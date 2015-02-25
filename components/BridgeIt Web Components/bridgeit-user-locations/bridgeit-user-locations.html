@@ -1,0 +1,173 @@
+<link rel="import" href="../../polymer/polymer.html">
+
+<!--
+Show the locations of BridgeIt users in your realm.
+
+##### Example
+
+    <bridgeit-user-locations></bridgeit-user-locations>
+
+@element bridgeit-user-locations
+@blurb Show a Google map of user locations.
+@status alpha
+@homepage http://bridgeit.github.io/bridgeit-web-components
+-->
+<polymer-element name="bridgeit-user-locations" attributes="accessToken account realm">
+  <template>
+    <div id="container">
+      <div id="map">
+      </div>
+    </div>
+  </template>
+  <script>
+    var _this;
+
+    Polymer({
+
+      /**
+       * The `accessToken` attribute is required to authenticate with BridgeIt
+       *
+       * @attribute accessToken
+       * @type string
+       * @default 'bridgeit.io.auth.getLastAccessToken()'
+       */
+      accessToken: bridgeit.io.auth.getLastAccessToken(),
+
+       /**
+       * The `realm` attribute defines the BridgeIt realm to request locations for.
+       *
+       * @attribute realm
+       * @type string
+       * @default 'bridgeit.io.auth.getLastKnownRealm()'
+       */
+      realm: bridgeit.io.auth.getLastKnownRealm(),
+
+      /**
+       * The `account` attribute defines the BridgeIt account of the realm.
+       *
+       * @attribute account
+       * @type string
+       * @default 'bridgeit.io.auth.getLastKnownAccount()'
+       */
+      account: bridgeit.io.auth.getLastKnownAccount(),
+
+      locationUpdates: [],
+      mapMarkers: [],
+      map: null,
+
+      observe: {
+        realm: 'realmChanged'
+      },
+
+      ready: function(){
+        console.log('bridgeit-user-locations.ready() called');
+
+        _this = this; 
+
+        //load gmap script
+        window.initializeLocationsMap = function() {
+          var mapElem = _this.$.map;
+          mapElem.style.height = '200px';
+          mapElem.style.width = '100%';
+          var mapOptions = {
+            zoom: 8,
+            center: new google.maps.LatLng(-34.397, 150.644),
+            maxZoom: 12,
+            signed_in: false
+          };
+
+          _this.map = new google.maps.Map(mapElem, mapOptions);
+
+          _this.initAuthorization();
+          
+          if( _this.accessToken ){
+            _this.refreshMap();
+          }
+        };
+
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp' +
+          '&signed_in=true&callback=initializeLocationsMap';
+        _this.$.container.appendChild(script);
+
+      },
+
+      initAuthorization: function(){    
+
+        if( !_this.account ){
+          _this.account = bridgeit.io.auth.getLastKnownAccount();
+        }
+
+        if( !_this.realm ){
+          _this.realm = bridgeit.io.auth.getLastKnownRealm();
+        }
+        if( !_this.accessToken ){
+          _this.accessToken = bridgeit.io.auth.getLastAccessToken();
+        }
+
+        //TODO see why lib is returning strings
+        if( _this.account === 'null' || _this.account === 'undefined'){
+          _this.account = '';
+        }
+        if( _this.realm === 'null' || _this.realm === 'undefined'){
+          _this.realm = '';
+        }
+        if( _this.accessToken === 'null' || _this.accessToken === 'undefined'){
+          _this.accessToken = '';
+        }
+      },
+
+      clearMapMarkers: function(){
+        _this.mapMarkers.forEach(function(marker){
+          marker.setMap(null);
+        });
+        _this.mapMarkers = [];
+      },
+
+      realmChanged: function(){
+        _this.refreshMap();
+      },
+
+      refreshMap: function(){
+        if( _this.realm && _this.account){
+          _this.clearMapMarkers();
+          bridgeit.io.location.findLocations({
+            realm: _this.realm
+          }).then(function(locationUpdates){
+            _this.locationUpdates = locationUpdates;
+            _this.updateMapMarkers();
+          })['catch'](function(error){
+            alert('Error fetching location updates for realm ' + realm + ': ' + error.message);
+            throw error;
+          });
+        }
+      },
+
+      updateMapMarkers: function(){
+        if( !_this.map ){
+          console.log('ERROR: locations could not update map markers due to missing map');
+          return;
+        }
+
+        var bounds = new google.maps.LatLngBounds();
+        if( _this.locationUpdates && _this.locationUpdates.length > 0 ){
+          _this.locationUpdates.forEach(function(locationUpdate){
+            var coords = locationUpdate.location.geometry.coordinates;
+            var latlon = new google.maps.LatLng(coords[0],coords[1]);
+            bounds.extend(latlon);
+            var marker = new google.maps.Marker({
+              position: latlon,
+              map: _this.map,
+              title: locationUpdate.username + ' ' + 
+                new Date(locationUpdate.lastUpdated).toLocaleString()
+            });
+            _this.mapMarkers.push(marker);
+          });
+          _this.map.fitBounds(bounds);
+          _this.map.panToBounds(bounds);
+        }
+      }
+    })
+  </script>
+</polymer-element>

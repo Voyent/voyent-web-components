@@ -1,0 +1,29 @@
+{
+  "name": "bridgeit.js",
+  "main": "src/bridgeit.js",
+  "ignore": [
+    "docs",
+    "bower.json",
+    "LICENCE",
+    "README.md",
+    "favicon.ico",
+    ".gitignore"
+  ],
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": [
+    "mobile",
+    "native",
+    "javascript"
+  ],
+  "homepage": "https://github.com/bridgeit/bridgeit.js",
+  "_release": "d593294332",
+  "_resolution": {
+    "type": "branch",
+    "branch": "gh-pages",
+    "commit": "d59329433298c7ba00ef3dc71854a740c27d7292"
+  },
+  "_source": "git://github.com/bridgeit/bridgeit.js.git",
+  "_target": "gh-pages",
+  "_originalSource": "bridgeit.js"
+}
