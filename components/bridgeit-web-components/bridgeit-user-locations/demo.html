@@ -83,18 +83,26 @@
 
 			function setCredentialsOnComponent(){
 
-				var account = bridgeit.io.auth.getLastKnownAccount();
-				var realm = bridgeit.io.auth.getLastKnownRealm();
-				var token = bridgeit.io.auth.getLastAccessToken();
-
 				var elem = document.getElementById('userLocations');
-				elem.setAttribute('accessToken', token);
-				elem.setAttribute('realm', realm);
-				elem.setAttribute('account', account);
 
-				document.getElementById('account').value = account;
-				document.getElementById('realm').value = realm;
-				document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
+				var account = bridgeit.io.auth.getLastKnownAccount();
+				if( account ){
+					elem.setAttribute('account', account);
+					document.getElementById('account').value = account;
+				}
+
+				var realm = bridgeit.io.auth.getLastKnownRealm();
+				if( realm ){
+					elem.setAttribute('realm', realm);
+					document.getElementById('realm').value = realm;
+				}
+
+				var token = bridgeit.io.auth.getLastAccessToken();
+				if( token ){
+					elem.setAttribute('accessToken', token);
+					document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
+				}
+				
 			}
 
 			//initialize known credentials
