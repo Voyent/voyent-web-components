@@ -2,6 +2,6 @@
   "name": "bridgeit-web-components#gh-pages",
   "private": true,
   "dependencies": {
-    "BridgeIt Web Components": "bridgeit/bridgeit-web-components#master"
+    "bridgeit-web-components": "bridgeit/bridgeit-web-components#master"
   }
 }
