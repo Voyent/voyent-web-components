@@ -1,0 +1,28 @@
+{
+  "name":"BridgeIt Web Components",
+  "authors": [
+    "ICEsoft Technologies <bridgeit@icesoft.com>"
+  ],
+  "description": "A library of Polymer-based Web Components for BridgeIt Services",
+  "keywords": [
+    "web-component",
+    "web-components",
+    "polymer",
+    "bridgeit"
+  ],
+  "license": "Apache 2",
+  "homepage": "https://github.com/bridgeit/bridgeit-components/",
+  "ignore": [
+    "/.*",
+    "/tests/"
+  ],
+  "version":"0.0.0",
+  "dependencies": {
+    "bridgeit.io.js" : "#gh-pages",
+    "polymer": "Polymer/polymer#~0.5.5"
+
+  },
+  "devDependencies": {
+    "web-component-tester": "*"
+  }
+}
