@@ -23,14 +23,14 @@
 		<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
 
 		<script src="../../webcomponentsjs/webcomponents.min.js"></script>
-		<link rel="import" href="bridgeit-user-locations.html">
+		<link rel="import" href="bridgeit-locations.html">
 
 		<link rel="stylesheet" href="demo.css"/>
 		
 	</head>
 	<body unresolved>
 
-		<h1>BridgeIt User Location Updates Map Component Demo</h1>
+		<h1>BridgeIt Locations Map Component Demo</h1>
   		<h3>Login with your BridgeIt Account Information</h3>
   		<hr/>
   		<div class="container">
@@ -56,7 +56,40 @@
 					</label>
 				</div>
 				<a onclick="login()">Login</a>
+
+				<div class="settings">
+					<div>
+						<label>Show User Location Updates:
+							<input type="checkbox" checked 
+								onclick="document.getElementById('userLocations').setAttribute('showUserLocations', this.checked);"/>
+						</label>
+					</div>
+
+					<div>
+						<label>Show Regions:
+							<input type="checkbox" onclick="document.getElementById('userLocations').setAttribute('showRegions', this.checked);"/>
+						</label>
+					</div>
+
+					<div>
+						<label>Show Points of Interest:
+							<input type="checkbox" onclick="document.getElementById('userLocations').setAttribute('showPOIs', this.checked);"/>
+						</label>
+					</div>
+
+					<div>
+						<label>Height:
+							<select onchange="document.getElementById('userLocations').setAttribute('height', this.value)">
+								<option selected>200px</option>
+								<option>400px</option>
+								<option>600px</option>
+								<option>800px</option>
+							</select>
+						</label>
+					</div>
+				</div>
 			</form>
+
 
 			<!-- 3. Declare the element by its tag. -->
 			<bridgeit-user-locations id="userLocations" accessToken="" realm="" account="">
