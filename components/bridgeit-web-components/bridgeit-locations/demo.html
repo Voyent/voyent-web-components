@@ -111,7 +111,19 @@
 					password: password
 				}).then(function(){
 					setCredentialsOnComponent();
-				})
+				})['catch'](function(){
+					//try to login as admin
+					bridgeit.io.auth.connect({
+						account: account,
+						realm: 'admin',
+						username: username,
+						password: password
+					}).then(function(){
+						bridgeit.io.auth
+						setCredentialsOnComponent();
+						document.getElementById('userLocations').setAttribute('realm', realm);
+					})
+				});
 			}
 
 			function setCredentialsOnComponent(){
