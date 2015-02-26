@@ -197,9 +197,6 @@ Polymer({
 		}
 
 		if (_this.locationUpdates && _this.locationUpdates.length > 0) {
-			if( _this.locationUpdates.length > 10 ){
-				_this.locationUpdates = _this.locationUpdates.slice(0,10);
-			}
 			_this.locationUpdates.forEach(function(locationUpdate) {
 				var coords = locationUpdate.location.geometry.coordinates;
 				var latlon = new google.maps.LatLng(coords[1], coords[0]);
