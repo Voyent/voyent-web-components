@@ -3,7 +3,7 @@ bridgeit-web-components
 
 BridgeIt Web Components are a work in progress to leverage the power of Web Components, Polymer (currently 0.5), bridgeit.io.js and the BridgeIt Services platform. To use these components you will need a BridgeIt Account and create a realm. You can create a free account in the [BridgeIt Console](http://dev.bridgeit.io/console). 
 
-h2. Usage
+### Usage
 
 Get the basic dependencies manually, via a CDN, or with Bower: 
 
@@ -46,7 +46,7 @@ Profit:
 </bridgeit-locations>
 ```
 
-h2. Demos
+### Demos
 
 [&lt;bridgeit-locations&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-locations/)
 
