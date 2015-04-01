@@ -1,0 +1,36 @@
+<link rel="import" href="../../polymer/polymer.html">
+
+<!--
+Build queries for the BridgeIt services in your realm.
+
+##### Example
+
+	<bridgeit-query-editor accessToken="bridgeit.io.auth.getLastAccessToken()"
+		realm="myRealm"
+		account="myAccount"
+		service="documents"
+		collection="documents"
+		fields="{}"
+		options="{}"
+		queryURLTarget="queryURL">
+	</bridgeit-query-editor>
+
+@element bridgeit-query-editor
+@blurb Displays a query editor/builder that can build queries for the BridgeIt services.
+@status alpha
+@homepage http://bridgeit.github.io/bridgeit-web-components
+-->
+<polymer-element name="bridgeit-query-editor" 
+	             attributes="accessToken realm account service collection fields options queryURLTarget queryResults queryListResults">
+  <template>
+      <script src="../../jQuery-QueryBuilder/dist/query-builder.standalone.min.js"></script>
+      <link type="text/css" rel="stylesheet" href="../../bootstrap/dist/css/bootstrap.min.css">
+      <link type="text/css" rel="stylesheet" href="../../bootstrap/dist/css/bootstrap-theme.min.css">
+      <link type="text/css" rel="stylesheet" href="../../jQuery-QueryBuilder/dist/query-builder.min.css">
+      <link type="text/css" rel="stylesheet" href="./bridgeit-query-editor.min.css">
+
+      <div id="editor"></div>
+  </template>
+  <script src="./bridgeit-query-editor.js"></script>
+
+</polymer-element>
