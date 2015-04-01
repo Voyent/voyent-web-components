@@ -1,36 +1,52 @@
-seed-element
+bridgeit-web-components
 ============
 
+BridgeIt Web Components are a work in progress to leverage the power of Web Components, Polymer (currently 0.5), bridgeit.io.js and the BridgeIt Services platform. To use these components you will need a BridgeIt Account and create a realm. You can create a free account in the [BridgeIt Console](http://dev.bridgeit.io/console). 
 
-[<bridgeit-user-locations>](http://bridgeit.github.io/bridgeit-web-components/bridgeit-user-locations)
+### Usage
 
-See the [component page](http://polymerlabs.github.io/seed-element) for more information.
+Get the basic dependencies manually, via a CDN, or with Bower: 
 
-## Getting Started
-
-We've put together a [guide to seed-element](http://www.polymer-project.org/docs/start/reusableelements.html) to help get you rolling.
-
-## Testing Your Element
-
-Add the logic specific to your new element and verify its functionality. Good unit tests are essential to your verification plan but a good way to quickly sanity test your component is to access your demo.html file via a local web server. There are several ways to do this but one easy method is to run a simple web server that ships with Python, using the commands:
-
-```sh
-python -m SimpleHTTPServer
+```
+"dependencies": {
+	"bridgeit.io.js" : "#gh-pages",
+	"polymer": "Polymer/polymer#~0.5.5"
+},
 ```
 
-Or other method using NodeJS:
+Declare the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support:
 
-```sh
-http-server ./
+```
+<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
+<script>
+	if( !("Promise" in window)){
+		window.Promise = ES6Promise.Promise;
+	}
+</script>
+<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
+<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
 ```
 
-This starts a web server on port 8000, so you can test your new element by navigating a browser to `localhost:8000/test/index.html`.
+Declare the Web Components script:
 
-### web-component-tester
-
-The tests are also compatible with [web-component-tester](https://github.com/Polymer/web-component-tester). You can run them on multiple local browsers via:
-
-```sh
-npm install -g web-component-tester
-wct
 ```
+<script src="../../webcomponentsjs/webcomponents.min.js"></script>
+```
+
+Import the component you would like to use:
+
+```
+<link rel="import" href="bridgeit-locations.html">
+```
+
+Profit:
+
+```
+<bridgeit-locations id="userLocations" accessToken="xxx" realm="myRealm" account="myAccount">
+</bridgeit-locations>
+```
+
+### Demos
+
+[&lt;bridgeit-locations&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-locations/)
+

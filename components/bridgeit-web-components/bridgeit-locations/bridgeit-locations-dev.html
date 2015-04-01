@@ -1,0 +1,30 @@
+<link rel="import" href="../../polymer/polymer.html">
+
+<!--
+Show the locations of BridgeIt users in your realm.
+
+##### Example
+
+	<bridgeit-locations accessToken="bridgeit.io.auth.getLastAccessToken()"
+		realm="myRealm"
+		showUserLocations="true"
+		showRegions="true"
+		showPOIs="true"
+		height="400px">
+	</bridgeit-locations>
+
+@element bridgeit-locations
+@blurb Show a Google map of BridgeIt location data, including user location updates, regions, and points of interest.
+@status alpha
+@homepage http://bridgeit.github.io/bridgeit-web-components
+-->
+<polymer-element name="bridgeit-locations" 
+	attributes="accessToken account realm showUserLocations showRegions showPOIs height">
+  <template>
+	<div id="container">
+	  <div id="map">
+	  </div>
+	</div>
+  </template>
+  <script src="bridgeit-locations.js"></script>
+</polymer-element>

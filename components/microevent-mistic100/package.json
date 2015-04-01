@@ -1,0 +1,32 @@
+{
+  "name": "microevent-mistic100",
+  "version": "2.1.1",
+  "description": "Event emitter micro library",
+  "main": "microevent.js",
+  "author": [{
+    "name": "Jerome Etienne",
+    "homepage": "http://jetienne.com"
+  }, {
+    "name": "Damien \"Mistic\" Sorel",
+    "email": "contact@git.strangeplanet.fr",
+    "homepage": "http://www.strangeplanet.fr"
+  }],
+  "keywords": ["events", "emitter"],
+  "license": "MIT",
+  "homepage": "https://github.com/mistic100/microevent.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mistic100/microevent.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mistic100/microevent.js/issues"
+  },
+  "devDependencies": {
+      "grunt-contrib-uglify": "~0.8.0",
+      "grunt-contrib-jshint": "~0.11.0",
+      "grunt-mocha-test": "~0.12.0"
+  },
+  "scripts": {
+    "test": "grunt test --force"
+  }
+}

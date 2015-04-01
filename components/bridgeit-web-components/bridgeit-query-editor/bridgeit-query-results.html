@@ -1,0 +1,37 @@
+<link rel="import" href="../../polymer/polymer.html">
+
+<!--
+Displays the results of queries executed by the bridgeit-query-editor component.
+
+##### Example
+
+	<bridgeit-query-results for="editor"></bridgeit-query-results>
+
+@element bridgeit-query-results
+@blurb Displays the results of queries executed by the bridgeit-query-editor component by listening for the queryExecuted event.
+@status alpha
+@homepage http://bridgeit.github.io/bridgeit-web-components
+-->
+<polymer-element name="bridgeit-query-results" attributes="for tblstyle">
+    <template>
+        <table style="{{tblstyle | styleObject}}">
+            <thead>
+            <tr>
+                <template repeat="{{ head in tableHeaders }}">
+                    <th class="text-center">{{head}}</th>
+                </template>
+            </tr>
+            </thead>
+            <tbody>
+            <template repeat="{{ row in tableRows }}">
+                <tr>
+                    <template repeat="{{ column in row }}">
+                        <td class="text-center">{{column}}</td>
+                    </template>
+                </tr>
+            </template>
+            </tbody>
+        </table>
+    </template>
+    <script src="./bridgeit-query-results.js"></script>
+</polymer-element>

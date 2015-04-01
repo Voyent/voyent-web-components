@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../src/query-builder.css">
+  <link rel="stylesheet" href="../src/plugins/bt-tooltip-errors/plugin.css">
+  <link rel="stylesheet" href="../src/plugins/sortable/plugin.css">
+  <link rel="stylesheet" href="../src/plugins/filter-description/plugin.css">
+  <link href="../bower_components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="container">
+  <div class="col-md-12 col-lg-10 col-lg-offset-1">
+    <p><a href="http://www.eyecon.ro/bootstrap-slider">Bootstrap Slider</a> and <a href="http://bootboxjs.com">Bootbox</a> must be installed with Bower to run this demo.</p>
+    
+    <div id="builder"></div>
+    
+    <div class="btn-group">
+      <button class="btn btn-warning reset">Reset</button>
+      <button class="btn btn-success set">Set rules</button>
+      <button class="btn btn-success set-mongo">Set rules from MongoDB</button>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-primary parse-json">JSON</button>
+      <button class="btn btn-primary parse-sql" data-stmt="question_mark">SQL (question mark)</button>
+      <button class="btn btn-primary parse-sql" data-stmt="numbered">SQL (numbered)</button>
+      <button class="btn btn-primary parse-sql" data-stmt="false">SQL</button>
+      <button class="btn btn-primary parse-mongo">MongoDB</button>
+    </div>
+
+    <div id="result" class="hide">
+      <h3>Output</h3>
+      <pre></pre>
+    </div>
+  </div>
+</div>
+
+<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+<script src="../bower_components/microevent-mistic100/microevent.js"></script>
+<script src="../bower_components/jquery-extendext/jQuery.extendext.js"></script>
+<script src="../bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="../src/query-builder.js"></script>
+<script src="../src/plugins/sql-support/plugin.js"></script>
+<script src="../src/plugins/mongodb-support/plugin.js"></script>
+<script src="../src/plugins/bt-tooltip-errors/plugin.js"></script>
+<script src="../src/plugins/sortable/plugin.js"></script>
+<script src="../src/plugins/filter-description/plugin.js"></script>
+<script src="../bower_components/seiyria-bootstrap-slider/dist/bootstrap-slider.min.js"></script>
+<script src="../bower_components/bootbox/bootbox.js"></script>
+
+<script>
+// define filters
+$('#builder').queryBuilder({
+  allow_empty: true,
+  
+  onValidationError: function($target, err) {
+      console.error(err, $target);
+  },
+  
+  plugins: {
+    'bt-tooltip-errors': { delay: 100},
+    'sortable': null,
+    'filter-description': { mode: 'bootbox' }
+  },
+  
+  filters: [
+  /*
+   * basic
+   */
+  {
+    id: 'name',
+    label: 'Name',
+    type: 'string',
+    optgroup: 'core',
+    default_value: 'Mistic',
+    size: 30
+  },
+  /*
+   * textarea
+   */
+  {
+    id: 'bson',
+    label: 'BSON',
+    type: 'string',
+    input: 'textarea',
+    operators: ['equal'],
+    size: 30,
+    rows: 3
+  },
+  /*
+   * select
+   */
+  {
+    id: 'category',
+    label: 'Category',
+    type: 'integer',
+    input: 'checkbox',
+    optgroup: 'core',
+    values: {
+      1: 'Books',
+      2: 'Movies',
+      3: 'Music',
+      4: 'Tools',
+      5: 'Goodies',
+      6: 'Clothes'
+    },
+    operators: ['in', 'not_in', 'equal', 'not_equal', 'is_null', 'is_not_null']
+  },
+  /*
+   * radio
+   */
+  {
+    id: 'in_stock',
+    label: 'In stock',
+    type: 'integer',
+    input: 'radio',
+    optgroup: 'plugin',
+    values: {
+      1: 'Yes',
+      0: 'No'
+    },
+    operators: ['equal']
+  },
+  /*
+   * double
+   */
+  {
+    id: 'price',
+    label: 'Price',
+    type: 'double',
+    size: 5,
+    validation: {
+      min: 0,
+      step: 0.01
+    }
+  }, 
+  /*
+   * slider
+   */
+  {
+    id: 'rate',
+    label: 'Rate',
+    type: 'integer',
+    validation: {
+      min: 0,
+      max: 100
+    },
+    plugin: 'slider',
+    plugin_config: {
+      min: 0,
+      max: 100,
+      value: 0
+    },
+    onAfterSetValue: function($rule, value) {
+      var input = $rule.find('.rule-value-container input');
+      input.slider('setValue', value);
+      input.val(value); // don't know why I need it
+    }
+  }, 
+  /*
+   * placeholder and regex validation
+   */
+  {
+    id: 'id',
+    label: 'Identifier',
+    type: 'string',
+    optgroup: 'plugin',
+    placeholder: '____-____-____',
+    size: 14,
+    operators: ['equal', 'not_equal'],
+    validation: {
+      format: /^.{4}-.{4}-.{4}$/
+    }
+  },
+  /*
+   * custom input
+   */
+  {
+    id: 'coord',
+    label: 'Coordinates',
+    type: 'string',
+    default_value: 'C.5',
+    description: '<p>The letter is the cadran identifier:</p>\
+<ul>\
+  <li><b>A</b>: alpha</li>\
+  <li><b>B</b>: beta</li>\
+  <li><b>C</b>: gamma</li>\
+</ul>',
+    validation: {
+      format: /^[A-C]{1}.[1-6]{1}$/
+    },
+    input: function($rule, filter) {
+      var $container = $rule.find('.rule-value-container');
+      
+      $container.on('change', '[name=coord_1]', function(){
+        var h = '';
+        
+        switch ($(this).val()) {
+          case 'A':
+            h = '<option value="-1">-</option> <option value="1">1</option> <option value="2">2</option>';
+            break;
+          case 'B':
+            h = '<option value="-1">-</option> <option value="3">3</option> <option value="4">4</option>';
+            break;
+          case 'C':
+            h = '<option value="-1">-</option> <option value="5">5</option> <option value="6">6</option>';
+            break;
+        }
+        
+        $container.find('[name=coord_2]').html(h).toggle(h!='');
+      });
+      
+      return '\
+      <select name="coord_1"> \
+        <option value="-1">-</option> \
+        <option value="A">A</option> \
+        <option value="B">B</option> \
+        <option value="C">C</option> \
+      </select> \
+      <select name="coord_2" style="display:none;"></select>';
+    },
+    valueParser: function($rule, value, filter, operator) {
+      return $rule.find('[name=coord_1]').val()
+        +'.'+$rule.find('[name=coord_2]').val();
+    },
+    onAfterSetValue: function($rule, value, filter, operator) {
+      if (operator.accept_values) {
+        var val = value[0].split('.');
+        
+        $rule.find('[name=coord_1]').val(val[0]).trigger('change');
+        $rule.find('[name=coord_2]').val(val[1]);
+      }
+    }
+  }]
+});
+
+// set rules
+$('.set').on('click', function() {
+  $('#builder').queryBuilder('setRules', {
+    condition: 'AND',
+    rules: [{
+      id: 'price',
+      operator: 'between',
+      value: [10.25, 15.52],
+      flags: {
+        no_delete: true,
+        filter_readonly: true
+      }
+    }, {
+      condition: 'OR',
+      rules: [{
+        id: 'category',
+        operator: 'equal',
+        value: 2
+      }, {
+        id: 'coord',
+        operator: 'equal',
+        value: 'B.3'
+      }]
+    }]
+  });
+
+  $('.parse-json').trigger('click');
+})
+
+// set rules from MongoDB
+$('.set-mongo').on('click', function() {
+  $('#builder').queryBuilder('setRulesFromMongo', {
+    "$and": [{
+      "name": {
+        "$regex": "^(?!Mistic)"
+      }
+    }, {
+      "price": { "$gte": 0, "$lte": 100 }
+    }, {
+      "$or": [{
+        "category": 2
+      }, {
+        "category": { "$in": [4, 5] }
+      }]
+    }]
+  });
+});
+
+// reset builder
+$('.reset').on('click', function() {
+  $('#builder').queryBuilder('reset');
+  $('#result').addClass('hide').find('pre').empty();
+});
+
+// get rules
+$('.parse-json').on('click', function() {
+  $('#result').removeClass('hide')
+    .find('pre').html(JSON.stringify(
+      $('#builder').queryBuilder('getRules'),
+      undefined, 2
+    ));
+});
+
+$('.parse-sql').on('click', function() {
+  var res = $('#builder').queryBuilder('getSQL', $(this).data('stmt'), false);
+  $('#result').removeClass('hide')
+    .find('pre').html(
+      res.sql + (res.params ? '\n\n' + JSON.stringify(res.params, undefined, 2) : '')
+    );
+});
+
+$('.parse-mongo').on('click', function() {
+  $('#result').removeClass('hide')
+    .find('pre').html(JSON.stringify(
+      $('#builder').queryBuilder('getMongo'),
+      undefined, 2
+    ));
+});
+</script>
+
+</body>
+</html>

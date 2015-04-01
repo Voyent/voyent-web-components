@@ -19,7 +19,8 @@
   "version":"0.0.2",
   "dependencies": {
     "bridgeit.io.js" : "#gh-pages",
-    "polymer": "Polymer/polymer#~0.5.5"
+    "polymer": "Polymer/polymer#~0.5.5",
+    "jQuery-QueryBuilder": "~1.4.2"
 
   },
   "devDependencies": {

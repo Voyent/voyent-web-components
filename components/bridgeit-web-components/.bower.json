@@ -18,16 +18,17 @@
   ],
   "dependencies": {
     "bridgeit.io.js": "#gh-pages",
-    "polymer": "Polymer/polymer#~0.5.5"
+    "polymer": "Polymer/polymer#~0.5.5",
+    "jQuery-QueryBuilder": "~1.4.2"
   },
   "devDependencies": {
     "web-component-tester": "*"
   },
-  "_release": "e4b98d5f53",
+  "_release": "73c6a4d224",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "e4b98d5f5364c0d22dbe125d77ce92a83bb061ed"
+    "commit": "73c6a4d224aadc056379e21ff461d141cdd83a4b"
   },
   "_source": "git://github.com/bridgeit/bridgeit-web-components.git",
   "_target": "master",

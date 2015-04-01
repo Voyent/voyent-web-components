@@ -1,0 +1,50 @@
+{
+  "name": "jQuery-QueryBuilder",
+  "version": "1.4.2",
+  "authors": [
+    {
+      "name": "Damien \"Mistic\" Sorel",
+      "homepage": "http://www.strangeplanet.fr"
+    }
+  ],
+  "description": "jQuery plugin for user friendly query/filter creator",
+  "main": [
+    "dist/query-builder.js",
+    "dist/query-builder.css"
+  ],
+  "dependencies": {
+    "jquery": ">= 1.9.0",
+    "bootstrap": "^3.1.0",
+    "momentjs": "^2.6.0",
+    "microevent-mistic100": "^2.0.0",
+    "jquery-extendext": "^0.1.1"
+  },
+  "keywords": [
+    "jquery",
+    "query",
+    "builder",
+    "filter"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/mistic100/jQuery-QueryBuilder",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mistic100/jQuery-QueryBuilder.git"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "_release": "1.4.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.4.2",
+    "commit": "cfbdb2a9e83ef69a6f51efe23b59571fa17010e5"
+  },
+  "_source": "git://github.com/mistic100/jQuery-QueryBuilder.git",
+  "_target": "~1.4.2",
+  "_originalSource": "jQuery-QueryBuilder"
+}
