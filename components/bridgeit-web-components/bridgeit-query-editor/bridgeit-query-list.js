@@ -3,7 +3,7 @@ var _qList;
 Polymer({
 
     /**
-     * Fired whenever there is a message for an action that was triggered.
+     * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
      *
      * @event queryMsgUpdated
      */
@@ -31,7 +31,7 @@ Polymer({
     domReady: function() {
         _qList = this;
         if (!_qList.for) {
-            _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'for attribute is required'});
+            _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'for attribute is required','type':'error'});
             return;
         }
         var editor = document.getElementById(_qList.for);
@@ -41,7 +41,7 @@ Polymer({
                 editor.addEventListener('queriesRetrieved', function(e) {
                     var res = e.detail.results;
                     if (Object.keys(res).length === 0) {
-                        _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'Query list is empty.'});
+                        _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'Query list is empty.','type':'error'});
                         _qList.allQueries = [];
                         return;
                     }
@@ -49,11 +49,11 @@ Polymer({
                 });
             }
             else {
-                _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'element is not bridgeit-query-editor'});
+                _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'element is not bridgeit-query-editor','type':'error'});
             }
         }
         else {
-            _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'bridgeit-query-editor component not found'});
+            _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'bridgeit-query-editor component not found','type':'error'});
         }
     },
     _viewQuery: function(event,detail,sender) {

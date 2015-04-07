@@ -3,7 +3,7 @@ var _qResults;
 Polymer({
 
     /**
-     * Fired whenever there is a message for an action that was triggered.
+     * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
      *
      * @event queryMsgUpdated
      */
@@ -32,7 +32,7 @@ Polymer({
     domReady: function() {
         _qResults = this;
         if (!_qResults.for) {
-            _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'for attribute is required'});
+            _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'for attribute is required','type':'error'});
             return;
         }
         var editor = document.getElementById(_qResults.for);
@@ -41,7 +41,7 @@ Polymer({
                 editor.addEventListener('queryExecuted', function(e) {
                     var res = e.detail.results;
                     if (Object.keys(res).length === 0) {
-                        _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'Query results empty.'});
+                        _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'Query results empty.','type':'error'});
                         _qResults.tableHeaders = [];
                         _qResults.tableRows = [];
                         return;
@@ -67,11 +67,11 @@ Polymer({
                 });
             }
             else {
-                _qResults.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'element is not bridgeit-query-editor'});
+                _qResults.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'element is not bridgeit-query-editor','type':'error'});
             }
         }
         else {
-            _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'query-editor component not found'});
+            _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'query-editor component not found','type':'error'});
         }
     }
 });

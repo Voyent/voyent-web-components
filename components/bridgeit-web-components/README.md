@@ -49,4 +49,5 @@ Profit:
 ### Demos
 
 [&lt;bridgeit-locations&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-locations/)
+[&lt;bridgeit-query-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-query-editor/)
 
