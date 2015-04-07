@@ -111,8 +111,6 @@
 
               <div id="msgs"></div>
 
-              <bridgeit-query-list id="queryList" for="queryEditor" tblStyle="{'margin': '0 auto'}"></bridgeit-query-list>
-
               <div class="buttons">
                   <button id="resetEditor" onclick="document.getElementById('queryEditor').resetEditor();">New/Reset</button>
                   <button id="runQuery" onclick="document.getElementById('queryEditor').runQuery();">Run Query</button>
@@ -120,8 +118,18 @@
                   <button id="cloneQuery" onclick="document.getElementById('queryEditor').cloneQuery();">Clone Query</button>
                   <button id="deleteQuery" onclick="document.getElementById('queryEditor').deleteQuery();">Delete Query</button>
               </div>
-
-              <bridgeit-query-results id="queryResults" for="queryEditor" tblstyle="{'margin': '0 auto'}"></bridgeit-query-results>
+              <br/>
+              <div>
+                  <label>Saved Queries:
+                      <bridgeit-query-list id="queryList" for="queryEditor" tblStyle="{'margin': '0 auto'}"></bridgeit-query-list>
+                  </label>
+              </div>
+              <br/>
+              <div>
+                  <label>Query Results:
+                      <bridgeit-query-results id="queryResults" for="queryEditor" tblstyle="{'margin': '0 auto'}"></bridgeit-query-results>
+                  </label>
+              </div>
 
               <script type="text/javascript">
                   //Listen for the queryMsgUpdated event for all components
@@ -152,6 +160,7 @@
 				}).then(function(){
 					setCredentialsOnComponent();
                     document.getElementById('queryEditor').reloadEditor();
+                    document.getElementById('queryEditor').fetchQueryList();
 				})['catch'](function(){
 					//try to login as admin
 					bridgeit.io.auth.connect({
@@ -163,6 +172,7 @@
 						bridgeit.io.auth
 						setCredentialsOnComponent();
 						document.getElementById('queryEditor').reloadEditor();
+                        document.getElementById('queryEditor').fetchQueryList();
 					})
 				});
 			}
@@ -177,7 +187,7 @@
 					document.getElementById('account').value = account;
 				}
 
-				var realm = bridgeit.io.auth.getLastKnownRealm();
+                var realm = bridgeit.io.auth.getLastKnownRealm();
 				if( realm ){
 					elem.setAttribute('realm', realm);
 					document.getElementById('realm').value = realm;

@@ -3,7 +3,7 @@ var _qEditor;
 Polymer({
 
     /**
-     * Fired after a query is executed, this occurs on the initial load and when calling runQuery(), resetEditor() or reloadEditor(). Contains the query results and the unique fields.
+     * Fired after a query is executed, this occurs on the initial load and when calling runQuery() or reloadEditor(). Contains the query results and the unique fields.
      *
      * @event queryExecuted
      */
@@ -15,7 +15,7 @@ Polymer({
      */
 
     /**
-     * Fired whenever there is a message for an action that was triggered.
+     * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
      *
      * @event queryMsgUpdated
      */
@@ -66,18 +66,18 @@ Polymer({
     /** Specify the inclusion or exclusion of fields to return in the result set.
      *
      * @attribute fields
-     * @type object
-     * @default {}
+     * @type string
+     * @default '{}'
      */
-    fields: {},
+    fields: '{}',
 
     /** Additional query options such as limit and sort.
      *
      * @attribute options
-     * @type object
-     * @default {}
+     * @type string
+     * @default '{}'
      */
-    options: {},
+    options: '{}',
 
     /** Element ID of where the GET URL of the query will be displayed as the query is built. Supports input and non-input elements.
      *
@@ -114,8 +114,10 @@ Polymer({
 
     ready: function() {
         _qEditor = this;
-        _qEditor.reloadEditor();
-        _qEditor.fetchQueryList();
+        if (_qEditor.accessToken && _qEditor.realm && _qEditor.account && _qEditor.service && _qEditor.collection) {
+            _qEditor.reloadEditor();
+            _qEditor.fetchQueryList();
+        }
     },
 
     /**
@@ -153,7 +155,7 @@ Polymer({
      */
     cloneQuery: function(id,description,services) {
         if (!_qEditor.activeQuery) {
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No query to clone.'});
+            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No query to clone.','type':'error'});
             return;
         }
         var query = _qEditor._buildQuery(id,description,services,true);
@@ -167,8 +169,8 @@ Polymer({
      * Deletes the currently active query.
      */
     deleteQuery: function() {
-        if (!_qEditor.activeQuery || !this.activeQuery._id) {
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No query to delete.'});
+        if (!_qEditor.activeQuery || !_qEditor.activeQuery._id) {
+            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No query to delete.','type':'error'});
             return;
         }
         _qEditor._deleteQuery();
@@ -180,17 +182,16 @@ Polymer({
      */
     resetEditor: function() {
         $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('reset');
-        _qEditor.options = JSON.parse(_qEditor.getAttribute('options') ? _qEditor.getAttribute('options') : '{}');
-        _qEditor.fields = JSON.parse(_qEditor.getAttribute('fields') ? _qEditor.getAttribute('fields') : '{}');
+        _qEditor.options = _qEditor.getAttribute('options') ? _qEditor.getAttribute('options') : '{}';
+        _qEditor.fields = _qEditor.getAttribute('fields') ? _qEditor.getAttribute('fields') : '{}';
         _qEditor.activeQuery = null;
         _qEditor._setQueryHeader(null);
-        _qEditor._queryService({});
         _qEditor._updateQueryURL();
     },
 
     /**
      * @method fetchQueryList
-     * Retrieves a list of akk the queries in the current realm.
+     * Retrieves a list of all the queries in the current realm.
      */
     fetchQueryList: function() {
         if (!_qEditor.accessToken || !_qEditor.realm || !_qEditor.account || !_qEditor.service || !_qEditor.collection) {
@@ -200,13 +201,14 @@ Polymer({
     },
 
     /**
+     * @method setEditorFromMongo
      * Populate the editor from an existing query.
-     * @param query
+     * @param query - The query in object form.
      */
     setEditorFromMongo: function(query) {
         _qEditor.skipListeners = true;
-        _qEditor.options = query.options ? query.options : {};
-        _qEditor.fields = query.fields ? query.fields : {};
+        _qEditor.options = JSON.stringify(query.options ? query.options : {});
+        _qEditor.fields = JSON.stringify(query.fields ? query.fields : {});
         try {
             $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('setRulesFromMongo',query.query);
             _qEditor.activeQuery = query;
@@ -220,13 +222,14 @@ Polymer({
             else {
                 errorMsg = errorMsg + e.message;
             }
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: errorMsg});
+            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: errorMsg,'type':'error'});
         }
         _qEditor._updateQueryURL(query.query);
         _qEditor.skipListeners = false;
     },
 
     /**
+     * @method reloadEditor
      * Completely destroy and reinitialize the editor.
      */
     reloadEditor: function() {
@@ -238,6 +241,30 @@ Polymer({
         _qEditor._updateQueryURL();
     },
 
+    /**
+     * @method validateQuery
+     * Returns a boolean value that indicates if the current query is valid.
+     */
+    validateQuery: function() {
+        return Object.keys($(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('getMongo')).length > 0 ? true : false;
+    },
+
+    /**
+     * @method getActiveQuery
+     * Returns the currently active query as an object, or null if the there is no active query.
+     */
+    getActiveQuery: function() {
+        return _qEditor.activeQuery;
+    },
+
+    fieldsChanged: function() {
+        _qEditor._updateQueryParams();
+    },
+
+    optionsChanged: function() {
+        _qEditor._updateQueryParams();
+    },
+
 
     _createQuery: function(query) {
         bridgeit.io.query.createQuery({
@@ -247,8 +274,9 @@ Polymer({
             query: query
         }).then(function(uri) {
             var queryId = uri.split("/").pop();
-            _qEditor.activeQuery._id = queryId;
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Query "'+queryId+'" saved'});
+            query._id = queryId;
+            _qEditor.activeQuery = query;
+            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
             _qEditor._setQueryHeader(_qEditor.activeQuery);
             _qEditor.fetchQueryList();
         }).catch(function(error){
@@ -256,13 +284,14 @@ Polymer({
         });
     },
     _deleteQuery: function() {
+        var queryId = _qEditor.activeQuery._id;
         bridgeit.io.query.deleteQuery({
-            id:_qEditor.activeQuery._id,
+            id:queryId,
             accessToken: _qEditor.accessToken,
             account: _qEditor.account,
             realm: _qEditor.realm
         }).then(function() {
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Query "'+_qEditor.activeQuery._id+'" deleted'});
+            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Query "'+queryId+'" deleted','type':'info'});
             _qEditor.resetEditor();
             _qEditor.fetchQueryList();
         }).catch(function(error){
@@ -276,7 +305,7 @@ Polymer({
             realm: _qEditor.realm
         }).then(function(results) {
             _qEditor.allQueries = results;
-            _qEditor.queryListResults = JSON.stringify(results);
+            _qEditor.queryListResults = results;
             _qEditor.fire('queriesRetrieved',{results: results});
         }).catch(function(error){
             console.log('fetchQueryList caught an error: ' + error);
@@ -293,7 +322,7 @@ Polymer({
             "options": JSON.parse(_qEditor.getAttribute('options') ? _qEditor.getAttribute('options') : '{}'),
             "properties":{}
         };
-        if (id && id.toString().length > 0) {
+        if (id && jQuery.type(id) == 'string' && id.toString().length > 0) {
             queryToPost._id = id;
         }
         if ((_qEditor.activeQuery && isClone) || !_qEditor.activeQuery) {
@@ -318,8 +347,18 @@ Polymer({
         if (description && jQuery.type(description) == 'string' && description.trim().length > 0) {
             queryToPost.properties.description = description;
         }
+        else {
+            if (queryToPost.properties && queryToPost.properties.description) {
+                delete queryToPost.properties.description;
+            }
+        }
         if (services && jQuery.type(services) == 'array' && services.length > 0) {
             queryToPost.properties.services = services;
+        }
+        else {
+            if (queryToPost.properties && queryToPost.properties.services) {
+                delete queryToPost.properties.services;
+            }
         }
         if (Object.keys(queryToPost.properties).length === 0) {
             delete queryToPost.properties;
@@ -339,7 +378,7 @@ Polymer({
                     }
                 }
                 if (queryExists) {
-                    _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'The query name "'+name+'" already exists in this realm, please choose a different one.'});
+                    _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'The query name "'+name+'" already exists in this realm, please choose a different one.','type':'error'});
                 }
                 return queryExists;
             }
@@ -353,7 +392,7 @@ Polymer({
     },
     _setQueryHeader: function(query) {
         var container = _qEditor.shadowRoot.querySelector('#editor_group_0');
-        if (query === null) {
+        if (!query || !query._id) {
             if (_qEditor.shadowRoot.querySelector('#queryTitle') !== null) {
                 container.removeChild(_qEditor.shadowRoot.querySelector('#queryTitle'));
             }
@@ -379,7 +418,7 @@ Polymer({
         var queryURLTarget = _qEditor.queryURLTarget;
         if (document.getElementById(queryURLTarget)) {
             var q = query ? JSON.stringify(query) : '{}';
-            var params = '?access_token='+_qEditor.accessToken+'&query='+q+'&fields='+JSON.stringify(_qEditor.fields)+'&options='+JSON.stringify(_qEditor.options);
+            var params = '?access_token='+_qEditor.accessToken+'&query='+q+'&fields='+_qEditor.fields+'&options='+_qEditor.options;
             var queryURL = _qEditor.service_url+params;
             if ($(queryURLTarget).is(':input')) {
                 document.getElementById(queryURLTarget).value=queryURL;
@@ -392,14 +431,35 @@ Polymer({
             }
         }
     },
+    _updateQueryParams: function() {
+        var queryURLTarget = _qEditor.queryURLTarget;
+        if (document.getElementById(queryURLTarget)) {
+            var v;
+            if ($(queryURLTarget).is(':input')) {
+                v = document.getElementById(queryURLTarget).value;
+                v = v.replace(/fields=\{(.*?)\}/,'fields='+_qEditor.fields);
+                v = v.replace(/options=\{(.*)\}/,'options='+_qEditor.options);
+                document.getElementById(queryURLTarget).value = v;
+            }
+            else {
+                v = document.getElementById(queryURLTarget).innerHTML;
+                v = v.replace(/fields=\{(.*?)\}/,'fields='+_qEditor.fields);
+                v = v.replace(/options=\{(.*)\}/,'options='+_qEditor.options);
+                document.getElementById(queryURLTarget).innerHTML = v;
+                if (document.getElementById(queryURLTarget).tagName === 'A') {
+                    document.getElementById(queryURLTarget).href=v;
+                }
+            }
+        }
+    },
     _queryService: function(query,genFields) {
         var params = {
             accessToken: _qEditor.accessToken,
             account: _qEditor.account,
             realm: _qEditor.realm,
             query: query,
-            fields: _qEditor.fields,
-            options: _qEditor.options
+            fields: JSON.parse(_qEditor.fields),
+            options: JSON.parse(_qEditor.options)
         };
 
         if (_qEditor.service.toLowerCase() === 'documents') {
@@ -432,12 +492,12 @@ Polymer({
                     });
                     break;
                 default:
-                    _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Location Service Collection "' + _qEditor.collection + '" not supported.'});
+                    _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Location Service Collection "' + _qEditor.collection + '" not supported.','type':'error'});
             }
             _qEditor.service_url = 'http://'+bridgeit.io.locateURL+'/'+_qEditor.account+'/realms/'+_qEditor.realm+'/'+_qEditor.collection;
         }
         else {
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Service "' + _qEditor.service + '" not supported.'});
+            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Service "' + _qEditor.service + '" not supported.','type':'error'});
             return;
         }
         function successCallback(results) {
@@ -447,14 +507,14 @@ Polymer({
                     determineFields(results);
                 }
                 obj = {results: results, uniqueFields: _qEditor.uniqueFields};
-                _qEditor.queryResults = JSON.stringify(obj);
+                _qEditor.queryResults = obj;
                 _qEditor.fire('queryExecuted',obj);
             }
             else {
-                obj = {results: {}, uniqueFields: []};
-                _qEditor.queryResults = JSON.stringify(obj);
+                obj = {results: [], uniqueFields: []};
+                _qEditor.queryResults = obj;
                 _qEditor.fire('queryExecuted',obj);
-                _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No data in the "' + _qEditor.collection +'" collection.'});
+                _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No data in the "' + _qEditor.collection +'" collection.','type':'error'});
             }
         }
         function determineFields(results) {
