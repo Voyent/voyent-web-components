@@ -1,31 +1,33 @@
 <link rel="import" href="../../polymer/polymer.html">
 
 <!--
-Displays a list of queries in your realm that can be loaded into the bridgeit-query-editor component.
+Displays a list of queries retrieved by the `bridgeit-query-editor` component by listening for the `queriesRetrieved` event.
 
-##### Example
+Example:
 
-	<bridgeit-query-list for="editor"></bridgeit-query-list>
+	<pre>
+	&#60;bridgeit-query-list for="editor"
+                       tblstyle="margin:0 auto;"&#62;
+  &#60;/bridgeit-query-list&#62;
+    </pre>
 
-@element bridgeit-query-list
-@blurb Displays a list of queries by listening for the queriesRetrieved event of the bridgeit-query-editor component.
-@status alpha
-@homepage http://bridgeit.github.io/bridgeit-web-components
+@demo demo.html
 -->
-<polymer-element name="bridgeit-query-list" attributes="for tblstyle">
+<dom-module id="bridgeit-query-list">
     <template>
-        <table style="{{tblstyle | styleObject}}">
+        <table style$="{{tblstyle}}">
             <tbody>
-            <template repeat="{{ query in allQueries }}">
+            <template is="dom-repeat" items="{{_allQueries}}">
                 <tr>
-                    <td>{{query._id}}</td>
+                    <td>{{item._id}}</td>
                     <td>
-                        <button on-click="{{_viewQuery}}">View</button>
+                        <button on-click="_viewQuery">View</button>
                     </td>
                 </tr>
             </template>
             </tbody>
         </table>
     </template>
-    <script src="./bridgeit-query-list.js"></script>
-</polymer-element>
+</dom-module>
+
+<script src="./bridgeit-query-list.js"></script>

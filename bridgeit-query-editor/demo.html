@@ -13,6 +13,7 @@
 		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 		<title>BridgeIt Web Components Demo</title>
 
+		<!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
 		<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
 		<script>
 			if( !("Promise" in window)){
@@ -22,25 +23,24 @@
 		<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
 		<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
 
-		<script src="../../webcomponentsjs/webcomponents.min.js"></script>
+		<!-- Load the webcomponents polyfill -->
+		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
 
-        <!-- Load required jQuery and bootstrap font dependencies before loading component -->
+		<!-- Load required jQuery and font awesome dependencies before loading component -->
         <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
-        <style type="text/css">
-            @font-face {
-                font-family: 'Glyphicons Halflings';
-                src: url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.eot');
-                src: url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.woff2') format('woff2'), url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.woff') format('woff'), url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
-            }
-        </style>
-		<link rel="import" href="bridgeit-query-editor.html">
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 
+		<!-- Load bridgeit query editor component -->
+		<link rel="import" href="bridgeit-query-editor.html">
         <!-- Load supporting components (optional) -->
         <link rel="import" href="bridgeit-query-list.html">
         <link rel="import" href="bridgeit-query-results.html">
 
-		<link rel="stylesheet" href="demo.css"/>
-		
+		<link rel="stylesheet" href="../common/demo.css"/>
+		<style type="text/css">
+			.buttons {text-align:center;}
+			.buttons button{font-size:13px;padding:5px 10px;color:rgb(239, 239, 239);background-color:rgb(62, 69, 140);margin:10px;}
+		</style>
 	</head>
 	<body unresolved>
 
@@ -103,10 +103,10 @@
 
 			<!-- 3. Declare the element by its tag. -->
               <bridgeit-query-editor id="queryEditor"
-                                     accessToken=""
+                                     accesstoken=""
                                      realm=""
                                      account=""
-                                     queryURLTarget="queryURL">
+                                     queryurltarget="queryURL">
               </bridgeit-query-editor>
 
               <div id="msgs"></div>
@@ -121,13 +121,13 @@
               <br/>
               <div>
                   <label>Saved Queries:
-                      <bridgeit-query-list id="queryList" for="queryEditor" tblStyle="{'margin': '0 auto'}"></bridgeit-query-list>
+                      <bridgeit-query-list id="queryList" for="queryEditor" tblStyle="margin:0 auto;"></bridgeit-query-list>
                   </label>
               </div>
               <br/>
               <div>
                   <label>Query Results:
-                      <bridgeit-query-results id="queryResults" for="queryEditor" tblstyle="{'margin': '0 auto'}"></bridgeit-query-results>
+                      <bridgeit-query-results id="queryResults" for="queryEditor" tblStyle="margin:0 auto;"></bridgeit-query-results>
                   </label>
               </div>
 
@@ -142,7 +142,7 @@
                       },10000);
                   });
               </script>
-			
+
 		</div>
 
 		<script type="text/javascript">
@@ -169,7 +169,6 @@
 						username: username,
 						password: password
 					}).then(function(){
-						bridgeit.io.auth
 						setCredentialsOnComponent();
 						document.getElementById('queryEditor').reloadEditor();
                         document.getElementById('queryEditor').fetchQueryList();
@@ -182,20 +181,20 @@
 				var elem = document.getElementById('queryEditor');
 
 				var account = bridgeit.io.auth.getLastKnownAccount();
-				if( account ){
+				if (account) {
 					elem.setAttribute('account', account);
 					document.getElementById('account').value = account;
 				}
 
                 var realm = bridgeit.io.auth.getLastKnownRealm();
-				if( realm ){
+				if (realm) {
 					elem.setAttribute('realm', realm);
 					document.getElementById('realm').value = realm;
 				}
 
 				var token = bridgeit.io.auth.getLastAccessToken();
-				if( token ){
-					elem.setAttribute('accessToken', token);
+				if (token) {
+					elem.setAttribute('accesstoken', token);
 					document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
 				}
 			}

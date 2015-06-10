@@ -2,34 +2,27 @@ var _qResults;
 
 Polymer({
 
+    is: "bridgeit-query-results",
+
     /**
      * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
-     *
      * @event queryMsgUpdated
      */
+    properties: {
+        /**
+         * The id of the bridgeit-query-editor component.
+         */
+        for: { type: String },
+        /**
+         * Styling to be set directly on the query results table.
+         */
+        tblstyle: { type: String }
+    },
 
-    /**
-     * The id of the bridgeit-query-editor component.
-     *
-     * @attribute for
-     * @type string
-     * @default null
-     */
-    for: null,
+    _tableHeaders:[],
+    _tableRows:[],
 
-    /**
-     * A set of styles as name:value pairs, set directly on the query results table.
-     *
-     * @attribute tblstyle
-     * @type object
-     * @default {}
-     */
-    tblstyle: {},
-
-    tableHeaders:[],
-    tableRows:[],
-
-    domReady: function() {
+    ready: function() {
         _qResults = this;
         if (!_qResults.for) {
             _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'for attribute is required','type':'error'});
@@ -42,8 +35,8 @@ Polymer({
                     var res = e.detail.results;
                     if (Object.keys(res).length === 0) {
                         _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'Query results empty.','type':'error'});
-                        _qResults.tableHeaders = [];
-                        _qResults.tableRows = [];
+                        _qResults._tableHeaders = [];
+                        _qResults._tableRows = [];
                         return;
                     }
                     var tableHeaders = e.detail.uniqueFields;
@@ -62,8 +55,8 @@ Polymer({
                         }
                         tableRows.push(row);
                     }
-                    _qResults.tableHeaders = tableHeaders;
-                    _qResults.tableRows = tableRows;
+                    _qResults._tableHeaders = tableHeaders;
+                    _qResults._tableRows = tableRows;
                 });
             }
             else {

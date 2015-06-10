@@ -2,33 +2,26 @@ var _qList;
 
 Polymer({
 
+    is: "bridgeit-query-list",
+
     /**
      * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
-     *
      * @event queryMsgUpdated
      */
+    properties: {
+        /**
+         * The id of the bridgeit-query-editor component.
+         */
+        for: { type: String },
+        /**
+         * Styling to be set directly on the query list table.
+         */
+        tblstyle: { type: String }
+    },
 
-    /**
-     * The id of the bridgeit-query-editor component.
-     *
-     * @attribute for
-     * @type string
-     * @default null
-     */
-    for: null,
+    _allQueries:[],
 
-    /**
-     * A set of styles as name:value pairs, set directly on the query list table.
-     *
-     * @attribute tblstyle
-     * @type object
-     * @default {}
-     */
-    tblstyle: {},
-
-    allQueries:[],
-
-    domReady: function() {
+    ready: function() {
         _qList = this;
         if (!_qList.for) {
             _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'for attribute is required','type':'error'});
@@ -42,10 +35,10 @@ Polymer({
                     var res = e.detail.results;
                     if (Object.keys(res).length === 0) {
                         _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'Query list is empty.','type':'error'});
-                        _qList.allQueries = [];
+                        _qList._allQueries = [];
                         return;
                     }
-                    _qList.allQueries = res;
+                    _qList._allQueries = res;
                 });
             }
             else {
@@ -56,8 +49,8 @@ Polymer({
             _qList.fire('queryMsgUpdated',{id:_qList.id ? _qList.id : null, message: 'bridgeit-query-editor component not found','type':'error'});
         }
     },
-    _viewQuery: function(event,detail,sender) {
-        var query = sender.templateInstance.model.query;
+    _viewQuery: function(e) {
+        var query = e.model.item;
         var queryEditor = document.getElementById(_qList.for);
         queryEditor.setEditorFromMongo(query);
         queryEditor.runQuery();

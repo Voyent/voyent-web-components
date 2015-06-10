@@ -16,12 +16,12 @@
     "/.*",
     "/tests/"
   ],
-  "version":"0.0.2",
+  "version":"0.0.3",
   "dependencies": {
     "bridgeit.io.js" : "#gh-pages",
-    "polymer": "Polymer/polymer#~0.5.5",
-    "jQuery-QueryBuilder": "~1.4.2"
-
+    "polymer" : "Polymer/polymer#~1.0.0",
+    "iron-component-page" :"git+https://github.com/PolymerElements/iron-component-page.git",
+    "jQuery-QueryBuilder" : "~2.1.0"
   },
   "devDependencies": {
     "web-component-tester": "*"
