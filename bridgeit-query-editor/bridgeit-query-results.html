@@ -5,30 +5,55 @@ Displays the results of queries executed by the `bridgeit-query-editor` componen
 
 Example:
 
-    <bridgeit-query-results for="editor"
-                            tblstyle="margin:0 auto;">
-    </bridgeit-query-results>
+    <bridgeit-query-results for="editor"></bridgeit-query-results>
 
 @demo demo.html
 -->
 <dom-module id="bridgeit-query-results">
+    <style type="text/css">
+        table {
+            margin:0 auto;
+            border: 1px solid #ddd;
+            border-spacing: 0;
+            border-collapse: collapse;
+            @apply(--query-results-table);
+        }
+        thead {
+            border: 1px solid #ddd;
+            @apply(--query-results-thead);
+        }
+        tbody {
+            @apply(--query-results-tbody);
+        }
+        th {
+            border: 1px solid #ddd;
+            @apply(--query-results-th);
+        }
+        tr {
+            @apply(--query-results-tr);
+        }
+        td {
+            border: 1px solid #ddd;
+            @apply(--query-results-td);
+        }
+    </style>
     <template>
-        <table style$="{{tblstyle}}">
+        <table>
             <thead>
-            <tr>
-                <template is="dom-repeat" items="{{_tableHeaders}}">
-                    <th class="text-center">{{item}}</th>
-                </template>
-            </tr>
-            </thead>
-            <tbody>
-            <template is="dom-repeat" as="row" items="{{_tableRows}}">
                 <tr>
-                    <template is="dom-repeat" as="column" items="{{row}}">
-                        <td class="text-center">{{column}}</td>
+                    <template is="dom-repeat" items="{{_tableHeaders}}">
+                        <th class="text-center">{{item}}</th>
                     </template>
                 </tr>
-            </template>
+            </thead>
+            <tbody>
+                <template is="dom-repeat" as="row" items="{{_tableRows}}">
+                    <tr>
+                        <template is="dom-repeat" as="column" items="{{row}}">
+                            <td class="text-center">{{column}}</td>
+                        </template>
+                    </tr>
+                </template>
             </tbody>
         </table>
     </template>

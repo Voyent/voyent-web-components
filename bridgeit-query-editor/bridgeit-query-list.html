@@ -5,24 +5,40 @@ Displays a list of queries retrieved by the `bridgeit-query-editor` component by
 
 Example:
 
-    <bridgeit-query-list for="editor"
-                         tblstyle="margin:0 auto;">
-    </bridgeit-query-list>
+    <bridgeit-query-list for="editor"></bridgeit-query-list>
 
 @demo demo.html
 -->
 <dom-module id="bridgeit-query-list">
+    <style type="text/css">
+        table {
+            margin:0 auto;
+            @apply(--query-list-table);
+        }
+        tbody {
+            @apply(--query-list-tbody);
+        }
+        tr {
+            @apply(--query-list-tr);
+        }
+        td {
+            @apply(--query-list-td);
+        }
+        button {
+            @apply(--query-list-button);
+        }
+    </style>
     <template>
-        <table style$="{{tblstyle}}">
+        <table>
             <tbody>
-            <template is="dom-repeat" items="{{_allQueries}}">
-                <tr>
-                    <td>{{item._id}}</td>
-                    <td>
-                        <button on-click="_viewQuery">View</button>
-                    </td>
-                </tr>
-            </template>
+                <template is="dom-repeat" items="{{_allQueries}}">
+                    <tr>
+                        <td>{{item._id}}</td>
+                        <td>
+                            <button on-click="_viewQuery">View</button>
+                        </td>
+                    </tr>
+                </template>
             </tbody>
         </table>
     </template>
