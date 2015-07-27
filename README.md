@@ -1,7 +1,7 @@
 bridgeit-web-components
 ============
 
-BridgeIt Web Components are a work in progress to leverage the power of Web Components, Polymer, bridgeit.io.js and the BridgeIt Services platform. To use these components you will need a BridgeIt Account and create a realm. You can create a free account in the [BridgeIt Console](http://dev.bridgeit.io/console).
+BridgeIt Web Components are a work in progress to leverage the power of Web Components, Polymer, bridgeit.io.js and the BridgeIt Services platform. To use these components you will need a BridgeIt Account and Realm. You can create a free account in the [BridgeIt Console](http://dev.bridgeit.io/console).
 
 ### Usage
 
@@ -42,7 +42,7 @@ Import the component you would like to use:
 Profit:
 
 ```
-<bridgeit-locations id="userLocations" accessToken="xxx" realm="myRealm" account="myAccount">
+<bridgeit-locations id="userLocations" accessToken="xxx" realm="myRealm" account="myAccount" showUserLocations>
 </bridgeit-locations>
 ```
 

@@ -16,7 +16,7 @@
     "/.*",
     "/tests/"
   ],
-  "version":"0.0.3",
+  "version":"0.0.4",
   "dependencies": {
     "bridgeit.io.js" : "#gh-pages",
     "polymer" : "Polymer/polymer#~1.0.0",
