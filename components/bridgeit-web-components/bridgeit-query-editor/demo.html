@@ -13,6 +13,7 @@
 		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 		<title>BridgeIt Web Components Demo</title>
 
+		<!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
 		<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
 		<script>
 			if( !("Promise" in window)){
@@ -22,127 +23,168 @@
 		<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
 		<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
 
-		<script src="../../webcomponentsjs/webcomponents.min.js"></script>
+		<!-- Load the webcomponents polyfill -->
+		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
 
-        <!-- Load required jQuery and bootstrap font dependencies before loading component -->
+		<!-- Load required jQuery dependency -->
         <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
-        <style type="text/css">
-            @font-face {
-                font-family: 'Glyphicons Halflings';
-                src: url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.eot');
-                src: url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.woff2') format('woff2'), url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.woff') format('woff'), url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
-            }
-        </style>
-		<link rel="import" href="bridgeit-query-editor.html">
 
+		<!-- Load bridgeit query editor component -->
+		<link rel="import" href="bridgeit-query-editor.html">
         <!-- Load supporting components (optional) -->
         <link rel="import" href="bridgeit-query-list.html">
         <link rel="import" href="bridgeit-query-results.html">
 
-		<link rel="stylesheet" href="demo.css"/>
-		
+		<!-- Demo specific CSS -->
+		<link rel="stylesheet" href="../common/demo.css"/>
+		<style type="text/css">
+			.buttons {text-align:center;}
+			.buttons button{font-size:13px;padding:5px 10px;color:rgb(239, 239, 239);background-color:rgb(62, 69, 140);margin:10px;}
+		</style>
+
+		<!-- Define custom styling for the components (optional) -->
+		<style is="custom-style">
+			#queryList {
+				--query-list-button: { /* [Custom button styling] */
+					cursor:pointer;
+					padding: 5px 10px;
+					color: rgb(239, 239, 239);
+					background-color: rgb(62, 69, 140);
+					margin: 10px;
+				};
+				/*
+				Other available styling options:
+				--query-list-table: { key:value; }; [Custom table styling]
+				--query-list-tbody: { key:value; }; [Custom tbody styling]
+				--query-list-tr { key:value; }; [Custom tr styling]
+				--query-list-td: { key:value; }; [Custom td styling]
+				*/
+            }
+			#queryResults {
+				--query-results-table: {
+					 width: 100%;
+					 margin-bottom: 50px;
+			 	};
+				--query-results-td: {
+					 padding: 8px;
+					 line-height: 1.42857143;
+					 vertical-align: top;
+			 	};
+				--query-results-th: {
+					 border-bottom-width: 2px;
+					 background-color: #EFEFEF;
+			 	};
+				/*
+				Other available styling options:
+				--query-results-thead: { key:value; }; [Custom thead styling]
+				--query-results-tbody: { key:value; }; [Custom tbody styling]
+				--query-results-tr { key:value; }; [Custom tr styling]
+				*/
+			}
+        </style>
 	</head>
 	<body unresolved>
 
 		<h1>BridgeIt Query Editor Component Demo</h1>
   		<h3>Login with your BridgeIt Account Information</h3>
   		<hr/>
-  		<div id="wrapper" class="container">
-	  		<form>
-	  			<div>
-					<label>Account:
-						<input id="account" type="text"/>
-					</label>
-				</div>
-				<div>
-					<label>Realm:
-						<input id="realm" type="text"/>
-					</label>
-				</div>
-				<div>
-					<label>Username:
-						<input id="username" type="text"/>
-					</label>
-				</div>
-				<div>
-					<label>Password:
-						<input id="password" type="password"/>
-					</label>
-				</div>
-                <a onclick="login()">Login</a>
-
-				<div class="settings">
+		<div id="listenerWrapper">
+			<div id="wrapper" class="container">
+				<form>
 					<div>
-						<label>Service:
-                            <select onchange="document.getElementById('queryEditor').setAttribute('service', this.value)">
-                                <option selected>documents</option>
-                                <option>location</option>
-                            </select>
+						<label>Account:
+							<input id="account" type="text"/>
 						</label>
 					</div>
-
 					<div>
-						<label>Collection:
-                            <input id="collection" type="text" onchange="document.getElementById('queryEditor').setAttribute('collection', this.value)"/>
+						<label>Realm:
+							<input id="realm" type="text"/>
 						</label>
 					</div>
+					<div>
+						<label>Username:
+							<input id="username" type="text"/>
+						</label>
+					</div>
+					<div>
+						<label>Password:
+							<input id="password" type="password"/>
+						</label>
+					</div>
+					<a onclick="login()">Login</a>
 
-                    <div>
-                        <label>
-                            <a onclick="document.getElementById('queryEditor').reloadEditor()">Refresh</a>
-                        </label>
-                    </div>
-				</div>
-			</form>
+					<div class="settings">
+						<div>
+							<label>Service:
+								<select onchange="document.getElementById('queryEditor').setAttribute('service', this.value)">
+									<option selected>documents</option>
+									<option>location</option>
+								</select>
+							</label>
+						</div>
 
-              <div>
-                  <label>Query URL:
-                      <a id="queryURL" target="_blank"></a>
-                  </label>
-              </div>
+						<div>
+							<label>Collection:
+								<input id="collection" type="text" onchange="document.getElementById('queryEditor').setAttribute('collection', this.value)"/>
+							</label>
+						</div>
 
-			<!-- 3. Declare the element by its tag. -->
-              <bridgeit-query-editor id="queryEditor"
-                                     accessToken=""
-                                     realm=""
-                                     account=""
-                                     queryURLTarget="queryURL">
-              </bridgeit-query-editor>
+						<div>
+							<label>
+								<a onclick="document.getElementById('queryEditor').reloadEditor()">Refresh</a>
+							</label>
+						</div>
+					</div>
+				</form>
 
-              <div id="msgs"></div>
+				  <div>
+					  <label>Query URL:
+						  <a id="queryURL" target="_blank"></a>
+					  </label>
+				  </div>
 
-              <div class="buttons">
-                  <button id="resetEditor" onclick="document.getElementById('queryEditor').resetEditor();">New/Reset</button>
-                  <button id="runQuery" onclick="document.getElementById('queryEditor').runQuery();">Run Query</button>
-                  <button id="saveQuery" onclick="document.getElementById('queryEditor').saveQuery();">Save Query</button>
-                  <button id="cloneQuery" onclick="document.getElementById('queryEditor').cloneQuery();">Clone Query</button>
-                  <button id="deleteQuery" onclick="document.getElementById('queryEditor').deleteQuery();">Delete Query</button>
-              </div>
-              <br/>
-              <div>
-                  <label>Saved Queries:
-                      <bridgeit-query-list id="queryList" for="queryEditor" tblStyle="{'margin': '0 auto'}"></bridgeit-query-list>
-                  </label>
-              </div>
-              <br/>
-              <div>
-                  <label>Query Results:
-                      <bridgeit-query-results id="queryResults" for="queryEditor" tblstyle="{'margin': '0 auto'}"></bridgeit-query-results>
-                  </label>
-              </div>
+				<!-- 3. Declare the element by its tag. -->
+				  <bridgeit-query-editor id="queryEditor"
+										 queryurltarget="queryURL">
+				  </bridgeit-query-editor>
 
-              <script type="text/javascript">
-                  //Listen for the queryMsgUpdated event for all components
-                  document.getElementById('wrapper').addEventListener('queryMsgUpdated', function(e) {
-                      var id = e.detail.id ? e.detail.id + ' : ' : '';
-                      document.getElementById('msgs').innerHTML = id + e.detail.message;
-                      //clear message after 10 seconds
-                      setTimeout(function() {
-                          document.getElementById('msgs').innerHTML = '';
-                      },10000);
-                  });
-              </script>
-			
+					<div>
+						<div id="msgs"></div>
+					</div>
+
+				  <div class="buttons">
+					  <button id="resetEditor" onclick="document.getElementById('queryEditor').resetEditor();">New/Reset</button>
+					  <button id="runQuery" onclick="document.getElementById('queryEditor').runQuery();">Run Query</button>
+					  <button id="saveQuery" onclick="document.getElementById('queryEditor').saveQuery();">Save Query</button>
+					  <button id="cloneQuery" onclick="document.getElementById('queryEditor').cloneQuery();">Clone Query</button>
+					  <button id="deleteQuery" onclick="document.getElementById('queryEditor').deleteQuery();">Delete Query</button>
+				  </div>
+				  <br/>
+				  <div>
+					  <label>Saved Queries:
+						  <bridgeit-query-list id="queryList" for="queryEditor"></bridgeit-query-list>
+					  </label>
+				  </div>
+				  <br/>
+			</div>
+			<div>
+				<label>Query Results:
+					<bridgeit-query-results id="queryResults" for="queryEditor"></bridgeit-query-results>
+				</label>
+			</div>
+
+			<script type="text/javascript">
+				//Listen for the queryMsgUpdated event for all components
+				document.getElementById('listenerWrapper').addEventListener('queryMsgUpdated', function(e) {
+					var id = e.detail.id ? e.detail.id + ' : ' : '';
+					document.getElementById('msgs').innerHTML = id + e.detail.message;
+					//clear message 10 seconds after it's received
+					clearTimeout(window.msgTimeout);
+					window.msgTimeout = setTimeout(function() {
+						document.getElementById('msgs').innerHTML = '';
+					},10000);
+				});
+			</script>
 		</div>
 
 		<script type="text/javascript">
@@ -159,8 +201,7 @@
 					password: password
 				}).then(function(){
 					setCredentialsOnComponent();
-                    document.getElementById('queryEditor').reloadEditor();
-                    document.getElementById('queryEditor').fetchQueryList();
+					initializeComponent();
 				})['catch'](function(){
 					//try to login as admin
 					bridgeit.io.auth.connect({
@@ -169,40 +210,41 @@
 						username: username,
 						password: password
 					}).then(function(){
-						bridgeit.io.auth
 						setCredentialsOnComponent();
-						document.getElementById('queryEditor').reloadEditor();
-                        document.getElementById('queryEditor').fetchQueryList();
+						initializeComponent();
 					})
 				});
 			}
 
 			function setCredentialsOnComponent(){
-
 				var elem = document.getElementById('queryEditor');
 
 				var account = bridgeit.io.auth.getLastKnownAccount();
-				if( account ){
+				if (account) {
 					elem.setAttribute('account', account);
 					document.getElementById('account').value = account;
 				}
 
                 var realm = bridgeit.io.auth.getLastKnownRealm();
-				if( realm ){
+				if (realm) {
 					elem.setAttribute('realm', realm);
 					document.getElementById('realm').value = realm;
 				}
 
 				var token = bridgeit.io.auth.getLastAccessToken();
-				if( token ){
-					elem.setAttribute('accessToken', token);
+				if (token) {
+					elem.setAttribute('accesstoken', token);
 					document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
 				}
 			}
 
+			function initializeComponent() {
+				document.getElementById('queryEditor').reloadEditor();
+				document.getElementById('queryEditor').fetchQueryList();
+			}
+
 			//initialize known credentials
 			setCredentialsOnComponent();
-			
 		</script>
 	</body>
 </html>

@@ -375,7 +375,7 @@ if( ! ('bridgeit' in window)){
 			});
 		},
 
-		post: function(url, data, headers, isFormData, contentType, progressCallback){
+		post: function(url, data, headers, isFormData, contentType, progressCallback, onabort, onerror){
 			return new Promise(function(resolve, reject) {
 				console.log('sending post to ' + url);
 				contentType = contentType || "application/json";
@@ -394,10 +394,23 @@ if( ! ('bridgeit' in window)){
 					request.upload.addEventListener("progress", function(evt){
 						if (evt.lengthComputable){
 							var percentComplete = evt.loaded / evt.total;
-							progressCallback(percentComplete);
+							progressCallback(percentComplete, request);
 						}
 					}, false);
 				}
+				request.onabort = function(evt){
+					if( onabort ){
+						onabort();
+					}
+					reject(evt);
+				};
+				request.onerror = function(err){
+					if( onerror ){
+						request.onerror = onerror;
+					}
+					reject(err);
+				};
+				
 				request.onreadystatechange = function() {
 					if (this.readyState === 4) {
 						if (this.status >= 200 && this.status < 400) {
@@ -425,8 +438,6 @@ if( ! ('bridgeit' in window)){
 				else{
 					request.send();
 				}
-				
-				request = null;
 			});
 		},
 
@@ -964,7 +975,31 @@ if( ! ('bridgeit' in window)){
 			);
 		},
 
+		getLogs: function(params) {
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
 
+				var protocol = params.ssl ? 'https://' : 'http://';
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+
+				var query = params.query ? encodeURIComponent(JSON.stringify(params.query)) : '{}';
+				var fields = params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : '{}';
+				var options = params.options ? encodeURIComponent(JSON.stringify(params.options)) : '{}';
+
+				var url = protocol + services.authAdminURL + '/' + account + '/logging/?access_token=' +
+						token + '&query=' + query + '&fields=' + fields + '&options=' + options;
+
+				b.$.getJSON(url).then(function(logs){
+					services.auth.updateLastActiveTimestamp();
+					resolve(logs);
+				})['catch'](function(error){
+					reject(error);
+				});
+
+			});
+		}
 	};
 
 	/* AUTH SERVICE */
@@ -1542,6 +1577,53 @@ if( ! ('bridgeit' in window)){
 				}
 			);
 		},
+
+		/**
+		 * Check if the current user has a set of roles.
+		 *
+		 * @alias checkUserRoles 
+		 * @param {Object} params params
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {String} params.roles A space-delimited list of permissions
+		 * @param {String} params.op 'and' (default) or 'or' or 'single'
+		 * @returns Promise 
+		
+		 checkUserRoles: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+					
+					validateRequiredPermissions(params, reject);
+
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+
+					 /authadmin/:accountname/realms/:realmname/roles/:username/rolecheck
+
+					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+						'roles/' + , token, params.ssl);
+
+					b.$.post(url, {permissions: params.permissions}).then(function(response){
+						services.auth.updateLastActiveTimestamp();
+						resolve(true);
+					})['catch'](function(response){
+						if( response.status == 403){
+							services.auth.updateLastActiveTimestamp();
+							resolve(false);
+						}
+						else{
+							reject(error);
+						}
+					});
+				}
+			);
+		},
+		 */
 
 		/**
 		 * Update the last active timestamp for BridgeIt auth. This value is used
@@ -3552,6 +3634,7 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Object} params.blob The Blob to store
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Function} params.progressCallback The callback function to call on progress events. eg. function progressCallback(percentComplete, xhr){..}
 		 * @returns {Object} The results
 		 */
 		uploadBlob: function(params){
@@ -3573,7 +3656,7 @@ if( ! ('bridgeit' in window)){
 
 				b.$.post(url, formData, null, true, null, params.progressCallback).then(function(response){
 					services.auth.updateLastActiveTimestamp();
-					resolve(response.uri);
+					resolve(response.location || response.uri);
 				})['catch'](function(error){
 					reject(error);
 				});
@@ -3592,6 +3675,9 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Object} params.file The Blob to store
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Function} params.progressCallback The callback function to call on progress events. eg. function progressCallback(percentComplete, xhr){..}
+		 * @param {Function} params.onabort The callback for the XMLHttpRequest onabort event
+		 * @param {Function} params.onerror The callback for the XMLHttpRequest onerror event
 		 * @returns {Object} The results
 		 */
 		uploadFile: function(params){
@@ -3610,9 +3696,9 @@ if( ! ('bridgeit' in window)){
 				var formData = new FormData();
 				formData.append('file', params.file);
 
-				b.$.post(url, formData, null, true, null, params.progressCallback).then(function(response){
+				b.$.post(url, formData, null, true, null, params.progressCallback, params.onabort, params.onerror).then(function(response){
 					services.auth.updateLastActiveTimestamp();
-					resolve(response.uri);
+					resolve(response.location || response.uri);
 				})['catch'](function(error){
 					reject(error);
 				});

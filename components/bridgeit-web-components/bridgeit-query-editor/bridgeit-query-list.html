@@ -1,31 +1,47 @@
 <link rel="import" href="../../polymer/polymer.html">
 
 <!--
-Displays a list of queries in your realm that can be loaded into the bridgeit-query-editor component.
+Displays a list of queries retrieved by the `bridgeit-query-editor` component by listening for the `queriesRetrieved` event.
 
-##### Example
+Example:
 
-	<bridgeit-query-list for="editor"></bridgeit-query-list>
+    <bridgeit-query-list for="editor"></bridgeit-query-list>
 
-@element bridgeit-query-list
-@blurb Displays a list of queries by listening for the queriesRetrieved event of the bridgeit-query-editor component.
-@status alpha
-@homepage http://bridgeit.github.io/bridgeit-web-components
+@demo demo.html
 -->
-<polymer-element name="bridgeit-query-list" attributes="for tblstyle">
+<dom-module id="bridgeit-query-list">
+    <style type="text/css">
+        table {
+            margin:0 auto;
+            @apply(--query-list-table);
+        }
+        tbody {
+            @apply(--query-list-tbody);
+        }
+        tr {
+            @apply(--query-list-tr);
+        }
+        td {
+            @apply(--query-list-td);
+        }
+        button {
+            @apply(--query-list-button);
+        }
+    </style>
     <template>
-        <table style="{{tblstyle | styleObject}}">
+        <table>
             <tbody>
-            <template repeat="{{ query in allQueries }}">
-                <tr>
-                    <td>{{query._id}}</td>
-                    <td>
-                        <button on-click="{{_viewQuery}}">View</button>
-                    </td>
-                </tr>
-            </template>
+                <template is="dom-repeat" items="{{_allQueries}}">
+                    <tr>
+                        <td>{{item._id}}</td>
+                        <td>
+                            <button on-click="_viewQuery">View</button>
+                        </td>
+                    </tr>
+                </template>
             </tbody>
         </table>
     </template>
-    <script src="./bridgeit-query-list.js"></script>
-</polymer-element>
+</dom-module>
+
+<script src="./bridgeit-query-list.js"></script>

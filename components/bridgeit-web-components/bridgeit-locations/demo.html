@@ -13,6 +13,7 @@
 		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 		<title>BridgeIt Web Components Demo</title>
 
+		<!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
 		<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
 		<script>
 			if( !("Promise" in window)){
@@ -22,10 +23,23 @@
 		<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
 		<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
 
-		<script src="../../webcomponentsjs/webcomponents.min.js"></script>
+		<!-- Load the webcomponents polyfill -->
+		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+		<!-- Load bridgeit locations component -->
 		<link rel="import" href="bridgeit-locations.html">
 
-		<link rel="stylesheet" href="demo.css"/>
+		<!-- Demo specific CSS -->
+		<link rel="stylesheet" href="../common/demo.css"/>
+
+		<!-- Define custom styling for the component (optional) -->
+		<style is="custom-style">
+			#locations {
+				--locations-map: { /* [Custom map styling] */
+			 		height: 400px;
+			 	};
+			}
+		</style>
 		
 	</head>
 	<body unresolved>
@@ -60,40 +74,26 @@
 				<div class="settings">
 					<div>
 						<label>Show User Location Updates:
-							<input type="checkbox" checked 
-								onclick="document.getElementById('userLocations').setAttribute('showUserLocations', this.checked);"/>
+							<input type="checkbox" checked onclick="toggleBooleanAttribute('showuserlocations',this.checked);"/>
 						</label>
 					</div>
 
 					<div>
 						<label>Show Regions:
-							<input type="checkbox" onclick="document.getElementById('userLocations').setAttribute('showRegions', this.checked);"/>
+							<input type="checkbox" onclick="toggleBooleanAttribute('showregions',this.checked);"/>
 						</label>
 					</div>
 
 					<div>
 						<label>Show Points of Interest:
-							<input type="checkbox" onclick="document.getElementById('userLocations').setAttribute('showPOIs', this.checked);"/>
-						</label>
-					</div>
-
-					<div>
-						<label>Height:
-							<select onchange="document.getElementById('userLocations').setAttribute('height', this.value)">
-								<option selected>200px</option>
-								<option>400px</option>
-								<option>600px</option>
-								<option>800px</option>
-							</select>
+							<input type="checkbox" onclick="toggleBooleanAttribute('showpois',this.checked);"/>
 						</label>
 					</div>
 				</div>
 			</form>
 
-
 			<!-- 3. Declare the element by its tag. -->
-			<bridgeit-locations id="userLocations" accessToken="" realm="" account="">
-			</bridgeit-locations>
+			<bridgeit-locations id="locations"></bridgeit-locations>
 			
 		</div>
 
@@ -121,14 +121,14 @@
 					}).then(function(){
 						bridgeit.io.auth
 						setCredentialsOnComponent();
-						document.getElementById('userLocations').setAttribute('realm', realm);
+						document.getElementById('locations').setAttribute('realm', realm);
 					})
 				});
 			}
 
 			function setCredentialsOnComponent(){
 
-				var elem = document.getElementById('userLocations');
+				var elem = document.getElementById('locations');
 
 				var account = bridgeit.io.auth.getLastKnownAccount();
 				if( account ){
@@ -150,9 +150,13 @@
 				
 			}
 
-			//initialize known credentials
-			setCredentialsOnComponent();
-			
+            function toggleBooleanAttribute(attribute, value) {
+                var locations = document.getElementById('locations');
+                value ? locations.setAttribute(attribute, attribute) : locations.removeAttribute(attribute);
+            }
+
+            //initialize known credentials
+            setCredentialsOnComponent();
 		</script>
 	</body>
 </html>

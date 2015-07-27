@@ -1,23 +1,30 @@
 {
   "name": "jQuery-QueryBuilder",
-  "version": "1.4.2",
+  "version": "2.1.0",
   "authors": [
     {
       "name": "Damien \"Mistic\" Sorel",
+      "email": "contact@git.strangeplanet.fr",
       "homepage": "http://www.strangeplanet.fr"
     }
   ],
   "description": "jQuery plugin for user friendly query/filter creator",
   "main": [
-    "dist/query-builder.js",
-    "dist/query-builder.css"
+    "dist/js/query-builder.js",
+    "dist/css/query-builder.default.css"
   ],
   "dependencies": {
     "jquery": ">= 1.9.0",
     "bootstrap": "^3.1.0",
     "momentjs": "^2.6.0",
-    "microevent-mistic100": "^2.0.0",
     "jquery-extendext": "^0.1.1"
+  },
+  "devDependencies": {
+    "blanket": "^1.1.0",
+    "qunit": "^1.17.0",
+    "bootstrap-select": "^1.6.0",
+    "bootbox": "^4.3.0",
+    "awesome-bootstrap-checkbox": "^0.3.0"
   },
   "keywords": [
     "jquery",
@@ -35,16 +42,20 @@
     "**/.*",
     "node_modules",
     "bower_components",
-    "test",
-    "tests"
+    "src",
+    "tests",
+    "composer.json",
+    "package.json",
+    "Gruntfile.js",
+    "CONTRIBUTING.md"
   ],
-  "_release": "1.4.2",
+  "_release": "2.1.0",
   "_resolution": {
     "type": "version",
-    "tag": "1.4.2",
-    "commit": "cfbdb2a9e83ef69a6f51efe23b59571fa17010e5"
+    "tag": "2.1.0",
+    "commit": "e764efea72259f46c6322f0e0dc88f86e6af879b"
   },
   "_source": "git://github.com/mistic100/jQuery-QueryBuilder.git",
-  "_target": "~1.4.2",
+  "_target": "~2.1.0",
   "_originalSource": "jQuery-QueryBuilder"
 }

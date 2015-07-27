@@ -2,14 +2,71 @@ var _qEditor;
 
 Polymer({
 
+    is: "bridgeit-query-editor",
+    properties: {
+        /**
+         * Required to authenticate with BridgeIt.
+         * @default bridgeit.io.auth.getLastAccessToken()
+         */
+        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
+        /**
+         * Defines the BridgeIt realm to build queries for.
+         * @default bridgeit.io.auth.getLastKnownRealm()
+         */
+        realm: { type: String, value: bridgeit.io.auth.getLastKnownRealm() },
+        /**
+         * Defines the BridgeIt account to build queries for.
+         * @default bridgeit.io.auth.getLastKnownAccount()
+         */
+        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        /**
+         * The service that you would like to build the query for. Currently only `documents` and `location` are supported.
+         */
+        service: { type: String, value: 'documents' },
+        /**
+         * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor. If service is `location` then the available collections are `locations`, `regions`, `pois` and `monitors`.
+         */
+        collection: { type: String, value: 'documents' },
+        /**
+         * Specify the inclusion or exclusion of fields to return in the result set.
+         *
+         * Example:
+         *
+         *      //exclude _id column
+         *      {"_id":0}
+         */
+        fields: { type: Object, value: {} },
+        /**
+         * Additional query options such as limit and sort.
+         *
+         * Example:
+         *
+         *      //sort by _id (descending) + get only 100 records
+         *      {"sort":{"_id":-1},"limit":100}
+         */
+        options: { type: Object, value: {} },
+        /**
+         * Element ID of where the GET URL of the query will be displayed as the query is built. Supports input and non-input elements.
+         */
+        queryurltarget: { type: String },
+        /**
+         * A string representation of the object returned from the `queryExecuted` event. Use when data binding is preferred over event listeners.
+         */
+        queryresults: { type: String, reflectToAttribute: true, readOnly: true },
+        /**
+         * A string representation of the results array returned from the `queriesRetrieved` event. Use when data binding is preferred over event listeners.
+         */
+        querylistresults: { type: String, reflectToAttribute: true, readOnly: true }
+    },
+
     /**
-     * Fired after a query is executed, this occurs on the initial load and when calling runQuery() or reloadEditor(). Contains the query results and the unique fields.
+     * Fired after a query is executed, this occurs on the initial load and when calling `runQuery()` or `reloadEditor()`. Contains the query results and the unique fields.
      *
      * @event queryExecuted
      */
 
     /**
-     * Fired after the query list is retrieved, this occurs on the initial load and when calling fetchQueryList(), saveQuery(), cloneQuery(), deleteQuery(). Contains the list of saved queries in this realm.
+     * Fired after the query list is retrieved, this occurs on the initial load and when calling `fetchQueryList()`, `saveQuery()`, `cloneQuery()`, `deleteQuery()`. Contains the list of saved queries in this realm.
      *
      * @event queriesRetrieved
      */
@@ -20,120 +77,27 @@ Polymer({
      * @event queryMsgUpdated
      */
 
-    /**
-     * Required to authenticate with BridgeIt.
-     *
-     * @attribute accessToken
-     * @type string
-     * @default bridgeit.io.auth.getLastAccessToken()
-     */
-    accessToken: bridgeit.io.auth.getLastAccessToken(),
-
-    /**
-     * Defines the BridgeIt realm to build queries for.
-     *
-     * @attribute realm
-     * @type string
-     * @default bridgeit.io.auth.getLastKnownRealm()
-     */
-    realm: bridgeit.io.auth.getLastKnownRealm(),
-
-    /**
-     * Defines the BridgeIt account of the realm.
-     *
-     * @attribute account
-     * @type string
-     * @default bridgeit.io.auth.getLastKnownAccount()
-     */
-    account: bridgeit.io.auth.getLastKnownAccount(),
-
-    /** The service that you would like to build the query for. Currently only 'documents' and 'location' are supported.
-     *
-     * @attribute service
-     * @type string
-     * @default 'documents'
-     */
-    service: 'documents',
-
-    /** The collection that you would like to build the query for. This initial data within this collection determines what fields are available in the editor. If service is 'location' then the available collections are 'locations', 'regions', 'pois' and 'monitors'.
-     *
-     * @attribute collection
-     * @type string
-     * @default 'documents'
-     */
-    collection: 'documents',
-
-    /** Specify the inclusion or exclusion of fields to return in the result set.
-     *
-     * @attribute fields
-     * @type string
-     * @default '{}'
-     */
-    fields: '{}',
-
-    /** Additional query options such as limit and sort.
-     *
-     * @attribute options
-     * @type string
-     * @default '{}'
-     */
-    options: '{}',
-
-    /** Element ID of where the GET URL of the query will be displayed as the query is built. Supports input and non-input elements.
-     *
-     * @attribute queryURLTarget
-     * @type string
-     * @default null
-     */
-    queryURLTarget: null,
-
-    /**
-     * An output attribute that updates when the `queryExecuted` event fires. A string representation of the object returned from the event. Use when data binding is preferred over events.
-     * @attribute queryResults
-     * @type string
-     * @default ''
-     */
-
-    /**
-     * An output attribute that updates when the `queriesRetrieved` event fires. A string representation of the results array returned from the event. Use when data binding is preferred over events.
-     * @attribute queryListResults
-     * @type string
-     * @default ''
-     */
-
-    publish: {
-        queryResults: {
-            value: '',
-            reflect: true
-        },
-        queryListResults: {
-            value: '',
-            reflect: true
-        }
+    created: function() {
+        _qEditor = this;
     },
 
     ready: function() {
-        _qEditor = this;
-        if (_qEditor.accessToken && _qEditor.realm && _qEditor.account && _qEditor.service && _qEditor.collection) {
-            _qEditor.reloadEditor();
-            _qEditor.fetchQueryList();
-        }
+        _qEditor.reloadEditor();
+        _qEditor.fetchQueryList();
     },
 
     /**
-     * @method runQuery
      * Execute the current query.
      */
     runQuery: function() {
-        var query = $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('getMongo');
+        var query = $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
             _qEditor._queryService(query);
         }
     },
 
     /**
-     * @method saveQuery
-     * Creates or updates a query.
+     * Creates or updates a query using the provided parameters.
      * If there is an active query in the editor then the ID parameter will be ignored and the query will be updated. Otherwise a new query is created using the provided or server generated ID.
      * @param id - The query ID, ignored if doing an update
      * @param description - Optional query description
@@ -147,8 +111,7 @@ Polymer({
     },
 
     /**
-     * @method cloneQuery
-     * Clones the currently active query.
+     * Clones the currently active query using the provided parameters.
      * @param id - The query ID, generated by the service if not provided
      * @param description - Optional query description, if not provided then the existing value, if any, will be cloned
      * @param services - Optional services array, if not provided then the existing value, if any, will be cloned
@@ -165,7 +128,6 @@ Polymer({
     },
 
     /**
-     * @method deleteQuery
      * Deletes the currently active query.
      */
     deleteQuery: function() {
@@ -177,40 +139,37 @@ Polymer({
     },
 
     /**
-     * @method resetEditor
-     * Clears the query editor.
+     * Clears the query editor and restores the `fields` and `options` attributes to their original values.
      */
     resetEditor: function() {
-        $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('reset');
-        _qEditor.options = _qEditor.getAttribute('options') ? _qEditor.getAttribute('options') : '{}';
-        _qEditor.fields = _qEditor.getAttribute('fields') ? _qEditor.getAttribute('fields') : '{}';
+        $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('reset');
+        _qEditor.options = JSON.parse(_qEditor.getAttribute('options')) || {};
+        _qEditor.fields = JSON.parse(_qEditor.getAttribute('fields')) || {};
         _qEditor.activeQuery = null;
         _qEditor._setQueryHeader(null);
         _qEditor._updateQueryURL();
     },
 
     /**
-     * @method fetchQueryList
      * Retrieves a list of all the queries in the current realm.
      */
     fetchQueryList: function() {
-        if (!_qEditor.accessToken || !_qEditor.realm || !_qEditor.account || !_qEditor.service || !_qEditor.collection) {
+        if (!_qEditor.accesstoken || !_qEditor.realm || !_qEditor.account || !_qEditor.service || !_qEditor.collection) {
             return;
         }
         _qEditor._getAllQueries();
     },
 
     /**
-     * @method setEditorFromMongo
      * Populate the editor from an existing query.
      * @param query - The query in object form.
      */
     setEditorFromMongo: function(query) {
         _qEditor.skipListeners = true;
-        _qEditor.options = JSON.stringify(query.options ? query.options : {});
-        _qEditor.fields = JSON.stringify(query.fields ? query.fields : {});
+        _qEditor.options = query.options || {};
+        _qEditor.fields = query.fields || {};
         try {
-            $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('setRulesFromMongo',query.query);
+            $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('setRulesFromMongo',query.query);
             _qEditor.activeQuery = query;
             _qEditor._setQueryHeader(query);
         }
@@ -229,46 +188,39 @@ Polymer({
     },
 
     /**
-     * @method reloadEditor
      * Completely destroy and reinitialize the editor.
      */
     reloadEditor: function() {
-        if (!_qEditor.accessToken || !_qEditor.realm || !_qEditor.account || !_qEditor.service || !_qEditor.collection) {
+        if (!_qEditor.accesstoken || !_qEditor.realm || !_qEditor.account || !_qEditor.service || !_qEditor.collection) {
             return;
         }
-        $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('destroy');
-        _qEditor._queryService({},true);
+        $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('destroy');
+        _qEditor._queryService({});
         _qEditor._updateQueryURL();
     },
 
     /**
-     * @method validateQuery
-     * Returns a boolean value that indicates if the current query is valid.
+     * Test if the current query is valid.
+     * @return {boolean} boolean indicating if the query is valid.
      */
     validateQuery: function() {
-        return Object.keys($(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('getMongo')).length > 0 ? true : false;
+        return Object.keys($(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('getMongo')).length > 0;
     },
 
     /**
-     * @method getActiveQuery
-     * Returns the currently active query as an object, or null if the there is no active query.
+     * Get the currently active query.
+     * @return {object} object representation of the currently active query or null if the there is no active query.
      */
     getActiveQuery: function() {
-        return _qEditor.activeQuery;
+        return _qEditor.activeQuery || null;
     },
 
-    fieldsChanged: function() {
-        _qEditor._updateQueryParams();
-    },
 
-    optionsChanged: function() {
-        _qEditor._updateQueryParams();
-    },
-
+    //******************PRIVATE API******************
 
     _createQuery: function(query) {
         bridgeit.io.query.createQuery({
-            accessToken: _qEditor.accessToken,
+            accessToken: _qEditor.accesstoken,
             account: _qEditor.account,
             realm: _qEditor.realm,
             query: query
@@ -276,18 +228,18 @@ Polymer({
             var queryId = uri.split("/").pop();
             query._id = queryId;
             _qEditor.activeQuery = query;
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
             _qEditor._setQueryHeader(_qEditor.activeQuery);
             _qEditor.fetchQueryList();
+            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
         }).catch(function(error){
-            console.log('createQuery caught an error: ' + error);
+            console.log('createQuery caught an error:', error);
         });
     },
     _deleteQuery: function() {
         var queryId = _qEditor.activeQuery._id;
         bridgeit.io.query.deleteQuery({
             id:queryId,
-            accessToken: _qEditor.accessToken,
+            accessToken: _qEditor.accesstoken,
             account: _qEditor.account,
             realm: _qEditor.realm
         }).then(function() {
@@ -295,31 +247,31 @@ Polymer({
             _qEditor.resetEditor();
             _qEditor.fetchQueryList();
         }).catch(function(error){
-            console.log('deleteQuery caught an error: ' + error);
+            console.log('deleteQuery caught an error:', error);
         });
     },
     _getAllQueries: function() {
         bridgeit.io.query.findQueries({
-            accessToken:  _qEditor.accessToken,
+            accessToken:  _qEditor.accesstoken,
             account:_qEditor.account,
             realm: _qEditor.realm
         }).then(function(results) {
             _qEditor.allQueries = results;
-            _qEditor.queryListResults = results;
+            _qEditor._setQuerylistresults(results);
             _qEditor.fire('queriesRetrieved',{results: results});
         }).catch(function(error){
-            console.log('fetchQueryList caught an error: ' + error);
+            console.log('fetchQueryList caught an error:', error);
         });
     },
     _buildQuery: function(id,description,services,isClone) {
-        var query = $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('getMongo');
+        var query = $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('getMongo');
         if (Object.keys(query).length === 0) {
             return null;
         }
         var queryToPost = {
             "query": query,
-            "fields": JSON.parse(_qEditor.getAttribute('fields') ? _qEditor.getAttribute('fields') : '{}'),
-            "options": JSON.parse(_qEditor.getAttribute('options') ? _qEditor.getAttribute('options') : '{}'),
+            "fields": _qEditor.getAttribute('fields') ? _qEditor.getAttribute('fields') : {},
+            "options": _qEditor.getAttribute('options') ? _qEditor.getAttribute('options') : {},
             "properties":{}
         };
         if (id && jQuery.type(id) == 'string' && id.toString().length > 0) {
@@ -342,7 +294,6 @@ Polymer({
         else {
             _qEditor.activeQuery = queryToPost; //set the activeQuery without the ID, ID wil be added in the save callback
         }
-
 
         if (description && jQuery.type(description) == 'string' && description.trim().length > 0) {
             queryToPost.properties.description = description;
@@ -385,21 +336,21 @@ Polymer({
         }
     },
     _refreshQuery: function() {
-        var query = $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder('getMongo');
+        var query = $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
             _qEditor._updateQueryURL(query);
         }
     },
     _setQueryHeader: function(query) {
-        var container = _qEditor.shadowRoot.querySelector('#editor_group_0');
+        var container = Polymer.dom(this.root).querySelector('#editor_group_0');
         if (!query || !query._id) {
-            if (_qEditor.shadowRoot.querySelector('#queryTitle') !== null) {
-                container.removeChild(_qEditor.shadowRoot.querySelector('#queryTitle'));
+            if (Polymer.dom(this.root).querySelector('#queryTitle')) {
+                container.removeChild(Polymer.dom(this.root).querySelector('#queryTitle'));
             }
             return;
         }
         var div;
-        if (_qEditor.shadowRoot.querySelector('#queryTitle') === null) {
+        if (!Polymer.dom(this.root).querySelector('#queryTitle')) {
             div = document.createElement("div");
             div.id='queryTitle';
             div.className = 'activeQuery';
@@ -407,7 +358,7 @@ Polymer({
             container.insertBefore(div, container.firstChild);
         }
         else {
-            div = _qEditor.shadowRoot.querySelector('#queryTitle');
+            div = Polymer.dom(this.root).querySelector('#queryTitle');
             div.innerHTML = query._id;
         }
         if (query.properties && query.properties.description) {
@@ -415,10 +366,10 @@ Polymer({
         }
     },
     _updateQueryURL: function(query) {
-        var queryURLTarget = _qEditor.queryURLTarget;
-        if (document.getElementById(queryURLTarget)) {
+        var queryURLTarget = _qEditor.queryurltarget;
+        if (queryURLTarget && document.getElementById(queryURLTarget)) {
             var q = query ? JSON.stringify(query) : '{}';
-            var params = '?access_token='+_qEditor.accessToken+'&query='+q+'&fields='+_qEditor.fields+'&options='+_qEditor.options;
+            var params = '?access_token='+_qEditor.accesstoken+'&query='+q+'&fields='+JSON.stringify(_qEditor.fields)+'&options='+JSON.stringify(_qEditor.options);
             var queryURL = _qEditor.service_url+params;
             if ($(queryURLTarget).is(':input')) {
                 document.getElementById(queryURLTarget).value=queryURL;
@@ -431,64 +382,43 @@ Polymer({
             }
         }
     },
-    _updateQueryParams: function() {
-        var queryURLTarget = _qEditor.queryURLTarget;
-        if (document.getElementById(queryURLTarget)) {
-            var v;
-            if ($(queryURLTarget).is(':input')) {
-                v = document.getElementById(queryURLTarget).value;
-                v = v.replace(/fields=\{(.*?)\}/,'fields='+_qEditor.fields);
-                v = v.replace(/options=\{(.*)\}/,'options='+_qEditor.options);
-                document.getElementById(queryURLTarget).value = v;
-            }
-            else {
-                v = document.getElementById(queryURLTarget).innerHTML;
-                v = v.replace(/fields=\{(.*?)\}/,'fields='+_qEditor.fields);
-                v = v.replace(/options=\{(.*)\}/,'options='+_qEditor.options);
-                document.getElementById(queryURLTarget).innerHTML = v;
-                if (document.getElementById(queryURLTarget).tagName === 'A') {
-                    document.getElementById(queryURLTarget).href=v;
-                }
-            }
-        }
-    },
-    _queryService: function(query,genFields) {
+    _queryService: function(query) {
         var params = {
-            accessToken: _qEditor.accessToken,
+            accessToken: _qEditor.accesstoken,
             account: _qEditor.account,
             realm: _qEditor.realm,
             query: query,
-            fields: JSON.parse(_qEditor.fields),
-            options: JSON.parse(_qEditor.options)
+            fields: _qEditor.fields,
+            options: _qEditor.options
         };
 
         if (_qEditor.service.toLowerCase() === 'documents') {
             params.collection = _qEditor.collection;
             _qEditor.service_url = 'http://'+bridgeit.io.documentsURL+'/'+_qEditor.account+'/realms/'+_qEditor.realm+'/'+_qEditor.collection;
             bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
-                console.log('findDocuments caught an error: ' + error);
+                console.log('findDocuments caught an error:', error);
             });
         }
         else if (_qEditor.service.toLowerCase() === 'location') {
             switch (_qEditor.collection.toLowerCase()) {
                 case 'locations':
                     bridgeit.io.location.findLocations(params).then(successCallback).catch(function(error){
-                        console.log('findLocations caught an error: ' + error);
+                        console.log('findLocations caught an error:', error);
                     });
                     break;
                 case 'regions':
                     bridgeit.io.location.findRegions(params).then(successCallback).catch(function(error){
-                        console.log('findRegions caught an error: ' + error);
+                        console.log('findRegions caught an error:', error);
                     });
                     break;
                 case 'pois':
                     bridgeit.io.location.findPOIs(params).then(successCallback).catch(function(error){
-                        console.log('findPOIs caught an error: ' + error);
+                        console.log('findPOIs caught an error:', error);
                     });
                     break;
                 case 'monitors':
                     bridgeit.io.location.findMonitors(params).then(successCallback).catch(function(error){
-                        console.log('findMonitors caught an error: ' + error);
+                        console.log('findMonitors caught an error:', error);
                     });
                     break;
                 default:
@@ -503,16 +433,14 @@ Polymer({
         function successCallback(results) {
             var obj = {};
             if( results && results.length > 0) {
-                if (genFields) {
-                    determineFields(results);
-                }
+                determineFields(results);
                 obj = {results: results, uniqueFields: _qEditor.uniqueFields};
-                _qEditor.queryResults = obj;
+                _qEditor._setQueryresults(obj);
                 _qEditor.fire('queryExecuted',obj);
             }
             else {
                 obj = {results: [], uniqueFields: []};
-                _qEditor.queryResults = obj;
+                _qEditor._setQueryresults(obj);
                 _qEditor.fire('queryExecuted',obj);
                 _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No data in the "' + _qEditor.collection +'" collection.','type':'error'});
             }
@@ -531,8 +459,6 @@ Polymer({
                         var operators=[];
                         var input='';
                         var values={};
-                        var plugin='';
-                        var pluginConfig={};
                         if (type === 'string') {
                             if (!dateRegex.test(val)) {
                                 operators=['equal','not_equal','begins_with','not_begins_with','contains','not_contains',
@@ -558,64 +484,58 @@ Polymer({
                             operators=['in', 'not_in', 'is_null', 'is_not_null'];
                         }
 
-                        if ((type !== 'string' && type !== 'integer' &&
+                        if (type !== 'string' && type !== 'integer' &&
                             type !== 'double' && type !== 'boolean' &&
-                            type !== 'datetime') && type !== 'date' &&
+                            type !== 'datetime' && type !== 'date' &&
                             type !== 'time') {
                             type = 'string';
                         }
                         var filter = {
                             id: keys[j],
                             type: type,
-                            optgroup: _qEditor.service,
-                            onAfterCreateRuleInput: function ($rule, filter) {
-                                var valueContainer = $(_qEditor.shadowRoot.querySelector('#'+$rule[0].id + ' .rule-value-container'));
-                                valueContainer[0].style.display='inline-block';
-                                var inputs = valueContainer.children();
-                                if (inputs) {
-                                    if (!inputs.val()) {
-                                        inputs.val('0');
-                                        if (filter.type === 'double') {
-                                            inputs.val('0.0');
-                                        }
-                                    }
-                                    $(inputs).bind("keyup",function() {
-                                        _qEditor._refreshQuery();
-                                    });
-                                }
-                                if (!_qEditor.skipListeners) {
-                                    _qEditor._refreshQuery();
-                                }
-                            },
-                            onAfterChangeOperator: function ($rule, filter, operator) {
-                                if (!_qEditor.skipListeners) {
-                                    _qEditor._refreshQuery();
-                                }
-                            }
+                            optgroup: _qEditor.service
                         };
-                        if (operators.length !== 0) {
+                        if (operators.length > 0) {
                             filter.operators=operators;
                         }
-                        if (input.length !== 0) {
+                        if (input.length > 0) {
                             filter.input = input;
                         }
-                        if (Object.keys(values).length !== 0) {
+                        if (Object.keys(values).length > 0) {
                             filter.values = values;
-                        }
-                        if (plugin.length > 0) {
-                            filter.plugin = plugin;
-                        }
-                        if (Object.keys(pluginConfig).length !== 0) {
-                            filter.plugin_config = pluginConfig;
                         }
                         filters.push(filter);
                     }
                 }
             }
             _qEditor.uniqueFields = uniqueFields;
-            $(_qEditor.shadowRoot.querySelector('#editor')).queryBuilder({
-                filters: filters
+            $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder({
+                filters: filters,
+                icons: {
+                    add_group: 'fa fa-plus-square',
+                    add_rule: 'fa fa-plus-circle',
+                    remove_group: 'fa fa-minus-square',
+                    remove_rule: 'fa fa-minus-circle',
+                    error: 'fa fa-exclamation-triangle'
+                }
             });
+            _qEditor._setupListeners();
         }
+    },
+    _setupListeners: function() {
+        $(Polymer.dom(_qEditor.root).querySelector('#editor')).on('afterCreateRuleInput.queryBuilder', function(e, rule) {
+            var inputs = $(Polymer.dom(_qEditor.root).querySelector('#'+rule.id + ' .rule-value-container')).children();
+            if (inputs) {
+                $(inputs).bind("change",function() {
+                    _qEditor._refreshQuery();
+                });
+            }
+        });
+
+        $(Polymer.dom(_qEditor.root).querySelector('#editor')).on('afterUpdateRuleOperator.queryBuilder', function(e, rule) {
+            if (!_qEditor.skipListeners) {
+                _qEditor._refreshQuery();
+            }
+        });
     }
 });

@@ -2,56 +2,69 @@
 
 [![Bower version](https://badge.fury.io/bo/jQuery-QueryBuilder.svg)](http://badge.fury.io/bo/jQuery-QueryBuilder)
 [![Build Status](https://travis-ci.org/mistic100/jQuery-QueryBuilder.svg?branch=master)](https://travis-ci.org/mistic100/jQuery-QueryBuilder)
+[![Coverage Status](https://coveralls.io/repos/mistic100/jQuery-QueryBuilder/badge.svg)](https://coveralls.io/r/mistic100/jQuery-QueryBuilder)
+[![Gratipay](https://img.shields.io/gratipay/mistic100.svg)](https://gratipay.com/mistic100)
+[![Online documentation](https://img.shields.io/badge/documentation-online-blue.svg)](http://mistic100.github.io/jQuery-QueryBuilder)
 
-jQuery plugin offering an interface to create complex queries.
+jQuery plugin offering an simple interface to create complex queries.
 
 ## Documentation
 http://mistic100.github.io/jQuery-QueryBuilder
 
 ### Dependencies
- * Bootstrap 3.x CSS
+ * Bootstrap >= 3.1 (CSS only)
  * jQuery >= 1.9
  * [jQuery.extendext](https://github.com/mistic100/jQuery.extendext)
- * [MicroEvent](https://github.com/mistic100/microevent.js) (mistic100 version)
- * (optional) MomentJS
- * (optional) any widgets library like jQuery UI
+ * (optional) MomentJS for date/time validation
+ * (optional) some JS components used by plugins
 
-($.extendext and MicroEvent are directly included in the [standalone](https://github.com/mistic100/jQuery-QueryBuilder/blob/master/dist/query-builder.standalone.js) file)
+($.extendext is directly included in the [standalone](https://github.com/mistic100/jQuery-QueryBuilder/blob/master/dist/js/query-builder.standalone.js) file)
 
 ### Browser support
- * Internet Explorer >= 10
+ * Internet Explorer >= 10 (9 with various shims)
  * Mozilla FireFox ??
  * Google Chrome ??
  * Opera ??
  * Safari ??
 
 ### Build
-Run `grunt` in root directory to generate minified files inside `dist`.
 
-You can choose which plugins to include with `--modules`
+#### Prerequisites
+
+ * NodeJS + NPM: `apt-get install nodejs-legacy npm`
+ * Ruby Dev: `apt-get install ruby-dev`
+ * Grunt CLI: `npm install -g grunt-cli`
+ * Bower: `npm install -g bower`
+ * SASS: `gem install sass`
+
+#### Run
+
+Install Node and Bower dependencies `npm install & bower install` then run `grunt` in the root directory to generate production files inside `dist`.
+
+#### Options
+
+You can choose which plugins to include with `--plugins` :
 ```bash
 # include "sql-support" plugin
-grunt --modules=sql-support
+grunt --plugins=sql-support
 
-# disable all modules
-grunt --modules=false
+# disable all plugins
+grunt --plugins=false
 ```
 All plugins are included by default.
 
-You can also include ONE language with `--lang`
+You can also include language files with `--languages` :
 ```bash
-# include French translation
-grunt --lang=fr
+# include French & Italian translation
+grunt --languages=fr,it
 ```
 
-Run `grunt test` to run jsHint and the Mocha test suite.
+#### Other commands
 
-Run `grunt list_modules` to get the list of available plugins and languages.
-
-### Contributing
-Changes have to be done only in `src` directory. The `dist` directory is updated only once in a while before a release.
-
+ * `grunt test` to run JSHint and the QUnit test suite.
+ * `grunt list_modules` to get the list of available plugins and languages.
+ * `grunt watch` to automatically build the library when modifying source files.
 
 ### Inspiration
- * [Knockout Query Builder](http://kindohm.com/posts/2013/09/25/knockout-query-builder/)
+ * [Knockout Query Builder](http://kindohm.github.io/knockout-query-builder/)
  * [jui_filter_rules](http://www.pontikis.net/labs/jui_filter_rules/)
