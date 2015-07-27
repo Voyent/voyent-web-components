@@ -37,6 +37,8 @@ Polymer({
         _locations = this;
         _locations._map = null;
 		_locations._locationMarkers = [];
+        _locations._regions = [];
+        _locations._poiMarkers = [];
 		_locations._bounds = null;
 	},
 
@@ -120,6 +122,7 @@ Polymer({
                 var properties = typeof data[record].location.properties === "undefined" ? {} : data[record].location.properties;
                 var googlePoint;
                 if (type === "polygon") { //region
+                    var region;
                     var paths = [];
                     var path = [];
                     var color = properties["Color"];
@@ -135,14 +138,14 @@ Polymer({
                     }
                     if (metadata.shape === "polygon" || typeof metadata.shape === "undefined") {
                         metadata.shape = "polygon";
-                        new google.maps.Polygon({
+                        region = new google.maps.Polygon({
                             'paths': paths,
                             'map': _locations._map,
                             'editable': false,
                             'fillColor': color
                         });
                     } else if (metadata.shape === "circle") {
-                        new google.maps.Circle({
+                        region = new google.maps.Circle({
                             'center': new google.maps.LatLng(metadata.center[Object.keys(metadata.center)[0]], metadata.center[Object.keys(metadata.center)[1]]),
                             'radius': metadata.radius,
                             'map': _locations._map,
@@ -150,7 +153,7 @@ Polymer({
                             'fillColor': color
                         });
                     } else if (metadata.shape === "rectangle") {
-                        new google.maps.Rectangle({
+                        region = new google.maps.Rectangle({
                             'bounds': new google.maps.LatLngBounds(new google.maps.LatLng(coords[0][0][1],
                                 coords[0][0][0]), new google.maps.LatLng(coords[0][2][1],
                                 coords[0][2][0])),
@@ -159,14 +162,17 @@ Polymer({
                             'fillColor': color
                         });
                     }
+                    _locations._regions.push(region);
                 } else if (type === "point") { //poi
                     googlePoint = new google.maps.LatLng(coords[1], coords[0]);
-                    new google.maps.Marker({
+                    var poi;
+                    poi = new google.maps.Marker({
                         position: googlePoint,
                         map: _locations._map,
                         draggable: editable
                     });
                     _locations._bounds.extend(googlePoint);
+                    _locations._poiMarkers.push(poi);
                 }
             } catch (err) {
                 console.log("Issue importing region or poi: " + JSON.stringify(data[record]), err);
@@ -197,13 +203,23 @@ Polymer({
     },
 
     /**
-     * Clear user location markers on the map.
+     * Clear user location updates, regions, and points of interest from the map.
      */
     _clearLocations: function() {
         _locations._locationMarkers.forEach(function(marker) {
             marker.setMap(null);
         });
         _locations._locationMarkers = [];
+
+        _locations._regions.forEach(function(region) {
+            region.setMap(null);
+        });
+        _locations._regions = [];
+
+        _locations._poiMarkers.forEach(function(poi) {
+            poi.setMap(null);
+        });
+        _locations._poiMarkers = [];
     },
 
     /**
@@ -221,7 +237,6 @@ Polymer({
     _updatePOIs: function(pois) {
         _locations._updateRegionsAndPOIs(pois);
     },
-
 
     /**
      * Refresh the map when the `realm` attribute changes.
