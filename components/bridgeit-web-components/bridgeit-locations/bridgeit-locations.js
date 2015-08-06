@@ -53,7 +53,7 @@ Polymer({
 			_locations._map = new google.maps.Map(_locations.$.map, mapOptions);
 			_locations._bounds = new google.maps.LatLngBounds();
 
-			if (_locations.accessToken) {
+			if (_locations.accesstoken) {
 				_locations.refreshMap();
 			}
 		};
@@ -165,11 +165,10 @@ Polymer({
                     _locations._regions.push(region);
                 } else if (type === "point") { //poi
                     googlePoint = new google.maps.LatLng(coords[1], coords[0]);
-                    var poi;
-                    poi = new google.maps.Marker({
+                    var poi = new google.maps.Marker({
                         position: googlePoint,
                         map: _locations._map,
-                        draggable: editable
+                        draggable: false
                     });
                     _locations._bounds.extend(googlePoint);
                     _locations._poiMarkers.push(poi);
