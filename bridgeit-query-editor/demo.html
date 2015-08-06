@@ -211,6 +211,7 @@
 						password: password
 					}).then(function(){
 						setCredentialsOnComponent();
+						document.getElementById('queryEditor').setAttribute('realm', realm);
 						initializeComponent();
 					})
 				});
