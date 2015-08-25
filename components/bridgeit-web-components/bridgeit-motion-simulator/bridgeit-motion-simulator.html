@@ -1,7 +1,7 @@
 <link rel="import" href="../../polymer/polymer.html">
 
 <!--
-Show a map of BridgeIt location data and simulate location changes by dragging user's around the map or define an `origin` and `destination` and see them move along the path!
+Show a map of BridgeIt location data and simulate location changes by dragging user's around the map or define an `origin` and `destination` and simulate motion along the path!
 
 Example:
 
@@ -50,6 +50,12 @@ Example:
         </div>
         <div class="simulatorWrapper">
             <template is="dom-if" if="{{inputs}}">
+                <template is="dom-if" if="{{_eta}}">
+                    <div class="form-group">
+                        <label for="eta">ETA:</label>
+                        <div id="eta">{{_eta}}</div>
+                    </div>
+                </template>
                 <div class="form-group">
                     <label for="origin">Origin:</label>
                     <input id="origin" type="text" class="form-control" value="{{origin::change}}">
@@ -67,10 +73,22 @@ Example:
                         <option value="TRANSIT">Transit</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="speed">Speed (km/h):</label>
+                    <input id="speed" type="number" min="1" class="form-control" value="{{speed::change}}">
+                </div>
+                <div class="form-group">
+                    <label for="frequency">Location Update Frequency (seconds):</label>
+                    <input id="frequency" type="number" min="1" class="form-control" value="{{frequency::change}}">
+
+                </div>
             </template>
             <template is="dom-if" if="{{buttons}}">
                 <div class="buttonContainer">
+                    <button on-click="updateLocationAtMarker">Manual Location Update</button>
+                    <br/><br/>
                     <button on-click="previousCoordinate">Previous</button>
+                    <button on-click="cancelSimulation">Stop</button>
                     <button on-click="playSimulation">Play</button>
                     <button on-click="pauseSimulation">Pause</button>
                     <button on-click="nextCoordinate">Next</button>
