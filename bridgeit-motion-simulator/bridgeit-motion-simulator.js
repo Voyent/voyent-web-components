@@ -93,9 +93,9 @@ Polymer({
             //setup autocomplete for route inputs if they are being rendered
             if (_mSim.inputs) {
                 var origin = new google.maps.places.Autocomplete(_mSim.$$("#origin"),{bounds:_mSim._map.getBounds()});
-                _mSim._autocompleteListener(origin);
+                _mSim._autocompleteListener(origin,'_origin');
                 var destination = new google.maps.places.Autocomplete(_mSim.$$("#destination"),{bounds:_mSim._map.getBounds()});
-                _mSim._autocompleteListener(destination);
+                _mSim._autocompleteListener(destination,'_destination');
             }
 
             if (_mSim.accesstoken) {
@@ -114,7 +114,7 @@ Polymer({
      * @returns {*}
      */
     refreshMap: function() {
-        if (typeof google === 'undefined' || !_mSim.realm) {
+        if (typeof google === 'undefined' || !_mSim.realm || _mSim._route) {
             return;
         }
         _mSim._clearLocations();
@@ -139,7 +139,7 @@ Polymer({
     },
 
     /**
-     * Simulate movement along a path defined by the `origin` and `destination` fields.
+     * Simulate movement along a path defined by the `origin` and `destination` fields. Can be used to start a new simulation or to continue a currently paused simulation.
      */
     playSimulation: function() {
         if (!_mSim._route) {
@@ -147,8 +147,8 @@ Polymer({
                 return;
             }
             _mSim._directionsService.route({
-                origin:_mSim.origin,
-                destination:_mSim.destination,
+                origin:_mSim._origin || _mSim.origin,
+                destination:_mSim._destination || _mSim.destination,
                 travelMode: google.maps.TravelMode[_mSim.travelmode]
             }, function(response, status) {
                 if (status !== google.maps.DirectionsStatus.OK) {
@@ -182,9 +182,13 @@ Polymer({
                         icon: 'resources/user.png'
                     });
                     _mSim._locationMarkers.push(marker);
+                    //center and zoom on marker at the beginning of the simulation
+                    _mSim._map.setCenter(marker.getPosition());
+                    _mSim._map.setZoom(18);
                     _mSim._marker = marker;
                     _mSim._location = location;
                     _mSim._location._id = data.uri.split("/").pop();
+                    _mSim._addCustomSimControls();
                     _mSim._updateETA(_mSim._totalMills-_mSim._interval);
                     _mSim._clickListener(marker,location,'point');
                     _mSim._doSimulation();
@@ -194,7 +198,6 @@ Polymer({
             });
         }
         else if (_mSim._paused) {
-            _mSim._paused = false;
             _mSim._doSimulation();
         }
     },
@@ -216,8 +219,11 @@ Polymer({
         if (!_mSim._route) {
             return;
         }
-        _mSim._paused = true;
-        _mSim._simulationFinished();
+        _mSim._canceled = true;
+        //if the simulation is paused before it's cancelled then cleanup manually
+        if (_mSim._paused) {
+            _mSim._cleanupSimulation();
+        }
     },
 
     /**
@@ -233,11 +239,13 @@ Polymer({
 
         bridgeit.io.location.updateLocation({location:_mSim._location}).then(function(data) {
             _mSim._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
-            _mSim._map.setCenter(_mSim._marker.getPosition()); //center map on the marker
+            if (_mSim._followUser) {
+                _mSim._map.setCenter(_mSim._marker.getPosition()); //center map on the marker
+            }
             _mSim._updateETA(_mSim._totalMills-_mSim._interval); //update the ETA
-            if (i+1 >= route.length) {
+            if (i+1 == route.length) {
                 _mSim.updateLocationAtMarker();
-                _mSim._simulationFinished();
+                _mSim._cleanupSimulation();
                 return;
             }
             _mSim._index = i;
@@ -259,7 +267,9 @@ Polymer({
 
         bridgeit.io.location.updateLocation({location:_mSim._location}).then(function(data) {
             _mSim._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
-            _mSim._map.setCenter(_mSim._marker.getPosition()); //center map on the marker
+            if (_mSim._followUser) {
+                _mSim._map.setCenter(_mSim._marker.getPosition()); //center map on the marker
+            }
             _mSim._updateETA(_mSim._totalMills+_mSim._interval); //update the ETA
             _mSim._index = i;
         }).catch(function(error) {
@@ -285,6 +295,7 @@ Polymer({
     /**
      * Draw regions and points of interest on the map.
      * @param data
+     * @private
      */
     _updateRegionsAndPOIs: function(data) {
         for (var record = 0; record < data.length; record++) {
@@ -364,6 +375,8 @@ Polymer({
 
     /**
      * Draw user location markers on the map.
+     * @param locations
+     * @private
      */
     _updateLocations: function(locations) {
         locations.forEach(function(location) {
@@ -384,6 +397,7 @@ Polymer({
 
     /**
      * Clear user locations, regions, and points of interest from the map.
+     * @private
      */
     _clearLocations: function() {
         _mSim._locationMarkers.forEach(function(marker) {
@@ -405,6 +419,7 @@ Polymer({
     /**
      * Draw regions on the map (wrapper for `_updateRegionsAndPOIs`).
      * @param regions
+     * @private
      */
     _updateRegions: function(regions) {
         _mSim._updateRegionsAndPOIs(regions);
@@ -413,6 +428,7 @@ Polymer({
     /**
      * Draw points of interest on the map (wrapper for `_updateRegionsAndPOIs`).
      * @param pois
+     * @private
      */
     _updatePOIs: function(pois) {
         _mSim._updateRegionsAndPOIs(pois);
@@ -428,7 +444,7 @@ Polymer({
 
         for (var i=0; i<route.length; i++) {
             //nothing to do if we're at the last coordinate
-            if (i+1 >= route.length) {
+            if (i+1 == route.length) {
                 break;
             }
             //convert current and next lat/lng to radians for calculation
@@ -482,10 +498,10 @@ Polymer({
 
     /**
      * Handles continuous playing of the simulation.
-     * @param route
      * @private
      */
      _doSimulation: function() {
+        _mSim._paused = false;
         _mSim._updateOnFrequency();
         var route = _mSim._route;
         var i = _mSim._index+1; //get next coordinate
@@ -496,16 +512,19 @@ Polymer({
         var updatePosition = setInterval(function() {
             _mSim._updateETA(_mSim._totalMills-interval); //update the ETA
             marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //update the marker position
-            _mSim._map.setCenter(marker.getPosition()); //center map on the marker
-            _mSim._map.setZoom(18); //set map zoom
+            if (_mSim._followUser) {
+                _mSim._map.setCenter(marker.getPosition()); //center map on the marker
+            }
             if (_mSim._paused) {
                 _mSim._index = i;
                 clearInterval(updatePosition);
                 return;
             }
-            if (i+1 >= route.length) {
-                _mSim.updateLocationAtMarker();
-                _mSim._simulationFinished();
+            if (_mSim._canceled || i+1 == route.length) {
+                if (i+1 == route.length) {
+                    _mSim.updateLocationAtMarker();
+                }
+                _mSim._cleanupSimulation();
                 clearInterval(updatePosition);
                 return;
             }
@@ -520,7 +539,7 @@ Polymer({
      */
     _updateOnFrequency: function() {
         var updateLocation = setInterval(function() {
-            if (_mSim._paused || !_mSim._location) {
+            if (_mSim._paused || _mSim._canceled || !_mSim._location) {
                 clearInterval(updateLocation);
                 return;
             }
@@ -545,12 +564,27 @@ Polymer({
     },
 
     /**
-     * After the simulation is complete submit the final position to the Location Service, remove the directions overlay and allow the marker to be dragged.
-     * @param marker
-     * @param location
+     * Adds custom "Follow User" control to the map during simulation.
      * @private
      */
-    _simulationFinished: function() {
+    _addCustomSimControls: function() {
+        //by default, follow the user along the path
+        if (typeof _mSim._followUser === 'undefined') {
+            _mSim._followUser = true;
+        }
+        var customControl = _mSim.$.customControl.getElementsByTagName("DIV")[0].cloneNode(true);
+        customControl.querySelector("#center").checked = _mSim._followUser; //set the checkbox state
+        customControl.querySelector("#followUser").addEventListener('click', function() {
+            _mSim._followUser = !!customControl.querySelector("#center:checked");
+        });
+        _mSim._map.controls[google.maps.ControlPosition.TOP_CENTER].push(customControl);
+    },
+
+    /**
+     * When the simulation is completed or cancelled do general cleanup, remove the directions overlay and allow the location marker to be dragged.
+     * @private
+     */
+    _cleanupSimulation: function() {
         _mSim._marker.setDraggable(true);
         _mSim._userLocationChangedListener(_mSim._marker,_mSim._location);
         _mSim._directionsRenderer.set('directions', null);
@@ -561,7 +595,8 @@ Polymer({
         _mSim._location = null;
         _mSim._eta = null;
         _mSim._totalMills = 0;
-
+        _mSim._canceled = false;
+        _mSim._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
     },
 
     /**
@@ -628,14 +663,16 @@ Polymer({
     },
 
     /**
-     * Ensure that the `origin` and `destination` attributes are set when a location is selected in the autocompletes.
+     * Store the address of the place selected in the `origin` and `destination` autocompletes and center/zoom the map when a location is selected.
      * @param input
+     * @param property
      * @private
      */
-    _autocompleteListener: function(input) {
+    _autocompleteListener: function(input,property) {
         google.maps.event.addListener(input, 'place_changed', function() {
-            _mSim.origin = _mSim.$$("#origin").value;
-            _mSim.destination = _mSim.$$("#destination").value;
+            _mSim[property] = input.getPlace().formatted_address; //set the address of the selected location in the background so we can use it for the directions search
+            _mSim._map.setCenter(input.getPlace().geometry.location); //center map on selected location
+            _mSim._map.setZoom(18); //zoom in on selected location
         });
     },
 

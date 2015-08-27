@@ -30,7 +30,7 @@ Example:
             width:100%;
             @apply(--motion-simulator-input);
         }
-        label {
+        .simulatorWrapper label {
             @apply(--motion-simulator-label);
         }
         .buttonContainer {
@@ -42,6 +42,24 @@ Example:
         }
         .simulatorWrapper {
             @apply(--motion-simulator-wrapper);
+        }
+        .simControl {
+            background-color: #FFF;
+            border-bottom-right-radius: 2px;
+            border-top-right-radius: 2px;
+            border-top: 1px solid rgba(0, 0, 0, 0.14902);
+            border-right: 1px solid rgba(0, 0, 0, 0.14902);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.14902);
+            border-left-width: 0px;
+            box-shadow: rgba(0,0,0,0.298039) 0px 1px 4px -1px;
+            padding-left: 4px;
+        }
+        .simControl label {
+            color: rgb(86, 86, 86);
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            cursor:pointer;
         }
     </style>
     <template>
@@ -94,6 +112,11 @@ Example:
                     <button on-click="nextCoordinate">Next</button>
                 </div>
             </template>
+        </div>
+        <div id="customControl" style="display:none;">
+            <div class="simControl">
+                <label id="followUser">Follow User <input id="center" type="checkbox"></label>
+            </div>
         </div>
     </template>
 </dom-module>
