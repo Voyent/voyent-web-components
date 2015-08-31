@@ -114,7 +114,7 @@ Polymer({
      * @returns {*}
      */
     refreshMap: function() {
-        if (typeof google === 'undefined' || !_mSim.realm) {
+        if (typeof google === 'undefined' || !_mSim.realm || _mSim._route) {
             return;
         }
         _mSim._clearLocations();
@@ -295,6 +295,7 @@ Polymer({
     /**
      * Draw regions and points of interest on the map.
      * @param data
+     * @private
      */
     _updateRegionsAndPOIs: function(data) {
         for (var record = 0; record < data.length; record++) {
@@ -374,6 +375,8 @@ Polymer({
 
     /**
      * Draw user location markers on the map.
+     * @param locations
+     * @private
      */
     _updateLocations: function(locations) {
         locations.forEach(function(location) {
@@ -394,6 +397,7 @@ Polymer({
 
     /**
      * Clear user locations, regions, and points of interest from the map.
+     * @private
      */
     _clearLocations: function() {
         _mSim._locationMarkers.forEach(function(marker) {
@@ -415,6 +419,7 @@ Polymer({
     /**
      * Draw regions on the map (wrapper for `_updateRegionsAndPOIs`).
      * @param regions
+     * @private
      */
     _updateRegions: function(regions) {
         _mSim._updateRegionsAndPOIs(regions);
@@ -423,6 +428,7 @@ Polymer({
     /**
      * Draw points of interest on the map (wrapper for `_updateRegionsAndPOIs`).
      * @param pois
+     * @private
      */
     _updatePOIs: function(pois) {
         _mSim._updateRegionsAndPOIs(pois);
@@ -492,7 +498,6 @@ Polymer({
 
     /**
      * Handles continuous playing of the simulation.
-     * @param route
      * @private
      */
      _doSimulation: function() {
