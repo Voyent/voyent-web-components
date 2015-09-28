@@ -287,8 +287,8 @@ BridgeItLocationRoute = Polymer({
         return {
             label:this.label,
             user:this.user,
-            origin:this.origin,
-            destination:this.destination,
+            origin:this._origin || this.origin,
+            destination:this._destination || this.destination,
             travelmode:this.travelmode,
             speed:this.speed,
             speedunit:this.speedunit,
