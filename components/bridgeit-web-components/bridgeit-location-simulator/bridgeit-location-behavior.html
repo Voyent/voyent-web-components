@@ -1,0 +1,25 @@
+<link rel="import" href="../../polymer/polymer.html">
+
+<script>
+    /**
+     Provides common functionality required by `bridgeit-location-*` components.
+     @polymerBehavior
+     */
+    LocationBehavior = {
+        /**
+         * When a user is dragged to a new location on the map update their location in the Location Service.
+         * @param marker
+         * @param location
+         */
+        _userLocationChangedListener: function(marker,location) {
+            google.maps.event.addListener(marker, "dragend", function () {
+                location.location.geometry.coordinates = [marker.getPosition().lng(), marker.getPosition().lat()];
+                bridgeit.io.location.updateLocation({location: location}).then(function(data) {
+                    location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                }).catch(function (error) {
+                    console.log('Issue changing location of user "' + location.username + '":', error);
+                });
+            });
+        }
+    };
+</script>

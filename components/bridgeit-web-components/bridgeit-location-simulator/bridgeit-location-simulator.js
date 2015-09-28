@@ -1,0 +1,926 @@
+Polymer({
+    is: "bridgeit-location-simulator",
+    behaviors: [LocationBehavior],
+
+    properties: {
+        /**
+         * Required to authenticate with BridgeIt.
+         * @default bridgeit.io.auth.getLastAccessToken()
+         */
+        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
+        /**
+         * The BridgeIt account of the realm.
+         * @default bridgeit.io.auth.getLastKnownAccount()
+         */
+        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        /**
+         * The BridgeIt realm to simulate motion in.
+         * @default bridgeit.io.auth.getLastKnownRealm()
+         */
+        realm: { type: String, value: bridgeit.io.auth.getLastKnownRealm() },
+        /**
+         * Define routes as a JSON object array. This attribute can be used on its own or in conjunction with `bridgeit-location-route` components.
+         * Changing this attribute dynamically will replace any routes previously created with this attribute, but any routes created using the component will remain unchanged.
+         *
+         * Example:
+         *
+         *      //define two different routes
+         *     [
+         *         {
+         *              "label":"ICEsoft Technologies To Calgary Tower",
+         *              "origin": "1717 10 St NW, Calgary",
+         *              "destination": "101 9 Ave SW, Calgary",
+         *              "travelmode": "DRIVING",
+         *              "speed": 60,
+         *              "frequency": 5
+         *          },
+         *          {
+         *              "label":"Prince's Island Park To Fort Calgary",
+         *              "user": "jimjones", //only available to admin users
+         *              "origin": "698 Eau Claire Ave SW, Calgary",
+         *              "destination": "750 9th Avenue SE, Calgary",
+         *              "travelmode": "BICYCLING",
+         *              "speed": 15,
+         *              "frequency": 10
+         *          }
+         *      ]
+         */
+        routes: { type: Array, observer: '_routesChanged' },
+        /**
+         * The document collection to be used for CRUD operations on simulations.
+         */
+        collection: { type: String, value: 'simulator-routes' }
+    },
+
+    //observe non-declared/private properties
+    observers: [
+        '_mapOrUsersChanged(_map, _users)'
+    ],
+
+    /**
+     * Fired after the Google Map has been initialized. Contains the map object.
+     * @event mapInitialized
+     */
+    /**
+     * Fired when the realm users are retrieved. Contains the list of users.
+     * @event usersRetrieved
+     */
+    /**
+     * Fired when the simulations are retrieved. Contains the list of saved simulations in the specified collection.
+     *
+     * @event simulationsRetrieved
+     */
+
+    ready: function() {
+        var _this = this;
+        //set some default values
+        _this._locationMarkers = [];
+        _this._regions = [];
+        _this._poiMarkers = [];
+        _this._followableUsers = [];
+        _this._hideContextMenu = true;
+        _this._activeSim = null;
+        //initialize google maps
+        window.initializeLocationsMap = function() {
+            _this._map = new google.maps.Map(_this.$.map, {
+                zoom: 8,
+                center: new google.maps.LatLng(51.067799, -114.085237),
+                mapTypeControlOptions: {
+                    style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                    position: google.maps.ControlPosition.RIGHT_TOP
+                },
+                signed_in: false
+            });
+            _this.fire('mapInitialized',{map:_this._map});
+            _this._bounds = new google.maps.LatLngBounds();
+            //setup ui and listener for manually adding new location markers
+            var drawingManager = new google.maps.drawing.DrawingManager({
+                drawingControlOptions: {
+                    position:google.maps.ControlPosition.TOP_RIGHT,
+                    drawingModes: [google.maps.drawing.OverlayType.MARKER]
+                },
+                markerOptions: { icon: 'resources/user.png', draggable: true }
+            });
+            drawingManager.setMap(_this._map);
+            _this._setupNewLocationListener(drawingManager);
+            //setup listeners for the map (context menu listeners)
+            _this._setupMapListeners();
+            //setup listeners for bridgeit-location-route components
+            _this._setupRouteListeners();
+            //initialize location data on the map
+            if (_this.accesstoken) {
+                _this.refreshMap();
+            }
+        };
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
+            'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+        _this.$.container.appendChild(script);
+    },
+
+    /**
+     * Retrieve the latest data from the Location Service and refresh the map.
+     * @returns {*}
+     */
+    refreshMap: function() {
+        var _this = this;
+        if (typeof google === 'undefined' || !_this.realm) {
+            return;
+        }
+        //get the realm users, but only once
+        if (!_this._users) {
+            _this._getRealmUsers();
+        }
+        //delete old location data
+        _this._clearLocationData();
+        //get current location data
+        var promises = [];
+        promises.push(bridgeit.io.location.findLocations({realm:_this.realm}).then(function(locations) {
+            _this._updateLocations(locations);
+        }));
+        promises.push(bridgeit.io.location.getAllRegions({realm:_this.realm}).then(function(regions) {
+            _this._updateRegions(regions);
+        }));
+        promises.push(bridgeit.io.location.getAllPOIs({realm:_this.realm}).then(function(pois) {
+            _this._updatePOIs(pois);
+        }));
+        return Promise.all(promises).then(function() {
+            _this._map.fitBounds(_this._bounds);
+            _this._map.panToBounds(_this._bounds);
+        })['catch'](function(error) {
+            console.log('Issue getting location data:',error);
+        });
+    },
+
+    /**
+     * Play all simulations (paused routes will be continued).
+     */
+    playAll: function() {
+        if (!this.accesstoken) {
+            return;
+        }
+        var children = Polymer.dom(this).childNodes.filter(function(node) {
+            return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+        });
+        for (var i=0; i<children.length; i++) {
+            children[i].playSimulation();
+        }
+    },
+
+    /**
+     * Pause all simulation routes.
+     */
+    pauseAll: function() {
+        if (!this.accesstoken) {
+            return;
+        }
+        var children = Polymer.dom(this).childNodes.filter(function(node) {
+            return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+        });
+        for (var i=0; i<children.length; i++) {
+            children[i].pauseSimulation();
+        }
+    },
+
+    /**
+     * Cancel all simulation routes.
+     */
+    cancelAll: function() {
+        if (!this.accesstoken) {
+            return;
+        }
+        var children = Polymer.dom(this).childNodes.filter(function(node) {
+            return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+        });
+        for (var i=0; i<children.length; i++) {
+            children[i].cancelSimulation();
+        }
+    },
+
+    /**
+     * Add a new simulation route. If parameters are not provided then the default values will be used.
+     * @param label
+     * @param user
+     * @param origin
+     * @param destination
+     * @param travelmode
+     * @param speed
+     * @param speedunit
+     * @param frequency
+     */
+    addRoute: function(label,user,origin,destination,travelmode,speed,speedunit,frequency) {
+        var _this = this;
+        if (!_this.accesstoken) {
+            return;
+        }
+        //first append the new route as a direct child of the component so it inherits any custom styling
+        Polymer.dom(_this).appendChild(new BridgeItLocationRoute(_this._map,_this._users,label,user,origin,destination,travelmode,speed,speedunit,frequency));
+        //add a new tab for the child
+        _this.push('_children',{
+            "elem":Polymer.dom(_this).lastElementChild,
+            "tabClass":"",
+            "tabLabel": label || 'New Route',
+            "contentHidden": true
+        });
+        //move new child into tab (do _this async so the template has time to render the new child tab)
+        setTimeout(function() {
+            Polymer.dom(_this.root).querySelector('div[data-index="'+parseInt(_this._children.length-1)+'"]').appendChild(_this._children[_this._children.length-1].elem);
+        },0);
+    },
+
+    /**
+     * Reset the simulation (remove all currently defined routes).
+     */
+    resetSimulation: function() {
+        this._removeAllRoutes();
+        this._generateRouteTabs([{"user":"","origin":"","destination":"","travelmode":"DRIVING","speed":50,"frequency":5}]);
+        this._activeSim = null;
+        //maintain scroll position
+        var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
+        var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+        setTimeout(function() {
+            scrollTo(scrollLeft,scrollTop);
+        },50);
+    },
+
+    /**
+     * Save the current simulation to a document collection of your choice. If a simulation id is not provided then one is generated by the server,
+     * if a collection name is not provided the value of the `collection` attribute will be used.
+     * @param simulationId
+     * @param collection
+     */
+    saveSimulation: function(simulationId,collection) {
+        var _this = this;
+        if (!collection) {
+            collection = _this.collection;
+        }
+        var docCall = 'createDocument';
+        var routes = [];
+        var children = Polymer.dom(this).childNodes.filter(function(node) {
+            return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+        });
+        for (var i=0; i<children.length; i++) {
+            routes.push(children[i].getRouteJSON());
+        }
+        var params = {collection:collection,document:{routes:routes}};
+        if (simulationId && simulationId.trim().length > 0) {
+            params.id = simulationId;
+            docCall = 'updateDocument';
+        }
+        bridgeit.io.documents[docCall](params).then(function() {
+            _this._activeSim = params.document; //set as active simulation
+            _this.getSimulations(collection); //refresh simulation list
+        }).catch(function(error) {
+            console.log('Issue saving simulation document:',error);
+        });
+    },
+
+    /**
+     * Delete a simulation from a document collection of your choice. If a collection name is not provided we will use the value of the `collection` attribute..
+     * @param simulationId
+     * @param collection
+     */
+    deleteSimulation: function(simulationId,collection) {
+        var _this = this;
+        if (!simulationId || simulationId.trim().length === 0) {
+            return;
+        }
+        if (!collection) {
+            collection = _this.collection;
+        }
+        bridgeit.io.documents.deleteDocument({collection:collection,id:simulationId}).then(function() {
+            if (_this._activeSim._id === simulationId) {
+                //the active simulation was deleted so reset the simulation routes
+                _this._activeSim = null;
+                _this.resetSimulation();
+            }
+            _this.getSimulations(collection); //refresh simulation list
+        }).catch(function(error) {
+            console.log('Issue deleting simulation:',error);
+        });
+    },
+
+    /**
+     * Get previously saved simulations from a collection of your choice. If a collection name is not provided we will use the value of the `collection` attribute.
+     * @param collection
+     */
+    getSimulations: function(collection) {
+        var _this = this;
+        if (!collection) {
+            collection = _this.collection;
+        }
+        bridgeit.io.documents.findDocuments({collection:collection}).then(function(simulations) {
+            _this.fire('simulationsRetrieved',{simulations:simulations});
+        }).catch(function(error) {
+            console.log('Issue getting simulations:',error);
+        });
+    },
+
+    /**
+     * Load a simulation from JSON format.
+     * @param simulation
+     */
+    loadSimulation: function(simulation) {
+        if (!simulation.routes) {
+            return;
+        }
+        this._removeAllRoutes();
+        this._generateRouteTabs(simulation.routes);
+        this._activeSim = simulation;
+        //maintain scroll position
+        var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
+        var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+        setTimeout(function() {
+            scrollTo(scrollLeft,scrollTop);
+        },50);
+    },
+
+
+    //******************PRIVATE API******************
+
+    /**
+     * Draw regions and points of interest on the map.
+     * @param data
+     * @private
+     */
+    _updateRegionsAndPOIs: function(data) {
+        for (var i=0; i<data.length; i++) {
+            try {
+                var location = data[i].location;
+                if (!location) {
+                    continue;
+                }
+                var geometry = location.geometry;
+                if (!geometry) {
+                    continue;
+                }
+                var type = geometry.type.toLowerCase();
+                var coords = data[i].location.geometry.coordinates;
+                var properties = typeof data[i].location.properties === "undefined" ? {} : data[i].location.properties;
+                var googlePoint;
+                if (type === "polygon") { //region
+                    var region;
+                    var paths = [];
+                    var path = [];
+                    var color = properties.Color;
+                    var metadata = typeof properties.googleMaps === "undefined" ? {} : properties.googleMaps;
+                    //set the map bounds and the paths for polygon shapes
+                    for (var cycle = 0; cycle < coords.length; cycle++) {
+                        for (var point = 0; point < coords[cycle].length; point++) {
+                            googlePoint = new google.maps.LatLng(coords[cycle][point][1], coords[cycle][point][0]);
+                            path.push(googlePoint);
+                            this._bounds.extend(googlePoint);
+                        }
+                        paths.push(path);
+                    }
+                    if (metadata.shape === "polygon" || typeof metadata.shape === "undefined") {
+                        metadata.shape = "polygon";
+                        region = new google.maps.Polygon({
+                            'paths': paths,
+                            'map': this._map,
+                            'editable': false,
+                            'fillColor': color
+                        });
+                    } else if (metadata.shape === "circle") {
+                        region = new google.maps.Circle({
+                            'center': new google.maps.LatLng(metadata.center[Object.keys(metadata.center)[0]], metadata.center[Object.keys(metadata.center)[1]]),
+                            'radius': metadata.radius,
+                            'map': this._map,
+                            'editable': false,
+                            'fillColor': color
+                        });
+                    } else if (metadata.shape === "rectangle") {
+                        region = new google.maps.Rectangle({
+                            'bounds': new google.maps.LatLngBounds(new google.maps.LatLng(coords[0][0][1],
+                                coords[0][0][0]), new google.maps.LatLng(coords[0][2][1],
+                                coords[0][2][0])),
+                            'map': this._map,
+                            'editable': false,
+                            'fillColor': color
+                        });
+                    }
+                    this._clickListener(region,data[i],metadata.shape);
+                    this._regions.push(region);
+                }
+                else if (type === "point") { //poi
+                    googlePoint = new google.maps.LatLng(coords[1], coords[0]);
+                    var poi = new google.maps.Marker({
+                        position: googlePoint,
+                        map: this._map,
+                        draggable: false
+                    });
+                    this._bounds.extend(googlePoint);
+                    this._clickListener(poi,data[i],type);
+                    this._poiMarkers.push(poi);
+                }
+            } catch (err) {
+                console.log("Issue importing region or poi:", err);
+            }
+        }
+    },
+
+    /**
+     * Draw user location markers on the map.
+     * @param locations
+     * @private
+     */
+    _updateLocations: function(locations) {
+        var _this = this;
+        locations.forEach(function(location) {
+            var coords = location.location.geometry.coordinates;
+            var latLng = new google.maps.LatLng(coords[1], coords[0]);
+            _this._bounds.extend(latLng);
+            var marker = new google.maps.Marker({
+                position: latLng,
+                map: _this._map,
+                draggable: true,
+                icon: 'resources/user.png'
+            });
+            _this._userLocationChangedListener(marker,location);
+            _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
+            _this._locationMarkers.push(marker);
+        });
+    },
+
+    /**
+     * Clear user locations, regions, and points of interest from the map.
+     * @private
+     */
+    _clearLocationData: function() {
+        this._locationMarkers.forEach(function(marker) {
+            marker.setMap(null);
+        });
+        this._locationMarkers = [];
+        this._regions.forEach(function(region) {
+            region.setMap(null);
+        });
+        this._regions = [];
+        this._poiMarkers.forEach(function(poi) {
+            poi.setMap(null);
+        });
+        this._poiMarkers = [];
+    },
+
+    /**
+     * Draw regions on the map, wrapper for `_updateRegionsAndPOIs()`.
+     * @param regions
+     * @private
+     */
+    _updateRegions: function(regions) {
+        this._updateRegionsAndPOIs(regions);
+    },
+
+    /**
+     * Draw points of interest on the map, wrapper for `_updateRegionsAndPOIs()`.
+     * @param pois
+     * @private
+     */
+    _updatePOIs: function(pois) {
+        this._updateRegionsAndPOIs(pois);
+    },
+
+    /**
+     * Maintains custom "Follow User" control on the map during simulation.
+     * @param deleted
+     * @private
+     */
+    _updateMapControl: function(deleted) {
+        var _this = this;
+        if (_this._followableUsers && _this._followableUsers.length > 0) {
+            setTimeout(function() {
+                var div = _this.$.customControl.getElementsByTagName("DIV")[0].cloneNode(true); //clone hidden div on page
+                var select = div.querySelector("#followableUsers"); //find select
+                //if there is already a custom control on the map, check for a selected value and set it on the new control
+                var oldControl = _this._map.controls[google.maps.ControlPosition.TOP_CENTER].getArray()[0];
+                if (oldControl) {
+                    var oldSelect = oldControl.querySelector("#followableUsers");
+                    var oldVal = oldSelect.options[oldSelect.selectedIndex].value;
+                    if (oldVal >= 0) {
+                        select.value = oldVal;
+                        if (deleted === select.value) {
+                            //the simulation for the selected user has finished or stopped so reset the select
+                            select.value = '';
+                        }
+                    }
+                }
+                //re-create the control
+                _this._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
+                _this._map.controls[google.maps.ControlPosition.TOP_CENTER].push(div);
+                //add listener to handle toggling followUser functionality
+                select.addEventListener('change', function() {
+                    var index = select.options[select.selectedIndex].value;
+                    if (_this._prevChild) {
+                        _this._prevChild._toggleFollowUser(); //disable followUser for the last followed user
+                    }
+                    if (index == "-1") { //no user selected, so don't proceed
+                        _this._prevChild = null;
+                        return;
+                    }
+                    _this._followableUsers[index].child._toggleFollowUser(); //enable followUser for the selected route
+                    //use the tabChangeListener to change tabs to the user being followed
+                    var craftedEvent = {"model":{"item":{"elem":_this._followableUsers[index].child}}};
+                    _this._tabChangeListener(craftedEvent);
+                    _this._prevChild = _this._followableUsers[index].child; //save the child so followUser can be disabled later
+                });
+            },0);
+        }
+        else {
+            //all simulations are done, remove the custom map control
+            _this._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
+        }
+    },
+
+    /**
+     * Handles generating tabs for each route and moving the routes into them.
+     * @param routes
+     * @param isInitialLoad
+     * @private
+     */
+    _generateRouteTabs: function(routes,isInitialLoad) {
+        var _this = this;
+        var children = [];
+        if (routes && routes.length > 0) {
+            //append the new routes as direct children of the component so they inherit any custom styling
+            for (var j=0; j<routes.length; j++) {
+                //pass the map and users via the constructor (instead of via the events like markup defined components)
+                children.push(new BridgeItLocationRoute(_this._map, _this._users, routes[j].label, routes[j].user, routes[j].origin, routes[j].destination,
+                    routes[j].travelmode, routes[j].speed, routes[j].speedunit, routes[j].frequency, routes === this.routes));
+                Polymer.dom(_this).appendChild(children[children.length-1]);
+            }
+        }
+        if (isInitialLoad) {
+            //since it's the first time, make sure we include any routes defined as child components
+            children = Polymer.dom(_this).childNodes.filter(function(node) {
+                return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+            });
+        }
+        setTimeout(function () {
+            //create tabs for the new children
+            for (var k = 0; k < children.length; k++) {
+                _this.push('_children', {
+                    "elem": children[k],
+                    "tabClass": isInitialLoad && k === 0 ? "active" : "", //show first tab by default on initial load
+                    "tabLabel": children[k].label || 'New Route',
+                    "contentHidden": !(isInitialLoad && k === 0) //show first tab by default on initial load
+                });
+            }
+            //move new children into tabs (do this async so all the new children tabs are rendered first)
+            setTimeout(function() {
+                var tabIsSelected=false;
+                //append the children to the content panel of each tab
+                for (var i=0; i<_this._children.length; i++) {
+                    if (_this._children[i].tabClass === 'active') {
+                        tabIsSelected = true;
+                    }
+                    Polymer.dom(_this.root).querySelector('div[data-index="'+i+'"]').appendChild(_this._children[i].elem); //move into tab
+                }
+                //if no tab is selected (eg. the previously selected tab was replaced) then select the first one
+                if (!tabIsSelected) {
+                    _this.set('_children.0.tabClass','active');
+                    _this.set('_children.0.contentHidden',false);
+                }
+            },0);
+        }, 0);
+    },
+
+    /**
+     * Remove all routes.
+     * @private
+     */
+    _removeAllRoutes: function() {
+        for (var i=this._children.length-1; i >= 0; i--) {
+            Polymer.dom(this).removeChild(this._children[i].elem);
+            this.splice('_children',i,1);
+        }
+    },
+
+    /**
+     * Set the origin on the active route via the context menu.
+     * @private
+     */
+    _setAsOrigin: function() {
+        this._hideContextMenu = true;
+        var child;
+        for (var i=0; i<this._children.length; i++) {
+            if (!this._children[i].contentHidden) {
+                child = this._children[i].elem;
+                break;
+            }
+        }
+        child._setOrigin(this._contextMenuPosition.lat()+","+this._contextMenuPosition.lng());
+    },
+
+    /**
+     * Set the destination on the active route via the context menu.
+     * @private
+     */
+    _setAsDestination: function() {
+        this._hideContextMenu = true;
+        var child;
+        for (var i=0; i<this._children.length; i++) {
+            if (!this._children[i].contentHidden) {
+                child = this._children[i].elem;
+                break;
+            }
+        }
+        child._setDestination(this._contextMenuPosition.lat()+","+this._contextMenuPosition.lng());
+    },
+
+    /**
+     * Try to get the realm users.
+     */
+    _getRealmUsers: function() {
+        var _this = this;
+        //pass the users to the child components and set the users internally so they can be passed in the constructor of new routes defined via the `routes` attribute
+        bridgeit.io.admin.getRealmUsers({realmName:_this.realm}).then(function(users) {
+            _this.fire('usersRetrieved',{users:users.length>0?users:null});
+            _this._users = users;
+        }).catch(function(error) {
+            //always assume not an admin if something went wrong
+            _this.fire('usersRetrieved',{users:null});
+            _this._users = [];
+            if (error.status == 403) {
+                return; //fail "silently" if insufficient privileges
+            }
+            console.log('Error trying to get realm users:',error);
+        });
+    },
+
+    /**
+     * When a map overlay is clicked display an infoWindow with some relative information.
+     * @param overlay
+     * @param location
+     * @param shape
+     */
+    _clickListener: function(overlay,location,shape) {
+        var _this = this;
+        if (!_this._infoWindow) { //load "lazily" so google object is available
+            _this._infoWindow = new google.maps.InfoWindow();
+        }
+        //display infoWindow and hide context menu on map click
+        google.maps.event.addListener(overlay, 'click', function () {
+            var name = location.label || location._id;
+            _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+name+'</div>');
+            if (shape === "polygon") {
+                _this._infoWindow.setPosition(overlay.getPath().getAt(0));
+            }
+            else if (shape === "circle") {
+                _this._infoWindow.setPosition(overlay.getCenter());
+            }
+            else if (shape === "rectangle") {
+                _this._infoWindow.setPosition(overlay.getBounds().getNorthEast());
+            }
+            else { //shape === "point"
+                _this._infoWindow.setPosition(overlay.getPosition());
+                var username = location.username ? location.username+'<br/>' : '';
+                var date = location.lastUpdated ? new Date(location.lastUpdated).toLocaleString() : '';
+                _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+name+'<br/>'+username+date+'</div>');
+            }
+            _this._infoWindow.open(_this._map,overlay);
+            _this._hideContextMenu = true;
+        });
+        //display context menu on right-click
+        google.maps.event.addListener(overlay, 'rightclick', function (event) {
+            _this._handleRightClick(event);
+        });
+    },
+
+    /**
+     * When a new user is dropped on the map save them to the Location Service and setup required listeners.
+     * @param drawingManager
+     * @private
+     */
+    _setupNewLocationListener: function(drawingManager) {
+        var _this = this;
+        google.maps.event.addListener(drawingManager, 'markercomplete', function (marker) {
+            var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] } } };
+            bridgeit.io.location.updateLocation({location:location}).then(function(data) {
+                location._id = data.uri.split("/").pop();
+                location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                _this._locationMarkers.push(marker);
+                _this._userLocationChangedListener(marker,location);
+                _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
+            }).catch(function(error) {
+                console.log('Issue creating new location:',error);
+            });
+        });
+    },
+
+    /**
+     * Setup listeners for the map context menu.
+     * @private
+     */
+    _setupMapListeners: function() {
+        var _this = this;
+        //display context menu on right-click
+        google.maps.event.addListener(_this._map,"rightclick",function(event) {
+            _this._handleRightClick(event);
+        });
+        //hide context menu on map click
+        google.maps.event.addListener(_this._map, "click", function(event) {
+            _this._hideContextMenu = true;
+        });
+    },
+
+    /**
+     * Setup event listeners for `bridgeit-location-route` components.
+     * @private
+     */
+    _setupRouteListeners: function() {
+        var _this = this;
+        //add event listeners for bridgeit-location-route events to parent since the events bubble up (one listener covers all children)
+        _this.addEventListener('startSimulation', function(e) {
+            //add click listener to new location marker
+            _this._clickListener(e.detail.locationMarker,e.detail.location,'point');
+            //add the location marker to the master list
+            _this._locationMarkers.push(e.detail.locationMarker);
+            //create label for follow user menu
+            e.detail.label = e.detail.child.label + (e.detail.child.user.trim().length > 0 ? ' ('+e.detail.child.user+')' : '');
+            //update the custom map control
+            _this.push('_followableUsers',e.detail);
+            _this._updateMapControl();
+        });
+        _this.addEventListener('endSimulation', function(e) {
+            for (var i=0; i<_this._followableUsers.length; i++) {
+                if (_this._followableUsers[i].child === e.detail.child) {
+                    //remove the user from the "follow user" list
+                    _this.splice('_followableUsers',i,1);
+                    //update the custom map control
+                    _this._updateMapControl(i.toString());
+                    break;
+                }
+            }
+        });
+        _this.addEventListener('labelChanged', function(e) {
+            for (var i=0; i<_this._children.length; i++) {
+                if (_this._children[i].elem === e.detail.child) {
+                    //update tab label
+                    this.set('_children.'+i+'.tabLabel',e.detail.label);
+                }
+            }
+        });
+    },
+
+    /**
+     * Display context-menu on rightclick.
+     * @param event
+     * @private
+     */
+    _handleRightClick: function(event) {
+        //convert the lat/long rightclick coordinate to pixel coordinate
+        var scale = Math.pow(2, this._map.getZoom());
+        var nw = new google.maps.LatLng(this._map.getBounds().getNorthEast().lat(),this._map.getBounds().getSouthWest().lng());
+        var worldCoordinateNW = this._map.getProjection().fromLatLngToPoint(nw);
+        var worldCoordinate = this._map.getProjection().fromLatLngToPoint(event.latLng);
+        var pixelOffset = new google.maps.Point(
+            Math.floor((worldCoordinate.x - worldCoordinateNW.x) * scale),
+            Math.floor((worldCoordinate.y - worldCoordinateNW.y) * scale)
+        );
+        //take into account the position of the map in the view and the position of the scrollbars
+        var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
+        var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+        var left = pixelOffset.x + this._map.getDiv().getBoundingClientRect().left + scrollLeft;
+        var top = pixelOffset.y + this._map.getDiv().getBoundingClientRect().top + scrollTop;
+        //render the context menu at the pixel coordinate
+        this.$.contextMenu.style.left = left + 'px';
+        this.$.contextMenu.style.top = top + 'px';
+        this._hideContextMenu = false;
+        //store the lat/lng for later use
+        this._contextMenuPosition = event.latLng;
+    },
+
+    /**
+     * Handles tab changes between routes.
+     * @param e
+     * @private
+     */
+    _tabChangeListener: function(e) {
+        for (var i=0; i<this._children.length; i++) {
+            if (this._children[i].elem === e.model.item.elem) {
+                //show tab content
+                this.set('_children.'+i+'.contentHidden',false);
+                this.set('_children.'+i+'.tabClass','active');
+                continue;
+            }
+            //hide tab content
+            this.set('_children.'+i+'.tabClass','');
+            this.set('_children.'+i+'.contentHidden',true);
+        }
+    },
+
+    /**
+     * Handles tab closures (deleting routes).
+     * @param e
+     * @private
+     */
+    _tabCloseListener: function(e) {
+        for (var i=0; i<this._children.length; i++) {
+            if (this._children[i] === e.model.item) {
+                //check if this tab was active and if it is was select the first tab
+                if (this._children[i].tabClass === 'active') {
+                    this.set('_children.0.tabClass','active');
+                    this.set('_children.0.contentHidden',false);
+                }
+                //delete route and remove tab
+                Polymer.dom(this).removeChild(this._children[i].elem);
+                this.splice('_children',i,1);
+                break;
+            }
+        }
+    },
+
+    /**
+     * Re-draw the routes and associated tabs when the `routes` attribute changes.
+     * @param newVal
+     * @param oldVal
+     * @private
+     */
+    _routesChanged: function(newVal, oldVal) {
+        //The initial attribute value triggers this observer before the ready is called, which is where we set the map and users. So if the map/users
+        //are not set then the change event is for the initial value and we will ignore it (since the initial attribute value will be handled after
+        //both the map and users are set, in the _mapOrUsersChanged observer).
+        if (this._map && this._users && this.routes && this.routes.length > 0) {
+            //first remove any children that were previously created via the routes attribute
+            for (var i=this._children.length-1; i >= 0; i--) {
+                if (this._children[i].elem.viaRoutesAttribute) {
+                    Polymer.dom(this).removeChild(this._children[i].elem);
+                    this.splice('_children',i,1);
+                }
+            }
+            this._generateRouteTabs(this.routes);
+            //maintain scroll position
+            var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
+            var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+            setTimeout(function() {
+                scrollTo(scrollLeft,scrollTop);
+            },50);
+        }
+    },
+
+    /**
+     * Fired when the map and users properties are both set (since they are only changed on initial load).
+     * @param map
+     * @param users
+     * @private
+     */
+    _mapOrUsersChanged: function(map,users) {
+        this._children = [];
+        this._generateRouteTabs(this.routes,true);
+        this.getSimulations();
+    },
+
+    //We use these wrappers because the on-click in the template passes an event parameter that we
+    //don't want on the public functions, and in some cases we want to do some additional work
+
+    /**
+     * Wrapper for `addRoute(..)`.
+     * @private
+     */
+    _addRoute: function() {
+        this.addRoute();
+    },
+
+    /**
+     * Wrapper for `resetSimulation()`.
+     * @private
+     */
+    _resetSimulation: function() {
+        var confirm = window.confirm("Are you sure?");
+        if (!confirm) {
+            return;
+        }
+        this.resetSimulation();
+    },
+
+    /**
+     * Wrapper for `saveSimulation(..)`.
+     * @private
+     */
+    _saveSimulation: function() {
+        var simulation = window.prompt("Please enter the simulation name", "Auto-Named");
+        if (simulation === null) {
+            return;
+        }
+        this.saveSimulation(simulation === "Auto-Named" || simulation.trim().length === 0 ? null : simulation);
+    },
+
+    /**
+     * Wrapper for `saveSimulation(..)` that updates the active simulation.
+     * @private
+     */
+    _updateSimulation: function() {
+        this.saveSimulation(this._activeSim._id);
+    },
+
+    /**
+     * Wrapper for `deleteSimulation(..)`.
+     * @private
+     */
+    _deleteSimulation: function() {
+        if (!this._activeSim) {
+            return;
+        }
+        this.deleteSimulation(this._activeSim._id);
+    }
+});

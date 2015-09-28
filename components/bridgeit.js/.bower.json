@@ -17,11 +17,11 @@
     "javascript"
   ],
   "homepage": "https://github.com/bridgeit/bridgeit.js",
-  "_release": "625ffc33d3",
+  "_release": "44e35c03f4",
   "_resolution": {
     "type": "branch",
     "branch": "gh-pages",
-    "commit": "625ffc33d3491a8a4a254e15754a978b63b6ed53"
+    "commit": "44e35c03f41d16e4def18ddcb4fc805381d43c3e"
   },
   "_source": "git://github.com/bridgeit/bridgeit.js.git",
   "_target": "gh-pages",

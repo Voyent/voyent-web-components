@@ -1,0 +1,249 @@
+<!--
+	@license
+	Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+	This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	Code distributed by Google as part of the polymer project is also
+	subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <title>BridgeIt Web Components Demo</title>
+
+    <!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
+    <script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
+    <script>
+        if( !("Promise" in window)){
+            window.Promise = ES6Promise.Promise;
+        }
+    </script>
+    <script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
+    <script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
+
+    <!-- Load the webcomponents polyfill -->
+    <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+    <!-- Load bridgeit location simulator component -->
+    <link rel="import" href="bridgeit-location-simulator.html">
+    <!-- Load bridgeit location route component -->
+    <link rel="import" href="bridgeit-location-route.html">
+    <!-- Load bridgeit location simulations component -->
+    <link rel="import" href="bridgeit-location-simulations.html">
+
+    <!-- Demo specific CSS -->
+    <link rel="stylesheet" href="../common/demo.css"/>
+
+    <!-- Define custom styling for the component (optional) -->
+    <style is="custom-style">
+        bridgeit-location-simulator {
+            --location-sim-map: { /* [Custom map styling] */
+                margin-bottom:0;
+                margin-top:-20px;
+            };
+            --location-sim-button: { /* [Custom button styling] */
+                 font-size: 20px;
+                 padding: 5px 10px;
+                 color: rgb(239, 239, 239);
+                 background-color: rgb(62, 69, 140);
+            };
+            --location-sim-button-container: { /* [Custom button wrapper styling] */
+                 background-color: #EFEFEF;
+            };
+            --location-sim-title: { /* [Custom simulator id styling] */
+                 background-color: #EFEFEF;
+                 padding: 15px 0 15px 0;
+            };
+            --location-sim-tabs: { /* [Custom tabs (ul) styling] */
+                background-color: #EFEFEF;
+            };
+            --location-sim-first-tab: { /* [Custom first tab styling] */
+                 margin-left: 40px;
+            };
+            --location-sim-active-tab-label: { /* [Custom active tab label styling] */
+                 color: #2E7DA3;
+            };
+            --location-sim-tab-content-container: { /* [Custom tab content wrapper styling] */
+                border-top:none;
+                margin-bottom: 20px;
+            };
+            /*
+            Other available styling options:
+                --location-sim-tab: { }; [Custom tab (li) styling]
+                --location-sim-active-tab: { }; [Custom active tab styling]
+                --location-sim-tab-label: { }; [Custom tab label styling]
+                --location-sim-tab-content: { }; [Custom tab content styling]
+                --location-sim-contextmenu: {}; [Custom context-menu styling]
+                --location-sim-contextmenu-item: {}; [Custom context-menu item styling]
+                --location-sim-contextmenu-item-hover: {}; [Custom context-menu item:hover styling]
+            */
+        }
+        bridgeit-location-route {
+            --location-route-wrapper: { /* [Custom inputs and/or buttons wrapper styling] */
+                 padding: 20px;
+                 background-color: #EFEFEF;
+            };
+            --location-route-label: { /* [Custom label styling] */
+                 display: inline-block;
+                 max-width: 100%;
+                 margin-bottom: 5px;
+                 font-weight: 700;
+            };
+            --location-route-input: { /* [Custom input/select styling] */
+                 display: block;
+                 width: 100%;
+                 padding:6px 0;
+                 font-size: 14px;
+                 line-height: 1.42857143;
+                 color: #555;
+                 background-color: #fff;
+                 background-image: none;
+                 border: 1px solid #ccc;
+                 border-radius: 4px;
+                 -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                 box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                 -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+                 -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+                 transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+             };
+            --location-route-input-disabled: { /* [Custom input/select disabled styling] */
+                 background-color: rgb(248, 248, 248) !important;
+            };
+            --location-route-button: { /* [Custom button styling] */
+                 font-size: 20px;
+                 padding: 5px 10px;
+                 color: rgb(239, 239, 239);
+                 background-color: rgb(62, 69, 140);
+            };
+            --location-route-button-disabled: { /* [Custom button disabled styling] */
+                 color: graytext;
+            };
+            /*
+            Other available styling options:
+            --location-route-input-group: { key:value; }; [Custom label/input wrapper styling]
+            --location-route-button-container: { key:value; }; [Custom button wrapper styling]
+            */
+        }
+        bridgeit-location-simulations {
+            --location-simulations-wrapper: { /* [Custom table wrapper (div) styling] */
+                 padding:10px 0 10px 0;
+                 background-color: #EFEFEF;
+            };
+            --location-simulations-button: { /* [Custom button styling] */
+                 padding: 5px 10px;
+                 color: rgb(239, 239, 239);
+                 background-color: rgb(62, 69, 140);
+                 margin: 10px;
+             };
+            /*
+            Other available styling options:
+            --location-simulations-table: { key:value; }; /* [Custom table styling]
+            --location-simulations-tbody: { key:value; }; [Custom tbody styling]
+            --location-simulations-tr { key:value; }; [Custom tr styling]
+            --location-simulations-td: { key:value; }; [Custom td styling]
+            */
+        }
+    </style>
+
+</head>
+<body unresolved>
+
+    <h1>BridgeIt Location Simulator Component Demo</h1>
+    <h3>Login with your BridgeIt Account Information</h3>
+    <hr/>
+    <div class="container">
+        <form>
+            <div>
+                <label>Account:
+                    <input id="account" type="text"/>
+                </label>
+            </div>
+            <div>
+                <label>Realm:
+                    <input id="realm" type="text"/>
+                </label>
+            </div>
+            <div>
+                <label>Username:
+                    <input id="username" type="text"/>
+                </label>
+            </div>
+            <div>
+                <label>Password:
+                    <input id="password" type="password"/>
+                </label>
+            </div>
+            <a onclick="login()">Login</a>
+
+            <div class="settings">
+                <div>
+                    <label>
+                        <a onclick="document.getElementById('motionSimulator').refreshMap();">Refresh Map</a>
+                    </label>
+                </div>
+            </div>
+        </form>
+        <!-- Declare the elements by their tags. -->
+        <bridgeit-location-simulator id="motionSimulator">
+            <bridgeit-location-route></bridgeit-location-route>
+            <bridgeit-location-simulations></bridgeit-location-simulations>
+        </bridgeit-location-simulator>
+    </div>
+
+    <script type="text/javascript">
+        function login(event){
+            var account = document.getElementById('account').value;
+            var realm = document.getElementById('realm').value;
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+
+            bridgeit.io.auth.connect({
+                account: account,
+                realm: realm,
+                username: username,
+                password: password
+            }).then(function(){
+                setCredentialsOnComponent();
+                document.getElementById('motionSimulator').refreshMap();
+            })['catch'](function(){
+                //try to login as admin
+                bridgeit.io.auth.connect({
+                    account: account,
+                    realm: 'admin',
+                    username: username,
+                    password: password
+                }).then(function(){
+                    setCredentialsOnComponent();
+                    document.getElementById('motionSimulator').setAttribute('realm', realm);
+                    document.getElementById('motionSimulator').refreshMap();
+                })
+            });
+        }
+        function setCredentialsOnComponent(){
+            var elem = document.getElementById('motionSimulator');
+
+            var account = bridgeit.io.auth.getLastKnownAccount();
+            if( account ){
+                elem.setAttribute('account', account);
+                document.getElementById('account').value = account;
+            }
+
+            var realm = bridgeit.io.auth.getLastKnownRealm();
+            if( realm ){
+                elem.setAttribute('realm', realm);
+                document.getElementById('realm').value = realm;
+            }
+
+            var token = bridgeit.io.auth.getLastAccessToken();
+            if( token ){
+                elem.setAttribute('accessToken', token);
+                document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
+            }
+        }
+        //initialize known credentials
+        setCredentialsOnComponent();
+    </script>
+</body>
+</html>

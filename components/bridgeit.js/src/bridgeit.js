@@ -1,4 +1,4 @@
-/* BridgeIt Mobile 1.0.6
+/* BridgeIt Mobile 1.0.7
  *
  * Copyright 2004-2013 ICEsoft Technologies Canada Corp.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -405,9 +405,11 @@ if (!window.console) {
 			return;
 		}
 		if (b.isIOS())  {
+			console.log('bridgeit.deviceCommand() setting checkTimeout ' + new Date().getTime());
 			checkTimeout = setTimeout( function()  {
+				console.log('bridgeit.deviceCommand() lauchFailed ' + new Date().getTime());
 				bridgeit.launchFailed(id);
-			}, 3000);
+			}, 10000);
 		}
 		if (!options)  {
 			options = {};
@@ -734,6 +736,7 @@ if (!window.console) {
 		window.addEventListener("pagehide", function () {
 			//hiding the page either indicates user does not require
 			//BridgeIt or the url scheme invocation has succeeded
+			console.log('bridgeit clearing lauchFailed timeout on pagehide ' + new Date().getTime());
 			clearTimeout(checkTimeout);
 			if (ice.push && ice.push.connection) {
 				pausePush();
@@ -756,7 +759,9 @@ if (!window.console) {
 		}, false);
 
 		document.addEventListener("webkitvisibilitychange", function () {
+			console.log(new Date().getTime() + ' bridgeit webkitvisibilitychange document.hidden=' + document.hidden + ' visibilityState=' + document.visibilityState);
 			if (document.webkitHidden)  {
+				console.log('bridgeit clearing lauchFailed timeout on webkitvisibilitychange ' + new Date().getTime());
                 clearTimeout(checkTimeout);
 				pausePush();
 			} else {
@@ -765,7 +770,9 @@ if (!window.console) {
 		});
 
 		document.addEventListener("visibilitychange", function () {
+			console.log(new Date().getTime() + ' bridgeit visibilitychange document.hidden=' + document.hidden + ' visibilityState=' + document.visibilityState);
 			if (document.hidden)  {
+				console.log('bridgeit clearing lauchFailed timeout on visibilitychange ' + new Date().getTime());
                 clearTimeout(checkTimeout);
 				pausePush();
 			} else {
@@ -1060,11 +1067,10 @@ if (!window.console) {
 			'<a style="float:right;" '+
 			'onclick="document.body.removeChild(this.parentNode)">'+
 			'&times;</a>' +
-			'<p>The BridgeIt App is missing ... would you like to download ' +
-			'it?</p>' +
+			'<p>Having Problems?<BR>The BridgeIt App might not be installed.</p><BR>' +
 			'<a href="' + bridgeit.appStoreURL() + '"'+
 			' onclick="document.body.removeChild(this.parentNode)" ' +
-			'target="_blank">Download the utility app now</a>';
+			'target="_blank" style="text-decoration: underline;">Install BridgeIt</a>';
 		document.body.appendChild(popDiv);
 
 		var centerDiv = function(){
@@ -1406,6 +1412,14 @@ if (!window.console) {
 	};
 
 	/**
+	 * Is the current browser iOS 7
+	 * @alias plugin.isIOS8
+	 */
+	b.isIOS9 = function(){
+		return !b.isWindowsPhone8() && /(iPad|iPhone|iPod).*OS 9_/.test( navigator.userAgent );
+	};
+
+	/**
 	 * Is the current browser Android
 	 * @alias plugin.isAndroid
 	 */
@@ -1443,7 +1457,7 @@ if (!window.console) {
 	};
 
 	
-	var android, supportedAndroid, iOS, iOS6, iOS7, iOS8, wp8, iPhone, supportMatrix;
+	var android, supportedAndroid, iOS, iOS6, iOS7, iOS8, iOS9, wp8, iPhone, supportMatrix;
 
 	wp8 = b.isWindowsPhone8();
 
@@ -1454,6 +1468,7 @@ if (!window.console) {
 		iOS6 = b.isIOS6();
 		iOS7 = b.isIOS7();
 		iOS8 = b.isIOS8();
+		iOS9 = b.isIOS9();
 		wp8 = b.isWindowsPhone8();
 		iPhone = b.isIPhone();
 	}
@@ -1462,13 +1477,11 @@ if (!window.console) {
 	supportMatrix = {
 		'iPhone':{
 			'6':   [true,     true,       true,        true,           true,  false, true,    true,   false,     false],
-			'7':   [true,     true,       true,        true,           true,  true,  true,    true,   true,      true],
-			'8':   [true,     true,       true,        true,           true,  true,  true,    true,   true,      true]
+			'7':   [true,     true,       true,        true,           true,  true,  true,    true,   true,      true]
 		},
 		'iPad-iPod':{
 			'6':   [true,     true,       true,        true,           true,  false, true,    false,  false,     false],
-			'7':   [true,     true,       true,        true,           true,  true,  true,    false,  true,      true],
-			'8':   [true,     true,       true,        true,           true,  true,  true,    false,  true,      true]
+			'7':   [true,     true,       true,        true,           true,  true,  true,    false,  true,      true]
 		},
 		'wp8':     [true,     true,       true,        true,           true,  true,  false,   true,   false,     false],
 		'android': [true,     true,       true,        true,           true,  true,  true,    true,   false,     true]
@@ -1478,8 +1491,8 @@ if (!window.console) {
 	 * Check if the current browser is supported by the BridgeIt Native Mobile app.
 	 *
 	 * Currently iOS, Android, and some features on Windows Phone 8 are supported.
-	 * @param {String} command The BridgeIt API command that may or may not be supported
 	 * @alias plugin.isSupportedPlatform
+	 * @param {String} command The BridgeIt API command that may or may not be supported
 	 */
 	b.isSupportedPlatform = function(command){
 		if( 'register' == command ){
@@ -1509,7 +1522,7 @@ if (!window.console) {
 				if( iOS6 ){
 					return supportMatrix['iPad-iPod']['6'][b.commands.indexOf(command)];
 				}
-				else /* if( iOS7 ) */ {
+				else /* if( iOS7 or higher ) */ {
 					return supportMatrix['iPad-iPod']['7'][b.commands.indexOf(command)];
 				}
 			}
