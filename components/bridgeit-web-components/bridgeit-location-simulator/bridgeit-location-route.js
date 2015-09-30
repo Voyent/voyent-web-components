@@ -475,8 +475,9 @@ BridgeIt.LocationRoute = Polymer({
     _autocompleteListener: function(input,property) {
         var _this = this;
         google.maps.event.addListener(input, 'place_changed', function() {
-            _this[property] = input.getPlace().formatted_address; //set the full address of the selected location in the background so we can use it for the directions search
-            _this._map.setCenter(input.getPlace().geometry.location); //center map on selected location
+            var coordinates = input.getPlace().geometry.location;
+            _this[property] = coordinates.lat()+','+coordinates.lng(); //set the exact coordinate of the selected location in the background so we can use it for the directions search
+            _this._map.setCenter(coordinates); //center map on selected location
             _this._map.setZoom(18); //zoom in on selected location
         });
     },
