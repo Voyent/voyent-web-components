@@ -1,11 +1,12 @@
 <link rel="import" href="../../polymer/polymer.html">
 
 <script>
+    var BridgeIt = BridgeIt || {};
     /**
      Provides common functionality required by `bridgeit-location-*` components.
      @polymerBehavior
      */
-    LocationBehavior = {
+    BridgeIt.LocationBehavior = {
         /**
          * When a user is dragged to a new location on the map update their location in the Location Service.
          * @param marker

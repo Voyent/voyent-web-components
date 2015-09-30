@@ -30,32 +30,32 @@ Example:
 @demo demo.html
 -->
 <dom-module id="bridgeit-location-simulations">
-    <style type="text/css">
-        .tableWrapper {
-            @apply(--location-simulations-wrapper);
-        }
-        table {
-            margin:0 auto;
-            @apply(--location-simulations-table);
-        }
-        tbody {
-            @apply(--location-simulations-tbody);
-        }
-        tr {
-            @apply(--location-simulations-tr);
-        }
-        td {
-            @apply(--location-simulations-td);
-        }
-        button {
-            cursor:pointer;
-            @apply(--location-simulations-button);
-        }
-        .noSimTxt {
-            text-align: center;
-        }
-    </style>
     <template>
+        <style type="text/css">
+            .tableWrapper {
+                @apply(--location-simulations-wrapper);
+            }
+            table {
+                margin:0 auto;
+                @apply(--location-simulations-table);
+            }
+            tbody {
+                @apply(--location-simulations-tbody);
+            }
+            tr {
+                @apply(--location-simulations-tr);
+            }
+            td {
+                @apply(--location-simulations-td);
+            }
+            button {
+                cursor:pointer;
+                @apply(--location-simulations-button);
+            }
+            .noSimTxt {
+                text-align: center;
+            }
+        </style>
         <div class="tableWrapper">
             <template is="dom-if" if="{{_allSimulations}}">
                 <table>

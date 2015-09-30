@@ -1,6 +1,6 @@
-BridgeItLocationRoute = Polymer({
+BridgeIt.LocationRoute = Polymer({
     is: "bridgeit-location-route",
-    behaviors: [LocationBehavior],
+    behaviors: [BridgeIt.LocationBehavior],
 
     /**
      * Custom constructor
@@ -88,25 +88,25 @@ BridgeItLocationRoute = Polymer({
         
     ready: function() {
         var _this = this;
-        if (Polymer.dom(_this).parentNode) {
+        if (Polymer.dom(this).parentNode) {
             //if this component is defined in the light DOM it will have a parent (bridgeit-location-simulator) when this ready is called,
             //so we want to setup listeners on the parent to set the map and users properties inside this component. If there is no parent
             //(the component is created using the constructor) then the map and user properties will be set in the custom constructor instead.
-            Polymer.dom(_this).parentNode.addEventListener('mapInitialized', function(e) {
+            Polymer.dom(this).parentNode.addEventListener('mapInitialized', function(e) {
                 _this._map = e.detail.map;
             });
-            Polymer.dom(_this).parentNode.addEventListener('usersRetrieved', function(e) {
+            Polymer.dom(this).parentNode.addEventListener('usersRetrieved', function(e) {
                 _this._users = e.detail.users;
             });
         }
         //set some default values
-        _this._followUser = false;
-        _this._previousBtnDisabled = true;
-        _this._nextBtnDisabled = true;
-        _this._cancelBtnDisabled = true;
-        _this._playBtnDisabled = false;
-        _this._pauseBtnDisabled = true;
-        _this._updateBtnDisabled = true;
+        this._followUser = false;
+        this._previousBtnDisabled = true;
+        this._nextBtnDisabled = true;
+        this._cancelBtnDisabled = true;
+        this._playBtnDisabled = false;
+        this._pauseBtnDisabled = true;
+        this._updateBtnDisabled = true;
     },
 
     /**
@@ -114,17 +114,17 @@ BridgeItLocationRoute = Polymer({
      */
     playSimulation: function() {
         var _this = this;
-        if (!Polymer.dom(_this).parentNode.accesstoken || !Polymer.dom(_this).parentNode.account || !Polymer.dom(_this).parentNode.realm) {
+        if (!Polymer.dom(this).parentNode.accesstoken || !Polymer.dom(this).parentNode.account || !Polymer.dom(this).parentNode.realm) {
             return;
         }
-        if (!_this._route) { //if no route then it's a new simulation
-            if ((_this._users && _this._users.length > 0 && !_this.user) || !_this.origin || !_this.destination) {
+        if (!this._route) { //if no route then it's a new simulation
+            if ((this._users && this._users.length > 0 && !this.user) || !this.origin || !this.destination) {
                 return;
             }
-            _this._directionsService.route({
-                origin:_this._origin || _this.origin,
-                destination:_this._destination || _this.destination,
-                travelMode: google.maps.TravelMode[_this.travelmode]
+            this._directionsService.route({
+                origin:this._origin || this.origin,
+                destination:this._destination || this.destination,
+                travelMode: google.maps.TravelMode[this.travelmode]
             }, function(response, status) {
                 if (status !== google.maps.DirectionsStatus.OK) {
                     return;
@@ -178,8 +178,8 @@ BridgeItLocationRoute = Polymer({
                 });
             });
         }
-        else if (_this._paused) { //since we have a route, continue the simulation, but only if we are paused (so we don't start an already running simulation)
-            _this._doSimulation();
+        else if (this._paused) { //since we have a route, continue the simulation, but only if we are paused (so we don't start an already running simulation)
+            this._doSimulation();
         }
     },
 
@@ -212,13 +212,13 @@ BridgeItLocationRoute = Polymer({
      */
     nextCoordinate: function() {
         var _this = this;
-        var i = _this._index+1; //get next coordinate
-        if (!_this._route || !_this._marker || !_this._location || !_this._paused) {
+        var i = this._index+1; //get next coordinate
+        if (!this._route || !this._marker || !this._location || !this._paused) {
             return;
         }
-        var route = _this._route;
-        _this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the next location
-        bridgeit.io.location.updateLocation({location:_this._location}).then(function() {
+        var route = this._route;
+        this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the next location
+        bridgeit.io.location.updateLocation({location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
             if (_this._followUser) {
@@ -242,13 +242,13 @@ BridgeItLocationRoute = Polymer({
      */
     previousCoordinate: function() {
         var _this = this;
-        var i = _this._index-1; //get previous coordinate
-        if (!_this._route || !_this._marker || !_this._location || !_this._paused || i<0) {
+        var i = this._index-1; //get previous coordinate
+        if (!this._route || !this._marker || !this._location || !this._paused || i<0) {
             return;
         }
-        var route = _this._route;
-        _this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the previous location
-        bridgeit.io.location.updateLocation({location:_this._location}).then(function() {
+        var route = this._route;
+        this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the previous location
+        bridgeit.io.location.updateLocation({location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
             if (_this._followUser) {
@@ -269,10 +269,13 @@ BridgeItLocationRoute = Polymer({
      */
     updateLocationAtMarker: function() {
         var _this = this;
-        if (!_this._location) {
+        if (!this._location) {
             return;
         }
-        bridgeit.io.location.updateLocation({location:_this._location}).then(function(data) {
+        bridgeit.io.location.updateLocation({location:this._location}).then(function(data) {
+            if (!_this._location) {
+                return; //the simulation has been cleaned up
+            }
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
         }).catch(function(error) {
             console.log('Issue updating location:',error);
@@ -368,10 +371,10 @@ BridgeItLocationRoute = Polymer({
      */
     _doSimulation: function() {
         var _this = this;
-        _this._updateOnFrequency();
-        _this._paused = false;
-        var i = _this._index+1; //get next coordinate
-        _this._location.location.geometry.coordinates = [_this._route[i].lng(),_this._route[i].lat()]; //get the next location
+        this._updateOnFrequency();
+        this._paused = false;
+        var i = this._index+1; //get next coordinate
+        this._location.location.geometry.coordinates = [this._route[i].lng(),this._route[i].lat()]; //get the next location
         var updatePosition = setInterval(function() {
             _this._updateETA(_this._totalMills-_this._interval); //update the ETA
             _this._marker.setPosition({lat:_this._route[i].lat(),lng:_this._route[i].lng()}); //update the marker position
@@ -396,7 +399,7 @@ BridgeItLocationRoute = Polymer({
             }
             i++;
             _this._location.location.geometry.coordinates = [_this._route[i].lng(),_this._route[i].lat()]; //get the next location
-        },_this._interval);
+        },this._interval);
     },
 
     /**
@@ -415,7 +418,7 @@ BridgeItLocationRoute = Polymer({
             }).catch(function(error) {
                 console.log('Issue updating location:',error);
             });
-        },_this.frequency*1000);
+        },this.frequency*1000);
     },
 
     /**
@@ -581,7 +584,7 @@ BridgeItLocationRoute = Polymer({
             },0);
         }
         else {
-            _this.set('user','');
+            this.set('user','');
         }
     },
 

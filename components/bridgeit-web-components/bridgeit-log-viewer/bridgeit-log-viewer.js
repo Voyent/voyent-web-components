@@ -1,5 +1,3 @@
-var _lViewer;
-
 Polymer({
     is: "bridgeit-log-viewer",
 
@@ -60,59 +58,56 @@ Polymer({
         footer: { type: Boolean, value: false }
     },
 
-    created: function() {
-        _lViewer = this;
-    },
-
     ready: function() {
-        _lViewer.fetchLogs();
-        _lViewer._noLogs = false;
+        this.fetchLogs();
+        this._noLogs = false;
     },
 
     /**
      * Retrieve the log information from the Auth Service.
      */
     fetchLogs: function() {
-        if (!_lViewer.accesstoken || !_lViewer.account) {
+        var _this = this;
+        if (!this.accesstoken || !this.account) {
             return;
         }
-        _lViewer._hasLogs = false;
+        this._hasLogs = false;
         //display all columns by default
-        _lViewer._time = true;
-        _lViewer._tx = true;
-        _lViewer._service = true;
-        _lViewer._realmName = true;
-        _lViewer._username = true;
-        _lViewer._message = true;
+        this._time = true;
+        this._tx = true;
+        this._service = true;
+        this._realmName = true;
+        this._username = true;
+        this._message = true;
 
         bridgeit.io.admin.getLogs({
-            accessToken: _lViewer.accesstoken,
-            account: _lViewer.account,
-            query: _lViewer.query,
-            options: _lViewer.options,
-            fields: _lViewer.fields
+            accessToken: this.accesstoken,
+            account: this.account,
+            query: this.query,
+            options: this.options,
+            fields: this.fields
         }).then(function(logs) {
             if (logs.length === 0) {
-                _lViewer._logs = null;
-                _lViewer._noLogs = true;
+                _this._logs = null;
+                _this._noLogs = true;
                 return;
             }
-            if ((logs.length > _lViewer.pagesize) && (_lViewer.pagesize !== 0)) {
-                _lViewer._currentPage = logs.slice(logs.length-_lViewer.pagesize,logs.length);
-                _lViewer._logIndex = logs.length-_lViewer.pagesize;
-                _lViewer._hasPreviousPage = true;
+            if ((logs.length > _this.pagesize) && (_this.pagesize !== 0)) {
+                _this._currentPage = logs.slice(logs.length-_this.pagesize,logs.length);
+                _this._logIndex = logs.length-_this.pagesize;
+                _this._hasPreviousPage = true;
             }
             else {
-                _lViewer._currentPage = logs;
-                _lViewer._hasPreviousPage = false;
+                _this._currentPage = logs;
+                _this._hasPreviousPage = false;
             }
-            _lViewer._hasNextPage = false;
-            _lViewer._logs = logs;
-            _lViewer._hasLogs = true;
-            _lViewer._noLogs = false;
+            _this._hasNextPage = false;
+            _this._logs = logs;
+            _this._hasLogs = true;
+            _this._noLogs = false;
 
-            if (Object.keys(_lViewer.fields).length > 0) {
-                _lViewer._hideColumns();
+            if (Object.keys(_this.fields).length > 0) {
+                _this._hideColumns();
             }
         }).catch(function(error){
             console.log('fetchLogs caught an error:', error);
@@ -123,69 +118,69 @@ Polymer({
      * Load the last (least recent) page of logs.
      */
     lastPage: function() {
-        var logs = _lViewer._logs;
-        var pageSize = _lViewer.pagesize;
+        var logs = this._logs;
+        var pageSize = this.pagesize;
 
         var lastPageIndex = logs.length % pageSize;
         if (lastPageIndex === 0) {
             lastPageIndex = pageSize;
         }
-        _lViewer._currentPage = logs.slice(0,lastPageIndex);
-        _lViewer._logIndex = lastPageIndex;
-        _lViewer._hasPreviousPage = false;
-        _lViewer._hasNextPage = true;
+        this._currentPage = logs.slice(0,lastPageIndex);
+        this._logIndex = lastPageIndex;
+        this._hasPreviousPage = false;
+        this._hasNextPage = true;
     },
     
     /**
      * Load the previous (less recent) page of logs.
      */
     previousPage: function() {
-        var logs = _lViewer._logs;
-        var pageSize = _lViewer.pagesize;
-        var logIndex = _lViewer.lastAction === 'nextPage' ? _lViewer._logIndex - pageSize : _lViewer._logIndex;
+        var logs = this._logs;
+        var pageSize = this.pagesize;
+        var logIndex = this.lastAction === 'nextPage' ? this._logIndex - pageSize : this._logIndex;
 
         if (logIndex < pageSize) {
             pageSize = logIndex;
         }
 
-        _lViewer._currentPage =  logs.slice(logIndex-pageSize,logIndex);
-        _lViewer._logIndex =  logIndex-pageSize;
-        _lViewer._hasNextPage =  true;
+        this._currentPage =  logs.slice(logIndex-pageSize,logIndex);
+        this._logIndex =  logIndex-pageSize;
+        this._hasNextPage =  true;
 
         if (logIndex-pageSize === 0) {
-            _lViewer._hasPreviousPage = false;
+            this._hasPreviousPage = false;
         }
-        _lViewer.lastAction = 'previousPage';
+        this.lastAction = 'previousPage';
     },
     
     /**
      * Load the next (more recent) page of logs.
      */
     nextPage: function() {
-        var logs = _lViewer._logs;
-        var pageSize = _lViewer.pagesize;
-        var logIndex = _lViewer.lastAction === 'previousPage' ? _lViewer._logIndex + pageSize : _lViewer._logIndex;
+        var logs = this._logs;
+        var pageSize = this.pagesize;
+        var logIndex = this.lastAction === 'previousPage' ? this._logIndex + pageSize : this._logIndex;
 
-        _lViewer._currentPage =  logs.slice(logIndex,logIndex+pageSize);
-        _lViewer._logIndex =  logIndex+pageSize;
-        _lViewer._hasPreviousPage =  true;
+        this._currentPage =  logs.slice(logIndex,logIndex+pageSize);
+        this._logIndex =  logIndex+pageSize;
+        this._hasPreviousPage =  true;
 
         if (logIndex+pageSize >= logs.length) {
-            _lViewer._hasNextPage = false;
+            this._hasNextPage = false;
         }
-        _lViewer.lastAction = 'nextPage';
+        this.lastAction = 'nextPage';
     },
     
     /**
      * Load the first (most recent) page of logs.
      */
     firstPage: function() {
-        var logs = _lViewer._logs;
-        var pageSize = _lViewer.pagesize;
-        _lViewer._currentPage = logs.slice(logs.length-pageSize,logs.length);
-        _lViewer._logIndex = logs.length-pageSize;
-        _lViewer._hasNextPage = false;
-        _lViewer._hasPreviousPage = true;
+        var logs = this._logs;
+        var pageSize = this.pagesize;
+        this._currentPage = logs.slice(logs.length-pageSize,logs.length);
+        this._logIndex = logs.length-pageSize;
+        this._hasNextPage = false;
+        this._hasPreviousPage = true;
     },
 
 
@@ -199,7 +194,7 @@ Polymer({
      */
     _validatePageSize: function(newVal, oldVal) {
         if (isNaN(newVal) || (newVal%1)!==0 || newVal < 0) {
-            _lViewer.pagesize = oldVal || 100;
+            this.pagesize = oldVal || 100;
         }
     },
 
@@ -208,9 +203,9 @@ Polymer({
      * @private
      */
     _hideColumns: function() {
-        for (var key in _lViewer.fields) {
-            if (_lViewer.fields.hasOwnProperty(key)) {
-                _lViewer['_'+key] = false;
+        for (var key in this.fields) {
+            if (this.fields.hasOwnProperty(key)) {
+                this['_'+key] = false;
             }
         }
     }

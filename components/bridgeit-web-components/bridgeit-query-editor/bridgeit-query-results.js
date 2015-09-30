@@ -1,5 +1,3 @@
-var _qResults;
-
 Polymer({
     is: "bridgeit-query-results",
     
@@ -15,28 +13,24 @@ Polymer({
      * @event queryMsgUpdated
      */
 
-    created: function() {
-        _qResults = this;
-    },
-
     ready: function() {
-        _qResults._tableHeaders = [];
-        _qResults._tableRows = [];
-        _qResults.setupListener();
+        this._tableHeaders = [];
+        this._tableRows = [];
+        this.setupListener();
     },
 
     /**
      * Adds an event listener for the `queryExecuted` event. Triggered on initialization if there is a valid `for` attribute.
      */
     setupListener: function() {
-        if (!_qResults._validateFor()) { return; }
-
-        document.getElementById(_qResults.for).addEventListener('queryExecuted', function(e) {
+        var _this = this;
+        if (!this._validateFor()) { return; }
+        document.getElementById(this.for).addEventListener('queryExecuted', function(e) {
             var res = e.detail.results;
             if (Object.keys(res).length === 0) {
-                _qResults._tableHeaders = [];
-                _qResults._tableRows = [];
-                _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'Query results empty.','type':'error'});
+                _this._tableHeaders = [];
+                _this._tableRows = [];
+                _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query results empty.','type':'error'});
                 return;
             }
             var tableHeaders = e.detail.uniqueFields;
@@ -55,8 +49,8 @@ Polymer({
                 }
                 tableRows.push(row);
             }
-            _qResults._tableHeaders = tableHeaders;
-            _qResults._tableRows = tableRows;
+            _this._tableHeaders = tableHeaders;
+            _this._tableRows = tableRows;
         });
     },
 
@@ -69,12 +63,12 @@ Polymer({
      * @private
      */
     _validateFor: function() {
-        if (!_qResults.for) {
-            _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'for attribute is required','type':'error'});
+        if (!this.for) {
+            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'for attribute is required','type':'error'});
             return false;
         }
-        if (!document.getElementById(_qResults.for) || document.getElementById(_qResults.for).tagName !== 'BRIDGEIT-QUERY-EDITOR') {
-            _qResults.fire('queryMsgUpdated',{id:_qResults.id ? _qResults.id : null, message: 'element cannot be found or is not a bridgeit-query-editor','type':'error'});
+        if (!document.getElementById(this.for) || document.getElementById(this.for).tagName !== 'BRIDGEIT-QUERY-EDITOR') {
+            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'element cannot be found or is not a bridgeit-query-editor','type':'error'});
             return false;
         }
         return true;
