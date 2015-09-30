@@ -15,65 +15,65 @@ Example:
 @demo demo.html
 -->
 <dom-module id="bridgeit-log-viewer">
-    <style type="text/css">
-        table {
-            margin:0 auto;
-            border: 1px solid #ddd;
-            border-spacing: 0;
-            border-collapse: collapse;
-            @apply(--log-viewer-table);
-        }
-        tr {
-            @apply(--log-viewer-tr);
-        }
-        td {
-            border: 1px solid #ddd;
-            @apply(--log-viewer-td);
-        }
-        thead {
-            border: 1px solid #ddd;
-            @apply(--log-viewer-thead);
-        }
-        tbody {
-            @apply(--log-viewer-tbody);
-        }
-        tfoot {
-            border: 1px solid #ddd;
-            @apply(--log-viewer-tfoot);
-        }
-        th {
-            border: 1px solid #ddd;
-            @apply(--log-viewer-th);
-        }
-        table > tbody > tr.info > td {
-            background-color:#FFF;
-            @apply(--log-viewer-info-td);
-        }
-        table > tbody > tr.debug > td {
-            background-color:#d9edf7;
-            @apply(--log-viewer-debug-td);
-        }
-        table > tbody > tr.warn > td {
-            background-color:#fcf8e3;
-            @apply(--log-viewer-warn-td);
-        }
-        table > tbody > tr.error > td {
-            background-color:#f2dede;
-            @apply(--log-viewer-error-td);
-        }
-        .buttonContainer {
-            text-align:center;
-            @apply(--log-viewer-button-container);
-        }
-        .buttonContainer button {
-            @apply(--log-viewer-button);
-        }
-        p {
-            text-align:center;
-            @apply(--log-viewer-p);
-        }
-    </style>
     <template>
+        <style type="text/css">
+            table {
+                margin:0 auto;
+                border: 1px solid #ddd;
+                border-spacing: 0;
+                border-collapse: collapse;
+                @apply(--log-viewer-table);
+            }
+            tr {
+                @apply(--log-viewer-tr);
+            }
+            td {
+                border: 1px solid #ddd;
+                @apply(--log-viewer-td);
+            }
+            thead {
+                border: 1px solid #ddd;
+                @apply(--log-viewer-thead);
+            }
+            tbody {
+                @apply(--log-viewer-tbody);
+            }
+            tfoot {
+                border: 1px solid #ddd;
+                @apply(--log-viewer-tfoot);
+            }
+            th {
+                border: 1px solid #ddd;
+                @apply(--log-viewer-th);
+            }
+            table > tbody > tr.info > td {
+                background-color:#FFF;
+                @apply(--log-viewer-info-td);
+            }
+            table > tbody > tr.debug > td {
+                background-color:#d9edf7;
+                @apply(--log-viewer-debug-td);
+            }
+            table > tbody > tr.warn > td {
+                background-color:#fcf8e3;
+                @apply(--log-viewer-warn-td);
+            }
+            table > tbody > tr.error > td {
+                background-color:#f2dede;
+                @apply(--log-viewer-error-td);
+            }
+            .buttonContainer {
+                text-align:center;
+                @apply(--log-viewer-button-container);
+            }
+            .buttonContainer button {
+                @apply(--log-viewer-button);
+            }
+            p {
+                text-align:center;
+                @apply(--log-viewer-p);
+            }
+        </style>
         <template is="dom-if" if="{{_hasLogs}}">
             <template is="dom-if" if="{{paginator}}">
                 <div class="buttonContainer">

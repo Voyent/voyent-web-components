@@ -1,5 +1,3 @@
-var _qEditor;
-
 Polymer({
 
     is: "bridgeit-query-editor",
@@ -77,22 +75,18 @@ Polymer({
      * @event queryMsgUpdated
      */
 
-    created: function() {
-        _qEditor = this;
-    },
-
     ready: function() {
-        _qEditor.reloadEditor();
-        _qEditor.fetchQueryList();
+        this.reloadEditor();
+        this.fetchQueryList();
     },
 
     /**
      * Execute the current query.
      */
     runQuery: function() {
-        var query = $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('getMongo');
+        var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
-            _qEditor._queryService(query);
+            this._queryService(query);
         }
     },
 
@@ -104,9 +98,9 @@ Polymer({
      * @param services - Optional services array
      */
     saveQuery: function(id,description,services) {
-        var query = _qEditor._buildQuery(id,description,services,false);
+        var query = this._buildQuery(id,description,services,false);
         if (query !== null) {
-            _qEditor._createQuery(query);
+            this._createQuery(query);
         }
     },
 
@@ -117,13 +111,13 @@ Polymer({
      * @param services - Optional services array, if not provided then the existing value, if any, will be cloned
      */
     cloneQuery: function(id,description,services) {
-        if (!_qEditor.activeQuery) {
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No query to clone.','type':'error'});
+        if (!this.activeQuery) {
+            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'No query to clone.','type':'error'});
             return;
         }
-        var query = _qEditor._buildQuery(id,description,services,true);
+        var query = this._buildQuery(id,description,services,true);
         if (query !== null) {
-            _qEditor._createQuery(query);
+            this._createQuery(query);
         }
     },
 
@@ -131,33 +125,33 @@ Polymer({
      * Deletes the currently active query.
      */
     deleteQuery: function() {
-        if (!_qEditor.activeQuery || !_qEditor.activeQuery._id) {
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No query to delete.','type':'error'});
+        if (!this.activeQuery || !this.activeQuery._id) {
+            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'No query to delete.','type':'error'});
             return;
         }
-        _qEditor._deleteQuery();
+        this._deleteQuery();
     },
 
     /**
      * Clears the query editor and restores the `fields` and `options` attributes to their original values.
      */
     resetEditor: function() {
-        $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('reset');
-        _qEditor.options = JSON.parse(_qEditor.getAttribute('options')) || {};
-        _qEditor.fields = JSON.parse(_qEditor.getAttribute('fields')) || {};
-        _qEditor.activeQuery = null;
-        _qEditor._setQueryHeader(null);
-        _qEditor._updateQueryURL();
+        $(this.$.editor).queryBuilder('reset');
+        this.options = JSON.parse(this.getAttribute('options')) || {};
+        this.fields = JSON.parse(this.getAttribute('fields')) || {};
+        this.activeQuery = null;
+        this._setQueryHeader(null);
+        this._updateQueryURL();
     },
 
     /**
      * Retrieves a list of all the queries in the current realm.
      */
     fetchQueryList: function() {
-        if (!_qEditor.accesstoken || !_qEditor.realm || !_qEditor.account || !_qEditor.service || !_qEditor.collection) {
+        if (!this.accesstoken || !this.realm || !this.account || !this.service || !this.collection) {
             return;
         }
-        _qEditor._getAllQueries();
+        this._getAllQueries();
     },
 
     /**
@@ -165,13 +159,13 @@ Polymer({
      * @param query - The query in object form.
      */
     setEditorFromMongo: function(query) {
-        _qEditor.skipListeners = true;
-        _qEditor.options = query.options || {};
-        _qEditor.fields = query.fields || {};
+        this.skipListeners = true;
+        this.options = query.options || {};
+        this.fields = query.fields || {};
         try {
-            $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('setRulesFromMongo',query.query);
-            _qEditor.activeQuery = query;
-            _qEditor._setQueryHeader(query);
+            $(this.$.editor).queryBuilder('setRulesFromMongo',query.query);
+            this.activeQuery = query;
+            this._setQueryHeader(query);
         }
         catch (e) {
             var errorMsg = 'Unable to populate query editor. ';
@@ -181,22 +175,22 @@ Polymer({
             else {
                 errorMsg = errorMsg + e.message;
             }
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: errorMsg,'type':'error'});
+            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: errorMsg,'type':'error'});
         }
-        _qEditor._updateQueryURL(query.query);
-        _qEditor.skipListeners = false;
+        this._updateQueryURL(query.query);
+        this.skipListeners = false;
     },
 
     /**
      * Completely destroy and reinitialize the editor.
      */
     reloadEditor: function() {
-        if (!_qEditor.accesstoken || !_qEditor.realm || !_qEditor.account || !_qEditor.service || !_qEditor.collection) {
+        if (!this.accesstoken || !this.realm || !this.account || !this.service || !this.collection) {
             return;
         }
-        $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('destroy');
-        _qEditor._queryService({});
-        _qEditor._updateQueryURL();
+        $(this.$.editor).queryBuilder('destroy');
+        this._queryService({});
+        this._updateQueryURL();
     },
 
     /**
@@ -204,7 +198,7 @@ Polymer({
      * @return {boolean} boolean indicating if the query is valid.
      */
     validateQuery: function() {
-        return Object.keys($(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('getMongo')).length > 0;
+        return Object.keys($(this.$.editor).queryBuilder('getMongo')).length > 0;
     },
 
     /**
@@ -212,90 +206,93 @@ Polymer({
      * @return {object} object representation of the currently active query or null if the there is no active query.
      */
     getActiveQuery: function() {
-        return _qEditor.activeQuery || null;
+        return this.activeQuery || null;
     },
 
 
     //******************PRIVATE API******************
 
     _createQuery: function(query) {
+        var _this = this;
         bridgeit.io.query.createQuery({
-            accessToken: _qEditor.accesstoken,
-            account: _qEditor.account,
-            realm: _qEditor.realm,
+            accessToken: this.accesstoken,
+            account: this.account,
+            realm: this.realm,
             query: query
         }).then(function(uri) {
             var queryId = uri.split("/").pop();
             query._id = queryId;
-            _qEditor.activeQuery = query;
-            _qEditor._setQueryHeader(_qEditor.activeQuery);
-            _qEditor.fetchQueryList();
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
+            _this.activeQuery = query;
+            _this._setQueryHeader(_this.activeQuery);
+            _this.fetchQueryList();
+            _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
         }).catch(function(error){
             console.log('createQuery caught an error:', error);
         });
     },
     _deleteQuery: function() {
-        var queryId = _qEditor.activeQuery._id;
+        var _this = this;
+        var queryId = this.activeQuery._id;
         bridgeit.io.query.deleteQuery({
             id:queryId,
-            accessToken: _qEditor.accesstoken,
-            account: _qEditor.account,
-            realm: _qEditor.realm
+            accessToken: this.accesstoken,
+            account: this.account,
+            realm: this.realm
         }).then(function() {
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Query "'+queryId+'" deleted','type':'info'});
-            _qEditor.resetEditor();
-            _qEditor.fetchQueryList();
+            _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query "'+queryId+'" deleted','type':'info'});
+            _this.resetEditor();
+            _this.fetchQueryList();
         }).catch(function(error){
             console.log('deleteQuery caught an error:', error);
         });
     },
     _getAllQueries: function() {
+        var _this = this;
         bridgeit.io.query.findQueries({
-            accessToken:  _qEditor.accesstoken,
-            account:_qEditor.account,
-            realm: _qEditor.realm
+            accessToken:  this.accesstoken,
+            account:this.account,
+            realm: this.realm
         }).then(function(results) {
-            _qEditor.allQueries = results;
-            _qEditor._setQuerylistresults(results);
-            _qEditor.fire('queriesRetrieved',{results: results});
+            _this.allQueries = results;
+            _this._setQuerylistresults(results);
+            _this.fire('queriesRetrieved',{results: results});
         }).catch(function(error){
             console.log('fetchQueryList caught an error:', error);
         });
     },
     _buildQuery: function(id,description,services,isClone) {
-        var query = $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('getMongo');
+        var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length === 0) {
             return null;
         }
         var queryToPost = {
             "query": query,
-            "fields": _qEditor.getAttribute('fields') ? _qEditor.getAttribute('fields') : {},
-            "options": _qEditor.getAttribute('options') ? _qEditor.getAttribute('options') : {},
+            "fields": this.getAttribute('fields') ? this.getAttribute('fields') : {},
+            "options": this.getAttribute('options') ? this.getAttribute('options') : {},
             "properties":{}
         };
-        if (id && jQuery.type(id) == 'string' && id.toString().length > 0) {
+        if (id && $.type(id) == 'string' && id.toString().length > 0) {
             queryToPost._id = id;
         }
-        if ((_qEditor.activeQuery && isClone) || !_qEditor.activeQuery) {
+        if ((this.activeQuery && isClone) || !this.activeQuery) {
             if (checkQueryName(queryToPost._id)) {
                 return null;
             }
         }
 
-        if (_qEditor.activeQuery) {
+        if (this.activeQuery) {
             if (!isClone) {
-                queryToPost._id = _qEditor.activeQuery._id;
+                queryToPost._id = this.activeQuery._id;
             }
-            if (_qEditor.activeQuery.properties) {
-                queryToPost.properties = _qEditor.activeQuery.properties;
+            if (this.activeQuery.properties) {
+                queryToPost.properties = this.activeQuery.properties;
             }
         }
         else {
-            _qEditor.activeQuery = queryToPost; //set the activeQuery without the ID, ID wil be added in the save callback
+            this.activeQuery = queryToPost; //set the activeQuery without the ID, ID wil be added in the save callback
         }
 
-        if (description && jQuery.type(description) == 'string' && description.trim().length > 0) {
+        if (description && $.type(description) == 'string' && description.trim().length > 0) {
             queryToPost.properties.description = description;
         }
         else {
@@ -303,7 +300,7 @@ Polymer({
                 delete queryToPost.properties.description;
             }
         }
-        if (services && jQuery.type(services) == 'array' && services.length > 0) {
+        if (services && $.type(services) == 'array' && services.length > 0) {
             queryToPost.properties.services = services;
         }
         else {
@@ -317,7 +314,7 @@ Polymer({
         return queryToPost;
 
         function checkQueryName(name) {
-            var allQueries = _qEditor.allQueries;
+            var allQueries = this.allQueries;
             if (allQueries) {
                 var queryExists=false;
                 if (!name) {
@@ -329,16 +326,16 @@ Polymer({
                     }
                 }
                 if (queryExists) {
-                    _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'The query name "'+name+'" already exists in this realm, please choose a different one.','type':'error'});
+                    this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'The query name "'+name+'" already exists in this realm, please choose a different one.','type':'error'});
                 }
                 return queryExists;
             }
         }
     },
     _refreshQuery: function() {
-        var query = $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder('getMongo');
+        var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
-            _qEditor._updateQueryURL(query);
+            this._updateQueryURL(query);
         }
     },
     _setQueryHeader: function(query) {
@@ -366,11 +363,11 @@ Polymer({
         }
     },
     _updateQueryURL: function(query) {
-        var queryURLTarget = _qEditor.queryurltarget;
+        var queryURLTarget = this.queryurltarget;
         if (queryURLTarget && document.getElementById(queryURLTarget)) {
             var q = query ? JSON.stringify(query) : '{}';
-            var params = '?access_token='+_qEditor.accesstoken+'&query='+q+'&fields='+JSON.stringify(_qEditor.fields)+'&options='+JSON.stringify(_qEditor.options);
-            var queryURL = _qEditor.service_url+params;
+            var params = '?access_token='+this.accesstoken+'&query='+q+'&fields='+JSON.stringify(this.fields)+'&options='+JSON.stringify(this.options);
+            var queryURL = this.service_url+params;
             if ($(queryURLTarget).is(':input')) {
                 document.getElementById(queryURLTarget).value=queryURL;
             }
@@ -383,24 +380,25 @@ Polymer({
         }
     },
     _queryService: function(query) {
+        var _this = this;
         var params = {
-            accessToken: _qEditor.accesstoken,
-            account: _qEditor.account,
-            realm: _qEditor.realm,
+            accessToken: this.accesstoken,
+            account: this.account,
+            realm: this.realm,
             query: query,
-            fields: _qEditor.fields,
-            options: _qEditor.options
+            fields: this.fields,
+            options: this.options
         };
 
-        if (_qEditor.service.toLowerCase() === 'documents') {
-            params.collection = _qEditor.collection;
-            _qEditor.service_url = 'http://'+bridgeit.io.documentsURL+'/'+_qEditor.account+'/realms/'+_qEditor.realm+'/'+_qEditor.collection;
+        if (this.service.toLowerCase() === 'documents') {
+            params.collection = this.collection;
+            this.service_url = 'http://'+bridgeit.io.documentsURL+'/'+this.account+'/realms/'+this.realm+'/'+this.collection;
             bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
                 console.log('findDocuments caught an error:', error);
             });
         }
-        else if (_qEditor.service.toLowerCase() === 'location') {
-            switch (_qEditor.collection.toLowerCase()) {
+        else if (this.service.toLowerCase() === 'location') {
+            switch (this.collection.toLowerCase()) {
                 case 'locations':
                     bridgeit.io.location.findLocations(params).then(successCallback).catch(function(error){
                         console.log('findLocations caught an error:', error);
@@ -422,27 +420,26 @@ Polymer({
                     });
                     break;
                 default:
-                    _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Location Service Collection "' + _qEditor.collection + '" not supported.','type':'error'});
+                    this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Location Service Collection "' + this.collection + '" not supported.','type':'error'});
             }
-            _qEditor.service_url = 'http://'+bridgeit.io.locateURL+'/'+_qEditor.account+'/realms/'+_qEditor.realm+'/'+_qEditor.collection;
+            this.service_url = 'http://'+bridgeit.io.locateURL+'/'+this.account+'/realms/'+this.realm+'/'+this.collection;
         }
         else {
-            _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'Service "' + _qEditor.service + '" not supported.','type':'error'});
-            return;
+            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Service "' + this.service + '" not supported.','type':'error'});
         }
         function successCallback(results) {
             var obj = {};
             if( results && results.length > 0) {
                 determineFields(results);
-                obj = {results: results, uniqueFields: _qEditor.uniqueFields};
-                _qEditor._setQueryresults(obj);
-                _qEditor.fire('queryExecuted',obj);
+                obj = {results: results, uniqueFields: _this.uniqueFields};
+                _this._setQueryresults(obj);
+                _this.fire('queryExecuted',obj);
             }
             else {
                 obj = {results: [], uniqueFields: []};
-                _qEditor._setQueryresults(obj);
-                _qEditor.fire('queryExecuted',obj);
-                _qEditor.fire('queryMsgUpdated',{id:_qEditor.id ? _qEditor.id : null, message: 'No data in the "' + _qEditor.collection +'" collection.','type':'error'});
+                _this._setQueryresults(obj);
+                _this.fire('queryExecuted',obj);
+                _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'No data in the "' + _this.collection +'" collection.','type':'error'});
             }
         }
         function determineFields(results) {
@@ -455,7 +452,7 @@ Polymer({
                     if (uniqueFields.indexOf(keys[j]) === -1) {
                         uniqueFields.push(keys[j]);
                         var val = results[i][keys[j]];
-                        var type = jQuery.type(val);
+                        var type = $.type(val);
                         var operators=[];
                         var input='';
                         var values={};
@@ -493,7 +490,7 @@ Polymer({
                         var filter = {
                             id: keys[j],
                             type: type,
-                            optgroup: _qEditor.service
+                            optgroup: _this.service
                         };
                         if (operators.length > 0) {
                             filter.operators=operators;
@@ -508,8 +505,8 @@ Polymer({
                     }
                 }
             }
-            _qEditor.uniqueFields = uniqueFields;
-            $(Polymer.dom(_qEditor.root).querySelector('#editor')).queryBuilder({
+            _this.uniqueFields = uniqueFields;
+            $(_this.$.editor).queryBuilder({
                 filters: filters,
                 icons: {
                     add_group: 'fa fa-plus-square',
@@ -519,22 +516,23 @@ Polymer({
                     error: 'fa fa-exclamation-triangle'
                 }
             });
-            _qEditor._setupListeners();
+            _this._setupListeners();
         }
     },
     _setupListeners: function() {
-        $(Polymer.dom(_qEditor.root).querySelector('#editor')).on('afterCreateRuleInput.queryBuilder', function(e, rule) {
-            var inputs = $(Polymer.dom(_qEditor.root).querySelector('#'+rule.id + ' .rule-value-container')).children();
+        var _this = this;
+        $(this.$.editor).on('afterCreateRuleInput.queryBuilder', function(e, rule) {
+            var inputs = $(Polymer.dom(_this.root).querySelector('#'+rule.id + ' .rule-value-container')).children();
             if (inputs) {
                 $(inputs).bind("change",function() {
-                    _qEditor._refreshQuery();
+                    _this._refreshQuery();
                 });
             }
         });
 
-        $(Polymer.dom(_qEditor.root).querySelector('#editor')).on('afterUpdateRuleOperator.queryBuilder', function(e, rule) {
-            if (!_qEditor.skipListeners) {
-                _qEditor._refreshQuery();
+        $(this.$.editor).on('afterUpdateRuleOperator.queryBuilder', function(e, rule) {
+            if (!_this.skipListeners) {
+                _this._refreshQuery();
             }
         });
     }

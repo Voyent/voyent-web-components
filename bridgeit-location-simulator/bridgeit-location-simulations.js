@@ -13,7 +13,7 @@ Polymer({
      */
     _setupListener: function() {
         var _this = this;
-        Polymer.dom(_this).parentNode.addEventListener('simulationsRetrieved', function(e) {
+        Polymer.dom(this).parentNode.addEventListener('simulationsRetrieved', function(e) {
             _this._allSimulations = e.detail.simulations.length > 0 ? e.detail.simulations : null;
         });
     },
@@ -26,4 +26,4 @@ Polymer({
     _loadSimulation: function(e) {
         Polymer.dom(this).parentNode.loadSimulation(e.model.item);
     }
-});2
+});

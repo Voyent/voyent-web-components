@@ -1,5 +1,3 @@
-var _locations;
-
 Polymer({
 	is: "bridgeit-locations",
 
@@ -34,15 +32,15 @@ Polymer({
     },
 
 	created: function() {
-        _locations = this;
-        _locations._map = null;
-		_locations._locationMarkers = [];
-        _locations._regions = [];
-        _locations._poiMarkers = [];
-		_locations._bounds = null;
+        this._map = null;
+		this._locationMarkers = [];
+        this._regions = [];
+        this._poiMarkers = [];
+		this._bounds = null;
 	},
 
 	ready: function() {
+        var _this = this;
 		//initialize google maps
 		window.initializeLocationsMap = function() {
 			var mapOptions = {
@@ -50,18 +48,18 @@ Polymer({
 				center: new google.maps.LatLng(51.067799, -114.085237),
 				signed_in: false
 			};
-			_locations._map = new google.maps.Map(_locations.$.map, mapOptions);
-			_locations._bounds = new google.maps.LatLngBounds();
+			_this._map = new google.maps.Map(_this.$.map, mapOptions);
+			_this._bounds = new google.maps.LatLngBounds();
 
-			if (_locations.accesstoken) {
-				_locations.refreshMap();
+			if (_this.accesstoken) {
+				_this.refreshMap();
 			}
 		};
 		var script = document.createElement('script');
 		script.type = 'text/javascript';
 		script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
 			'libraries=places,geometry,visualization&callback=initializeLocationsMap';
-		_locations.$.container.appendChild(script);
+		this.$.container.appendChild(script);
 	},
 
     /**
@@ -69,31 +67,32 @@ Polymer({
      * @returns {*}
      */
 	refreshMap: function() {
-		if (typeof google === 'undefined' || !_locations.realm || !_locations.account) {
+        var _this = this;
+		if (typeof google === 'undefined' || !this.realm || !this.account) {
             return;
         }
-        _locations._clearLocations();
-        _locations._bounds = new google.maps.LatLngBounds();
+        this._clearLocations();
+        this._bounds = new google.maps.LatLngBounds();
         var promises = [];
-        if( _locations.showuserlocations ){
-            promises.push(bridgeit.io.location.findLocations({realm:_locations.realm}).then(function(locationUpdates) {
-                _locations._updateLocations(locationUpdates);
+        if( this.showuserlocations ){
+            promises.push(bridgeit.io.location.findLocations({realm:_this.realm}).then(function(locationUpdates) {
+                _this._updateLocations(locationUpdates);
             }));
         }
-        if( _locations.showregions ){
-            promises.push(bridgeit.io.location.getAllRegions({realm:_locations.realm}).then(function(regions) {
-                _locations._updateRegions(regions);
+        if( this.showregions ){
+            promises.push(bridgeit.io.location.getAllRegions({realm:_this.realm}).then(function(regions) {
+                _this._updateRegions(regions);
             }));
         }
-        if( _locations.showpois ){
-            promises.push(bridgeit.io.location.getAllPOIs({realm:_locations.realm}).then(function(pois) {
-                _locations._updatePOIs(pois);
+        if( this.showpois ){
+            promises.push(bridgeit.io.location.getAllPOIs({realm:_this.realm}).then(function(pois) {
+                _this._updatePOIs(pois);
             }));
         }
 
         return Promise.all(promises).then(function(){
-            _locations._map.fitBounds(_locations._bounds);
-            _locations._map.panToBounds(_locations._bounds);
+            _this._map.fitBounds(_this._bounds);
+            _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
             console.log('<bridgeit-locations> Error: ' + ( error.message || error.responseText));
         });
@@ -125,14 +124,14 @@ Polymer({
                     var region;
                     var paths = [];
                     var path = [];
-                    var color = properties["Color"];
+                    var color = properties.Color;
                     var metadata = typeof properties.googleMaps === "undefined" ? {} : properties.googleMaps;
                     //set the map bounds and the paths for polygon shapes
                     for (var cycle = 0; cycle < coords.length; cycle++) {
                         for (var point = 0; point < coords[cycle].length; point++) {
                             googlePoint = new google.maps.LatLng(coords[cycle][point][1], coords[cycle][point][0]);
                             path.push(googlePoint);
-                            _locations._bounds.extend(googlePoint);
+                            this._bounds.extend(googlePoint);
                         }
                         paths.push(path);
                     }
@@ -140,7 +139,7 @@ Polymer({
                         metadata.shape = "polygon";
                         region = new google.maps.Polygon({
                             'paths': paths,
-                            'map': _locations._map,
+                            'map': this._map,
                             'editable': false,
                             'fillColor': color
                         });
@@ -148,7 +147,7 @@ Polymer({
                         region = new google.maps.Circle({
                             'center': new google.maps.LatLng(metadata.center[Object.keys(metadata.center)[0]], metadata.center[Object.keys(metadata.center)[1]]),
                             'radius': metadata.radius,
-                            'map': _locations._map,
+                            'map': this._map,
                             'editable': false,
                             'fillColor': color
                         });
@@ -157,21 +156,21 @@ Polymer({
                             'bounds': new google.maps.LatLngBounds(new google.maps.LatLng(coords[0][0][1],
                                 coords[0][0][0]), new google.maps.LatLng(coords[0][2][1],
                                 coords[0][2][0])),
-                            'map': _locations._map,
+                            'map': this._map,
                             'editable': false,
                             'fillColor': color
                         });
                     }
-                    _locations._regions.push(region);
+                    this._regions.push(region);
                 } else if (type === "point") { //poi
                     googlePoint = new google.maps.LatLng(coords[1], coords[0]);
                     var poi = new google.maps.Marker({
                         position: googlePoint,
-                        map: _locations._map,
+                        map: this._map,
                         draggable: false
                     });
-                    _locations._bounds.extend(googlePoint);
-                    _locations._poiMarkers.push(poi);
+                    this._bounds.extend(googlePoint);
+                    this._poiMarkers.push(poi);
                 }
             } catch (err) {
                 console.log("Issue importing region or poi: " + JSON.stringify(data[record]), err);
@@ -183,21 +182,22 @@ Polymer({
      * Draw user location markers on the map.
      */
     _updateLocations: function(locations) {
-        if (!_locations._map) {
+        var _this = this;
+        if (!this._map) {
             console.log('ERROR: locations could not update map markers due to missing map');
             return;
         }
         locations.forEach(function(locationUpdate) {
             var coords = locationUpdate.location.geometry.coordinates;
             var latlon = new google.maps.LatLng(coords[1], coords[0]);
-            _locations._bounds.extend(latlon);
+            _this._bounds.extend(latlon);
             var marker = new google.maps.Marker({
                 position: latlon,
-                map: _locations._map,
+                map: _this._map,
                 title: locationUpdate.username + ' ' +
                 new Date(locationUpdate.lastUpdated).toLocaleString()
             });
-            _locations._locationMarkers.push(marker);
+            _this._locationMarkers.push(marker);
         });
     },
 
@@ -205,20 +205,20 @@ Polymer({
      * Clear user location updates, regions, and points of interest from the map.
      */
     _clearLocations: function() {
-        _locations._locationMarkers.forEach(function(marker) {
+        this._locationMarkers.forEach(function(marker) {
             marker.setMap(null);
         });
-        _locations._locationMarkers = [];
+        this._locationMarkers = [];
 
-        _locations._regions.forEach(function(region) {
+        this._regions.forEach(function(region) {
             region.setMap(null);
         });
-        _locations._regions = [];
+        this._regions = [];
 
-        _locations._poiMarkers.forEach(function(poi) {
+        this._poiMarkers.forEach(function(poi) {
             poi.setMap(null);
         });
-        _locations._poiMarkers = [];
+        this._poiMarkers = [];
     },
 
     /**
@@ -226,7 +226,7 @@ Polymer({
      * @param regions
      */
     _updateRegions: function(regions) {
-        _locations._updateRegionsAndPOIs(regions);
+        this._updateRegionsAndPOIs(regions);
     },
 
     /**
@@ -234,7 +234,7 @@ Polymer({
      * @param pois
      */
     _updatePOIs: function(pois) {
-        _locations._updateRegionsAndPOIs(pois);
+        this._updateRegionsAndPOIs(pois);
     },
 
     /**
@@ -242,7 +242,7 @@ Polymer({
      * @private
      */
     _realmChanged: function() {
-        _locations.refreshMap();
+        this.refreshMap();
     },
 
     /**
@@ -250,7 +250,7 @@ Polymer({
      * @private
      */
     _showUserLocationsChanged: function() {
-        _locations.refreshMap();
+        this.refreshMap();
     },
 
     /**
@@ -258,7 +258,7 @@ Polymer({
      * @private
      */
     _showRegionsChanged: function() {
-        _locations.refreshMap();
+        this.refreshMap();
     },
 
     /**
@@ -266,6 +266,6 @@ Polymer({
      * @private
      */
     _showPOIsChanged: function() {
-        _locations.refreshMap();
+        this.refreshMap();
     }
 });

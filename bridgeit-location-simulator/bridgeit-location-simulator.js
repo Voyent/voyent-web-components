@@ -1,6 +1,6 @@
 Polymer({
     is: "bridgeit-location-simulator",
-    behaviors: [LocationBehavior],
+    behaviors: [BridgeIt.LocationBehavior],
 
     properties: {
         /**
@@ -74,12 +74,12 @@ Polymer({
     ready: function() {
         var _this = this;
         //set some default values
-        _this._locationMarkers = [];
-        _this._regions = [];
-        _this._poiMarkers = [];
-        _this._followableUsers = [];
-        _this._hideContextMenu = true;
-        _this._activeSim = null;
+        this._locationMarkers = [];
+        this._regions = [];
+        this._poiMarkers = [];
+        this._followableUsers = [];
+        this._hideContextMenu = true;
+        this._activeSim = null;
         //initialize google maps
         window.initializeLocationsMap = function() {
             _this._map = new google.maps.Map(_this.$.map, {
@@ -116,7 +116,7 @@ Polymer({
         script.type = 'text/javascript';
         script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
             'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-        _this.$.container.appendChild(script);
+        this.$.container.appendChild(script);
     },
 
     /**
@@ -125,24 +125,24 @@ Polymer({
      */
     refreshMap: function() {
         var _this = this;
-        if (typeof google === 'undefined' || !_this.realm) {
+        if (typeof google === 'undefined' || !this.realm) {
             return;
         }
         //get the realm users, but only once
-        if (!_this._users) {
-            _this._getRealmUsers();
+        if (!this._users) {
+            this._getRealmUsers();
         }
         //delete old location data
-        _this._clearLocationData();
+        this._clearLocationData();
         //get current location data
         var promises = [];
-        promises.push(bridgeit.io.location.findLocations({realm:_this.realm}).then(function(locations) {
+        promises.push(bridgeit.io.location.findLocations({realm:this.realm}).then(function(locations) {
             _this._updateLocations(locations);
         }));
-        promises.push(bridgeit.io.location.getAllRegions({realm:_this.realm}).then(function(regions) {
+        promises.push(bridgeit.io.location.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
         }));
-        promises.push(bridgeit.io.location.getAllPOIs({realm:_this.realm}).then(function(pois) {
+        promises.push(bridgeit.io.location.getAllPOIs({realm:this.realm}).then(function(pois) {
             _this._updatePOIs(pois);
         }));
         return Promise.all(promises).then(function() {
@@ -211,19 +211,19 @@ Polymer({
      */
     addRoute: function(label,user,origin,destination,travelmode,speed,speedunit,frequency) {
         var _this = this;
-        if (!_this.accesstoken) {
+        if (!this.accesstoken) {
             return;
         }
         //first append the new route as a direct child of the component so it inherits any custom styling
-        Polymer.dom(_this).appendChild(new BridgeItLocationRoute(_this._map,_this._users,label,user,origin,destination,travelmode,speed,speedunit,frequency));
+        Polymer.dom(this).appendChild(new BridgeIt.LocationRoute(this._map,this._users,label,user,origin,destination,travelmode,speed,speedunit,frequency));
         //add a new tab for the child
-        _this.push('_children',{
-            "elem":Polymer.dom(_this).lastElementChild,
+        this.push('_children',{
+            "elem":Polymer.dom(this).lastElementChild,
             "tabClass":"",
             "tabLabel": label || 'New Route',
             "contentHidden": true
         });
-        //move new child into tab (do _this async so the template has time to render the new child tab)
+        //move new child into tab (do this async so the template has time to render the new child tab)
         setTimeout(function() {
             Polymer.dom(_this.root).querySelector('div[data-index="'+parseInt(_this._children.length-1)+'"]').appendChild(_this._children[_this._children.length-1].elem);
         },0);
@@ -253,7 +253,7 @@ Polymer({
     saveSimulation: function(simulationId,collection) {
         var _this = this;
         if (!collection) {
-            collection = _this.collection;
+            collection = this.collection;
         }
         var docCall = 'createDocument';
         var routes = [];
@@ -287,7 +287,7 @@ Polymer({
             return;
         }
         if (!collection) {
-            collection = _this.collection;
+            collection = this.collection;
         }
         bridgeit.io.documents.deleteDocument({collection:collection,id:simulationId}).then(function() {
             if (_this._activeSim._id === simulationId) {
@@ -308,7 +308,7 @@ Polymer({
     getSimulations: function(collection) {
         var _this = this;
         if (!collection) {
-            collection = _this.collection;
+            collection = this.collection;
         }
         bridgeit.io.documents.findDocuments({collection:collection}).then(function(simulations) {
             _this.fire('simulationsRetrieved',{simulations:simulations});
@@ -487,7 +487,7 @@ Polymer({
      */
     _updateMapControl: function(deleted) {
         var _this = this;
-        if (_this._followableUsers && _this._followableUsers.length > 0) {
+        if (this._followableUsers && this._followableUsers.length > 0) {
             setTimeout(function() {
                 var div = _this.$.customControl.getElementsByTagName("DIV")[0].cloneNode(true); //clone hidden div on page
                 var select = div.querySelector("#followableUsers"); //find select
@@ -527,7 +527,7 @@ Polymer({
         }
         else {
             //all simulations are done, remove the custom map control
-            _this._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
+            this._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
         }
     },
 
@@ -544,14 +544,14 @@ Polymer({
             //append the new routes as direct children of the component so they inherit any custom styling
             for (var j=0; j<routes.length; j++) {
                 //pass the map and users via the constructor (instead of via the events like markup defined components)
-                children.push(new BridgeItLocationRoute(_this._map, _this._users, routes[j].label, routes[j].user, routes[j].origin, routes[j].destination,
+                children.push(new BridgeIt.LocationRoute(this._map, this._users, routes[j].label, routes[j].user, routes[j].origin, routes[j].destination,
                     routes[j].travelmode, routes[j].speed, routes[j].speedunit, routes[j].frequency, routes === this.routes));
-                Polymer.dom(_this).appendChild(children[children.length-1]);
+                Polymer.dom(this).appendChild(children[children.length-1]);
             }
         }
         if (isInitialLoad) {
             //since it's the first time, make sure we include any routes defined as child components
-            children = Polymer.dom(_this).childNodes.filter(function(node) {
+            children = Polymer.dom(this).childNodes.filter(function(node) {
                 return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
             });
         }
@@ -633,7 +633,7 @@ Polymer({
     _getRealmUsers: function() {
         var _this = this;
         //pass the users to the child components and set the users internally so they can be passed in the constructor of new routes defined via the `routes` attribute
-        bridgeit.io.admin.getRealmUsers({realmName:_this.realm}).then(function(users) {
+        bridgeit.io.admin.getRealmUsers({realmName:this.realm}).then(function(users) {
             _this.fire('usersRetrieved',{users:users.length>0?users:null});
             _this._users = users;
         }).catch(function(error) {
@@ -655,8 +655,8 @@ Polymer({
      */
     _clickListener: function(overlay,location,shape) {
         var _this = this;
-        if (!_this._infoWindow) { //load "lazily" so google object is available
-            _this._infoWindow = new google.maps.InfoWindow();
+        if (!this._infoWindow) { //load "lazily" so google object is available
+            this._infoWindow = new google.maps.InfoWindow();
         }
         //display infoWindow and hide context menu on map click
         google.maps.event.addListener(overlay, 'click', function () {
@@ -714,11 +714,11 @@ Polymer({
     _setupMapListeners: function() {
         var _this = this;
         //display context menu on right-click
-        google.maps.event.addListener(_this._map,"rightclick",function(event) {
+        google.maps.event.addListener(this._map,"rightclick",function(event) {
             _this._handleRightClick(event);
         });
         //hide context menu on map click
-        google.maps.event.addListener(_this._map, "click", function(event) {
+        google.maps.event.addListener(this._map, "click", function(event) {
             _this._hideContextMenu = true;
         });
     },
@@ -730,7 +730,7 @@ Polymer({
     _setupRouteListeners: function() {
         var _this = this;
         //add event listeners for bridgeit-location-route events to parent since the events bubble up (one listener covers all children)
-        _this.addEventListener('startSimulation', function(e) {
+        this.addEventListener('startSimulation', function(e) {
             //add click listener to new location marker
             _this._clickListener(e.detail.locationMarker,e.detail.location,'point');
             //add the location marker to the master list
@@ -741,7 +741,7 @@ Polymer({
             _this.push('_followableUsers',e.detail);
             _this._updateMapControl();
         });
-        _this.addEventListener('endSimulation', function(e) {
+        this.addEventListener('endSimulation', function(e) {
             for (var i=0; i<_this._followableUsers.length; i++) {
                 if (_this._followableUsers[i].child === e.detail.child) {
                     //remove the user from the "follow user" list
@@ -752,7 +752,7 @@ Polymer({
                 }
             }
         });
-        _this.addEventListener('labelChanged', function(e) {
+        this.addEventListener('labelChanged', function(e) {
             for (var i=0; i<_this._children.length; i++) {
                 if (_this._children[i].elem === e.detail.child) {
                     //update tab label

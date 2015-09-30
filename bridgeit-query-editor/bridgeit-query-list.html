@@ -10,25 +10,25 @@ Example:
 @demo demo.html
 -->
 <dom-module id="bridgeit-query-list">
-    <style type="text/css">
-        table {
-            margin:0 auto;
-            @apply(--query-list-table);
-        }
-        tbody {
-            @apply(--query-list-tbody);
-        }
-        tr {
-            @apply(--query-list-tr);
-        }
-        td {
-            @apply(--query-list-td);
-        }
-        button {
-            @apply(--query-list-button);
-        }
-    </style>
     <template>
+        <style type="text/css">
+            table {
+                margin:0 auto;
+                @apply(--query-list-table);
+            }
+            tbody {
+                @apply(--query-list-tbody);
+            }
+            tr {
+                @apply(--query-list-tr);
+            }
+            td {
+                @apply(--query-list-td);
+            }
+            button {
+                @apply(--query-list-button);
+            }
+        </style>
         <table>
             <tbody>
                 <template is="dom-repeat" items="{{_allQueries}}">
