@@ -39,15 +39,15 @@ BridgeIt.LocationRoute = Polymer({
         /**
          * The user to simulate motion for. This attribute must be set to a valid user in the realm. **Only available to admin users.**
          */
-        user: { type: String, value: '' },
+        user: { type: String, value: '', observer: '_userValidation' },
         /**
          * The starting point of the route, represented as an address or coordinate.
          */
-        origin: { type: String, value: '' },
+        origin: { type: String, value: '', observer: '_originValidation' },
         /**
          * The ending point of the route, represented as an address or coordinate.
          */
-        destination: { type: String, value: '' },
+        destination: { type: String, value: '', observer: '_destinationValidation' },
         /**
          * The routing type between the `origin` and `destination`. Available options are `DRIVING`, `BICYCLING`, `WALKING` or `TRANSIT`.
          */
@@ -104,7 +104,7 @@ BridgeIt.LocationRoute = Polymer({
         this._previousBtnDisabled = true;
         this._nextBtnDisabled = true;
         this._cancelBtnDisabled = true;
-        this._playBtnDisabled = false;
+        this._playBtnDisabled = true;
         this._pauseBtnDisabled = true;
         this._updateBtnDisabled = true;
     },
@@ -501,6 +501,76 @@ BridgeIt.LocationRoute = Polymer({
     },
 
     /**
+     * Fire `labelChanged` event.
+     * @param newVal
+     * @param oldVal
+     * @private
+     */
+    _labelChanged: function(newVal,oldVal) {
+        this.fire('labelChanged',{child:this,label:newVal});
+    },
+
+    /**
+     * Validates the `user` attribute. If invalid show indication on the input.
+     * @param newVal
+     * @param oldVal
+     * @private
+     */
+    _userValidation: function(newVal,oldVal) {
+        if (!newVal || newVal.trim().length === 0) {
+            this.userInputClass='form-control error';
+            this.userLblClass='error';
+            this._playBtnDisabled=true;
+            return;
+        }
+        this.userInputClass='form-control';
+        this.userLblClass='';
+        if (this.origin && this.destination) {
+            this._playBtnDisabled=false;
+        }
+    },
+
+    /**
+     * Validates the `origin` attribute. If invalid show indication on the input.
+     * @param newVal
+     * @param oldVal
+     * @private
+     */
+    _originValidation: function(newVal,oldVal) {
+        if (!newVal || newVal.trim().length === 0) {
+            this.originInputClass='form-control error';
+            this.originLblClass='error';
+            this._playBtnDisabled=true;
+            return;
+        }
+        this.originInputClass='form-control';
+        this.originLblClass='';
+        if (this.user && this.destination) {
+            this._playBtnDisabled=false;
+        }
+    },
+
+    /**
+     * Validates the `destination` attribute. If invalid show indication on the input.
+     * @param newVal
+     * @param oldVal
+     * @private
+     */
+    _destinationValidation: function(newVal,oldVal) {
+        if (!newVal || newVal.trim().length === 0) {
+            this.destInputClass='form-control error';
+            this.destLblClass='error';
+            this._playBtnDisabled=true;
+            return;
+        }
+        this.destInputClass='form-control';
+        this.destLblClass='';
+        if (this.user && this.origin) {
+            this._playBtnDisabled=false;
+        }
+    },
+
+    /**
      * Validates the `travelmode` attribute. If invalid, the old value, or the default will be used.
      * @param newVal
      * @param oldVal
@@ -551,16 +621,6 @@ BridgeIt.LocationRoute = Polymer({
         if (isNaN(newVal) || newVal <= 0) {
             this.frequency = oldVal || 5;
         }
-    },
-
-    /**
-     * Fire `labelChanged` event.
-     * @param newVal
-     * @param oldVal
-     * @private
-     */
-    _labelChanged: function(newVal,oldVal) {
-        this.fire('labelChanged',{child:this,label:newVal});
     },
 
     /**
