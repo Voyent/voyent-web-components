@@ -137,6 +137,17 @@ Polymer({
         //get current location data
         var promises = [];
         promises.push(bridgeit.io.location.findLocations({realm:this.realm}).then(function(locations) {
+            //process the locations so we only keep the most recent update for each user
+            var userLocations={};
+            for (var i=0; i<locations.length; i++) {
+                if (userLocations.hasOwnProperty(locations[i].username)) {
+                    if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
+                        userLocations[locations[i].username]=locations[i];
+                    }
+                }
+                else { userLocations[locations[i].username]=locations[i]; }
+            }
+            locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
             _this._updateLocations(locations);
         }));
         promises.push(bridgeit.io.location.getAllRegions({realm:this.realm}).then(function(regions) {
