@@ -58,6 +58,16 @@ Example:
             .simulatorWrapper {
                 @apply(--location-route-wrapper);
             }
+            #usersLbl.error,
+            #originLbl.error,
+            #destinationLbl.error {
+                color:#a94442;
+            }
+            #users.error,
+            #origin.error,
+            #destination.error {
+                border:1px solid #a94442;
+            }
         </style>
         <div class="simulatorWrapper">
             <template is="dom-if" if="{{_eta}}">
@@ -81,8 +91,8 @@ Example:
             </div>
             <template is="dom-if" if="{{_users}}">
                 <div class="form-group">
-                    <label for="users">User:</label>
-                    <select id="users" class="form-control" value="{{user::change}}" disabled$="{{_inputsDisabled}}">
+                    <label id="usersLbl" for="users" class$="{{userLblClass}}">User:</label>
+                    <select id="users" class$="{{userInputClass}}" value="{{user::change}}" disabled$="{{_inputsDisabled}}">
                         <option value="" selected>Select a User</option>
                         <template is="dom-repeat" items="{{_users}}" as="user">
                             <option value="{{user.username}}">{{user.username}}</option>
@@ -91,12 +101,12 @@ Example:
                 </div>
             </template>
             <div class="form-group">
-                <label for="origin">Origin:</label>
-                <input id="origin" type="text" class="form-control" value="{{origin::change}}" disabled$="{{_inputsDisabled}}" placeholder="Enter a location or right click on the map">
+                <label id="originLbl" for="origin" class$="{{originLblClass}}">Origin:</label>
+                <input id="origin" type="text" class$="{{originInputClass}}" value="{{origin::change}}" disabled$="{{_inputsDisabled}}" placeholder="Enter a location or right click on the map">
             </div>
             <div class="form-group">
-                <label for="destination">Destination:</label>
-                <input id="destination" type="text" class="form-control" value="{{destination::change}}" disabled$="{{_inputsDisabled}}" placeholder="Enter a location or right click on the map">
+                <label id="destinationLbl" for="destination" class$="{{destLblClass}}">Destination:</label>
+                <input id="destination" type="text" class$="{{destInputClass}}" value="{{destination::change}}" disabled$="{{_inputsDisabled}}" placeholder="Enter a location or right click on the map">
             </div>
             <div class="form-group">
                 <label for="travelMode">Travel Mode:</label>
