@@ -198,7 +198,7 @@ if( ! ('bridgeit' in window)){
 			return 'tx=' + txId;
 		}
 		else{
-			return '';
+			return 'tx=null';
 		}
 	}
 
@@ -293,6 +293,7 @@ if( ! ('bridgeit' in window)){
 	var USER_STORE_KEY = "bridgeitUserStore";
 	var USER_STORE_SETTING_KEY = "bridgeitUserStoreSetting";
 	var LAST_UPDATED = "last_updated";
+	var PUSH_CALLBACKS = 'pushCallbacks';
 
 	b.$ = {
 
@@ -318,6 +319,12 @@ if( ! ('bridgeit' in window)){
 						}
 					}
 				};
+				request.onabort = function(evt){
+					reject(evt);
+				};
+				request.onerror = function(err){
+					reject(err);
+				};
 				request.send();
 				request = null;
 			});
@@ -341,6 +348,12 @@ if( ! ('bridgeit' in window)){
 						}
 					}
 				};
+				request.onabort = function(evt){
+					reject(evt);
+				};
+				request.onerror = function(err){
+					reject(err);
+				};
 				request.send();
 				request = null;
 			});
@@ -363,6 +376,12 @@ if( ! ('bridgeit' in window)){
 							reject(this);
 						}
 					}
+				};
+				request.onabort = function(evt){
+					reject(evt);
+				};
+				request.onerror = function(err){
+					reject(err);
 				};
 				request.open('GET', url);
 				request.responseType = 'arraybuffer';
@@ -388,6 +407,7 @@ if( ! ('bridgeit' in window)){
 				}
 				if( progressCallback ){
 					request.upload.addEventListener("progress", function(evt){
+						services.auth.updateLastActiveTimestamp();
 						if (evt.lengthComputable){
 							var percentComplete = evt.loaded / evt.total;
 							progressCallback(percentComplete, request);
@@ -474,6 +494,12 @@ if( ! ('bridgeit' in window)){
 						}
 					}
 				};
+				request.onabort = function(evt){
+					reject(evt);
+				};
+				request.onerror = function(err){
+					reject(err);
+				};
 				if( data ){
 					request.send(isFormData ? data : JSON.stringify(data));
 				}
@@ -504,6 +530,12 @@ if( ! ('bridgeit' in window)){
 							reject(extractResponseValues(this));
 						}
 					}
+				};
+				request.onabort = function(evt){
+					reject(evt);
+				};
+				request.onerror = function(err){
+					reject(err);
 				};
 				request.send();
 				request = null;
@@ -1124,8 +1156,9 @@ if( ! ('bridgeit' in window)){
 						return;
 					}
 					var protocol = params.ssl ? 'https://' : 'http://';
+					var txParam = getTransactionURLParam();
 					var url = protocol + services.authURL + '/' + encodeURI(params.account) + 
-						'/realms/' + encodeURI(params.realm) + '/token/?' + getTransactionURLParam();
+						'/realms/' + encodeURI(params.realm) + '/token/' + ( txParam ? ('?' + txParam) : '');
 
 					var loggedInAt = new Date().getTime();
 					b.$.post(url, {
@@ -1198,170 +1231,205 @@ if( ! ('bridgeit' in window)){
 		 *
 		 */
 		connect: function(params){
-			return new Promise(
-				function(resolve, reject) {
+			return new Promise(function(resolve, reject) {
 
-					function initConnectCallback(){
+				function initConnectCallback(){
 
-						function connectCallback(){
-							console.log('bridgeit connect: callback running')
-							var connectSettings = services.auth.getConnectSettings();
-							if( !connectSettings ){
-								console.log('bridgeit connect: error, could not retrieve settings');
-							}
+					function connectCallback(){
+						console.log(new Date().toISOString() + ' bridgeit connect: callback running')
+						var connectSettings = services.auth.getConnectSettings();
+						if( !connectSettings ){
+							console.log(new Date().toISOString() + ' bridgeit connect: error, could not retrieve settings');
+							return;
+						}
 
-							var timeoutMillis =  connectSettings.connectionTimeout * 60 * 1000;	
+						var timeoutMillis = connectSettings.connectionTimeout * 60 * 1000;	
 
-							//first check if connectionTimeout has expired
-							var now = new Date().getTime();
-							if( now - services.auth.getLastActiveTimestamp() < timeoutMillis - timeoutPadding ){
-								console.log('bridgeit connect: timeout has not been exceeded, ' + services.auth.getTimeRemainingBeforeExpiry()/1000/60 + ' mins remaining');
+						//first check if connectionTimeout has expired
+						var now = new Date().getTime();
+						console.log('bridgeit.getLastActiveTimestamp: ' + services.auth.getLastActiveTimestamp());
+						console.log('bridgeit timeout ms: ' + timeoutMillis);
+						console.log('bridgeit now ms: ' + now);
+						if( ( now - services.auth.getLastActiveTimestamp()) < timeoutMillis ){
+							console.log(new Date().toISOString() + ' bridgeit connect: timeout has not been exceeded, ' + services.auth.getTimeRemainingBeforeExpiry()/1000/60 + ' mins remaining');
 
-								if( connectSettings.connectionTimeout > services.auth.getTimeRemainingBeforeExpiry()){
-									
-									var loginParams = services.auth.getConnectSettings();
-									loginParams.account = atob(sessionStorage.getItem(btoa(ACCOUNT_KEY)));
-									loginParams.realm = atob(sessionStorage.getItem(btoa(REALM_KEY)));
-									loginParams.username = atob(sessionStorage.getItem(btoa(USERNAME_KEY)));
-									loginParams.password = atob(sessionStorage.getItem(btoa(PASSWORD_KEY)));
-									loginParams.suppressUpdateTimestamp = true;
+							if( (connectSettings.connectionTimeout * 1000 * 60 ) > services.auth.getTimeRemainingBeforeExpiry()){
+								
+								var loginParams = services.auth.getConnectSettings();
+								loginParams.account = atob(sessionStorage.getItem(btoa(ACCOUNT_KEY)));
+								loginParams.realm = atob(sessionStorage.getItem(btoa(REALM_KEY)));
+								loginParams.username = atob(sessionStorage.getItem(btoa(USERNAME_KEY)));
+								loginParams.password = atob(sessionStorage.getItem(btoa(PASSWORD_KEY)));
+								loginParams.suppressUpdateTimestamp = true;
 
-									services.auth.login(loginParams).then(function(authResponse){
-										if( loginParams.usePushService ){
-											services.push.startPushService(loginParams);
-										}
-										setTimeout(connectCallback, services.auth.getTimeRemainingBeforeExpiry() - timeoutPadding);
-									})['catch'](function(response){
-										throw new Error('bridgeit connect: error relogging in: ' + response.responseText);
-									});
-								}
-								else{
-									console.log('bridgeit connect: setting callback for ' + connectSettings.connectionTimeout + ' minutes');
-									setTimeout(connectCallback, connectSettings.connectionTimeout * 60 * 1000);
-								}
+								services.auth.login(loginParams).then(function(authResponse){
+									if( loginParams.usePushService ){
+										services.push.startPushService(loginParams);
+									}
+									setTimeout(connectCallback, services.auth.getTimeRemainingBeforeExpiry() - timeoutPadding);
+								})['catch'](function(response){
+									var msg = new Date().toISOString() + ' bridgeit connect: error relogging in: ' + response.responseText;
+									console.error(msg);
+									reject(response);
+									throw new Error(msg);
+								});
 							}
 							else{
-								console.log('bridgeit connect: timeout has expired, disconnecting..');
-								
+								console.log( new Date().toISOString() + ' bridgeit connect: setting callback for ' + connectSettings.connectionTimeout + ' minutes');
+								setTimeout(connectCallback, connectSettings.connectionTimeout * 60 * 1000);
+							}
+						}
+						else{
+							console.log( new Date().toISOString() + ' bridgeit connect: timeout has expired, disconnecting..');
+							
 
-								//look for the onSessionExpiry callback on the params first,
-								//as functions could be passed by reference
-								//secondly by settings, which would only be passed by name
-								var expiredCallback = params.onSessionExpiry;
-								if( !expiredCallback ){
-									expiredCallback = connectSettings.onSessionExpiry;
+							//look for the onSessionExpiry callback on the params first,
+							//as functions could be passed by reference
+							//secondly by settings, which would only be passed by name
+							var expiredCallback = params.onSessionExpiry;
+							if( !expiredCallback ){
+								expiredCallback = connectSettings.onSessionExpiry;
+							}
+
+							//if there's no onSessionExpiry, call disconnect immediately
+							//otherwise search for onSessionExpiry function, if not found
+							//call disconnect() immediately, otherwise call onSessionExpiry
+							//if callback if a promise, wait until the promise completes 
+							//before disconnecting, otherwise, wait 500ms then disconnect
+							if( expiredCallback ){
+								var expiredCallbackFunction;
+								if( typeof expiredCallback === 'function'){
+									expiredCallbackFunction = expiredCallback;
 								}
-
-								//if there's no onSessionExpiry, call disconnect immediately
-								//otherwise search for onSessionExpiry function, if not found
-								//call disconnect() immediately, otherwise call onSessionExpiry
-								//if callback if a promise, wait until the promise completes 
-								//before disconnecting, otherwise, wait 500ms then disconnect
-								if( expiredCallback ){
-									var expiredCallbackFunction;
-									if( typeof expiredCallback === 'function'){
-										expiredCallbackFunction = expiredCallback;
-									}
-									else if( typeof expiredCallback === 'string'){
-										expiredCallbackFunction = findFunctionInGlobalScope(expiredCallback);
-									}
-									if( expiredCallbackFunction ){
-										var expiredCallbackPromise = expiredCallbackFunction();
-										if( expiredCallbackPromise && expiredCallbackPromise.then ){
-											expiredCallbackPromise.then(services.auth.disconnect)
-											['catch'](services.auth.disconnect);
-										}
-										else{
-											setTimeout(services.auth.disconnect, 500);
-										}
+								else if( typeof expiredCallback === 'string'){
+									expiredCallbackFunction = findFunctionInGlobalScope(expiredCallback);
+								}
+								if( expiredCallbackFunction ){
+									var expiredCallbackPromise = expiredCallbackFunction();
+									if( expiredCallbackPromise && expiredCallbackPromise.then ){
+										expiredCallbackPromise.then(services.auth.disconnect)
+										['catch'](services.auth.disconnect);
 									}
 									else{
-										console.log('BridgeIt: error calling onSessionExpiry callback, ' +
-											'could not find function: ' + expiredCallback);
-										services.auth.disconnect();
+										setTimeout(services.auth.disconnect, 500);
 									}
-
-								}	
+								}
 								else{
+									console.log( new Date().toISOString() + ' bridgeit connect: error calling onSessionExpiry callback, ' +
+										'could not find function: ' + expiredCallback);
 									services.auth.disconnect();
 								}
-								
+
+							}	
+							else{
+								services.auth.disconnect();
 							}
-						}
-
-						var callbackTimeout;
-
-						//if the desired connection timeout is greater the token expiry
-						//set the callback check for just before the token expires
-						if( connectionTimeoutMillis > services.auth.getExpiresIn()){
-							callbackTimeout = services.auth.getExpiresIn() - 500;
-						}
-						//otherwise the disired timeout is less then the token expiry
-						//so set the callback to happen just at specified timeout
-						else{
-							callbackTimeout = connectionTimeoutMillis;
-						}
-
-						console.log('bridgeit connect: setting timeout to ' + callbackTimeout / 1000 / 60 + ' mins');
-						var cbId = setTimeout(connectCallback, callbackTimeout);
-						sessionStorage.setItem(btoa(RELOGIN_CB_KEY), cbId);
-					}
-
-					var timeoutPadding = 500;
-					params = params ? params : {};
-					services.checkHost(params);
-					if( !params.storeCredentials){
-						params.storeCredentials = true;
-					}
-
-					//store connect settings
-					var settings = {
-						host: services.baseURL,
-						usePushService: params.usePushService,
-						connectionTimeout: params.connectionTimeout || 20,
-						ssl: params.ssl,
-						storeCredentials: params.storeCredentials || true,
-						onSessionExpiry: params.onSessionExpiry
-					};
-					sessionStorage.setItem(btoa(CONNECT_SETTINGS_KEY), btoa(JSON.stringify(settings)));
-
-					if( params.onSessionExpiry ){
-						if( typeof params.onSessionExpiry === 'function'){
-							var name = getFunctionName(params.onSessionExpiry);
-							if( name ){
-								settings.onSessionExpiry = name;
-							}
+							
 						}
 					}
 
-					var connectionTimeoutMillis =  settings.connectionTimeout * 60 * 1000;	
+					var callbackTimeout;
 
-					if( services.auth.isLoggedIn()){
-						initConnectCallback();
+					//if the desired connection timeout is greater the token expiry
+					//set the callback check for just before the token expires
+					if( connectionTimeoutMillis > services.auth.getExpiresIn()){
+						callbackTimeout = services.auth.getTimeRemainingBeforeExpiry() - timeoutPadding;
+					}
+					//otherwise the disired timeout is less then the token expiry
+					//so set the callback to happen just at specified timeout
+					else{
+						callbackTimeout = connectionTimeoutMillis;
+					}
+
+					console.log( new Date().toISOString() + ' bridgeit connect: setting timeout to ' + callbackTimeout / 1000 / 60 + ' mins, expiresIn: ' + services.auth.getExpiresIn() + ', remaining: '  + services.auth.getTimeRemainingBeforeExpiry());
+					var cbId = setTimeout(connectCallback, callbackTimeout);
+					sessionStorage.setItem(btoa(RELOGIN_CB_KEY), cbId);
+				}
+
+				var timeoutPadding = 500;
+				params = params ? params : {};
+				services.checkHost(params);
+				if( !params.storeCredentials){
+					params.storeCredentials = true;
+				}
+
+				//store connect settings
+				var settings = {
+					host: services.baseURL,
+					usePushService: params.usePushService,
+					connectionTimeout: params.connectionTimeout || 20,
+					ssl: params.ssl,
+					storeCredentials: params.storeCredentials || true,
+					onSessionExpiry: params.onSessionExpiry
+				};
+				sessionStorage.setItem(btoa(CONNECT_SETTINGS_KEY), btoa(JSON.stringify(settings)));
+
+				if( params.onSessionExpiry ){
+					if( typeof params.onSessionExpiry === 'function'){
+						var name = getFunctionName(params.onSessionExpiry);
+						if( name ){
+							settings.onSessionExpiry = name;
+						}
+					}
+				}
+
+				var connectionTimeoutMillis =  settings.connectionTimeout * 60 * 1000;	
+
+				if( services.auth.isLoggedIn()){
+					initConnectCallback();
+					if( settings.usePushService ){
+						services.push.startPushService(settings);
+					}
+					resolve();
+				}
+				else{
+					services.auth.login(params).then(function(authResponse){
+						console.log(new Date().toISOString() + ' bridgeit connect: received auth response');				
+						sessionStorage.setItem(btoa(ACCOUNT_KEY), btoa(bridgeit.io.auth.getLastKnownAccount()));
+						sessionStorage.setItem(btoa(REALM_KEY), btoa(bridgeit.io.auth.getLastKnownRealm()));
+						sessionStorage.setItem(btoa(USERNAME_KEY), btoa(params.username));
+						sessionStorage.setItem(btoa(PASSWORD_KEY), btoa(params.password));
+						initConnectCallback();	
 						if( settings.usePushService ){
 							services.push.startPushService(settings);
 						}
 						resolve();
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			});
+		},
+
+		refreshAccessToken: function(){
+			return new Promise(function(resolve, reject) {
+				if( !services.auth.isLoggedIn()){
+					reject('bridgeit.io.auth.refreshAccessToken() not logged in, cant refresh token');
+				}
+				else{
+					var loginParams = services.auth.getConnectSettings();
+					if( !loginParams ){
+						reject('bridgeit.io.auth.refreshAccessToken() no connect settings, cant refresh token');
 					}
 					else{
-						services.auth.login(params).then(function(authResponse){
-							console.log('bridgeit connect: received auth response');				
-							sessionStorage.setItem(btoa(ACCOUNT_KEY), btoa(bridgeit.io.auth.getLastKnownAccount()));
-							sessionStorage.setItem(btoa(REALM_KEY), btoa(bridgeit.io.auth.getLastKnownRealm()));
-							sessionStorage.setItem(btoa(USERNAME_KEY), btoa(params.username));
-							sessionStorage.setItem(btoa(PASSWORD_KEY), btoa(params.password));
-							initConnectCallback();	
-							if( settings.usePushService ){
-								services.push.startPushService(settings);
+						loginParams.account = atob(sessionStorage.getItem(btoa(ACCOUNT_KEY)));
+						loginParams.realm = atob(sessionStorage.getItem(btoa(REALM_KEY)));
+						loginParams.username = atob(sessionStorage.getItem(btoa(USERNAME_KEY)));
+						loginParams.password = atob(sessionStorage.getItem(btoa(PASSWORD_KEY)));
+						loginParams.suppressUpdateTimestamp = true;
+
+						services.auth.login(loginParams).then(function(authResponse){
+							if( loginParams.usePushService ){
+								services.push.startPushService(loginParams);
 							}
-							resolve();
-						})['catch'](function(error){
-							reject(error);
+							resolve(authResponse);
+						})['catch'](function(response){
+							reject(response);
 						});
 					}
 				}
-			);
-
+				
+			});
 		},
 
 		/**
@@ -1401,7 +1469,7 @@ if( ! ('bridgeit' in window)){
 				clearTimeout(cbId);
 			}
 			sessionStorage.removeItem(btoa(RELOGIN_CB_KEY));
-			console.log('BridgeIt has disconnected')
+			console.log(new Date().toISOString() + ' bridgeit has disconnected')
 		},
 
 		getLastAccessToken: function(){
@@ -3114,84 +3182,133 @@ if( ! ('bridgeit' in window)){
 		 * @param {Boolean} params.useCloudPush Use BridgeIt Cloud Push to call the callback through native cloud notification channels when necessary (default true)
 		 */
 		addPushListener: function(params){
-			return new Promise(
-				function(resolve, reject) {
+			return new Promise(function(resolve, reject) {
 
-					function storePushListener(pushId, group, cb){
-						var pushListeners = {};
-						var pushListenersStr = sessionStorage.getItem('pushListeners');
-						if( pushListenersStr ){
-							try{
-								pushListeners = JSON.parse(pushListenersStr);
-							}
-							catch(e){}
+				function storePushListener(pushId, group, cb){
+					var pushListeners = {};
+					var pushListenersStr = sessionStorage.getItem(PUSH_CALLBACKS);
+					if( pushListenersStr ){
+						try{
+							pushListeners = JSON.parse(pushListenersStr);
 						}
-						pushListeners[pushId] = {group: group, callback: cb};
-						sessionStorage.setItem(JSON.stringify(pushListeners));
+						catch(e){}
 					}
-
-					function addCloudPushListener(){
-						var callback = findFunctionInGlobalScope(params.callback);
-						if( !callback ){
-							reject('BridgeIt Cloud Push callbacks must be in window scope. Please pass either a reference to or a name of a global function.');
-						}
-						else{	
-							var callbacks = localStorage.getItem(CLOUD_CALLBACKS_KEY);
-							var callbackName = getFunctionName(callback);
-							if (!callbacks)  {
-								callbacks = " ";
-							}
-							if (callbacks.indexOf(" " + callbackName + " ") < 0)  {
-								callbacks += callbackName + " ";
-							}
-							localStorage.setItem(CLOUD_CALLBACKS_KEY, callbacks);
-						}
+					if( !pushListeners[group] ){
+						pushListeners[group] = [];
 					}
+					pushListeners[group].push({pushId: pushId, callback: cb});
+					sessionStorage.setItem(PUSH_CALLBACKS, JSON.stringify(pushListeners));
+				}
 
-					function addPushGroupMember(){
-						ice.push.connection.resumeConnection();
-						var pushId = ice.push.createPushId();
-						ice.push.addGroupMember(params.group, pushId);
-						var fn = findFunctionInGlobalScope(params.callback);
-						if( !fn ){
-							reject('could not find function in global scope: ' + params.callback);
-						}
-						else{
-							ice.push.register([ pushId ], fn);
-							if( params.useCloudPush ){
-								addCloudPushListener();
-							}
-						}
-						
+				function addCloudPushListener(){
+					var callback = findFunctionInGlobalScope(params.callback);
+					if( !callback ){
+						reject('BridgeIt Cloud Push callbacks must be in window scope. Please pass either a reference to or a name of a global function.');
 					}
-					
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					validateRequiredGroup(params, reject);
-					validateRequiredCallback(params, reject);
-
-					if( !('useCloudPush' in params )){
-						params.useCloudPush = true;
-					}
-					
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					
-					var pushURL = (params.ssl ? 'https://' : 'http://') + services.pushURL + '/';
-
-					if (ice && ice.push && ice.push.configuration.contextPath) {
-						addPushGroupMember();
-						console.log('bridgeit.io.push.addPushListener() added listener ' + 
-							params.callback + ' to group ' + params.group);
-						resolve();
-					} else {
-						reject('Push service is not active');
+					else{	
+						var callbacks = localStorage.getItem(CLOUD_CALLBACKS_KEY);
+						var callbackName = getFunctionName(callback);
+						if (!callbacks)  {
+							callbacks = " ";
+						}
+						if (callbacks.indexOf(" " + callbackName + " ") < 0)  {
+							callbacks += callbackName + " ";
+						}
+						localStorage.setItem(CLOUD_CALLBACKS_KEY, callbacks);
 					}
 				}
-			);
+
+				function addPushGroupMember(){
+					ice.push.connection.resumeConnection();
+					var pushId = ice.push.createPushId();
+					ice.push.addGroupMember(params.group, pushId);
+					var fn = findFunctionInGlobalScope(params.callback);
+					if( !fn ){
+						reject('could not find function in global scope: ' + params.callback);
+					}
+					else{
+						ice.push.register([ pushId ], fn);
+						storePushListener(pushId, params.group, params.callback);
+						if( params.useCloudPush ){
+							addCloudPushListener();
+						}
+					}
+					
+				}
+					
+				params = params ? params : {};
+				services.checkHost(params);
+				
+				validateRequiredGroup(params, reject);
+				validateRequiredCallback(params, reject);
+
+				if( !('useCloudPush' in params )){
+					params.useCloudPush = true;
+				}
+				
+				//validate
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealm(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				
+				var pushURL = (params.ssl ? 'https://' : 'http://') + services.pushURL + '/';
+
+				if (ice && ice.push && ice.push.configuration.contextPath) {
+					addPushGroupMember();
+					console.log('bridgeit.io.push.addPushListener() added listener ' + 
+						params.callback + ' to group ' + params.group);
+					resolve();
+				} else {
+					reject('Push service is not active');
+				}
+			});
+		},
+
+		/**
+		 * Remove listener for notifications belonging to the specified group.
+	 	 * Callbacks must be passed by name to receive cloud push notifications.
+		 *
+		 * @alias addPushListener
+		 * @param {Object} params params
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.group The push group name
+		 */
+		removePushListener: function(params){
+			return new Promise(function(resolve, reject) {
+				console.log('bridgeit.io.push.removePushListener() group: ' + params.group);
+				params = params ? params : {};
+				services.checkHost(params);	
+				validateRequiredGroup(params, reject);
+				var pushListenersStr = sessionStorage.getItem(PUSH_CALLBACKS);
+				if( !pushListenersStr ){
+					console.error('Cannot remove push listener ' + params.group + ', missing push listener storage.');
+				}
+				else{
+					try{
+						var pushListenerStorage = JSON.parse(pushListenersStr);
+						var listeners = pushListenerStorage[params.group];
+						console.log('found push listeners in storage: ' + ( listeners ? JSON.stringify(listeners) : null ) );
+						if( !listeners ){
+							console.error('could not find listeners for group ' + params.group);
+							return;
+						}
+						ice.push.connection.resumeConnection();
+						var pushIds = [];
+						for( var i = 0 ; i < listeners.length ; i++ ){
+							ice.push.removeGroupMember(params.group, listeners[i].pushId);
+							console.log('removed push id ' + listeners[i].pushId);
+						}
+						delete pushListenerStorage[params.group];
+						sessionStorage.setItem(PUSH_CALLBACKS, JSON.stringify(pushListenerStorage));
+
+					}
+					catch(e){
+						console.error(e);
+					}
+				}
+							
+			});
 		},
 
 		/**
