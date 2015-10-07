@@ -116,16 +116,19 @@
 					<div class="settings">
 						<div>
 							<label>Service:
-								<select onchange="document.getElementById('queryEditor').setAttribute('service', this.value)">
+								<select id="service" onchange="serviceChanged()">
 									<option selected>documents</option>
 									<option>location</option>
+									<option>metrics</option>
 								</select>
 							</label>
 						</div>
 
 						<div>
 							<label>Collection:
-								<input id="collection" type="text" onchange="document.getElementById('queryEditor').setAttribute('collection', this.value)"/>
+                                <span id="collectionInput">
+								    <input id="collection" type="text" onchange="document.getElementById('queryEditor').setAttribute('collection', this.value)"/>
+                                </span>
 							</label>
 						</div>
 
@@ -172,22 +175,45 @@
 					<bridgeit-query-results id="queryResults" for="queryEditor"></bridgeit-query-results>
 				</label>
 			</div>
-
-			<script type="text/javascript">
-				//Listen for the queryMsgUpdated event for all components
-				document.getElementById('listenerWrapper').addEventListener('queryMsgUpdated', function(e) {
-					var id = e.detail.id ? e.detail.id + ' : ' : '';
-					document.getElementById('msgs').innerHTML = id + e.detail.message;
-					//clear message 10 seconds after it's received
-					clearTimeout(window.msgTimeout);
-					window.msgTimeout = setTimeout(function() {
-						document.getElementById('msgs').innerHTML = '';
-					},10000);
-				});
-			</script>
 		</div>
 
 		<script type="text/javascript">
+            //Listen for the queryMsgUpdated event for all components
+            document.getElementById('listenerWrapper').addEventListener('queryMsgUpdated', function(e) {
+                var id = e.detail.id ? e.detail.id + ' : ' : '';
+                document.getElementById('msgs').innerHTML = id + e.detail.message;
+                //clear message 10 seconds after it's received
+                clearTimeout(window.msgTimeout);
+                window.msgTimeout = setTimeout(function() {
+                    document.getElementById('msgs').innerHTML = '';
+                },10000);
+            });
+            //set the service on the component on change
+            function serviceChanged() {
+                var service = document.getElementById('service').options[document.getElementById('service').selectedIndex].value;
+                document.getElementById('queryEditor').setAttribute('service', service);
+                var collectionInput = document.getElementById('collectionInput');
+                switch (service) {
+                    case 'documents':
+                        collectionInput.innerHTML = "<input id='collection' type='text'/>";
+                        document.getElementById('queryEditor').setAttribute('collection', 'documents');
+                        break;
+                    case 'location':
+                        collectionInput.innerHTML = "<select id='collection'><option selected>regions</option><option>pois</option><option>locations</option></select>";
+                        document.getElementById('queryEditor').setAttribute('collection', 'regions');
+                        break;
+                    case 'metrics':
+                        collectionInput.innerHTML = "<select id='collection'><option selected>events</option></select>";
+                        document.getElementById('queryEditor').setAttribute('collection', 'events');
+                        break;
+                }
+            }
+            //set the collection on the component on change
+            document.getElementById('collectionInput').addEventListener('change',function() {
+                var collection = document.getElementById('collection');
+                document.getElementById('queryEditor').setAttribute('collection',collection.options ? collection.options[collection.selectedIndex].value : collection.value);
+            });
+
 			function login(event){
 				var account = document.getElementById('account').value;
 				var realm = document.getElementById('realm').value;

@@ -59,7 +59,7 @@ Polymer({
 
     /**
      * Checks that the `for` attribute is pointing to a valid element.
-     * @return {boolean} Boolean indicating if the for attribute is pointing to a valid `bridgeit-query-editor`.
+     * @return {boolean} Indicates if the for attribute is pointing to a valid `bridgeit-query-editor`.
      * @private
      */
     _validateFor: function() {
