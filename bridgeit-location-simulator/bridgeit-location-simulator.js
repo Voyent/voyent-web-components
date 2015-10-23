@@ -164,6 +164,7 @@ Polymer({
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
             console.log('Issue getting location data:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -287,6 +288,7 @@ Polymer({
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
             console.log('Issue saving simulation document:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -312,6 +314,7 @@ Polymer({
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
             console.log('Issue deleting simulation:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -430,6 +433,7 @@ Polymer({
                 }
             } catch (err) {
                 console.log("Issue importing region or poi:", err);
+                _this.fire('bridgeit-error', {error: error});
             }
         }
     },
