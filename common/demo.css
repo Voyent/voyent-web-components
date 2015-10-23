@@ -20,10 +20,14 @@ form > div > label{
     width: 100%;
     text-align: right;
 }
-form > div > label > input{
+form > div > label > input,
+form > div > label > select {
     display: inline-block;
     width: 50%;
     margin-left: 10px
+}
+form > div > label > select {
+    margin-left: 16px;
 }
 form a{
     font-size: 27px;
