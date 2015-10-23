@@ -55,11 +55,16 @@ Polymer({
 				_this.refreshMap();
 			}
 		};
-		var script = document.createElement('script');
-		script.type = 'text/javascript';
-		script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
-			'libraries=places,geometry,visualization&callback=initializeLocationsMap';
-		this.$.container.appendChild(script);
+		if( !('google' in window) || !('maps' in window.google)){
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
+                'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+            this.$.container.appendChild(script);
+        }
+        else{
+            initializeLocationsMap();
+        }
 	},
 
     /**
