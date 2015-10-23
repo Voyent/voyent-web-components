@@ -545,7 +545,7 @@ BridgeIt.LocationRoute = Polymer({
         }
         this.originInputClass='form-control';
         this.originLblClass='';
-        if (this.user && this.destination) {
+        if ((this.user || (!this._users || this._users.length==0)) && this.destination) {
             this._playBtnDisabled=false;
         }
     },
@@ -565,7 +565,7 @@ BridgeIt.LocationRoute = Polymer({
         }
         this.destInputClass='form-control';
         this.destLblClass='';
-        if (this.user && this.origin) {
+        if ((this.user || (!this._users || this._users.length==0)) && this.origin) {
             this._playBtnDisabled=false;
         }
     },

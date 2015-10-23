@@ -18,11 +18,11 @@ Polymer({
          */
         account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
         /**
-         * The service that you would like to build the query for. Currently only `documents` and `location` are supported.
+         * The service that you would like to build the query for. Currently `documents`, `location` and `metrics` are supported.
          */
         service: { type: String, value: 'documents' },
         /**
-         * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor. If service is `location` then the available collections are `locations`, `regions`, `pois` and `monitors`.
+         * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
          */
         collection: { type: String, value: 'documents' },
         /**
@@ -195,7 +195,7 @@ Polymer({
 
     /**
      * Test if the current query is valid.
-     * @return {boolean} boolean indicating if the query is valid.
+     * @return {boolean} Indicates if the query is valid.
      */
     validateQuery: function() {
         return Object.keys($(this.$.editor).queryBuilder('getMongo')).length > 0;
@@ -203,7 +203,7 @@ Polymer({
 
     /**
      * Get the currently active query.
-     * @return {object} object representation of the currently active query or null if the there is no active query.
+     * @return {object} Represents the currently active query or null if the there is no active query.
      */
     getActiveQuery: function() {
         return this.activeQuery || null;
@@ -389,43 +389,48 @@ Polymer({
             fields: this.fields,
             options: this.options
         };
+        var protocol = 'http://';
+        var path = '/'+this.account+'/realms/'+this.realm+'/'+this.collection;
 
-        if (this.service.toLowerCase() === 'documents') {
-            params.collection = this.collection;
-            this.service_url = 'http://'+bridgeit.io.documentsURL+'/'+this.account+'/realms/'+this.realm+'/'+this.collection;
-            bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
-                console.log('findDocuments caught an error:', error);
-            });
-        }
-        else if (this.service.toLowerCase() === 'location') {
-            switch (this.collection.toLowerCase()) {
-                case 'locations':
-                    bridgeit.io.location.findLocations(params).then(successCallback).catch(function(error){
-                        console.log('findLocations caught an error:', error);
-                    });
-                    break;
-                case 'regions':
-                    bridgeit.io.location.findRegions(params).then(successCallback).catch(function(error){
-                        console.log('findRegions caught an error:', error);
-                    });
-                    break;
-                case 'pois':
-                    bridgeit.io.location.findPOIs(params).then(successCallback).catch(function(error){
-                        console.log('findPOIs caught an error:', error);
-                    });
-                    break;
-                case 'monitors':
-                    bridgeit.io.location.findMonitors(params).then(successCallback).catch(function(error){
-                        console.log('findMonitors caught an error:', error);
-                    });
-                    break;
-                default:
-                    this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Location Service Collection "' + this.collection + '" not supported.','type':'error'});
-            }
-            this.service_url = 'http://'+bridgeit.io.locateURL+'/'+this.account+'/realms/'+this.realm+'/'+this.collection;
-        }
-        else {
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Service "' + this.service + '" not supported.','type':'error'});
+        switch(this.service.toLowerCase()) {
+            case 'documents':
+                params.collection = this.collection;
+                this.service_url = protocol+bridgeit.io.documentsURL+path;
+                bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
+                    console.log('findDocuments caught an error:', error);
+                });
+                break;
+            case 'location':
+                switch (this.collection.toLowerCase()) {
+                    case 'locations':
+                        bridgeit.io.location.findLocations(params).then(successCallback).catch(function(error){
+                            console.log('findLocations caught an error:', error);
+                        });
+                        break;
+                    case 'regions':
+                        bridgeit.io.location.findRegions(params).then(successCallback).catch(function(error){
+                            console.log('findRegions caught an error:', error);
+                        });
+                        break;
+                    case 'pois':
+                        bridgeit.io.location.findPOIs(params).then(successCallback).catch(function(error){
+                            console.log('findPOIs caught an error:', error);
+                        });
+                        break;
+                    default:
+                        this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Location Service Collection "' + this.collection + '" not supported.','type':'error'});
+                }
+                this.service_url = protocol+bridgeit.io.locateURL+path;
+                break;
+            case 'metrics':
+                params.collection = this.collection;
+                this.service_url = protocol+bridgeit.io.metricsURL+path;
+                bridgeit.io.metrics.findEvents(params).then(successCallback).catch(function(error){
+                    console.log('findEvents caught an error:', error);
+                });
+                break;
+            default:
+                this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Service "' + this.service + '" not supported.','type':'error'});
         }
         function successCallback(results) {
             var obj = {};
