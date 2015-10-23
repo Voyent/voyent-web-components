@@ -175,6 +175,14 @@
                     <input id="password" type="password"/>
                 </label>
             </div>
+            <div>
+                <label>Host:
+                    <select id="host">
+                        <option selected>api.bridgeit.mobi</option>
+                        <option>dev.bridgeit.io</option>
+                    </select>
+                </label>
+            </div>
             <a onclick="login()">Login</a>
 
             <div class="settings">
@@ -204,7 +212,7 @@
                 realm: realm,
                 username: username,
                 password: password,
-                host:'api.bridgeit.mobi'
+                host:document.getElementById('host').options[document.getElementById('host').selectedIndex].value
             }).then(function(){
                 setCredentialsOnComponent();
                 document.getElementById('motionSimulator').refreshMap();
@@ -215,7 +223,7 @@
                     realm: 'admin',
                     username: username,
                     password: password,
-                    host:'api.bridgeit.mobi'
+                    host:document.getElementById('host').options[document.getElementById('host').selectedIndex].value
                 }).then(function(){
                     setCredentialsOnComponent();
                     document.getElementById('motionSimulator').setAttribute('realm', realm);
