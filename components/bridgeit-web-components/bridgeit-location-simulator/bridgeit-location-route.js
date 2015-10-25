@@ -150,8 +150,9 @@ BridgeIt.LocationRoute = Polymer({
                 bridgeit.io.location.updateLocation({location:location}).then(function(data) {
                     //set location object (take best guess at username and lastUpdated without re-retrieving record)
                     _this._location = location;
-                    _this._location._id = data.uri.split("/").pop();
-                    _this._location.username = _this.user;
+                    if (_this.user) {
+                        _this._location.username = _this.user;
+                    }
                     _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                     //set marker object
                     var marker = new google.maps.Marker({
@@ -415,7 +416,10 @@ BridgeIt.LocationRoute = Polymer({
                 return;
             }
             bridgeit.io.location.updateLocation({location:_this._location}).then(function(data) {
-              _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                if (!_this._location) {
+                    return; //the simulation has been cleaned up
+                }
+                _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             }).catch(function(error) {
                 console.log('Issue updating location:',error);
             });
@@ -453,7 +457,6 @@ BridgeIt.LocationRoute = Polymer({
         this._route = null;
         this._index = 0;
         this._interval = 0;
-        this._marker = null;
         this._location = null;
         this._eta = null;
         this._totalMills = 0;
