@@ -1,0 +1,165 @@
+<!--
+	@license
+	Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+	This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	Code distributed by Google as part of the polymer project is also
+	subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+	<title>BridgeIt Web Components Demo</title>
+
+	<!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
+	<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
+	<script>
+		if( !("Promise" in window)){
+			window.Promise = ES6Promise.Promise;
+		}
+	</script>
+	<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
+	<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
+
+	<!-- Load the webcomponents polyfill -->
+	<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+	<!-- Load bridgeit action editor component -->
+	<link rel="import" href="bridgeit-action-editor.html">
+    <!-- Load bridgeit action list component -->
+    <link rel="import" href="bridgeit-action-list.html">
+
+	<!-- Demo specific CSS -->
+	<link rel="stylesheet" href="../common/demo.css"/>
+
+	<!-- Define custom styling for the component (optional) -->
+	<style is="custom-style">
+        bridgeit-action-editor {
+
+        }
+		bridgeit-action-list {
+            --action-list-wrapper: { /* [Custom table wrapper styling] */
+                padding:10px 0 10px 0;
+                background-color: #EFEFEF;
+            };
+            --action-list-button: { /* [Custom button styling] */
+                 color: #FFF;
+                 background-color: #3E458C;
+                 font-size: 10px;
+                 padding: 3px;
+                 border:1px solid transparent;
+                 border-radius: 5px;
+             };
+            /*
+            Other available styling options:
+            --action-list-table: { key:value; }; [Custom table styling]
+            --action-list-tbody: { key:value; }; [Custom tbody styling]
+            --action-list-tr { key:value; }; [Custom tr styling]
+            --action-list-td: { key:value; }; [Custom td styling]
+            */
+        }
+	</style>
+
+</head>
+<body unresolved>
+
+<h1>BridgeIt Action Editor Component Demo</h1>
+<h3>Login with your BridgeIt Account Information</h3>
+<hr/>
+<div class="container">
+	<form>
+		<div>
+			<label>Account:
+				<input id="account" type="text"/>
+			</label>
+		</div>
+		<div>
+			<label>Realm:
+				<input id="realm" type="text"/>
+			</label>
+		</div>
+		<div>
+			<label>Username:
+				<input id="username" type="text"/>
+			</label>
+		</div>
+		<div>
+			<label>Password:
+				<input id="password" type="password"/>
+			</label>
+		</div>
+		<a onclick="login()">Login</a>
+
+		<div class="settings">
+			<div>
+				<label>
+
+				</label>
+			</div>
+		</div>
+	</form>
+	<!-- Declare the elements by their tags -->
+	<bridgeit-action-editor id="actionEditor">
+        <bridgeit-action-list></bridgeit-action-list>
+	</bridgeit-action-editor>
+</div>
+
+<script type="text/javascript">
+	function login(event){
+		var account = document.getElementById('account').value;
+		var realm = document.getElementById('realm').value;
+		var username = document.getElementById('username').value;
+		var password = document.getElementById('password').value;
+
+		bridgeit.io.auth.connect({
+			account: account,
+			realm: realm,
+			username: username,
+			password: password
+		}).then(function(){
+			setCredentialsOnComponent();
+            document.getElementById('actionEditor').getTasks();
+            document.getElementById('actionEditor').getActions();
+		})['catch'](function(){
+			//try to login as admin
+			bridgeit.io.auth.connect({
+				account: account,
+				realm: 'admin',
+				username: username,
+				password: password
+			}).then(function(){
+				setCredentialsOnComponent();
+				document.getElementById('actionEditor').setAttribute('realm', realm);
+                document.getElementById('actionEditor').getTasks();
+                document.getElementById('actionEditor').getActions();
+			})
+		});
+	}
+	function setCredentialsOnComponent(){
+		var elem = document.getElementById('actionEditor');
+
+		var account = bridgeit.io.auth.getLastKnownAccount();
+		if( account ){
+			elem.setAttribute('account', account);
+			document.getElementById('account').value = account;
+		}
+
+		var realm = bridgeit.io.auth.getLastKnownRealm();
+		if( realm ){
+			elem.setAttribute('realm', realm);
+			document.getElementById('realm').value = realm;
+		}
+
+		var token = bridgeit.io.auth.getLastAccessToken();
+		if( token ){
+			elem.setAttribute('accessToken', token);
+			document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
+		}
+	}
+	//initialize known credentials
+	setCredentialsOnComponent();
+</script>
+</body>
+</html>
