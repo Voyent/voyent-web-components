@@ -112,11 +112,16 @@ Polymer({
                 _this.refreshMap();
             }
         };
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
-            'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-        this.$.container.appendChild(script);
+        if( !('google' in window) || !('maps' in window.google)){
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
+                'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+            this.$.container.appendChild(script);
+        }
+        else{
+            initializeLocationsMap();
+        }
     },
 
     /**
@@ -137,18 +142,21 @@ Polymer({
         //get current location data
         var promises = [];
         promises.push(bridgeit.io.location.findLocations({realm:this.realm}).then(function(locations) {
-            //process the locations so we only keep the most recent update for each user
-            var userLocations={};
-            for (var i=0; i<locations.length; i++) {
-                if (userLocations.hasOwnProperty(locations[i].username)) {
-                    if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
-                        userLocations[locations[i].username]=locations[i];
+            if( locations && locations.length ){
+                 //process the locations so we only keep the most recent update for each user
+                var userLocations={};
+                for (var i=0; i<locations.length; i++) {
+                    if (userLocations.hasOwnProperty(locations[i].username)) {
+                        if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
+                            userLocations[locations[i].username]=locations[i];
+                        }
                     }
+                    else { userLocations[locations[i].username]=locations[i]; }
                 }
-                else { userLocations[locations[i].username]=locations[i]; }
+                locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
+                _this._updateLocations(locations);
             }
-            locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
-            _this._updateLocations(locations);
+           
         }));
         promises.push(bridgeit.io.location.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
@@ -161,6 +169,7 @@ Polymer({
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
             console.log('Issue getting location data:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -284,6 +293,7 @@ Polymer({
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
             console.log('Issue saving simulation document:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -309,6 +319,7 @@ Polymer({
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
             console.log('Issue deleting simulation:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -427,6 +438,7 @@ Polymer({
                 }
             } catch (err) {
                 console.log("Issue importing region or poi:", err);
+                _this.fire('bridgeit-error', {error: error});
             }
         }
     },

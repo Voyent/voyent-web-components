@@ -175,6 +175,7 @@ BridgeIt.LocationRoute = Polymer({
                     _this._updateBtnDisabled=false;
                 }).catch(function(error) {
                     console.log('Issue updating location:',error);
+                    _this.fire('bridgeit-error', {error: error});
                 });
             });
         }

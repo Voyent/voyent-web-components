@@ -55,11 +55,16 @@ Polymer({
 				_this.refreshMap();
 			}
 		};
-		var script = document.createElement('script');
-		script.type = 'text/javascript';
-		script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
-			'libraries=places,geometry,visualization&callback=initializeLocationsMap';
-		this.$.container.appendChild(script);
+		if( !('google' in window) || !('maps' in window.google)){
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
+                'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+            this.$.container.appendChild(script);
+        }
+        else{
+            initializeLocationsMap();
+        }
 	},
 
     /**
@@ -95,6 +100,7 @@ Polymer({
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
             console.log('<bridgeit-locations> Error: ' + ( error.message || error.responseText));
+            _this.fire('bridgeit-error', {error: error});
         });
 	},
 
@@ -106,6 +112,7 @@ Polymer({
      * @param data
      */
     _updateRegionsAndPOIs: function(data){
+        var _this = this;
         for (var record = 0; record < data.length; record++) {
             try {
                 var location = data[record].location;
@@ -174,6 +181,7 @@ Polymer({
                 }
             } catch (err) {
                 console.log("Issue importing region or poi: " + JSON.stringify(data[record]), err);
+                _this.fire('bridgeit-error', {error: error});
             }
         }
     },
