@@ -160,7 +160,7 @@ BridgeIt.LocationRoute = Polymer({
                         position: route[_this._index],
                         map: _this._map,
                         draggable: false, //don't allow manual location changes during simulation
-                        icon: 'resources/user.png'
+                        icon: 'images/user.png'
                     });
                     _this._marker = marker;
                     //center and zoom on marker at the beginning of the simulation

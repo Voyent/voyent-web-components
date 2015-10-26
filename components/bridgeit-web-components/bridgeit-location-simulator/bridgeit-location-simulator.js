@@ -99,7 +99,7 @@ Polymer({
                     position:google.maps.ControlPosition.TOP_RIGHT,
                     drawingModes: [google.maps.drawing.OverlayType.MARKER]
                 },
-                markerOptions: { icon: 'resources/user.png', draggable: true }
+                markerOptions: { icon: 'images/user.png', draggable: true }
             });
             drawingManager.setMap(_this._map);
             _this._setupNewLocationListener(drawingManager);
@@ -456,7 +456,7 @@ Polymer({
                 position: latLng,
                 map: _this._map,
                 draggable: true,
-                icon: 'resources/user.png'
+                icon: 'images/user.png'
             });
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
