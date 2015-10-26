@@ -147,12 +147,13 @@ BridgeIt.LocationRoute = Polymer({
                 //Start by POSTing the first coordinate to the Location Service
                 _this._index = 0;
                 var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [route[_this._index].lng(),route[_this._index].lat()] } } };
+                if (_this.user && _this.user.length > 0) {
+                    location.username = _this.user;
+                    location.demoUsername = _this.user; //(NTFY-301)
+                }
                 bridgeit.io.location.updateLocation({location:location}).then(function(data) {
                     //set location object (take best guess at username and lastUpdated without re-retrieving record)
                     _this._location = location;
-                    if (_this.user) {
-                        _this._location.username = _this.user;
-                    }
                     _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                     //set marker object
                     var marker = new google.maps.Marker({

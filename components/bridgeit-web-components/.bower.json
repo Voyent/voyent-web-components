@@ -26,11 +26,11 @@
   "devDependencies": {
     "web-component-tester": "*"
   },
-  "_release": "273ada502c",
+  "_release": "634a22f381",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "273ada502c8157a5dced9a0ea401171f170408a0"
+    "commit": "634a22f38104461811455b27aa2ba698bd0fe241"
   },
   "_source": "git://github.com/bridgeit/bridgeit-web-components.git",
   "_target": "master",

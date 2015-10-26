@@ -58,7 +58,7 @@ Polymer({
 		if( !('google' in window) || !('maps' in window.google)){
             var script = document.createElement('script');
             script.type = 'text/javascript';
-            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
+            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
                 'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
             this.$.container.appendChild(script);
         }
