@@ -623,10 +623,7 @@ Polymer({
     _loadHandler: function(id) {
         id = id + '_handler';
         var handler = this._handlers[id];
-        if (!handler) {
-            return;
-        }
-        this._selectedEvents = handler.events;
+        this._selectedEvents = handler && handler.events ? handler.events : [];
         for (var i=0; i<this._events.length; i++) {
             if (this._selectedEvents.indexOf(this._events[i].event) > -1) {
                 this.set('_events.'+i+'.checked',true);
