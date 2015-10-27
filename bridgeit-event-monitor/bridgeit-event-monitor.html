@@ -16,6 +16,57 @@ Example:
 <dom-module id="bridgeit-event-monitor">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
     <template>
+        <link type="text/css" rel="stylesheet" href="./bridgeit-event-monitor.css">
+        
+        <label>Graph of Events:<br/>
+            <svg id="eventmonitorsvg" width="100%" height="50px">
+            </svg>
+        </label>
+        
+        <div id="eventDetails" style="display: none;">
+            <table style="margin-top: 20px;">
+            <thead><tr><td colspan="2">Clicked Event Details:</td></tr></thead>
+            <tr>
+            <td><label>Time:</label></td>
+            <td><span id="detailTime"/></td>
+            </tr>
+            <tr>
+            <td><label>Account:</label></td>
+            <td><span id="detailAccount"/></td>
+            </tr>
+            <tr>
+            <td><label>Realm:</label></td>
+            <td><span id="detailRealm"/></td>
+            </tr>
+            <tr>
+            <td><label>Service:</label></td>
+            <td><span id="detailService"/></td>
+            </tr>
+            <tr>
+            <td><label>Event:</label></td>
+            <td><span id="detailEvent"/></td>
+            </tr>
+            <tr>
+            <td><label>Type:</label></td>
+            <td><span id="detailType"/></td>
+            </tr>
+            <tr>
+            <td><label>Username:</label></td>
+            <td><span id="detailUsername"/></td>
+            </tr>
+            <tr>
+            <td><label>Data:</label></td>
+            <td><span id="detailData"/></td>
+            </tr>
+            <tr>
+            <td><label>ID:</label></td>
+            <td><span id="detailId"/></td>
+            </tr>                   
+            <tfoot><tr><td colspan="2">
+            <button type="button" onclick="hideData();">Close</button>
+            </td></tr></tfoot>
+            </table>
+        </div>
     </template>
 </dom-module>
 
