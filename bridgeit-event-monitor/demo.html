@@ -1,0 +1,398 @@
+<!--
+	@license
+	Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+	This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	Code distributed by Google as part of the polymer project is also
+	subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/html">
+	<head>
+	    <meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+		<title>BridgeIt Web Components Demo</title>
+
+		<!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
+		<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
+		<script>
+			if( !("Promise" in window)){
+				window.Promise = ES6Promise.Promise;
+			}
+		</script>
+		<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
+		<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
+		
+		<!-- Load the webcomponents polyfill -->
+		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+		<!-- Load required jQuery dependency -->
+        <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+
+        <!-- Load bridgeit event monitor component -->
+        <link rel="import" href="bridgeit-event-monitor.html">
+		<!-- Load bridgeit query editor component -->
+		<link rel="import" href="../bridgeit-query-editor/bridgeit-query-editor.html">
+        <!-- Load supporting components (optional) -->
+        <link rel="import" href="../bridgeit-query-editor/bridgeit-query-list.html">
+        <link rel="import" href="../bridgeit-query-editor/bridgeit-query-results.html">
+
+		<!-- Demo specific CSS -->
+		<link rel="stylesheet" href="../common/demo.css"/>
+		<style type="text/css">
+			.buttons {text-align:center;}
+			.buttons button{font-size:13px;padding:5px 10px;color:rgb(239, 239, 239);background-color:rgb(62, 69, 140);margin:10px;}
+		</style>
+
+		<!-- Define custom styling for the components (optional) -->
+		<style is="custom-style">
+			#queryList {
+				--query-list-button: { /* [Custom button styling] */
+					cursor:pointer;
+					padding: 5px 10px;
+					color: rgb(239, 239, 239);
+					background-color: rgb(62, 69, 140);
+					margin: 10px;
+				};
+				/*
+				Other available styling options:
+				--query-list-table: { key:value; }; [Custom table styling]
+				--query-list-tbody: { key:value; }; [Custom tbody styling]
+				--query-list-tr { key:value; }; [Custom tr styling]
+				--query-list-td: { key:value; }; [Custom td styling]
+				*/
+            }
+			#queryResults {
+				--query-results-table: {
+					 width: 100%;
+					 margin-bottom: 50px;
+			 	};
+				--query-results-td: {
+					 padding: 8px;
+					 line-height: 1.42857143;
+					 vertical-align: top;
+			 	};
+				--query-results-th: {
+					 border-bottom-width: 2px;
+					 background-color: #EFEFEF;
+			 	};
+				/*
+				Other available styling options:
+				--query-results-thead: { key:value; }; [Custom thead styling]
+				--query-results-tbody: { key:value; }; [Custom tbody styling]
+				--query-results-tr { key:value; }; [Custom tr styling]
+				*/
+			}
+        </style>
+        
+        <style type="text/css">
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+        
+        .line {
+          fill: none;
+          stroke: steelblue;
+          stroke-width: 1.5px;
+        }
+        </style>       
+	</head>
+	<body unresolved>
+	
+		<h1>BridgeIt Event Monitor Component Demo</h1>
+  		<h3>Login with your BridgeIt Account Information</h3>
+  		<hr/>
+		<div id="listenerWrapper">
+			<div id="wrapper" class="container">
+				<form>
+					<div>
+						<label>Account:
+							<input id="account" type="text" value="demox_corporate"/>
+						</label>
+					</div>
+					<div>
+						<label>Realm:
+							<input id="realm" type="text" value="nargles.net"/>
+						</label>
+					</div>
+					<div>
+						<label>Username:
+							<input id="username" type="text" value="bobwilliams"/>
+						</label>
+					</div>
+					<div>
+						<label>Password:
+							<input id="password" type="password" value="secretestfly"/>
+						</label>
+					</div>
+					<a onclick="login()">Login</a>
+					
+					<div class="settings">
+					    &nbsp;
+					</div>
+				</form>
+
+				<!-- 3. Declare the element by its tag. -->
+				  <bridgeit-query-editor id="queryEditor"
+										 queryurltarget="queryURL">
+				  </bridgeit-query-editor>
+
+					<div>
+						<div id="msgs"></div>
+					</div>
+
+				  <div class="buttons">
+					  <button id="resetEditor" onclick="document.getElementById('queryEditor').resetEditor();">New/Reset</button>
+					  <button id="runQuery" onclick="document.getElementById('queryEditor').runQuery();">Run Query</button>
+					  <button id="saveQuery" onclick="document.getElementById('queryEditor').saveQuery();">Save Query</button>
+					  <button id="cloneQuery" onclick="document.getElementById('queryEditor').cloneQuery();">Clone Query</button>
+					  <button id="deleteQuery" onclick="document.getElementById('queryEditor').deleteQuery();">Delete Query</button>
+				  </div>
+				  <br/>
+				  <div>
+					  <label>Saved Queries:
+						  <bridgeit-query-list id="queryList" for="queryEditor"></bridgeit-query-list>
+					  </label>
+				  </div>
+				  <br/>
+			</div>
+			
+			<div>
+			    <label>Graph of Events:<br/>
+                    <svg id="eventmonitor" width="100%" height="50px">
+                    </svg>
+                </label>
+                
+                <div id="eventDetails" style="display: none;">
+                    <table style="margin-top: 20px;">
+                    <thead><tr><td colspan="2">Clicked Event Details:</td></tr></thead>
+                    <tr>
+                    <td><label>Time:</label></td>
+                    <td><span id="detailTime"/></td>
+                    </tr>
+                    <tr>
+                    <td><label>Account:</label></td>
+                    <td><span id="detailAccount"/></td>
+                    </tr>
+                    <tr>
+                    <td><label>Realm:</label></td>
+                    <td><span id="detailRealm"/></td>
+                    </tr>
+                    <tr>
+                    <td><label>Service:</label></td>
+                    <td><span id="detailService"/></td>
+                    </tr>
+                    <tr>
+                    <td><label>Event:</label></td>
+                    <td><span id="detailEvent"/></td>
+                    </tr>
+                    <tr>
+                    <td><label>Type:</label></td>
+                    <td><span id="detailType"/></td>
+                    </tr>
+                    <tr>
+                    <td><label>Username:</label></td>
+                    <td><span id="detailUsername"/></td>
+                    </tr>
+                    <tr>
+                    <td><label>Data:</label></td>
+                    <td><span id="detailData"/></td>
+                    </tr>
+                    <tr>
+                    <td><label>ID:</label></td>
+                    <td><span id="detailId"/></td>
+                    </tr>                   
+                    <tfoot><tr><td colspan="2">
+                    <button type="button" onclick="hideData();">Close</button>
+                    </td></tr></tfoot>
+                    </table>
+                </div>
+			</div>
+			
+			<br/><br/>
+			
+			<div>
+				<label>Query Results:
+					<bridgeit-query-results id="queryResults" for="queryEditor"></bridgeit-query-results>
+				</label>
+			</div>
+		</div>
+
+		<script type="text/javascript">
+            //Listen for the queryMsgUpdated event for all components
+            document.getElementById('listenerWrapper').addEventListener('queryMsgUpdated', function(e) {
+                var id = e.detail.id ? e.detail.id + ' : ' : '';
+                document.getElementById('msgs').innerHTML = id + e.detail.message;
+                //clear message 10 seconds after it's received
+                clearTimeout(window.msgTimeout);
+                window.msgTimeout = setTimeout(function() {
+                    document.getElementById('msgs').innerHTML = '';
+                },10000);
+            });
+
+			function login(event){
+				var account = document.getElementById('account').value;
+				var realm = document.getElementById('realm').value;
+				var username = document.getElementById('username').value;
+				var password = document.getElementById('password').value;
+
+				bridgeit.io.auth.connect({
+					account: account,
+					realm: realm,
+					username: username,
+					password: password,
+					host: '192.168.56.101'
+				}).then(function(){
+					setCredentialsOnComponent();
+					initializeComponent();
+				})['catch'](function(){
+					//try to login as admin
+					bridgeit.io.auth.connect({
+                        account: account,
+						realm: 'admin',
+						username: username,
+						password: password
+					}).then(function(){
+						setCredentialsOnComponent();
+						document.getElementById('queryEditor').setAttribute('realm', realm);
+						initializeComponent();
+					})
+				});
+			}
+
+			function setCredentialsOnComponent(){
+				var elem = document.getElementById('queryEditor');
+
+				var account = bridgeit.io.auth.getLastKnownAccount();
+				if (account) {
+					elem.setAttribute('account', account);
+					document.getElementById('account').value = account;
+				}
+
+                var realm = bridgeit.io.auth.getLastKnownRealm();
+				if (realm) {
+					elem.setAttribute('realm', realm);
+					document.getElementById('realm').value = realm;
+				}
+
+				var token = bridgeit.io.auth.getLastAccessToken();
+				if (token) {
+					elem.setAttribute('accesstoken', token);
+					document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
+				}
+			}
+
+			function initializeComponent() {
+			    var token = bridgeit.io.auth.getLastAccessToken();
+			    if (token) {
+                    document.getElementById('queryEditor').setAttribute('service', 'metrics');
+                    document.getElementById('queryEditor').setAttribute('collection', 'events');		
+                    document.getElementById('queryEditor').reloadEditor();
+                    document.getElementById('queryEditor').fetchQueryList();
+                }
+			}
+
+			//initialize known credentials
+			setCredentialsOnComponent();
+			initializeComponent();
+		</script>
+		
+        <script type="text/javascript">
+            function getDate(d) {
+                return new Date(d.time);
+            }
+            
+            function clickData(d) {
+                document.getElementById('eventDetails').style.display = "inline";
+                document.getElementById('detailTime').innerHTML = d.time;
+                document.getElementById('detailAccount').innerHTML = d.account;
+                document.getElementById('detailRealm').innerHTML = d.realm;
+                document.getElementById('detailService').innerHTML = d.service;
+                document.getElementById('detailEvent').innerHTML = d.event;
+                document.getElementById('detailType').innerHTML = d.type;
+                document.getElementById('detailUsername').innerHTML = d.username;
+                document.getElementById('detailData').innerHTML = d.data;
+                document.getElementById('detailId').innerHTML = d._id;
+            }
+            
+            function hideData() {
+                document.getElementById('eventDetails').style.display = "none";
+            }
+            
+            function addListener() {
+                document.getElementById('queryEditor').addEventListener('queryExecuted', function(e) {
+                    var res = e.detail.results;
+                    if (Object.keys(res).length > 0) {
+                        initMarbles(res);
+                    }
+                });
+            }
+        
+            function initMarbles(data) {
+                var vis = d3.select("#eventmonitor"),
+                    PADDING = 20,
+                    CIRCLE_RADIUS = 10;
+                var WIDTH = parseInt(vis.style("width"))-PADDING,
+                    HEIGHT = 50;
+                
+                // Clear our old graph first
+                vis.selectAll("*").remove();
+                
+                // Build our date scale
+                xScale = d3.time.scale().domain([d3.min(data, function(d) {
+                    return getDate(d);
+                }), d3.max(data, function(d) {
+                    return getDate(d);
+                })]).range([PADDING, WIDTH-PADDING]);
+                
+                // Use the scale to make an axis
+                xAxis = d3.svg.axis().scale(xScale)
+                            .orient("bottom")
+                            .tickPadding(5);
+                
+                // Vertically center the graph
+                vis.append("svg:g")
+                    .attr("class", "axis")
+                    .attr("transform", "translate(0," + (HEIGHT/2) + ")")
+                    .call(xAxis);
+                
+                // Draw a circle for every piece of data
+                vis.selectAll("circle.line")
+                    .data(data)
+                    .enter().append("circle")
+                    .attr("cy", HEIGHT/2)
+                    .attr("cx", function(d) { return xScale(getDate(d)) })
+                    .attr("r", CIRCLE_RADIUS)
+                    .attr("cursor", "pointer")
+                    .attr("title", function (d) { return getDate(d); })
+                    .style("fill", function(d) {
+                        switch (d.service.toLowerCase()) {
+                            case 'locate':
+                                return "blue";
+                            break;
+                            case 'query':
+                                return "red";
+                            break;
+                            case 'metrics':
+                                return "yellow";
+                            break;
+                            case 'storage':
+                                return "purple";
+                            break;
+                            default:
+                                return "orange";
+                        }
+                    })
+                    .on("click", function(d, i) { clickData(d); });
+            }
+            
+            addListener();
+        </script>
+	</body>
+</html>
