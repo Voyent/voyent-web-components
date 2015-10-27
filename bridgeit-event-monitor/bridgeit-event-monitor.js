@@ -82,20 +82,18 @@ Polymer({
                         return "orange";
                 }
             })
-            .on("click", function(d, i) { clickData(d); });
-    },
-    
-    clickData: function(d) {
-        document.getElementById('eventDetails').style.display = "inline";
-        document.getElementById('detailTime').innerHTML = d.time;
-        document.getElementById('detailAccount').innerHTML = d.account;
-        document.getElementById('detailRealm').innerHTML = d.realm;
-        document.getElementById('detailService').innerHTML = d.service;
-        document.getElementById('detailEvent').innerHTML = d.event;
-        document.getElementById('detailType').innerHTML = d.type;
-        document.getElementById('detailUsername').innerHTML = d.username;
-        document.getElementById('detailData').innerHTML = d.data;
-        document.getElementById('detailId').innerHTML = d._id;
+            .on("click", function(d, i) {
+                document.getElementById('eventDetails').style.display = "inline";
+                document.getElementById('detailTime').innerHTML = d.time;
+                document.getElementById('detailAccount').innerHTML = d.account;
+                document.getElementById('detailRealm').innerHTML = d.realm;
+                document.getElementById('detailService').innerHTML = d.service;
+                document.getElementById('detailEvent').innerHTML = d.event;
+                document.getElementById('detailType').innerHTML = d.type;
+                document.getElementById('detailUsername').innerHTML = d.username;
+                document.getElementById('detailData').innerHTML = d.data;
+                document.getElementById('detailId').innerHTML = d._id;                   
+            });
     },
     
     hideData: function() {
