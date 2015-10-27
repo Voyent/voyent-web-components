@@ -1,15 +1,8 @@
 <link rel="import" href="../../polymer/polymer.html">
 
 <!--
-Displays a query editor that can build queries for data stored by the BridgeIt Services. Requires jQuery.
-
-Example:
-
-		<bridgeit-query-editor accesstoken="xxx"
-													 realm="myRealm"
-													 account="myAccount"
-													 queryurltarget="queryURL">
-		</bridgeit-query-editor>
+Displays an event monitor used to graph historical data from the BridgeIt services
+This component has no attributes, instead call the Javascript function "show(data)" to render the graph
 
 @demo demo.html
 -->
@@ -61,9 +54,9 @@ Example:
             <tr>
             <td><label>ID:</label></td>
             <td><span id="detailId"/></td>
-            </tr>                   
+            </tr>
             <tfoot><tr><td colspan="2">
-            <button type="button" on-click="hideData">Close</button>
+            <button type="button" on-click="_hideData">Close</button>
             </td></tr></tfoot>
             </table>
         </div>
