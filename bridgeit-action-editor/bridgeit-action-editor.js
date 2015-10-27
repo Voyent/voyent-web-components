@@ -105,6 +105,7 @@ Polymer({
             return;
         }
         var action = this.convertUIToAction();
+        action._id = actionId;
         bridgeit.io.action.createAction({"realm":this.realm,"id":actionId,"action":action}).then(function() {
             _this._loadedAction = action;
             _this.getActions(); //refresh actions list
@@ -236,8 +237,7 @@ Polymer({
 
 
     //******************PRIVATE API******************
-
-
+    
     /**
      * Wrapper for `saveAction()`.
      * @private
@@ -505,6 +505,21 @@ Polymer({
         Polymer.dom(e.target).parentNode.classList.toggle('hidden');
         Polymer.dom(e.target).parentNode.querySelector('.content').classList.toggle('hidden');
         Polymer.dom(e.target).querySelector('.arrow').classList.toggle('toggled');
+    },
+
+    /**
+     * Sorts the list of task items alphabetically.
+     * @param a
+     * @param b
+     * @returns {number}
+     * @private
+     */
+    _sortTaskItems: function(a,b) {
+        a = a.title.toLowerCase();
+        b = b.title.toLowerCase();
+        if (a < b) { return -1; }
+        else if (a > b) { return  1; }
+        return 0;
     },
 
     /**
