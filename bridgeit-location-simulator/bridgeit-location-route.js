@@ -147,18 +147,20 @@ BridgeIt.LocationRoute = Polymer({
                 //Start by POSTing the first coordinate to the Location Service
                 _this._index = 0;
                 var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [route[_this._index].lng(),route[_this._index].lat()] } } };
+                if (_this.user && _this.user.length > 0) {
+                    location.username = _this.user;
+                    location.demoUsername = _this.user; //(NTFY-301)
+                }
                 bridgeit.io.location.updateLocation({location:location}).then(function(data) {
                     //set location object (take best guess at username and lastUpdated without re-retrieving record)
                     _this._location = location;
-                    _this._location._id = data.uri.split("/").pop();
-                    _this._location.username = _this.user;
                     _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                     //set marker object
                     var marker = new google.maps.Marker({
                         position: route[_this._index],
                         map: _this._map,
                         draggable: false, //don't allow manual location changes during simulation
-                        icon: 'resources/user.png'
+                        icon: 'images/user.png'
                     });
                     _this._marker = marker;
                     //center and zoom on marker at the beginning of the simulation
@@ -175,6 +177,7 @@ BridgeIt.LocationRoute = Polymer({
                     _this._updateBtnDisabled=false;
                 }).catch(function(error) {
                     console.log('Issue updating location:',error);
+                    _this.fire('bridgeit-error', {error: error});
                 });
             });
         }
@@ -414,7 +417,10 @@ BridgeIt.LocationRoute = Polymer({
                 return;
             }
             bridgeit.io.location.updateLocation({location:_this._location}).then(function(data) {
-              _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                if (!_this._location) {
+                    return; //the simulation has been cleaned up
+                }
+                _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             }).catch(function(error) {
                 console.log('Issue updating location:',error);
             });
@@ -452,7 +458,6 @@ BridgeIt.LocationRoute = Polymer({
         this._route = null;
         this._index = 0;
         this._interval = 0;
-        this._marker = null;
         this._location = null;
         this._eta = null;
         this._totalMills = 0;
@@ -545,7 +550,7 @@ BridgeIt.LocationRoute = Polymer({
         }
         this.originInputClass='form-control';
         this.originLblClass='';
-        if (this.user && this.destination) {
+        if ((this.user || (!this._users || this._users.length==0)) && this.destination) {
             this._playBtnDisabled=false;
         }
     },
@@ -565,7 +570,7 @@ BridgeIt.LocationRoute = Polymer({
         }
         this.destInputClass='form-control';
         this.destLblClass='';
-        if (this.user && this.origin) {
+        if ((this.user || (!this._users || this._users.length==0)) && this.origin) {
             this._playBtnDisabled=false;
         }
     },

@@ -1,0 +1,315 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+
+<!--
+Description
+
+Example:
+
+    <bridgeit-action-editor accesstoken="xxx"
+                            realm="myRealm"
+                            account="myAccount">
+    </bridgeit-action-editor>
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-action-editor">
+    <template>
+        <!-- TODO - Cleanup css + expose styling externally -->
+        <style type="text/css">
+            :host {
+                font-size:14px;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+            .taskPanel {
+                border: 1px solid #999;
+                border-bottom:0;
+                margin-right:5px;
+                padding: 10px;
+                background-color: #EFEFEF;
+            }
+            .taskPanel .header {
+                background-color: #C5C5C5;
+                margin: -10px -10px 10px;
+                text-align: center;
+                cursor:pointer;
+                padding-right:21px;
+                height: 20px;
+                line-height: 20px;
+            }
+            .taskPanel .taskItem {
+                height: 25px;
+                line-height:25px;
+                margin: 10px auto;
+                padding:2px;
+                text-align:center;
+                width: 100px;
+                cursor:move;
+                border-radius: 5px;
+            }
+            .taskPanel .taskItem,
+            .task {
+                background-color: #DEDEDE;
+            }
+            .taskPanel .taskItem:hover {
+               border-color:#3E458C;
+            }
+            .taskPanel .taskGroup,
+            .task-group {
+                background-color: #D6D6D6;
+            }
+            .actionContainer {
+                background-color: #EFEFEF;
+                padding:10px;
+            }
+            #actionForm {
+                padding:0;
+                margin:0;
+            }
+            .actionPanel,
+            .task-group {
+                padding-bottom: 40px !important;
+            }
+            .actionContainer,
+            .taskItem,
+            .task,
+            .task-group{
+                border: 1px solid #999;
+            }
+            .task,
+            .task-group {
+                position:relative;
+                border-radius: 5px;
+                padding:10px;
+                margin-bottom: 10px;
+            }
+            .task-group .title {
+                cursor:pointer;
+            }
+            .task .title {
+                margin-bottom: 10px;
+                font-size: 18px;
+                cursor:pointer;
+            }
+            .form-control {
+                display: block;
+                width: 100%;
+                padding:2px 3px;
+                font-size: 14px;
+                line-height: 1.42857143;
+                color: #555;
+                background: #FFF;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+                -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+                transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+                margin:5px 0 10px 0;
+            }
+            .arrow {
+                width: 0;
+                height: 0;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 6px solid #777;
+                float:left;
+                -moz-transition: -moz-transform .3s;
+                -webkit-transition: -webkit-transform .3s;
+                -o-transition: -o-transform .3s;
+                transition: transform .3s;
+            }
+            .taskPanel .arrow {
+                margin-top:7px;
+                margin-left:10px;
+            }
+            .task-group .arrow {
+                margin-top: 5px;
+            }
+            .task .arrow {
+                margin-top:8px;
+                margin-right: 5px;
+            }
+            .arrow.toggled {
+                -moz-transform: rotate(-90deg);
+                -o-transform: rotate(-90deg);
+                -webkit-transform: rotate(-90deg);
+                transform: rotate(-90deg);
+            }
+            .task-group .toggleable-area {
+                cursor:pointer;
+                max-width:20px;
+            }
+            .taskPanel:not(:first-child),
+            .taskPanel .header:last-child {
+                border-bottom: 1px solid #999;
+            }
+            .task-group:last-child {
+                margin-bottom:0;
+            }
+            .taskPanel.hidden {
+                height:0;
+            }
+            .task-group.hidden,
+            .task.hidden {
+                padding-bottom:0 !important;
+            }
+            .content.hidden {
+                display:none;
+            }
+            .buttons {
+                float:right;
+                padding-bottom:5px;
+            }
+            .task .buttons,
+            .task-group .buttons {
+                position: absolute;
+                top: 4px;
+            }
+            .task-group .buttons {
+                right: 15px;
+            }
+            .task .buttons {
+                right: 4px;
+            }
+            .buttonContainer {
+                background-color: #EFEFEF;
+                padding:10px 0 10px 0;
+                text-align:center;
+            }
+            button {
+                color: #FFF;
+                background-color: #3E458C;
+                font-size: 10px;
+                padding: 3px;
+                border:1px solid transparent;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            input:invalid {
+                border: 1px solid #a94442;
+            }
+
+            label {
+                font-weight: 700;
+            }
+            span.required {
+                color: #a94442;
+            }
+        </style>
+        <template is="dom-if" if="{{_schemas}}">
+            <content select="bridgeit-action-list"></content>
+            <div class="buttonContainer">
+                <button type="button" on-click="_resetEditor">New/Reset</button>
+                <template is="dom-if" if="{{!_loadedAction}}">
+                    <button type="button" on-click="_saveAction">Save</button>
+                </template>
+                <template is="dom-if" if="{{_loadedAction}}">
+                    <button type="button" on-click="_updateAction">Update</button>
+                    <button type="button" on-click="_cloneAction">Clone<!-- (Save as new)--></button>
+                    <button type="button" on-click="_deleteAction">Delete</button>
+                </template>
+            </div>
+            <div class="layout horizontal">
+                <div class="flex-2">
+                    <div class="layout vertical wrap">
+                        <div class="taskPanel">
+                            <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
+                            <div class="content layout vertical wrap">
+                                <div class="flex taskGroup taskItem" draggable="true" on-dragstart="_startDragGroup" title="Container for Tasks">
+                                    <div class="title">task-group</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="taskPanel">
+                            <div class="header" on-click="_toggleTask">Tasks<div class="arrow"></div></div>
+                            <div class="content layout vertical wrap">
+                                <template is="dom-repeat" items="{{_schemas}}" sort="_sortTaskItems">
+                                    <div class="flex taskItem" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
+                                        <div class="title">{{item.title}}</div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="actionContainer flex-10" on-dragover="_dragOverAction" on-drop="_dropInAction">
+                    <div class="layout vertical">
+                        <form id="actionForm">
+                            <div class="flex">
+                                <div>
+                                    <label title="The action ID">
+                                        <span class="required">*</span><span>Action Name</span>
+                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name" value="{{_actionId::change}}" required>
+                                    </label>
+                                    <label title="The action description">
+                                        <span>Description</span>
+                                        <input class="form-control" type="text" placeholder="Action Description" title="The action description." value="{{_actionDesc::change}}">
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="actionPanel flex">
+                                <template is="dom-repeat" items="{{_taskGroups}}" as="group">
+                                    <div id$="{{group.id}}" class="task-group" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
+                                        <div class="buttons" on-drop="_preventDrop">
+                                            <button type="button" on-click="_moveTaskGroupUp">Up</span></button>
+                                            <button type="button" on-click="_moveTaskGroupDown">Down</button>
+                                            <button type="button" on-click="_deleteTaskGroup">Remove</button>
+                                        </div>
+                                        <div class="layout horizontal" on-drop="_preventDrop">
+                                            <div class="flex toggleable-area" on-click="_toggleTaskGroup">
+                                                <div class="arrow"></div>
+                                            </div>
+                                            <div class="flex">
+                                                <label title="The task group name">
+                                                    <span class="title" on-click="_toggleTaskGroup"><span class="required">*</span><span>Task Group Name</span></span>
+                                                    <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::change}}" required>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="content">
+                                            <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                                <div class="task hidden" on-drop="_preventDrop">
+                                                    <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
+                                                    <div class="title" on-click="_toggleTask">{{task.schema.title}}<div class="arrow toggled"></div></div>
+                                                    <div class="content hidden">
+                                                        <label title="The task name">
+                                                            <span class="required">*</span><span>Task Name</span>
+                                                            <input class="form-control" type="text" placeholder="Task Name" title="The task name" value="{{task.name::change}}" required>
+                                                        </label>
+                                                        <label title="The task description">
+                                                            <span>Description</span>
+                                                            <input class="form-control" type="text" placeholder="Task Description" title="The task description" value="{{task.desc::change}}">
+                                                        </label>
+                                                        <hr/>
+                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties)}}" as="property">
+                                                            <label title$="{{property.description}}">
+                                                                <template is="dom-if" if="{{property.required}}"><span class="required">*</span></template><span>{{property.title}}</span>
+                                                                <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                           required$="{{property.required}}" value="{{property.value::change}}">
+                                                                </template>
+                                                            </label>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </template>
+</dom-module>
+
+<script src="bridgeit-action-editor.js"></script>

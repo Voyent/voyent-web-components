@@ -111,6 +111,7 @@ Polymer({
             }
         }).catch(function(error){
             console.log('fetchLogs caught an error:', error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 

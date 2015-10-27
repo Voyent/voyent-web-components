@@ -99,7 +99,7 @@ Polymer({
                     position:google.maps.ControlPosition.TOP_RIGHT,
                     drawingModes: [google.maps.drawing.OverlayType.MARKER]
                 },
-                markerOptions: { icon: 'resources/user.png', draggable: true }
+                markerOptions: { icon: 'images/user.png', draggable: true }
             });
             drawingManager.setMap(_this._map);
             _this._setupNewLocationListener(drawingManager);
@@ -112,11 +112,16 @@ Polymer({
                 _this.refreshMap();
             }
         };
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
-            'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-        this.$.container.appendChild(script);
+        if( !('google' in window) || !('maps' in window.google)){
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
+                'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+            this.$.container.appendChild(script);
+        }
+        else{
+            initializeLocationsMap();
+        }
     },
 
     /**
@@ -128,27 +133,28 @@ Polymer({
         if (typeof google === 'undefined' || !this.realm) {
             return;
         }
-        //get the realm users, but only once
-        if (!this._users) {
-            this._getRealmUsers();
-        }
+        //refresh realm users
+        this._getRealmUsers();
         //delete old location data
         this._clearLocationData();
         //get current location data
         var promises = [];
-        promises.push(bridgeit.io.location.findLocations({realm:this.realm}).then(function(locations) {
-            //process the locations so we only keep the most recent update for each user
-            var userLocations={};
-            for (var i=0; i<locations.length; i++) {
-                if (userLocations.hasOwnProperty(locations[i].username)) {
-                    if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
-                        userLocations[locations[i].username]=locations[i];
+        promises.push(bridgeit.io.location.findLocations({realm:this.realm,fields:{_id:0}}).then(function(locations) {
+            if( locations && locations.length ){
+                 //process the locations so we only keep the most recent update for each user
+                var userLocations={};
+                for (var i=0; i<locations.length; i++) {
+                    if (userLocations.hasOwnProperty(locations[i].username)) {
+                        if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
+                            userLocations[locations[i].username]=locations[i];
+                        }
                     }
+                    else { userLocations[locations[i].username]=locations[i]; }
                 }
-                else { userLocations[locations[i].username]=locations[i]; }
+                locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
+                _this._updateLocations(locations);
             }
-            locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
-            _this._updateLocations(locations);
+           
         }));
         promises.push(bridgeit.io.location.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
@@ -161,6 +167,7 @@ Polymer({
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
             console.log('Issue getting location data:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -284,6 +291,7 @@ Polymer({
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
             console.log('Issue saving simulation document:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -309,6 +317,7 @@ Polymer({
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
             console.log('Issue deleting simulation:',error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
 
@@ -427,6 +436,7 @@ Polymer({
                 }
             } catch (err) {
                 console.log("Issue importing region or poi:", err);
+                _this.fire('bridgeit-error', {error: error});
             }
         }
     },
@@ -446,7 +456,7 @@ Polymer({
                 position: latLng,
                 map: _this._map,
                 draggable: true,
-                icon: 'resources/user.png'
+                icon: 'images/user.png'
             });
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
@@ -646,11 +656,11 @@ Polymer({
         //pass the users to the child components and set the users internally so they can be passed in the constructor of new routes defined via the `routes` attribute
         bridgeit.io.admin.getRealmUsers({realmName:this.realm}).then(function(users) {
             _this.fire('usersRetrieved',{users:users.length>0?users:null});
-            _this._users = users;
+            _this._users = users.length>0?users:null;
         }).catch(function(error) {
             //always assume not an admin if something went wrong
             _this.fire('usersRetrieved',{users:null});
-            _this._users = [];
+            _this._users = null;
             if (error.status == 403) {
                 return; //fail "silently" if insufficient privileges
             }
@@ -672,7 +682,9 @@ Polymer({
         //display infoWindow and hide context menu on map click
         google.maps.event.addListener(overlay, 'click', function () {
             var name = location.label || location._id;
-            _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+name+'</div>');
+            if (name) {
+                _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+name+'</div>');
+            }
             if (shape === "polygon") {
                 _this._infoWindow.setPosition(overlay.getPath().getAt(0));
             }
@@ -686,7 +698,7 @@ Polymer({
                 _this._infoWindow.setPosition(overlay.getPosition());
                 var username = location.username ? location.username+'<br/>' : '';
                 var date = location.lastUpdated ? new Date(location.lastUpdated).toLocaleString() : '';
-                _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+name+'<br/>'+username+date+'</div>');
+                _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+username+date+'</div>');
             }
             _this._infoWindow.open(_this._map,overlay);
             _this._hideContextMenu = true;

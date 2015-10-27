@@ -228,6 +228,7 @@ Polymer({
             _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
         }).catch(function(error){
             console.log('createQuery caught an error:', error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
     _deleteQuery: function() {
@@ -244,6 +245,7 @@ Polymer({
             _this.fetchQueryList();
         }).catch(function(error){
             console.log('deleteQuery caught an error:', error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
     _getAllQueries: function() {
@@ -258,6 +260,7 @@ Polymer({
             _this.fire('queriesRetrieved',{results: results});
         }).catch(function(error){
             console.log('fetchQueryList caught an error:', error);
+            _this.fire('bridgeit-error', {error: error});
         });
     },
     _buildQuery: function(id,description,services,isClone) {

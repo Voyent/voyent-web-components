@@ -1,0 +1,65 @@
+<link rel="import" href="../../polymer/polymer.html">
+
+<!--
+Display a list of previously created actions.
+
+Example:
+
+    <bridgeit-action-editor accesstoken="xxx"
+                            account="myAccount"
+                            realm="myRealm">
+        <bridgeit-action-list></bridgeit-action-list>
+    </bridgeit-action-editor>
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-action-list">
+    <template>
+        <style type="text/css">
+            .tableWrapper {
+                @apply(--action-list-wrapper);
+            }
+            table {
+                margin:0 auto;
+                @apply(--action-list-table);
+            }
+            tbody {
+                @apply(--action-list-tbody);
+            }
+            tr {
+                @apply(--action-list-tr);
+            }
+            td {
+                @apply(--action-list-td);
+            }
+            button {
+                cursor:pointer;
+                @apply(--action-list-button);
+            }
+            .noActionTxt {
+                text-align: center;
+            }
+        </style>
+        <div class="tableWrapper">
+            <template is="dom-if" if="{{_allActions}}">
+                <table>
+                    <tbody>
+                        <template is="dom-repeat" items="{{_allActions}}" sort="_sortList">
+                            <tr>
+                                <td>{{item._id}}</td>
+                                <td>
+                                    <button on-click="_loadAction">View</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </template>
+            <template is="dom-if" if="{{!_allActions}}">
+                <div class="noActionTxt">No existing actions found.</div>
+            </template>
+        </div>
+    </template>
+</dom-module>
+
+<script src="bridgeit-action-list.js"></script>
