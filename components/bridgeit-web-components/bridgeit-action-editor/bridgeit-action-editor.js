@@ -77,9 +77,12 @@ Polymer({
         var _this = this;
         bridgeit.io.action.findActions({"realm":this.realm}).then(function(actions) {
             //save the list of action IDs so we can check for uniqueness
-            _this._actionIds = actions.map(function(action) {
-                return action._id;
-            });
+                if (!Array.isArray(actions)) {
+                    actions = [actions];
+                }
+                _this._actionIds = actions.map(function(action) {
+                    return action._id;
+                });
             _this.fire('actionsRetrieved',{actions:actions});
             _this._getHandlers();
         }).catch(function(error) {
