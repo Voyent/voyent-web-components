@@ -173,11 +173,7 @@
             });
             // Listen for queryExecuted event
             document.getElementById('queryEditor').addEventListener('queryExecuted', function(e) {
-                var res = e.detail.results;
-                
-                if (Object.keys(res).length > 0) {
-                    document.getElementById('eventMonitor').show(res);
-                }
+                document.getElementById('eventMonitor').show(e.detail.results);
             });
 
 			function login(event){
