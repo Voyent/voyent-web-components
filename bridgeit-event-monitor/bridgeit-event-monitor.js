@@ -27,13 +27,23 @@ Polymer({
         xAxis = d3.svg.axis().scale(xScale)
                     .orient("bottom")
                     .tickPadding(5);
-                    
+        
         // Vertically center the graph
         vis.append("svg:g")
             .attr("class", "axis")
             .attr("transform", "translate(0," + (HEIGHT/2) + ")")
             .call(xAxis);
             
+        // Add zoom functionality
+        var zoom = d3.behavior.zoom()
+            .x(xScale)
+            .on("zoom", function() {
+                vis.select("g.axis").call(xAxis);
+                vis.selectAll("circle")
+                    .attr("cx", function(d) { return xScale(new Date(d.time)) });
+            });
+        vis.call(zoom);
+        
         // Draw a circle for every piece of data
         vis.selectAll("circle.line")
             .data(data)
