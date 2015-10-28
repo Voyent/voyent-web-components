@@ -51,6 +51,8 @@ Example:
                 width: 100px;
                 cursor:move;
                 border-radius: 5px;
+                font-size: 12px;
+                overflow:hidden;
             }
             .taskPanel .taskItem,
             .task {
@@ -242,7 +244,7 @@ Example:
                             <div class="content layout vertical wrap">
                                 <template is="dom-repeat" items="{{_schemas}}" sort="_sortTaskItems">
                                     <div class="flex taskItem" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
-                                        <div class="title">{{item.title}}</div>
+                                        <div class="title">{{item.label}}</div>
                                     </div>
                                 </template>
                             </div>
