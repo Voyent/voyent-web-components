@@ -11,7 +11,7 @@ Polymer({
         var PADDING = 20,
             CIRCLE_RADIUS = 10;
             WIDTH = parseInt(vis.style("width"))-PADDING,
-            HEIGHT = 50;       
+            HEIGHT = parseInt(vis.style("height"));
         
         // Clear our old graph first and reset the cursor
         vis.selectAll("*").remove();
@@ -118,12 +118,14 @@ Polymer({
                 // This will basically function as a toggle
                 if (d == _this.clickedData) {
                     _this.clickedData = null;
+                    _this.clickedDataFormatted = null;
                     document.getElementById('eventDetails').style.display = "none";
                     return;
                 }
                 
                 // Otherwise set our data object for display on the page and show the details
                 _this.clickedData = d;
+                _this.clickedDataFormatted = JSON.stringify(d.data);
                 document.getElementById('eventDetails').style.display = "inline";
             });
     },
