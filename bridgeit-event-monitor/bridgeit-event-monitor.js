@@ -81,7 +81,7 @@ Polymer({
         );
         
         // Draw a circle for every piece of data
-        var lastClickedData = null;
+        var _this = this;
         vis.selectAll("circle.line")
             .data(data)
             .enter().append("circle")
@@ -116,23 +116,15 @@ Polymer({
             .on("click", function(d, i) {
                 // Check if we're re-clicking the same circle, in which case we want to hide the details
                 // This will basically function as a toggle
-                if (d == lastClickedData) {
+                if (d == _this.clickedData) {
+                    _this.clickedData = null;
                     document.getElementById('eventDetails').style.display = "none";
-                    lastClickedData = null;
                     return;
                 }
-                    
-                lastClickedData = d;
+                
+                // Otherwise set our data object for display on the page and show the details
+                _this.clickedData = d;
                 document.getElementById('eventDetails').style.display = "inline";
-                document.getElementById('detailTime').innerHTML = d.time;
-                document.getElementById('detailAccount').innerHTML = d.account;
-                document.getElementById('detailRealm').innerHTML = d.realm;
-                document.getElementById('detailService').innerHTML = d.service;
-                document.getElementById('detailEvent').innerHTML = d.event;
-                document.getElementById('detailType').innerHTML = d.type;
-                document.getElementById('detailUsername').innerHTML = d.username;
-                document.getElementById('detailData').innerHTML = d.data;
-                document.getElementById('detailId').innerHTML = d._id;                   
             });
     },
     
