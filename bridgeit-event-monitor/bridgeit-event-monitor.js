@@ -7,14 +7,32 @@ Polymer({
      * @param data array of the metric events to show on the graph
      */
     show: function(data) {
-        var vis = d3.select("#eventmonitorsvg"),
-            PADDING = 20,
+        var vis = d3.select("#eventmonitorsvg");
+        var PADDING = 20,
             CIRCLE_RADIUS = 10;
-        var WIDTH = parseInt(vis.style("width"))-PADDING,
-            HEIGHT = 50;
+            WIDTH = parseInt(vis.style("width"))-PADDING,
+            HEIGHT = 50;       
         
-        // Clear our old graph first
+        // Clear our old graph first and reset the cursor
         vis.selectAll("*").remove();
+        vis.style("cursor", null);
+        
+        // Before progressing check if we even have data to graph
+        // If we don't we'll disable zoom/drag and show an error message
+        if (typeof data == "undefined" || data == null || data.length == 0) {
+            console.log("No data was passed to event monitor graph.");
+            
+            vis.call(d3.behavior.zoom().on("zoom", null));
+            vis.call(d3.behavior.drag().on("drag", null));
+            
+            vis.append("svg:g").attr("class", "axis");
+            vis.append("text").text("No event data was found, please try again.")
+                .attr("x", PADDING)
+                .attr("y", HEIGHT/2)
+                .attr("fill", "red");
+            
+            return;
+        }
         
         // Build our date scale
         xScale = d3.time.scale().domain([d3.min(data, function(d) {
@@ -35,16 +53,35 @@ Polymer({
             .call(xAxis);
             
         // Add zoom functionality
-        var zoom = d3.behavior.zoom()
+        vis.call(d3.behavior.zoom()
             .x(xScale)
             .on("zoom", function() {
                 vis.select("g.axis").call(xAxis);
                 vis.selectAll("circle")
                     .attr("cx", function(d) { return xScale(new Date(d.time)) });
-            });
-        vis.call(zoom);
+            })
+            .on("zoomstart", function() {
+                vis.style("cursor", "zoom-in");
+            })
+            .on("zoomend", function() {
+                vis.style("cursor", null);
+            })
+        );
+        
+        // Customize our drag functionality
+        vis.call(d3.behavior.drag()
+            .on("dragstart", function() {
+                vis.style("cursor", "move");
+                d3.select("body").style("cursor", "move");
+            })
+            .on("dragend", function() {
+                vis.style("cursor", null);
+                d3.select("body").style("cursor", null);                   
+            })
+        );
         
         // Draw a circle for every piece of data
+        var lastClickedData = null;
         vis.selectAll("circle.line")
             .data(data)
             .enter().append("circle")
@@ -77,6 +114,15 @@ Polymer({
                 }
             })
             .on("click", function(d, i) {
+                // Check if we're re-clicking the same circle, in which case we want to hide the details
+                // This will basically function as a toggle
+                if (d == lastClickedData) {
+                    document.getElementById('eventDetails').style.display = "none";
+                    lastClickedData = null;
+                    return;
+                }
+                    
+                lastClickedData = d;
                 document.getElementById('eventDetails').style.display = "inline";
                 document.getElementById('detailTime').innerHTML = d.time;
                 document.getElementById('detailAccount').innerHTML = d.account;
