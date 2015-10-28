@@ -42,6 +42,7 @@ Polymer({
         var _this = this;
         bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
             for (var i=0; i<schemas.length; i++) {
+                schemas[i].label = schemas[i].title.replace('-task',''); //remove redundant '-task' from task item label
                 var properties = schemas[i].properties;
                 for (var prop in properties) {
                     if (!properties.hasOwnProperty(prop)) {
@@ -50,10 +51,6 @@ Polymer({
                     //add required directly to property in schema so it can be used in template
                     if (schemas[i].required.indexOf(prop) > -1) {
                         properties[prop].required = true;
-                    }
-                    //set the value of any token properties
-                    if (properties[prop].title == 'token') {
-                        properties[prop].value = bridgeit.io.auth.getLastAccessToken();
                     }
                 }
             }

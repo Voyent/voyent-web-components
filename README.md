@@ -49,8 +49,8 @@ Profit:
 ### Demos
 
 [&lt;bridgeit-action-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-action-editor/)  
+[&lt;bridgeit-event-monitor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-event-monitor/)  
 [&lt;bridgeit-location-simulator&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-location-simulator/)  
 [&lt;bridgeit-locations&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-locations/)  
 [&lt;bridgeit-log-viewer&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-log-viewer/)  
 [&lt;bridgeit-query-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-query-editor/)  
-[&lt;bridgeit-event-monitor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-event-monitor/)  
