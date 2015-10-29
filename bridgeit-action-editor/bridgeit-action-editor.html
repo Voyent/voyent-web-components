@@ -50,6 +50,8 @@ Example:
                 width: 100px;
                 cursor:move;
                 border-radius: 5px;
+                font-size: 12px;
+                overflow:hidden;
             }
             .taskPanel .taskItem,
             .task {
@@ -72,7 +74,7 @@ Example:
             }
             .actionPanel,
             .task-group {
-                padding-bottom: 25px;
+                padding-bottom: 40px !important;
             }
             .actionContainer,
             .taskItem,
@@ -157,7 +159,7 @@ Example:
             }
             .task-group.hidden,
             .task.hidden {
-                padding-bottom:0;
+                padding-bottom:0 !important;
             }
             .content.hidden {
                 display:none;
@@ -181,6 +183,16 @@ Example:
                 background-color: #EFEFEF;
                 padding:10px 0 10px 0;
                 text-align:center;
+            }
+            .event-triggers {
+                max-height: 70px;
+                overflow-y: scroll;
+                overflow-x: hidden;
+            }
+            .event-triggers label {
+                cursor:pointer;
+                color:#777;
+                font-weight:normal;
             }
             button {
                 color: #FFF;
@@ -229,9 +241,9 @@ Example:
                         <div class="taskPanel">
                             <div class="header" on-click="_toggleTask">Tasks<div class="arrow"></div></div>
                             <div class="content layout vertical wrap">
-                                <template is="dom-repeat" items="{{_schemas}}">
+                                <template is="dom-repeat" items="{{_schemas}}" sort="_sortTaskItems">
                                     <div class="flex taskItem" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
-                                        <div class="title">{{item.title}}</div>
+                                        <div class="title">{{item.label}}</div>
                                     </div>
                                 </template>
                             </div>
@@ -243,13 +255,24 @@ Example:
                         <form id="actionForm">
                             <div class="flex">
                                 <div>
-                                    <label title="The action ID.">
+                                    <label title="The action ID">
                                         <span class="required">*</span><span>Action Name</span>
-                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name." value="{{_actionId::change}}" required>
+                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name" value="{{_actionId::change}}" required>
                                     </label>
-                                    <label title="The action description.">
+                                    <label title="The action description">
                                         <span>Description</span>
-                                        <input class="form-control" type="text" placeholder="Action Description" title="The action description." value="{{_actionDesc::change}}">
+                                        <input class="form-control" type="text" placeholder="Action Description" title="The action description" value="{{_actionDesc::change}}">
+                                    </label>
+                                    <label title="The event triggers">
+                                        <span>Event Triggers</span>
+                                        <div class="event-triggers">
+                                            <template id="triggerList" is="dom-repeat" items="{{_events}}" sort="_sortEventList">
+                                                <label title$="{{item.event}}" class="form-control">
+                                                    <span>{{item.event}}</span>
+                                                    <input type="checkbox" on-click="_toggleEvent" checked="{{item.checked::change}}"/>
+                                                </label>
+                                            </template>
+                                        </div>
                                     </label>
                                 </div>
                             </div>
