@@ -64,7 +64,7 @@
       'doLogin': 'login'
     },
 
-    login: function(username, password){
+    login: function(username, password, admin){
       console.log('bridgeit-auth-provider.login()');
       var _this = this;
       if( username ){
@@ -79,14 +79,17 @@
         return;
       }
       this.error = '';
-      return bridgeit.io.auth.connect({
+      var params = {
         account: this.account,
-        realm: this.realm,
         username: this.username,
         password: password,
         host: this.host,
         usePushService: this.usePushService
-      }).then(function(authResponse){ //jshint ignore:line
+      };
+      if( !admin ){
+        params.realm = this.realm;
+      }
+      return bridgeit.io.auth.connect().then(function(authResponse){ //jshint ignore:line
         _this.authResponse = authResponse;
         bridgeit.io.setCurrentRealm(_this.realm);
         _this.accessToken = bridgeit.io.auth.getLastAccessToken();
