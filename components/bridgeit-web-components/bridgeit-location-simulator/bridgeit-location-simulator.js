@@ -281,7 +281,7 @@ Polymer({
         for (var i=0; i<children.length; i++) {
             routes.push(children[i].getRouteJSON());
         }
-        var params = {collection:collection,document:{routes:routes}};
+        var params = {realm:this.realm,collection:collection,document:{routes:routes}};
         if (simulationId && simulationId.trim().length > 0) {
             params.id = simulationId;
             docCall = 'updateDocument';
@@ -308,7 +308,7 @@ Polymer({
         if (!collection) {
             collection = this.collection;
         }
-        bridgeit.io.documents.deleteDocument({collection:collection,id:simulationId}).then(function() {
+        bridgeit.io.documents.deleteDocument({realm:this.realm,collection:collection,id:simulationId}).then(function() {
             if (_this._activeSim._id === simulationId) {
                 //the active simulation was deleted so reset the simulation routes
                 _this._activeSim = null;
@@ -330,7 +330,7 @@ Polymer({
         if (!collection) {
             collection = this.collection;
         }
-        bridgeit.io.documents.findDocuments({collection:collection}).then(function(simulations) {
+        bridgeit.io.documents.findDocuments({realm:this.realm,collection:collection}).then(function(simulations) {
             _this.fire('simulationsRetrieved',{simulations:simulations});
         }).catch(function(error) {
             console.log('Issue getting simulations:',error);
@@ -654,7 +654,7 @@ Polymer({
     _getRealmUsers: function() {
         var _this = this;
         //pass the users to the child components and set the users internally so they can be passed in the constructor of new routes defined via the `routes` attribute
-        bridgeit.io.admin.getRealmUsers({realmName:this.realm}).then(function(users) {
+        bridgeit.io.admin.getRealmUsers({realm:this.realm}).then(function(users) {
             _this.fire('usersRetrieved',{users:users.length>0?users:null});
             _this._users = users.length>0?users:null;
         }).catch(function(error) {
@@ -718,7 +718,7 @@ Polymer({
         var _this = this;
         google.maps.event.addListener(drawingManager, 'markercomplete', function (marker) {
             var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] } } };
-            bridgeit.io.location.updateLocation({location:location}).then(function(data) {
+            bridgeit.io.location.updateLocation({realm:_this.realm,location:location}).then(function(data) {
                 location._id = data.uri.split("/").pop();
                 location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._locationMarkers.push(marker);

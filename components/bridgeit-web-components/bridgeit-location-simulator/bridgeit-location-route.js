@@ -151,7 +151,7 @@ BridgeIt.LocationRoute = Polymer({
                     location.username = _this.user;
                     location.demoUsername = _this.user; //(NTFY-301)
                 }
-                bridgeit.io.location.updateLocation({location:location}).then(function(data) {
+                bridgeit.io.location.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
                     //set location object (take best guess at username and lastUpdated without re-retrieving record)
                     _this._location = location;
                     _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
@@ -221,7 +221,7 @@ BridgeIt.LocationRoute = Polymer({
         }
         var route = this._route;
         this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the next location
-        bridgeit.io.location.updateLocation({location:this._location}).then(function() {
+        bridgeit.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
             if (_this._followUser) {
@@ -251,7 +251,7 @@ BridgeIt.LocationRoute = Polymer({
         }
         var route = this._route;
         this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the previous location
-        bridgeit.io.location.updateLocation({location:this._location}).then(function() {
+        bridgeit.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
             if (_this._followUser) {
@@ -275,7 +275,7 @@ BridgeIt.LocationRoute = Polymer({
         if (!this._location) {
             return;
         }
-        bridgeit.io.location.updateLocation({location:this._location}).then(function(data) {
+        bridgeit.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
             if (!_this._location) {
                 return; //the simulation has been cleaned up
             }
@@ -416,7 +416,7 @@ BridgeIt.LocationRoute = Polymer({
                 clearInterval(updateLocation);
                 return;
             }
-            bridgeit.io.location.updateLocation({location:_this._location}).then(function(data) {
+            bridgeit.io.location.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
                 if (!_this._location) {
                     return; //the simulation has been cleaned up
                 }
