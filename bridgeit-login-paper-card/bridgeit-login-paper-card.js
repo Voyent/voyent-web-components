@@ -41,6 +41,10 @@
       cancelLabel: {
         notify: true,
         type: String
+      },
+      loginAsAdmin: {
+        notify: true,
+        type: Boolean
       }
     },
 
@@ -53,7 +57,7 @@
         return;
       }
       this.$$('#loginSpinner').active = true;
-      authProvider.login(this.username, this.password).then(function(){
+      authProvider.login(this.username, this.password, this.loginAsAdmin).then(function(){
         //clear password
         _this.password = '';
         _this.$$('#loginSpinner').active = false;
