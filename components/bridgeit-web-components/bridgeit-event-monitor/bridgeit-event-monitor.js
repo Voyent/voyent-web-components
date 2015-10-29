@@ -34,6 +34,8 @@ Polymer({
             return;
         }
         
+        console.log("Going to graph " + data.length + " points for event monitor.");
+        
         // Build our date scale
         xScale = d3.time.scale().domain([d3.min(data, function(d) {
             return new Date(d.time);
