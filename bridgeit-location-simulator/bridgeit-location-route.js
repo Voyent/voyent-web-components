@@ -121,65 +121,78 @@ BridgeIt.LocationRoute = Polymer({
             if ((this._users && this._users.length > 0 && !this.user) || !this.origin || !this.destination) {
                 return;
             }
-            this._directionsService.route({
-                origin:this._origin || this.origin,
-                destination:this._destination || this.destination,
-                travelMode: google.maps.TravelMode[this.travelmode]
-            }, function(response, status) {
-                if (status !== google.maps.DirectionsStatus.OK) {
-                    return;
-                }
-                _this._directionsRenderer.setDirections(response);
-                //Use the steps of the legs instead of overview_path/polyline_path because they are the most atomic unit of a directions route
-                var legs = response.routes[0].legs;
-                var route = [];
-                for (var i=0;i<legs.length;i++) {
-                    var steps = legs[i].steps;
-                    for (var j=0;j<steps.length;j++) {
-                        Array.prototype.push.apply(route, steps[j].path);
+            var failures=0;
+            (function routeRequest(){
+                _this._directionsService.route({
+                    origin:_this._origin || _this.origin,
+                    destination:_this._destination || _this.destination,
+                    travelMode: google.maps.TravelMode[_this.travelmode]
+                }, function(response, status) {
+                    if (status !== google.maps.DirectionsStatus.OK) {
+                        if (failures == 10) {
+                            console.log('Directions request failed 10 times for "',_this.label,'". Not retrying.');
+                            return;
+                        }
+                        console.log('Error starting route "',_this.label+'"','due to',status+'.','This was failure #',parseInt(failures+1)+'.','Retrying request in 3 seconds...');
+                        setTimeout(function () {
+                            routeRequest();
+                        },3000);
+                        failures++;
+                        return;
                     }
-                }
-                route = _this._processRoute(route); //add more coordinates than what is provided by Google so we can move smoother along the path
-                _this._route = route;
-                var totalSecs = legs[0].distance.value / (_this.speed * (_this.speedunit === 'kph'? 0.277778 : 0.44704)); //number of seconds to travel the entire route (distance in m / speed in m/s)
-                _this._totalMills = 1000 * totalSecs; //number of milliseconds to travel the entire route
-                _this._interval = 1000 / (route.length / totalSecs); //number of milliseconds to move one point
-                //Start by POSTing the first coordinate to the Location Service
-                _this._index = 0;
-                var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [route[_this._index].lng(),route[_this._index].lat()] } } };
-                if (_this.user && _this.user.length > 0) {
-                    location.username = _this.user;
-                    location.demoUsername = _this.user; //(NTFY-301)
-                }
-                bridgeit.io.location.updateLocation({realm:_this.realm,location:location}).then(function(data) {
-                    //set location object (take best guess at username and lastUpdated without re-retrieving record)
-                    _this._location = location;
-                    _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
-                    //set marker object
-                    var marker = new google.maps.Marker({
-                        position: route[_this._index],
-                        map: _this._map,
-                        draggable: false, //don't allow manual location changes during simulation
-                        icon: 'images/user.png'
+                    console.log('Successfully started route',_this.label+'.');
+                    _this._directionsRenderer.setDirections(response);
+                    //Use the steps of the legs instead of overview_path/polyline_path because they are the most atomic unit of a directions route
+                    var legs = response.routes[0].legs;
+                    var route = [];
+                    for (var i=0;i<legs.length;i++) {
+                        var steps = legs[i].steps;
+                        for (var j=0;j<steps.length;j++) {
+                            Array.prototype.push.apply(route, steps[j].path);
+                        }
+                    }
+                    route = _this._processRoute(route); //add more coordinates than what is provided by Google so we can move smoother along the path
+                    _this._route = route;
+                    var totalSecs = legs[0].distance.value / (_this.speed * (_this.speedunit === 'kph'? 0.277778 : 0.44704)); //number of seconds to travel the entire route (distance in m / speed in m/s)
+                    _this._totalMills = 1000 * totalSecs; //number of milliseconds to travel the entire route
+                    _this._interval = 1000 / (route.length / totalSecs); //number of milliseconds to move one point
+                    //Start by POSTing the first coordinate to the Location Service
+                    _this._index = 0;
+                    var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [route[_this._index].lng(),route[_this._index].lat()] } } };
+                    if (_this.user && _this.user.length > 0) {
+                        location.username = _this.user;
+                        location.demoUsername = _this.user; //(NTFY-301)
+                    }
+                    bridgeit.io.location.updateLocation({realm:_this.realm,location:location}).then(function(data) {
+                        //set location object (take best guess at username and lastUpdated without re-retrieving record)
+                        _this._location = location;
+                        _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                        //set marker object
+                        var marker = new google.maps.Marker({
+                            position: route[_this._index],
+                            map: _this._map,
+                            draggable: false, //don't allow manual location changes during simulation
+                            icon: 'images/user.png'
+                        });
+                        _this._marker = marker;
+                        //center and zoom on marker at the beginning of the simulation
+                        /*_this._map.setCenter(marker.getPosition());
+                        _this._map.setZoom(18);*/
+                        //initialize ETA
+                        _this._updateETA(_this._totalMills-_this._interval);
+                        //start simulation
+                        _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this}); //pass required data to the parent component
+                        _this._doSimulation();
+                        //set button states
+                        _this._inputsDisabled=true;
+                        _this._cancelBtnDisabled=false;
+                        _this._updateBtnDisabled=false;
+                    }).catch(function(error) {
+                        console.log('Issue updating location:',error);
+                        _this.fire('bridgeit-error', {error: error});
                     });
-                    _this._marker = marker;
-                    //center and zoom on marker at the beginning of the simulation
-                    _this._map.setCenter(marker.getPosition());
-                    _this._map.setZoom(18);
-                    //initialize ETA
-                    _this._updateETA(_this._totalMills-_this._interval);
-                    //start simulation
-                    _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this}); //pass required data to the parent component
-                    _this._doSimulation();
-                    //set button states
-                    _this._inputsDisabled=true;
-                    _this._cancelBtnDisabled=false;
-                    _this._updateBtnDisabled=false;
-                }).catch(function(error) {
-                    console.log('Issue updating location:',error);
-                    _this.fire('bridgeit-error', {error: error});
                 });
-            });
+            } )();
         }
         else if (this._paused) { //since we have a route, continue the simulation, but only if we are paused (so we don't start an already running simulation)
             this._doSimulation();
