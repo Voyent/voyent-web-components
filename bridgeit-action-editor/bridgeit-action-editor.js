@@ -3,11 +3,6 @@ Polymer({
 
     properties: {
         /**
-         * Required to authenticate with BridgeIt.
-         * @default bridgeit.io.auth.getLastAccessToken()
-         */
-        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
-        /**
          * Defines the BridgeIt account of the realm.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
@@ -25,7 +20,7 @@ Polymer({
      */
 
 	ready: function() {
-        if (this.accesstoken) {
+        if (bridgeit.io.auth.isLoggedIn()) {
             this.getActions();
             this.getTasks();
         }

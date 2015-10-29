@@ -4,11 +4,6 @@ Polymer({
 
     properties: {
         /**
-         * Required to authenticate with BridgeIt.
-         * @default bridgeit.io.auth.getLastAccessToken()
-         */
-        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
-        /**
          * The BridgeIt account of the realm.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
@@ -108,7 +103,7 @@ Polymer({
             //setup listeners for bridgeit-location-route components
             _this._setupRouteListeners();
             //initialize location data on the map
-            if (_this.accesstoken) {
+            if (bridgeit.io.auth.isLoggedIn()) {
                 _this.refreshMap();
             }
         };
@@ -175,7 +170,7 @@ Polymer({
      * Play all simulations (paused routes will be continued).
      */
     playAll: function() {
-        if (!this.accesstoken) {
+        if (!bridgeit.io.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -190,7 +185,7 @@ Polymer({
      * Pause all simulation routes.
      */
     pauseAll: function() {
-        if (!this.accesstoken) {
+        if (!bridgeit.io.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -205,7 +200,7 @@ Polymer({
      * Cancel all simulation routes.
      */
     cancelAll: function() {
-        if (!this.accesstoken) {
+        if (!bridgeit.io.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -229,7 +224,7 @@ Polymer({
      */
     addRoute: function(label,user,origin,destination,travelmode,speed,speedunit,frequency) {
         var _this = this;
-        if (!this.accesstoken) {
+        if (!bridgeit.io.auth.isLoggedIn()) {
             return;
         }
         //first append the new route as a direct child of the component so it inherits any custom styling

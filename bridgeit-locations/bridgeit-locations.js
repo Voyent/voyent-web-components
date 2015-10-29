@@ -3,11 +3,6 @@ Polymer({
 
     properties: {
         /**
-         * Required to authenticate with BridgeIt.
-         * @default bridgeit.io.auth.getLastAccessToken()
-         */
-        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
-        /**
          * Defines the BridgeIt account of the realm.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
@@ -51,7 +46,7 @@ Polymer({
 			_this._map = new google.maps.Map(_this.$.map, mapOptions);
 			_this._bounds = new google.maps.LatLngBounds();
 
-			if (_this.accesstoken) {
+			if (bridgeit.io.auth.isLoggedIn()) {
 				_this.refreshMap();
 			}
 		};

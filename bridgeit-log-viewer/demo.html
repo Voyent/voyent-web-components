@@ -141,9 +141,7 @@
             document.getElementById('account').value = account;
         }
 
-        var token = bridgeit.io.auth.getLastAccessToken();
-        if (token) {
-            elem.setAttribute('accesstoken', token);
+        if (bridgeit.io.auth.isLoggedIn()) {
             document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
         }
     }

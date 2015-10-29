@@ -42,12 +42,13 @@ Import the component you would like to use:
 Profit:
 
 ```
-<bridgeit-locations id="userLocations" accessToken="xxx" realm="myRealm" account="myAccount" showUserLocations>
+<bridgeit-locations id="userLocations" realm="myRealm" account="myAccount" showUserLocations>
 </bridgeit-locations>
 ```
 
 ### Demos
 
+[&lt;bridgeit-auth-provider&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-auth-provider/bridgeit-auth-provider/)  
 [&lt;bridgeit-action-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-action-editor/)  
 [&lt;bridgeit-location-simulator&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-location-simulator/)  
 [&lt;bridgeit-locations&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-locations/)  

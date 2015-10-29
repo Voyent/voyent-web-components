@@ -3,11 +3,6 @@ Polymer({
     is: "bridgeit-query-editor",
     properties: {
         /**
-         * Required to authenticate with BridgeIt.
-         * @default bridgeit.io.auth.getLastAccessToken()
-         */
-        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
-        /**
          * Defines the BridgeIt realm to build queries for.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
@@ -148,7 +143,7 @@ Polymer({
      * Retrieves a list of all the queries in the current realm.
      */
     fetchQueryList: function() {
-        if (!this.accesstoken || !this.realm || !this.account || !this.service || !this.collection) {
+        if (!bridgeit.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
             return;
         }
         this._getAllQueries();
@@ -185,7 +180,7 @@ Polymer({
      * Completely destroy and reinitialize the editor.
      */
     reloadEditor: function() {
-        if (!this.accesstoken || !this.realm || !this.account || !this.service || !this.collection) {
+        if (!bridgeit.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
             return;
         }
         $(this.$.editor).queryBuilder('destroy');
@@ -215,7 +210,6 @@ Polymer({
     _createQuery: function(query) {
         var _this = this;
         bridgeit.io.query.createQuery({
-            accessToken: this.accesstoken,
             account: this.account,
             realm: this.realm,
             query: query
@@ -236,7 +230,6 @@ Polymer({
         var queryId = this.activeQuery._id;
         bridgeit.io.query.deleteQuery({
             id:queryId,
-            accessToken: this.accesstoken,
             account: this.account,
             realm: this.realm
         }).then(function() {
@@ -251,7 +244,6 @@ Polymer({
     _getAllQueries: function() {
         var _this = this;
         bridgeit.io.query.findQueries({
-            accessToken:  this.accesstoken,
             account:this.account,
             realm: this.realm
         }).then(function(results) {
@@ -369,7 +361,7 @@ Polymer({
         var queryURLTarget = this.queryurltarget;
         if (queryURLTarget && document.getElementById(queryURLTarget)) {
             var q = query ? JSON.stringify(query) : '{}';
-            var params = '?access_token='+this.accesstoken+'&query='+q+'&fields='+JSON.stringify(this.fields)+'&options='+JSON.stringify(this.options);
+            var params = '?access_token='+bridgeit.io.auth.getLastAccessToken()+'&query='+q+'&fields='+JSON.stringify(this.fields)+'&options='+JSON.stringify(this.options);
             var queryURL = this.service_url+params;
             if ($(queryURLTarget).is(':input')) {
                 document.getElementById(queryURLTarget).value=queryURL;
@@ -385,7 +377,7 @@ Polymer({
     _queryService: function(query) {
         var _this = this;
         var params = {
-            accessToken: this.accesstoken,
+            accessToken: bridgeit.io.auth.getLastAccessToken(),
             account: this.account,
             realm: this.realm,
             query: query,

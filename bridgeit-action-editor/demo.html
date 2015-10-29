@@ -152,11 +152,6 @@
 			document.getElementById('realm').value = realm;
 		}
 
-		var token = bridgeit.io.auth.getLastAccessToken();
-		if( token ){
-			elem.setAttribute('accessToken', token);
-			document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
-		}
 	}
 	//initialize known credentials
 	setCredentialsOnComponent();

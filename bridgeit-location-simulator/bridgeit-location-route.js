@@ -114,7 +114,7 @@ BridgeIt.LocationRoute = Polymer({
      */
     playSimulation: function() {
         var _this = this;
-        if (!Polymer.dom(this).parentNode.accesstoken || !Polymer.dom(this).parentNode.account || !Polymer.dom(this).parentNode.realm) {
+        if (!bridgeit.io.auth.isLoggedIn() || !Polymer.dom(this).parentNode.account || !Polymer.dom(this).parentNode.realm) {
             return;
         }
         if (!this._route) { //if no route then it's a new simulation
