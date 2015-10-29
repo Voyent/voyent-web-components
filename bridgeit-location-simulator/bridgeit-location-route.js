@@ -85,7 +85,7 @@ BridgeIt.LocationRoute = Polymer({
      * Fired when the label is changed.
      * @event labelChanged
      */
-        
+
     ready: function() {
         var _this = this;
         if (Polymer.dom(this).parentNode) {
@@ -151,7 +151,7 @@ BridgeIt.LocationRoute = Polymer({
                     location.username = _this.user;
                     location.demoUsername = _this.user; //(NTFY-301)
                 }
-                bridgeit.io.location.updateLocation({realm:this.realm,location:location}).then(function(data) {
+                bridgeit.io.location.updateLocation({realm:_this.realm,location:location}).then(function(data) {
                     //set location object (take best guess at username and lastUpdated without re-retrieving record)
                     _this._location = location;
                     _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
@@ -416,7 +416,7 @@ BridgeIt.LocationRoute = Polymer({
                 clearInterval(updateLocation);
                 return;
             }
-            bridgeit.io.location.updateLocation({realm:this.realm,location:_this._location}).then(function(data) {
+            bridgeit.io.location.updateLocation({realm:_this.realm,location:_this._location}).then(function(data) {
                 if (!_this._location) {
                     return; //the simulation has been cleaned up
                 }
