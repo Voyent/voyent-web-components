@@ -89,7 +89,7 @@
       if( !admin ){
         params.realm = this.realm;
       }
-      return bridgeit.io.auth.connect().then(function(authResponse){ //jshint ignore:line
+      return bridgeit.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
         _this.authResponse = authResponse;
         bridgeit.io.setCurrentRealm(_this.realm);
         _this.accessToken = bridgeit.io.auth.getLastAccessToken();
