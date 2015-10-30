@@ -677,8 +677,9 @@ Polymer({
         //display infoWindow and hide context menu on map click
         google.maps.event.addListener(overlay, 'click', function () {
             var name = location.label || location._id;
+            var content = '<div style="overflow:auto;font-weight:bold;">';
             if (name) {
-                _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+name+'</div>');
+                content = content + name + "</div>";
             }
             if (shape === "polygon") {
                 _this._infoWindow.setPosition(overlay.getPath().getAt(0));
@@ -693,8 +694,9 @@ Polymer({
                 _this._infoWindow.setPosition(overlay.getPosition());
                 var username = location.username ? location.username+'<br/>' : '';
                 var date = location.lastUpdated ? new Date(location.lastUpdated).toLocaleString() : '';
-                _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+username+date+'</div>');
+                content = content+username+date+'</div>';
             }
+            _this._infoWindow.setContent(content);
             _this._infoWindow.open(_this._map,overlay);
             _this._hideContextMenu = true;
         });
