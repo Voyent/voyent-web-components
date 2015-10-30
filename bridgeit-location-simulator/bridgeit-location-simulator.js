@@ -716,7 +716,6 @@ Polymer({
         google.maps.event.addListener(drawingManager, 'markercomplete', function (marker) {
             var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] } } };
             bridgeit.io.location.updateLocation({realm:_this.realm,location:location}).then(function(data) {
-                location._id = data.uri.split("/").pop();
                 location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._locationMarkers.push(marker);
                 _this._userLocationChangedListener(marker,location);
