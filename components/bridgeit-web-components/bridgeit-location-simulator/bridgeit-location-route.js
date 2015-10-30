@@ -100,7 +100,7 @@ BridgeIt.LocationRoute = Polymer({
             });
         }
         //set some default values
-        this._followUser = false;
+        //this._followUser = false;
         this._previousBtnDisabled = true;
         this._nextBtnDisabled = true;
         this._cancelBtnDisabled = true;
@@ -237,9 +237,9 @@ BridgeIt.LocationRoute = Polymer({
         bridgeit.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
-            if (_this._followUser) {
+            /*if (_this._followUser) {
                 _this._map.setCenter(_this._marker.getPosition()); //center map on the marker
-            }
+            }*/
             _this._updateETA(_this._totalMills-_this._interval); //update the ETA
             if (i+1 == route.length) {
                 _this.updateLocationAtMarker();
@@ -267,9 +267,9 @@ BridgeIt.LocationRoute = Polymer({
         bridgeit.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
-            if (_this._followUser) {
+            /*if (_this._followUser) {
                 _this._map.setCenter(_this._marker.getPosition()); //center map on the marker
-            }
+            }*/
             _this._updateETA(_this._totalMills+_this._interval); //update the ETA
             _this._index = i;
             if (i === 0) {
@@ -394,9 +394,13 @@ BridgeIt.LocationRoute = Polymer({
         var updatePosition = setInterval(function() {
             _this._updateETA(_this._totalMills-_this._interval); //update the ETA
             _this._marker.setPosition({lat:_this._route[i].lat(),lng:_this._route[i].lng()}); //update the marker position
-            if (_this._followUser) {
-                _this._map.setCenter(_this._marker.getPosition()); //center map on the marker
-            }
+            /*if (_this._followUser) {
+             _this._map.setCenter(_this._marker.getPosition()); //center map on the marker
+             }*/
+            //keep the map zoomed on the simulation
+            _this._bounds.extend(new google.maps.LatLng(_this._location.location.geometry.coordinates[1],_this._location.location.geometry.coordinates[0]));
+            _this._map.fitBounds(_this._bounds);
+            _this._map.panToBounds(_this._bounds);
             if (_this._paused) {
                 //save the current index and stop recursion
                 _this._index = i;
@@ -509,7 +513,7 @@ BridgeIt.LocationRoute = Polymer({
         if (this._map) {
             //setup direction objects for querying and drawing directions
             this._directionsService = new google.maps.DirectionsService();
-            this._directionsRenderer = new google.maps.DirectionsRenderer({map:this._map});
+            this._directionsRenderer = new google.maps.DirectionsRenderer({map:this._map,preserveViewport:true,hideRouteList:true});
             //setup autocomplete for route inputs
             var origin = new google.maps.places.Autocomplete(this.$$("#origin"),{bounds:this._map.getBounds()});
             this._autocompleteListener(origin,'_origin');
@@ -705,5 +709,13 @@ BridgeIt.LocationRoute = Polymer({
     _setDestination: function(destination) {
         this._destination = null;
         this.destination = destination;
+    },
+
+    /**
+     * Pass the map bounds object.
+     * @private
+     */
+    _setBounds: function(bounds) {
+        this._bounds = bounds;
     }
 });
