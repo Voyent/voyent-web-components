@@ -128,6 +128,7 @@ Polymer({
         if (typeof google === 'undefined' || !this.realm) {
             return;
         }
+        this._bounds = new google.maps.LatLngBounds();
         //refresh realm users
         this._getRealmUsers();
         //delete old location data
