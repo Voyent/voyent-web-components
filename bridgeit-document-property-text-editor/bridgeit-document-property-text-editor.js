@@ -104,8 +104,10 @@
     },
 
     _updateDocumentFromEditor: function(_this){
-      _this.serializedDocumentProperty = _this._editor.getContent();
-      _this.document[_this.documentProperty] = _this.serializedDocumentProperty;
+      if( _this.document ){
+        _this.serializedDocumentProperty = _this._editor.getContent();
+        _this.document[_this.documentProperty] = _this.serializedDocumentProperty;
+      }
     },
 
     saveDocument: function(){
