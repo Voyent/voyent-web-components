@@ -654,7 +654,7 @@ Polymer({
     _getRealmUsers: function() {
         var _this = this;
         //pass the users to the child components and set the users internally so they can be passed in the constructor of new routes defined via the `routes` attribute
-        bridgeit.io.admin.getRealmUsers({realm:this.realm}).then(function(users) {
+        bridgeit.io.admin.getRealmUsers({realmName:this.realm}).then(function(users) {
             _this.fire('usersRetrieved',{users:users.length>0?users:null});
             _this._users = users.length>0?users:null;
         }).catch(function(error) {
