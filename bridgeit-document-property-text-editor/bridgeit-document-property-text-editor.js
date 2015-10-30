@@ -65,8 +65,8 @@
           if( tinymce.activeEditor ){
             _this._editor = tinymce.activeEditor;
             _this._editor.setContent(_this.serializedDocumentProperty);
-            _this._editor.on('SaveContent', function(ed) {
-              _this._updateDocumentFromEditor(ed, _this);
+            _this._editor.on('SaveContent', function(e) {
+              _this._updateDocumentFromEditor(_this);
             });
           }
           else{
@@ -103,14 +103,14 @@
       this._updateEditor();      
     },
 
-    _updateDocumentFromEditor: function(ed, _this){
-      _this.serializedDocumentProperty = ed.getContent();
+    _updateDocumentFromEditor: function(_this){
+      _this.serializedDocumentProperty = _this._editor.getContent();
       _this.document[_this.documentProperty] = _this.serializedDocumentProperty;
     },
 
     saveDocument: function(){
       var _this = this;
-      this._updateDocumentFromEditor(_this._editor, _this);
+      this._updateDocumentFromEditor(_this);
       bridgeit.io.documents.updateDocument({id: this.documentId, document: _this.document}).then(function(){
         _this.message = 'Successfully updated the document.';
       }).catch(function(error){
