@@ -128,13 +128,14 @@ Polymer({
         if (typeof google === 'undefined' || !this.realm) {
             return;
         }
+        this._bounds = new google.maps.LatLngBounds();
         //refresh realm users
         this._getRealmUsers();
         //delete old location data
         this._clearLocationData();
         //get current location data
         var promises = [];
-        promises.push(bridgeit.io.location.findLocations({realm:this.realm,fields:{_id:0}}).then(function(locations) {
+        promises.push(bridgeit.io.location.findLocations({realm:this.realm,fields:{_id:0},options:{sort:{lastUpdated:-1}}}).then(function(locations) {
             if( locations && locations.length ){
                  //process the locations so we only keep the most recent update for each user
                 var userLocations={};
@@ -176,6 +177,9 @@ Polymer({
         var children = Polymer.dom(this).childNodes.filter(function(node) {
             return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
         });
+        if (children.length > 0) { //reset the bounds so we only bound around the simulation
+            this._bounds = new google.maps.LatLngBounds();
+        }
         for (var i=0; i<children.length; i++) {
             children[i].playSimulation();
         }
@@ -677,8 +681,9 @@ Polymer({
         //display infoWindow and hide context menu on map click
         google.maps.event.addListener(overlay, 'click', function () {
             var name = location.label || location._id;
+            var content = '<div style="overflow:auto;font-weight:bold;">';
             if (name) {
-                _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+name+'</div>');
+                content = content + name + "</div>";
             }
             if (shape === "polygon") {
                 _this._infoWindow.setPosition(overlay.getPath().getAt(0));
@@ -693,8 +698,9 @@ Polymer({
                 _this._infoWindow.setPosition(overlay.getPosition());
                 var username = location.username ? location.username+'<br/>' : '';
                 var date = location.lastUpdated ? new Date(location.lastUpdated).toLocaleString() : '';
-                _this._infoWindow.setContent('<div style="overflow:auto;font-weight:bold;">'+username+date+'</div>');
+                content = content+username+date+'</div>';
             }
+            _this._infoWindow.setContent(content);
             _this._infoWindow.open(_this._map,overlay);
             _this._hideContextMenu = true;
         });
@@ -714,7 +720,6 @@ Polymer({
         google.maps.event.addListener(drawingManager, 'markercomplete', function (marker) {
             var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] } } };
             bridgeit.io.location.updateLocation({realm:_this.realm,location:location}).then(function(data) {
-                location._id = data.uri.split("/").pop();
                 location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._locationMarkers.push(marker);
                 _this._userLocationChangedListener(marker,location);
@@ -749,6 +754,11 @@ Polymer({
         var _this = this;
         //add event listeners for bridgeit-location-route events to parent since the events bubble up (one listener covers all children)
         this.addEventListener('startSimulation', function(e) {
+            //Extend the bounds to fit the new location
+            _this._bounds.extend(new google.maps.LatLng(e.detail.location.location.geometry.coordinates[1], e.detail.location.location.geometry.coordinates[0]));
+            _this._map.fitBounds(_this._bounds);
+            _this._map.panToBounds(_this._bounds);
+            e.detail.child._setBounds(_this._bounds);
             //add click listener to new location marker
             _this._clickListener(e.detail.locationMarker,e.detail.location,'point');
             //add the location marker to the master list
@@ -756,8 +766,8 @@ Polymer({
             //create label for follow user menu
             e.detail.label = e.detail.child.label + (e.detail.child.user.trim().length > 0 ? ' ('+e.detail.child.user+')' : '');
             //update the custom map control
-            _this.push('_followableUsers',e.detail);
-            _this._updateMapControl();
+            /*_this.push('_followableUsers',e.detail);
+            _this._updateMapControl();*/
         });
         this.addEventListener('endSimulation', function(e) {
             for (var i=0; i<_this._followableUsers.length; i++) {

@@ -15,6 +15,9 @@
         _userLocationChangedListener: function(marker,location) {
             google.maps.event.addListener(marker, "dragend", function () {
                 location.location.geometry.coordinates = [marker.getPosition().lng(), marker.getPosition().lat()];
+                if (location.username && location.username.length > 0) {
+                    location.demoUsername = location.username; //(NTFY-301)
+                }
                 bridgeit.io.location.updateLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
