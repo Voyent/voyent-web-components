@@ -459,7 +459,7 @@ Polymer({
             });
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
-            _this._locationMarkers.push(marker);
+            _this._handleNewLocationMarker(location.username,marker);
         });
     },
 
@@ -469,7 +469,7 @@ Polymer({
      */
     _clearLocationData: function() {
         this._locationMarkers.forEach(function(marker) {
-            marker.setMap(null);
+            marker[Object.keys(marker)[0]].setMap(null);
         });
         this._locationMarkers = [];
         this._regions.forEach(function(region) {
@@ -654,8 +654,17 @@ Polymer({
         var _this = this;
         //pass the users to the child components and set the users internally so they can be passed in the constructor of new routes defined via the `routes` attribute
         bridgeit.io.admin.getRealmUsers({realmName:this.realm}).then(function(users) {
-            _this.fire('usersRetrieved',{users:users.length>0?users:null});
-            _this._users = users.length>0?users:null;
+            var usernames = [];
+            if (users && users.length > 0) {
+                usernames = users.map(function(user) {
+                    return user.username;
+                });
+                //add the current user to the list (they won't be included because the current user is an admin)
+                usernames.unshift(bridgeit.io.auth.getLastKnownUsername());
+            }
+            //fire event and set users locally
+            _this.fire('usersRetrieved',{users:usernames.length>0?users:null});
+            _this._users = users.length>0?usernames:null;
         }).catch(function(error) {
             //always assume not an admin if something went wrong
             _this.fire('usersRetrieved',{users:null});
@@ -719,9 +728,12 @@ Polymer({
         var _this = this;
         google.maps.event.addListener(drawingManager, 'markercomplete', function (marker) {
             var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] } } };
+            //only allow dropping current user
+            location.username = bridgeit.io.auth.getLastKnownUsername();
+            location.demoUsername = bridgeit.io.auth.getLastKnownUsername(); //(NTFY-301)
             bridgeit.io.location.updateLocation({realm:_this.realm,location:location}).then(function(data) {
                 location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
-                _this._locationMarkers.push(marker);
+                _this._handleNewLocationMarker(location.username,marker);
                 _this._userLocationChangedListener(marker,location);
                 _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
             }).catch(function(error) {
@@ -762,7 +774,7 @@ Polymer({
             //add click listener to new location marker
             _this._clickListener(e.detail.locationMarker,e.detail.location,'point');
             //add the location marker to the master list
-            _this._locationMarkers.push(e.detail.locationMarker);
+            _this._handleNewLocationMarker(e.detail.location.username, e.detail.locationMarker);
             //create label for follow user menu
             e.detail.label = e.detail.child.label + (e.detail.child.user.trim().length > 0 ? ' ('+e.detail.child.user+')' : '');
             //update the custom map control
@@ -856,6 +868,20 @@ Polymer({
                 break;
             }
         }
+    },
+
+    /**
+     * Only keep the last location for each user.
+     * @param username
+     * @param marker
+     * @private
+     */
+    _handleNewLocationMarker: function(username,marker) {
+        if (this._locationMarkers.hasOwnProperty(username)) {
+            this._locationMarkers[username].setMap(null);
+            delete this._locationMarkers[username];
+        }
+        this._locationMarkers[username] = marker;
     },
 
     /**
