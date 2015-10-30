@@ -668,8 +668,8 @@ Polymer({
                 usernames.unshift(bridgeit.io.auth.getLastKnownUsername());
             }
             //fire event and set users locally
-            _this.fire('usersRetrieved',{users:usernames.length>0?users:null});
-            _this._users = users.length>0?usernames:null;
+            _this.fire('usersRetrieved',{users:usernames.length>0?usernames:null});
+            _this._users = usernames.length>0?usernames:null;
         }).catch(function(error) {
             //always assume not an admin if something went wrong
             _this.fire('usersRetrieved',{users:null});
