@@ -6,12 +6,12 @@ Polymer({
          * Defines the BridgeIt account of the realm.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
-        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        account: { type: String },
         /**
          * Defines the BridgeIt realm to request location data for.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
-        realm: { type: String, value: bridgeit.io.auth.getLastKnownRealm(), observer: '_realmChanged' },
+        realm: { type: String, observer: '_realmChanged' },
         /**
          * Whether to show the user location updates for the realm.
          */
@@ -35,6 +35,12 @@ Polymer({
 	},
 
 	ready: function() {
+        if (!this.realm) {
+            this.realm = bridgeit.io.auth.getLastKnownRealm()
+        }
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount()
+        }
         var _this = this;
 		//initialize google maps
 		window.initializeLocationsMap = function() {

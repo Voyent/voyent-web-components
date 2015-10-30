@@ -6,12 +6,12 @@ Polymer({
          * Defines the BridgeIt realm to build queries for.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
-        realm: { type: String, value: bridgeit.io.auth.getLastKnownRealm() },
+        realm: { type: String },
         /**
          * Defines the BridgeIt account to build queries for.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
-        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        account: { type: String },
         /**
          * The service that you would like to build the query for. Currently `documents`, `location` and `metrics` are supported.
          */
@@ -71,6 +71,12 @@ Polymer({
      */
 
     ready: function() {
+        if (!this.realm) {
+            this.realm = bridgeit.io.auth.getLastKnownRealm()
+        }
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount()
+        }
         this.reloadEditor();
         this.fetchQueryList();
     },

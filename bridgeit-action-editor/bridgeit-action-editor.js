@@ -6,12 +6,12 @@ Polymer({
          * Defines the BridgeIt account of the realm.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
-        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        account: { type: String },
         /**
          * Defines the BridgeIt realm to build actions for.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
-        realm: { type: String, value: bridgeit.io.auth.getLastKnownRealm() }
+        realm: { type: String }
     },
 
     /**
@@ -20,6 +20,12 @@ Polymer({
      */
 
 	ready: function() {
+        if (!this.realm) {
+            this.realm = bridgeit.io.auth.getLastKnownRealm()
+        }
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount()
+        }
         if (bridgeit.io.auth.isLoggedIn()) {
             this.getActions();
             this.getTasks();

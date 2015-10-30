@@ -7,12 +7,12 @@ Polymer({
          * The BridgeIt account of the realm.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
-        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        account: { type: String },
         /**
          * The BridgeIt realm to simulate motion in.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
-        realm: { type: String, value: bridgeit.io.auth.getLastKnownRealm() },
+        realm: { type: String },
         /**
          * Define routes as a JSON object array. This attribute can be used on its own or in conjunction with `bridgeit-location-route` components.
          * Changing this attribute dynamically will replace any routes previously created with this attribute, but any routes created using the component will remain unchanged.
@@ -67,6 +67,12 @@ Polymer({
      */
 
     ready: function() {
+        if (!this.realm) {
+            this.realm = bridgeit.io.auth.getLastKnownRealm()
+        }
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount()
+        }
         var _this = this;
         //set some default values
         this._locationMarkers = [];

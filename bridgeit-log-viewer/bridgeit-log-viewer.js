@@ -7,7 +7,7 @@ Polymer({
          * Defines the BridgeIt account to view logs for.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
-        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        account: { type: String },
         /**
          * A query object that can be used to find specific log entries.
          *
@@ -55,6 +55,9 @@ Polymer({
     },
 
     ready: function() {
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount()
+        }
         this.fetchLogs();
         this._noLogs = false;
     },
