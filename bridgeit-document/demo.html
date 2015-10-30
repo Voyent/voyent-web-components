@@ -173,6 +173,11 @@
   function selectDocument(item){
     console.log('selectDocument() ' + item);
   }
+
+  function logout(){
+    document.querySelector('#authProvider').logout();
+    document.querySelector('#demo').message = 'Sucessfully logged out';
+  }
   
   </script>
 </body>
