@@ -55,6 +55,10 @@ Polymer({
 			if (bridgeit.io.auth.isLoggedIn()) {
 				_this.refreshMap();
 			}
+            //make sure the map is sized correctly for the view
+            setTimeout(function() {
+                google.maps.event.trigger(_this._map, "resize");
+            },100);
 		};
 		if( !('google' in window) || !('maps' in window.google)){
             var script = document.createElement('script');
