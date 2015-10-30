@@ -13,7 +13,6 @@
          * @param location
          */
         _userLocationChangedListener: function(marker,location) {
-            var _this = this;
             google.maps.event.addListener(marker, "dragend", function () {
                 location.location.geometry.coordinates = [marker.getPosition().lng(), marker.getPosition().lat()];
                 if (location.username && location.username.length > 0) {
