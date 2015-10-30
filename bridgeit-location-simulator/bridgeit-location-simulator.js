@@ -134,7 +134,7 @@ Polymer({
         this._clearLocationData();
         //get current location data
         var promises = [];
-        promises.push(bridgeit.io.location.findLocations({realm:this.realm,fields:{_id:0}}).then(function(locations) {
+        promises.push(bridgeit.io.location.findLocations({realm:this.realm,fields:{_id:0},options:{sort:{lastUpdated:-1}}}).then(function(locations) {
             if( locations && locations.length ){
                  //process the locations so we only keep the most recent update for each user
                 var userLocations={};
