@@ -95,7 +95,7 @@ Example:
                     <select id="users" class$="{{userInputClass}}" value="{{user::change}}" disabled$="{{_inputsDisabled}}">
                         <option value="" selected>Select a User</option>
                         <template is="dom-repeat" items="{{_users}}" as="user">
-                            <option value="{{user.username}}">{{user.username}}</option>
+                            <option value="{{user}}">{{user}}</option>
                         </template>
                     </select>
                 </div>

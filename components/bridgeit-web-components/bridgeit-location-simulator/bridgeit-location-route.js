@@ -159,10 +159,8 @@ BridgeIt.LocationRoute = Polymer({
                     //Start by POSTing the first coordinate to the Location Service
                     _this._index = 0;
                     var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [route[_this._index].lng(),route[_this._index].lat()] } } };
-                    if (_this.user && _this.user.length > 0) {
-                        location.username = _this.user;
-                        location.demoUsername = _this.user; //(NTFY-301)
-                    }
+                    location.username = _this.user || bridgeit.io.auth.getLastKnownUsername();
+                    location.demoUsername = _this.user || bridgeit.io.auth.getLastKnownUsername(); //(NTFY-301)
                     bridgeit.io.location.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
                         //set location object (take best guess at username and lastUpdated without re-retrieving record)
                         _this._location = location;
@@ -513,7 +511,7 @@ BridgeIt.LocationRoute = Polymer({
         if (this._map) {
             //setup direction objects for querying and drawing directions
             this._directionsService = new google.maps.DirectionsService();
-            this._directionsRenderer = new google.maps.DirectionsRenderer({map:this._map,preserveViewport:true,hideRouteList:true});
+            this._directionsRenderer = new google.maps.DirectionsRenderer({map:this._map,preserveViewport:true,hideRouteList:true,suppressMarkers:true});
             //setup autocomplete for route inputs
             var origin = new google.maps.places.Autocomplete(this.$$("#origin"),{bounds:this._map.getBounds()});
             this._autocompleteListener(origin,'_origin');
@@ -656,9 +654,7 @@ BridgeIt.LocationRoute = Polymer({
             setTimeout(function() {
                 var user = _this.user;
                 _this.set('user','');
-                var usernames = users.map(function(user) {
-                    return user.username;
-                }).filter(function(username) {
+                var usernames = users.filter(function(username) {
                     return username === user;
                 });
                 if (usernames.length > 0) {
