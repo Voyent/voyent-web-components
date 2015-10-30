@@ -16,7 +16,10 @@
       },
       username: {
         notify: true,
-        type: String
+        type: String,
+        value: function(){
+          return bridgeit.io.auth.getLastKnownUsername();
+        }
       },
       password: {
         notify: true,
