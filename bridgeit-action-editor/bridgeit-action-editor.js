@@ -344,7 +344,7 @@ Polymer({
                     if (!properties.hasOwnProperty(prop)) {
                         continue;
                     }
-                    if (typeof params[properties[prop].title] !== 'undefined') {
+                    if (params && typeof params[properties[prop].title] !== 'undefined') {
                         properties[prop].value = params[properties[prop].title];
                     }
                 }
