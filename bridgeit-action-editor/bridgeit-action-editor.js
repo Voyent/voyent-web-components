@@ -43,12 +43,15 @@ Polymer({
         var _this = this;
         bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
             for (var i=0; i<schemas.length; i++) {
-                schemas[i].label = schemas[i].title.replace('-task',''); //remove redundant '-task' from task item label
+                //remove redundant '-task' from task item label
+                schemas[i].label = schemas[i].title.replace('-task','');
                 var properties = schemas[i].properties;
                 for (var prop in properties) {
                     if (!properties.hasOwnProperty(prop)) {
                         continue;
                     }
+                    //add value directly to property in schema so it can be used for binding
+                    properties[prop].value='';
                     //add required directly to property in schema so it can be used in template
                     if (schemas[i].required && schemas[i].required.indexOf(prop) > -1) {
                         properties[prop].required = true;
@@ -184,21 +187,22 @@ Polymer({
      * @returns {boolean}
      */
     validateAction: function() {
-        //make sure we have at least one task defined
-        var haveTasks = false;
-        for (var i=0; i<this._taskGroups.length; i++) {
-            if (this._taskGroups[i].tasks.length > 0) {
-                haveTasks = true;
-                break;
-            }
-        }
-        if (!haveTasks) {
-            alert('You must define at least one task.');
-            return false;
-        }
         //validate required fields
         if (!this.$$('#actionForm').checkValidity()) {
             alert('Please enter all required fields.');
+            return false;
+        }
+        var hasTasks = false;
+        for (var i=0; i<this._taskGroups.length; i++) {
+            //make sure we have at least one task defined in each task group
+            var tasks = this._taskGroups[i].tasks;
+            if (tasks.length > 0) {
+                hasTasks = true;
+                break;
+            }
+        }
+        if (!hasTasks) {
+            alert('You must define at least one task.');
             return false;
         }
         return true;
@@ -557,6 +561,16 @@ Polymer({
      */
     _isString: function(type) {
         return type=='string';
+    },
+
+    /**
+     * Template helper function
+     * @param title
+     * @returns {boolean}
+     * @private
+     */
+    _isFunction: function(title) {
+        return title=='function';
     },
 
     //event handler functions
