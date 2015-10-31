@@ -50,7 +50,7 @@ Polymer({
                         continue;
                     }
                     //add required directly to property in schema so it can be used in template
-                    if (schemas[i].required.indexOf(prop) > -1) {
+                    if (schemas[i].required && schemas[i].required.indexOf(prop) > -1) {
                         properties[prop].required = true;
                     }
                 }
