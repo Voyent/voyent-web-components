@@ -510,8 +510,8 @@ Polymer({
         while (!parent.classList.contains('task-group')) {
             parent = Polymer.dom(parent).parentNode;
         }
-        parent.classList.toggle('hidden');
-        parent.querySelector('.content').classList.toggle('hidden');
+        parent.classList.toggle('toggled');
+        parent.querySelector('.content').classList.toggle('toggled');
         parent.querySelector('.arrow').classList.toggle('toggled');
     },
 
@@ -521,8 +521,8 @@ Polymer({
      * @private
      */
     _toggleTask: function(e) {
-        Polymer.dom(e.target).parentNode.classList.toggle('hidden');
-        Polymer.dom(e.target).parentNode.querySelector('.content').classList.toggle('hidden');
+        Polymer.dom(e.target).parentNode.classList.toggle('toggled');
+        Polymer.dom(e.target).parentNode.querySelector('.content').classList.toggle('toggled');
         Polymer.dom(e.target).querySelector('.arrow').classList.toggle('toggled');
     },
 

@@ -154,14 +154,14 @@ Example:
             .task-group:last-child {
                 margin-bottom:0;
             }
-            .taskPanel.hidden {
+            .taskPanel.toggled {
                 height:0;
             }
-            .task-group.hidden,
-            .task.hidden {
+            .task-group.toggled,
+            .task.toggled {
                 padding-bottom:0 !important;
             }
-            .content.hidden {
+            .content.toggled {
                 display:none;
             }
             .buttons {
@@ -301,10 +301,10 @@ Example:
                                         </div>
                                         <div class="content">
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                                <div class="task hidden" on-drop="_preventDrop">
+                                                <div class="task toggled" on-drop="_preventDrop">
                                                     <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
                                                     <div class="title" on-click="_toggleTask">{{task.schema.title}}<div class="arrow toggled"></div></div>
-                                                    <div class="content hidden">
+                                                    <div class="content toggled">
                                                         <label title="The task name">
                                                             <span class="required">*</span><span>Task Name</span>
                                                             <input class="form-control" type="text" placeholder="Task Name" title="The task name" value="{{task.name::input}}" required>
