@@ -214,6 +214,10 @@ Example:
             span.required {
                 color: #a94442;
             }
+            .task textarea {
+                min-height:100px;
+                resize:vertical;
+            }
         </style>
         <template is="dom-if" if="{{_schemas}}">
             <content select="bridgeit-action-list"></content>
@@ -258,11 +262,11 @@ Example:
                                 <div>
                                     <label title="The action ID">
                                         <span class="required">*</span><span>Action Name</span>
-                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name" value="{{_actionId::change}}" required>
+                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name" value="{{_actionId::input}}" required>
                                     </label>
                                     <label title="The action description">
                                         <span>Description</span>
-                                        <input class="form-control" type="text" placeholder="Action Description" title="The action description" value="{{_actionDesc::change}}">
+                                        <input class="form-control" type="text" placeholder="Action Description" title="The action description" value="{{_actionDesc::input}}">
                                     </label>
                                     <label title="The event triggers">
                                         <span>Event Triggers</span>
@@ -292,7 +296,7 @@ Example:
                                             <div class="flex">
                                                 <label title="The task group name">
                                                     <span class="title" on-click="_toggleTaskGroup"><span class="required">*</span><span>Task Group Name</span></span>
-                                                    <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::change}}" required>
+                                                    <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
                                                 </label>
                                             </div>
                                         </div>
@@ -304,19 +308,25 @@ Example:
                                                     <div class="content hidden">
                                                         <label title="The task name">
                                                             <span class="required">*</span><span>Task Name</span>
-                                                            <input class="form-control" type="text" placeholder="Task Name" title="The task name" value="{{task.name::change}}" required>
+                                                            <input class="form-control" type="text" placeholder="Task Name" title="The task name" value="{{task.name::input}}" required>
                                                         </label>
                                                         <label title="The task description">
                                                             <span>Description</span>
-                                                            <input class="form-control" type="text" placeholder="Task Description" title="The task description" value="{{task.desc::change}}">
+                                                            <input class="form-control" type="text" placeholder="Task Description" title="The task description" value="{{task.desc::input}}">
                                                         </label>
                                                         <hr/>
                                                         <template is="dom-repeat" items="{{_toArray(task.schema.properties)}}" as="property">
                                                             <label title$="{{property.description}}">
                                                                 <template is="dom-if" if="{{property.required}}"><span class="required">*</span></template><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                           required$="{{property.required}}" value="{{property.value::change}}">
+                                                                    <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                        <textarea class="form-control" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                        required$="{{property.required}}" value="{{property.value::input}}"></textarea>
+                                                                    </template>
+                                                                    <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                        required$="{{property.required}}" value="{{property.value::input}}">
+                                                                    </template>
                                                                 </template>
                                                             </label>
                                                         </template>
