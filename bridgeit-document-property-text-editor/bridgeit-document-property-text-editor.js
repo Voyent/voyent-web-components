@@ -57,10 +57,13 @@
         else{
           this.serializedDocumentProperty = documentToDisplay;
         }
-        tinymce.init({
-          selector: ".document-editor-container", //TODO narrow this,
-          plugins: 'autosave'
-        });
+        if( !_this._editor ){
+          tinymce.init({
+            selector: ".document-editor-container", //TODO narrow this,
+            plugins: 'autosave'
+          });
+        }
+        
         setTimeout(function(){
           if( tinymce.activeEditor ){
             _this._editor = tinymce.activeEditor;
@@ -68,6 +71,7 @@
             _this._editor.on('SaveContent', function(e) {
               _this._updateDocumentFromEditor(_this);
             });
+            _this._editor.show();
           }
           else{
             console.log('bridgeit-document-editor has no active editor');
@@ -76,6 +80,7 @@
       }
       else{
         if( _this._editor ){
+          console.log('hiding editor');
           _this._editor.hide();
         }
       }
