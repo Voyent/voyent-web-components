@@ -182,7 +182,7 @@ Polymer({
               .attr("height", 10)
               .attr("width", legendBoxWidth)
               .attr("title", "'" + d + "' service")
-              .style("fill", colors[String(d)])
+              .style("fill", "black")
               .text(d);
           });
         
