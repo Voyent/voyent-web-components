@@ -36,7 +36,12 @@ Polymer({
         this._selectedEvents=[];
         this._events=[{event:'locationAdded',checked:false},{event:'locationChanged',checked:false},{event:'locationDeleted',checked:false},{event:'nearPointOfInterest',checked:false},{event:'enteredRegion',checked:false},{event:'exitedRegion',checked:false}];
         //keep a reference to the code editor change event listener function for 'removeEventListener'
-        this._editorEventListener = function(e) { _this._taskGroups[_this._groupIndex].tasks[_this._taskIndex].schema.properties.function.value = _this._codeEditor.value; };
+        this._editorEventListener = function(e) {
+            var editor = e.target;
+            var groupIndex = editor.getAttribute('data-groupid').slice(-1);
+            var taskIndex = editor.getAttribute('data-taskid').slice(-1);
+            _this._taskGroups[groupIndex].tasks[taskIndex].schema.properties.function.value = editor.value;
+        };
 	},
 
     /**
@@ -390,19 +395,7 @@ Polymer({
             if (editors && editors.length > 0) {
                 for (var i=0; i<editors.length; i++) {
                     var editor = editors[i];
-                    //find the ID of the task group and task so we know where to map the values of the editor to
-                    var taskIndex;
-                    var parent = Polymer.dom(editor).parentNode;
-                    while (!parent.classList.contains('task-group')) {
-                        if (parent.classList.contains('task')) {
-                            taskIndex = parent.id.slice(-1);
-                        }
-                        parent = Polymer.dom(parent).parentNode;
-                    }
                     editor.editor.$blockScrolling = Infinity; //disable console warning
-                    _this._groupIndex = parent.id.slice(-1);
-                    _this._taskIndex = taskIndex;
-                    _this._codeEditor = editor;
                     editor.removeEventListener('change',_this._editorEventListener);
                     editor.addEventListener('change',_this._editorEventListener);
                 }
