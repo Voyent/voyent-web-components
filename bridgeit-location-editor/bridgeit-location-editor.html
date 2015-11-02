@@ -13,7 +13,7 @@
 <script src="../../bootstrap/js/tooltip.js"></script>
 <script src="../../handlebars/handlebars.js"></script>
 <script src="../../typeahead/dist/typeahead.jquery.js"></script>
-<link rel='stylesheet' href='css/typeahead.css'/>
+
 <dom-module id="bridgeit-location-editor">
 <style type="text/css">
     #map {
@@ -9328,9 +9328,7 @@
     .affix {
         position: fixed;
     }
-    @-ms-viewport {
-        width: device-width;
-    }
+
     .visible-xs,
     .visible-sm,
     .visible-md,
@@ -9539,6 +9537,94 @@
         }
     }
     /*# sourceMappingURL=bootstrap.css.map */
+
+    span.twitter-typeahead .tt-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1000;
+        display: none;
+        float: left;
+        min-width: 160px;
+        padding: 5px 0;
+        margin: 2px 0 0;
+        list-style: none;
+        font-size: 14px;
+        text-align: left;
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+        -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+        background-clip: padding-box;
+    }
+    span.twitter-typeahead .tt-suggestion > p {
+        display: block;
+        padding: 3px 20px;
+        clear: both;
+        font-weight: normal;
+        line-height: 1.42857143;
+        color: #333333;
+        white-space: nowrap;
+    }
+    span.twitter-typeahead .tt-suggestion > p:hover,
+    span.twitter-typeahead .tt-suggestion > p:focus {
+        color: #ffffff;
+        text-decoration: none;
+        outline: 0;
+        background-color: #428bca;
+    }
+    span.twitter-typeahead .tt-suggestion.tt-cursor {
+        color: #ffffff;
+        background-color: #428bca;
+    }
+    span.twitter-typeahead {
+        width: 100%;
+    }
+    .input-group span.twitter-typeahead {
+        display: block !important;
+    }
+    .input-group span.twitter-typeahead .tt-dropdown-menu {
+        top: 32px !important;
+    }
+    .input-group.input-group-lg span.twitter-typeahead .tt-dropdown-menu {
+        top: 44px !important;
+    }
+    .input-group.input-group-sm span.twitter-typeahead .tt-dropdown-menu {
+        top: 28px !important;
+    }
+
+    /** CUSTOM CSS **/
+
+    #searchBarDiv span.twitter-typeahead {
+        height: 100%;
+    }
+
+    #searchBarDiv span.twitter-typeahead .tt-dropdown-menu {
+        min-width:565px;
+        max-width:565px;
+        overflow: hidden;
+    }
+
+    .monitorLocationsSearchBar span.twitter-typeahead .tt-dropdown-menu,
+    .existingMonitorsSearchBar span.twitter-typeahead .tt-dropdown-menu {
+        min-width:275px;
+        max-width:275px;
+        overflow: hidden;
+    }
+
+    .locationMonitorsSearchBar span.twitter-typeahead .tt-dropdown-menu {
+        min-width:258px;
+        max-width:258px;
+        overflow: hidden;
+    }
+
+    .locationMonitorsSearchBar.placesSearch span.twitter-typeahead .tt-dropdown-menu {
+        min-width:475px;
+        max-width:475px;
+        overflow: hidden;
+    }
 
 </style>
 <template>
