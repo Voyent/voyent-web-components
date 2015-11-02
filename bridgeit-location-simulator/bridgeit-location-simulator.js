@@ -68,10 +68,10 @@ Polymer({
 
     ready: function() {
         if (!this.realm) {
-            this.realm = bridgeit.io.auth.getLastKnownRealm()
+            this.realm = bridgeit.io.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = bridgeit.io.auth.getLastKnownAccount()
+            this.account = bridgeit.io.auth.getLastKnownAccount();
         }
         var _this = this;
         //set some default values
