@@ -1,5 +1,6 @@
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">'
+<link rel="import" href="../../juicy-ace-editor/juicy-ace-editor.html">
 
 <!--
 Description
@@ -213,9 +214,9 @@ Example:
             span.required {
                 color: #a94442;
             }
-            .task textarea {
-                min-height:100px;
-                resize:vertical;
+            .task .code-editor {
+                width:100%;
+                min-height:200px;
             }
         </style>
         <template is="dom-if" if="{{_schemas}}">
@@ -301,7 +302,7 @@ Example:
                                         </div>
                                         <div class="content">
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                                <div class="task toggled" on-drop="_preventDrop">
+                                                <div id$="{{task.id}}" class="task toggled" on-drop="_preventDrop">
                                                     <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
                                                     <div class="title" on-click="_toggleTask">{{task.schema.title}}<div class="arrow toggled"></div></div>
                                                     <div class="content toggled">
@@ -319,8 +320,7 @@ Example:
                                                                 <template is="dom-if" if="{{property.required}}"><span class="required">*</span></template><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isFunction(property.title)}}">
-                                                                        <textarea class="form-control" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                        required$="{{property.required}}" value="{{property.value::input}}"></textarea>
+                                                                        <juicy-ace-editor class="code-editor" mode="ace/mode/javascript" softtabs="true" tabsize="4" title$="{{property.description}}"></juicy-ace-editor>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isFunction(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
