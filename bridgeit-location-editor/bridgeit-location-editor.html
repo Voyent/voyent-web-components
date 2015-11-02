@@ -1,0 +1,545 @@
+<link rel="import" href="../../polymer/polymer.html" xmlns="http://www.w3.org/1999/html">
+<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
+<script>
+    if (!("Promise" in window)) {
+        window.Promise = ES6Promise.Promise;
+    }
+</script>
+<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
+<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
+<script src="../../jquery/dist/jquery.js"></script>
+<script src="../../bootstrap/dist/js/bootstrap.js"></script>
+<script src="../../bootstrap/js/popover.js"></script>
+<script src="../../bootstrap/js/tooltip.js"></script>
+<script src="../../handlebars/handlebars.js"></script>
+<script src="../../typeahead.js/dist/typeahead.jquery.js"></script>
+<dom-module id="bridgeit-location-editor">
+<style type="text/css">
+    #map {
+        width: 100%;
+        height: 200px;
+        margin-bottom: 15px;
+    }
+
+    #container {
+        width: 100%;
+        height: 100%;
+    }
+    #overall{
+        width: 100%;
+        height: 100%;
+        position:relative;
+    }
+</style>
+<template>
+<link rel='stylesheet' href='css/font-awesome.css'/>
+<link rel="stylesheet" href="bootstrap/dist/css/bootstrap.css">
+<link rel="stylesheet" href="bootstrap/dist/css/bootstrap-theme.css">
+<link rel='stylesheet' href='css/style.css'/>
+<link rel='stylesheet' href='css/metrics-custom.css'/>
+<link rel='stylesheet' href='css/bootstrap-datetimepicker.css'/>
+<link rel='stylesheet' href='css/typeahead.css'/>
+<div id="overall">
+<div id="container">
+    <div id="map" class="noDblClickSelect"></div>
+</div>
+<div id="searchBarWrap" style="display:none;">
+    <div id="searchBarDiv" class="ui-widget">
+        <input id="locationSearchBar" placeholder="Search for Locations" class="searchBar typeahead">
+        <input id="locationPropertySearchBar" placeholder="Search for Location Properties/Tags"
+               class="searchBar typeahead" style="display:none;">
+        <input id="regionSearchBar" placeholder="Search for Regions" class="searchBar typeahead"
+               style="display:none;">
+        <input id="regionPropertySearchBar" placeholder="Search for Region Properties/Tags"
+               class="searchBar typeahead" style="display:none;">
+        <input id="poiSearchBar" placeholder="Search for POIs" class="searchBar typeahead"
+               style="display:none;">
+        <input id="poiPropertySearchBar" placeholder="Search for POI Properties/Tags"
+               class="searchBar typeahead" style="display:none;">
+        <input id="mapSearchBar" class="searchBar" placeholder="Search the Map" style="display:none;">
+    </div>
+    <div id="regionSearchButton" on-click="querySearch" class="btn btn-sm btn-primary">
+        <img src="css/QueryBarIcon.png">
+    </div>
+    <div on-click="toggleSearchOptDialog" class="btn btn-sm btn-primary mainSearchBarButton">
+        <div>Search <br>Options</div>
+    </div>
+    <div on-click="toggleLocations" class="btn btn-sm btn-primary mainSearchBarButton">
+        <div>Show<br><span>{{searchByTxt}}</span>s</div>
+    </div>
+    <div on-click="toggleDeleteDialog" class="btn btn-sm btn-danger mainSearchBarButton">
+        <div>Delete<br><span>{{searchByTxt}}</span>s</div>
+    </div>
+    <!--TODO: Test to make sure this is working. Originally had click on clearFilter "" querySearch-->
+    <div id="clearFilterBttn" on-click="clearFilter" class="btn btn-sm btn-warning mainSearchBarButton">
+        <div>Clear <br>Filter</div>
+    </div>
+</div>
+
+<template is="dom-if" if="{{showImportDialog}}">
+    <div class="smlPopDlg text-center">
+        <button type="button" class="btn btn-xs btn-danger closeSmlPopDlgBttn" on-click="toggleImportDialog">X
+        </button>
+        <div class="smlPopDlgTitle">Import Location(s)</div>
+        <div class="col-sm-12 medHeight">Select file(s) to import locations from:</div>
+        <div class="col-sm-12 medHeight">
+            <input id="geoJSONUploads" type="file" name="files[]" multiple/>
+        </div>
+        <div class="col-sm-12">
+            <button class="btn btn-sm btn-success" on-click="importLocations">Import</button>
+        </div>
+    </div>
+</template>
+<div id="searchAddButtonWrap" class="customMapBttnWrap">
+    <div id="searchAddButtonDiv" title="Add with Google Places" on-click="togglePlacesSearch">
+                <span class="customMapBttnSpan">
+                    <div id="finalSearchButtonDiv" class="customMapBttn">
+                        <img id="searchAddImage" src="css/searchImage.png">
+                    </div>
+                </span>
+    </div>
+</div>
+<div id="importButtonWrap" class="customMapBttnWrap">
+    <div id="importButtonDiv" title="Import locations from geoJSON file" on-click="toggleImportDialog">
+                <span class="customMapBttnSpan">
+                    <div id="finalImportButtonDiv" class="customMapBttn">
+                        <img id="regionImportImage" src="css/regionImportImage.png">
+                    </div>
+                </span>
+    </div>
+</div>
+
+<template is="dom-if" if="{{showSearchDialog}}">
+    <div class="smlPopDlg">
+        <button type="button" class="btn btn-xs btn-danger closeSmlPopDlgBttn" on-click="toggleSearchOptDialog">X
+        </button>
+        <div class="smlPopDlgTitle">Search Options</div>
+        <div class="col-sm-12 smlHeight" style="font-size:15px;"><strong>Search Type:</strong></div>
+        <div style="height:35px;margin:10px 0 20px 0;">
+                <div class="col-sm-5 smlHeight">Starts With</div>
+                <div class="col-sm-1 smlHeight noPadding">
+                    <input type="radio" name="searchType" checked="checked" value="startsWith" on-click="changeSearchType">
+                </div>
+                <div class="col-sm-5 smlHeight">Ends With</div>
+                <div class="col-sm-1 smlHeight noPadding">
+                    <input type="radio" name="searchType" value="endsWith" on-click="changeSearchType">
+                </div>
+                <div class="col-sm-5 smlHeight">Contains</div>
+                <div class="col-sm-1 smlHeight noPadding">
+                    <input type="radio" name="searchType" value="contains" on-click="changeSearchType" >
+                </div>
+                <div class="col-sm-5 smlHeight">Exact Match</div>
+                <div class="col-sm-1 smlHeight noPadding">
+                    <input type="radio" name="searchType" value="exactMatch" on-click="changeSearchType" >
+                </div>
+        </div>
+        <div class="col-sm-12 smlHeight" style="font-size:15px;"><strong>Search By:</strong></div>
+        <div class="col-sm-11 overAutoNoWrap">
+            <div class="smlHeight"><span>{{searchByTxt}}</span> Name</div>
+            <div class="smlHeight"><span>{{searchByTxt}}</span> Properties/Tags</div>
+            <div class="smlHeight">Google Map Search (Reposition Map)</div>
+        </div>
+        <div class="col-sm-1 noPadding">
+                <div class="smlHeight">
+                    <input type="radio" name="searchByType" checked="checked" value="nameVal" on-click="changeSearchBy">
+                </div>
+                <div class="smlHeight">
+                    <input type="radio" name="searchByType" value="propVal" on-click="changeSearchBy">
+                </div>
+                <div class="smlHeight">
+                    <input type="radio" name="searchByType" value="map" on-click="changeSearchBy">
+                </div>
+        </div>
+    </div>
+</template>
+
+
+<template is="dom-if" if="{{showDeleteDialog}}">
+    <div class="smlPopDlg">
+        <button type="button" class="btn btn-xs btn-danger closeSmlPopDlgBttn" on-click="toggleDeleteDialog">X</button>
+        <div class="smlPopDlgTitle">Delete <span>{{searchByTxt}}</span>s</div>
+        <template is="dom-if" if="{{matchingLocations}}">
+            <div class="col-sm-12 text-center" style="padding-bottom:10px;">Mouseover the <span>{{searchByTxt}}</span>
+                Names to
+                highlight that Location on the map.
+            </div>
+            <div class="col-sm-12 text-center">
+                <!--Below originally had {{action "toggleCheckboxes" "matchingLocations" on="click"}}-->
+                <div class="btn btn-sm btn-primary checkboxToggle" on-click="toggleCheckboxes">{{toggleCheckboxesTxt}}
+                </div>
+            </div>
+            <div class="col-sm-11 overAutoNoWrap">
+                <template is="dom-repeat" items="{{matchingLocations}}">
+                    <div class="locationName smlHeight" data="{{item.id}}">
+                        {{item.name}}
+                    </div>
+                </template>
+            </div>
+    <div class="col-sm-1 noPadding">
+        <template is="dom-repeat" items="{{matchingLocations}}">
+            <div class="smlHeight">
+                <input type="checkbox" name="location" value="{{item.id::change}}">
+            </div>
+        </template>
+    </div>
+    <div class="col-sm-12">
+        <div class="text-center">
+            <button class="btn btn-sm btn-danger" on-click="massDeleteLocations">Delete</button>
+        </div>
+    </div>
+    </template>
+
+
+    <template is="dom-if" if="{{!matchingLocations}}">
+        <br/>
+
+        <div class="col-sm-12 text-center">
+            <div class="smlHeight">
+                No <span>{{searchByTxt}}</span>s found for that query.
+            </div>
+        </div>
+        <br/>
+        </template>
+        </div>
+</template>
+
+<div id="infoWindow"
+     class="infoWindow {{ {infoWindowLg1:showMonitorDiv} {infoWindowLg2:showPropertiesDiv} {infoWindowLg3:showTagsDiv} | tokenList}}">
+    <div class="infoWindowMain">
+        <div id="locationNameDiv">
+            <div id="staticLocationName">
+                <div class="col-sm-6 locationNameWrap noPadding text-center">
+                    <span id="locationName"></span>
+                </div>
+                <div class="text-center col-sm-6">
+                    <button class="btn btn-sm btn-primary" on-click="setupNameEdit">Rename</button>
+                    <button id="locationIdBtn" class="btn btn-sm btn-info">View ID</button>
+                </div>
+            </div>
+            <div id="editLocationName" style="display:none;">
+                <div class="col-sm-6" style="height:50px;">
+                    <input id="locationNameInput" class="form-control locationNameInput" value={{locationNameInput::change}}>
+                </div>
+                <div class="col-sm-6" style="padding-left:20px;">
+                    <button class="btn btn-sm btn-success" on-click="confirmNameChange">Confirm</button>
+                    <button class="btn btn-sm btn-danger" on-click="revertNameEdit">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="regionButtonsDiv" class="text-center">
+
+            <div class="col-sm-3" style="padding-left:20px;">
+                <button id="showPropertiesButton"
+                        class="btn btn-sm btn-primary {{ {active:showPropertiesDiv} | tokenList}} "
+                        on-click="togglePropertiesDiv">Properties
+                </button>
+            </div>
+            <div class="col-sm-3" style="padding-left:28px;">
+                <button id="showTagsButton" class="btn btn-sm btn-primary {{ {active:showTagsDiv} | tokenList}} "
+                        on-click="toggleTagsDiv">Tags
+                </button>
+            </div>
+            <div class="col-sm-3" style="padding-left:0;">
+                <button class="btn btn-sm btn-danger" on-click="removeLocation">Delete</button>
+            </div>
+        </div>
+    </div>
+    <template is="dom-if" if="{{showPropertiesDiv}}">
+        <div class="regionEditorDiv propertiesDiv">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>
+                        <input placeholder="New Name" class='form-control' value="{{newPropKey::change}}">
+                    </td>
+                    <td>
+                        <input placeholder="New Value" class='form-control' value="{{newPropVal::change}}">
+                    </td>
+                    <td>
+                        <button on-click="addProperty" class="btn btn-xs btn-success">Add</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <template is="dom-if" if="{{isPOI}}">Draggable</template>
+                        <template is="dom-if" if="{{!isPOI}}">Editable</template>
+                    </td>
+                    <td>
+                        <select content="{{editablePropOpts}}" value="{{editableProp}}" class="form-control"></select>
+                    </td>
+                    <td>
+                        <button class="btn btn-xs btn-success" on-click="updateEditableProperty">Update</button>
+                    </td>
+                </tr>
+                <template is="dom-if" if="{{!isPOI}}">
+                    <tr class="colourRow">
+                        <td>Color</td>
+                        <td>
+                            <select content="{{colourPropOpts}}" value="{{colourProp}}" class="form-control"></select>
+                        </td>
+                        <td>
+                            <button class="btn btn-xs btn-success" on-click="updateColourProperty">Update</button>
+                        </td>
+                    </tr>
+                </template>
+                <template is="dom-repeat" items="{{regionProperties}}">
+                    <tr>
+                        <td>{{item.key}}</td>
+                        <td>{{item.val}}</td>
+                        <td>
+                            <!--button class="btn btn-xs btn-danger" on-click="removeProperty(item.key)">Delete
+                            </button-->
+                        </td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
+        </div>
+    </template>
+    <template is="dom-if" if="{{showTagsDiv}}">
+        <div class="regionEditorDiv tagsDiv">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Tag</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><input placeholder="New Tag" class='form-control' value="{{newTag::change}}"></td>
+                    <td>
+                        <button class="btn btn-xs btn-success" on-click="addTag">Add</button>
+                    </td>
+                </tr>
+                <template is="dom-repeat" items="{{tags}}">
+                    <tr>
+                        <td>{{item.name}}</td>
+                        <td>
+                            <!--button class="btn btn-xs btn-danger" on-click="removeTag()" tag.name on="click"}}>Delete</button--></td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
+        </div>
+    </template>
+</div>
+
+<template is="dom-if" if="{{showPlacesDialog}}">
+    <div class="lgPopDlg" class="noDblClickSelect {{ {xLgPopDlg:placesSearchResults} | tokenList}}">
+        <button type="button" class="btn btn-xs btn-danger closeLgPopDlgBttn" on-click="togglePlacesSearch">X</button>
+        <template is="dom-if" if="{{arePlacesSearchResults}}">
+            <div class="lgPopDlgTitle">Google Places Search Results</div>
+            <div class="placesEditorDiv">
+                <div class="col-sm-12 pull-left">
+                    <button class="btn btn-sm btn-primary" on-click="backToPlacesSearch">< Back to Search</button>
+                </div>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name<br>----</th>
+                        <th>Vicinity<br>----</th>
+                        <th>
+                            Create
+                            <input type="checkbox" name="createAllPlaces">
+                        </th>
+                        <th style="min-width:85px;">
+                            Type
+                            <label>
+                                R <input type="radio" name="allLocations" value="allRegion"> P <input type="radio"
+                                                                                                      name="allLocations"
+                                                                                                      value="allPois">
+                            </label>
+                        </th>
+                        <th>
+                            Radius (m)
+                            <input class='form-control' type='text' value="{{allLocationsRadius::change}}">
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody id="placesBody">
+                    <template is="dom-repeat" items="{{placesSearchResults}}">
+                        <tr>
+                            <td><img style="max-width:35px;" src="[[item.icon]]"></td>
+                            <td>{{item.name}}</td>
+                            <td>{{item.vicinity}}</td>
+                            <td><input type="checkbox" name="createPlace" value="{{item.place_id::change}}"></td>
+                            <td>
+                                <label>
+                                    Region
+                                    <input type="radio" data="placesType" value="region" disabled="disabled"
+                                           name="{{item.place_id::change}}">
+                                </label>
+                                <br/>
+                                <label>
+                                    POI
+                                    <input type="radio" data="placesType" value="poi" disabled="disabled"
+                                           name="{{item.place_id::change}}">
+                                </label>
+                            </td>
+                            <td><input class='form-control radiusInput' type='text' name='radiusInput'
+                                       placeholder='' value='20' data="{{item.place_id::change}}"></td>
+                        </tr>
+                    </template>
+                    </tbody>
+                </table>
+                <div class="col-sm-12 form-group">
+                    <div class="text-center">
+                        <div class="col-sm-12 form-group" style="border-top:1px solid;padding-top: 15px;">Add Properties
+                            and Tags to the new Locations:
+                        </div>
+
+                        <div class="col-sm-4">
+                            <button class="{{{active:showPlacesPropertiesDiv} | tokenList}} btn btn-sm btn-primary"
+                                    on-click="togglePlacesPropertiesDiv">Properties
+                            </button>
+                        </div>
+                        <div class="col-sm-4">
+                            <button class="{{{active:showPlacesTagsDiv} | tokenList}} btn btn-sm btn-primary"
+                                    on-click="togglePlacesTagsDiv">Tags
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <template is="dom-if" if="{{showPlacesPropertiesDiv}}">
+                    <div class="placesEditorDiv propertiesDiv">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Value</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><input placeholder="New Name" class='form-control' value={{newPropKey::change}}></td>
+                                <td><input placeholder="New Value" class='form-control' value={{newPropVal::change}}></td>
+                                <td>
+                                    <button class="btn btn-xs btn-success" on-click="addProperty">Add</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Editable</td>
+                                <td>
+                                    <select content="{{editablePropOpts}}" value="{{editableProp}}"
+                                            class="form-control"></select>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr class="colourRow">
+                                <td>Color</td>
+                                <td>
+                                    <select content="{{colourPropOpts}}" value="{{colourProp}}"
+                                            class="form-control"></select>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <template is="dom-repeat" items="{{regionProperties::change}}">
+                                <tr>
+                                    <td>{{item.key}}</td>
+                                    <td>{{item.val}}</td>
+                                    <td>
+                                        <!--Was originally "removeProperty" property.key on="click" button class="btn btn-xs btn-danger" on-click="removeProperty">Delete</button--></td>
+                                </tr>
+                            </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template is="dom-if" if="{{showPlacesTagsDiv}}">
+                    <div class="placesEditorDiv tagsDiv">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Tag</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><input placeholder="New Tag" class='form-control' value="{{newTag::change}}"></td>
+                                <td>
+                                    <button class="btn btn-xs btn-success" on-click="addTag" on="click">Add</button>
+                                </td>
+                            </tr>
+                            <template is="dom-repeat" items="{{tags}}">
+                                <tr>
+                                    <td>{{item.name}}</td>
+                                    <!-- Originally action "removeTag" tag.name on="click" below-->
+                                    <td>
+                                        <!--button class="btn btn-xs btn-danger" on-click="removeTag">Delete</button--></td>
+                                </tr>
+                            </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <div class="col-sm-12 text-center">
+                    <button class="btn btn-sm btn-success" on-click="createPlacesLocations">Create Locations</button>
+                </div>
+            </div>
+        </template>
+        <template is="dom-if" if="{{!arePlacesSearchResults}}">
+            <div class="lgPopDlgTitle">Google Places Search</div>
+            <div class="text-center rankSearchResults">
+                <div class="col-sm-12" style="margin-bottom:7px;">Rank Search Results By:</div>
+
+                    <div class="col-sm-6">
+                        <label>
+                            <input type="radio" name="placesSearchRank" value="PROMINENCE" checked="checked">
+                            Google's Assigned Importance
+                        </label>
+                    </div>
+                    <div class="col-sm-6">
+                        <label>
+                            <input type="radio" name="placesSearchRank" value="DISTANCE">
+                            Proximity to Map's Center
+                        </label>
+                    </div>
+
+            </div>
+            <div class="col-sm-12 form-group">
+                <input id="placesName" class="form-control" type="text" placeholder="Name" value="{{placesName::input}}">
+            </div>
+            <div class="col-sm-10 form-group" style="padding-right:5px;">
+                <input class="form-control" type="text" placeholder="Types (seperated by commas)"
+                       value="{{placesTypes::input}}">
+            </div>
+            <div class="col-sm-2 noPadding" style="line-height:30px;"><a
+                    href="https://developers.google.com/places/documentation/supported_types#table1" target="_blank">Supported
+                Types</a></div>
+            <div class="col-sm-12 form-group">
+                <input class="form-control" type="text" placeholder="Keyword" value="{{placesKeyword::input}}">
+            </div>
+            <div class="col-sm-12 form-group">
+                <input class="form-control" type="text" placeholder="Radius (meters, default=10,000m)"
+                       value="{{placesRadius::input}}" disabled="{{placesRadiusDisabled}}">
+            </div>
+            <div class="col-sm-12 form-group text-center">
+                <button class="btn btn-sm btn-danger" on-click="clearPlacesSearch">Clear</button>
+                <button class="btn btn-sm btn-primary" on-click="placesSearch">Search</button>
+            </div>
+            <div class="col-sm-12 text-center" style="color:#DD5734;">
+                <span>{{placesSearchStatus}}</span>
+            </div>
+        </template>
+    </div>
+</template>
+
+</div>
+</template>
+</dom-module>
+
+<script src="bridgeit-location-editor.js"></script>
