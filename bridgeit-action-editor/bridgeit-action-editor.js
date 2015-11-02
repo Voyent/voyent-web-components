@@ -20,11 +20,12 @@ Polymer({
      */
 
 	ready: function() {
+        var _this = this;
         if (!this.realm) {
-            this.realm = bridgeit.io.auth.getLastKnownRealm()
+            this.realm = bridgeit.io.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = bridgeit.io.auth.getLastKnownAccount()
+            this.account = bridgeit.io.auth.getLastKnownAccount();
         }
         if (bridgeit.io.auth.isLoggedIn()) {
             this.getActions();
@@ -34,6 +35,8 @@ Polymer({
         this._taskGroups = [{"id":"taskGroup0","tasks":[]}]; //initialize with one group by default
         this._selectedEvents=[];
         this._events=[{event:'locationAdded',checked:false},{event:'locationChanged',checked:false},{event:'locationDeleted',checked:false},{event:'nearPointOfInterest',checked:false},{event:'enteredRegion',checked:false},{event:'exitedRegion',checked:false}];
+        //keep a reference to the code editor change event listener function for 'removeEventListener'
+        this._editorEventListener = function(e) { _this._taskGroups[_this._groupIndex].tasks[_this._taskIndex].schema.properties.function.value = _this._codeEditor.value; };
 	},
 
     /**
@@ -97,9 +100,20 @@ Polymer({
      * @param action
      */
     loadAction: function(action) {
+        var _this = this;
         this._loadHandler(action._id);
         this._loadedAction = JSON.parse(JSON.stringify(action)); //deep copy object (quick and dirty)
         this._taskGroups = this._convertActionToUI(this._loadedAction);
+        this._setupCodeEditor(); //initialize code editor components
+        //set the values from the action into the code editor in the UI
+        setTimeout(function() {
+            if (_this._editorMappings) {
+                for (var i=0; i<_this._editorMappings.length; i++) {
+                    var editor = Polymer.dom(_this.root).querySelector(_this._editorMappings[i].domSelector);
+                    editor.editor.setValue(_this.get(_this._editorMappings[i].valueSelector),1);
+                }
+            }
+        },0);
     },
 
     /**
@@ -235,6 +249,7 @@ Polymer({
             delete taskGroups[i].id; //remove id used by template
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
+                delete tasks[j].id; //remove id used by template
                 var properties = tasks[j].schema.properties;
                 tasks[j].params = {}; //create action params object
                 tasks[j].type = tasks[j].schema.title; //move title to type property
@@ -330,11 +345,14 @@ Polymer({
         this._actionId = action._id;
         this._actionDesc = action.desc && action.desc.trim().length > 0 ? action.desc : '';
         var taskGroups = action.taskGroups;
+        var editorMappings=[];
         for (var i=0; i<taskGroups.length; i++) {
             //add uniqueID for drag/drop functionality
             taskGroups[i].id = 'taskGroup'+i;
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
+                //add uniqueID for code editor functionality
+                tasks[j].id = 'task'+j;
                 //add schema inside task for mapping UI values
                 tasks[j].schema = JSON.parse(JSON.stringify(this._schemaMap[tasks[j].type])); //deep copy object (quick and dirty)
                 //move the params values to the value of each property in the schema
@@ -346,6 +364,9 @@ Polymer({
                     }
                     if (params && typeof params[properties[prop].title] !== 'undefined') {
                         properties[prop].value = params[properties[prop].title];
+                        if (prop == 'function') {
+                            editorMappings.push({domSelector:'#'+taskGroups[i].id+' #'+tasks[j].id + ' juicy-ace-editor',valueSelector:'_taskGroups.'+i+'.tasks.'+j+'.schema.properties.function.value'});
+                        }
                     }
                 }
                 //cleanup values that aren't used in the UI
@@ -353,7 +374,40 @@ Polymer({
                 delete tasks[j].params;
             }
         }
+        this._editorMappings = editorMappings;
         return taskGroups;
+    },
+
+    /**
+     * Setup code editor inputs for 'function' properties.
+     * @private
+     */
+    _setupCodeEditor: function() {
+        var _this = this;
+        //add event listener for function properties
+        setTimeout(function() {
+            var editors = Polymer.dom(_this.root).querySelectorAll('.code-editor');
+            if (editors && editors.length > 0) {
+                for (var i=0; i<editors.length; i++) {
+                    var editor = editors[i];
+                    //find the ID of the task group and task so we know where to map the values of the editor to
+                    var taskIndex;
+                    var parent = Polymer.dom(editor).parentNode;
+                    while (!parent.classList.contains('task-group')) {
+                        if (parent.classList.contains('task')) {
+                            taskIndex = parent.id.slice(-1);
+                        }
+                        parent = Polymer.dom(parent).parentNode;
+                    }
+                    editor.editor.$blockScrolling = Infinity; //disable console warning
+                    _this._groupIndex = parent.id.slice(-1);
+                    _this._taskIndex = taskIndex;
+                    _this._codeEditor = editor;
+                    editor.removeEventListener('change',_this._editorEventListener);
+                    editor.addEventListener('change',_this._editorEventListener);
+                }
+            }
+        },0);
     },
 
     /**
@@ -422,7 +476,14 @@ Polymer({
         if (!e.dataTransfer.getData('action/task')) { e.stopPropagation(); return; }
         //add new task (with schema reference) to task group
         var schema = this._lastDragged;
-        this.push('_taskGroups.'+e.target.id.slice(-1)+'.tasks',{"schema":schema});
+        var taskGroupIndex = e.target.id.slice(-1);
+        var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
+        this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
+        //if we have a function property then setup the code editor
+        if (schema.properties.hasOwnProperty('function')) {
+            this._setupCodeEditor();
+        }
+
     },
 
     /**
@@ -457,14 +518,17 @@ Polymer({
      */
     _deleteTask: function(e) {
         var task = e.model.task;
-        for (var i=0; i<this._taskGroups.length; i++) {
-            for (var j=0; j<this._taskGroups[i].tasks.length; j++) {
+        for (var i=this._taskGroups.length-1; i>=0; i--) {
+            for (var j=this._taskGroups[i].tasks.length-1; j>=0; j--) {
                 if (task == this._taskGroups[i].tasks[j]) {
                     this.splice('_taskGroups.'+i+'.tasks',j,1);
-                    return;
                 }
+                //must keep task IDs up to date for code editor functionality
+                this.set('_taskGroups.'+i+'.tasks.'+j+'.id',"task"+j);
             }
         }
+        //we initialize the editors again so we can properly map to the value property in the schema
+        this._setupCodeEditor();
     },
 
     /**
@@ -479,8 +543,12 @@ Polymer({
         if (newPos < 0) {
             return;
         }
+        //move the group up
         this.splice('_taskGroups',currPos,1);
         this.splice('_taskGroups',newPos,0,taskGroup);
+        //keep the taskGroup IDs in sync
+        this.set('_taskGroups.'+currPos+'.id','taskGroup'+currPos);
+        this.set('_taskGroups.'+newPos+'.id','taskGroup'+newPos);
     },
 
     /**
@@ -495,8 +563,12 @@ Polymer({
         if (newPos == this._taskGroups.length) {
             return;
         }
+        //move the group down
         this.splice('_taskGroups',currPos,1);
         this.splice('_taskGroups',newPos,0,taskGroup);
+        //keep the taskGroup IDs in sync
+        this.set('_taskGroups.'+currPos+'.id','taskGroup'+currPos);
+        this.set('_taskGroups.'+newPos+'.id','taskGroup'+newPos);
     },
 
     /**

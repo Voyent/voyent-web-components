@@ -25,7 +25,8 @@
     "jQuery-QueryBuilder" : "~2.3",
     "tinymce" : "~4.2.7",
     "codemirror": "~5.8.0",
-    "jsonlint": "~1.6.0"
+    "jsonlint": "~1.6.0",
+    "juicy-ace-editor": "~1.1.1"
   },
   "devDependencies": {
     "web-component-tester": "*"

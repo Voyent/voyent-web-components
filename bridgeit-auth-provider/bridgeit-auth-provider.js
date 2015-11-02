@@ -57,6 +57,14 @@
       },
       timeRemainingBeforeExpiryInterval: {
         type: Number
+      },
+      timeout: {
+        type: Number,
+        notify: true
+      },
+      admin: {
+        type: Boolean,
+        notify: true
       }
     },
 
@@ -84,10 +92,12 @@
         username: this.username,
         password: password,
         host: this.host,
-        usePushService: this.usePushService
+        usePushService: this.usePushService,
+        onSessionExpiry: this.onSessionExpiry,
+        admin: this.admin
       };
-      if( !admin ){
-        params.realm = this.realm;
+      if( this.timeout ){
+        params.connectionTimeout = this.timeout;
       }
       return bridgeit.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
         _this.authResponse = authResponse;
@@ -107,6 +117,9 @@
       this.loggedIn = false;
       this.accessToken = null;
       this.timeRemaining = 0;
+    },
+    onSessionExpiry: function(){
+      this.fire('bridgeit-session-expired');
     }
   });
 })();
