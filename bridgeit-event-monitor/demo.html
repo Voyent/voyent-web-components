@@ -179,7 +179,7 @@
                 // Before we process the data we want to change the dates (data.time field)
                 // This is because the dates come from the queryEditor as UTC
                 // But we want to display them in the table and graph as the local timezone
-                if (typeof res != "undefined" && res != null && res.length != 0) {
+                if (typeof res !== 'undefined' && res !== null && res.length !== 0) {
                     for (i = 0; i < res.length; i++) {
                         res[i].time = new Date(res[i].time);
                     }

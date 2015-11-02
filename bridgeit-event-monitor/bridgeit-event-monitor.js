@@ -7,12 +7,14 @@ Polymer({
      * @param data array of the metric events to show on the graph
      */
     show: function(data) {
+        var _this = this;
         var vis = d3.select("#eventmonitorsvg");
         var PADDING = 20,
             CIRCLE_RADIUS = 10;
             WIDTH = parseInt(vis.style("width"))-PADDING,
-            HEIGHT = parseInt(vis.style("height"));
-        
+            HEIGHT = parseInt(vis.style("height")),
+            DEFAULT_COLOR = "orange";
+            
         // Clear our old graph first and reset the cursor
         vis.selectAll("*").remove();
         vis.style("cursor", null);
@@ -34,7 +36,45 @@ Polymer({
             return;
         }
         
+        // All good, we'll be graphing!
         console.log("Going to graph " + data.length + " points for event monitor.");
+        
+        // Setup our colors
+        var colors = {};
+        colors['query'] = "red";
+        colors['storage'] = "purple";
+        colors['metrics'] = "yellow";
+        colors['locate'] = "blue";
+        colors['docs'] = "green";
+        colors['action'] = "brown";
+        colors['eventhub'] = "aqua";
+        
+        // Generate a list of services used from the data
+        // This is a bit complex, but we loop through our data and look for unique services
+        var services = [];
+        var addCurrent;
+        for (i = 0; i < data.length; i++) {
+            addCurrent = false;
+            // Add the first service automatically
+            if (services.length == 0) {
+                addCurrent = true;
+            }
+            // Otherwise check the existing services list against our data object
+            // If we don't find a match we'll add the service
+            else {
+                addCurrent = true;
+                for (j = 0; j < services.length; j++) {
+                    if (services[j] == data[i].service) {
+                        addCurrent = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (addCurrent) {
+                services.push(data[i].service);
+            }
+        }        
         
         // Build our date scale
         xScale = d3.time.scale().domain([d3.min(data, function(d) {
@@ -83,7 +123,6 @@ Polymer({
         );
         
         // Draw a circle for every piece of data
-        var _this = this;
         vis.selectAll("circle.line")
             .data(data)
             .enter().append("circle")
@@ -95,25 +134,11 @@ Polymer({
             .attr("cursor", "pointer")
             .attr("title", function (d) { return new Date(d.time); })
             .style("fill", function(d) {
-                switch (d.service.toLowerCase()) {
-                    case 'locate':
-                        return "blue";
-                    break;
-                    case 'query':
-                        return "red";
-                    break;
-                    case 'metrics':
-                        return "yellow";
-                    break;
-                    case 'storage':
-                        return "purple";
-                    break;
-                    case 'docs':
-                        return "green";
-                    break;
-                    default:
-                        return "orange";
+                var toReturn = colors[d.service];
+                if (!toReturn) {
+                    return DEFAULT_COLOR;
                 }
+                return toReturn; 
             })
             .on("click", function(d, i) {
                 // Check if we're re-clicking the same circle, in which case we want to hide the details
@@ -130,6 +155,50 @@ Polymer({
                 _this.clickedDataFormatted = JSON.stringify(d.data);
                 document.getElementById('eventDetails').style.display = "inline";
             });
+        
+        // Add a legend showing service color and corresponding name
+        var legend = vis.append('g')
+            .attr('class', 'legend')
+            .attr('x', 50)
+            .attr('y', 50)
+            .attr('height', 100)
+            .attr('width', 100);
+            
+        var legendBoxWidth = 100;
+        legend.selectAll('g').data(services)
+          .enter()
+          .append('g')
+          .each(function(d, i) {
+            var g = d3.select(this);
+            g.append("rect")
+              .attr("x", i * legendBoxWidth + 5)
+              .attr("y", 10)
+              .attr("width", 10)
+              .attr("height", 10)
+              .attr("stroke", "black")
+              .attr("stroke-width", 0.5)
+              .style("fill", function() {
+                  var toReturn = colors[String(d)];
+                  if (!toReturn) {
+                      return DEFAULT_COLOR;
+                  }
+                  return toReturn;
+              });
+            
+            g.append("text")
+              .attr("x", i * legendBoxWidth + 20)
+              .attr("y", 18)
+              .attr("height", 10)
+              .attr("width", legendBoxWidth)
+              .attr("title", "'" + d + "' service")
+              .style("fill", "black")
+              .text(d);
+          });
+        
+        // Add a very simple resize that duplicates this method with a new width/height
+        d3.select(window).on('resize', function() {
+            _this.show(data);
+        });
     },
     
     //******************PRIVATE API******************
