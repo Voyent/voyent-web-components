@@ -25,7 +25,7 @@ Polymer({
     setupListener: function() {
         var _this = this;
         if (!this._validateFor()) { return; }
-        document.getElementById(this.for).addEventListener('queryExecuted', function(e) {
+        this._queryEditor.addEventListener('queryExecuted', function(e) {
             var res = e.detail.results;
             if (Object.keys(res).length === 0) {
                 _this._tableHeaders = [];
@@ -67,10 +67,27 @@ Polymer({
             this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'for attribute is required','type':'error'});
             return false;
         }
-        if (!document.getElementById(this.for) || document.getElementById(this.for).tagName !== 'BRIDGEIT-QUERY-EDITOR') {
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'element cannot be found or is not a bridgeit-query-editor','type':'error'});
-            return false;
+        if (!document.getElementById(this.for)) {
+            //traverse through the dom tree to look for the component
+            var parent = Polymer.dom(this).parentNode;
+            var node;
+            while (parent) {
+                node = Polymer.dom(parent).querySelector('#'+this.for);
+                if (node) {
+                    break;
+                }
+                parent = Polymer.dom(parent).parentNode;
+            }
+            if (node && node.tagName === 'BRIDGEIT-QUERY-EDITOR') {
+                this._queryEditor = node;
+                return true;
+            }
         }
-        return true;
-    },
+        else if (document.getElementById(this.for).tagName === 'BRIDGEIT-QUERY-EDITOR') {
+            this._queryEditor = document.getElementById(this.for);
+            return true;
+        }
+        this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'element cannot be found or is not a bridgeit-query-editor','type':'error'});
+        return false;
+    }
 });
