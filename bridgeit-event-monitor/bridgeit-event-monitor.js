@@ -12,7 +12,8 @@ Polymer({
         var PADDING = 20,
             CIRCLE_RADIUS = 10;
             WIDTH = parseInt(vis.style("width"))-PADDING,
-            HEIGHT = parseInt(vis.style("height"));
+            HEIGHT = parseInt(vis.style("height")),
+            DEFAULT_COLOR = "orange";
             
         // Clear our old graph first and reset the cursor
         vis.selectAll("*").remove();
@@ -45,6 +46,8 @@ Polymer({
         colors['metrics'] = "yellow";
         colors['locate'] = "blue";
         colors['docs'] = "green";
+        colors['action'] = "brown";
+        colors['eventhub'] = "aqua";
         
         // Generate a list of services used from the data
         // This is a bit complex, but we loop through our data and look for unique services
@@ -133,7 +136,7 @@ Polymer({
             .style("fill", function(d) {
                 var toReturn = colors[d.service];
                 if (!toReturn) {
-                    return "orange";
+                    return DEFAULT_COLOR;
                 }
                 return toReturn; 
             })
@@ -168,16 +171,22 @@ Polymer({
           .each(function(d, i) {
             var g = d3.select(this);
             g.append("rect")
-              .attr("x", i * legendBoxWidth)
+              .attr("x", i * legendBoxWidth + 5)
               .attr("y", 10)
               .attr("width", 10)
               .attr("height", 10)
               .attr("stroke", "black")
               .attr("stroke-width", 0.5)
-              .style("fill", colors[String(d)]);
+              .style("fill", function() {
+                  var toReturn = colors[String(d)];
+                  if (!toReturn) {
+                      return DEFAULT_COLOR;
+                  }
+                  return toReturn;
+              });
             
             g.append("text")
-              .attr("x", i * legendBoxWidth + 14)
+              .attr("x", i * legendBoxWidth + 20)
               .attr("y", 18)
               .attr("height", 10)
               .attr("width", legendBoxWidth)
