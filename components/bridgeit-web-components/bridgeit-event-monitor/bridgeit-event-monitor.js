@@ -159,6 +159,17 @@ Polymer({
                 _this.clickedData = d;
                 _this.clickedDataFormatted = JSON.stringify(d.data);
                 document.getElementById('eventDetails').style.display = "inline";
+            })
+            .on("mouseover", function(d, i) {
+                var sel = d3.select(this);
+                sel.attr("r", CIRCLE_RADIUS+3);
+                sel.transition().attr("stroke-width", 2);
+                this.parentElement.appendChild(this);
+            })
+            .on("mouseout", function(d, i) {
+                var sel = d3.select(this);
+                sel.attr("r", CIRCLE_RADIUS);
+                sel.transition().attr("stroke-width", 1);
             });
         
         // Add a legend showing service color and corresponding name
