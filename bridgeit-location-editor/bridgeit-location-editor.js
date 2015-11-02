@@ -93,6 +93,11 @@ Polymer({
                 _loc._makeMap(lat, lng);
             }
         };
+        console.log(bridgeit.io.auth.getLastAccessToken());
+        _loc.accesstoken = bridgeit.io.auth.getLastAccessToken();
+        _loc.realm = bridgeit.io.auth.getLastKnownRealm();
+        _loc.account = bridgeit.io.auth.getLastKnownAccount();
+        _loc.host = bridgeit.io.auth.getConnectSettings().host;
         var script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
@@ -103,8 +108,8 @@ Polymer({
 
 
     _makeMap: function (lat, lng) {
-        var height = self.height;
-        var width = self.width;
+        var height = _loc.height;
+        var width = _loc.width;
 
         // if the height or width is not set on the component then set them here based on view size
         if (height == null) {
@@ -151,10 +156,10 @@ Polymer({
             return data;
         }).fail(function(obj,status,error) {
             if (error === "Not Found") {
-                console.log('no regions found for ' + self.get('currentRealm').get('id'));
+                console.log('no regions found for ' + _loc.realm);
             }
             else {
-                console.error('could not load regions for ' + self.get('currentRealm').get('id'));
+                console.error('could not load regions for ' + _loc.realm);
             }
         })
             .always(function(regionData) {
@@ -167,10 +172,10 @@ Polymer({
                 })
                     .fail(function(obj,status,error) {
                         if (error === "Not Found") {
-                            console.log('no pois found for ' + self.get('currentRealm').get('id'));
+                            console.log('no pois found for ' + _loc.realm);
                         }
                         else {
-                            console.error('could not load pois for ' + self.get('currentRealm').get('id'));
+                            console.error('could not load pois for ' + _loc.realm);
                         }
                         _loc.startEditor(regionData);
                     });
@@ -280,10 +285,10 @@ Polymer({
             return data;
         }).fail(function(obj,status,error) {
             if (error === "Not Found") {
-                console.log('no regions found for ' + self.get('currentRealm').get('id'));
+                console.log('no regions found for ' + _loc.realm);
             }
             else {
-                console.error('could not load regions for ' + self.get('currentRealm').get('id'));
+                console.error('could not load regions for ' + _loc.realm);
             }
         })
             .always(function(regionData) {
@@ -299,10 +304,10 @@ Polymer({
                 })
                     .fail(function(obj,status,error) {
                         if (error === "Not Found") {
-                            console.log('no pois found for ' + self.get('currentRealm').get('id'));
+                            console.log('no pois found for ' + _loc.realm);
                         }
                         else {
-                            console.error('could not load pois for ' + self.get('currentRealm').get('id'));
+                            console.error('could not load pois for ' + _loc.realm);
                         }
                         if(!setup)
                             _loc.startEditor(locations)
@@ -762,7 +767,6 @@ Polymer({
             setTimeout(function () {
                 //TODO:
                 var pos = _loc.$$("#overall").querySelectorAll(".locationName .smlHeight");
-                console.log(pos);
                 //for (var i = 0; i < pos.length; i++) {
                 $().mouseover(function () {
                     var id = $(this).attr('data');
@@ -820,9 +824,10 @@ Polymer({
             for (var i = 0; i < locations.length; i++) {
                 id = locations[i];
                 if (typeof allRegions[id] !== "undefined") {
-                    _loc.deleteRegion(allRegions[id][0], allRegions[id][1]);
+                    _loc.deleteRegion(allRegions[id], allRegions[id][1]);
                 }
                 else {
+                    console.log(allPOIs);
                     _loc.deletePOI(allPOIs[id][0], allPOIs[id][1]);
                 }
             }
@@ -1397,7 +1402,7 @@ Polymer({
                 }
                 properties['tags'] = placesTags;
             }
-            var radius = $(":text[data='" + place_id + "']").val();
+            var radius = $(_loc.$$(".radiusInput[name='" + place_id + "']")).val();
             if (!radius || radius.toString().trim().length === 0) {
                 console.log('Please enter a radius for location "' + name + '".');
                 locations = [];
@@ -1863,7 +1868,7 @@ Polymer({
      * @param geoJSON
      */
     deleteRegion: function (location, geoJSON) {
-        _loc.deleteRegion(_loc.realm, geoJSON._id).then(function () {
+        _loc.realDeleteRegion(_loc.realm, geoJSON._id).then(function () {
             _loc.deleteLocationSuccess(location, geoJSON, 'region');
         }).fail(function () {
             _loc.deleteLocationFail();
@@ -1876,7 +1881,7 @@ Polymer({
      * @param geoJSON
      */
     deletePOI: function (location, geoJSON) {
-        _loc.deletePOI(_loc.currentRealm.get('id'), geoJSON._id).then(function () {
+        _loc.realDeletePOI(_loc.realm, geoJSON._id).then(function () {
             _loc.deleteLocationSuccess(location, geoJSON, 'poi');
         }).fail(function () {
             _loc.deleteLocationFail();
@@ -2038,7 +2043,7 @@ Polymer({
 
     getAllRegions: function(realmName){
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
             type: 'GET',
@@ -2047,7 +2052,7 @@ Polymer({
     },
     createRegion: function(realmName,geoJSON) {
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
+            url: "http://" + _loc.host + ":/locate/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
             data: JSON.stringify(geoJSON),
@@ -2057,7 +2062,7 @@ Polymer({
     },
     editRegion: function(realmName,geoJSON) {
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
             data: JSON.stringify(geoJSON),
@@ -2065,9 +2070,9 @@ Polymer({
             crossDomain: true
         });
     },
-    deleteRegion: function (realmName,regionId) {
+    realDeleteRegion: function (realmName,regionId) {
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName + '/regions/' +
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/regions/' +
                 regionId + '?access_token=' + _loc.accesstoken,
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
@@ -2077,7 +2082,7 @@ Polymer({
     },
     queryRegion: function(realmName, query){
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
             data: {"query": query},
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
@@ -2087,7 +2092,7 @@ Polymer({
     },
     getAllPOIs: function(realmName){
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
             type: 'GET',
@@ -2096,7 +2101,7 @@ Polymer({
     },
     createPOI: function(realmName,poiObj) {
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
             data: JSON.stringify(poiObj),
@@ -2106,7 +2111,7 @@ Polymer({
     },
     editPOI: function(realmName,poiObj) {
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
             data: JSON.stringify(poiObj),
@@ -2114,9 +2119,9 @@ Polymer({
             crossDomain: true
         });
     },
-    deletePOI: function (realmName,poiID) {
+    realDeletePOI: function (realmName,poiID) {
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + _loc.account + '/poi/' +
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/poi/' +
                 poiID + '?access_token=' + _loc.accesstoken,
             dataType: 'json',
             contentType: 'application/json; charset=UTF-8',
@@ -2126,7 +2131,7 @@ Polymer({
     },
     queryLocateService: function(realmName, collection, query, fields, options){
         return $.ajax({
-            url: _loc.host + "/" + _loc.account + "/realms/" + realmName +
+            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName +
                 "/" + collection + "?access_token=" + _loc.accesstoken + '&query=' + JSON.stringify(query) +
                 '&fields=' + JSON.stringify(fields) + '&options=' + JSON.stringify(options),
             dataType: 'JSON',
