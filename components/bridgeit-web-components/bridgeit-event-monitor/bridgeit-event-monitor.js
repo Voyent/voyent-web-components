@@ -15,6 +15,11 @@ Polymer({
             HEIGHT = parseInt(vis.style("height")),
             DEFAULT_COLOR = "orange";
             
+        // Sizing minimum
+        if (WIDTH < 100 && window.innerWidth && window.innerWidth > 500) {
+            WIDTH = window.innerWidth - 400;
+        }
+            
         // Clear our old graph first and reset the cursor
         vis.selectAll("*").remove();
         vis.style("cursor", null);
