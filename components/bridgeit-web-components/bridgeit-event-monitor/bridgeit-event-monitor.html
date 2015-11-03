@@ -2,7 +2,10 @@
 
 <!--
 Displays an event monitor used to graph historical data from the BridgeIt services
-This component has no attributes, instead call the Javascript function "show(data)" to render the graph
+
+This uses D3 (http://d3js.org/) and an underlying SVG to achieve the graphing
+
+To display call the Javascript function "show(data)"
 
 @demo demo.html
 -->
@@ -11,10 +14,9 @@ This component has no attributes, instead call the Javascript function "show(dat
     <template>
         <link type="text/css" rel="stylesheet" href="./bridgeit-event-monitor.css">
         
-        <label>Graph of Events:<br/>
-            <svg id="eventmonitorsvg" width="100%" height="100px">
-            </svg>
-        </label>
+        <label>[[customTitle]]</label>
+        <svg id="eventmonitorsvg">
+        </svg>
         
         <div id="eventDetails" style="display: none;">
             <table style="margin-top: 20px;">
