@@ -94,11 +94,13 @@
         host: this.host,
         usePushService: this.usePushService,
         onSessionExpiry: this.onSessionExpiry,
-        admin: this.admin,
-        realm: this.realm
+        admin: this.admin
       };
       if( this.timeout ){
         params.connectionTimeout = this.timeout;
+      }
+      if( !admin ){
+        params.realm = this.realm;
       }
       return bridgeit.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
         _this.authResponse = authResponse;
