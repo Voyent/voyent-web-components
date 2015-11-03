@@ -116,6 +116,7 @@ Polymer({
         colors['docs'] = "green";
         colors['action'] = "brown";
         colors['eventhub'] = "aqua";
+        colors['push'] = "hotpink";
         
         // Generate a list of services used from the data
         // This is a bit complex, but we loop through our data and look for unique services
