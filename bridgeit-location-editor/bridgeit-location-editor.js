@@ -767,50 +767,52 @@ Polymer({
         _loc.querySearch('', false);
         if (_loc.showDeleteDialog) {
             setTimeout(function () {
-                //TODO:
-                var pos = _loc.$$("#overall").querySelectorAll(".locationName .smlHeight");
-                //for (var i = 0; i < pos.length; i++) {
-                $().mouseover(function () {
-                    var id = $(this).attr('data');
-                    var coords;
-                    var selectedLocation;
-                    var type;
-                    if (typeof allRegions[id] !== "undefined") {
-                        selectedLocation = allRegions[id][0];
-                        type = allRegions[id][1].location.properties.googleMaps.shape.toLowerCase();
-                        selectedLocation.setOptions({fillOpacity: 0.9});
-                    }
-                    else {
-                        selectedLocation = allPOIs[id][0];
-                        type = 'point';
-                        selectedLocation.setIcon('images/green-marker.png');
-                    }
-                    if (type === "polygon") {
-                        coords = selectedLocation.getPath().getAt(0);
-                    }
-                    else if (type === "circle") {
-                        coords = selectedLocation.getCenter();
-                    }
-                    else if (type === "rectangle") {
-                        coords = selectedLocation.getBounds().getCenter();
-                    }
-                    else { //type === point
-                        coords = selectedLocation.getPosition();
-                    }
-                    //pan to the location if it's not in the view
-                    if (!_loc._map.getBounds().contains(coords)) {
-                        _loc._map.panTo(coords);
-                    }
-                });
-                $(".locationName.smlHeight").mouseout(function () {
-                    var id = $(this).attr('data');
-                    if (typeof allRegions[id] !== "undefined") {
-                        allRegions[id][0].setOptions({fillOpacity: 0.4});
-                    }
-                    else {
-                        allPOIs[id][0].setIcon(null);
-                    }
-                });
+
+                var pos = _loc.$$("#massDeleteContainer").querySelectorAll(".locationName");
+                for (var i = 0; i < pos.length; i++) {
+                    $(pos[i]).mouseover(function () {
+                        var id = $(this).attr('title');
+                        var coords;
+                        var selectedLocation;
+                        var type;
+                        if (typeof allRegions[id] !== "undefined") {
+                            selectedLocation = allRegions[id][0];
+                            type = allRegions[id][1].location.properties.googleMaps.shape.toLowerCase();
+                            selectedLocation.setOptions({fillOpacity: 0.9});
+                        }
+                        else {
+                            selectedLocation = allPOIs[id][0];
+                            type = 'point';
+                            //TODO:Figure out if we can make the reference to the marker image relative
+                            //selectedLocation.setIcon('/css/green-marker.png');
+                        }
+                        if (type === "polygon") {
+                            coords = selectedLocation.getPath().getAt(0);
+                        }
+                        else if (type === "circle") {
+                            coords = selectedLocation.getCenter();
+                        }
+                        else if (type === "rectangle") {
+                            coords = selectedLocation.getBounds().getCenter();
+                        }
+                        else { //type === point
+                            coords = selectedLocation.getPosition();
+                        }
+                        //pan to the location if it's not in the view
+                        if (!_loc._map.getBounds().contains(coords)) {
+                            _loc._map.panTo(coords);
+                        }
+                    });
+                    $(pos[i]).mouseout(function () {
+                        var id = $(this).attr('title');
+                        if (typeof allRegions[id] !== "undefined") {
+                            allRegions[id][0].setOptions({fillOpacity: 0.4});
+                        }
+                        else {
+                            allPOIs[id][0].setIcon(null);
+                        }
+                    });
+                }
             }, 100);
         }
     },
@@ -826,10 +828,9 @@ Polymer({
             for (var i = 0; i < locations.length; i++) {
                 id = locations[i];
                 if (typeof allRegions[id] !== "undefined") {
-                    _loc.deleteRegion(allRegions[id], allRegions[id][1]);
+                    _loc.deleteRegion(allRegions[id][0], allRegions[id][1]);
                 }
                 else {
-                    console.log(allPOIs);
                     _loc.deletePOI(allPOIs[id][0], allPOIs[id][1]);
                 }
             }
