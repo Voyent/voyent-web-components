@@ -325,6 +325,12 @@ Polymer({
             "options": this.getAttribute('options') ? this.getAttribute('options') : {},
             "properties":{}
         };
+        if (typeof queryToPost.fields === 'string') {
+            queryToPost.fields = JSON.parse(queryToPost.fields);
+        }
+        if (typeof queryToPost.options === 'string') {
+            queryToPost.options = JSON.parse(queryToPost.options);
+        }
         if (id && $.type(id) == 'string' && id.toString().length > 0) {
             queryToPost._id = id;
         }
