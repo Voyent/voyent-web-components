@@ -109,13 +109,13 @@ Polymer({
         
         // Setup our colors
         var colors = {};
-        colors['query'] = "red";
+        colors['query'] = "crimson";
         colors['storage'] = "purple";
-        colors['metrics'] = "yellow";
-        colors['locate'] = "blue";
-        colors['docs'] = "green";
-        colors['action'] = "brown";
-        colors['eventhub'] = "aqua";
+        colors['metrics'] = "gold";
+        colors['locate'] = "cornflowerblue";
+        colors['docs'] = "forestgreen";
+        colors['action'] = "sienna";
+        colors['eventhub'] = "darkturquoise";
         colors['push'] = "hotpink";
         
         // Generate a list of services used from the data
