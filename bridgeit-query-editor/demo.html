@@ -21,7 +21,7 @@
 			}
 		</script>
 		<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
-		<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
+		<script src="../../bridgeit.io.js/lib/bridgeit.io.js"></script>
 
 		<!-- Load the webcomponents polyfill -->
 		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
@@ -158,8 +158,8 @@
 				  <div class="buttons">
 					  <button id="resetEditor" onclick="document.getElementById('queryEditor').resetEditor();">New/Reset</button>
 					  <button id="runQuery" onclick="document.getElementById('queryEditor').runQuery();">Run Query</button>
-					  <button id="saveQuery" onclick="document.getElementById('queryEditor').saveQuery();">Save Query</button>
-					  <button id="cloneQuery" onclick="document.getElementById('queryEditor').cloneQuery();">Clone Query</button>
+					  <button id="saveQuery" onclick="document.getElementById('queryEditor').saveQueryWithPrompt();">Save Query</button>
+					  <button id="cloneQuery" onclick="document.getElementById('queryEditor').cloneQueryWithPrompt();">Clone Query</button>
 					  <button id="deleteQuery" onclick="document.getElementById('queryEditor').deleteQuery();">Delete Query</button>
 				  </div>
 				  <br/>
