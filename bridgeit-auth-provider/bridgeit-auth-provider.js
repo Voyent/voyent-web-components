@@ -94,7 +94,8 @@
         host: this.host,
         usePushService: this.usePushService,
         onSessionExpiry: this.onSessionExpiry,
-        admin: this.admin
+        admin: this.admin,
+        realm: this.realm
       };
       if( this.timeout ){
         params.connectionTimeout = this.timeout;
