@@ -5,8 +5,7 @@ Displays a table for viewing, sorting and querying log information stored by the
 
 Example:
 
-    <bridgeit-log-viewer accesstoken="xxx"
-                         account="myAccount"
+    <bridgeit-log-viewer account="myAccount"
                          paginator
                          header
                          footer>
@@ -16,6 +15,8 @@ Example:
 -->
 <dom-module id="bridgeit-log-viewer">
     <template>
+        <link type="text/css" rel="stylesheet" href="./bridgeit-log-viewer.css">
+    
         <style type="text/css">
             table {
                 margin:0 auto;
@@ -168,6 +169,9 @@ Example:
             </template>
             <template is="dom-if" if="{{!_noLogs}}">
                 <p>One moment, loading logs...</p>
+                <div class="throbber-wrapper">
+                    <div class="throbber-loader">...</div>
+                </div>
             </template>
         </template>
     </template>
