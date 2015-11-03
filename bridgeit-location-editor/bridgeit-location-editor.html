@@ -1,4 +1,7 @@
 <link rel="import" href="../../polymer/polymer.html" xmlns="http://www.w3.org/1999/html">
+        <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../paper-menu/paper-menu.html">
+<link rel="import" href="../../paper-item/paper-item.html">
 <script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
 <script>
     if (!("Promise" in window)) {
@@ -9871,9 +9874,19 @@
                 </tr>
                 <template is="dom-if" if="{{!isPOI}}">
                     <tr class="colourRow">
-                        <td>Color</td>
+                        <td>Colour</td>
                         <td>
-                            <select content="{{colourPropOpts}}" value="{{colourProp}}" class="form-control"></select>
+                            <select id="colourSelect" class="form-control">
+                                <option value="Black" selected="selected">Black</option>
+                                <option value="White">White</option>
+                                <option value="Red">Red</option>
+                                <option value="Orange">Orange</option>
+                                <option value="Yellow">Yellow</option>
+                                <option value="Green">Green</option>
+                                <option value="Blue">Blue</option>
+                                <option value="Pink">Pink</option>
+                                <option value="Purple">Purple</option>
+                            </select>
                         </td>
                         <td>
                             <button class="btn btn-xs btn-success" on-click="updateColourProperty">Update</button>
@@ -10029,10 +10042,19 @@
                                 <td></td>
                             </tr>
                             <tr class="colourRow">
-                                <td>Color</td>
+                                <td>Colour</td>
                                 <td>
-                                    <select content="{{colourPropOpts}}" value="{{colourProp}}"
-                                            class="form-control"></select>
+                                    <select id="colourSelect2" class="form-control">
+                                        <option value="Black" selected="selected">Black</option>
+                                        <option value="White">White</option>
+                                        <option value="Red">Red</option>
+                                        <option value="Orange">Orange</option>
+                                        <option value="Yellow">Yellow</option>
+                                        <option value="Green">Green</option>
+                                        <option value="Blue">Blue</option>
+                                        <option value="Pink">Pink</option>
+                                        <option value="Purple">Purple</option>
+                                    </select>
                                 </td>
                                 <td></td>
                             </tr>

@@ -93,18 +93,15 @@ Polymer({
                 _loc._makeMap(lat, lng);
             }
         };
-        console.log(bridgeit.io.auth.getLastAccessToken());
         _loc.accesstoken = bridgeit.io.auth.getLastAccessToken();
         _loc.realm = bridgeit.io.auth.getLastKnownRealm();
         _loc.account = bridgeit.io.auth.getLastKnownAccount();
         _loc.host = bridgeit.io.auth.getConnectSettings().host;
-        if( !('google' in window) || !('maps' in window.google)){
-            var script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
-                'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-            _loc.$.container.appendChild(script);
-        }
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
+            'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+        _loc.$.container.appendChild(script);
 
     },
 
@@ -375,7 +372,7 @@ Polymer({
             var degreeStep = 360 / N;
             geoJSON.location.properties.googleMaps.shape = "circle";
             geoJSON.location.properties.googleMaps.radius = location.getRadius();
-            geoJSON.location.properties.googleMaps.center = location.getCenter();
+            geoJSON.location.properties.googleMaps.center = [location.getCenter().lat(),location.getCenter().lng()];
             for (var i = 0; i < N; i++) {
                 var gpos = google.maps.geometry.spherical.computeOffset(location.getCenter(), location.getRadius(), degreeStep * i);
                 geoJSON.location.geometry.coordinates[0].push([gpos.lng(), gpos.lat()]);
@@ -612,7 +609,9 @@ Polymer({
         var geoJSON = _loc.activeLocation;
         var properties = geoJSON.location.properties;
         if (!(_loc.isPOI)) {
-            this.set('colourProp', properties["Color"]);
+            _loc.colourProp=properties["Color"];
+            $(_loc.$$("#colourSelect")).find('option:selected').removeAttr('selected');
+            $(_loc.$$("#colourSelect")).find('option:contains("'+'_loc.colourProp'+'")').attr("selected",true);
         }
         this.set('editableProp', typeof properties["Editable"] === "undefined" ? true : properties["Editable"]);
         var props = [];
@@ -917,6 +916,9 @@ Polymer({
     },
     updateColourProperty: function () {
         $(_loc.$$('#locationIdBtn')).popover('hide');
+        _loc.colourProp = $(_loc.$$("#colourSelect")).find(':selected').text();
+        var location = _loc.activeLocation;
+        allLocations[location._id][0].setOptions({fillColor:_loc.colourProp});
         _loc.updateProperties();
     },
 
@@ -1394,6 +1396,8 @@ Polymer({
         var geoJSON;
         var locations = [];
         var placesSearchResultsMap = _loc.placesSearchResultsMap;
+        _loc.colourProp = $(_loc.$$("#colourSelect2")).find(':selected').text();
+        _loc.colourProp = _loc.colourProp == "" ? "Black": _loc.colourProp;
         $('input[name="createPlace"]:checked').each(function () {
             var place_id = $(this).val();
             var name = placesSearchResultsMap[place_id].name;
@@ -1427,9 +1431,7 @@ Polymer({
             }
 
             properties["Address"] = address;
-
             if (type === 'region') {
-
                 geoJSON = {
                     location: {
                         "type": "Feature",
@@ -1991,12 +1993,13 @@ Polymer({
                     }
                     else if (metadata.shape === "circle") {
                         region = new google.maps.Circle({
-                            'center':new google.maps.LatLng(metadata.center[Object.keys(metadata.center)[0]],metadata.center[Object.keys(metadata.center)[1]]),
+                            'center':new google.maps.LatLng(metadata.center[0],metadata.center[1]),
                             'radius':metadata.radius,
                             'map':_loc._map,
                             'editable':editable,
                             'fillColor':color
                         });
+
                     }
                     else if (metadata.shape === "rectangle") {
                         region = new google.maps.Rectangle({
