@@ -21,7 +21,7 @@
 		}
 	</script>
 	<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
-	<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
+    <script src="../../bridgeit.io.js/lib/bridgeit.io.js"></script>
 
 	<!-- Load the webcomponents polyfill -->
 	<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
@@ -37,7 +37,103 @@
 	<!-- Define custom styling for the component (optional) -->
 	<style is="custom-style">
         bridgeit-action-editor {
-
+            --action-editor: {  /* [Custom component (host) styling] */
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            };
+            --action-editor-action-container: { /* [Custom action container] */
+                background-color: #EFEFEF;
+            };
+            --action-editor-form: { /* [Custom form styling] */
+                padding:0;
+                margin:0;
+            };
+            --action-editor-task-panel: { /* [Custom task panel styling] */
+                border-color:#999;
+                background-color: #EFEFEF;
+            };
+            --action-editor-task-panel-header: { /* [Custom task panel header styling] */
+                background-color: #C5C5C5;
+            };
+            --action-editor-task-panel-item: { /* [Custom task panel task item (includes task group) styling] */
+                background-color: #DEDEDE;
+            };
+            --action-editor-task-panel-item-hover: { /* [Custom task panel task item hover styling] */
+                border-color:#3E458C;
+            };
+            --action-editor-task-panel-group-item: { /* [Custom task panel task group styling] */
+                background-color: #D6D6D6;
+            };
+            --action-editor-task-group: { /* [Custom task group styling] */
+                background-color: #D6D6D6;
+            };
+            --action-editor-task: { /* [Custom task styling] */
+                background-color: #DEDEDE;
+            };
+            --action-editor-button-container: { /* [Custom button wrapper styling] */
+                background-color: #EFEFEF;
+                padding:10px 0 10px 0;
+            };
+            --action-editor-button: { /* [Custom button styling] */
+                color: #FFF;
+                background-color: #3E458C;
+                font-size: 10px;
+                padding: 3px;
+                border:1px solid transparent;
+                border-radius: 5px;
+            };
+            --action-editor-input: { /* [Custom input styling] */
+                display: block;
+                width: 100%;
+                padding:2px 3px;
+                font-size: 14px;
+                line-height: 1.42857143;
+                color: #555;
+                background: #FFF;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+                -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+                transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+            };
+            --action-editor-event-triggers-label: { /* [Custom event triggers label styling] */
+                display: block;
+                width: 100%;
+                padding:2px 3px;
+                font-size: 14px;
+                line-height: 1.42857143;
+                color: #555;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+                -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+                transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+            };
+            /*
+            Other available styling options:
+            --action-editor-task-group-title: { }; [Custom task group title styling]
+            --action-editor-task-title: { }; [Custom task title styling]
+            --action-editor-task-group-button-container: { }; [Custom task group button container styling]
+            --action-editor-task-button-container: { }; [Custom task button container styling]
+            --action-editor-arrow: {  }; [Custom toggle arrow styling]
+            --action-editor-arrow-toggled: { }; [Custom toggle arrow toggled styling]
+            --action-editor-task-panel-arrow: { }; [Custom task panel toggle arrow styling]
+            --action-editor-task-group-arrow: { }; [Custom task group toggle arrow styling]
+            --action-editor-task-arrow: { }; [Custom task toggle arrow styling]
+            --action-editor-label: { }; [Custom label styling]
+            --action-editor-function-input: { }; [Custom function input styling]
+            --action-editor-input-invalid: { }; [Custom invalid input styling]
+            --action-editor-event-triggers: { }; [Custom event trigger div wrapper styling]
+            --action-editor-required-asterisk: { }; [Custom required asterisk styling]
+            */
         }
 		bridgeit-action-list {
             --action-list-wrapper: { /* [Custom table wrapper styling] */
