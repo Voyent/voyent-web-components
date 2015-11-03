@@ -944,6 +944,10 @@ Polymer({
 
     togglePropertiesDiv: function () {
         $(_loc.$$('#locationIdBtn')).popover('hide');
+        if(!_loc.showTagsDiv) {
+            var newHeight = $(_loc.$$('#infoWindow')).css("height") == "305px" ? "100px" : "305px";
+            $(_loc.$$('#infoWindow')).css("height", newHeight);
+        }
         _loc.isPlacesSearch = false;
         _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
         if (_loc.showPropertiesDiv) {
@@ -962,6 +966,10 @@ Polymer({
 
     toggleTagsDiv: function () {
         $(_loc.$$('#locationIdBtn')).popover('hide');
+        if(!_loc.showPropertiesDiv) {
+            var newHeight = $(_loc.$$('#infoWindow')).css("height") == "305px" ? "100px" : "305px";
+            $(_loc.$$('#infoWindow')).css("height", newHeight);
+        }
         _loc.isPlacesSearch = false;
         _loc.showTagsDiv = !_loc.showTagsDiv;
         if (_loc.showTagsDiv) {
