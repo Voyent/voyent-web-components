@@ -128,6 +128,7 @@ Polymer({
         );
         
         // Draw a circle for every piece of data
+        var clickedCircle; // Used to track SVG object that was clicked
         vis.selectAll("circle.line")
             .data(data)
             .enter().append("circle")
@@ -146,19 +147,49 @@ Polymer({
                 return toReturn; 
             })
             .on("click", function(d, i) {
+                // First we restore any previously clicked circle to the normal radius
+                if (_this.clickedCircle) {
+                    var old = d3.select(_this.clickedCircle);
+                    old.attr("r", CIRCLE_RADIUS);
+                    old.classed("clickedCircle", false);
+                }
+                    
                 // Check if we're re-clicking the same circle, in which case we want to hide the details
                 // This will basically function as a toggle
                 if (d == _this.clickedData) {
                     _this.clickedData = null;
                     _this.clickedDataFormatted = null;
                     document.getElementById('eventDetails').style.display = "none";
+                    
                     return;
                 }
                 
                 // Otherwise set our data object for display on the page and show the details
+                var sel = d3.select(this);
+                sel.attr("r", CIRCLE_RADIUS*2);
+                sel.classed("clickedCircle", true);
+                _this.clickedCircle = this;
                 _this.clickedData = d;
                 _this.clickedDataFormatted = JSON.stringify(d.data);
                 document.getElementById('eventDetails').style.display = "inline";
+            })
+            .on("mouseover", function(d, i) {
+                var sel = d3.select(this);
+                // Only do mouseover radius functionality if we're not already clicked
+                if (!sel.classed("clickedCircle")) {
+                    sel.attr("r", CIRCLE_RADIUS+3);
+                }
+                // Always change stroke width and bring to the front though
+                sel.transition().attr("stroke-width", 2);
+                this.parentElement.appendChild(this);
+            })
+            .on("mouseout", function(d, i) {
+                var sel = d3.select(this);
+                // Only do mouseout radius functionality if we're not already clicked
+                if (!sel.classed("clickedCircle")) {
+                    sel.attr("r", CIRCLE_RADIUS);
+                }
+                sel.transition().attr("stroke-width", 1);
             });
         
         // Add a legend showing service color and corresponding name
