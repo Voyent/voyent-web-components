@@ -548,9 +548,21 @@ Polymer({
         _loc.activeGoogleLocation=location;
         _loc.activeLocation=geoJSON;
         _loc.isPOI=geoJSON.location.geometry.type.toLowerCase() === "point" ? true : false;
-        _loc.showPropertiesDiv=false;
-        _loc.showTagsDiv=false;
-        _loc.showLocationList=false;
+        if(_loc.showPropertiesDiv || _loc.showTagsDiv){
+            if(_loc.showPropertiesDiv){
+                _loc.togglePropertiesDiv();
+                _loc.togglePropertiesDiv();
+
+            }
+            else{
+                _loc.toggleTagsDiv();
+                _loc.toggleTagsDiv();
+
+            }
+        }
+        //_loc.showPropertiesDiv=false;
+        //_loc.showTagsDiv=false;
+        //_loc.showLocationList=false;
 
         $(_loc.$$('#locationIdBtn')).popover('destroy'); //kill the location ID popover if it's visible
         _loc._infoWindow.close();
