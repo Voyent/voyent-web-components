@@ -241,7 +241,7 @@ Example:
                 </template>
             </div>
             <div class="actionWrapper layout horizontal">
-                <div class="flex-2">
+                <div class="flex-2" style="min-width:130px;">
                     <div class="layout vertical wrap">
                         <div class="taskPanel">
                             <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
@@ -263,7 +263,7 @@ Example:
                         </div>
                     </div>
                 </div>
-                <div class="actionContainer flex-10" on-dragover="_dragOverAction" on-drop="_dropInAction">
+                <div class="actionContainer flex-10" style="min-width:345px;" on-dragover="_dragOverAction" on-drop="_dropInAction">
                     <div class="layout vertical">
                         <form id="actionForm">
                             <div class="flex">
