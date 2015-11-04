@@ -48,6 +48,10 @@
       loginAsAdmin: {
         notify: true,
         type: Boolean
+      },
+      headerImage: {
+        notify: true,
+        type: String
       }
     },
 

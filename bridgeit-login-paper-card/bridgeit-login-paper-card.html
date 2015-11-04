@@ -36,13 +36,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       paper-button[type='submit'] {
         padding:0;
-        background-color: #444444;
+        background-color: #028E54;
+        border: 1px solid #01A001;
+      }
+      paper-button[type='submit']:hover {
+        background-color: #029C05;
       }
       paper-button[type='submit']::shadow .button-content {
         padding:0;
       }
       paper-button[type='submit'] button {
-        padding: 0.6em 0.8em;
+        padding: 0.5em 0.8em;
         font: inherit;
         background-color: transparent;
         border-color: transparent;
@@ -68,10 +72,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       paper-spinner{
         vertical-align: middle;
       }
+      :host ::content .title-text.over-image.paper-card{
+        text-shadow: 3px 1px 4px #000;
+      }
+      :host ::content .header.paper-card{
+        max-height: 200px;
+        border-bottom: 10px solid #027244;
+      }
+      @media (max-height: 600px) {
+        :host ::content .header.paper-card{
+          max-height: 80px;
+        }
+      }
+      
      
     </style>
       <form is="iron-form" id="loginForm" on-submit="handleLogin">
-        <paper-card heading="{{heading}}">
+        <paper-card heading="{{heading}}" image="{{headerImage}}">
           <div class="card-content">
             <paper-input label="Username" required placeholder="Enter your username" value="{{username}}">
                <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
