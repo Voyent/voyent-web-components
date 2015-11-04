@@ -97,17 +97,12 @@ Polymer({
         _loc.realm = bridgeit.io.auth.getLastKnownRealm();
         _loc.account = bridgeit.io.auth.getLastKnownAccount();
         _loc.host = bridgeit.io.auth.getConnectSettings().host;
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
+            'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+        _loc.$.container.appendChild(script);
 
-        if( !('google' in window) || !('maps' in window.google)){
-            var script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
-                'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-            _loc.$.container.appendChild(script);
-        }
-        else{
-            initializeLocationsMap();
-        }
     },
 
 
@@ -146,9 +141,14 @@ Polymer({
         _loc._bounds = new google.maps.LatLngBounds();
         _loc._infoWindow = new google.maps.InfoWindow();
 
-        //make sure the map is sized correctly when the window size changes
+        //make sure the map is sized correctly for the view
+        setTimeout(function() {
+            google.maps.event.trigger(_loc._map, "resize");
+        },300);
         google.maps.event.addDomListener(window, "resize", function() {
-            _loc.resizeMap();
+            var center = _loc._map.getCenter();
+            google.maps.event.trigger(_loc._map, "resize");
+            _loc._map.setCenter(center);
         });
 
         _loc.drawingManager = new google.maps.drawing.DrawingManager({drawingControlOptions: {
@@ -282,17 +282,6 @@ Polymer({
             }
         });
         setup = true;
-    },
-
-    /**
-     * Resize the Google Map.
-     */
-    resizeMap: function() {
-        if (('google' in window) && this._map) {
-            var center = this._map.getCenter();
-            google.maps.event.trigger(this._map, "resize");
-            this._map.setCenter(center);
-        }
     },
 
     refreshMap: function () {
@@ -1435,7 +1424,7 @@ Polymer({
         _loc.colourProp = $(_loc.$$("#colourSelect2")).find(':selected').text();
         _loc.colourProp = _loc.colourProp == "" ? "Black": _loc.colourProp;
         _loc.editableProp = $(_loc.$$("#editableSelect2")).find(':selected').attr('value');
-        _loc.editableProp = _loc.editableProp == "" ? "true": _loc.editableProp;
+        _loc.editableProp = _loc.editableProp == "" ? true: _loc.editableProp === 'true';
         $('input[name="createPlace"]:checked').each(function () {
             var place_id = $(this).val();
             var name = placesSearchResultsMap[place_id].name;
