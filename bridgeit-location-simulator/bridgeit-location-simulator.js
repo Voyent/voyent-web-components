@@ -293,7 +293,9 @@ Polymer({
         var params = {realm:this.realm,collection:collection,document:{routes:routes}};
         if (simulationId && simulationId.trim().length > 0) {
             params.id = simulationId;
-            docCall = 'updateDocument';
+            if (this._activeSim._id === simulationId) {
+                docCall = 'updateDocument';
+            }
         }
         bridgeit.io.documents[docCall](params).then(function() {
             _this._activeSim = params.document; //set as active simulation
