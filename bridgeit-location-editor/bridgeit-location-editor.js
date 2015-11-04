@@ -611,9 +611,11 @@ Polymer({
         if (!(_loc.isPOI)) {
             _loc.colourProp=properties["Color"];
             $(_loc.$$("#colourSelect")).find('option:selected').removeAttr('selected');
-            $(_loc.$$("#colourSelect")).find('option:contains("'+'_loc.colourProp'+'")').attr("selected",true);
+            $(_loc.$$("#colourSelect")).find('option:contains("'+_loc.colourProp+'")').attr("selected",true);
         }
-        this.set('editableProp', typeof properties["Editable"] === "undefined" ? true : properties["Editable"]);
+        _loc.editableProp=typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
+        $(_loc.$$("#editableSelect")).find('option:selected').removeAttr('selected');
+        $(_loc.$$("#editableSelect")).find('option:contains("'+_loc.editableProp+'")').attr("selected",true);
         var props = [];
         for (var property in properties) {
             if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
@@ -925,7 +927,8 @@ Polymer({
     updateEditableProperty: function () {
         $(_loc.$$('#locationIdBtn')).popover('hide');
         var location = _loc.activeLocation;
-        var editableProp = _loc.editableProp;
+        _loc.editableProp = $(_loc.$$("#editableSelect")).find(':selected').attr("value");
+        var editableProp = _loc.editableProp === 'true';
         if (_loc.isPOI) {
             allPOIs[location._id][0].setDraggable(editableProp);
             allLocations[location._id][0].setDraggable(editableProp);
@@ -1398,6 +1401,8 @@ Polymer({
         var placesSearchResultsMap = _loc.placesSearchResultsMap;
         _loc.colourProp = $(_loc.$$("#colourSelect2")).find(':selected').text();
         _loc.colourProp = _loc.colourProp == "" ? "Black": _loc.colourProp;
+        _loc.editableProp = $(_loc.$$("#editableSelect2")).find(':selected').attr('value');
+        _loc.editableProp = _loc.editableProp == "" ? "true": _loc.editableProp;
         $('input[name="createPlace"]:checked').each(function () {
             var place_id = $(this).val();
             var name = placesSearchResultsMap[place_id].name;

@@ -9866,7 +9866,10 @@
                         <template is="dom-if" if="{{!isPOI}}">Editable</template>
                     </td>
                     <td>
-                        <select content="{{editablePropOpts}}" value="{{editableProp}}" class="form-control"></select>
+                        <select id="editableSelect" class="form-control">
+                            <option value="true" selected="selected">True</option>
+                            <option value="false">False</option>
+                        </select>
                     </td>
                     <td>
                         <button class="btn btn-xs btn-success" on-click="updateEditableProperty">Update</button>
@@ -10036,8 +10039,10 @@
                             <tr>
                                 <td>Editable</td>
                                 <td>
-                                    <select content="{{editablePropOpts}}" value="{{editableProp}}"
-                                            class="form-control"></select>
+                                    <select id="editableSelect2" class="form-control">
+                                        <option value="true" selected="selected">true</option>
+                                        <option value="false">false</option>
+                                    </select>
                                 </td>
                                 <td></td>
                             </tr>
