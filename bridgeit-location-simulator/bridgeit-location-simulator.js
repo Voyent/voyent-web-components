@@ -112,10 +112,10 @@ Polymer({
             if (bridgeit.io.auth.isLoggedIn()) {
                 _this.refreshMap();
             }
-            //make sure the map is sized correctly for the view
-            setTimeout(function() {
-                google.maps.event.trigger(_this._map, "resize");
-            },100);
+            //make sure the map is sized correctly when the window size changes
+            google.maps.event.addDomListener(window, "resize", function() {
+                _this.resizeMap();
+            });
         };
         if( !('google' in window) || !('maps' in window.google)){
             var script = document.createElement('script');
@@ -365,6 +365,17 @@ Polymer({
         setTimeout(function() {
             scrollTo(scrollLeft,scrollTop);
         },50);
+    },
+
+    /**
+     * Resize the Google Map.
+     */
+    resizeMap: function() {
+        if (('google' in window) && this._map) {
+            var center = this._map.getCenter();
+            google.maps.event.trigger(this._map, "resize");
+            this._map.setCenter(center);
+        }
     },
 
 
