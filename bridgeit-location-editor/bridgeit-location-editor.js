@@ -144,7 +144,12 @@ Polymer({
         //make sure the map is sized correctly for the view
         setTimeout(function() {
             google.maps.event.trigger(_loc._map, "resize");
-        },100);
+        },300);
+        google.maps.event.addDomListener(window, "resize", function() {
+            var center = _loc._map.getCenter();
+            google.maps.event.trigger(_loc._map, "resize");
+            _loc._map.setCenter(center);
+        });
 
         _loc.drawingManager = new google.maps.drawing.DrawingManager({drawingControlOptions: {
             position:google.maps.ControlPosition.TOP_RIGHT,
