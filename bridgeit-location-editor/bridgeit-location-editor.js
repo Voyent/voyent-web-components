@@ -97,12 +97,18 @@ Polymer({
         _loc.realm = bridgeit.io.auth.getLastKnownRealm();
         _loc.account = bridgeit.io.auth.getLastKnownAccount();
         _loc.host = bridgeit.io.auth.getConnectSettings().host;
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
-            'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-        _loc.$.container.appendChild(script);
+        
 
+        if( !('google' in window) || !('maps' in window.google)){
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
+                'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+            _loc.$.container.appendChild(script);
+        }
+        else{
+            initializeLocationsMap();
+        }
     },
 
 
@@ -141,14 +147,9 @@ Polymer({
         _loc._bounds = new google.maps.LatLngBounds();
         _loc._infoWindow = new google.maps.InfoWindow();
 
-        //make sure the map is sized correctly for the view
-        setTimeout(function() {
-            google.maps.event.trigger(_loc._map, "resize");
-        },300);
+        //make sure the map is sized correctly when the window size changes
         google.maps.event.addDomListener(window, "resize", function() {
-            var center = _loc._map.getCenter();
-            google.maps.event.trigger(_loc._map, "resize");
-            _loc._map.setCenter(center);
+            _loc.resizeMap();
         });
 
         _loc.drawingManager = new google.maps.drawing.DrawingManager({drawingControlOptions: {
@@ -282,6 +283,17 @@ Polymer({
             }
         });
         setup = true;
+    },
+
+    /**
+     * Resize the Google Map.
+     */
+    resizeMap: function() {
+        if (('google' in window) && this._map) {
+            var center = this._map.getCenter();
+            google.maps.event.trigger(this._map, "resize");
+            this._map.setCenter(center);
+        }
     },
 
     refreshMap: function () {
