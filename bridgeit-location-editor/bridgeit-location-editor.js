@@ -97,12 +97,17 @@ Polymer({
         _loc.realm = bridgeit.io.auth.getLastKnownRealm();
         _loc.account = bridgeit.io.auth.getLastKnownAccount();
         _loc.host = bridgeit.io.auth.getConnectSettings().host;
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
-            'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-        _loc.$.container.appendChild(script);
 
+        if( !('google' in window) || !('maps' in window.google)){
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
+                'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+            _loc.$.container.appendChild(script);
+        }
+        else{
+            initializeLocationsMap();
+        }
     },
 
 
