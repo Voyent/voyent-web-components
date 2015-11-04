@@ -33,6 +33,14 @@ Polymer({
                 _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query results empty.','type':'error'});
                 return;
             }
+            
+            // Before we process the data we want to change the dates (data.time field)
+            // This is because the dates come from the queryEditor as UTC
+            // But we want to display them in the table as the local timezone
+            for (var i = 0; i < res.length; i++) {
+                res[i].time = new Date(res[i].time);
+            }
+            
             var tableHeaders = e.detail.uniqueFields;
             var tableRows=[];
             for (var i=0; i<res.length; i++) {
