@@ -104,9 +104,6 @@ Polymer({
             return;
         }
         
-        // All good, we'll be graphing!
-        console.log("Going to graph " + data.length + " points for event monitor.");
-        
         // Setup our colors
         var colors = {};
         colors['query'] = "crimson";
