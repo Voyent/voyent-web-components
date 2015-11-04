@@ -119,6 +119,7 @@
             };
             /*
             Other available styling options:
+            --action-editor-wrapper: { }; [Custom component wrapper styling]
             --action-editor-task-group-title: { }; [Custom task group title styling]
             --action-editor-task-title: { }; [Custom task title styling]
             --action-editor-task-group-button-container: { }; [Custom task group button container styling]
@@ -150,10 +151,10 @@
              };
             /*
             Other available styling options:
-            --action-list-table: { key:value; }; [Custom table styling]
-            --action-list-tbody: { key:value; }; [Custom tbody styling]
-            --action-list-tr { key:value; }; [Custom tr styling]
-            --action-list-td: { key:value; }; [Custom td styling]
+            --action-list-table: { }; [Custom table styling]
+            --action-list-tbody: { }; [Custom tbody styling]
+            --action-list-tr { }; [Custom tr styling]
+            --action-list-td: { }; [Custom td styling]
             */
         }
 	</style>
@@ -168,22 +169,22 @@
 	<form>
 		<div>
 			<label>Account:
-				<input id="account" type="text"/>
-			</label>
-		</div>
-		<div>
-			<label>Realm:
-				<input id="realm" type="text"/>
-			</label>
-		</div>
-		<div>
-			<label>Username:
-				<input id="username" type="text"/>
-			</label>
-		</div>
-		<div>
-			<label>Password:
-				<input id="password" type="password"/>
+                <input id="account" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Realm:
+                <input id="realm" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Username:
+                <input id="username" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Password:
+                <input id="password" type="password"/>
 			</label>
 		</div>
 		<a onclick="login()">Login</a>

@@ -15,10 +15,13 @@ Example:
 -->
 <dom-module id="bridgeit-action-editor">
     <template>
-       <style type="text/css">
+        <style type="text/css">
            :host {
                font-size:14px;
                @apply(--action-editor);
+           }
+           .actionWrapper {
+               @apply(--action-editor-wrapper);
            }
            .actionContainer {
                border: 1px solid #999;
@@ -223,7 +226,7 @@ Example:
                cursor:pointer;
                max-width:20px;
            }
-       </style>
+        </style>
         <template is="dom-if" if="{{_schemas}}">
             <content select="bridgeit-action-list"></content>
             <div class="buttonContainer">
@@ -237,7 +240,7 @@ Example:
                     <button type="button" on-click="_deleteAction">Delete</button>
                 </template>
             </div>
-            <div class="layout horizontal">
+            <div class="actionWrapper layout horizontal">
                 <div class="flex-2">
                     <div class="layout vertical wrap">
                         <div class="taskPanel">
