@@ -143,7 +143,7 @@ Polymer({
 
         //make sure the map is sized correctly for the view
         setTimeout(function() {
-            google.maps.event.trigger(_this._map, "resize");
+            google.maps.event.trigger(_loc._map, "resize");
         },100);
 
         _loc.drawingManager = new google.maps.drawing.DrawingManager({drawingControlOptions: {
