@@ -141,6 +141,11 @@ Polymer({
         _loc._bounds = new google.maps.LatLngBounds();
         _loc._infoWindow = new google.maps.InfoWindow();
 
+        //make sure the map is sized correctly for the view
+        setTimeout(function() {
+            google.maps.event.trigger(_this._map, "resize");
+        },100);
+
         _loc.drawingManager = new google.maps.drawing.DrawingManager({drawingControlOptions: {
             position:google.maps.ControlPosition.TOP_RIGHT,
             drawingModes: [
