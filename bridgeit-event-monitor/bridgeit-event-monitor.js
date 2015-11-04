@@ -150,9 +150,11 @@ Polymer({
         })]).range([this.padding, calcWidth-this.padding]);
         
         // Use the scale to make an axis
+        // Remember to keep the number of ticks relative to the calculated width, to allow for responsive resizing
         xAxis = d3.svg.axis().scale(xScale)
                     .orient("bottom")
-                    .tickPadding(5);
+                    .tickPadding(5)
+                    .ticks(Math.max(calcWidth/120, 2));
         
         // Vertically center the graph
         vis.append("svg:g")
