@@ -5,7 +5,12 @@ Polymer({
         /**
          * The id of the `bridgeit-query-editor` component.
          */
-        for: { type: String }
+        for: { type: String },
+        /**
+         * Defines whether any time fields should use UTC or the local browser timezone
+         * @default true
+         */
+        utc: { type: String, value: "true" }
     },
     
     /**
@@ -37,8 +42,10 @@ Polymer({
             // Before we process the data we want to change the dates (data.time field)
             // This is because the dates come from the queryEditor as UTC
             // But we want to display them in the table as the local timezone
-            for (var i = 0; i < res.length; i++) {
-                res[i].time = new Date(res[i].time);
+            if ((_this.utc != 'true') && (res[0].hasOwnProperty('time'))) {
+                for (var k = 0; k < res.length; k++) {
+                    res[k].time = new Date(res[k].time);
+                }
             }
             
             var tableHeaders = e.detail.uniqueFields;
