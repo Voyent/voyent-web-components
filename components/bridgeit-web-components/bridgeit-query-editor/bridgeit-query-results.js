@@ -5,7 +5,12 @@ Polymer({
         /**
          * The id of the `bridgeit-query-editor` component.
          */
-        for: { type: String }
+        for: { type: String },
+        /**
+         * Defines whether any time fields should use UTC or the local browser timezone
+         * @default true
+         */
+        utc: { type: String, value: "true" }
     },
     
     /**
@@ -37,8 +42,10 @@ Polymer({
             // Before we process the data we want to change the dates (data.time field)
             // This is because the dates come from the queryEditor as UTC
             // But we want to display them in the table as the local timezone
-            for (var i = 0; i < res.length; i++) {
-                res[i].time = new Date(res[i].time);
+            if ((_this.utc != 'true') && (res[0].hasOwnProperty('time'))) {
+                for (var k = 0; k < res.length; k++) {
+                    res[k].time = new Date(res[k].time);
+                }
             }
             
             var tableHeaders = e.detail.uniqueFields;
@@ -75,10 +82,27 @@ Polymer({
             this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'for attribute is required','type':'error'});
             return false;
         }
-        if (!document.getElementById(this.for) || document.getElementById(this.for).tagName !== 'BRIDGEIT-QUERY-EDITOR') {
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'element cannot be found or is not a bridgeit-query-editor','type':'error'});
-            return false;
+        if (!document.getElementById(this.for)) {
+            //traverse through the dom tree to look for the component
+            var parent = Polymer.dom(this).parentNode;
+            var node;
+            while (parent) {
+                node = Polymer.dom(parent).querySelector('#'+this.for);
+                if (node) {
+                    break;
+                }
+                parent = Polymer.dom(parent).parentNode;
+            }
+            if (node && node.tagName === 'BRIDGEIT-QUERY-EDITOR') {
+                this._queryEditor = node;
+                return true;
+            }
         }
-        return true;
-    },
+        else if (document.getElementById(this.for).tagName === 'BRIDGEIT-QUERY-EDITOR') {
+            this._queryEditor = document.getElementById(this.for);
+            return true;
+        }
+        this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'element cannot be found or is not a bridgeit-query-editor','type':'error'});
+        return false;
+    }
 });
