@@ -35,7 +35,7 @@ Polymer({
         newPropKey: {type: String, value: ''},
         newPropVal: {type: String, value: ''},
         newTag: {type: String, value: ''},
-        regionProperties: {type: Object, value: []},
+        regionProperties: {type: Object, value: [], notify:true},
         tags: {type: Object, value: []},
         locationNameInput: {type: String, value: ''},
         toggleCheckboxesTxt: {type: String, value: 'Select All'},
@@ -97,7 +97,7 @@ Polymer({
         _loc.realm = bridgeit.io.auth.getLastKnownRealm();
         _loc.account = bridgeit.io.auth.getLastKnownAccount();
         _loc.host = bridgeit.io.auth.getConnectSettings().host;
-        
+
 
         if( !('google' in window) || !('maps' in window.google)){
             var script = document.createElement('script');
@@ -319,9 +319,9 @@ Polymer({
                 _loc.getAllPOIs(_loc.realm).then(function(data) {
                     var locations = regionData.concat(data);
                     if(!setup)
-                    _loc.startEditor(locations)
+                        _loc.startEditor(locations)
                     else
-                    _loc.makeLocations(locations);
+                        _loc.makeLocations(locations);
                 })
                     .fail(function(obj,status,error) {
                         if (error === "Not Found") {
@@ -548,7 +548,7 @@ Polymer({
         //set the active locations to the one that was clicked and cleanup old infoWindows
         _loc.activeGoogleLocation=location;
         _loc.activeLocation=geoJSON;
-        _loc.isPOI=geoJSON.location.geometry.type.toLowerCase() === "point" ? true : false;
+        _loc.isPOI=geoJSON.location.geometry.type.toLowerCase() === "point";
         if(_loc.showPropertiesDiv || _loc.showTagsDiv){
             if(_loc.showPropertiesDiv){
                 _loc.togglePropertiesDiv();
@@ -897,25 +897,25 @@ Polymer({
             console.log('Please enter a property value.');
             return;
         }
-        var properties = _loc.regionProperties;
-        properties.push({key: newPropKey, val: newPropVal});
-        _loc.regionProperties = properties;
+
+        _loc.push('regionProperties',{key: newPropKey, val: newPropVal});
         if (!_loc.isPlacesSearch) {
             _loc.updateProperties();
         }
         _loc.newPropKey = '';
         _loc.newPropVal = '';
     },
-    removeProperty: function (propToRemove) {
+    removeProperty: function (e) {
+        var propToRemove= e.model.item;
         $(_loc.$$('#locationIdBtn')).popover('hide');
         var properties = _loc.regionProperties;
         for (var i = 0; i < properties.length; i++) {
-            if (propToRemove === properties[i]['key']) {
-                properties.removeAt(i);
+            if (propToRemove['key'] === properties[i]['key']) {
+                e.target.remove();
+                _loc.splice('regionProperties',i,1);
                 break;
             }
         }
-        _loc.regionProperties = properties;
         if (!_loc.isPlacesSearch) {
             _loc.updateProperties();
         }
@@ -928,20 +928,21 @@ Polymer({
             console.log('Please enter a tag.');
             return;
         }
-        var tags = _loc.tags;
-        tags.push({name: newTag});
+        _loc.push('tags',{name:newTag});
         if (!_loc.isPlacesSearch) {
             _loc.updateTags();
         }
         _loc.newTag = '';
     },
 
-    removeTag: function (tagToRemove) {
+    removeTag: function (e) {
+        var tagToRemove = e.model.item.name;
         $(_loc.$$('#locationIdBtn')).popover('hide');
         var tags = _loc.tags;
         for (var i = 0; i < tags.length; i++) {
             if (tagToRemove === tags[i]['name']) {
-                tags.removeAt(i);
+                e.target.remove();
+                _loc.splice('tags',i,1);
                 break;
             }
         }
@@ -1058,7 +1059,7 @@ Polymer({
             $(_loc.$$('#locationIdBtn')).popover({
                 'content': _loc.activeLocation._id,
                 'title': _loc.isPOI ? 'POI ID' : 'Region ID',
-                'container': '#regioneditor',
+                'container': '#container',
                 'trigger': 'click',
                 'placement': 'top'
             });
@@ -2003,7 +2004,7 @@ Polymer({
                 var type = data[record].location.geometry.type.toLowerCase();
                 var coords = data[record].location.geometry.coordinates;
                 var properties = typeof data[record].location.properties === "undefined" ? {} : data[record].location.properties;
-                var editable = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
+                var editable = typeof properties["Editable"] === "undefined" ? true : (properties["Editable"] === 'true' || properties["Editable"] === 'True');
                 var googlePoint;
                 var geoJSON;
                 if (type === "polygon") { //region

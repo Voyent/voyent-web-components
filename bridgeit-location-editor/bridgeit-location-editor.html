@@ -7217,7 +7217,7 @@
     }
 
     /*enable text highlighting for the popover*/
-    #regioneditor .popover{
+    #overall .popover{
         -webkit-user-select: all; /* webkit (safari, chrome) browsers */
         -moz-user-select: all; /* mozilla browsers */
         -khtml-user-select: all; /* webkit (konqueror) browsers */
@@ -7225,7 +7225,7 @@
         text-align:center;
     }
 
-    #regioneditor .popover-content {
+    #overall .popover-content {
         font-size:12px;
         font-weight:normal;
         text-align:center;
@@ -7724,15 +7724,15 @@
         margin-right:7px;
     }
 
-    #regioneditor .tooltip {
+    #overall .tooltip {
         opacity:1;
     }
 
-    #regioneditor .tooltip-arrow {
+    #overall .tooltip-arrow {
         border-right-color:#F5F5F5;
     }
 
-    #regioneditor .tooltip-inner {
+    #overall .tooltip-inner {
         max-width:300px;
         background-color:#F5F5F5;
         color:#5F5F5F;
@@ -9324,7 +9324,7 @@
         width: 100%;
         text-align: right;
     }
-    #regioneditor .page-header{
+    #overall .page-header{
         margin-bottom: 0;
     }
 
@@ -9896,13 +9896,13 @@
                         </td>
                     </tr>
                 </template>
-                <template is="dom-repeat" items="{{regionProperties}}">
+                <template id="propertyAddTemplate" is="dom-repeat" items="{{regionProperties}}">
                     <tr>
                         <td>{{item.key}}</td>
                         <td>{{item.val}}</td>
                         <td>
-                            <!--button class="btn btn-xs btn-danger" on-click="removeProperty(item.key)">Delete
-                            </button-->
+                            <button name="{{item.key}}" class="btn btn-xs btn-danger" on-click="removeProperty">Delete
+                            </button>
                         </td>
                     </tr>
                 </template>
@@ -9930,7 +9930,7 @@
                     <tr>
                         <td>{{item.name}}</td>
                         <td>
-                            <!--button class="btn btn-xs btn-danger" on-click="removeTag()" tag.name on="click"}}>Delete</button--></td>
+                            <button class="btn btn-xs btn-danger" on-click="removeTag">Delete</button></td>
                     </tr>
                 </template>
                 </tbody>
@@ -10154,6 +10154,11 @@
         </template>
     </div>
 </template>
+<!--modal-dialog id='oneMoment' size='modal-sm' class="text-center">
+<modal-body>
+<p>One moment, waiting for all search results...</p>
+</modal-body>
+</modal-dialog-->
 
 </div>
 </template>
