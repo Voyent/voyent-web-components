@@ -20,6 +20,7 @@
   "dependencies": {
     "bridgeit.io.js" : "#dev",
     "polymer" : "Polymer/polymer#~1.2.0",
+    "es6-promise": "jakearchibald/es6-promise#~3.0.2",
     "iron-elements": "PolymerElements/iron-elements#~1.0.4",
     "paper-elements": "PolymerElements/paper-elements#^1.0.5",
     "jQuery-QueryBuilder" : "~2.3",
@@ -27,8 +28,8 @@
     "codemirror": "~5.8.0",
     "jsonlint": "~1.6.0",
     "juicy-ace-editor": "~1.1.1",
-	"handlebars": "https://github.com/components/handlebars.js.git",
-	"typeahead":"https://github.com/twitter/typeahead.js.git"
+    "handlebars": "https://github.com/components/handlebars.js.git",
+    "typeahead":"https://github.com/twitter/typeahead.js.git"
   },
   "devDependencies": {
     "web-component-tester": "*"
