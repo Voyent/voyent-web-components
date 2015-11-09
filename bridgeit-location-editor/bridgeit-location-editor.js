@@ -222,7 +222,7 @@ Polymer({
                                 ]
                             ]
                         },
-                        "properties": {"googleMaps":{},"Color":"Black","Editable":true}
+                        "properties": {"googleMaps":{},"Color":"Black","Editable":"true"}
                     }
                 };
             }
@@ -235,7 +235,7 @@ Polymer({
                             "type": "Point",
                             "coordinates": []
                         },
-                        "properties": {"Editable":true, "Proximity":500}
+                        "properties": {"Editable":"true", "Proximity":500}
                     }
                 };
                 shape="point";
@@ -245,9 +245,9 @@ Polymer({
         });
 
         //listener fired when closing the infoWindow with the 'x' button
-        google.maps.event.addListener(_loc._infoWindow,'closeclick',function(){
-            $(_loc.$$('#locationIdBtn')).popover('destroy');
-        });
+        //google.maps.event.addListener(_loc._infoWindow,'closeclick',function(){
+            //$(_loc.$$('#locationIdBtn')).popover('destroy');
+        //});
 
         //if the escape key is pressed then stop drawing
         $(window).keydown(function(event){
@@ -565,7 +565,7 @@ Polymer({
         //_loc.showTagsDiv=false;
         //_loc.showLocationList=false;
 
-        $(_loc.$$('#locationIdBtn')).popover('destroy'); //kill the location ID popover if it's visible
+        //$(_loc.$$('#locationIdBtn')).popover('destroy'); //kill the location ID popover if it's visible
         _loc._infoWindow.close();
 
         //set the new infoWindow position based on the type of location
@@ -588,7 +588,7 @@ Polymer({
     },
 
     setupNameEdit: function () {
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         $(_loc.$$('#staticLocationName')).hide();
         $(_loc.$$('#editLocationName')).show();
         _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id; //display the id if the label hasn't been set yet
@@ -629,7 +629,7 @@ Polymer({
         var oldLocationName = geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
         if (newLocationName !== oldLocationName && newLocationName !== "Auto-Named" && newLocationName.trim() !== "") {
             geoJSON.label = newLocationName;
-            if (_loc.isPOI) {
+            if (!_loc.isPOI) {
                 _loc.postRegion(_loc.activeGoogleLocation, geoJSON, geoJSON.location.properties.googleMaps.shape, true);
             }
             else {
@@ -886,7 +886,7 @@ Polymer({
 
     addProperty: function () {
 
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var newPropKey = _loc.newPropKey;
         var newPropVal = _loc.newPropVal;
         if (!newPropKey || newPropKey.toString().trim().length === 0) {
@@ -907,7 +907,7 @@ Polymer({
     },
     removeProperty: function (e) {
         var propToRemove= e.model.item;
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var properties = _loc.regionProperties;
         for (var i = 0; i < properties.length; i++) {
             if (propToRemove['key'] === properties[i]['key']) {
@@ -922,7 +922,7 @@ Polymer({
     },
 
     addTag: function () {
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var newTag = _loc.newTag;
         if (!newTag || newTag.toString().trim().length === 0) {
             console.log('Please enter a tag.');
@@ -937,7 +937,7 @@ Polymer({
 
     removeTag: function (e) {
         var tagToRemove = e.model.item.name;
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var tags = _loc.tags;
         for (var i = 0; i < tags.length; i++) {
             if (tagToRemove === tags[i]['name']) {
@@ -952,7 +952,7 @@ Polymer({
         }
     },
     updateColourProperty: function () {
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         _loc.colourProp = $(_loc.$$("#colourSelect")).find(':selected').text();
         var location = _loc.activeLocation;
         allLocations[location._id][0].setOptions({fillColor:_loc.colourProp});
@@ -960,7 +960,7 @@ Polymer({
     },
 
     updateEditableProperty: function () {
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var location = _loc.activeLocation;
         _loc.editableProp = $(_loc.$$("#editableSelect")).find(':selected').attr("value");
         var editableProp = _loc.editableProp === 'true';
@@ -976,7 +976,7 @@ Polymer({
     },
 
     removeLocation: function () {
-        $(_loc.$$('#locationIdBtn')).popover('destroy');
+        //$(_loc.$$('#locationIdBtn')).popover('destroy');
         if (!_loc.isPOI) {
             _loc.deleteRegion(_loc.activeGoogleLocation, _loc.activeLocation);
         }
@@ -986,7 +986,7 @@ Polymer({
     },
 
     togglePropertiesDiv: function () {
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         if(!_loc.showTagsDiv) {
             var newHeight = $(_loc.$$('#infoWindow')).css("height") == "305px" ? "100px" : "305px";
             $(_loc.$$('#infoWindow')).css("height", newHeight);
@@ -1008,7 +1008,7 @@ Polymer({
     },
 
     toggleTagsDiv: function () {
-        $(_loc.$$('#locationIdBtn')).popover('hide');
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
         if(!_loc.showPropertiesDiv) {
             var newHeight = $(_loc.$$('#infoWindow')).css("height") == "305px" ? "100px" : "305px";
             $(_loc.$$('#infoWindow')).css("height", newHeight);
@@ -1054,7 +1054,7 @@ Polymer({
     },
 
     setupLocationIdPopover: function () {
-        $(_loc.$$('#locationIdBtn')).popover('destroy');
+        /**$(_loc.$$('#locationIdBtn')).popover('destroy');
         setTimeout(function () {
             $(_loc.$$('#locationIdBtn')).popover({
                 'content': _loc.activeLocation._id,
@@ -1063,7 +1063,7 @@ Polymer({
                 'trigger': 'click',
                 'placement': 'top'
             });
-        }, 0);
+        }, 0);*/
     },
 
     clearFilter: function (selector, searchBar) {
@@ -1079,6 +1079,20 @@ Polymer({
             $(_loc.$$('#poiPropertySearchBar')).typeahead('val', '');
             $(_loc.$$('#mapSearchBar')).val('');
         }
+        //Was originally this.send(searchBar,'',false);
+        _loc.searchBar = '';
+    },
+
+    clearFilterButton: function (e) {
+        //no selector provided (clear filter button pressed) so just clear them all
+            $(_loc.$$('#locationSearchBar')).typeahead('val', '');
+            $(_loc.$$('#locationPropertySearchBar')).typeahead('val', '');
+            $(_loc.$$('#regionSearchBar')).typeahead('val', '');
+            $(_loc.$$('#regionPropertySearchBar')).typeahead('val', '');
+            $(_loc.$$('#poiSearchBar')).typeahead('val', '');
+            $(_loc.$$('#poiPropertySearchBar')).typeahead('val', '');
+            $(_loc.$$('#mapSearchBar')).val('');
+
         //Was originally this.send(searchBar,'',false);
         _loc.searchBar = '';
     },
@@ -1139,6 +1153,12 @@ Polymer({
         var matchingLocations = [];
         var matchFound = false;
         var locationList;
+
+
+        if(typeof optionalQuery == "object"){
+            optionalQuery = '';
+            exactMatch = false;
+        }
 
         //if (searchBy === 'locations' || searchBy === 'locationProperties') {locationList=jQuery.extend({},allRegions,allPOIs);}
         if (searchBy === 'locations' || searchBy === 'locationProperties') {
@@ -1257,12 +1277,12 @@ Polymer({
         );
         //search when selecting an autocomplete list item
         $(_loc.$$(inputId + '.typeahead')).unbind('typeahead:selected').bind('typeahead:selected', function (obj, datum, name) {
-            _loc.searchFunction(datum, true);
+            _loc.searchFunction=datum;
         });
         //add event listeners for the search bar
         $(_loc.$$(inputId + '.typeahead')).unbind('keyup').keyup(function (event) {
             if (event.which === 13) {
-                _loc.searchFunction = '';
+                _loc.searchFunction='';
                 $(inputId + '.typeahead').typeahead('close');
             }
         });

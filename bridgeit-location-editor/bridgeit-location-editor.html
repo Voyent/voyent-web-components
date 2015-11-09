@@ -4,9 +4,8 @@
 <link rel="import" href="../../paper-menu/paper-menu.html">
 <link rel="import" href="../../paper-item/paper-item.html">
 <script src="../../jquery/dist/jquery.js"></script>
-<script src="../../bootstrap/dist/js/bootstrap.js"></script>
-<script src="../../bootstrap/js/popover.js"></script>
-<script src="../../bootstrap/js/tooltip.js"></script>
+<!--script src="../../bootstrap/dist/js/bootstrap.js"></script>
+<script src="../../bootstrap/js/popover.js"></script-->
 <script src="../../handlebars/handlebars.js"></script>
 <script src="../../typeahead/dist/typeahead.jquery.js"></script>
 <dom-module id="bridgeit-location-editor">
@@ -9629,6 +9628,7 @@
 <div id="container">
     <div id="map" class="noDblClickSelect"></div>
 </div>
+<div class="{{propDiv:showPropertiesDiv}}" style="background: white;width:300px;height:200px;"></div>
 <div id="searchBarWrap" style="display:none;">
     <div id="searchBarDiv" class="ui-widget">
         <input id="locationSearchBar" placeholder="Search for Locations" class="searchBar typeahead">
@@ -9657,7 +9657,7 @@
         <div>Delete<br><span>{{searchByTxt}}</span>s</div>
     </div>
     <!--TODO: Test to make sure this is working. Originally had click on clearFilter "" querySearch-->
-    <div id="clearFilterBttn" on-click="clearFilter" class="btn btn-sm btn-warning mainSearchBarButton">
+    <div id="clearFilterBttn" on-click="clearFilterButton" class="btn btn-sm btn-warning mainSearchBarButton">
         <div>Clear <br>Filter</div>
     </div>
 </div>
