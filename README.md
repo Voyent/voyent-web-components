@@ -9,22 +9,8 @@ Get the basic dependencies manually, via a CDN, or with Bower:
 
 ```
 "dependencies": {
-	"bridgeit.io.js" : "#gh-pages",
 	"polymer" : "Polymer/polymer#~1.0.0"
 },
-```
-
-Declare the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support:
-
-```
-<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
-<script>
-	if( !("Promise" in window)){
-		window.Promise = ES6Promise.Promise;
-	}
-</script>
-<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
-<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
 ```
 
 Declare the Web Components script:
