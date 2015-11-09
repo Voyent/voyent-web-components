@@ -56,7 +56,8 @@ Polymer({
         movesInRegion: {type: Boolean, value: false, observer: "movesInRegionChanged"},
         nearRegionPoi: {type: Boolean, value: false, observer: "nearRegionPoiChanged"},
         showPropertiesDiv:{type:Boolean, value:false},
-        isPOI:{type:Boolean, value:false}
+        isPOI:{type:Boolean, value:false},
+        currentId:{type:String, value:''}
 
     },
 
@@ -246,7 +247,7 @@ Polymer({
 
         //listener fired when closing the infoWindow with the 'x' button
         //google.maps.event.addListener(_loc._infoWindow,'closeclick',function(){
-            //$(_loc.$$('#locationIdBtn')).popover('destroy');
+        //$(_loc.$$('#locationIdBtn')).popover('destroy');
         //});
 
         //if the escape key is pressed then stop drawing
@@ -589,6 +590,7 @@ Polymer({
 
     setupNameEdit: function () {
         //$(_loc.$$('#locationIdBtn')).popover('hide');
+        //something
         $(_loc.$$('#staticLocationName')).hide();
         $(_loc.$$('#editLocationName')).show();
         _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id; //display the id if the label hasn't been set yet
@@ -603,8 +605,44 @@ Polymer({
         _loc.adjustLocationFontSize();
     },
 
+    setupViewID: function () {
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
+        //something
+        $(_loc.$$('#staticLocationName')).hide();
+        $(_loc.$$('#viewId')).show();
+        _loc.currentId=_loc.activeLocation._id;
+        _loc.adjustIdFontSize();
+    },
+
+    revertViewID: function () {
+        //$(_loc.$$('#locationIdBtn')).popover('hide');
+        //something
+        $(_loc.$$('#viewId')).hide();
+        $(_loc.$$('#staticLocationName')).show();
+    },
+
     adjustLocationFontSize: function () {
         var elem = $(_loc.$$("#locationName"))[0];
+        var fontstep = 1;
+        var fontsize = parseInt($(elem).css('font-size').split('px')[0]);
+        if ($(elem).height() > $(elem).parent().height() || $(elem).width() > $(elem).parent().width()) {
+            fontsize = fontsize - fontstep;
+            $(elem).css('font-size', (fontsize) + 'px');
+            if (($(elem).height() > $(elem).parent().height() || $(elem).width() > $(elem).parent().width()) && fontsize > 9) { //don't decrease the font size past 9px
+                _loc.adjustLocationFontSize();
+            }
+        }
+        else {
+            fontsize = fontsize + fontstep;
+            $(elem).css('font-size', (fontsize) + 'px');
+            if (($(elem).height() < $(elem).parent().height() || $(elem).width() < $(elem).parent().width()) && fontsize < 30) { //don't increase the font size past 30px
+                _loc.adjustLocationFontSize();
+            }
+        }
+    },
+
+    adjustIdFontSize: function () {
+        var elem = $(_loc.$$("#viewIDDiv"))[0];
         var fontstep = 1;
         var fontsize = parseInt($(elem).css('font-size').split('px')[0]);
         if ($(elem).height() > $(elem).parent().height() || $(elem).width() > $(elem).parent().width()) {
@@ -1055,7 +1093,7 @@ Polymer({
 
     setupLocationIdPopover: function () {
         /**$(_loc.$$('#locationIdBtn')).popover('destroy');
-        setTimeout(function () {
+         setTimeout(function () {
             $(_loc.$$('#locationIdBtn')).popover({
                 'content': _loc.activeLocation._id,
                 'title': _loc.isPOI ? 'POI ID' : 'Region ID',
@@ -1085,13 +1123,13 @@ Polymer({
 
     clearFilterButton: function (e) {
         //no selector provided (clear filter button pressed) so just clear them all
-            $(_loc.$$('#locationSearchBar')).typeahead('val', '');
-            $(_loc.$$('#locationPropertySearchBar')).typeahead('val', '');
-            $(_loc.$$('#regionSearchBar')).typeahead('val', '');
-            $(_loc.$$('#regionPropertySearchBar')).typeahead('val', '');
-            $(_loc.$$('#poiSearchBar')).typeahead('val', '');
-            $(_loc.$$('#poiPropertySearchBar')).typeahead('val', '');
-            $(_loc.$$('#mapSearchBar')).val('');
+        $(_loc.$$('#locationSearchBar')).typeahead('val', '');
+        $(_loc.$$('#locationPropertySearchBar')).typeahead('val', '');
+        $(_loc.$$('#regionSearchBar')).typeahead('val', '');
+        $(_loc.$$('#regionPropertySearchBar')).typeahead('val', '');
+        $(_loc.$$('#poiSearchBar')).typeahead('val', '');
+        $(_loc.$$('#poiPropertySearchBar')).typeahead('val', '');
+        $(_loc.$$('#mapSearchBar')).val('');
 
         //Was originally this.send(searchBar,'',false);
         _loc.searchBar = '';
