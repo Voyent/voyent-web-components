@@ -194,6 +194,15 @@ Example:
                background-color: white;
                @apply(--action-editor-event-triggers-label);
            }
+           .oneOf0 {
+               color:blue;
+           }
+           .oneOf1 {
+               color:green;
+           }
+           .oneOf2 {
+               color:orange;
+           }
 
             /* Static styles */
            .actionPanel,
@@ -326,7 +335,9 @@ Example:
                                                         <hr/>
                                                         <template is="dom-repeat" items="{{_toArray(task.schema.properties)}}" as="property">
                                                             <label>
-                                                                <template is="dom-if" if="{{property.required}}"><span class="required">*</span></template><span>{{property.title}}</span>
+                                                                <template is="dom-if" if="{{property.required}}"><span class="required">*</span></template>
+                                                                <template is="dom-if" if="{{property.oneOf}}"><span class$="{{property.oneOfGroup}}">* (oneOf)</span></template>
+                                                                <span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isFunction(property.title)}}">
                                                                         <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
@@ -335,7 +346,7 @@ Example:
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isFunction(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                               title$="{{property.description}}" required$="{{property.required}}" value="{{property.value::input}}">
+                                                                               required$="{{property.required}}" value="{{property.value::input}}">
                                                                     </template>
                                                                 </template>
                                                             </label>

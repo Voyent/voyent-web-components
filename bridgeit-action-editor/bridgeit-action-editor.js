@@ -40,7 +40,7 @@ Polymer({
             var editor = e.target;
             var groupIndex = editor.getAttribute('data-groupid').slice(-1);
             var taskIndex = editor.getAttribute('data-taskid').slice(-1);
-            _this._taskGroups[groupIndex].tasks[taskIndex].schema.properties.function.value = editor.value;
+            _this.set('_taskGroups.'+groupIndex+'.tasks.'+taskIndex+'.schema.properties.function.value',editor.editor.getValue());
         };
 	},
 
@@ -50,29 +50,7 @@ Polymer({
     getTasks: function() {
         var _this = this;
         bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
-            for (var i=0; i<schemas.length; i++) {
-                //remove redundant '-task' from task item label
-                schemas[i].label = schemas[i].title.replace('-task','');
-                var properties = schemas[i].properties;
-                for (var prop in properties) {
-                    if (!properties.hasOwnProperty(prop)) {
-                        continue;
-                    }
-                    //add value directly to property in schema so it can be used for binding
-                    properties[prop].value='';
-                    //add required directly to property in schema so it can be used in template
-                    if (schemas[i].required && schemas[i].required.indexOf(prop) > -1) {
-                        properties[prop].required = true;
-                    }
-                }
-            }
-            _this._schemas = schemas;
-            //map schema array to title property so we can easily find schemas later
-            var schemaMap = {};
-            schemas.forEach(function (schema) {
-                schemaMap[schema.title] = schema;
-            });
-            _this._schemaMap = schemaMap;
+            _this._processSchemas(schemas);
         }).catch(function(error) {
             console.log('Error in getTasks:',error);
             _this.fire('bridgeit-error', {error: error});
@@ -215,9 +193,57 @@ Polymer({
         for (var i=0; i<this._taskGroups.length; i++) {
             //make sure we have at least one task defined in each task group
             var tasks = this._taskGroups[i].tasks;
-            if (tasks.length > 0) {
-                hasTasks = true;
-                break;
+            if (tasks.length === 0) {
+                continue;
+            }
+            hasTasks = true;
+            //validate 'oneOf' fields
+            var oneOfGroups={};
+            for (var j=0; j<tasks.length; j++) {
+                var properties = tasks[j].schema.properties;
+                for (var prop in properties) {
+                    if (!properties.hasOwnProperty(prop)) {
+                        continue;
+                    }
+                    if (properties[prop].oneOf) {
+                        if (!oneOfGroups[properties[prop].oneOfGroup]) {
+                            oneOfGroups[properties[prop].oneOfGroup]=[];
+                        }
+                        oneOfGroups[properties[prop].oneOfGroup].push(properties[prop].value);
+                    }
+                }
+            }
+            var someGroupDefined=false;
+            var allGroupDefined=false;
+            for (var group in oneOfGroups) {
+                if (!oneOfGroups.hasOwnProperty(group)) {
+                    continue;
+                }
+                var definedCount=0;
+                for (var k=0; k<oneOfGroups[group].length; k++) {
+                    if (oneOfGroups[group][k] && oneOfGroups[group][k].trim().length > 0) {
+                        definedCount++;
+                    }
+                }
+                if (definedCount > 0) {
+                    if (someGroupDefined) {
+                        alert('You must define only one of the property groups in taskGroup "' + this._taskGroups[i].name +'".');
+                        return false;
+                    }
+                    someGroupDefined=true;
+                    if (definedCount == oneOfGroups[group].length) {
+                        allGroupDefined=true;
+                    }
+                }
+
+            }
+            if (!allGroupDefined && someGroupDefined) {
+                alert('You must define all properties for the property group in taskGroup "' + this._taskGroups[i].name +'".');
+                return false;
+            }
+            else if (!someGroupDefined) {
+                alert('You must define at least one of the property groups in taskGroup "' + this._taskGroups[i].name +'".');
+                return false;
             }
         }
         if (!hasTasks) {
@@ -275,6 +301,58 @@ Polymer({
 
 
     //******************PRIVATE API******************
+
+    /**
+     * Process the task schemas so they easily be used in the template.
+     * @param schemas
+     * @private
+     */
+    _processSchemas: function(schemas) {
+        for (var i=0; i<schemas.length; i++) {
+            //remove redundant '-task' from task item label
+            schemas[i].label = schemas[i].title.replace('-task','');
+            //get the array of oneOf properties
+            var oneOf = schemas[i].oneOf;
+            var oneOfProps={};
+            if (oneOf) {
+                for (var j=0; j<oneOf.length; j++) {
+                    var oneOfThese = oneOf[j].required;
+                    for (var k=0; k<oneOfThese.length; k++) {
+                        oneOfProps[oneOfThese[k]] = j;
+                    }
+                }
+            }
+            var properties = schemas[i].properties;
+            for (var prop in properties) {
+                if (!properties.hasOwnProperty(prop)) {
+                    continue;
+                }
+                //add value directly to property in schema so it can be used for binding
+                properties[prop].value='';
+                //add required directly to property in schema so it can be used in template
+                if (schemas[i].required && schemas[i].required.indexOf(prop) > -1) {
+                    properties[prop].required = true;
+                }
+                //add oneOf directly to property in schema so it can be used in template
+                if (oneOfProps.hasOwnProperty(prop)) {
+                    properties[prop].oneOf = true;
+                    properties[prop].oneOfGroup = 'oneOf'+oneOfProps[prop];
+                }
+            }
+            //cleanup parts of schema we don't need
+            delete schemas[i].$schema;
+            delete schemas[i].type;
+            delete schemas[i].required;
+            delete schemas[i].oneOf;
+        }
+        this._schemas = schemas;
+        //map schema array to title property so we can easily find schemas later
+        var schemaMap = {};
+        schemas.forEach(function (schema) {
+            schemaMap[schema.title] = schema;
+        });
+        this._schemaMap = schemaMap;
+    },
 
     /**
      * Wrapper for `saveAction()`.
