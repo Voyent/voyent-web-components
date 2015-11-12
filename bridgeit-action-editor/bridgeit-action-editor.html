@@ -222,6 +222,9 @@ Example:
            .task-group:last-child {
                margin-bottom:0;
            }
+           .task:first-child {
+               margin-top:10px;
+           }
            .taskPanel.toggled {
                height:0;
            }
@@ -315,6 +318,10 @@ Example:
                                                 <label title="The task group name">
                                                     <span class="title" on-click="_toggleTaskGroup"><span class="required">*</span><span>Task Group Name</span></span>
                                                     <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
+                                                </label>
+                                                <label title="Stop executing the action on error?">
+                                                    <span class="title">Quit Action On Task Error</span>
+                                                    <input type="checkbox" checked="{{group.exitOnError::change}}"/>
                                                 </label>
                                             </div>
                                         </div>
