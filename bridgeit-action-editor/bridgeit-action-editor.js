@@ -204,15 +204,15 @@ Polymer({
                 return false;
             }
             taskGroupNames.push(this._taskGroups[i].name);
-            //do some processing for validating 'oneOf' fields + check task name uniqueness
+            //check task name uniqueness + validate oneOf fields
             var taskNames=[];
-            var oneOfGroups={};
             for (var j=0; j<tasks.length; j++) {
                 if (taskNames.indexOf(tasks[j].name) > -1) { //task names need to be unique within a task group
                     alert('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'".');
                     return false;
                 }
                 taskNames.push(tasks[j].name);
+                var oneOfGroups={};
                 var properties = tasks[j].schema.properties;
                 for (var prop in properties) {
                     if (!properties.hasOwnProperty(prop)) {
@@ -225,42 +225,41 @@ Polymer({
                         oneOfGroups[properties[prop].oneOfGroup].push(properties[prop].value);
                     }
                 }
-            }
-            //validate any 'oneOf' fields
-            if (Object.keys(oneOfGroups).length === 0) {
-                continue;
-            }
-            var someGroupDefined=false;
-            var allGroupDefined=false;
-            for (var group in oneOfGroups) {
-                if (!oneOfGroups.hasOwnProperty(group)) {
+                //validate any 'oneOf' fields
+                if (Object.keys(oneOfGroups).length === 0) {
                     continue;
                 }
-                var definedCount=0;
-                for (var k=0; k<oneOfGroups[group].length; k++) {
-                    if (oneOfGroups[group][k] && oneOfGroups[group][k].trim().length > 0) {
-                        definedCount++;
+                var someGroupDefined=false;
+                var allGroupDefined=false;
+                for (var group in oneOfGroups) {
+                    if (!oneOfGroups.hasOwnProperty(group)) {
+                        continue;
+                    }
+                    var definedCount=0;
+                    for (var k=0; k<oneOfGroups[group].length; k++) {
+                        if (oneOfGroups[group][k] && oneOfGroups[group][k].trim().length > 0) {
+                            definedCount++;
+                        }
+                    }
+                    if (definedCount > 0) {
+                        if (someGroupDefined) {
+                            alert('You must define only one of the property groups in taskGroup "' + this._taskGroups[i].name +'".');
+                            return false;
+                        }
+                        someGroupDefined=true;
+                        if (definedCount == oneOfGroups[group].length) {
+                            allGroupDefined=true;
+                        }
                     }
                 }
-                if (definedCount > 0) {
-                    if (someGroupDefined) {
-                        alert('You must define only one of the property groups in taskGroup "' + this._taskGroups[i].name +'".');
-                        return false;
-                    }
-                    someGroupDefined=true;
-                    if (definedCount == oneOfGroups[group].length) {
-                        allGroupDefined=true;
-                    }
+                if (!allGroupDefined && someGroupDefined) {
+                    alert('You must define all properties for the property group in taskGroup "' + this._taskGroups[i].name +'".');
+                    return false;
                 }
-
-            }
-            if (!allGroupDefined && someGroupDefined) {
-                alert('You must define all properties for the property group in taskGroup "' + this._taskGroups[i].name +'".');
-                return false;
-            }
-            else if (!someGroupDefined) {
-                alert('You must define at least one of the property groups in taskGroup "' + this._taskGroups[i].name +'".');
-                return false;
+                else if (!someGroupDefined) {
+                    alert('You must define at least one of the property groups in taskGroup "' + this._taskGroups[i].name +'".');
+                    return false;
+                }
             }
         }
         if (!hasTasks) {
