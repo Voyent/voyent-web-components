@@ -463,9 +463,9 @@ Polymer({
                     }
                     if (params && typeof params[properties[prop].title] !== 'undefined') {
                         properties[prop].value = params[properties[prop].title];
-                        if (prop == 'function') {
-                            editorMappings.push({domSelector:'#'+taskGroups[i].id+' #'+tasks[j].id + ' juicy-ace-editor',valueSelector:'_taskGroups.'+i+'.tasks.'+j+'.schema.properties.function.value'});
-                        }
+                    }
+                    if (prop == 'function') {
+                        editorMappings.push({domSelector:'#'+taskGroups[i].id+' #'+tasks[j].id + ' juicy-ace-editor',valueSelector:'_taskGroups.'+i+'.tasks.'+j+'.schema.properties.function.value'});
                     }
                 }
                 //cleanup values that aren't used in the UI
