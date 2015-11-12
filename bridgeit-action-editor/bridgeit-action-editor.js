@@ -190,6 +190,7 @@ Polymer({
             return false;
         }
         var hasTasks = false;
+        var taskGroupNames=[];
         for (var i=0; i<this._taskGroups.length; i++) {
             //make sure we have at least one task defined in each task group
             var tasks = this._taskGroups[i].tasks;
@@ -197,9 +198,21 @@ Polymer({
                 continue;
             }
             hasTasks = true;
-            //validate 'oneOf' fields
+            //task group names need to be unique
+            if (taskGroupNames.indexOf(this._taskGroups[i].name) > -1) {
+                alert('Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
+                return false;
+            }
+            taskGroupNames.push(this._taskGroups[i].name);
+            //do some processing for validating 'oneOf' fields + check task name uniqueness
+            var taskNames=[];
             var oneOfGroups={};
             for (var j=0; j<tasks.length; j++) {
+                if (taskNames.indexOf(tasks[j].name) > -1) { //task names need to be unique within a task group
+                    alert('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'".');
+                    return false;
+                }
+                taskNames.push(tasks[j].name);
                 var properties = tasks[j].schema.properties;
                 for (var prop in properties) {
                     if (!properties.hasOwnProperty(prop)) {
@@ -212,6 +225,10 @@ Polymer({
                         oneOfGroups[properties[prop].oneOfGroup].push(properties[prop].value);
                     }
                 }
+            }
+            //validate any 'oneOf' fields
+            if (Object.keys(oneOfGroups).length === 0) {
+                continue;
             }
             var someGroupDefined=false;
             var allGroupDefined=false;
