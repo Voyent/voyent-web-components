@@ -293,7 +293,7 @@ Polymer({
         var params = {realm:this.realm,collection:collection,document:{routes:routes}};
         if (simulationId && simulationId.trim().length > 0) {
             params.id = simulationId;
-            if (this._activeSim._id === simulationId) {
+            if (this._activeSim && this._activeSim._id === simulationId) {
                 docCall = 'updateDocument';
             }
         }
@@ -368,13 +368,13 @@ Polymer({
     },
 
     /**
-     * Resize the Google Map.
+     * Trigger the Google Map resize event and pan the map to the last known bounds.
      */
     resizeMap: function() {
         if (('google' in window) && this._map) {
-            var center = this._map.getCenter();
             google.maps.event.trigger(this._map, "resize");
-            this._map.setCenter(center);
+            this._map.fitBounds(this._bounds);
+            this._map.panToBounds(this._bounds);
         }
     },
 
