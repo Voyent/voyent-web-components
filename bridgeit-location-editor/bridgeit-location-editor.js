@@ -530,7 +530,7 @@ Polymer({
     postPOI: function (location, geoJSON, shape, isUpdate) {
         if(isUpdate){
             _loc.editPOI(_loc.realm, geoJSON).then(function (data) {
-                _loc.postLocationSuccess(data, location, geoJSON, shape, isUpdate, "region");
+                _loc.postLocationSuccess(data, location, geoJSON, shape, isUpdate, "POI");
             }).fail(function () {
                 _loc.postLocationFail(location);
             });
@@ -538,7 +538,7 @@ Polymer({
         else
         {
             _loc.createPOI(_loc.realm, geoJSON).then(function (data) {
-                _loc.postLocationSuccess(data, location, geoJSON, shape, isUpdate, "region");
+                _loc.postLocationSuccess(data, location, geoJSON, shape, isUpdate, "POI");
             }).fail(function () {
                 _loc.postLocationFail(location);
             });
@@ -680,21 +680,23 @@ Polymer({
     populateProperties: function () {
         var geoJSON = _loc.activeLocation;
         var properties = geoJSON.location.properties;
-        if (!(_loc.isPOI)) {
-            _loc.colourProp=properties["Color"];
-            $(_loc.$$("#colourSelect")).find('option:selected').removeAttr('selected');
-            $(_loc.$$("#colourSelect")).find('option:contains("'+_loc.colourProp+'")').attr("selected",true);
-        }
-        _loc.editableProp=typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
-        $(_loc.$$("#editableSelect")).find('option:selected').removeAttr('selected');
-        $(_loc.$$("#editableSelect")).find('option:contains("'+_loc.editableProp+'")').attr("selected",true);
-        var props = [];
-        for (var property in properties) {
-            if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
-                props.push({key: property, val: properties[property]});
+        setTimeout(function () {
+            if (!(_loc.isPOI)) {
+                _loc.colourProp = properties["Color"];
+                $(_loc.$$("#colourSelect")).find('option:selected').removeAttr('selected');
+                $(_loc.$$("#colourSelect")).find('option:contains("' + _loc.colourProp + '")').attr("selected", true);
             }
-        }
-        _loc.regionProperties = props;
+            _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
+            $(_loc.$$("#editableSelect")).find('option:selected').removeProp('selected');
+            $(_loc.$$("#editableSelect")).find('option[value="'+_loc.editableProp+'"]').prop("selected", true);
+            var props = [];
+            for (var property in properties) {
+                if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
+                    props.push({key: property, val: properties[property]});
+                }
+            }
+            _loc.regionProperties = props;
+        },100);
     },
 
     populateTags: function () {
@@ -2062,7 +2064,7 @@ Polymer({
                 var type = data[record].location.geometry.type.toLowerCase();
                 var coords = data[record].location.geometry.coordinates;
                 var properties = typeof data[record].location.properties === "undefined" ? {} : data[record].location.properties;
-                var editable = typeof properties["Editable"] === "undefined" ? true : (properties["Editable"] === 'true' || properties["Editable"] === 'True');
+                var editable = typeof properties["Editable"] === "undefined" ? true : (properties["Editable"] === 'true' || properties["Editable"] === 'True' || properties["Editable"] === true);
                 var googlePoint;
                 var geoJSON;
                 if (type === "polygon") { //region
