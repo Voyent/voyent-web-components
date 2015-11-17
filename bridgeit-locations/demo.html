@@ -26,8 +26,8 @@
 		<style is="custom-style">
 			#locations {
 				--locations-map: { /* [Custom map styling] */
-			 		height: 400px;
-			 	};
+					height: 400px;
+				};
 			}
 		</style>
 		
@@ -35,11 +35,11 @@
 	<body unresolved>
 
 		<h1>BridgeIt Locations Map Component Demo</h1>
-  		<h3>Login with your BridgeIt Account Information</h3>
-  		<hr/>
-  		<div class="container">
-	  		<form>
-	  			<div>
+		<h3>Login with your BridgeIt Account Information</h3>
+		<hr/>
+		<div class="container">
+			<form>
+				<div>
 					<label>Account:
 						<input id="account" type="text"/>
 					</label>
@@ -139,13 +139,18 @@
 				
 			}
 
-            function toggleBooleanAttribute(attribute, value) {
-                var locations = document.getElementById('locations');
-                value ? locations.setAttribute(attribute, attribute) : locations.removeAttribute(attribute);
-            }
+			function toggleBooleanAttribute(attribute, value) {
+				var locations = document.getElementById('locations');
+				value ? locations.setAttribute(attribute, attribute) : locations.removeAttribute(attribute);
+			}
 
-            //initialize known credentials
-            setCredentialsOnComponent();
+			window.addEventListener('WebComponentsReady', function() {
+				// imports are loaded and elements have been registered
+				console.log('WebComponentsReady');
+
+				//initialize known credentials
+				setCredentialsOnComponent();
+			});
 		</script>
 	</body>
 </html>

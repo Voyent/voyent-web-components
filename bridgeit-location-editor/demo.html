@@ -115,8 +115,13 @@
             document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
         }
     }
-    //initialize known credentials
-    setCredentialsOnComponent();
+    window.addEventListener('WebComponentsReady', function() {
+        // imports are loaded and elements have been registered
+        console.log('WebComponentsReady');
+
+        //initialize known credentials
+        setCredentialsOnComponent();
+    });
 </script>
 </body>
 </html>
