@@ -6,8 +6,8 @@ var drawingManager;
 var infoWindow;
 var map;
 var bounds;
-var firstRun=true;
-var setup=false;
+var firstRun = true;
+var setup = false;
 
 Polymer({
     is: "bridgeit-location-editor",
@@ -19,11 +19,11 @@ Polymer({
         realm: String,
         host: String,
         accesstoken: String,
-        searchBy: {type: String, value: 'locations', observer:'changeSearchBy'},
+        searchBy: {type: String, value: 'locations', observer: 'changeSearchBy'},
         searchByTxt: {type: String, value: 'Location'},
         searchByNameVal: {type: String, value: 'locations'},
         searchByPropVal: {type: String, value: 'locationProperties'},
-        searchByType:{type:String, value: 'nameVal'},
+        searchByType: {type: String, value: 'nameVal'},
         searchType: {type: String, value: 'contains'},
         showSearchDialog: {type: Boolean, value: false},
         showImportDialog: {type: Boolean, value: false},
@@ -35,13 +35,13 @@ Polymer({
         newPropKey: {type: String, value: ''},
         newPropVal: {type: String, value: ''},
         newTag: {type: String, value: ''},
-        regionProperties: {type: Object, value: [], notify:true},
+        regionProperties: {type: Object, value: [], notify: true},
         tags: {type: Object, value: []},
         locationNameInput: {type: String, value: ''},
         toggleCheckboxesTxt: {type: String, value: 'Select All'},
         placesSearchRank: {type: String, value: 'PROMINENCE', observer: 'placesSearchRankChanged'},
         placesRadiusDisabled: {type: Boolean, value: false},
-        arePlacesSearchResults:{type:Boolean,value:false},
+        arePlacesSearchResults: {type: Boolean, value: false},
         placesSearchResults: {type: Object, value: [], observer: 'placesSearchResultsChanged'},
         placesSearchResultsMap: {type: Object, value: {}},
         allLocationsRadius: {type: Number, value: 20, observer: 'allLocationsRadiusChanged'},
@@ -55,9 +55,9 @@ Polymer({
         locationImportCount: {type: Number, value: 0, observer: "locationImportCountChanged"},
         movesInRegion: {type: Boolean, value: false, observer: "movesInRegionChanged"},
         nearRegionPoi: {type: Boolean, value: false, observer: "nearRegionPoiChanged"},
-        showPropertiesDiv:{type:Boolean, value:false},
-        isPOI:{type:Boolean, value:false},
-        currentId:{type:String, value:''}
+        showPropertiesDiv: {type: Boolean, value: false},
+        isPOI: {type: Boolean, value: false},
+        currentId: {type: String, value: ''}
 
     },
 
@@ -66,9 +66,9 @@ Polymer({
         _loc._locationMarkers = [];
         _loc._regions = [];
         _loc._poiMarkers = [];
-        allRegions={};
-        allPOIs={};
-        allLocations={};
+        allRegions = {};
+        allPOIs = {};
+        allLocations = {};
     },
 
     ready: function () {
@@ -100,14 +100,14 @@ Polymer({
         _loc.host = bridgeit.io.auth.getConnectSettings().host;
 
 
-        if( !('google' in window) || !('maps' in window.google)){
+        if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
             script.type = 'text/javascript';
             script.src = 'https://maps.googleapis.com/maps/api/js?v=3.2&' +
                 'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
             _loc.$.container.appendChild(script);
         }
-        else{
+        else {
             initializeLocationsMap();
         }
     },
@@ -136,9 +136,9 @@ Polymer({
                 position: google.maps.ControlPosition.RIGHT_TOP
             },
             signed_in: false,
-            streetViewControl:false,
-            panControl:false,
-            zoomControlOptions:{
+            streetViewControl: false,
+            panControl: false,
+            zoomControlOptions: {
                 style: google.maps.ZoomControlStyle.LARGE,
                 position: google.maps.ControlPosition.LEFT_CENTER
             }
@@ -149,12 +149,12 @@ Polymer({
         _loc._infoWindow = new google.maps.InfoWindow();
 
         //make sure the map is sized correctly when the window size changes
-        google.maps.event.addDomListener(window, "resize", function() {
+        google.maps.event.addDomListener(window, "resize", function () {
             _loc.resizeMap();
         });
 
         _loc.drawingManager = new google.maps.drawing.DrawingManager({drawingControlOptions: {
-            position:google.maps.ControlPosition.TOP_RIGHT,
+            position: google.maps.ControlPosition.TOP_RIGHT,
             drawingModes: [
                 google.maps.drawing.OverlayType.MARKER,
                 google.maps.drawing.OverlayType.CIRCLE,
@@ -163,45 +163,31 @@ Polymer({
             ]
         }});
 
-        _loc.getAllRegions(_loc.realm).then(function(data) {
-            return data;
-        }).fail(function(obj,status,error) {
-            if (error === "Not Found") {
-                console.log('no regions found for ' + _loc.realm);
-            }
-            else {
-                console.error('could not load regions for ' + _loc.realm);
-            }
-        })
-            .always(function(regionData) {
-                if (!(regionData instanceof Array)) {
-                    regionData=[];
-                }
-                _loc.getAllPOIs(_loc.realm).then(function(data) {
-                    var locations = regionData.concat(data);
-                    _loc.startEditor(locations);
-                })
-                    .fail(function(obj,status,error) {
-                        if (error === "Not Found") {
-                            console.log('no pois found for ' + _loc.realm);
-                        }
-                        else {
-                            console.error('could not load pois for ' + _loc.realm);
-                        }
-                        _loc.startEditor(regionData);
-                    });
-            });
+        var promises = [];
+        promises.push(bridgeit.io.location.getAllRegions({realm: _loc.realm}).then(function (regions) {
+            _loc.regionsTemp = regions;
+        }));
+        promises.push(bridgeit.io.location.getAllPOIs({realm: _loc.realm}).then(function (pois) {
+            _loc.poisTemp = pois;
+        }));
+
+        return Promise.all(promises).then(function () {
+            _loc.startEditor(_loc.regionsTemp.concat(_loc.poisTemp));
+        })['catch'](function (error) {
+            console.log('<bridgeit-locations> Error: ' + ( error.message || error.responseText));
+        });
+
     },
 
-    startEditor: function(locationsData){
+    startEditor: function (locationsData) {
         if (locationsData !== null && locationsData.length > 0) {
             _loc.makeLocations(locationsData);
         }
 
         _loc.addCustomButtons();
-        setTimeout(function() {
+        setTimeout(function () {
             _loc.updateMainAutoComplete();
-        },1000);
+        }, 1000);
 
         _loc._infoWindow.setContent($(_loc.$$('#infoWindow'))[0]);
 
@@ -212,9 +198,9 @@ Polymer({
             var location = event.overlay;
 
             if (shape !== "marker") {
-                location.setOptions({editable:true}); //always make region editable
+                location.setOptions({editable: true}); //always make region editable
                 geoJSON = {
-                    location : {
+                    location: {
                         "type": "Feature",
                         "geometry": {
                             "type": "Polygon",
@@ -223,25 +209,25 @@ Polymer({
                                 ]
                             ]
                         },
-                        "properties": {"googleMaps":{},"Color":"Black","Editable":"true"}
+                        "properties": {"googleMaps": {}, "Color": "Black", "Editable": "true"}
                     }
                 };
             }
             else {
-                location.setOptions({draggable:true}); //always make poi draggable
+                location.setOptions({draggable: true}); //always make poi draggable
                 geoJSON = {
-                    location : {
+                    location: {
                         "type": "Feature",
                         "geometry": {
                             "type": "Point",
                             "coordinates": []
                         },
-                        "properties": {"Editable":"true", "Proximity":500}
+                        "properties": {"Editable": "true", "Proximity": 500}
                     }
                 };
-                shape="point";
+                shape = "point";
             }
-            _loc.setupLocation(location,geoJSON,shape);
+            _loc.setupLocation(location, geoJSON, shape);
             _loc.drawingManager.setDrawingMode(null);
         });
 
@@ -251,9 +237,9 @@ Polymer({
         //});
 
         //if the escape key is pressed then stop drawing
-        $(window).keydown(function(event){
-            if(event.which === 27){
-                if(_loc.drawingManager.getDrawingMode() !== null){
+        $(window).keydown(function (event) {
+            if (event.which === 27) {
+                if (_loc.drawingManager.getDrawingMode() !== null) {
                     _loc.drawingManager.setDrawingMode(null);
                 }
             }
@@ -270,7 +256,7 @@ Polymer({
         }
 
         var searchControlDiv = $(document.createElement('div'));
-        searchControlDiv.attr('style','padding-left:30px;padding-top:15px;width:30%;min-width:630px;');
+        searchControlDiv.attr('style', 'padding-left:30px;padding-top:15px;width:30%;min-width:630px;');
         var searchControl = new SearchControl(searchControlDiv);
 
         searchControl.index = 1;
@@ -278,7 +264,7 @@ Polymer({
 
         //Clear region/poi name input on click when "Auto-Named"
 
-        $(_loc.$$("#locationNameInput")).click(function() {
+        $(_loc.$$("#locationNameInput")).click(function () {
             if ($(this).val() === "Auto-Named") {
                 $(this).val("");
             }
@@ -289,7 +275,7 @@ Polymer({
     /**
      * Resize the Google Map.
      */
-    resizeMap: function() {
+    resizeMap: function () {
         if (('google' in window) && this._map) {
             var center = this._map.getCenter();
             google.maps.event.trigger(this._map, "resize");
@@ -303,40 +289,25 @@ Polymer({
         }
         _loc._clearLocations();
         _loc._bounds = new google.maps.LatLngBounds();
-        _loc.getAllRegions(_loc.realm).then(function(data) {
-            return data;
-        }).fail(function(obj,status,error) {
-            if (error === "Not Found") {
-                console.log('no regions found for ' + _loc.realm);
-            }
-            else {
-                console.error('could not load regions for ' + _loc.realm);
-            }
-        })
-            .always(function(regionData) {
-                if (!(regionData instanceof Array)) {
-                    regionData=[];
-                }
-                _loc.getAllPOIs(_loc.realm).then(function(data) {
-                    var locations = regionData.concat(data);
-                    if(!setup)
-                        _loc.startEditor(locations)
-                    else
-                        _loc.makeLocations(locations);
-                })
-                    .fail(function(obj,status,error) {
-                        if (error === "Not Found") {
-                            console.log('no pois found for ' + _loc.realm);
-                        }
-                        else {
-                            console.error('could not load pois for ' + _loc.realm);
-                        }
-                        if(!setup)
-                            _loc.startEditor(locations)
-                        else
-                            _loc.makeLocations(locations);
-                    });
-            });
+
+        var promises = [];
+        promises.push(bridgeit.io.location.getAllRegions({realm: _loc.realm}).then(function (regions) {
+            _loc.regionsTemp = regions;
+        }));
+        promises.push(bridgeit.io.location.getAllPOIs({realm: _loc.realm}).then(function (pois) {
+            _loc.poisTemp = pois;
+        }));
+
+        return Promise.all(promises).then(function () {
+            var data = _loc.regionsTemp.concat(_loc.poisTemp);
+            if (!setup)
+                _loc.startEditor(data);
+            else
+                _loc.makeLocations(data, false);
+        })['catch'](function (error) {
+            console.log('<bridgeit-locations> Error: ' + ( error.message || error.responseText));
+        });
+
     },
 
     _clearLocations: function () {
@@ -395,7 +366,7 @@ Polymer({
             var degreeStep = 360 / N;
             geoJSON.location.properties.googleMaps.shape = "circle";
             geoJSON.location.properties.googleMaps.radius = location.getRadius();
-            geoJSON.location.properties.googleMaps.center = [location.getCenter().lat(),location.getCenter().lng()];
+            geoJSON.location.properties.googleMaps.center = [location.getCenter().lat(), location.getCenter().lng()];
             for (var i = 0; i < N; i++) {
                 var gpos = google.maps.geometry.spherical.computeOffset(location.getCenter(), location.getRadius(), degreeStep * i);
                 geoJSON.location.geometry.coordinates[0].push([gpos.lng(), gpos.lat()]);
@@ -430,24 +401,31 @@ Polymer({
     },
 
     postRegion: function (location, geoJSON, shape, isUpdate) {
-        if(isUpdate){
-            _loc.editRegion(_loc.realm, geoJSON).then(function (data) {
-                _loc.postLocationSuccess(data, location, geoJSON, shape, isUpdate, "region");
-            }).fail(function () {
+        if (isUpdate) {
+            bridgeit.io.location.updateRegion({
+                realm: _loc.realm,
+                region: geoJSON,
+                id:geoJSON._id
+            }).then(function (uri) {
+                _loc.postLocationSuccess(uri, location, geoJSON, shape, isUpdate, "region");
+            }).catch(function (error) {
                 _loc.postLocationFail(location);
             });
         }
-        else
-        {
-            _loc.createRegion(_loc.realm, geoJSON).then(function (data) {
-                _loc.postLocationSuccess(data, location, geoJSON, shape, isUpdate, "region");
-            }).fail(function () {
+        else {
+            bridgeit.io.location.createRegion({
+                realm: _loc.realm,
+                region: geoJSON
+            }).then(function (uri) {
+                _loc.postLocationSuccess(uri, location, geoJSON, shape, isUpdate, "region");
+            }).catch(function (error) {
+                console.log(error);
                 _loc.postLocationFail(location);
             });
         }
     },
     postLocationSuccess: function (data, location, geoJSON, shape, isUpdate, type) {
-        geoJSON._id = data ? data.uri.split("/").pop() : geoJSON._id;
+        geoJSON._id = data ? data.split("/").pop() : geoJSON._id;
         allLocations[geoJSON._id] = [location, geoJSON];
         if (type === "region") {
             allRegions[geoJSON._id] = [location, geoJSON];
@@ -528,18 +506,24 @@ Polymer({
     },
 
     postPOI: function (location, geoJSON, shape, isUpdate) {
-        if(isUpdate){
-            _loc.editPOI(_loc.realm, geoJSON).then(function (data) {
-                _loc.postLocationSuccess(data, location, geoJSON, shape, isUpdate, "POI");
-            }).fail(function () {
+        if (isUpdate) {
+            bridgeit.io.location.updatePOI({
+                realm: _loc.realm,
+                poi: geoJSON,
+                id:geoJSON._id
+            }).then(function (uri) {
+                _loc.postLocationSuccess(uri, location, geoJSON, shape, isUpdate, "POI");
+            }).catch(function (error) {
                 _loc.postLocationFail(location);
             });
         }
-        else
-        {
-            _loc.createPOI(_loc.realm, geoJSON).then(function (data) {
-                _loc.postLocationSuccess(data, location, geoJSON, shape, isUpdate, "POI");
-            }).fail(function () {
+        else {
+            bridgeit.io.location.createPOI({
+                realm: _loc.realm,
+                poi: geoJSON
+            }).then(function (uri) {
+                _loc.postLocationSuccess(uri, location, geoJSON, shape, isUpdate, "POI");
+            }).catch(function (error) {
                 _loc.postLocationFail(location);
             });
         }
@@ -547,16 +531,16 @@ Polymer({
 
     infoWindowSetup: function (location, geoJSON, shape) {
         //set the active locations to the one that was clicked and cleanup old infoWindows
-        _loc.activeGoogleLocation=location;
-        _loc.activeLocation=geoJSON;
-        _loc.isPOI=geoJSON.location.geometry.type.toLowerCase() === "point";
-        if(_loc.showPropertiesDiv || _loc.showTagsDiv){
-            if(_loc.showPropertiesDiv){
+        _loc.activeGoogleLocation = location;
+        _loc.activeLocation = geoJSON;
+        _loc.isPOI = geoJSON.location.geometry.type.toLowerCase() === "point";
+        if (_loc.showPropertiesDiv || _loc.showTagsDiv) {
+            if (_loc.showPropertiesDiv) {
                 _loc.togglePropertiesDiv();
                 _loc.togglePropertiesDiv();
 
             }
-            else{
+            else {
                 _loc.toggleTagsDiv();
                 _loc.toggleTagsDiv();
 
@@ -610,7 +594,7 @@ Polymer({
         //something
         $(_loc.$$('#staticLocationName')).hide();
         $(_loc.$$('#viewId')).show();
-        _loc.currentId=_loc.activeLocation._id;
+        _loc.currentId = _loc.activeLocation._id;
         _loc.adjustIdFontSize();
     },
 
@@ -688,7 +672,7 @@ Polymer({
             }
             _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
             $(_loc.$$("#editableSelect")).find('option:selected').removeProp('selected');
-            $(_loc.$$("#editableSelect")).find('option[value="'+_loc.editableProp+'"]').prop("selected", true);
+            $(_loc.$$("#editableSelect")).find('option[value="' + _loc.editableProp + '"]').prop("selected", true);
             var props = [];
             for (var property in properties) {
                 if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
@@ -696,7 +680,7 @@ Polymer({
                 }
             }
             _loc.regionProperties = props;
-        },100);
+        }, 100);
     },
 
     populateTags: function () {
@@ -838,7 +822,7 @@ Polymer({
 
     toggleDeleteDialog: function () {
         _loc.showDeleteDialog = !_loc.showDeleteDialog;
-        _loc.toggleCheckboxesTxt= 'Select All';
+        _loc.toggleCheckboxesTxt = 'Select All';
         _loc.querySearch('', false);
         if (_loc.showDeleteDialog) {
             setTimeout(function () {
@@ -938,7 +922,7 @@ Polymer({
             return;
         }
 
-        _loc.push('regionProperties',{key: newPropKey, val: newPropVal});
+        _loc.push('regionProperties', {key: newPropKey, val: newPropVal});
         if (!_loc.isPlacesSearch) {
             _loc.updateProperties();
         }
@@ -946,13 +930,13 @@ Polymer({
         _loc.newPropVal = '';
     },
     removeProperty: function (e) {
-        var propToRemove= e.model.item;
+        var propToRemove = e.model.item;
         //$(_loc.$$('#locationIdBtn')).popover('hide');
         var properties = _loc.regionProperties;
         for (var i = 0; i < properties.length; i++) {
             if (propToRemove['key'] === properties[i]['key']) {
                 e.target.remove();
-                _loc.splice('regionProperties',i,1);
+                _loc.splice('regionProperties', i, 1);
                 break;
             }
         }
@@ -968,7 +952,7 @@ Polymer({
             console.log('Please enter a tag.');
             return;
         }
-        _loc.push('tags',{name:newTag});
+        _loc.push('tags', {name: newTag});
         if (!_loc.isPlacesSearch) {
             _loc.updateTags();
         }
@@ -982,7 +966,7 @@ Polymer({
         for (var i = 0; i < tags.length; i++) {
             if (tagToRemove === tags[i]['name']) {
                 e.target.remove();
-                _loc.splice('tags',i,1);
+                _loc.splice('tags', i, 1);
                 break;
             }
         }
@@ -995,7 +979,7 @@ Polymer({
         //$(_loc.$$('#locationIdBtn')).popover('hide');
         _loc.colourProp = $(_loc.$$("#colourSelect")).find(':selected').text();
         var location = _loc.activeLocation;
-        allLocations[location._id][0].setOptions({fillColor:_loc.colourProp});
+        allLocations[location._id][0].setOptions({fillColor: _loc.colourProp});
         _loc.updateProperties();
     },
 
@@ -1027,7 +1011,7 @@ Polymer({
 
     togglePropertiesDiv: function () {
         //$(_loc.$$('#locationIdBtn')).popover('hide');
-        if(!_loc.showTagsDiv) {
+        if (!_loc.showTagsDiv) {
             var newHeight = $(_loc.$$('#infoWindow')).css("height") == "305px" ? "100px" : "305px";
             $(_loc.$$('#infoWindow')).css("height", newHeight);
         }
@@ -1049,7 +1033,7 @@ Polymer({
 
     toggleTagsDiv: function () {
         //$(_loc.$$('#locationIdBtn')).popover('hide');
-        if(!_loc.showPropertiesDiv) {
+        if (!_loc.showPropertiesDiv) {
             var newHeight = $(_loc.$$('#infoWindow')).css("height") == "305px" ? "100px" : "305px";
             $(_loc.$$('#infoWindow')).css("height", newHeight);
         }
@@ -1195,7 +1179,7 @@ Polymer({
         var locationList;
 
 
-        if(typeof optionalQuery == "object"){
+        if (typeof optionalQuery == "object") {
             optionalQuery = '';
             exactMatch = false;
         }
@@ -1277,7 +1261,7 @@ Polymer({
                         _loc._map.fitBounds(results[0].geometry.viewport);
                         _loc._map.setCenter(results[0].geometry.location);
                         mapQueryAutocomplete.setBounds(results[0].geometry.viewport);
-                        _loc.mapQueryAutocomplete=mapQueryAutocomplete;
+                        _loc.mapQueryAutocomplete = mapQueryAutocomplete;
                     } else {
                         console.log('Geocode was not successful for the following reason: ' + status);
                     }
@@ -1317,12 +1301,12 @@ Polymer({
         );
         //search when selecting an autocomplete list item
         $(_loc.$$(inputId + '.typeahead')).unbind('typeahead:selected').bind('typeahead:selected', function (obj, datum, name) {
-            _loc.searchFunction=datum;
+            _loc.searchFunction = datum;
         });
         //add event listeners for the search bar
         $(_loc.$$(inputId + '.typeahead')).unbind('keyup').keyup(function (event) {
             if (event.which === 13) {
-                _loc.searchFunction='';
+                _loc.searchFunction = '';
                 $(inputId + '.typeahead').typeahead('close');
             }
         });
@@ -1335,7 +1319,7 @@ Polymer({
      * Toggles the visibility of the places search dialog. If the dialog is opened with results then make sure the listeners are added to the input elements.
      */
     togglePlacesSearch: function () {
-        _loc.showPlacesDialog=!_loc.showPlacesDialog;
+        _loc.showPlacesDialog = !_loc.showPlacesDialog;
         if (_loc.showPlacesDialog) {
             _loc.isPlacesSearch = true;
             if (_loc.placesSearchResults.length > 0) {
@@ -1495,9 +1479,9 @@ Polymer({
         var locations = [];
         var placesSearchResultsMap = _loc.placesSearchResultsMap;
         _loc.colourProp = $(_loc.$$("#colourSelect2")).find(':selected').text();
-        _loc.colourProp = _loc.colourProp == "" ? "Black": _loc.colourProp;
+        _loc.colourProp = _loc.colourProp == "" ? "Black" : _loc.colourProp;
         _loc.editableProp = $(_loc.$$("#editableSelect2")).find(':selected').attr('value');
-        _loc.editableProp = _loc.editableProp == "" ? true: _loc.editableProp === 'true';
+        _loc.editableProp = _loc.editableProp == "" ? true : _loc.editableProp === 'true';
         $('input[name="createPlace"]:checked').each(function () {
             var place_id = $(this).val();
             var name = placesSearchResultsMap[place_id].name;
@@ -1683,7 +1667,7 @@ Polymer({
      * @return {boolean}
      */
     compareStrings: function (value, query, exactMatch, forceContains) {
-        var searchType = $(_loc.$$("input[name='searchType']:checked"))[0] == null? _loc.searchType:$(_loc.$$("input[name='searchType']:checked"))[0].value;
+        var searchType = $(_loc.$$("input[name='searchType']:checked"))[0] == null ? _loc.searchType : $(_loc.$$("input[name='searchType']:checked"))[0].value;
         value = value.toString();
         query = query.toString();
 
@@ -1765,18 +1749,18 @@ Polymer({
      * Show the necessary inputs if searchBy is changed and close the Search Options dialog.
      */
     changeSearchBy: function () {
-        if(_loc.searchByType == "nameVal")
+        if (_loc.searchByType == "nameVal")
             _loc.searchBy = _loc.searchByNameVal;
-        else if(_loc.searchByType == "propVal")
+        else if (_loc.searchByType == "propVal")
             _loc.searchBy = _loc.searchByNameVal;
-        else if(_loc.searchByType =="map")
+        else if (_loc.searchByType == "map")
             _loc.searchBy = "map";
         _loc.clearFilter('', 'querySearch');
         _loc.hideAndShowInputs();
         _loc.showSearchDialog = false;
     },
 
-    changeSearchByType:function(){
+    changeSearchByType: function () {
         _loc.searchByType = $(_loc.$$("input[name='searchByType']:checked"))[0].value;
         _loc.changeSearchBy();
     },
@@ -1785,7 +1769,7 @@ Polymer({
      * Close the Search Options dialog after the searchType is changed.
      */
     changeSearchType: function () {
-        _loc.searchType=$(_loc.$$("input[name='searchType']:checked"))[0].value;
+        _loc.searchType = $(_loc.$$("input[name='searchType']:checked"))[0].value;
         _loc.toggleSearchOptDialog();
     },
 
@@ -1830,9 +1814,9 @@ Polymer({
      * Update all radius inputs with the master input at the top of the Places Search Results table.
      */
     allLocationsRadiusChanged: function () {
-        var pos = _loc.$$("#placesBody") == null? null: _loc.$$("#placesBody").querySelectorAll(".radiusInput[name='radiusInput']");
-        if(pos != null){
-            for(var i = 0; i < pos.length; i++){
+        var pos = _loc.$$("#placesBody") == null ? null : _loc.$$("#placesBody").querySelectorAll(".radiusInput[name='radiusInput']");
+        if (pos != null) {
+            for (var i = 0; i < pos.length; i++) {
                 var node = pos[i];
                 $(node).val(_loc.allLocationsRadius);
             }
@@ -1981,9 +1965,12 @@ Polymer({
      * @param geoJSON
      */
     deleteRegion: function (location, geoJSON) {
-        _loc.realDeleteRegion(_loc.realm, geoJSON._id).then(function () {
+        bridgeit.io.location.deleteRegion({
+            realm: _loc.realm,
+            id: geoJSON._id
+        }).then(function(){
             _loc.deleteLocationSuccess(location, geoJSON, 'region');
-        }).fail(function () {
+        }).catch(function(error){
             _loc.deleteLocationFail();
         });
     },
@@ -1994,9 +1981,13 @@ Polymer({
      * @param geoJSON
      */
     deletePOI: function (location, geoJSON) {
-        _loc.realDeletePOI(_loc.realm, geoJSON._id).then(function () {
+        bridgeit.io.location.deletePOI({
+            realm:_loc.realm,
+            id: geoJSON._id
+        }).then(function () {
             _loc.deleteLocationSuccess(location, geoJSON, 'poi');
-        }).fail(function () {
+        }).catch(function (error) {
+            console.log('deletePOI failed ' + error);
             _loc.deleteLocationFail();
         });
     },
@@ -2026,7 +2017,7 @@ Polymer({
         if (_loc.isMassDelete) {
             var deletedCount = _loc.deletedCount;
             deletedCount++;
-            _loc.deletedCount=deletedCount;
+            _loc.deletedCount = deletedCount;
             if (_loc.toDeleteCount === deletedCount) { //all locations have been deleted
                 _loc.allLocationsDeleted();
             }
@@ -2041,7 +2032,7 @@ Polymer({
      * Fail callback for Region and POI DELETEs.
      */
     deleteLocationFail: function () {
-        if (_loc.isMassDelete){
+        if (_loc.isMassDelete) {
             var deletedCount = _loc.deletedCount;
             deletedCount++;
             _loc.deletedCount = deletedCount;
@@ -2057,9 +2048,9 @@ Polymer({
      * @param data
      * @param doPOST
      */
-    makeLocations: function (data,doPOST) {
+    makeLocations: function (data, doPOST) {
         var bounds = new google.maps.LatLngBounds();
-        for (var record=0; record<data.length; record++) {
+        for (var record = 0; record < data.length; record++) {
             try {
                 var type = data[record].location.geometry.type.toLowerCase();
                 var coords = data[record].location.geometry.coordinates;
@@ -2074,9 +2065,9 @@ Polymer({
                     var color = properties["Color"];
                     var metadata = typeof properties.googleMaps === "undefined" ? {} : properties.googleMaps;
                     //set the map bounds and the paths for polygon shapes
-                    for (var cycle=0; cycle<coords.length; cycle++) {
-                        for (var point=0; point<coords[cycle].length; point++) {
-                            googlePoint = new google.maps.LatLng(coords[cycle][point][1],coords[cycle][point][0]);
+                    for (var cycle = 0; cycle < coords.length; cycle++) {
+                        for (var point = 0; point < coords[cycle].length; point++) {
+                            googlePoint = new google.maps.LatLng(coords[cycle][point][1], coords[cycle][point][0]);
                             path.push(googlePoint);
                             bounds.extend(googlePoint);
                         }
@@ -2085,19 +2076,19 @@ Polymer({
                     if (metadata.shape === "polygon" || typeof metadata.shape === "undefined") {
                         metadata.shape = "polygon";
                         region = new google.maps.Polygon({
-                            'paths':paths,
-                            'map':_loc._map,
-                            'editable':editable,
-                            'fillColor':color
+                            'paths': paths,
+                            'map': _loc._map,
+                            'editable': editable,
+                            'fillColor': color
                         });
                     }
                     else if (metadata.shape === "circle") {
                         region = new google.maps.Circle({
-                            'center':new google.maps.LatLng(metadata.center[0],metadata.center[1]),
-                            'radius':metadata.radius,
-                            'map':_loc._map,
-                            'editable':editable,
-                            'fillColor':color
+                            'center': new google.maps.LatLng(metadata.center[0], metadata.center[1]),
+                            'radius': metadata.radius,
+                            'map': _loc._map,
+                            'editable': editable,
+                            'fillColor': color
                         });
 
                     }
@@ -2107,152 +2098,58 @@ Polymer({
                                     coords[0][0][0]), new google.maps.LatLng(coords[0][2][1],
                                     coords[0][2][0])
                             ),
-                            'map':_loc._map,
-                            'editable':editable,
-                            'fillColor':color
+                            'map': _loc._map,
+                            'editable': editable,
+                            'fillColor': color
                         });
                     }
                     geoJSON = data[record];
                     properties["googleMaps"] = metadata;
                     geoJSON.location.properties = properties;
                     if (!doPOST) {
-                        if (!geoJSON.label) {geoJSON.label = geoJSON._id;}
-                        allRegions[geoJSON._id] = [region,geoJSON];
-                        allLocations[geoJSON._id] = [region,geoJSON];
-                        _loc.setupListeners(region,geoJSON,metadata.shape);
+                        if (!geoJSON.label) {
+                            geoJSON.label = geoJSON._id;
+                        }
+                        allRegions[geoJSON._id] = [region, geoJSON];
+                        allLocations[geoJSON._id] = [region, geoJSON];
+                        _loc.setupListeners(region, geoJSON, metadata.shape);
                     }
                     else {
-                        _loc.postRegion(region,geoJSON,metadata.shape,false);
+                        _loc.postRegion(region, geoJSON, metadata.shape, false);
                     }
                 }
                 else if (type === "point") { //poi
-                    googlePoint = new google.maps.LatLng(coords[1],coords[0]);
+                    googlePoint = new google.maps.LatLng(coords[1], coords[0]);
                     var poi;
                     poi = new google.maps.Marker({
                         position: googlePoint,
                         map: _loc._map,
-                        draggable:editable
+                        draggable: editable
                     });
                     bounds.extend(googlePoint);
                     geoJSON = data[record];
                     if (!doPOST) {
-                        if (!geoJSON.label) {geoJSON.label = geoJSON._id;}
-                        allPOIs[geoJSON._id] = [poi,geoJSON];
-                        allLocations[geoJSON._id] = [poi,geoJSON];
-                        _loc.setupListeners(poi,geoJSON,"point");
+                        if (!geoJSON.label) {
+                            geoJSON.label = geoJSON._id;
+                        }
+                        allPOIs[geoJSON._id] = [poi, geoJSON];
+                        allLocations[geoJSON._id] = [poi, geoJSON];
+                        _loc.setupListeners(poi, geoJSON, "point");
                     }
                     else {
-                        _loc.postPOI(poi,geoJSON,"point",false);
+                        _loc.postPOI(poi, geoJSON, "point", false);
                     }
                 }
             }
-            catch(err){
-                console.log("Issue importing region or poi: " + JSON.stringify(data[record]),err);
+            catch (err) {
+                console.log("Issue importing region or poi: " + JSON.stringify(data[record]), err);
             }
         }
         //set the map to the right zoom level for the regions
         _loc._map.fitBounds(bounds);
         _loc._map.panToBounds(bounds);
-    },
-
-    getAllRegions: function(realmName){
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            type: 'GET',
-            crossDomain: true
-        });
-    },
-    createRegion: function(realmName,geoJSON) {
-        return $.ajax({
-            url: "http://" + _loc.host + ":/locate/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            data: JSON.stringify(geoJSON),
-            type: 'POST',
-            crossDomain: true
-        });
-    },
-    editRegion: function(realmName,geoJSON) {
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            data: JSON.stringify(geoJSON),
-            type: 'PUT',
-            crossDomain: true
-        });
-    },
-    realDeleteRegion: function (realmName,regionId) {
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/regions/' +
-                regionId + '?access_token=' + _loc.accesstoken,
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            type: 'DELETE',
-            crossDomain: true
-        });
-    },
-    queryRegion: function(realmName, query){
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/regions?access_token=' + _loc.accesstoken,
-            data: {"query": query},
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            type: 'GET',
-            crossDomain: true
-        });
-    },
-    getAllPOIs: function(realmName){
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            type: 'GET',
-            crossDomain: true
-        });
-    },
-    createPOI: function(realmName,poiObj) {
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            data: JSON.stringify(poiObj),
-            type: 'POST',
-            crossDomain: true
-        });
-    },
-    editPOI: function(realmName,poiObj) {
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/poi?access_token=' + _loc.accesstoken,
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            data: JSON.stringify(poiObj),
-            type: 'PUT',
-            crossDomain: true
-        });
-    },
-    realDeletePOI: function (realmName,poiID) {
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName + '/poi/' +
-                poiID + '?access_token=' + _loc.accesstoken,
-            dataType: 'json',
-            contentType: 'application/json; charset=UTF-8',
-            type: 'DELETE',
-            crossDomain: true
-        });
-    },
-    queryLocateService: function(realmName, collection, query, fields, options){
-        return $.ajax({
-            url: "http://" + _loc.host + "/locate/" + _loc.account + "/realms/" + realmName +
-                "/" + collection + "?access_token=" + _loc.accesstoken + '&query=' + JSON.stringify(query) +
-                '&fields=' + JSON.stringify(fields) + '&options=' + JSON.stringify(options),
-            dataType: 'JSON',
-            contentType: 'application/json; charset=UTF-8',
-            type: 'GET',
-            crossDomain: true
-        });
     }
+
+
 
 });

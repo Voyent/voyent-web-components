@@ -640,7 +640,7 @@ input[type="button"].btn-block {
     width:100%;
     height:100%;
     outline:none;
-    padding:0;
+    padding: 0px 5px 0px 5px;
     border:none;
     font-size:15px;
     line-height:100%;
@@ -1061,7 +1061,7 @@ span.noBold strong {
     background-color: #F9F9F9;
 }
 
-.infoWindow {
+#overall ::content .infoWindow {
     display:none;
     width:350px;
     height:100px;
@@ -1163,13 +1163,16 @@ span.noBold strong {
     background-color: #428bca;
 }
 
+.placesSearchWrapper{
+    height:375px;
+}
+
 
 
 /** CUSTOM CSS **/
 
 #searchBarDiv ::content span.twitter-typeahead {
     height: 100%;
-
 }
 
 #searchBarDiv ::content span.twitter-typeahead ::content .tt-menu {
@@ -1199,15 +1202,15 @@ span.noBold strong {
     <div id="searchBarDiv" class="ui-widget">
         <input id="locationSearchBar" placeholder="Search for Locations" class="searchBar typeahead" style="height:100%;">
         <input id="locationPropertySearchBar" placeholder="Search for Location Properties/Tags"
-               class="searchBar typeahead" style="display:none;">
+               class="searchBar typeahead" style="display:none; height:100%;">
         <input id="regionSearchBar" placeholder="Search for Regions" class="searchBar typeahead"
-               style="display:none;">
+               style="display:none;height:100%;">
         <input id="regionPropertySearchBar" placeholder="Search for Region Properties/Tags"
-               class="searchBar typeahead" style="display:none;">
+               class="searchBar typeahead" style="display:none;height:100%;">
         <input id="poiSearchBar" placeholder="Search for POIs" class="searchBar typeahead"
-               style="display:none;">
+               style="display:none;height:100%;">
         <input id="poiPropertySearchBar" placeholder="Search for POI Properties/Tags"
-               class="searchBar typeahead" style="display:none;">
+               class="searchBar typeahead" style="display:none;height:100%;">
         <input id="mapSearchBar" class="searchBar" placeholder="Search the Map" style="display:none;height:100%;">
     </div>
     <div id="regionSearchButton" on-click="querySearch" class="btn btn-sm btn-primary">
@@ -1356,7 +1359,7 @@ span.noBold strong {
 </template>
 
 <div id="infoWindow"
-     class="infoWindow {{ {infoWindowLg1:showMonitorDiv} {infoWindowLg2:showPropertiesDiv} {infoWindowLg3:showTagsDiv} | tokenList}}">
+     class="infoWindow">
     <div class="infoWindowMain">
         <div id="locationNameDiv">
             <div id="staticLocationName">
@@ -1390,13 +1393,15 @@ span.noBold strong {
         <div id="regionButtonsDiv" class="text-center">
 
             <div class="col-sm-3" style="padding-left:20px;">
+                <!-- Had class {{ {active:showPropertiesDiv} | tokenList}} -->
                 <button id="showPropertiesButton"
-                        class="btn btn-sm btn-primary {{ {active:showPropertiesDiv} | tokenList}} "
+                        class="btn btn-sm btn-primary"
                         on-click="togglePropertiesDiv">Properties
                 </button>
             </div>
             <div class="col-sm-3" style="padding-left:28px;">
-                <button id="showTagsButton" class="btn btn-sm btn-primary {{ {active:showTagsDiv} | tokenList}} "
+                <!-- Was {{ {active:showTagsDiv} | tokenList}} -->
+                <button id="showTagsButton" class="btn btn-sm btn-primary"
                         on-click="toggleTagsDiv">Tags
                 </button>
             </div>
@@ -1507,7 +1512,8 @@ span.noBold strong {
 </div>
 
 <template is="dom-if" if="{{showPlacesDialog}}">
-<div class="lgPopDlg" class="noDblClickSelect {{ {xLgPopDlg:placesSearchResults} | tokenList}}">
+<!-- Was {{ {xLgPopDlg:placesSearchResults} | tokenList}} -->
+<div class="lgPopDlg placesSearchWrapper" class="noDblClickSelect">
 <button type="button" class="btn btn-xs btn-danger closeLgPopDlgBttn" on-click="togglePlacesSearch">X</button>
 <template is="dom-if" if="{{arePlacesSearchResults}}">
     <div class="lgPopDlgTitle">Google Places Search Results</div>
@@ -1572,19 +1578,20 @@ span.noBold strong {
                 </div>
 
                 <div class="col-sm-4">
-                    <button class="{{{active:showPlacesPropertiesDiv} | tokenList}} btn btn-sm btn-primary"
+
+                    <!--{{{active:showPlacesPropertiesDiv} | tokenList}}-->
+                    <button class="btn btn-sm btn-primary"
                             on-click="togglePlacesPropertiesDiv">Properties
                     </button>
                 </div>
                 <div class="col-sm-4">
-                    <button class="{{{active:showPlacesTagsDiv} | tokenList}} btn btn-sm btn-primary"
+                    <!--{{{active:showPlacesTagsDiv} | tokenList}}-->
+                    <button class=" btn btn-sm btn-primary"
                             on-click="togglePlacesTagsDiv">Tags
                     </button>
                 </div>
             </div>
         </div>
-
-
         <template is="dom-if" if="{{showPlacesPropertiesDiv}}">
             <div class="placesEditorDiv propertiesDiv">
                 <table class="table table-striped">
