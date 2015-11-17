@@ -85,7 +85,7 @@ Polymer({
     loadAction: function(action) {
         var _this = this;
         this._loadHandler(action._id);
-        this._loadedAction = JSON.parse(JSON.stringify(action)); //deep copy object (quick and dirty)
+        this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
         this._taskGroups = this._convertActionToUI(this._loadedAction);
         this._setupCodeEditor(); //initialize code editor components
         //set the values from the action into the code editor in the UI
@@ -208,7 +208,7 @@ Polymer({
             var taskNames=[];
             for (var j=0; j<tasks.length; j++) {
                 if (taskNames.indexOf(tasks[j].name) > -1) { //task names need to be unique within a task group
-                    alert('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'".');
+                    alert('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
                     return false;
                 }
                 taskNames.push(tasks[j].name);
@@ -243,7 +243,7 @@ Polymer({
                     }
                     if (definedCount > 0) {
                         if (someGroupDefined) {
-                            alert('You must define only one of the property groups in taskGroup "' + this._taskGroups[i].name +'".');
+                            alert('You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                             return false;
                         }
                         someGroupDefined=true;
@@ -253,11 +253,11 @@ Polymer({
                     }
                 }
                 if (!allGroupDefined && someGroupDefined) {
-                    alert('You must define all properties for the property group in taskGroup "' + this._taskGroups[i].name +'".');
+                    alert('You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
                 else if (!someGroupDefined) {
-                    alert('You must define at least one of the property groups in taskGroup "' + this._taskGroups[i].name +'".');
+                    alert('You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
             }
@@ -291,7 +291,7 @@ Polymer({
         if (this._actionDesc && this._actionDesc.trim().length > 0) {
             action.desc = this._actionDesc;
         }
-        var taskGroups = JSON.parse(JSON.stringify(this._taskGroups)); //deep copy array (quick and dirty)
+        var taskGroups = JSON.parse(JSON.stringify(this._taskGroups)); //clone array (it is valid JSON so this technique is sufficient)
         for (var i=0; i<taskGroups.length; i++) {
             delete taskGroups[i].id; //remove id used by template
             var tasks = taskGroups[i].tasks;
@@ -453,7 +453,7 @@ Polymer({
                 //add uniqueID for code editor functionality
                 tasks[j].id = 'task'+j;
                 //add schema inside task for mapping UI values
-                tasks[j].schema = JSON.parse(JSON.stringify(this._schemaMap[tasks[j].type])); //deep copy object (quick and dirty)
+                tasks[j].schema = JSON.parse(JSON.stringify(this._schemaMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
                 //move the params values to the value of each property in the schema
                 var params = tasks[j].params;
                 var properties = tasks[j].schema.properties;
@@ -562,7 +562,7 @@ Polymer({
         //only allow tasks to be dropped inside task groups
         if (!e.dataTransfer.getData('action/task')) { e.stopPropagation(); return; }
         //add new task (with schema reference) to task group
-        var schema = this._lastDragged;
+        var schema = JSON.parse(JSON.stringify(this._lastDragged)); //clone object (it is valid JSON so this technique is sufficient)
         var taskGroupIndex = e.target.id.slice(-1);
         var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
         this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
