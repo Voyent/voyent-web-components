@@ -224,6 +224,7 @@
 			})
 		});
 	}
+    
 	function setCredentialsOnComponent(){
 		var elem = document.getElementById('actionEditor');
 
@@ -240,8 +241,15 @@
 		}
 
 	}
-	//initialize known credentials
-	setCredentialsOnComponent();
+	
+    window.addEventListener('WebComponentsReady', function() {
+        // imports are loaded and elements have been registered
+        console.log('WebComponentsReady');
+
+        //initialize known credentials
+        setCredentialsOnComponent();
+    });
+
 </script>
 </body>
 </html>
