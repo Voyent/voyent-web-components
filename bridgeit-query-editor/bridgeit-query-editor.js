@@ -597,6 +597,19 @@ Polymer({
             var inputs = $(Polymer.dom(_this.root).querySelector('#'+rule.id + ' .rule-value-container')).children();
             if (inputs) {
                 $(inputs).bind("change",function() {
+                    if (rule.filter.id === 'time') {
+                        //prevent infinite change listener calls
+                        if (_this._lastRuleVal === rule.value) {
+                            _this._lastRuleVal = null;
+                            return;
+                        }
+                        //parse the date to ISO UTC format or if invalid reject the value
+                        var newVal;
+                        try { newVal = new Date(rule.value).toISOString(); }
+                        catch (e) { newVal = ''; }
+                        _this._lastRuleVal = newVal;
+                        rule.value = newVal;
+                    }
                     _this._refreshQuery();
                 });
             }
