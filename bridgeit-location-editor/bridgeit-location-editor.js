@@ -276,7 +276,19 @@ Polymer({
      * Resize the Google Map.
      */
     resizeMap: function () {
-        if (('google' in window) && this._map) {
+		if (('google' in window) && this._map) {
+			var height = _loc.height;
+			var width = _loc.width;
+
+			// if the height or width is not set on the component then set them here based on view size
+			if (height == null) {
+				height = _loc.$$("#container").clientHeight;
+			}
+			if (width == null) {
+				width = _loc.$$("#container").clientWidth;
+			}
+			_loc.$$("#map").style.height = height + "px";
+			_loc.$$("#map").style.width = width + "px";
             var center = this._map.getCenter();
             google.maps.event.trigger(this._map, "resize");
             this._map.setCenter(center);
@@ -575,16 +587,16 @@ Polymer({
     setupNameEdit: function () {
         //$(_loc.$$('#locationIdBtn')).popover('hide');
         //something
-        $(_loc.$$('#staticLocationName')).hide();
-        $(_loc.$$('#editLocationName')).show();
+        _loc.$$('#staticLocationName').style.display = 'none';
+        _loc.$$('#editLocationName').style.display = '';
         _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id; //display the id if the label hasn't been set yet
     },
 
     revertNameEdit: function () {
         var geoJSON = this.get('activeLocation');
-        $(_loc.$$('#editLocationName')).hide();
-        $(_loc.$$('#staticLocationName')).show();
-        $(_loc.$$('#locationName')).text(geoJSON.label ? geoJSON.label : geoJSON._id); //display the id if the label hasn't been set yet
+        _loc.$$('#editLocationName').style.display = 'none';
+        _loc.$$('#staticLocationName').style.display = '';
+        _loc.$$('#locationName').textContent= geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
         _loc.setupLocationIdPopover(); //Setup the location ID popover
         _loc.adjustLocationFontSize();
     },
@@ -592,7 +604,7 @@ Polymer({
     setupViewID: function () {
         //$(_loc.$$('#locationIdBtn')).popover('hide');
         //something
-        $(_loc.$$('#staticLocationName')).hide();
+        _loc.$$('#staticLocationName').style.display = 'none';
         $(_loc.$$('#viewId')).show();
         _loc.currentId = _loc.activeLocation._id;
         _loc.adjustIdFontSize();
@@ -601,8 +613,8 @@ Polymer({
     revertViewID: function () {
         //$(_loc.$$('#locationIdBtn')).popover('hide');
         //something
-        $(_loc.$$('#viewId')).hide();
-        $(_loc.$$('#staticLocationName')).show();
+        _loc.$$('#viewId').style.display = 'none';
+        _loc.$$('#staticLocationName').style.display = '';
     },
 
     adjustLocationFontSize: function () {
@@ -757,67 +769,70 @@ Polymer({
      */
     hideAndShowInputs: function () {
 
-        var searchBy = _loc.searchBy;
-        var mapQueryAutocomplete = _loc.mapQueryAutocomplete;
+         var searchBy = _loc.searchBy;
+         var mapQueryAutocomplete = _loc.mapQueryAutocomplete;
 
-        $(_loc.$$('#locationSearchBar')).hide();
-        $(_loc.$$('#locationPropertySearchBar')).hide();
-        $(_loc.$$('#regionSearchBar')).hide();
-        $(_loc.$$('#regionPropertySearchBar')).hide();
-        $(_loc.$$('#poiSearchBar')).hide();
-        $(_loc.$$('#poiPropertySearchBar')).hide();
-        $(_loc.$$('#mapSearchBar')).hide();
+         _loc.$$('#locationSearchBar').style.display = 'none';
+         _loc.$$('#locationPropertySearchBar').style.display = 'none';
+         _loc.$$('#regionSearchBar').style.display = 'none';
+         _loc.$$('#regionPropertySearchBar').style.display = 'none';
+         _loc.$$('#poiSearchBar').style.display = 'none';
+         _loc.$$('#poiPropertySearchBar').style.display = 'none';
+         _loc.$$('#mapSearchBar').style.display = 'none';
 
-        if (searchBy === 'locations') {
-            $(_loc.$$('#locationSearchBar')).parent().show();
-            $(_loc.$$('#locationSearchBar')).show();
-            $(_loc.$$("#locationSearchBar")).focus();
+         if (searchBy === 'locations') {
+            _loc.$$('#locationSearchBar').parentNode.style.display = 'inline-block';
+            _loc.$$('#locationSearchBar').style.display = 'inline-block';
+            _loc.$$("#locationSearchBar").focus();
         }
-        else if (searchBy === 'locationProperties') {
-            $(_loc.$$('#locationPropertySearchBar')).parent().show();
-            $(_loc.$$('#locationPropertySearchBar')).show();
-            $(_loc.$$("#locationPropertySearchBar")).focus();
+         else if (searchBy === 'locationProperties') {
+            _loc.$$('#locationPropertySearchBar').parentNode.style.display = 'inline-block';
+            _loc.$$('#locationPropertySearchBar').style.display = 'inline-block';
+            _loc.$$("#locationPropertySearchBar").focus();
         }
-        else if (searchBy === 'regions') {
-            $(_loc.$$('#regionSearchBar')).parent().show();
-            $(_loc.$$('#regionSearchBar')).show();
-            $(_loc.$$("#regionSearchBar")).focus();
+         else if (searchBy === 'regions') {
+            _loc.$$('#regionSearchBar').parentNode.style.display = 'inline-block';
+            _loc.$$('#regionSearchBar').style.display = 'inline-block';
+            _loc.$$("#regionSearchBar").focus();
         }
-        else if (searchBy === 'regionProperties') {
-            $(_loc.$$('#regionPropertySearchBar')).parent().show();
-            $(_loc.$$('#regionPropertySearchBar')).show();
-            $(_loc.$$("#regionPropertySearchBar")).focus();
+         else if (searchBy === 'regionProperties') {
+            _loc.$$('#regionPropertySearchBar').parentNode.style.display = 'inline-block';
+            _loc.$$('#regionPropertySearchBar').style.display = 'inline-block';
+            _loc.$$("#regionPropertySearchBar").focus();
         }
-        else if (searchBy === 'pois') {
-            $(_loc.$$('#poiSearchBar')).parent().show();
-            $(_loc.$$('#poiSearchBar')).show();
-            $(_loc.$$("#poiSearchBar")).focus();
+         else if (searchBy === 'pois') {
+            _loc.$$('#poiSearchBar').parentNode.style.display = 'inline-block';
+            _loc.$$('#poiSearchBar').style.display = 'inline-block';
+            _loc.$$("#poiSearchBar").focus();
         }
-        else if (searchBy === 'poiProperties') {
-            $(_loc.$$('#poiPropertySearchBar')).parent().show();
-            $(_loc.$$('#poiPropertySearchBar')).show();
-            $(_loc.$$("#poiPropertySearchBar")).focus();
+         else if (searchBy === 'poiProperties') {
+            _loc.$$('#poiPropertySearchBar').parentNode.style.display = 'inline-block';
+            _loc.$$('#poiPropertySearchBar').style.display = 'inline-block';
+            _loc.$$("#poiPropertySearchBar").focus();
         }
-        else if (searchBy === 'map') {
-            $(_loc.$$('#mapSearchBar')).show();
-            $(_loc.$$("#mapSearchBar")).focus();
+         else if (searchBy === 'map') {
+            _loc.$$('#mapSearchBar').style.display = 'inline-block';
+            _loc.$$("#mapSearchBar").focus();
             if (typeof mapQueryAutocomplete === "undefined" || mapQueryAutocomplete === null) {
                 mapQueryAutocomplete = new google.maps.places.Autocomplete($("#mapSearchBar")[0], {bounds: map.getBounds()});
                 mapQueryAutocomplete.bindTo('bounds', map); //bias the results to the map's viewport, even while that viewport changes.
                 _loc.mapQueryAutocomplete(mapQueryAutocomplete);
             }
-            $(_loc.$$('#mapSearchBar')).unbind('keyup').keyup(function (event) {
-                if (event.which === 13) {
-                    _loc.querySearch('');
-                }
-            });
-            $(_loc.$$('#mapSearchBar')).unbind('dblclick').dblclick(function () {
-                $(_loc.$$('#mapSearchBar')).val('');
-            });
+             var enterFunction= function (event) {
+                 if (event.which === 13) {
+                     _loc.querySearch('');
+                 }
+             };
+             var doubleFunction = function () {
+                 _loc.$$('#mapSearchBar').setAttribute('value','');
+             }
+            _loc.$$('#mapSearchBar').removeEventListener('keyup',enterFunction).addEventListener('keyup',enterFunction);
+            _loc.$$('#mapSearchBar').removeEventListener('dblclick', doubleFunction).addEventListener('dblclick',doubleFunction);
             google.maps.event.addListener(mapQueryAutocomplete, 'place_changed', function () {
                 _loc.querySearch('');
             });
         }
+
     },
 
     toggleDeleteDialog: function () {
@@ -910,7 +925,6 @@ Polymer({
 
     addProperty: function () {
 
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var newPropKey = _loc.newPropKey;
         var newPropVal = _loc.newPropVal;
         if (!newPropKey || newPropKey.toString().trim().length === 0) {
@@ -931,7 +945,6 @@ Polymer({
     },
     removeProperty: function (e) {
         var propToRemove = e.model.item;
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var properties = _loc.regionProperties;
         for (var i = 0; i < properties.length; i++) {
             if (propToRemove['key'] === properties[i]['key']) {
@@ -946,7 +959,6 @@ Polymer({
     },
 
     addTag: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var newTag = _loc.newTag;
         if (!newTag || newTag.toString().trim().length === 0) {
             console.log('Please enter a tag.');
@@ -961,7 +973,6 @@ Polymer({
 
     removeTag: function (e) {
         var tagToRemove = e.model.item.name;
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var tags = _loc.tags;
         for (var i = 0; i < tags.length; i++) {
             if (tagToRemove === tags[i]['name']) {
@@ -976,17 +987,16 @@ Polymer({
         }
     },
     updateColourProperty: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
-        _loc.colourProp = $(_loc.$$("#colourSelect")).find(':selected').text();
+        var selector = _loc.$$("#colourSelect")
+        _loc.colourProp = selector.options[selector.selectedIndex].text;
         var location = _loc.activeLocation;
         allLocations[location._id][0].setOptions({fillColor: _loc.colourProp});
         _loc.updateProperties();
     },
 
     updateEditableProperty: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
         var location = _loc.activeLocation;
-        _loc.editableProp = $(_loc.$$("#editableSelect")).find(':selected').attr("value");
+        _loc.editableProp = _loc.$$("#editableSelect").find(':selected').attr("value");
         var editableProp = _loc.editableProp === 'true';
         if (_loc.isPOI) {
             allPOIs[location._id][0].setDraggable(editableProp);
@@ -1000,7 +1010,6 @@ Polymer({
     },
 
     removeLocation: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('destroy');
         if (!_loc.isPOI) {
             _loc.deleteRegion(_loc.activeGoogleLocation, _loc.activeLocation);
         }
@@ -1010,10 +1019,9 @@ Polymer({
     },
 
     togglePropertiesDiv: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
         if (!_loc.showTagsDiv) {
-            var newHeight = $(_loc.$$('#infoWindow')).css("height") == "305px" ? "100px" : "305px";
-            $(_loc.$$('#infoWindow')).css("height", newHeight);
+            var newHeight = getComputedStyle(_loc.$$('#infoWindow'))['height'] == "305px" ? "100px" : "305px";
+            _loc.$$('#infoWindow').style.height= newHeight;
         }
         _loc.isPlacesSearch = false;
         _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
@@ -1032,10 +1040,9 @@ Polymer({
     },
 
     toggleTagsDiv: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
         if (!_loc.showPropertiesDiv) {
-            var newHeight = $(_loc.$$('#infoWindow')).css("height") == "305px" ? "100px" : "305px";
-            $(_loc.$$('#infoWindow')).css("height", newHeight);
+            var newHeight = getComputedStyle(_loc.$$('#infoWindow'))['height'] == "305px" ? "100px" : "305px";
+            _loc.$$('#infoWindow').style.height= newHeight;
         }
         _loc.isPlacesSearch = false;
         _loc.showTagsDiv = !_loc.showTagsDiv;
@@ -1056,7 +1063,7 @@ Polymer({
     toggleCheckboxes: function (checkboxType) {
         //var pos = _loc.$$("#map").querySelectorAll(".gmnoprint");
         //for (var i = 0; i < pos.length; i++) {
-		checkboxType = 'matchingLocations';
+        checkboxType = "matchingLocations";
         var objects = _loc.matchingLocations;
         var checked;
         if (_loc.toggleCheckboxesTxt === 'Select All') {
@@ -1069,25 +1076,16 @@ Polymer({
         }
         for (var i = 0; i < objects.length; i++) {
             var value = checkboxType === 'locations' || checkboxType === 'matchingLocations' ? objects[i].id : objects[i].index;
-            $(_loc.$$('input[value="' + value + '"]')).prop('checked', checked);
+            _loc.$$('input[value="' + value + '"]').checked= checked;
         }
 //always select the currently active location in the monitor location list
         if (checkboxType === 'locations' && !_loc.isPlacesSearch) {
-            $('input[value="' + _loc.activeLocation._id + '"]').prop('checked', true);
+            _loc.$$('input[value="' + _loc.activeLocation._id + '"]').checked = true;
         }
     },
 
     setupLocationIdPopover: function () {
-        /**$(_loc.$$('#locationIdBtn')).popover('destroy');
-         setTimeout(function () {
-            $(_loc.$$('#locationIdBtn')).popover({
-                'content': _loc.activeLocation._id,
-                'title': _loc.isPOI ? 'POI ID' : 'Region ID',
-                'container': '#container',
-                'trigger': 'click',
-                'placement': 'top'
-            });
-        }, 0);*/
+
     },
 
     clearFilter: function (selector, searchBar) {
