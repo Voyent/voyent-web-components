@@ -1056,7 +1056,7 @@ Polymer({
     toggleCheckboxes: function (checkboxType) {
         //var pos = _loc.$$("#map").querySelectorAll(".gmnoprint");
         //for (var i = 0; i < pos.length; i++) {
-
+		checkboxType = 'matchingLocations';
         var objects = _loc.matchingLocations;
         var checked;
         if (_loc.toggleCheckboxesTxt === 'Select All') {
