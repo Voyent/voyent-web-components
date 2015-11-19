@@ -194,14 +194,9 @@ Example:
                background-color: white;
                @apply(--action-editor-event-triggers-label);
            }
-           .oneOf0 {
-               color:blue;
-           }
-           .oneOf1 {
-               color:green;
-           }
-           .oneOf2 {
-               color:orange;
+           fieldset {
+               border: 1px solid #999;
+               @apply(--action-editor-fieldset);
            }
 
             /* Static styles */
@@ -320,7 +315,7 @@ Example:
                                                     <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
                                                 </label>
                                                 <label title="Stop executing the action on error?">
-                                                    <span class="title">Quit Action On Task Error</span>
+                                                    <span class="title">Quit Action On Error</span>
                                                     <input type="checkbox" checked="{{group.exitOnError::change}}"/>
                                                 </label>
                                             </div>
@@ -340,20 +335,63 @@ Example:
                                                             <input class="form-control" type="text" placeholder="Task Description" title="The task description" value="{{task.desc::input}}">
                                                         </label>
                                                         <hr/>
-                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties)}}" as="property">
+                                                        <template is="dom-if" if="{{task.schema.properties.oneOf}}">
                                                             <label>
-                                                                <template is="dom-if" if="{{property.required}}"><span class="required">*</span></template>
-                                                                <template is="dom-if" if="{{property.oneOf}}"><span class$="{{property.oneOfGroup}}">* (oneOf)</span></template>
+                                                                <span><span class="required">*</span>One of these property groups are required</span>
+                                                            </label>
+                                                            <template is="dom-repeat" items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
+                                                                <fieldset>
+                                                                    <legend>Group <span>{{_toOneBasedIndex(index)}}</span></legend>
+                                                                    <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property">
+                                                                        <label>
+                                                                            <span>{{property.title}}</span>
+                                                                            <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                                <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                                    <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
+                                                                                                      softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
+                                                                                                      data-groupid$="{{group.id}}" data-propertytype="oneOf"
+                                                                                                      data-oneofindex$="{{index}}"></juicy-ace-editor>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                           value="{{property.value::input}}">
+                                                                                </template>
+                                                                            </template>
+                                                                        </label>
+                                                                    </template>
+                                                                </fieldset>
+                                                            </template>
+                                                        </template>
+                                                        <template is="dom-if" if="{{task.schema.properties.oneOf}}">
+                                                            <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property">
+                                                                <label>
+                                                                    <span class="required">*</span><span>{{property.title}}</span>
+                                                                    <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                        <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                            <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
+                                                                                              softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
+                                                                                              data-groupid$="{{group.id}}" data-propertytype="required"></juicy-ace-editor>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                   required value="{{property.value::input}}">
+                                                                        </template>
+                                                                    </template>
+                                                                </label>
+                                                            </template>
+                                                        </template>
+                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property">
+                                                            <label>
                                                                 <span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isFunction(property.title)}}">
                                                                         <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
                                                                                           softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                          data-groupid$="{{group.id}}"></juicy-ace-editor>
+                                                                                          data-groupid$="{{group.id}}" data-propertytype="optional"></juicy-ace-editor>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isFunction(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                               required$="{{property.required}}" value="{{property.value::input}}">
+                                                                               value="{{property.value::input}}">
                                                                     </template>
                                                                 </template>
                                                             </label>

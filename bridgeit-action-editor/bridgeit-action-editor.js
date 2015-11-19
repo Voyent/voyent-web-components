@@ -40,7 +40,14 @@ Polymer({
             var editor = e.target;
             var groupIndex = editor.getAttribute('data-groupid').slice(-1);
             var taskIndex = editor.getAttribute('data-taskid').slice(-1);
-            _this.set('_taskGroups.'+groupIndex+'.tasks.'+taskIndex+'.schema.properties.function.value',editor.editor.getValue());
+            var propertyType = editor.getAttribute('data-propertytype');
+            var oneOfIndex = editor.getAttribute('data-oneofindex');
+            var selector = '_taskGroups.'+groupIndex+'.tasks.'+taskIndex+'.schema.properties.'+propertyType;
+            if (propertyType === 'oneOf') {
+                selector = selector+'.'+oneOfIndex;
+            }
+            selector = selector+'.function.value';
+            _this.set(selector,editor.editor.getValue());
         };
 	},
 
@@ -204,40 +211,35 @@ Polymer({
                 return false;
             }
             taskGroupNames.push(this._taskGroups[i].name);
-            //check task name uniqueness + validate oneOf fields
             var taskNames=[];
             for (var j=0; j<tasks.length; j++) {
-                if (taskNames.indexOf(tasks[j].name) > -1) { //task names need to be unique within a task group
+                //task names need to be unique within the same task group
+                if (taskNames.indexOf(tasks[j].name) > -1) {
                     alert('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
                     return false;
                 }
                 taskNames.push(tasks[j].name);
-                var oneOfGroups={};
-                var properties = tasks[j].schema.properties;
-                for (var prop in properties) {
-                    if (!properties.hasOwnProperty(prop)) {
-                        continue;
-                    }
-                    if (properties[prop].oneOf) {
-                        if (!oneOfGroups[properties[prop].oneOfGroup]) {
-                            oneOfGroups[properties[prop].oneOfGroup]=[];
-                        }
-                        oneOfGroups[properties[prop].oneOfGroup].push(properties[prop].value);
-                    }
+
+                //pull out the values for the oneOf fields and group the values for each group together before processing
+                var oneOfGroups;
+                if (tasks[j].schema.properties.oneOf) {
+                    oneOfGroups = tasks[j].schema.properties.oneOf.map(function(group) {
+                        return this._toArray(group).map(function(property) {
+                            return property.value;
+                        });
+                    }.bind(this));
                 }
-                //validate any 'oneOf' fields
-                if (Object.keys(oneOfGroups).length === 0) {
+                if (!oneOfGroups) {
                     continue;
                 }
+                //validate oneOf
                 var someGroupDefined=false;
                 var allGroupDefined=false;
-                for (var group in oneOfGroups) {
-                    if (!oneOfGroups.hasOwnProperty(group)) {
-                        continue;
-                    }
+                for (var k=0; k<oneOfGroups.length; k++) {
                     var definedCount=0;
-                    for (var k=0; k<oneOfGroups[group].length; k++) {
-                        if (oneOfGroups[group][k] && oneOfGroups[group][k].trim().length > 0) {
+                    var propertyVal = oneOfGroups[k];
+                    for (var l=0; l<propertyVal.length; l++) {
+                        if (propertyVal[l] && propertyVal[l].trim().length > 0) {
                             definedCount++;
                         }
                     }
@@ -247,7 +249,7 @@ Polymer({
                             return false;
                         }
                         someGroupDefined=true;
-                        if (definedCount == oneOfGroups[group].length) {
+                        if (definedCount == propertyVal.length) {
                             allGroupDefined=true;
                         }
                     }
@@ -296,19 +298,39 @@ Polymer({
             delete taskGroups[i].id; //remove id used by template
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
-                delete tasks[j].id; //remove id used by template
-                var properties = tasks[j].schema.properties;
                 tasks[j].params = {}; //create action params object
                 tasks[j].type = tasks[j].schema.title; //move title to type property
-                for (var prop in properties) {
-                    if (!properties.hasOwnProperty(prop)) {
+                var properties = tasks[j].schema.properties;
+                //convert the property template technique into a simple array of property objects so we can easily pull the values out
+                for (var type in properties) {
+                    if (!properties.hasOwnProperty(type)) {
                         continue;
                     }
-                    if (typeof properties[prop].value !== 'undefined' && properties[prop].value.toString().trim().length > 0) {
-                        tasks[j].params[properties[prop].title] = properties[prop].value; //move value to params object
+                    var typeGroup = properties[type];
+                    //we have an array if the typeGroup is "oneOf" so we'll collapse them into a single object before processing
+                    if (Array.isArray(typeGroup)) {
+                        var obj={};
+                        for (var l=0; l<typeGroup.length; l++) {
+                            for (var prop in typeGroup[l]) {
+                                if (typeGroup[l].hasOwnProperty(prop)) { obj[prop] = typeGroup[l][prop]; }
+                            }
+                        }
+                        typeGroup = obj;
+                    }
+                    for (var propName in typeGroup) {
+                        if (!typeGroup.hasOwnProperty(propName)) {
+                            continue;
+                        }
+                        var property = typeGroup[propName];
+                        //move the values of each property in the schema to the params object
+                        if (typeof property.value !== 'undefined' && property.value.toString().trim().length > 0) {
+                            tasks[j].params[property.title] = property.value;
+                        }
                     }
                 }
-                delete tasks[j].schema; //remove schema reference used by ui template
+                //cleanup values that aren't used in the action
+                delete tasks[j].id;
+                delete tasks[j].schema;
             }
         }
         action.taskGroups = taskGroups;
@@ -319,7 +341,7 @@ Polymer({
     //******************PRIVATE API******************
 
     /**
-     * Process the task schemas so they easily be used in the template.
+     * Do some processing on the task schemas so they can be used to easily render out the template.
      * @param schemas
      * @private
      */
@@ -327,33 +349,62 @@ Polymer({
         for (var i=0; i<schemas.length; i++) {
             //remove redundant '-task' from task item label
             schemas[i].label = schemas[i].title.replace('-task','');
-            //get the array of oneOf properties
-            var oneOf = schemas[i].oneOf;
+            //do some pre-processing on the schema definition of oneOf properties
             var oneOfProps={};
-            if (oneOf) {
-                for (var j=0; j<oneOf.length; j++) {
-                    var oneOfThese = oneOf[j].required;
-                    for (var k=0; k<oneOfThese.length; k++) {
-                        oneOfProps[oneOfThese[k]] = j;
+            if (schemas[i].oneOf) {
+                //collapse the oneOf properties into a single object with the
+                //oneOf property as the key and the oneOf group # as the index
+                for (var j=0; j<schemas[i].oneOf.length; j++) {
+                    for (var k=0; k<schemas[i].oneOf[j].required.length; k++) {
+                        oneOfProps[schemas[i].oneOf[j].required[k]] = j;
                     }
                 }
             }
             var properties = schemas[i].properties;
+            var isOptional;
             for (var prop in properties) {
                 if (!properties.hasOwnProperty(prop)) {
                     continue;
                 }
-                //add value directly to property in schema so it can be used for binding
+                //use this to determine if we should add event listeners for code editors when dropping a new task
+                if (prop === 'function') {
+                    properties.hasFunction = true;
+                }
+                isOptional=true;
+                //add value directly to property in schema so it can be used for data binding
                 properties[prop].value='';
-                //add required directly to property in schema so it can be used in template
+                //group the required properties under required object
                 if (schemas[i].required && schemas[i].required.indexOf(prop) > -1) {
-                    properties[prop].required = true;
+                    if (!properties.required) {
+                        properties.required = {};
+                    }
+                    properties.required[prop] = properties[prop];
+                    isOptional=false;
                 }
-                //add oneOf directly to property in schema so it can be used in template
+                //group the oneOf properties under a oneOf array (so we can render the fieldset groups)
                 if (oneOfProps.hasOwnProperty(prop)) {
-                    properties[prop].oneOf = true;
-                    properties[prop].oneOfGroup = 'oneOf'+oneOfProps[prop];
+                    if (!properties.oneOf) {
+                        properties.oneOf = {};
+                    }
+                    if (!properties.oneOf[oneOfProps[prop]]) {
+                        //use object initially so we are sure we place the oneOf properties into the correct groups
+                        properties.oneOf[oneOfProps[prop]] = {};
+                    }
+                    properties[prop].oneOfGroupNum = oneOfProps[prop];
+                    properties.oneOf[oneOfProps[prop]][prop] = properties[prop];
+                    isOptional=false;
                 }
+                //group the optional properties under optional object
+                if (isOptional) {
+                    if (!properties.optional) {
+                        properties.optional = {};
+                    }
+                    properties.optional[prop] = properties[prop];
+                }
+                delete properties[prop];
+            }
+            if (properties.oneOf) { //convert oneOf to array of objects, each object representing a oneOf group
+                properties.oneOf = this._toArray(properties.oneOf);
             }
             //cleanup parts of schema we don't need
             delete schemas[i].$schema;
@@ -454,18 +505,42 @@ Polymer({
                 tasks[j].id = 'task'+j;
                 //add schema inside task for mapping UI values
                 tasks[j].schema = JSON.parse(JSON.stringify(this._schemaMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
-                //move the params values to the value of each property in the schema
                 var params = tasks[j].params;
                 var properties = tasks[j].schema.properties;
-                for (var prop in properties) {
-                    if (!properties.hasOwnProperty(prop)) {
+                //convert the property template technique into a simple array of property objects so we can easily pull the values out
+                for (var type in properties) {
+                    if (!properties.hasOwnProperty(type)) {
                         continue;
                     }
-                    if (params && typeof params[properties[prop].title] !== 'undefined') {
-                        properties[prop].value = params[properties[prop].title];
+                    var typeGroup = properties[type];
+                    //we have an array if the typeGroup is "oneOf" so we'll collapse them into a single object before processing
+                    if (Array.isArray(typeGroup)) {
+                        var obj={};
+                        for (var l=0; l<typeGroup.length; l++) {
+                            for (var prop in typeGroup[l]) {
+                                if (typeGroup[l].hasOwnProperty(prop)) { obj[prop] = typeGroup[l][prop]; }
+                            }
+                        }
+                        typeGroup = obj;
                     }
-                    if (prop == 'function') {
-                        editorMappings.push({domSelector:'#'+taskGroups[i].id+' #'+tasks[j].id + ' juicy-ace-editor',valueSelector:'_taskGroups.'+i+'.tasks.'+j+'.schema.properties.function.value'});
+                    for (var propName in typeGroup) {
+                        if (!typeGroup.hasOwnProperty(propName)) {
+                            continue;
+                        }
+                        var property = typeGroup[propName];
+                        //move the params values to the value of each property in the schema
+                        if (params && typeof params[property.title] !== 'undefined') {
+                            property.value = params[property.title];
+                        }
+                        //keep a map of code editor DOM locations and their value selectors so we can know where to put the values when loading the action
+                        if (propName == 'function') {
+                            var selector = '_taskGroups.'+i+'.tasks.'+j+'.schema.properties.'+type;
+                            if (type === 'oneOf') {
+                                selector = selector+'.'+property.oneOfGroupNum;
+                            }
+                            selector = selector+'.function.value';
+                            editorMappings.push({domSelector:'#'+taskGroups[i].id+' #'+tasks[j].id + ' juicy-ace-editor',valueSelector:selector});
+                        }
                     }
                 }
                 //cleanup values that aren't used in the UI
@@ -566,11 +641,10 @@ Polymer({
         var taskGroupIndex = e.target.id.slice(-1);
         var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
         this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
-        //if we have a function property then setup the code editor
-        if (schema.properties.hasOwnProperty('function')) {
+        //if we have a function property inside the task then setup the code editor
+        if (schema.properties.hasOwnProperty('hasFunction')) {
             this._setupCodeEditor();
         }
-
     },
 
     /**
@@ -707,9 +781,21 @@ Polymer({
      * @private
      */
     _toArray: function(properties) {
+        if (!properties) {
+            return [];
+        }
         return Object.keys(properties).map(function(key) {
             return properties[key];
         });
+    },
+
+    /**
+     * Template helper function
+     * @param index
+     * @private
+     */
+    _toOneBasedIndex: function(index) {
+        return index+1;
     },
 
     /**
