@@ -362,23 +362,21 @@ Example:
                                                                 </fieldset>
                                                             </template>
                                                         </template>
-                                                        <template is="dom-if" if="{{task.schema.properties.oneOf}}">
-                                                            <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property">
-                                                                <label>
-                                                                    <span class="required">*</span><span>{{property.title}}</span>
-                                                                    <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                        <template is="dom-if" if="{{_isFunction(property.title)}}">
-                                                                            <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
-                                                                                              softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                              data-groupid$="{{group.id}}" data-propertytype="required"></juicy-ace-editor>
-                                                                        </template>
-                                                                        <template is="dom-if" if="{{!_isFunction(property.title)}}">
-                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                   required value="{{property.value::input}}">
-                                                                        </template>
+                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property">
+                                                            <label>
+                                                                <span class="required">*</span><span>{{property.title}}</span>
+                                                                <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                    <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                        <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
+                                                                                          softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
+                                                                                          data-groupid$="{{group.id}}" data-propertytype="required"></juicy-ace-editor>
                                                                     </template>
-                                                                </label>
-                                                            </template>
+                                                                    <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                               required value="{{property.value::input}}">
+                                                                    </template>
+                                                                </template>
+                                                            </label>
                                                         </template>
                                                         <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property">
                                                             <label>
