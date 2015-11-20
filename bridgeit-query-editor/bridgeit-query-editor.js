@@ -486,24 +486,31 @@ Polymer({
     _toLocalTime: function(val) {
         var newVal;
         try {
-            var dateVal = new Date(val);
+            var dateObj = new Date(val);
             // Get the original long format date to parse
-            var toParse = dateVal.toString();
+            var toParse = dateObj.toString();
             if (toParse === 'Invalid Date') {
                 return val;
             }
             // Format the minute properly
-            var minute = dateVal.getMinutes(),
+            var minute = dateObj.getMinutes(),
                 minuteFormatted = minute < 10 ? "0" + minute : minute, // pad with 0 as needed
-                second = dateVal.getSeconds(),
+                second = dateObj.getSeconds(),
                 secondFormatted = second < 10 ? "0" + second : second; // pad with 0 as needed
             // Now get the time string used in the long format, such as 12:46:35
-            var timeString = dateVal.getHours() + ":" + minuteFormatted + ":" + secondFormatted;
+            var timeString = dateObj.getHours() + ":" + minuteFormatted + ":" + secondFormatted;
             // Now we insert the milliseconds value from the date into our long format string
             // This will turn: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
             // into:           Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+            var milliseconds = dateObj.getMilliseconds().toString();
+            if (milliseconds.toString().length == 1) {
+                milliseconds = '00'+milliseconds;
+            }
+            else if (milliseconds.toString().length == 2) {
+                milliseconds = '0'+milliseconds;
+            }
             newVal = toParse.substring(0, toParse.indexOf(timeString)+timeString.length) +
-                "." + dateVal.getMilliseconds() +
+                "." + milliseconds +
                 toParse.substring(toParse.indexOf(timeString)+timeString.length);
         }
         catch(e) { newVal = null; }

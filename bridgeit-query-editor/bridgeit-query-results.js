@@ -139,8 +139,15 @@ Polymer({
         // Now we insert the milliseconds value from the date into our long format string
         // This will turn: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
         // into:           Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+        var milliseconds = date.getMilliseconds().toString();
+        if (milliseconds.toString().length == 1) {
+            milliseconds = '00'+milliseconds;
+        }
+        else if (milliseconds.toString().length == 2) {
+            milliseconds = '0'+milliseconds;
+        }
         return toParse.substring(0, toParse.indexOf(timeString)+timeString.length) +
-            "." + date.getMilliseconds() +
+            "." + milliseconds +
             toParse.substring(toParse.indexOf(timeString)+timeString.length);
     }
 });
