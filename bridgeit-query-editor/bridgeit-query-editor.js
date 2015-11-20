@@ -87,6 +87,7 @@ Polymer({
     runQuery: function() {
         var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
+            this._processTimeFields(query);
             this._queryService(query);
         }
     },
@@ -319,6 +320,7 @@ Polymer({
         if (Object.keys(query).length === 0) {
             return null;
         }
+        this._processTimeFields(query);
         var queryToPost = {
             "query": query,
             "fields": this.getAttribute('fields') ? this.getAttribute('fields') : {},
@@ -396,8 +398,74 @@ Polymer({
     _refreshQuery: function() {
         var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
+            this._processTimeFields(query);
             this._updateQueryURL(query);
         }
+    },
+    _processTimeFields: function(query) {
+        var _this = this;
+        var doProcess = function (query) {
+            for (var key in query) {
+                if (!query.hasOwnProperty(key)) {
+                    continue;
+                }
+                var value = query[key];
+                if (key === 'time') {
+                    if (typeof value === 'string' || value instanceof String) {
+                        query[key] = _this._formatDate(value);
+                    }
+                    else if (value !== null && typeof value === 'object') {
+                        for (var op in value) {
+                            if (!value.hasOwnProperty(op)) {
+                                continue;
+                            }
+                            var timeValue = value[op];
+                            if (typeof timeValue === 'string' || timeValue instanceof String) {
+                                value[op] = _this._formatDate(timeValue);
+                            }
+                            else if (Array.isArray(timeValue)) {
+                                for (var i=0; i<timeValue.length; i++) {
+                                    value[op][i] = _this._formatDate(timeValue[i]);
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (value !== null && typeof value === 'object') {
+                        doProcess(value);
+                    }
+                }
+            }
+        };
+        doProcess(query);
+    },
+    _formatDate: function(val) {
+        var newVal;
+        try {
+            // If we have a '.' then assume milliseconds are present
+            // Such as the modified long format Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+            if (val.indexOf('.') !== -1) {
+                // First we parse out milliseconds, in the above example this would be "769"
+                var millis = val.substring(val.indexOf('.')+1, val.indexOf(' ', val.indexOf('.')));
+                // Then we rebuild the string without milliseconds, so back to the standard Date long format
+                var toParse = val.substring(0, val.indexOf('.')) +
+                    val.substring(val.indexOf('.' + millis)+1+millis.length);
+                // Now we parse a Date object from that long format
+                var parsedDate = new Date(toParse);
+                // And set in our milliseconds
+                parsedDate.setMilliseconds(millis);
+                // Then we convert this to ISO UTC format
+                newVal = parsedDate.toISOString();
+            }
+            else {
+                newVal = new Date(val).toISOString();
+            }
+            return newVal;
+        }
+        catch (e) { }
+
+        return null;
     },
     _setQueryHeader: function(query) {
         var container = Polymer.dom(this.root).querySelector('#editor_group_0');
@@ -597,19 +665,6 @@ Polymer({
             var inputs = $(Polymer.dom(_this.root).querySelector('#'+rule.id + ' .rule-value-container')).children();
             if (inputs) {
                 $(inputs).bind("change",function() {
-                    if (rule.filter.id === 'time') {
-                        //prevent infinite change listener calls
-                        if (_this._lastRuleVal === rule.value) {
-                            _this._lastRuleVal = null;
-                            return;
-                        }
-                        //parse the date to ISO UTC format or if invalid reject the value
-                        var newVal;
-                        try { newVal = new Date(rule.value).toISOString(); }
-                        catch (e) { newVal = ''; }
-                        _this._lastRuleVal = newVal;
-                        rule.value = newVal;
-                    }
                     _this._refreshQuery();
                 });
             }
