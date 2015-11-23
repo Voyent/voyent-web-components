@@ -3,6 +3,15 @@ Polymer({
     is: "bridgeit-event-monitor",
     
     properties: {
+        /** Defines the ID of this component
+         * @default eventmonitor
+         */
+        id: { type: String, value: "eventmonitor", reflectToAttribute: true },
+        /**
+         * Defines the array of data used to generate this event monitor graph
+         * Note this property is private to avoid duplicating the data on the page as an HTML attribute
+         */
+        _data: { type: Array },
         /**
          * Defines the width of the underlying SVG element
          * @default 100%
@@ -14,10 +23,10 @@ Polymer({
          */
         height: { type: String, value: "100px" },
         /**
-         * Defines the left padding of the graph inside the SVG element
-         * @default 20
+         * Defines the width padding of the graph inside the SVG element
+         * @default 0
          */
-        padding: { type: Number, value: 20 },
+        padding: { type: Number, value: 0 },
         /**
          * Defines the circle radius for all events show on the graph
          * @default 10
@@ -60,17 +69,80 @@ Polymer({
          * @default true
          */
         useresize: { type: String, value: "true" },
+        /**
+         * Defines the ID of the details pane container, used for consistency
+         * @default eventDetails
+         */
+        detailsid: { type: String, value: "eventDetails" }
     },
     
     /**
-     * Display a marble style graph based on the passed metric data
-     * @param data array of the metric events to show on the graph
+     * Method to graph and show the passed data
+     * This will also store the data internally as data
+     * @param data array of metric events to show on the graph
      */
-    show: function(data) {
-        var _this = this;
-        var vis = d3.select("#eventmonitorsvg");
+    showData: function(data) {
+        this._data = data;
+        this.show();
+    },
+    
+    /**
+     * Method to graph and show the current data object
+     * Nothing will happen if data is null or missing
+     * If you don't want to set data directly use showData instead
+     */
+    show: function() {
+        this._generateGraph(this._data);
+    },
+    
+    /**
+     * Show our event detail data panel for the clicked item
+     */
+    showDetails: function() {
+        document.getElementById(this._padID(this.detailsid)).style.display = "inline";
+    },
+    
+    /**
+     * Hide our event detail data panel, which would be shown upon clicking on a graph element
+     */
+    hideDetails: function() {
+        document.getElementById(this._padID(this.detailsid)).style.display = "none";
         
-        // Set our basic width/height and then calculate the result without units
+        if (this.clickedCircle) {
+            var old = d3.select(this.clickedCircle);
+            if (old) {
+                old.attr("r", this.circleradius);
+                old.classed("clickedCircle", false);
+            }
+        }
+        this.clickedData = null;
+        this.clickedDataFormatted = null;
+    },
+    
+    //******************PRIVATE API******************
+    
+    /**
+     * Internal method to display a marble style graph based on the passed metric data
+     * @param data array of the metric events to show on the graph
+     * @private
+     */
+    _generateGraph: function(data) {
+        var _this = this;
+        var wrapper = d3.select("div#" + this.id + "div");
+        
+        // Bail if we can't find our div container
+        if (typeof wrapper === 'undefined' || wrapper === null) {
+            console.log("No SVG container was found that matches ID " + this.id + ", not drawing event monitor.");
+            return;
+        }
+        
+        // First of all remove the old SVG (if we can) and append a fresh one and use that
+        wrapper.select("svg").remove();
+        wrapper.insert("svg", ".detailsBox");
+        var vis = wrapper.select("svg");
+        
+        // Set our cursor and basic width/height and then calculate the result without units
+        vis.style("cursor", null);
         vis.attr("width", this.width);
         vis.attr("height", this.height);
         var calcWidth = parseInt(vis.style("width"))-this.padding;
@@ -80,10 +152,6 @@ Polymer({
         if (calcWidth < 100 && window.innerWidth && window.innerWidth > 500) {
             calcWidth = window.innerWidth - 400;
         }
-            
-        // Clear our old graph first and reset the cursor
-        vis.selectAll("*").remove();
-        vis.style("cursor", null);
         
         // Before progressing check if we even have data to graph
         // If we don't we'll disable zoom/drag and show an error message
@@ -92,10 +160,10 @@ Polymer({
             
             this.customTitle = null;
             
-            vis.call(d3.behavior.zoom().on("zoom", null));
-            vis.call(d3.behavior.drag().on("drag", null));
+            vis.call(d3.behavior.zoom().on(this._padID("zoom"), null));
+            vis.call(d3.behavior.drag().on(this._padID("drag"), null));
             
-            vis.append("svg:g").attr("class", "axis");
+            vis.append("g").attr("class", "axis");
             vis.append("text").text("No event data was found, please try again.")
                 .attr("x", this.padding)
                 .attr("y", calcHeight/2)
@@ -103,6 +171,9 @@ Polymer({
             
             return;
         }
+        
+        // Style our wrapper box
+        wrapper.classed("emBox", true);
         
         // Setup our colors
         var colors = {};
@@ -140,7 +211,7 @@ Polymer({
             if (addCurrent) {
                 services.push(data[i].service);
             }
-        }        
+        }
         
         // Build our date scale
         xScale = d3.time.scale().domain([d3.min(data, function(d) {
@@ -157,51 +228,53 @@ Polymer({
                     .ticks(Math.max(calcWidth/120, 2));
         
         // Vertically center the graph
-        vis.append("svg:g")
+        vis.append("g")
             .attr("class", "axis")
             .attr("transform", "translate(0," + (calcHeight/2) + ")")
             .call(xAxis);
             
         // Add zoom functionality
         if (this.usezoom == 'true') {
-            vis.call(d3.behavior.zoom()
+            var zoom = d3.behavior.zoom();
+            vis.call(zoom
                 .x(xScale)
-                .on("zoom", function() {
+                .on(this._padID("zoom"), function() {
+                    zoom.x(xScale);
                     vis.select("g.axis").call(xAxis);
                     vis.selectAll("circle")
                         .attr("cx", function(d) { return xScale(new Date(d.time)); });
                 })
-                .on("zoomstart", function() {
+                .on(this._padID("zoomstart"), function() {
                     vis.style("cursor", "zoom-in");
                 })
-                .on("zoomend", function() {
+                .on(this._padID("zoomend"), function() {
                     vis.style("cursor", null);
                 })
             );
         }
         else {
-            vis.call(d3.behavior.zoom().on("zoom", null));
-            vis.call(d3.behavior.zoom().on("zoomstart", null));
-            vis.call(d3.behavior.zoom().on("zoomend", null));
+            vis.call(d3.behavior.zoom().on(this._padID("zoom"), null));
+            vis.call(d3.behavior.zoom().on(this._padID("zoomstart"), null));
+            vis.call(d3.behavior.zoom().on(this._padID("zoomend"), null));
         }
         
         if (this.usedrag == 'true') {
             // Customize our drag functionality
             vis.call(d3.behavior.drag()
-                .on("dragstart", function() {
+                .on(this._padID("dragstart"), function() {
                     vis.style("cursor", "move");
                     d3.select("body").style("cursor", "move");
                 })
-                .on("dragend", function() {
+                .on(this._padID("dragend"), function() {
                     vis.style("cursor", null);
                     d3.select("body").style("cursor", null);                   
                 })
             );
         }
         else {
-            vis.call(d3.behavior.drag().on("drag", null));
-            vis.call(d3.behavior.drag().on("dragstart", null));
-            vis.call(d3.behavior.drag().on("dragend", null));
+            vis.call(d3.behavior.drag().on(this._padID("drag"), null));
+            vis.call(d3.behavior.drag().on(this._padID("dragstart"), null));
+            vis.call(d3.behavior.drag().on(this._padID("dragend"), null));
         }
         
         // Draw a circle for every piece of data
@@ -223,23 +296,21 @@ Polymer({
                 }
                 return toReturn; 
             })
-            .on("click", function(d, i) {
+            .on(this._padID("click"), function(d, i) {
                 if (_this.useclickable == 'true') {
-                    // First we restore any previously clicked circle to the normal radius
+                    // Check if we're re-clicking the same circle, in which case we want to hide the details
+                    // This will basically function as a toggle
+                    if (d == _this.clickedData) {
+                        _this.hideDetails();
+                        
+                        return;
+                    }
+                    
+                    // Then we restore any previously clicked circle to the normal radius
                     if (_this.clickedCircle) {
                         var old = d3.select(_this.clickedCircle);
                         old.attr("r", _this.circleradius);
                         old.classed("clickedCircle", false);
-                    }
-                        
-                    // Check if we're re-clicking the same circle, in which case we want to hide the details
-                    // This will basically function as a toggle
-                    if (d == _this.clickedData) {
-                        _this.clickedData = null;
-                        _this.clickedDataFormatted = null;
-                        document.getElementById('eventDetails').style.display = "none";
-                        
-                        return;
                     }
                     
                     // Otherwise set our data object for display on the page and show the details
@@ -249,10 +320,10 @@ Polymer({
                     _this.clickedCircle = this;
                     _this.clickedData = d;
                     _this.clickedDataFormatted = JSON.stringify(d.data);
-                    document.getElementById('eventDetails').style.display = "inline";
+                    _this.showDetails();
                 }
             })
-            .on("mouseover", function(d, i) {
+            .on(this._padID("mouseover"), function(d, i) {
                 if (_this.usemouseover == 'true') {
                     var sel = d3.select(this);
                     // Only do mouseover radius functionality if we're not already clicked
@@ -264,7 +335,7 @@ Polymer({
                     this.parentElement.appendChild(this);
                 }
             })
-            .on("mouseout", function(d, i) {
+            .on(this._padID("mouseout"), function(d, i) {
                 if (_this.usemouseover == 'true') {
                     var sel = d3.select(this);
                     // Only do mouseout radius functionality if we're not already clicked
@@ -318,7 +389,7 @@ Polymer({
         
         // Add a very simple resize that duplicates this method with a new width/height
         if (this.useresize == 'true') {
-            d3.select(window).on('resize', function() {
+            d3.select(window).on(this._padID("resize"), function() {
                 _this.show(data);
             });
         }
@@ -327,13 +398,13 @@ Polymer({
         this.customTitle = "Graph of " + data.length + " Events:";
     },
     
-    //******************PRIVATE API******************
-    
     /**
-     * Hide our event detail data panel, which would be shown upon clicking on a graph element
+     * Convenience method to wrap append our ID to a name (such as an event, existing ID)
+     *  to ensure it will be unique with other D3 graphs on the same page
+     * @param base string to pad with our ID
      * @private
      */
-    _hideData: function() {
-        document.getElementById('eventDetails').style.display = "none";
-    },
+    _padID: function(base) {
+        return base + '.' + this.id;
+    }
 });
