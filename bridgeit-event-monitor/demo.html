@@ -10,23 +10,34 @@
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/html">
 	<head>
-		<meta charset="utf-8"/>
+	    <meta charset="utf-8"/>
 		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 		<title>BridgeIt Web Components Demo</title>
+		
+        <script src="../../es6-promise/dist/es6-promise.min.js"></script>
+        <script>
+            if( !("Promise" in window)){
+                window.Promise = ES6Promise.Promise;
+            }
+        </script>
+		<script src="http://bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
+		<script src="http://bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
 
 		<!-- Load the webcomponents polyfill -->
 		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+		
+		<script>
+		    var useMultipleEventMonitors = true;
+		</script>
 
-		<!-- Load required jQuery dependency -->
-		
-		
-		<!-- Load bridgeit event monitor component -->
-		<link rel="import" href="bridgeit-event-monitor.html">
+        <!-- Load bridgeit event monitor component -->
+        <link rel="import" href="bridgeit-event-monitor-repeat.html">
+        <link rel="import" href="bridgeit-event-monitor.html">
 		<!-- Load bridgeit query editor component -->
 		<link rel="import" href="../bridgeit-query-editor/bridgeit-query-editor.html">
-		<!-- Load supporting components (optional) -->
-		<link rel="import" href="../bridgeit-query-editor/bridgeit-query-list.html">
-		<link rel="import" href="../bridgeit-query-editor/bridgeit-query-results.html">
+        <!-- Load supporting components (optional) -->
+        <link rel="import" href="../bridgeit-query-editor/bridgeit-query-list.html">
+        <link rel="import" href="../bridgeit-query-editor/bridgeit-query-results.html">
 
 		<!-- Demo specific CSS -->
 		<link rel="stylesheet" href="../common/demo.css"/>
@@ -52,21 +63,21 @@
 				--query-list-tr { key:value; }; [Custom tr styling]
 				--query-list-td: { key:value; }; [Custom td styling]
 				*/
-			}
+            }
 			#queryResults {
 				--query-results-table: {
 					 width: 100%;
 					 margin-bottom: 50px;
-				};
+			 	};
 				--query-results-td: {
 					 padding: 8px;
 					 line-height: 1.42857143;
 					 vertical-align: top;
-				};
+			 	};
 				--query-results-th: {
 					 border-bottom-width: 2px;
 					 background-color: #EFEFEF;
-				};
+			 	};
 				/*
 				Other available styling options:
 				--query-results-thead: { key:value; }; [Custom thead styling]
@@ -74,13 +85,13 @@
 				--query-results-tr { key:value; }; [Custom tr styling]
 				*/
 			}
-		</style>
+        </style>
 	</head>
 	<body unresolved>
 	
 		<h1>BridgeIt Event Monitor Component Demo</h1>
-		<h3>Login with your BridgeIt Account Information</h3>
-		<hr/>
+  		<h3>Login with your BridgeIt Account Information</h3>
+  		<hr/>
 		<div id="listenerWrapper">
 			<div id="wrapper" class="container">
 				<form>
@@ -107,7 +118,7 @@
 					<a onclick="login()">Login</a>
 					
 					<div class="settings">
-						&nbsp;
+					    &nbsp;
 					</div>
 				</form>
 
@@ -138,8 +149,11 @@
 			</div>
 			
 			<div>
-				<bridgeit-event-monitor id="eventMonitor">
-				</bridgeit-event-monitor>
+			    <bridgeit-event-monitor-repeat id="eventMonitorRepeat">
+			    </bridgeit-event-monitor-repeat>
+			    
+			    <bridgeit-event-monitor id="eventMonitor">
+			    </bridgeit-event-monitor>
 			</div>
 			
 			<br/><br/>
@@ -152,32 +166,27 @@
 		</div>
 
 		<script type="text/javascript">
-			//Listen for the queryMsgUpdated event for all components
-			document.getElementById('listenerWrapper').addEventListener('queryMsgUpdated', function(e) {
-				var id = e.detail.id ? e.detail.id + ' : ' : '';
-				document.getElementById('msgs').innerHTML = id + e.detail.message;
-				//clear message 10 seconds after it's received
-				clearTimeout(window.msgTimeout);
-				window.msgTimeout = setTimeout(function() {
-					document.getElementById('msgs').innerHTML = '';
-				},10000);
-			});
-			// Listen for queryExecuted event
-			document.getElementById('queryEditor').addEventListener('queryExecuted', function(e) {
-				var res = e.detail.results;
-				
-				// Before we process the data we want to change the dates (data.time field)
-				// This is because the dates come from the queryEditor as UTC
-				// But we want to display them in the table and graph as the local timezone
-				if (typeof res !== 'undefined' && res !== null && res.length !== 0) {
-					for (i = 0; i < res.length; i++) {
-						res[i].time = new Date(res[i].time);
-					}
-				}
-			
-				document.getElementById('eventMonitor').show(e.detail.results);
-			});
-
+            //Listen for the queryMsgUpdated event for all components
+            document.getElementById('listenerWrapper').addEventListener('queryMsgUpdated', function(e) {
+                var id = e.detail.id ? e.detail.id + ' : ' : '';
+                document.getElementById('msgs').innerHTML = id + e.detail.message;
+                //clear message 10 seconds after it's received
+                clearTimeout(window.msgTimeout);
+                window.msgTimeout = setTimeout(function() {
+                    document.getElementById('msgs').innerHTML = '';
+                },10000);
+            });
+            // Listen for queryExecuted event
+            document.getElementById('queryEditor').addEventListener('queryExecuted', function(e) {
+                // Add our data to a new event monitor graph
+                if (useMultipleEventMonitors) {
+                    document.getElementById('eventMonitorRepeat').addEventMonitor(e.detail.results);
+                }
+                else {
+                    document.getElementById('eventMonitor').showData(e.detail.results);
+                }
+            });
+            
 			function login(event){
 				var account = document.getElementById('account').value;
 				var realm = document.getElementById('realm').value;
@@ -195,7 +204,7 @@
 				})['catch'](function(){
 					//try to login as admin
 					bridgeit.io.auth.connect({
-						account: account,
+                        account: account,
 						realm: 'admin',
 						username: username,
 						password: password
@@ -208,7 +217,6 @@
 			}
 
 			function setCredentialsOnComponent(){
-				console.log('setCredentialsOnComponent()');
 				var elem = document.getElementById('queryEditor');
 
 				var account = bridgeit.io.auth.getLastKnownAccount();
@@ -217,7 +225,7 @@
 					document.getElementById('account').value = account;
 				}
 
-				var realm = bridgeit.io.auth.getLastKnownRealm();
+                var realm = bridgeit.io.auth.getLastKnownRealm();
 				if (realm) {
 					elem.setAttribute('realm', realm);
 					document.getElementById('realm').value = realm;
@@ -231,24 +239,18 @@
 			}
 
 			function initializeComponent() {
-				var token = bridgeit.io.auth.getLastAccessToken();
-				if (token) {
-					document.getElementById('queryEditor').setAttribute('service', 'metrics');
-					document.getElementById('queryEditor').setAttribute('collection', 'events');		
-					document.getElementById('queryEditor').reloadEditor();
-					document.getElementById('queryEditor').fetchQueryList();
-				}
+			    var token = bridgeit.io.auth.getLastAccessToken();
+			    if (token) {
+                    document.getElementById('queryEditor').setAttribute('service', 'metrics');
+                    document.getElementById('queryEditor').setAttribute('collection', 'events');		
+                    document.getElementById('queryEditor').reloadEditor();
+                    document.getElementById('queryEditor').fetchQueryList();
+                }
 			}
 
-			window.addEventListener('WebComponentsReady', function() {
-				// imports are loaded and elements have been registered
-				console.log('WebComponentsReady');
-
-				//initialize known credentials
-				setCredentialsOnComponent();
-				initializeComponent();
-			});
-			
+			//initialize known credentials
+			setCredentialsOnComponent();
+			initializeComponent();
 		</script>
 	</body>
 </html>
