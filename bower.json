@@ -32,8 +32,7 @@
     "codemirror": "~5.8.0",
     "jsonlint": "~1.6.0",
     "juicy-ace-editor": "~1.1.1",
-    "handlebars": "https://github.com/components/handlebars.js.git",
-    "typeahead": "https://github.com/twitter/typeahead.js.git",
+	"awesomplete": "https://github.com/LeaVerou/awesomplete.git#^1.0.0",
     "components-font-awesome": "~4.4.0"
   },
   "devDependencies": {

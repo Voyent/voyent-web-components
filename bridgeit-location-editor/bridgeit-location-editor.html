@@ -4,8 +4,7 @@
 <link rel="import" href="../../paper-menu/paper-menu.html">
 <link rel="import" href="../../paper-item/paper-item.html">
 <script src="../../jquery/dist/jquery.js"></script>
-<script src="../../handlebars/handlebars.js"></script>
-<script src="../../typeahead/dist/typeahead.jquery.js"></script>
+<script src="../../awesomplete/awesomplete.js"></script>
 <dom-module id="bridgeit-location-editor">
 <style type="text/css">
 #map {
@@ -1121,7 +1120,7 @@ span.noBold strong {
     display:inline-block;
 }
 
-#searchBarDiv ::content span.twitter-typeahead ::content .tt-menu {
+/**#searchBarDiv ::content span.twitter-typeahead ::content .tt-menu {
     position: absolute;
     top: 100%;
     left: 0;
@@ -1168,8 +1167,7 @@ span.noBold strong {
 }
 
 
-
-/** CUSTOM CSS **/
+Custom stuff:
 
 #searchBarDiv ::content span.twitter-typeahead {
     height: 100%;
@@ -1192,6 +1190,109 @@ span.noBold strong {
     max-width:475px;
     overflow: hidden;
 }
+
+Awesomeplete stuff starts below
+**/
+#searchBarDiv ::content [hidden] { display: none; }
+
+#searchBarDiv ::content .visually-hidden {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+}
+
+#searchBarDiv ::content div.awesomplete {
+    display: inline-block;
+    position: relative;
+    width:100%;
+}
+
+#searchBarDiv ::content div.awesomplete > input {
+    display: block;
+}
+
+#searchBarDiv ::content div.awesomplete > ul {
+    position: absolute;
+    left: 0;
+    z-index: 1;
+    min-width: 100%;
+    box-sizing: border-box;
+    list-style: none;
+    padding: 0;
+    border-radius: .3em;
+    margin: .2em 0 0;
+    background: hsla(0,0%,100%,.9);
+    background: linear-gradient(to bottom right, white, hsla(0,0%,100%,.8));
+    border: 1px solid rgba(0,0,0,.3);
+    box-shadow: .05em .2em .6em rgba(0,0,0,.2);
+    text-shadow: none;
+}
+
+#searchBarDiv ::content div.awesomplete > ul[hidden],
+#searchBarDiv ::content div.awesomplete > ul:empty {
+    display: none;
+}
+
+@supports (transform: scale(0)) {
+    #searchBarDiv ::content div.awesomplete > ul {
+        transition: .3s cubic-bezier(.4,.2,.5,1.4);
+        transform-origin: 1.43em -.43em;
+        top:30px;
+    }
+
+    #searchBarDiv ::content div.awesomplete > ul[hidden],
+    #searchBarDiv ::content div.awesomplete > ul:empty {
+        opacity: 0;
+        transform: scale(0);
+        display: block !important;
+        transition-timing-function: ease;
+        top:30px;
+    }
+}
+
+/* Pointer */
+#searchBarDiv ::content div.awesomplete > ul:before {
+    content: "";
+    position: absolute;
+    top: -.43em;
+    left: 1em;
+    width: 0; height: 0;
+    padding: .4em;
+    background: white;
+    border: inherit;
+    border-right: 0;
+    border-bottom: 0;
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+#searchBarDiv ::content div.awesomplete > ul > li {
+    position: relative;
+    padding: .2em .5em;
+    cursor: pointer;
+}
+
+#searchBarDiv ::content div.awesomplete > ul > li:hover {
+    background: hsl(200, 40%, 80%);
+    color: black;
+}
+
+#searchBarDiv ::content div.awesomplete > ul > li[aria-selected="true"] {
+    background: hsl(205, 40%, 40%);
+    color: white;
+}
+
+#searchBarDiv ::content div.awesomplete mark {
+    background: hsl(65, 100%, 50%);
+}
+
+#searchBarDiv ::content div.awesomplete li:hover mark {
+    background: hsl(68, 101%, 41%);
+}
+
+#searchBarDiv ::content div.awesomplete li[aria-selected="true"] mark {
+    background: hsl(86, 102%, 21%);
+    color: inherit;
+}
 </style>
 <template>
 <div id="overall">
@@ -1200,18 +1301,8 @@ span.noBold strong {
 </div>
 <div id="searchBarWrap" style="display:none;">
     <div id="searchBarDiv" class="ui-widget">
-        <input id="locationSearchBar" placeholder="Search for Locations" class="searchBar typeahead" style="height:100%;">
-        <input id="locationPropertySearchBar" placeholder="Search for Location Properties/Tags"
-               class="searchBar typeahead" style="display:none; height:100%;">
-        <input id="regionSearchBar" placeholder="Search for Regions" class="searchBar typeahead"
-               style="display:none;height:100%;">
-        <input id="regionPropertySearchBar" placeholder="Search for Region Properties/Tags"
-               class="searchBar typeahead" style="display:none;height:100%;">
-        <input id="poiSearchBar" placeholder="Search for POIs" class="searchBar typeahead"
-               style="display:none;height:100%;">
-        <input id="poiPropertySearchBar" placeholder="Search for POI Properties/Tags"
-               class="searchBar typeahead" style="display:none;height:100%;">
-        <input id="mapSearchBar" class="searchBar" placeholder="Search the Map" style="display:none;height:100%;">
+        <input id="locationSearchBar" placeholder="Search" class="searchBar" style="height:100%;width:100%">
+        <input id="mapSearchBar" class="searchBar" placeholder="Search the Map" style="display:none;height:100%;width:100%">
     </div>
     <div id="regionSearchButton" on-click="querySearch" class="btn btn-sm btn-primary">
         <img src="css/QueryBarIcon.png">
@@ -1220,10 +1311,10 @@ span.noBold strong {
         <div>Search <br>Options</div>
     </div>
     <div on-click="toggleLocations" class="btn btn-sm btn-primary mainSearchBarButton">
-        <div>Show<br><span>{{searchByTxt}}</span>s</div>
+        <div>Show<br><span>[[searchByTxt]]</span>s</div>
     </div>
     <div on-click="toggleDeleteDialog" class="btn btn-sm btn-danger mainSearchBarButton">
-        <div>Delete<br><span>{{searchByTxt}}</span>s</div>
+        <div>Delete<br><span>[[searchByTxt]]</span>s</div>
     </div>
     <!--TODO: Test to make sure this is working. Originally had click on clearFilter "" querySearch-->
     <div id="clearFilterBttn" on-click="clearFilterButton" class="btn btn-sm btn-warning mainSearchBarButton">
@@ -1290,19 +1381,19 @@ span.noBold strong {
         </div>
         <div class="col-sm-12 smlHeight" style="font-size:15px;"><strong>Search By:</strong></div>
         <div class="col-sm-11 overAutoNoWrap">
-            <div class="smlHeight"><span>{{searchByTxt}}</span> Name</div>
-            <div class="smlHeight"><span>{{searchByTxt}}</span> Properties/Tags</div>
+            <div class="smlHeight"><span>[[searchByTxt]]</span> Name</div>
+            <div class="smlHeight"><span>[[searchByTxt]]</span> Properties/Tags</div>
             <div class="smlHeight">Google Map Search (Reposition Map)</div>
         </div>
         <div class="col-sm-1 noPadding">
             <div class="smlHeight">
-                <input type="radio" name="searchByType" checked="checked" value="nameVal" on-click="changeSearchBy">
+                <input type="radio" name="searchByType" checked="checked" value="nameVal" on-click="changeSearchByType">
             </div>
             <div class="smlHeight">
-                <input type="radio" name="searchByType" value="propVal" on-click="changeSearchBy">
+                <input type="radio" name="searchByType" value="propVal" on-click="changeSearchByType">
             </div>
             <div class="smlHeight">
-                <input type="radio" name="searchByType" value="map" on-click="changeSearchBy">
+                <input type="radio" name="searchByType" value="map" on-click="changeSearchByType">
             </div>
         </div>
     </div>
@@ -1312,9 +1403,9 @@ span.noBold strong {
 <template is="dom-if" if="{{showDeleteDialog}}">
     <div class="smlPopDlg">
         <button type="button" class="btn btn-xs btn-danger closeSmlPopDlgBttn" on-click="toggleDeleteDialog">X</button>
-        <div class="smlPopDlgTitle">Delete <span>{{searchByTxt}}</span>s</div>
+        <div class="smlPopDlgTitle">Delete <span>[[searchByTxt]]</span>s</div>
         <template is="dom-if" if="{{matchingLocations}}">
-            <div class="col-sm-12 text-center" style="padding-bottom:10px;">Mouseover the <span>{{searchByTxt}}</span>
+            <div class="col-sm-12 text-center" style="padding-bottom:10px;">Mouseover the <span>[[searchByTxt]]</span>
                 Names to
                 highlight that Location on the map.
             </div>
@@ -1350,7 +1441,7 @@ span.noBold strong {
 
             <div class="col-sm-12 text-center">
                 <div class="smlHeight">
-                    No <span>{{searchByTxt}}</span>s found for that query.
+                    No <span>[[searchByTxt]]</span>s found for that query.
                 </div>
             </div>
             <br/>
