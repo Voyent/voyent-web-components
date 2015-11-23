@@ -67,6 +67,11 @@ Polymer({
         }
     },
     
+    /**
+     * Move the passed event monitor to the top of the list
+     * If the event monitor is already at the top nothing will be done
+     * @param e event of a button click in our template repeat containing model data
+     */
     moveTop: function(e) {
         var oldIndex = this.items.indexOf(e.model.item);
         if (oldIndex != 0) {
@@ -101,6 +106,11 @@ Polymer({
         }
     },
     
+    /**
+     * Move the passed event monitor to the bottom of the list
+     * If the event monitor is already at the bottom nothing will be done
+     * @param e event of a button click in our template repeat containing model data
+     */
     moveBottom: function(e) {
         var oldIndex = this.items.indexOf(e.model.item);
         if (oldIndex != (this.items.length-1)) {
