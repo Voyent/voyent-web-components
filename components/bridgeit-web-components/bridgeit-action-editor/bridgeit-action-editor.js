@@ -35,18 +35,20 @@ Polymer({
         this._taskGroups = [{"id":"taskGroup0","tasks":[]}]; //initialize with one group by default
         this._selectedEvents=[];
         this._events=[{event:'locationAdded',checked:false},{event:'locationChanged',checked:false},{event:'locationDeleted',checked:false},{event:'nearPointOfInterest',checked:false},{event:'enteredRegion',checked:false},{event:'exitedRegion',checked:false}];
+        this._codeEditorProperties=['function','messagetemplate'];
         //keep a reference to the code editor change event listener function for 'removeEventListener'
         this._editorEventListener = function(e) {
             var editor = e.target;
             var groupIndex = editor.getAttribute('data-groupid').slice(-1);
             var taskIndex = editor.getAttribute('data-taskid').slice(-1);
             var propertyType = editor.getAttribute('data-propertytype');
+            var propertyTitle = editor.getAttribute('data-propertytitle');
             var oneOfIndex = editor.getAttribute('data-oneofindex');
             var selector = '_taskGroups.'+groupIndex+'.tasks.'+taskIndex+'.schema.properties.'+propertyType;
             if (propertyType === 'oneOf') {
                 selector = selector+'.'+oneOfIndex;
             }
-            selector = selector+'.function.value';
+            selector = selector+'.'+propertyTitle+'.value';
             _this.set(selector,editor.editor.getValue());
         };
 	},
@@ -366,9 +368,9 @@ Polymer({
                 if (!properties.hasOwnProperty(prop)) {
                     continue;
                 }
-                //use this to determine if we should add event listeners for code editors when dropping a new task
-                if (prop === 'function') {
-                    properties.hasFunction = true;
+                if (this._codeEditorProperties.indexOf(prop.toLowerCase()) > -1) {
+                    //quick way to check if we should add event listeners for code editors when dropping a new task
+                    properties.hasCodeEditor = true;
                 }
                 isOptional=true;
                 //add value directly to property in schema so it can be used for data binding
@@ -533,12 +535,12 @@ Polymer({
                             property.value = params[property.title];
                         }
                         //keep a map of code editor DOM locations and their value selectors so we can know where to put the values when loading the action
-                        if (propName == 'function') {
+                        if (this._codeEditorProperties.indexOf(propName.toLowerCase()) > -1) {
                             var selector = '_taskGroups.'+i+'.tasks.'+j+'.schema.properties.'+type;
                             if (type === 'oneOf') {
                                 selector = selector+'.'+property.oneOfGroupNum;
                             }
-                            selector = selector+'.function.value';
+                            selector = selector+'.'+propName+'.value';
                             editorMappings.push({domSelector:'#'+taskGroups[i].id+' #'+tasks[j].id + ' juicy-ace-editor',valueSelector:selector});
                         }
                     }
@@ -553,7 +555,7 @@ Polymer({
     },
 
     /**
-     * Setup code editor inputs for 'function' properties.
+     * Setup code editor inputs for certain properties.
      * @private
      */
     _setupCodeEditor: function() {
@@ -565,6 +567,10 @@ Polymer({
                 for (var i=0; i<editors.length; i++) {
                     var editor = editors[i];
                     editor.editor.$blockScrolling = Infinity; //disable console warning
+                    if (editor.getAttribute('data-propertytitle').toLowerCase() === 'messagetemplate') {
+                        //disable syntax checker for messageTemplate since the value can be a simple string
+                        editor.editor.session.setOption("useWorker", false);
+                    }
                     editor.removeEventListener('change',_this._editorEventListener);
                     editor.addEventListener('change',_this._editorEventListener);
                 }
@@ -641,8 +647,7 @@ Polymer({
         var taskGroupIndex = e.target.id.slice(-1);
         var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
         this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
-        //if we have a function property inside the task then setup the code editor
-        if (schema.properties.hasOwnProperty('hasFunction')) {
+        if (schema.properties.hasOwnProperty('hasCodeEditor')) {
             this._setupCodeEditor();
         }
     },
@@ -814,8 +819,8 @@ Polymer({
      * @returns {boolean}
      * @private
      */
-    _isFunction: function(title) {
-        return title=='function';
+    _isCodeEditor: function(title) {
+        return this._codeEditorProperties.indexOf(title.toLowerCase()) > -1;
     },
 
     //event handler functions
