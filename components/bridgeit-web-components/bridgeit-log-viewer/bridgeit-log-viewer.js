@@ -2,16 +2,12 @@ Polymer({
     is: "bridgeit-log-viewer",
 
     properties: {
-        /**
-         * Required to authenticate with BridgeIt.
-         * @default bridgeit.io.auth.getLastAccessToken()
-         */
-        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
+        
         /**
          * Defines the BridgeIt account to view logs for.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
-        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        account: { type: String },
         /**
          * A query object that can be used to find specific log entries.
          *
@@ -59,6 +55,9 @@ Polymer({
     },
 
     ready: function() {
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount()
+        }
         this.fetchLogs();
         this._noLogs = false;
     },
@@ -68,7 +67,10 @@ Polymer({
      */
     fetchLogs: function() {
         var _this = this;
-        if (!this.accesstoken || !this.account) {
+        if( !this.account ){
+            this.account = bridgeit.io.auth.getLastKnownAccount();
+        }
+        if (!this.account) {
             return;
         }
         this._hasLogs = false;
@@ -81,7 +83,6 @@ Polymer({
         this._message = true;
 
         bridgeit.io.admin.getLogs({
-            accessToken: this.accesstoken,
             account: this.account,
             query: this.query,
             options: this.options,

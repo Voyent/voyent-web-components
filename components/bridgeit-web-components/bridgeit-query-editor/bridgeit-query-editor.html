@@ -1,11 +1,12 @@
 <link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 
 <!--
 Displays a query editor that can build queries for data stored by the BridgeIt Services. Requires jQuery.
 
 Example:
 
-		<bridgeit-query-editor accesstoken="xxx"
+		<bridgeit-query-editor 
 													 realm="myRealm"
 													 account="myAccount"
 													 queryurltarget="queryURL">
@@ -18,7 +19,7 @@ Example:
     <template>
         <link type="text/css" rel="stylesheet" href="../../jQuery-QueryBuilder/dist/css/query-builder.default.min.css">
         <link type="text/css" rel="stylesheet" href="./bridgeit-query-editor.min.css">
-        <link type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+        <link type="text/css" rel="stylesheet" href="../../components-font-awesome/css/font-awesome.min.css">
         <div id="editor"></div>
     </template>
 </dom-module>

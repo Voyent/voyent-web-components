@@ -1,13 +1,14 @@
 <link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../../juicy-ace-editor/juicy-ace-editor.html">
 
 <!--
 Description
 
 Example:
 
-    <bridgeit-action-editor accesstoken="xxx"
-                            realm="myRealm"
+    <bridgeit-action-editor realm="myRealm"
                             account="myAccount">
     </bridgeit-action-editor>
 
@@ -15,209 +16,229 @@ Example:
 -->
 <dom-module id="bridgeit-action-editor">
     <template>
-        <!-- TODO - Cleanup css + expose styling externally -->
         <style type="text/css">
-            :host {
-                font-size:14px;
-                -webkit-touch-callout: none;
-                -webkit-user-select: none;
-                -khtml-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
-            }
-            .taskPanel {
-                border: 1px solid #999;
-                border-bottom:0;
-                margin-right:5px;
-                padding: 10px;
-                background-color: #EFEFEF;
-            }
-            .taskPanel .header {
-                background-color: #C5C5C5;
-                margin: -10px -10px 10px;
-                text-align: center;
-                cursor:pointer;
-                padding-right:21px;
-                height: 20px;
-                line-height: 20px;
-            }
-            .taskPanel .taskItem {
-                height: 25px;
-                line-height:25px;
-                margin: 10px auto;
-                padding:2px;
-                text-align:center;
-                width: 100px;
-                cursor:move;
-                border-radius: 5px;
-                font-size: 12px;
-                overflow:hidden;
-            }
-            .taskPanel .taskItem,
-            .task {
-                background-color: #DEDEDE;
-            }
-            .taskPanel .taskItem:hover {
-               border-color:#3E458C;
-            }
-            .taskPanel .taskGroup,
-            .task-group {
-                background-color: #D6D6D6;
-            }
-            .actionContainer {
-                background-color: #EFEFEF;
-                padding:10px;
-            }
-            #actionForm {
-                padding:0;
-                margin:0;
-            }
-            .actionPanel,
-            .task-group {
-                padding-bottom: 40px !important;
-            }
-            .actionContainer,
-            .taskItem,
-            .task,
-            .task-group{
-                border: 1px solid #999;
-            }
-            .task,
-            .task-group {
-                position:relative;
-                border-radius: 5px;
-                padding:10px;
-                margin-bottom: 10px;
-            }
-            .task-group .title {
-                cursor:pointer;
-            }
-            .task .title {
-                margin-bottom: 10px;
-                font-size: 18px;
-                cursor:pointer;
-            }
-            .form-control {
-                display: block;
-                width: 100%;
-                padding:2px 3px;
-                font-size: 14px;
-                line-height: 1.42857143;
-                color: #555;
-                background: #FFF;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
-                box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
-                -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
-                -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
-                transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
-                margin:5px 0 10px 0;
-            }
-            .arrow {
-                width: 0;
-                height: 0;
-                border-left: 6px solid transparent;
-                border-right: 6px solid transparent;
-                border-top: 6px solid #777;
-                float:left;
-                -moz-transition: -moz-transform .3s;
-                -webkit-transition: -webkit-transform .3s;
-                -o-transition: -o-transform .3s;
-                transition: transform .3s;
-            }
-            .taskPanel .arrow {
-                margin-top:7px;
-                margin-left:10px;
-            }
-            .task-group .arrow {
-                margin-top: 5px;
-            }
-            .task .arrow {
-                margin-top:8px;
-                margin-right: 5px;
-            }
-            .arrow.toggled {
-                -moz-transform: rotate(-90deg);
-                -o-transform: rotate(-90deg);
-                -webkit-transform: rotate(-90deg);
-                transform: rotate(-90deg);
-            }
-            .task-group .toggleable-area {
-                cursor:pointer;
-                max-width:20px;
-            }
-            .taskPanel:not(:first-child),
-            .taskPanel .header:last-child {
-                border-bottom: 1px solid #999;
-            }
-            .task-group:last-child {
-                margin-bottom:0;
-            }
-            .taskPanel.hidden {
-                height:0;
-            }
-            .task-group.hidden,
-            .task.hidden {
-                padding-bottom:0 !important;
-            }
-            .content.hidden {
-                display:none;
-            }
-            .buttons {
-                float:right;
-                padding-bottom:5px;
-            }
-            .task .buttons,
-            .task-group .buttons {
-                position: absolute;
-                top: 4px;
-            }
-            .task-group .buttons {
-                right: 15px;
-            }
-            .task .buttons {
-                right: 4px;
-            }
-            .buttonContainer {
-                background-color: #EFEFEF;
-                padding:10px 0 10px 0;
-                text-align:center;
-            }
-            .event-triggers {
-                max-height: 70px;
-                overflow-y: scroll;
-                overflow-x: hidden;
-            }
-            .event-triggers label {
-                cursor:pointer;
-                color:#777;
-                font-weight:normal;
-            }
-            button {
-                color: #FFF;
-                background-color: #3E458C;
-                font-size: 10px;
-                padding: 3px;
-                border:1px solid transparent;
-                border-radius: 5px;
-                cursor: pointer;
-            }
-            input:invalid {
-                border: 1px solid #a94442;
-            }
+           :host {
+               font-size:14px;
+               @apply(--action-editor);
+           }
+           .actionWrapper {
+               @apply(--action-editor-wrapper);
+           }
+           .itemsContainer {
+               width:130px;
+               @apply(--action-editor-item-container);
+           }
+           .actionContainer {
+               border: 1px solid #999;
+               padding:10px;
+               background-color:#efefef;
+               min-width:345px;
+               @apply(--action-editor-action-container);
+           }
+           #actionForm {
+               background-color:transparent;
+               @apply(--action-editor-form);
+           }
+           .taskPanel {
+               border: 1px solid #999;
+               border-bottom:0;
+               margin-right:5px;
+               padding: 10px;
+               background-color:#efefef;
+               @apply(--action-editor-task-panel);
+           }
+           .taskPanel .header {
+               background-color: #CCC;
+               margin: -10px -10px 10px;
+               text-align: center;
+               cursor:pointer;
+               padding-right:21px;
+               line-height: 20px;
+               @apply(--action-editor-task-panel-header);
+           }
+           .taskPanel .taskItem {
+               height: 25px;
+               line-height:25px;
+               margin: 10px auto;
+               padding:2px;
+               text-align:center;
+               width: 100px;
+               cursor:move;
+               border-radius: 5px;
+               font-size: 12px;
+               overflow:hidden;
+               background-color:#e5e5e5;
+               @apply(--action-editor-task-panel-item);
+           }
+           .taskPanel .taskItem:hover {
+               @apply(--action-editor-task-panel-item-hover);
+           }
+           .taskPanel .taskGroup {
+               background-color:#dbdbdb;
+               @apply(--action-editor-task-panel-group-item);
+           }
+           .task-group {
+               position:relative;
+               border-radius: 5px;
+               padding:10px;
+               margin-bottom: 10px;
+               background-color:#dbdbdb;
+               @apply(--action-editor-task-group);
+           }
+           .task {
+               position:relative;
+               border-radius: 5px;
+               padding:10px;
+               margin-bottom: 10px;
+               background-color:#e5e5e5;
+               @apply(--action-editor-task);
+           }
+           .task-group .buttons {
+               position: absolute;
+               top: 4px;
+               right: 15px;
+               float:right;
+               padding-bottom:5px;
+               @apply(--action-editor-task-group-button-container);
+           }
+           .task .buttons {
+               position: absolute;
+               top: 4px;
+               right: 4px;
+               float:right;
+               padding-bottom:5px;
+               @apply(--action-editor-task-button-container);
+           }
+           .task-group .title {
+               cursor:pointer;
+               @apply(--action-editor-task-group-title);
+           }
+           .task .title {
+               margin-bottom: 10px;
+               font-size: 18px;
+               cursor:pointer;
+               @apply(--action-editor-task-title);
+           }
+           .task .code-editor {
+               width:100%;
+               min-height:200px;
+               @apply(--action-editor-function-input);
+           }
+           .arrow {
+               width: 0;
+               height: 0;
+               border-left: 6px solid transparent;
+               border-right: 6px solid transparent;
+               border-top: 6px solid #777;
+               float:left;
+               -moz-transition: -moz-transform .3s;
+               -webkit-transition: -webkit-transform .3s;
+               -o-transition: -o-transform .3s;
+               transition: transform .3s;
+               @apply(--action-editor-arrow);
+           }
+           .arrow.toggled {
+               -moz-transform: rotate(-90deg);
+               -o-transform: rotate(-90deg);
+               -webkit-transform: rotate(-90deg);
+               transform: rotate(-90deg);
+               @apply(--action-editor-arrow-toggled);
+           }
+           .taskPanel .arrow {
+               margin-top:7px;
+               margin-left:10px;
+               @apply(--action-editor-task-panel-arrow);
+           }
+           .task-group .arrow {
+               margin-top: 5px;
+               @apply(--action-editor-task-group-arrow);
+           }
+           .task .arrow {
+               margin-top:8px;
+               margin-right: 5px;
+               @apply(--action-editor-task-arrow);
+           }
+           .buttonContainer {
+               text-align:center;
+               @apply(--action-editor-button-container);
+           }
+           button {
+               cursor: pointer;
+               @apply(--action-editor-button);
+           }
+           label {
+               font-weight: 700;
+               @apply(--action-editor-label);
+           }
+           .form-control {
+               width:100%;
+               margin:5px 0 10px 0;
+               @apply(--action-editor-input);
+           }
+           input:invalid {
+               border: 1px solid #a94442 !important;
+               @apply(--action-editor-input-invalid);
+           }
+           span.required {
+               color: #a94442;
+               @apply(--action-editor-required-asterisk);
+           }
+           .event-triggers {
+               max-height: 70px;
+               overflow-y: scroll;
+               overflow-x: hidden;
+               @apply(--action-editor-event-triggers);
+           }
+           .event-triggers label {
+               cursor:pointer;
+               color:#777;
+               font-weight:normal;
+               width:100%;
+               display: block;
+               margin:5px 0 10px 0;
+               background-color: white;
+               @apply(--action-editor-event-triggers-label);
+           }
+           fieldset {
+               border: 1px solid #999;
+               @apply(--action-editor-fieldset);
+           }
 
-            label {
-                font-weight: 700;
-            }
-            span.required {
-                color: #a94442;
-            }
-            .task textarea {
-                min-height:100px;
-                resize:vertical;
-            }
+            /* Static styles */
+           .actionPanel,
+           .task-group {
+               padding-bottom: 40px !important;
+           }
+           .actionContainer,
+           .taskItem,
+           .task,
+           .task-group{
+               border: 1px solid #999;
+           }
+           .taskPanel:not(:first-child),
+           .taskPanel .header:last-child {
+               border-bottom: 1px solid #999;
+           }
+           .task-group:last-child {
+               margin-bottom:0;
+           }
+           .task:first-child {
+               margin-top:10px;
+           }
+           .taskPanel.toggled {
+               height:0;
+           }
+           .task-group.toggled,
+           .task.toggled {
+               padding-bottom:0 !important;
+           }
+           .content.toggled {
+               display:none;
+           }
+           .task-group .toggleable-area {
+               cursor:pointer;
+               max-width:20px;
+           }
         </style>
         <template is="dom-if" if="{{_schemas}}">
             <content select="bridgeit-action-list"></content>
@@ -232,8 +253,8 @@ Example:
                     <button type="button" on-click="_deleteAction">Delete</button>
                 </template>
             </div>
-            <div class="layout horizontal">
-                <div class="flex-2">
+            <div class="actionWrapper layout horizontal">
+                <div class="itemsContainer">
                     <div class="layout vertical wrap">
                         <div class="taskPanel">
                             <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
@@ -255,7 +276,7 @@ Example:
                         </div>
                     </div>
                 </div>
-                <div class="actionContainer flex-10" on-dragover="_dragOverAction" on-drop="_dropInAction">
+                <div class="actionContainer flex" on-dragover="_dragOverAction" on-drop="_dropInAction">
                     <div class="layout vertical">
                         <form id="actionForm">
                             <div class="flex">
@@ -272,7 +293,7 @@ Example:
                                         <span>Event Triggers</span>
                                         <div class="event-triggers">
                                             <template id="triggerList" is="dom-repeat" items="{{_events}}" sort="_sortEventList">
-                                                <label title$="{{item.event}}" class="form-control">
+                                                <label title$="{{item.event}}">
                                                     <span>{{item.event}}</span>
                                                     <input type="checkbox" on-click="_toggleEvent" checked="{{item.checked::change}}"/>
                                                 </label>
@@ -298,14 +319,18 @@ Example:
                                                     <span class="title" on-click="_toggleTaskGroup"><span class="required">*</span><span>Task Group Name</span></span>
                                                     <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
                                                 </label>
+                                                <label title="Stop executing the action on error?">
+                                                    <span class="title">Quit Action On Error</span>
+                                                    <input type="checkbox" checked="{{group.exitOnError::change}}"/>
+                                                </label>
                                             </div>
                                         </div>
                                         <div class="content">
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                                <div class="task hidden" on-drop="_preventDrop">
+                                                <div id$="{{task.id}}" class="task toggled" on-drop="_preventDrop">
                                                     <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
                                                     <div class="title" on-click="_toggleTask">{{task.schema.title}}<div class="arrow toggled"></div></div>
-                                                    <div class="content hidden">
+                                                    <div class="content toggled">
                                                         <label title="The task name">
                                                             <span class="required">*</span><span>Task Name</span>
                                                             <input class="form-control" type="text" placeholder="Task Name" title="The task name" value="{{task.name::input}}" required>
@@ -315,17 +340,61 @@ Example:
                                                             <input class="form-control" type="text" placeholder="Task Description" title="The task description" value="{{task.desc::input}}">
                                                         </label>
                                                         <hr/>
-                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties)}}" as="property">
-                                                            <label title$="{{property.description}}">
-                                                                <template is="dom-if" if="{{property.required}}"><span class="required">*</span></template><span>{{property.title}}</span>
+                                                        <template is="dom-if" if="{{task.schema.properties.oneOf}}">
+                                                            <label>
+                                                                <span><span class="required">*</span>One of these property groups are required</span>
+                                                            </label>
+                                                            <template is="dom-repeat" items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
+                                                                <fieldset>
+                                                                    <legend>Group <span>{{_toOneBasedIndex(index)}}</span></legend>
+                                                                    <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property">
+                                                                        <label>
+                                                                            <span>{{property.title}}</span>
+                                                                            <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                                <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                                    <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
+                                                                                                      softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
+                                                                                                      data-groupid$="{{group.id}}" data-propertytype="oneOf"
+                                                                                                      data-oneofindex$="{{index}}"></juicy-ace-editor>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                           value="{{property.value::input}}">
+                                                                                </template>
+                                                                            </template>
+                                                                        </label>
+                                                                    </template>
+                                                                </fieldset>
+                                                            </template>
+                                                        </template>
+                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property">
+                                                            <label>
+                                                                <span class="required">*</span><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isFunction(property.title)}}">
-                                                                        <textarea class="form-control" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                        required$="{{property.required}}" value="{{property.value::input}}"></textarea>
+                                                                        <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
+                                                                                          softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
+                                                                                          data-groupid$="{{group.id}}" data-propertytype="required"></juicy-ace-editor>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isFunction(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                        required$="{{property.required}}" value="{{property.value::input}}">
+                                                                               required value="{{property.value::input}}">
+                                                                    </template>
+                                                                </template>
+                                                            </label>
+                                                        </template>
+                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property">
+                                                            <label>
+                                                                <span>{{property.title}}</span>
+                                                                <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                    <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                        <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
+                                                                                          softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
+                                                                                          data-groupid$="{{group.id}}" data-propertytype="optional"></juicy-ace-editor>
+                                                                    </template>
+                                                                    <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                               value="{{property.value::input}}">
                                                                     </template>
                                                                 </template>
                                                             </label>

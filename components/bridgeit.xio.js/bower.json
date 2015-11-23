@@ -1,0 +1,24 @@
+{
+	"name": "bridgeit.xio.js",
+	"version": "0.0.1",
+	"main": "lib/bridgeit.xio.js",
+	"ignore": [
+		"docs",
+		"bower.json",
+		"LICENCE",
+		"README.md",
+		"favicon.ico",
+		".gitignore"
+	],
+	"dependencies":{
+      "bridgeit.js": "#gh-pages",
+      "bridgeit.io.js": "#gh-pages"
+	},
+	"devDependencies":{},
+	"keywords":[
+		"mobile",
+		"javascript",
+		"services"
+	]
+
+}

@@ -13,16 +13,6 @@
 		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 		<title>BridgeIt Web Components Demo</title>
 
-		<!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
-		<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
-		<script>
-			if( !("Promise" in window)){
-				window.Promise = ES6Promise.Promise;
-			}
-		</script>
-		<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
-		<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
-
 		<!-- Load the webcomponents polyfill -->
 		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
 
@@ -36,8 +26,8 @@
 		<style is="custom-style">
 			#locations {
 				--locations-map: { /* [Custom map styling] */
-			 		height: 400px;
-			 	};
+					height: 400px;
+				};
 			}
 		</style>
 		
@@ -45,11 +35,11 @@
 	<body unresolved>
 
 		<h1>BridgeIt Locations Map Component Demo</h1>
-  		<h3>Login with your BridgeIt Account Information</h3>
-  		<hr/>
-  		<div class="container">
-	  		<form>
-	  			<div>
+		<h3>Login with your BridgeIt Account Information</h3>
+		<hr/>
+		<div class="container">
+			<form>
+				<div>
 					<label>Account:
 						<input id="account" type="text"/>
 					</label>
@@ -149,13 +139,18 @@
 				
 			}
 
-            function toggleBooleanAttribute(attribute, value) {
-                var locations = document.getElementById('locations');
-                value ? locations.setAttribute(attribute, attribute) : locations.removeAttribute(attribute);
-            }
+			function toggleBooleanAttribute(attribute, value) {
+				var locations = document.getElementById('locations');
+				value ? locations.setAttribute(attribute, attribute) : locations.removeAttribute(attribute);
+			}
 
-            //initialize known credentials
-            setCredentialsOnComponent();
+			window.addEventListener('WebComponentsReady', function() {
+				// imports are loaded and elements have been registered
+				console.log('WebComponentsReady');
+
+				//initialize known credentials
+				setCredentialsOnComponent();
+			});
 		</script>
 	</body>
 </html>

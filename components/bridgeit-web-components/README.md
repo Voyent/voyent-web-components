@@ -9,22 +9,8 @@ Get the basic dependencies manually, via a CDN, or with Bower:
 
 ```
 "dependencies": {
-	"bridgeit.io.js" : "#gh-pages",
 	"polymer" : "Polymer/polymer#~1.0.0"
 },
-```
-
-Declare the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support:
-
-```
-<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
-<script>
-	if( !("Promise" in window)){
-		window.Promise = ES6Promise.Promise;
-	}
-</script>
-<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
-<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
 ```
 
 Declare the Web Components script:
@@ -42,12 +28,13 @@ Import the component you would like to use:
 Profit:
 
 ```
-<bridgeit-locations id="userLocations" accessToken="xxx" realm="myRealm" account="myAccount" showUserLocations>
+<bridgeit-locations id="userLocations" realm="myRealm" account="myAccount" showUserLocations>
 </bridgeit-locations>
 ```
 
 ### Demos
 
+[&lt;bridgeit-auth-provider&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-auth-provider/bridgeit-auth-provider/)  
 [&lt;bridgeit-action-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-action-editor/)  
 [&lt;bridgeit-event-monitor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-event-monitor/)  
 [&lt;bridgeit-location-simulator&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-location-simulator/)  

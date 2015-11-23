@@ -13,16 +13,6 @@
 	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 	<title>BridgeIt Web Components Demo</title>
 
-	<!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
-	<script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
-	<script>
-		if( !("Promise" in window)){
-			window.Promise = ES6Promise.Promise;
-		}
-	</script>
-	<script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
-	<script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
-
 	<!-- Load the webcomponents polyfill -->
 	<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
 
@@ -37,7 +27,106 @@
 	<!-- Define custom styling for the component (optional) -->
 	<style is="custom-style">
         bridgeit-action-editor {
-
+            --action-editor: {  /* [Custom component (host) styling] */
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            };
+            --action-editor-action-container: { /* [Custom action container styling] */
+                background-color: #EFEFEF;
+            };
+            --action-editor-form: { /* [Custom form styling] */
+                padding:0;
+                margin:0;
+            };
+            --action-editor-task-panel: { /* [Custom task panel styling] */
+                border-color:#999;
+                background-color: #EFEFEF;
+            };
+            --action-editor-task-panel-header: { /* [Custom task panel header styling] */
+                background-color: #C5C5C5;
+            };
+            --action-editor-task-panel-item: { /* [Custom task panel task item (includes task group) styling] */
+                background-color: #DEDEDE;
+            };
+            --action-editor-task-panel-item-hover: { /* [Custom task panel task item hover styling] */
+                border-color:#3E458C;
+            };
+            --action-editor-task-panel-group-item: { /* [Custom task panel task group styling] */
+                background-color: #D6D6D6;
+            };
+            --action-editor-task-group: { /* [Custom task group styling] */
+                background-color: #D6D6D6;
+            };
+            --action-editor-task: { /* [Custom task styling] */
+                background-color: #DEDEDE;
+            };
+            --action-editor-button-container: { /* [Custom button wrapper styling] */
+                background-color: #EFEFEF;
+                padding:10px 0 10px 0;
+            };
+            --action-editor-button: { /* [Custom button styling] */
+                color: #FFF;
+                background-color: #3E458C;
+                font-size: 10px;
+                padding: 3px;
+                border:1px solid transparent;
+                border-radius: 5px;
+            };
+            --action-editor-input: { /* [Custom input styling] */
+                display: block;
+                width: 100%;
+                padding:2px 3px;
+                font-size: 14px;
+                line-height: 1.42857143;
+                color: #555;
+                background: #FFF;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+                -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+                transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+            };
+            --action-editor-event-triggers-label: { /* [Custom event triggers label styling] */
+                display: block;
+                width: 100%;
+                padding:2px 3px;
+                font-size: 14px;
+                line-height: 1.42857143;
+                color: #555;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+                -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+                -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+                transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+            };
+            /*
+            Other available styling options:
+            --action-editor-wrapper: { }; [Custom component wrapper styling]
+            --action-editor-item-container: {} [Custom taskgroup/taskitem container styling]
+            --action-editor-task-group-title: { }; [Custom task group title styling]
+            --action-editor-task-title: { }; [Custom task title styling]
+            --action-editor-task-group-button-container: { }; [Custom task group button container styling]
+            --action-editor-task-button-container: { }; [Custom task button container styling]
+            --action-editor-arrow: {  }; [Custom toggle arrow styling]
+            --action-editor-arrow-toggled: { }; [Custom toggle arrow toggled styling]
+            --action-editor-task-panel-arrow: { }; [Custom task panel toggle arrow styling]
+            --action-editor-task-group-arrow: { }; [Custom task group toggle arrow styling]
+            --action-editor-task-arrow: { }; [Custom task toggle arrow styling]
+            --action-editor-label: { }; [Custom label styling]
+            --action-editor-function-input: { }; [Custom function input styling]
+            --action-editor-input-invalid: { }; [Custom invalid input styling]
+            --action-editor-event-triggers: { }; [Custom event trigger div wrapper styling]
+            --action-editor-required-asterisk: { }; [Custom required asterisk styling]
+            --action-editor-fieldset: { }; [Custom fieldset styling]
+            */
         }
 		bridgeit-action-list {
             --action-list-wrapper: { /* [Custom table wrapper styling] */
@@ -54,10 +143,10 @@
              };
             /*
             Other available styling options:
-            --action-list-table: { key:value; }; [Custom table styling]
-            --action-list-tbody: { key:value; }; [Custom tbody styling]
-            --action-list-tr { key:value; }; [Custom tr styling]
-            --action-list-td: { key:value; }; [Custom td styling]
+            --action-list-table: { }; [Custom table styling]
+            --action-list-tbody: { }; [Custom tbody styling]
+            --action-list-tr { }; [Custom tr styling]
+            --action-list-td: { }; [Custom td styling]
             */
         }
 	</style>
@@ -72,22 +161,22 @@
 	<form>
 		<div>
 			<label>Account:
-				<input id="account" type="text"/>
-			</label>
-		</div>
-		<div>
-			<label>Realm:
-				<input id="realm" type="text"/>
-			</label>
-		</div>
-		<div>
-			<label>Username:
-				<input id="username" type="text"/>
-			</label>
-		</div>
-		<div>
-			<label>Password:
-				<input id="password" type="password"/>
+                <input id="account" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Realm:
+                <input id="realm" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Username:
+                <input id="username" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Password:
+                <input id="password" type="password"/>
 			</label>
 		</div>
 		<a onclick="login()">Login</a>
@@ -137,6 +226,7 @@
 			})
 		});
 	}
+    
 	function setCredentialsOnComponent(){
 		var elem = document.getElementById('actionEditor');
 
@@ -152,14 +242,16 @@
 			document.getElementById('realm').value = realm;
 		}
 
-		var token = bridgeit.io.auth.getLastAccessToken();
-		if( token ){
-			elem.setAttribute('accessToken', token);
-			document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
-		}
 	}
-	//initialize known credentials
-	setCredentialsOnComponent();
+	
+    window.addEventListener('WebComponentsReady', function() {
+        // imports are loaded and elements have been registered
+        console.log('WebComponentsReady');
+
+        //initialize known credentials
+        setCredentialsOnComponent();
+    });
+
 </script>
 </body>
 </html>

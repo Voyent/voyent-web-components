@@ -8,6 +8,33 @@ if( ! ('bridgeit' in window)){
 
 	/************************* Private ********************/
 
+	function fireEvent(el, eventName, detail){
+		console.log('bridgeit.io firing event ' + eventName + ' on element ' + el, detail);
+		var event;
+		if( 'CustomEvent' in window ){
+			event = new CustomEvent(eventName, { 'detail': detail });
+		}
+		else if(document.createEvent){//IE 10 & other older browsers
+			event = document.createEvent('HTMLEvents');
+			event.initEvent(eventName, true, true);
+		}
+		else if(document.createEventObject){// IE < 9
+			event = document.createEventObject();
+			event.eventType = eventName;
+		}
+		event.eventName = eventName;
+		if(el.dispatchEvent){
+			el.dispatchEvent(event);
+		}else if(el.fireEvent && htmlEvents['on'+eventName]){// IE < 9
+			el.fireEvent('on'+event.eventType, event);// can trigger only real event (e.g. 'click')
+		}else if(el[eventName]){
+			el[eventName]();
+		}else if(el['on'+eventName]){
+			el['on'+eventName]();
+		}
+	}
+
+
 	/* Action */
 	function validateRequiredAction(params, reject){
 		validateParameter('action', 'The action parameter is required', params, reject);
@@ -26,6 +53,16 @@ if( ! ('bridgeit' in window)){
 		validateParameter('role', 'The role parameter is required', params, reject);	
 	}
 
+	function validateAndReturnRequiredAdmin(params, reject){
+		var admin = params.admin;
+		if( admin ){
+			return admin;
+		}
+		else{
+			return reject(Error('The admin parameter is required'));
+		}
+	}
+
 	/* Auth */
 	function validateRequiredRealm(params, reject){
 		validateParameter('realm', 'The BridgeIt realm is required', params, reject);
@@ -33,10 +70,6 @@ if( ! ('bridgeit' in window)){
 
 	function validateRequiredPassword(params, reject){
 		validateParameter('password', 'The password parameter is required', params, reject);
-	}
-
-	function validateRequiredPermissions(params, reject){
-		validateParameter('permissions', 'The permissions parameter is required', params, reject);
 	}
 
 	function validateAndReturnRequiredAccessToken(params, reject){
@@ -58,7 +91,7 @@ if( ! ('bridgeit' in window)){
 			realm = services.auth.getLastKnownRealm();
 		}
 		if( realm ){
-			sessionStorage.setItem(btoa(REALM_KEY), btoa(realm));
+			services.setCurrentRealm(realm);
 			return realm;
 		}
 		else{
@@ -111,6 +144,26 @@ if( ! ('bridgeit' in window)){
 		}
 		else{
 			return reject(Error('The BridgeIt username is required'));
+		}
+	}
+
+	function validateAndReturnRequiredRole(params, reject){
+		var role = params.role;
+		if( role ){
+			return role;
+		}
+		else{
+			return reject(Error('The BridgeIt role parameter is required'));
+		}
+	}
+
+	function validateAndReturnRequiredRoles(params, reject){
+		var roles = params.roles;
+		if( roles ){
+			return roles;
+		}
+		else{
+			return reject(Error('The BridgeIt roles parameter is required'));
 		}
 	}
 
@@ -172,12 +225,12 @@ if( ! ('bridgeit' in window)){
 		validateParameter('state', 'The state parameter is required', params, reject);
 	}
 
-    /* Document */
-    function validateCollection(params, reject){
-        return params.collection ? params.collection : 'documents';
-    }
+	/* Document */
+	function validateCollection(params, reject){
+		return params.collection ? params.collection : 'documents';
+	}
 
-    /* Push */
+	/* Push */
 	function validateRequiredGroup(params, reject){
 		validateParameter('group', 'The group parameter is required', params, reject);
 	}
@@ -208,7 +261,7 @@ if( ! ('bridgeit' in window)){
 			return 'tx=' + txId;
 		}
 		else{
-			return 'tx=null';
+			return '';
 		}
 	}
 
@@ -294,6 +347,7 @@ if( ! ('bridgeit' in window)){
 	var LAST_ACTIVE_TS_KEY = 'bridgeitLastActiveTimestamp';
 	var ACCOUNT_KEY = 'bridgeitAccount';
 	var REALM_KEY = 'bridgeitRealm';
+	var ADMIN_KEY = 'bridgeitAdmin';
 	var USERNAME_KEY = 'bridgeitUsername';
 	var PASSWORD_KEY = 'bridgeitPassword';
 	var RELOGIN_CB_KEY = 'bridgeitReloginCallback';
@@ -579,9 +633,9 @@ if( ! ('bridgeit' in window)){
 		services.metricsURL = baseURL + (isLocal ? ':55040' : '') + '/metrics';
 		services.contextURL = baseURL + (isLocal ? ':55060' : '') + '/context';
 		services.codeURL = baseURL + (isLocal ? ':55090' : '') + '/code';
-        services.pushURL = baseURL + (isLocal ? ':8080' : '') + '/push';
-        services.pushRESTURL = services.pushURL + '/rest';
-        services.queryURL = baseURL + (isLocal ? ':55110' : '') + '/query';
+		services.pushURL = baseURL + (isLocal ? ':8080' : '') + '/push';
+		services.pushRESTURL = services.pushURL + '/rest';
+		services.queryURL = baseURL + (isLocal ? ':55110' : '') + '/query';
 		services.actionURL = baseURL + (isLocal ? ':55130' : '') + '/action';
 		services.eventhubURL = baseURL + (isLocal ? ':55200' : '') + '/eventhub';
 	};
@@ -605,6 +659,10 @@ if( ! ('bridgeit' in window)){
 
 	services.getLastTransactionId = function(){
 		return sessionStorage.getItem(btoa(TRANSACTION_KEY));
+	};
+
+	services.setCurrentRealm = function(realm){
+		sessionStorage.setItem(btoa(REALM_KEY), btoa(realm));
 	};
 
 	services.action = {
@@ -964,8 +1022,9 @@ if( ! ('bridgeit' in window)){
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				
 				var protocol = params.ssl ? 'https://' : 'http://';
+				var txparam = getTransactionURLParam();
 				var url = protocol + services.authAdminURL + '/' + account + '/realms/'
-						+ '?access_token=' + token + getTransactionURLParam();
+						+ '?access_token=' + token + '&' + getTransactionURLParam();
 
 				b.$.getJSON(url).then(function(json){
 					services.auth.updateLastActiveTimestamp();
@@ -1058,6 +1117,8 @@ if( ! ('bridgeit' in window)){
 				var url = getRealmResourceURL(services.authAdminURL, account, realmName, 
 					'', token, params.ssl);
 
+				console.log('bridgeit.io.admin.deleteRealm() ' + url);
+
 				b.$.doDelete(url).then(function(){
 					services.auth.updateLastActiveTimestamp();
 					resolve();
@@ -1071,232 +1132,212 @@ if( ! ('bridgeit' in window)){
 		/* Realm Users */
 
 		getRealmUsers: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'users', token, params.ssl);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+				
+				//validate
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'users', token, params.ssl);
 
-					b.$.getJSON(url).then(function(json){
-						services.auth.updateLastActiveTimestamp();
-						resolve(json.users);
-					})['catch'](function(error){
-						reject(error);
-					});
-			
-				}
-			);
+				b.$.getJSON(url).then(function(json){
+					services.auth.updateLastActiveTimestamp();
+					resolve(json.users);
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		createRealmUser: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
 
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					validateRequiredUser(params, reject);
+				validateRequiredUser(params, reject);
 
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'users', services.auth.getLastAccessToken(), params.ssl);
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'users', token, params.ssl);
 
-					b.$.post(url, {user: params.user}).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response.resourceLocation);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
+				b.$.post(url, {user: params.user}).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve(response.resourceLocation);
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		getRealmUser: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					var username = validateAndReturnRequiredUsername(params, reject);
-					
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'users/' + username, token, params.ssl);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+				
+				//validate
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				var username = validateAndReturnRequiredUsername(params, reject);
+				
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'users/' + username, token, params.ssl);
 
-					b.$.getJSON(url).then(function(json){
-						services.auth.updateLastActiveTimestamp();
-						resolve(json.user);
-					})['catch'](function(error){
-						reject(error);
-					});
-			
-				}
-			);
+				b.$.getJSON(url).then(function(json){
+					services.auth.updateLastActiveTimestamp();
+					resolve(json.user);
+				})['catch'](function(error){
+					reject(error);
+				});
+		
+			});
 		},
 
 		updateRealmUser: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
 
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					validateRequiredUser(params, reject);
+				validateRequiredUser(params, reject);
 
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'users/' + params.user.username, services.auth.getLastAccessToken(), params.ssl);
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'users/' + params.user.username, token, params.ssl);
 
-					b.$.put(url, {user: params.user}).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve();
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
+				b.$.put(url, {user: params.user}).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve();
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		deleteRealmUser: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
 
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				var username = validateAndReturnRequiredUsername(params, reject);
 
-					validateRequiredUsername(params, reject);
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'users/' + params.username, token, params.ssl);
 
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'users/' + params.username, services.auth.getLastAccessToken(), params.ssl);
-
-					b.$.doDelete(url).then(function(){
-						services.auth.updateLastActiveTimestamp();
-						resolve();
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
+				b.$.doDelete(url).then(function(){
+					services.auth.updateLastActiveTimestamp();
+					resolve();
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		/* Realm Roles */
 
 		getRealmRoles: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'roles', token, params.ssl);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+				
+				//validate
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'roles', token, params.ssl);
 
-					b.$.getJSON(url).then(function(json){
-						services.auth.updateLastActiveTimestamp();
-						resolve(json.roles);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
+				b.$.getJSON(url).then(function(json){
+					services.auth.updateLastActiveTimestamp();
+					resolve(json.roles);
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		createRealmRole: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
 
-					validateRequiredRole(params, reject);
-					
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'roles', token, params.ssl);
+				validateRequiredRole(params, reject);
+				
+				//validate
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'roles', token, params.ssl);
 
-					b.$.post(url, {role: params.role}).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response.resourceLocation);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
+				b.$.post(url, {role: params.role}).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve(response.resourceLocation);
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		updateRealmRole: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
 
-					validateRequiredRole(params, reject);
-					
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'roles/' + params.role.name, token, params.ssl);
+				validateRequiredRole(params, reject);
+				
+				//validate
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'roles/' + params.role.name, token, params.ssl);
 
-					b.$.put(url, {role: params.role}).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve();
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
+				b.$.put(url, {role: params.role}).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve();
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		deleteRealmRole: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
 
-					validateRequiredId(params, reject);
-					
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealmName(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'roles/' + params.id, token, params.ssl);
+				validateRequiredId(params, reject);
+				
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealmName(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'roles/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve();
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
+				b.$.doDelete(url).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve();
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		getLogs: function(params) {
@@ -1323,7 +1364,80 @@ if( ! ('bridgeit' in window)){
 				});
 
 			});
-		}
+		},
+
+
+		createAdministrator: function(params){
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				var admin = validateAndReturnRequiredAdmin(params, reject);
+				
+				var protocol = params.ssl ? 'https://' : 'http://';
+				var txParam = getTransactionURLParam();
+				var url = protocol + services.authAdminURL + '/' + account + '/admins/?access_token=' + token +
+					(txParam ? '&' + txParam : '');
+
+				b.$.post(url, {admin: admin}).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve();
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
+		},
+
+		updateAdministrator: function(params){
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				var admin = validateAndReturnRequiredAdmin(params, reject);
+				
+				var protocol = params.ssl ? 'https://' : 'http://';
+				var txParam = getTransactionURLParam();
+				var url = protocol + services.authAdminURL + '/' + account + '/admins/' + admin.username + 
+					'/?access_token=' + token + (txParam ? '&' + txParam : '');
+
+				b.$.put(url, {admin: admin}).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve();
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
+		},
+
+		deleteAdministrator: function(params){
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+
+				validateRequiredUsername(params, reject);
+				
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				var username = validateAndReturnRequiredUsername(params, reject);
+				
+				var protocol = params.ssl ? 'https://' : 'http://';
+				var txParam = getTransactionURLParam();
+				var url = protocol + services.authAdminURL + '/' + account + '/admins/' + username + '/?access_token=' + token +
+					(txParam ? '&' + txParam : '');
+
+				b.$.doDelete(url).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve();
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
+		},
+
 	};
 
 	/* AUTH SERVICE */
@@ -1417,6 +1531,7 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.account BridgeIt Services account name (required)
 		 * @param {String} params.realm BridgeIt Services realm (required only for non-admin logins)
+		 * @param {Boolean} params.admin The client should or should not log in as an account administrator
 		 * @param {String} params.username User name (required)
 		 * @param {String} params.password User password (required)
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
@@ -1429,55 +1544,54 @@ if( ! ('bridgeit' in window)){
 		 *
 		 */
 		login: function(params) {
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
 
-					if( !params.realm ){
-						params.realm = 'admin';
-					}
-					
-					//validation
-					if( !params.account ){
-						reject(Error('BridgeIt account required for login'));
-						return;
-					}
-					if( !params.password ){
-						reject(Error('password required for login'));
-						return;
-					}
-					if( !params.username ){
-						reject(Error('username required for login'));
-						return;
-					}
-					var protocol = params.ssl ? 'https://' : 'http://';
-					var txParam = getTransactionURLParam();
-					var url = protocol + services.authURL + '/' + encodeURI(params.account) + 
-						'/realms/' + encodeURI(params.realm) + '/token/' + ( txParam ? ('?' + txParam) : '');
-
-					var loggedInAt = new Date().getTime();
-					b.$.post(url, {
-						strategy: 'query', 
-						username: params.username, 
-						password: params.password
-					}).then(function(authResponse){
-						if( !params.suppressUpdateTimestamp ){
-							services.auth.updateLastActiveTimestamp();
-						}
-						sessionStorage.setItem(btoa(TOKEN_KEY), authResponse.access_token);
-						sessionStorage.setItem(btoa(TOKEN_EXPIRES_KEY), authResponse.expires_in);
-						sessionStorage.setItem(btoa(TOKEN_SET_KEY), loggedInAt);
-						sessionStorage.setItem(btoa(ACCOUNT_KEY), btoa(params.account));
-						sessionStorage.setItem(btoa(REALM_KEY), btoa(params.realm));
-                        sessionStorage.setItem(btoa(USERNAME_KEY), btoa(params.username));
-
-						resolve(authResponse);
-					})['catch'](function(error){
-						reject(error);
-					});
+				if( !params.realm ){
+					params.realm = 'admin';
 				}
-			);
+				
+				//validation
+				if( !params.account ){
+					reject(Error('BridgeIt account required for login'));
+					return;
+				}
+				if( !params.password ){
+					reject(Error('password required for login'));
+					return;
+				}
+				if( !params.username ){
+					reject(Error('username required for login'));
+					return;
+				}
+				var protocol = params.ssl ? 'https://' : 'http://';
+				var txParam = getTransactionURLParam();
+				var url = protocol + services.authURL + '/' + encodeURI(params.account) + 
+					'/realms/' + (params.admin ? 'admin' : encodeURI(params.realm)) + '/token/' + ( txParam ? ('?' + txParam) : '');
+
+				var loggedInAt = new Date().getTime();
+				b.$.post(url, {
+					strategy: 'query', 
+					username: params.username, 
+					password: params.password
+				}).then(function(authResponse){
+					if( !params.suppressUpdateTimestamp ){
+						services.auth.updateLastActiveTimestamp();
+					}
+					sessionStorage.setItem(btoa(TOKEN_KEY), authResponse.access_token);
+					sessionStorage.setItem(btoa(TOKEN_EXPIRES_KEY), authResponse.expires_in);
+					sessionStorage.setItem(btoa(TOKEN_SET_KEY), loggedInAt);
+					sessionStorage.setItem(btoa(ACCOUNT_KEY), btoa(params.account));
+					sessionStorage.setItem(btoa(REALM_KEY), btoa(params.realm));
+					sessionStorage.setItem(btoa(USERNAME_KEY), btoa(params.username));
+					sessionStorage.setItem(btoa(ADMIN_KEY), btoa(params.admin));
+
+					resolve(authResponse);
+				})['catch'](function(error){
+					reject(error);
+				});
+			});
 		},
 
 		/**
@@ -1514,6 +1628,7 @@ if( ! ('bridgeit' in window)){
 		 * @alias connect
 		 * @param {Object} params params
 		 * @param {String} params.account BridgeIt Services account name
+		 * @param {Boolean} params.admin The client should or should not log in as an account administrator
 		 * @param {String} params.realm BridgeIt Services realm
 		 * @param {String} params.username User name
 		 * @param {String} params.password User password
@@ -1550,25 +1665,7 @@ if( ! ('bridgeit' in window)){
 							console.log(new Date().toISOString() + ' bridgeit connect: timeout has not been exceeded, ' + services.auth.getTimeRemainingBeforeExpiry()/1000/60 + ' mins remaining');
 
 							if( (connectSettings.connectionTimeout * 1000 * 60 ) > services.auth.getTimeRemainingBeforeExpiry()){
-								
-								var loginParams = services.auth.getConnectSettings();
-								loginParams.account = atob(sessionStorage.getItem(btoa(ACCOUNT_KEY)));
-								loginParams.realm = atob(sessionStorage.getItem(btoa(REALM_KEY)));
-								loginParams.username = atob(sessionStorage.getItem(btoa(USERNAME_KEY)));
-								loginParams.password = atob(sessionStorage.getItem(btoa(PASSWORD_KEY)));
-								loginParams.suppressUpdateTimestamp = true;
-
-								services.auth.login(loginParams).then(function(authResponse){
-									if( loginParams.usePushService ){
-										services.push.startPushService(loginParams);
-									}
-									setTimeout(connectCallback, services.auth.getTimeRemainingBeforeExpiry() - timeoutPadding);
-								})['catch'](function(response){
-									var msg = new Date().toISOString() + ' bridgeit connect: error relogging in: ' + response.responseText;
-									console.error(msg);
-									reject(response);
-									throw new Error(msg);
-								});
+								services.auth.refreshAccessToken();
 							}
 							else{
 								console.log( new Date().toISOString() + ' bridgeit connect: setting callback for ' + connectSettings.connectionTimeout + ' minutes');
@@ -1577,7 +1674,6 @@ if( ! ('bridgeit' in window)){
 						}
 						else{
 							console.log( new Date().toISOString() + ' bridgeit connect: timeout has expired, disconnecting..');
-							
 
 							//look for the onSessionExpiry callback on the params first,
 							//as functions could be passed by reference
@@ -1642,7 +1738,7 @@ if( ! ('bridgeit' in window)){
 					sessionStorage.setItem(btoa(RELOGIN_CB_KEY), cbId);
 				}
 
-				var timeoutPadding = 500;
+				var timeoutPadding = 60000;
 				params = params ? params : {};
 				services.checkHost(params);
 				if( !params.storeCredentials){
@@ -1656,7 +1752,8 @@ if( ! ('bridgeit' in window)){
 					connectionTimeout: params.connectionTimeout || 20,
 					ssl: params.ssl,
 					storeCredentials: params.storeCredentials || true,
-					onSessionExpiry: params.onSessionExpiry
+					onSessionExpiry: params.onSessionExpiry,
+					admin: params.admin
 				};
 				sessionStorage.setItem(btoa(CONNECT_SETTINGS_KEY), btoa(JSON.stringify(settings)));
 
@@ -1680,11 +1777,7 @@ if( ! ('bridgeit' in window)){
 				}
 				else{
 					services.auth.login(params).then(function(authResponse){
-						console.log(new Date().toISOString() + ' bridgeit connect: received auth response');				
-						sessionStorage.setItem(btoa(ACCOUNT_KEY), btoa(bridgeit.io.auth.getLastKnownAccount()));
-						sessionStorage.setItem(btoa(REALM_KEY), btoa(bridgeit.io.auth.getLastKnownRealm()));
-						sessionStorage.setItem(btoa(USERNAME_KEY), btoa(params.username));
-						sessionStorage.setItem(btoa(PASSWORD_KEY), btoa(params.password));
+						console.log(new Date().toISOString() + ' bridgeit connect: received auth response');
 						initConnectCallback();	
 						if( settings.usePushService ){
 							services.push.startPushService(settings);
@@ -1713,8 +1806,10 @@ if( ! ('bridgeit' in window)){
 						loginParams.username = atob(sessionStorage.getItem(btoa(USERNAME_KEY)));
 						loginParams.password = atob(sessionStorage.getItem(btoa(PASSWORD_KEY)));
 						loginParams.suppressUpdateTimestamp = true;
+						loginParams.admin = atob(sessionStorage.getItem(btoa(ADMIN_KEY)));
 
 						services.auth.login(loginParams).then(function(authResponse){
+							fireEvent(window, 'bridgeit-access-token-refreshed', services.auth.getLastAccessToken());
 							if( loginParams.usePushService ){
 								services.push.startPushService(loginParams);
 							}
@@ -1826,15 +1921,15 @@ if( ! ('bridgeit' in window)){
 			}
 		},
 
-        getLastKnownUsername: function () {
-            var usernameCipher = sessionStorage.getItem(btoa(USERNAME_KEY));
-            if (usernameCipher) {
-                return atob(usernameCipher);
-            }
-        },
+		getLastKnownUsername: function () {
+			var usernameCipher = sessionStorage.getItem(btoa(USERNAME_KEY));
+			if (usernameCipher) {
+				return atob(usernameCipher);
+			}
+		},
 
 
-        /**
+		/**
 		 * Register a new user for a realm that supports open user registrations.
 		 *
 		 * @alias registerAsNewUser
@@ -1883,7 +1978,7 @@ if( ! ('bridgeit' in window)){
 					}
 
 					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'quickuser', services.auth.getLastAccessToken(), params.ssl);
+						'quickuser', token, params.ssl);
 
 					b.$.post(url, {user: user}).then(function(response){
 						services.auth.updateLastActiveTimestamp();
@@ -1896,94 +1991,102 @@ if( ! ('bridgeit' in window)){
 		},
 
 		/**
-		 * Check if the current user has a set of permissions.
+		 * Check if the current user has a single role.
 		 *
-		 * @alias checkUserPermissions 
+		 * @alias checkUserRole
 		 * @param {Object} params params
 		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
 		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-		 * @param {String} params.permissions A space-delimited list of permissions
+		 * @param {String} params.role The single role to check for
 		 * @returns Promise 
 		 */
-		 checkUserPermissions: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					validateRequiredPermissions(params, reject);
+		 checkUserRole: function(params){
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+				
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealm(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				var role = validateAndReturnRequiredRole(params, reject);
 
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'rolecheck/', token, params.ssl, {roleName: role});
 
-					var url = getRealmResourceURL(services.authURL, account, realm, 
-						'permission', token, params.ssl);
-
-					b.$.post(url, {permissions: params.permissions}).then(function(response){
+				b.$.getJSON(url).then(function(response){
+					if( response.results ){
 						services.auth.updateLastActiveTimestamp();
 						resolve(true);
-					})['catch'](function(response){
-						if( response.status == 403){
-							services.auth.updateLastActiveTimestamp();
-							resolve(false);
-						}
-						else{
-							reject(error);
-						}
-					});
-				}
-			);
+					}
+					else{
+						reject(response);
+					}
+				})['catch'](function(response){
+					if( response.status == 403){
+						services.auth.updateLastActiveTimestamp();
+						resolve(false);
+					}
+					else{
+						reject(error);
+					}
+				});
+			});
 		},
 
 		/**
-		 * Check if the current user has a set of roles.
+		 * Check if the current user has a set of roles. The 'op' params can be added to check for 'or' or 'and'.
 		 *
-		 * @alias checkUserRoles 
+		 * @alias checkUserRole
 		 * @param {Object} params params
 		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
 		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-		 * @param {String} params.roles A space-delimited list of permissions
-		 * @param {String} params.op 'and' (default) or 'or' or 'single'
+		 * @param {Array} params.roles The array of roles to check for
+		 * @param {Array} params.roles The array of roles to check for
+		 * @param {String} params.op The operator 'and' or 'or' ??? TODO
+		 * @param {String} params.username The username parameter TODO may be later removed http://jira.icesoft.org/browse/NTFY-216
 		 * @returns Promise 
-		
-		 checkUserRoles: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					validateRequiredPermissions(params, reject);
-
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-
-					 /authadmin/:accountname/realms/:realmname/roles/:username/rolecheck
-
-					var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-						'roles/' + , token, params.ssl);
-
-					b.$.post(url, {permissions: params.permissions}).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(true);
-					})['catch'](function(response){
-						if( response.status == 403){
-							services.auth.updateLastActiveTimestamp();
-							resolve(false);
-						}
-						else{
-							reject(error);
-						}
-					});
-				}
-			);
-		},
 		 */
+		 checkUserRoles: function(params){
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+				
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealm(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				var roles = validateAndReturnRequiredRoles(params, reject);
+				var username = validateAndReturnRequiredUsername(params, reject);
+
+				var payload = {
+					roleBlock:  [{
+						name: 'first',
+						roles: roles,
+						op: params.op
+					}]
+				};
+
+				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
+					'users/' + username + '/rolecheck', token, params.ssl);
+
+				b.$.post(url, payload).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve(true);
+				})['catch'](function(response){
+					if( response.status == 403){
+						services.auth.updateLastActiveTimestamp();
+						resolve(false);
+					}
+					else{
+						reject(error);
+					}
+				});
+			});
+		},
+		 
 
 		/**
 		 * Update the last active timestamp for BridgeIt auth. This value is used
@@ -2001,343 +2104,7 @@ if( ! ('bridgeit' in window)){
 		 */
 		getLastActiveTimestamp: function(){
 			return sessionStorage.getItem(btoa(LAST_ACTIVE_TS_KEY));
-		},
-
-		/**
-		 * User the browser local storage to cache the user store. This will allow access to the user store 
-		 * when the user is offline or when the server is not accessible.
-		 * 
-		 * @alias enableUserStoreCache
-		 *
-		 */
-		enableUserStoreCache: function(){
-			if( !services.auth.isLoggedIn() ){
-				console.log('not logged in, cannot access user store');
-				return;
-			}
-			var userStoreSettings;
-			var username = services.auth.getLastKnownUsername();
-			if( !username ){
-				console.log('username not available, cannot access user store');
-				return;
-			}	
-			var userStoreSettingsStr = localStorage.getItem(btoa(USER_STORE_SETTING_KEY));
-			if( !userStoreSettingsStr ){
-				userStoreSettings = {};
-			}
-			else{
-				userStoreSettings = JSON.parse(atob(userStoreSettingsStr));
-			}
-			userStoreSettings[username] = new Date().getTime();
-			localStorage.setItem(btoa(USER_STORE_SETTING_KEY), btoa(JSON.stringify(userStoreSettings)));
-			
-		},
-
-		/**
-		 * Disaled the browser local storage to cache the user store. 
-		 * 
-		 * @alias disableUserStoreCache
-		 *
-		 */
-		disableUserStoreCache: function(){
-			if( !services.auth.isLoggedIn() ){
-				console.log('not logged in, cannot access user store');
-				return;
-			}
-			var userStoreSettings;
-			var username = services.auth.getLastKnownUsername();
-			if( !username ){
-				console.log('username not available, cannot access user store');
-				return;
-			}	
-			var userStoreSettingsStr = localStorage.getItem(btoa(USER_STORE_SETTING_KEY));
-			if( !userStoreSettingsStr ){
-				userStoreSettings = {};
-			}
-			else{
-				userStoreSettings = JSON.parse(atob(userStoreSettingsStr));
-			}
-			userStoreSettings[username] = null;
-			localStorage.setItem(btoa(USER_STORE_SETTING_KEY), btoa(JSON.stringify(userStoreSettings)));
-			
-		},
-
-		/**
-		 * Returns true if enableUserStoreCache() has previously been called and the user store
-		 * cache is active.
-		 * @alias isUserStoreCacheActive
-		 */
-		isUserStoreCacheActive: function(){
-			if( !services.auth.isLoggedIn() ){
-				console.log('not logged in, cannot access user store');
-				return;
-			}
-			var userStoreSettings;
-			var username = services.auth.getLastKnownUsername();
-			if( !username ){
-				console.log('username not available, cannot access user store');
-				return;
-			}	
-			var userStoreSettingsStr = localStorage.getItem(btoa(USER_STORE_SETTING_KEY));
-			if( !userStoreSettingsStr ){
-				return false;
-			}
-			else{
-				userStoreSettings = JSON.parse(atob(userStoreSettingsStr));
-				return !!userStoreSettings[username];
-			}
-		},
-
-		/**
-		 * Set an item by key and value in the user store. The user store is updated
-		 * on the server side user record 'custom' property. 
-		 * 
-		 * If the user store cache is active, the cache will also be updated.
-		 *
-		 * The userStore.last_updated property will be updated with the current time.
-		 * When the server side store is updated, this 'last_updated' timestamp will
-		 * be verified. If the server side timestamp is later than the previous 'last_updated'
-		 * timestamp, the operation will be rejected, and the returned promise will reject
-		 * with the current server side userStore value.
-		 *
-		 * The key and value must be parsable as JSON strings. 
-		 *
-		 * @alias setItemInUserStore
-		 * @param {string} key the key
-		 * @param {string} value the value
-		 * @returns a Promise with no argument, if successful, or with the server side userStore if a conflict occurs
-		 */
-		setItemInUserStore: function(key, value){
-			return new Promise(function(resolve, reject) {
-				function updateServerUserStore(userStore, previousLastUpdated){
-					return services.admin.getRealmUser().then(function(user){
-						var customProp = user.custom;
-						if( !customProp ){
-							user.custom = userStore;
-						}
-						else{
-							//compare timestamps 
-							var customObj;
-							try{
-								customObj = JSON.parse(customProp);
-								var thatTS = customObj[LAST_UPDATED];
-								if( !thatTS || !previousLastUpdated){
-									user.custom = userStore;
-								}
-								else{
-									if( thatTS > previousLastUpdated ){
-										console.log('ERROR: userStore update conflict' );
-										reject(userStore);
-										return;
-									}
-									else{
-										user.custom = userStore;
-									}
-								}
-							}
-							catch(e){
-								user.custom = userStore;
-							}
-							
-						}
-						return services.admin.updateRealmUser({user: user}).then(function(){
-							resolve();
-						})['catch'](function(error){
-							console.log('could not update server side user object: ' + error);
-							reject('could not update server side user object: ' + error);
-						});
-					})
-				}
-				if( !key ){
-					reject('The key is required');
-					return;
-				}
-
-				return services.auth.getUserStore().then(function(userStore){
-					userStore[key] = value;
-					var prevTS = userStore[LAST_UPDATED];
-					userStore[LAST_UPDATED] = new Date().getTime();
-					if( services.auth.isUserStoreCacheActive() ){
-						return services.auth.saveUserStoreToCache().then(function(){
-							return updateServerUserStore(userStore, prevTS);
-						});
-					}
-					else{
-						return updateServerUserStore(userStore);
-					}
-				})['catch'](function(error){
-					reject(error);
-				})
-			});
-		},
-
-		/**
-		 * Get an item by key from the user store. The user store is checked
-		 * on the server side user record 'custom' property. 
-		 * 
-		 * @alias getItemInUserStore
-		 * @param {string} key the key
-		 */
-		getItemInUserStore: function(key){
-			return new Promise(function(resolve, reject) {
-				return services.auth.getUserStore().then(function(userStore){
-					resolve(userStore[key]);
-				})['catch'](function(error){
-					reject(error);
-				})
-			});
-		},
-
-		/**
-		 * Get the user store for the current user. The user must be logged in to 
-		 * access the store. The user store is persisted on the 'custom' property 
-		 * of the user record, and can be used to store any relevant information for 
-		 * user.
-		 * 
-		 * @alias getUserStore
-		 * @returns A promise with the userStore object if successful.
-		 */
-		getUserStore: function(){
-			return new Promise(function(resolve, reject) {
-				if( !services.auth.isLoggedIn() ){
-					console.log('not logged in, cannot access user store');
-					return null;
-				}
-				if( !(USER_STORE_KEY in window) ){
-					var userStoreCache;
-					if( services.auth.isUserStoreCacheActive()){
-						userStoreCache = services.auth.getUserStoreCache();
-					}
-					if( navigator.onLine ){
-						return services.admin.getRealmUser().then( function(user){
-							console.log('getUserStore() retrieved realm user');
-							var userStore = user.custom;
-							if( !userStore ){
-								userStore = {};
-							}
-							else if( typeof userStore === 'string'){
-								try{
-									userStore = JSON.parse(userStore); 
-								}
-								catch(e){
-									userStore = {};
-								}
-							}
-							else if( typeof userStore !== 'object' ){
-								console.log('getUserStore() could not process user record store object: ' + userStore);
-								reject();
-								return;
-							}
-							window[USER_STORE_KEY] = userStore;
-							if( services.auth.isUserStoreCacheActive()){
-								return services.auth.saveUserStoreToCache().then(function(){
-									return resolve(userStore);
-								});
-							}
-							else{
-								resolve(userStore);
-							}
-						})['catch'](function(error){
-							console.log('getUserStore() could not retrieve user from server: ' + error);
-							if( userStoreCache ){
-								resolve(userStoreCache);
-							}
-							else{
-								reject(error);
-							}
-							
-						});
-					}
-					else if( userStoreCache ){
-						resolve(userStoreCache);
-					}
-					else{
-						reject('could not retrieve uncached user store while offline');
-					}
-					
-				}
-				else{
-					resolve(window[USER_STORE_KEY]);
-				}
-			});
-		},
-
-		saveUserStoreToCache: function(){
-			return new Promise(function(resolve, reject) {
-				if( !services.auth.isLoggedIn() ){
-					console.log('not logged in, cannot access user store');
-					reject('not logged in, cannot access user store');
-					return;
-				}
-				if( !services.auth.isUserStoreCacheActive() ){
-					console.log('user store cache is not active, cannot save locally');
-					reject('user store cache is not active, cannot save locally')
-					return;
-				}
-				var username = services.auth.getLastKnownUsername();
-				if( !username ){
-					console.log('username not available, cannot access user store');
-					reject('username not available, cannot access user store')
-					return;
-				}	
-				else{
-					return services.auth.getUserStore().then(function(userStore){
-						var storeKeyCipher = btoa(USER_STORE_KEY);
-						var userStoreCacheStr = localStorage.getItem(storeKeyCipher);
-						var userStoreCache;
-						if( userStoreCacheStr ){
-							userStoreCache = JSON.parse(atob(userStoreCacheStr));
-						}
-						else{
-							userStoreCache = {};
-						}
-						userStoreCache[username] = userStore;
-						localStorage.setItem(storeKeyCipher, btoa(JSON.stringify(userStoreCache)));
-						resolve();
-						return;
-					})['catch'](function(error){
-						reject(error);
-						return;
-					})
-
-				}
-			});
-			
-		},
-
-		getUserStoreCache: function(){
-			if( !services.auth.isLoggedIn() ){
-				console.log('not logged in, cannot access user store');
-				reject('not logged in, cannot access user store');
-				return;
-			}
-			if( !services.auth.isUserStoreCacheActive() ){
-				console.log('user store cache is not active, cannot save locally');
-				reject('user store cache is not active, cannot save locally')
-				return;
-			}
-			var username = services.auth.getLastKnownUsername();
-			if( !username ){
-				console.log('username not available, cannot access user store');
-				reject('username not available, cannot access user store')
-				return;
-			}	
-			var storeKeyCipher = btoa(USER_STORE_KEY);
-			var userStoreCacheStr = localStorage.getItem(storeKeyCipher);
-			var userStoreCache;
-			if( userStoreCacheStr ){
-				userStoreCache = JSON.parse(atob(userStoreCacheStr));
-			}
-			else{
-				userStoreCache = {};
-			}
-			var userStoreCacheObject = userStoreCache[username];
-			if( !userStoreCacheObject ){
-				userStoreCacheObject = {};
-			}
-			return userStoreCacheObject;
 		}
-
 	};
 
 	/* DOC SERVICE */
@@ -2348,8 +2115,8 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias createDocument
 		 * @param {Object} params params
-         * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
-         * @param {String} params.id The document id. If not provided, the service will return a new id
+		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
+		 * @param {String} params.id The document id. If not provided, the service will return a new id
 		 * @param {Object} params.document The document to be created
 		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
 		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
@@ -2367,7 +2134,7 @@ if( ! ('bridgeit' in window)){
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-                    var collection = validateCollection(params, reject);
+					var collection = validateCollection(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
 					var url = getRealmResourceURL(services.documentsURL, account, realm, 
@@ -2389,8 +2156,8 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias updateDocument
 		 * @param {Object} params params
-         * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
-         * @param {String} params.id The document id.
+		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
+		 * @param {String} params.id The document id.
 		 * @param {Object} params.document The document to be created
 		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
 		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
@@ -2408,16 +2175,16 @@ if( ! ('bridgeit' in window)){
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-                    var collection = validateCollection(params, reject);
+					var collection = validateCollection(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
 					var url = getRealmResourceURL(services.documentsURL, account, realm, 
-					    collection + '/' + params.id, token, params.ssl);
+						collection + '/' + params.id, token, params.ssl);
 
-					b.$.post(url, params.document).then(function(response){
+					b.$.put(url, params.document).then(function(){
 						services.auth.updateLastActiveTimestamp();
-						resolve(response.uri);
+						resolve();
 					})['catch'](function(error){
 						reject(error);
 					});
@@ -2430,8 +2197,8 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getDocument
 		 * @param {Object} params params
-         * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
-         * @param {String} params.id The document id. If not provided, the service will return a new id
+		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
+		 * @param {String} params.id The document id. If not provided, the service will return a new id
 		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
 		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
 		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
@@ -2448,12 +2215,12 @@ if( ! ('bridgeit' in window)){
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-                    var collection = validateCollection(params, reject);
-                    var token = validateAndReturnRequiredAccessToken(params, reject);
+					var collection = validateCollection(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
 					var url = getRealmResourceURL(services.documentsURL, account, realm, 
-					    collection + '/' + params.id, token, params.ssl);
+						collection + '/' + params.id, token, params.ssl);
 
 					b.$.getJSON(url).then(function(doc){
 						services.auth.updateLastActiveTimestamp();
@@ -2477,15 +2244,15 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findDocuments
 		 * @param {Object} params params
-         * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
+		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
 		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
 		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
 		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @param {Object} params.query A mongo query for the documents
-         * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
-         * @param {Object} params.options Additional query options such as limit and sort
+		 * @param {Object} params.query A mongo query for the documents
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
 		 * @returns {Object} The results
 		 */
 		 findDocuments: function(params){
@@ -2498,14 +2265,14 @@ if( ! ('bridgeit' in window)){
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-                    var collection = validateCollection(params, reject);
-                    var token = validateAndReturnRequiredAccessToken(params, reject);
+					var collection = validateCollection(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
 
 					var url = getRealmResourceURL(services.documentsURL, account, realm, 
 						collection, token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
-                            'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
-                            'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 					});
 
 					b.$.getJSON(url).then(function(doc){
@@ -2530,8 +2297,8 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias deleteDocument
 		 * @param {Object} params params
-         * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
-         * @param {String} params.id The document id. If not provided, the service will return a new id
+		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
+		 * @param {String} params.id The document id. If not provided, the service will return a new id
 		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
 		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
 		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
@@ -2547,8 +2314,8 @@ if( ! ('bridgeit' in window)){
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-                    var collection = validateCollection(params, reject);
-                    var token = validateAndReturnRequiredAccessToken(params, reject);
+					var collection = validateCollection(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
 					var url = getRealmResourceURL(services.documentsURL, account, realm, 
@@ -2845,13 +2612,51 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredRegion(params, reject);
 
-					var url = (services.locateURL, account, realm,
+					var url = getRealmResourceURL(services.locateURL, account, realm,
 						'regions/' + (params.id ? params.id : ''), token, params.ssl);
-
 
 					b.$.post(url, params.region).then(function(response){
 						services.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Update a region
+		 *
+		 * @alias updateRegion
+		 * @param {Object} params params
+		 * @param {String} params.id The region id, the region to be updated
+		 * @param {Object} params.region The new region
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 */
+		updateRegion: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+					validateRequiredRegion(params, reject);
+
+					var url = getRealmResourceURL(services.locateURL, account, realm,
+							'regions/' + params.id, token, params.ssl);
+
+					b.$.put(url, params.region).then(function(){
+						services.auth.updateLastActiveTimestamp();
+						resolve();
 					})['catch'](function(error){
 						reject(error);
 					});
@@ -2943,9 +2748,9 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @param {Object} params.query A mongo query for the regions
-         * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
-         * @param {Object} params.options Additional query options such as limit and sort
+		 * @param {Object} params.query A mongo query for the regions
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
 		 * @returns {Object} The results
 		 */
 		 findRegions: function(params){
@@ -2961,10 +2766,10 @@ if( ! ('bridgeit' in window)){
 
 					var url = getRealmResourceURL(services.locateURL, account, realm, 
 						'regions', token, params.ssl, {
-                            'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
-                            'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
-                            'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
-                        });
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
 
 					b.$.getJSON(url).then(function(response){
 						services.auth.updateLastActiveTimestamp();
@@ -2991,9 +2796,9 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @param {Object} params.query A mongo query for the monitors
-         * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
-         * @param {Object} params.options Additional query options such as limit and sort
+		 * @param {Object} params.query A mongo query for the monitors
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
 		 * @returns {Object} The results
 		 */
 		 findMonitors: function(params){
@@ -3009,10 +2814,10 @@ if( ! ('bridgeit' in window)){
 
 					var url = getRealmResourceURL(services.locateURL, account, realm, 
 						'monitors', token, params.ssl, {
-                            'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
-                            'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
-                            'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
-                        });
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
 
 					b.$.getJSON(url).then(function(response){
 						services.auth.updateLastActiveTimestamp();
@@ -3181,6 +2986,45 @@ if( ! ('bridgeit' in window)){
 		},
 
 		/**
+		 * Update a poi
+		 *
+		 * @alias updatePOI
+		 * @param {Object} params params
+		 * @param {String} params.id The poi id, the poi to be updated
+		 * @param {Object} params.poi The new poi
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 */
+		updatePOI: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+					validateRequiredPOI(params, reject);
+
+					var url = getRealmResourceURL(services.locateURL, account, realm,
+							'poi/' + params.id, token, params.ssl);
+
+					b.$.put(url, params.poi).then(function(){
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
 		 * Searches for POIs in a realm based on a query
 		 *
 		 * @alias findPOIs
@@ -3190,9 +3034,9 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @param {Object} params.query A mongo query for the points of interest
-         * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
-         * @param {Object} params.options Additional query options such as limit and sort
+		 * @param {Object} params.query A mongo query for the points of interest
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
 		 * @returns {Object} The results
 		 */
 		 findPOIs: function(params){
@@ -3208,10 +3052,10 @@ if( ! ('bridgeit' in window)){
 
 					var url = getRealmResourceURL(services.locateURL, account, realm, 
 						'poi', token, params.ssl, {
-                            'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
-                            'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
-                            'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
-                        });
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
 
 					b.$.getJSON(url).then(function(response){
 						services.auth.updateLastActiveTimestamp();
@@ -3311,9 +3155,9 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @param {Object} params.query A mongo query for the locations
-         * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
-         * @param {Object} params.options Additional query options such as limit and sort
+		 * @param {Object} params.query A mongo query for the locations
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
 		 * @returns {Object} The results
 		 */
 		 findLocations: function(params){
@@ -3329,10 +3173,10 @@ if( ! ('bridgeit' in window)){
 
 					var url = getRealmResourceURL(services.locateURL, account, realm, 
 						'locations', token, params.ssl, {
-                            'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
-                            'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
-                            'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
-                        });
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
 
 					b.$.getJSON(url).then(function(response){
 						services.auth.updateLastActiveTimestamp();
@@ -3458,17 +3302,17 @@ if( ! ('bridgeit' in window)){
 		 
 
 		 http://dev.bridgeit.io/locate/bsrtests/realms/test/locations
-		 	?access_token=4be2fc2f-a53b-4987-9446-88d519faaa77
-		 	&query={%22username%22:%22user%22}
-		 	&options={%22sort%22:[[%22lastUpdated%22,%22desc%22]]}
-		 	&results=one
+			?access_token=4be2fc2f-a53b-4987-9446-88d519faaa77
+			&query={%22username%22:%22user%22}
+			&options={%22sort%22:[[%22lastUpdated%22,%22desc%22]]}
+			&results=one
 
 		 var locationURL = apiURL + '/locations' +
-                    '?access_token=' + encodeURIComponent(bsr.auth.getCurrentToken()) +
-                    '&query={"username": "' + encodeURIComponent(user) + '"} +' +
-                    '&options={"sort":[["lastUpdated","desc"]]}' +
-                    '&results=one';
-         */
+					'?access_token=' + encodeURIComponent(bsr.auth.getCurrentToken()) +
+					'&query={"username": "' + encodeURIComponent(user) + '"} +' +
+					'&options={"sort":[["lastUpdated","desc"]]}' +
+					'&results=one';
+		 */
 
 		 getLastUserLocation: function(params){
 			return new Promise(
@@ -3482,12 +3326,12 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					var username = validateAndReturnRequiredUsername(params, reject);
 
-                    var url = getRealmResourceURL(services.locateURL, account, realm,
-                        'locations/' + username, token, params.ssl, {
-                            'results': 'last'
-                        });
+					var url = getRealmResourceURL(services.locateURL, account, realm,
+						'locations/' + username, token, params.ssl, {
+							'results': 'last'
+						});
 
-                    b.$.getJSON(url).then(function(response){
+					b.$.getJSON(url).then(function(response){
 						services.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(response){
@@ -3501,10 +3345,6 @@ if( ! ('bridgeit' in window)){
 				}
 			);
 		},
-
-
-
-		
 	};
 
 	/* METRICS SERVICE */
@@ -3564,9 +3404,9 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.event The custom event that you would like to store, in JSON format.
-         * @returns {String} The resource URI
+		 * @returns {String} The resource URI
 		 */
-        createCustomEvent: function(params){
+		createCustomEvent: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
@@ -3576,17 +3416,17 @@ if( ! ('bridgeit' in window)){
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
-                    validateRequiredEvent(params, reject);
+					validateRequiredEvent(params, reject);
 
 					var url = getRealmResourceURL(services.metricsURL, account, realm, 
 						'events', token, params.ssl);
 
-                    b.$.post(url, params.event).then(function(response){
-                        services.auth.updateLastActiveTimestamp();
-                        resolve(response.uri);
-                    })['catch'](function(error){
-                        reject(error);
-                    });
+					b.$.post(url, params.event).then(function(response){
+						services.auth.updateLastActiveTimestamp();
+						resolve(response.uri);
+					})['catch'](function(error){
+						reject(error);
+					});
 				}
 			);
 		},
@@ -3717,7 +3557,7 @@ if( ! ('bridgeit' in window)){
 		
 		/**
 		 * Add listener for notifications belonging to the specified group.
-	 	 * Callbacks must be passed by name to receive cloud push notifications.
+		 * Callbacks must be passed by name to receive cloud push notifications.
 		 *
 		 * @alias addPushListener
 		 * @param {Object} params params
@@ -3812,7 +3652,7 @@ if( ! ('bridgeit' in window)){
 
 		/**
 		 * Remove listener for notifications belonging to the specified group.
-	 	 * Callbacks must be passed by name to receive cloud push notifications.
+		 * Callbacks must be passed by name to receive cloud push notifications.
 		 *
 		 * @alias addPushListener
 		 * @param {Object} params params
@@ -4101,121 +3941,6 @@ if( ! ('bridgeit' in window)){
 
 	};
 
-	/* CODE SERVICE */
-	services.code = {
-
-		/**
-		 * Executes a code flow
-		 *
-		 * @alias executeFlow
-		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-		 * @param {String} params.httpMethod (default 'post') 'get' or 'post'
-		 * @param {String} params.flow The code flow name
-		 * @param {Object} params.data The data to send with the flow
-		 */
-		executeFlow: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					var httpMethod = params.httpMethod || 'post';
-					httpMethod = httpMethod.toLowerCase();
-
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					validateRequiredFlow(params, reject);
-
-					var url = getRealmResourceURL(services.codeURL, account, realm, 
-						'nodes/' + encodeURI(params.flow), token, params.ssl);
-
-					if( 'get' === httpMethod ){
-						//TODO encode params.data into URL?
-						b.$.get(url).then(function(response){
-							services.auth.updateLastActiveTimestamp();
-							resolve();
-						})['catch'](function(error){
-							reject(error);
-						});
-					}
-					else if( 'post' === httpMethod ){
-						b.$.post(url, params.data).then(function(response){
-							services.auth.updateLastActiveTimestamp();
-							resolve();
-						})['catch'](function(error){
-							reject(error);
-						});
-					}
-					
-				}
-			);
-		},
-
-		start: function(params){
-			return new Promise(
-				function(resolve, reject) {
-
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					
-					var url = getRealmResourceURL(services.codeURL, account, realm, 
-						'', token, params.ssl);
-
-					b.$.post(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve();
-					})['catch'](function(error){
-						reject(error);
-					});
-					
-				}
-			);
-		},
-
-		stop: function(params){
-			return new Promise(
-				function(resolve, reject) {
-
-					params = params ? params : {};
-					services.checkHost(params);
-					
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					
-					var url = getRealmResourceURL(services.codeURL, account, realm, 
-						'', token, params.ssl);
-
-					b.$.doDelete(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve();
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
-		},
-
-		restart: function(params){
-			return services.code.stop(params).then(function(){
-				return services.code.start(params);
-			});
-		}
-	}
-
 	/* STORAGE SERVICE */
 	services.storage = {
 
@@ -4410,215 +4135,215 @@ if( ! ('bridgeit' in window)){
 		}
 	};
 
-    /* QUERY SERVICE */
-    services.query = {
+	/* QUERY SERVICE */
+	services.query = {
 
-        /**
-         * Create a new query
-         *
-         * @alias createQuery
-         * @param {Object} params params
-         * @param {String} params.id The query id. If not provided, the service will return a new id
-         * @param {Object} params.query The query to be created
-         * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-         * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-         * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-         * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
-         * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @returns {String} The resource URI
-         */
-        createQuery: function(params){
-            return new Promise(
-                function(resolve, reject) {
-                    params = params ? params : {};
-                    services.checkHost(params);
+		/**
+		 * Create a new query
+		 *
+		 * @alias createQuery
+		 * @param {Object} params params
+		 * @param {String} params.id The query id. If not provided, the service will return a new id
+		 * @param {Object} params.query The query to be created
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {String} The resource URI
+		 */
+		createQuery: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
 
-                    //validate
-                    var account = validateAndReturnRequiredAccount(params, reject);
-                    var realm = validateAndReturnRequiredRealm(params, reject);
-                    var token = validateAndReturnRequiredAccessToken(params, reject);
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-                    var url = getRealmResourceURL(services.queryURL, account, realm,
-                        'queries' + (params.id ? params.id : ''), token, params.ssl);
+					var url = getRealmResourceURL(services.queryURL, account, realm,
+						'queries/' + (params.id ? params.id : ''), token, params.ssl);
 
-                    b.$.post(url, params.query).then(function(response){
-                        services.auth.updateLastActiveTimestamp();
-                        resolve(response.uri);
-                    })['catch'](function(error){
-                        reject(error);
-                    });
+					b.$.post(url, params.query).then(function(response){
+						services.auth.updateLastActiveTimestamp();
+						resolve(response.uri);
+					})['catch'](function(error){
+						reject(error);
+					});
 
-                }
-            );
-        },
+				}
+			);
+		},
 
-        /**
-         * Update a query
-         *
-         * @alias updateQuery
-         * @param {Object} params params
-         * @param {String} params.id The query id, the query to be updated
-         * @param {Object} params.query The query
-         * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-         * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-         * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-         * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-         * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @returns {String} The resource URI
-         */
-        updateQuery: function(params){
-            return new Promise(
-                function(resolve, reject) {
-                    params = params ? params : {};
-                    services.checkHost(params);
+		/**
+		 * Update a query
+		 *
+		 * @alias updateQuery
+		 * @param {Object} params params
+		 * @param {String} params.id The query id, the query to be updated
+		 * @param {Object} params.query The query
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {String} The resource URI
+		 */
+		updateQuery: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
 
-                    //validate
-                    var account = validateAndReturnRequiredAccount(params, reject);
-                    var realm = validateAndReturnRequiredRealm(params, reject);
-                    var token = validateAndReturnRequiredAccessToken(params, reject);
-                    validateRequiredId(params, reject);
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
 
-                    var url = getRealmResourceURL(services.queryURL, account, realm,
-                        'queries/' + params.id, token, params.ssl);
+					var url = getRealmResourceURL(services.queryURL, account, realm,
+						'queries/' + params.id, token, params.ssl);
 
-                    b.$.post(url, params.query).then(function(response){
-                        services.auth.updateLastActiveTimestamp();
-                        resolve(response.uri);
-                    })['catch'](function(error){
-                        reject(error);
-                    });
-                }
-            );
-        },
+					b.$.put(url, params.query).then(function(response){
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
 
-        /**
-         * Fetch a query
-         *
-         * @alias getQuery
-         * @param {Object} params params
-         * @param {String} params.id The query id, the query to fetch
-         * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-         * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-         * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-         * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-         * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @returns {Object} The query
-         */
-        getQuery: function(params){
-            return new Promise(
-                function(resolve, reject) {
-                    params = params ? params : {};
-                    services.checkHost(params);
+		/**
+		 * Fetch a query
+		 *
+		 * @alias getQuery
+		 * @param {Object} params params
+		 * @param {String} params.id The query id, the query to fetch
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {Object} The query
+		 */
+		getQuery: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
 
-                    //validate
-                    var account = validateAndReturnRequiredAccount(params, reject);
-                    var realm = validateAndReturnRequiredRealm(params, reject);
-                    var token = validateAndReturnRequiredAccessToken(params, reject);
-                    validateRequiredId(params, reject);
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
 
-                    var url = getRealmResourceURL(services.queryURL, account, realm,
-                        'queries/' + params.id, token, params.ssl);
+					var url = getRealmResourceURL(services.queryURL, account, realm,
+						'queries/' + params.id, token, params.ssl);
 
-                    b.$.getJSON(url).then(function(doc){
-                        services.auth.updateLastActiveTimestamp();
-                        //the query service always returns a list, so
-                        //check if we have a list of one, and if so, return the single item
-                        if( doc.length && doc.length === 1 ){
-                            resolve(doc[0]);
-                        }
-                        else{
-                            resolve(doc);
-                        }
-                    })['catch'](function(error){
-                        reject(error);
-                    });
-                }
-            );
-        },
+					b.$.getJSON(url).then(function(doc){
+						services.auth.updateLastActiveTimestamp();
+						//the query service always returns a list, so
+						//check if we have a list of one, and if so, return the single item
+						if( doc.length && doc.length === 1 ){
+							resolve(doc[0]);
+						}
+						else{
+							resolve(doc);
+						}
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
 
-        /**
-         * Searches for queries in a realm based on a query
-         *
-         * @alias findQueries
-         * @param {Object} params params
-         * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-         * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-         * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-         * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-         * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         * @param {Object} params.query A mongo query for the queries
-         * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
-         * @param {Object} params.options Additional query options such as limit and sort
-         * @returns {Object} The results
-         */
-        findQueries: function(params){
-            return new Promise(
-                function(resolve, reject) {
+		/**
+		 * Searches for queries in a realm based on a query
+		 *
+		 * @alias findQueries
+		 * @param {Object} params params
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Object} params.query A mongo query for the queries
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
+		 * @returns {Object} The results
+		 */
+		findQueries: function(params){
+			return new Promise(
+				function(resolve, reject) {
 
-                    params = params ? params : {};
-                    services.checkHost(params);
+					params = params ? params : {};
+					services.checkHost(params);
 
-                    //validate
-                    var account = validateAndReturnRequiredAccount(params, reject);
-                    var realm = validateAndReturnRequiredRealm(params, reject);
-                    var token = validateAndReturnRequiredAccessToken(params, reject);
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-                    var url = getRealmResourceURL(services.queryURL, account, realm,
-                        'queries', token, params.ssl, {
-                            'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
-                            'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
-                            'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
-                        });
+					var url = getRealmResourceURL(services.queryURL, account, realm,
+						'queries/', token, params.ssl, {
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
 
-                    b.$.getJSON(url).then(function(doc){
-                        services.auth.updateLastActiveTimestamp();
-                        resolve(doc);
-                    })['catch'](function(response){
-                        reject(response);
-                    });
+					b.$.getJSON(url).then(function(doc){
+						services.auth.updateLastActiveTimestamp();
+						resolve(doc);
+					})['catch'](function(response){
+						reject(response);
+					});
 
-                }
-            );
-        },
+				}
+			);
+		},
 
-        /**
-         * Delete a query
-         *
-         * @alias deleteQuery
-         * @param {Object} params params
-         * @param {String} params.id The query id, the query to be deleted
-         * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-         * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-         * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-         * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-         * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-         */
-        deleteQuery: function(params){
-            return new Promise(
-                function(resolve, reject) {
-                    params = params ? params : {};
-                    services.checkHost(params);
+		/**
+		 * Delete a query
+		 *
+		 * @alias deleteQuery
+		 * @param {Object} params params
+		 * @param {String} params.id The query id, the query to be deleted
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 */
+		deleteQuery: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
 
-                    //validate
-                    var account = validateAndReturnRequiredAccount(params, reject);
-                    var realm = validateAndReturnRequiredRealm(params, reject);
-                    var token = validateAndReturnRequiredAccessToken(params, reject);
-                    validateRequiredId(params, reject);
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
 
-                    var url = getRealmResourceURL(services.queryURL, account, realm,
-                        'queries/' + params.id, token, params.ssl);
+					var url = getRealmResourceURL(services.queryURL, account, realm,
+						'queries/' + params.id, token, params.ssl);
 
-                    b.$.doDelete(url).then(function(response){
-                        services.auth.updateLastActiveTimestamp();
-                        resolve();
-                    })['catch'](function(error){
-                        reject(error);
-                    });
-                }
-            );
-        }
+					b.$.doDelete(url).then(function(response){
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		}
 
-    };
+	};
 
 	/* Initialization */
 	services.configureHosts();

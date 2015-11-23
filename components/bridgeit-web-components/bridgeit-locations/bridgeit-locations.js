@@ -3,20 +3,15 @@ Polymer({
 
     properties: {
         /**
-         * Required to authenticate with BridgeIt.
-         * @default bridgeit.io.auth.getLastAccessToken()
-         */
-        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
-        /**
          * Defines the BridgeIt account of the realm.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
-        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        account: { type: String },
         /**
          * Defines the BridgeIt realm to request location data for.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
-        realm: { type: String, value: bridgeit.io.auth.getLastKnownRealm(), observer: '_realmChanged' },
+        realm: { type: String, observer: '_realmChanged' },
         /**
          * Whether to show the user location updates for the realm.
          */
@@ -40,6 +35,12 @@ Polymer({
 	},
 
 	ready: function() {
+        if (!this.realm) {
+            this.realm = bridgeit.io.auth.getLastKnownRealm();
+        }
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount();
+        }
         var _this = this;
 		//initialize google maps
 		window.initializeLocationsMap = function() {
@@ -51,9 +52,13 @@ Polymer({
 			_this._map = new google.maps.Map(_this.$.map, mapOptions);
 			_this._bounds = new google.maps.LatLngBounds();
 
-			if (_this.accesstoken) {
+			if (bridgeit.io.auth.isLoggedIn()) {
 				_this.refreshMap();
 			}
+            //make sure the map is sized correctly for the view
+            setTimeout(function() {
+                google.maps.event.trigger(_this._map, "resize");
+            },100);
 		};
 		if( !('google' in window) || !('maps' in window.google)){
             var script = document.createElement('script');

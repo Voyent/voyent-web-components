@@ -30,7 +30,7 @@ Polymer({
     setupListener: function() {
         var _this = this;
         if (!this._validateFor()) { return; }
-        document.getElementById(this.for).addEventListener('queryExecuted', function(e) {
+        this._queryEditor.addEventListener('queryExecuted', function(e) {
             var res = e.detail.results;
             if (Object.keys(res).length === 0) {
                 _this._tableHeaders = [];
@@ -39,12 +39,16 @@ Polymer({
                 return;
             }
             
+            var timeVar = 'time';
+            var timeDisplayVar = 'timeDisplay';
+            
             // Before we process the data we want to change the dates (data.time field)
             // This is because the dates come from the queryEditor as UTC
             // But we want to display them in the table as the local timezone
-            if ((_this.utc != 'true') && (res[0].hasOwnProperty('time'))) {
+            if ((_this.utc != 'true') && (res[0].hasOwnProperty(timeVar))) {
                 for (var k = 0; k < res.length; k++) {
                     res[k].time = new Date(res[k].time);
+                    res[k][timeDisplayVar] = _this._formatDate(res[k].time);
                 }
             }
             
@@ -56,7 +60,12 @@ Polymer({
                 for (var j=0; j<tableHeaders.length; j++) {
                     var key = tableHeaders[j];
                     if (typeof document[key] !== 'undefined') {
-                        row.push(document[key]);
+                        if (key === timeVar) {
+                            row.push(document[timeDisplayVar]);
+                        }
+                        else {
+                            row.push(document[key]);
+                        }
                     }
                     else {
                         row.push(null);
@@ -104,5 +113,41 @@ Polymer({
         }
         this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'element cannot be found or is not a bridgeit-query-editor','type':'error'});
         return false;
+    },
+    
+    /**
+     * Specially formats a date for presentation using a modified long format that includes milliseconds
+     * Traditional Date.toString() returns: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
+     * This method would return the above with milliseconds appended as ".XYZ", such as:
+     *  Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+     * This allows greater accuracy when matching the result to a new query editor rule with time
+     * @return {string} of the formatted date
+     * @private
+     */
+    _formatDate: function(date) {
+        // Format the minute properly
+        var minute = date.getMinutes(),
+            minuteFormatted = minute < 10 ? "0" + minute : minute, // pad with 0 as needed
+            second = date.getSeconds(),
+            secondFormatted = second < 10 ? "0" + second : second; // pad with 0 as needed
+
+        // Get the original long format date to parse
+        var toParse = date.toString();
+        // Now get the time string used in the long format, such as 12:46:35
+        var timeString = date.getHours() + ":" + minuteFormatted + ":" + secondFormatted;
+
+        // Now we insert the milliseconds value from the date into our long format string
+        // This will turn: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
+        // into:           Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+        var milliseconds = date.getMilliseconds().toString();
+        if (milliseconds.toString().length == 1) {
+            milliseconds = '00'+milliseconds;
+        }
+        else if (milliseconds.toString().length == 2) {
+            milliseconds = '0'+milliseconds;
+        }
+        return toParse.substring(0, toParse.indexOf(timeString)+timeString.length) +
+            "." + milliseconds +
+            toParse.substring(toParse.indexOf(timeString)+timeString.length);
     }
 });

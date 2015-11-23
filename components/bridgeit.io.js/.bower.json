@@ -19,13 +19,13 @@
     "services"
   ],
   "homepage": "https://github.com/bridgeit/bridgeit.io.js",
-  "_release": "dd072d5acc",
+  "_release": "c20f08db20",
   "_resolution": {
     "type": "branch",
-    "branch": "gh-pages",
-    "commit": "dd072d5acc936a2f1a7f748492755976fce06122"
+    "branch": "dev",
+    "commit": "c20f08db20a1675ba321e11b8889eefcd4176857"
   },
   "_source": "git://github.com/bridgeit/bridgeit.io.js.git",
-  "_target": "gh-pages",
+  "_target": "dev",
   "_originalSource": "bridgeit.io.js"
 }

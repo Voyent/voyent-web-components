@@ -4,20 +4,15 @@ Polymer({
 
     properties: {
         /**
-         * Required to authenticate with BridgeIt.
-         * @default bridgeit.io.auth.getLastAccessToken()
-         */
-        accesstoken: { type: String, value: bridgeit.io.auth.getLastAccessToken() },
-        /**
          * The BridgeIt account of the realm.
          * @default bridgeit.io.auth.getLastKnownAccount()
          */
-        account: { type: String, value: bridgeit.io.auth.getLastKnownAccount() },
+        account: { type: String },
         /**
          * The BridgeIt realm to simulate motion in.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
-        realm: { type: String, value: bridgeit.io.auth.getLastKnownRealm() },
+        realm: { type: String },
         /**
          * Define routes as a JSON object array. This attribute can be used on its own or in conjunction with `bridgeit-location-route` components.
          * Changing this attribute dynamically will replace any routes previously created with this attribute, but any routes created using the component will remain unchanged.
@@ -72,6 +67,12 @@ Polymer({
      */
 
     ready: function() {
+        if (!this.realm) {
+            this.realm = bridgeit.io.auth.getLastKnownRealm();
+        }
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount();
+        }
         var _this = this;
         //set some default values
         this._locationMarkers = [];
@@ -108,9 +109,13 @@ Polymer({
             //setup listeners for bridgeit-location-route components
             _this._setupRouteListeners();
             //initialize location data on the map
-            if (_this.accesstoken) {
+            if (bridgeit.io.auth.isLoggedIn()) {
                 _this.refreshMap();
             }
+            //make sure the map is sized correctly when the window size changes
+            google.maps.event.addDomListener(window, "resize", function() {
+                _this.resizeMap();
+            });
         };
         if( !('google' in window) || !('maps' in window.google)){
             var script = document.createElement('script');
@@ -176,7 +181,7 @@ Polymer({
      * Play all simulations (paused routes will be continued).
      */
     playAll: function() {
-        if (!this.accesstoken) {
+        if (!bridgeit.io.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -194,7 +199,7 @@ Polymer({
      * Pause all simulation routes.
      */
     pauseAll: function() {
-        if (!this.accesstoken) {
+        if (!bridgeit.io.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -209,7 +214,7 @@ Polymer({
      * Cancel all simulation routes.
      */
     cancelAll: function() {
-        if (!this.accesstoken) {
+        if (!bridgeit.io.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -233,7 +238,7 @@ Polymer({
      */
     addRoute: function(label,user,origin,destination,travelmode,speed,speedunit,frequency) {
         var _this = this;
-        if (!this.accesstoken) {
+        if (!bridgeit.io.auth.isLoggedIn()) {
             return;
         }
         //first append the new route as a direct child of the component so it inherits any custom styling
@@ -288,7 +293,9 @@ Polymer({
         var params = {realm:this.realm,collection:collection,document:{routes:routes}};
         if (simulationId && simulationId.trim().length > 0) {
             params.id = simulationId;
-            docCall = 'updateDocument';
+            if (this._activeSim && this._activeSim._id === simulationId) {
+                docCall = 'updateDocument';
+            }
         }
         bridgeit.io.documents[docCall](params).then(function() {
             _this._activeSim = params.document; //set as active simulation
@@ -358,6 +365,17 @@ Polymer({
         setTimeout(function() {
             scrollTo(scrollLeft,scrollTop);
         },50);
+    },
+
+    /**
+     * Trigger the Google Map resize event and pan the map to the last known bounds.
+     */
+    resizeMap: function() {
+        if (('google' in window) && this._map) {
+            google.maps.event.trigger(this._map, "resize");
+            this._map.fitBounds(this._bounds);
+            this._map.panToBounds(this._bounds);
+        }
     },
 
 

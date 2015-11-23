@@ -1,0 +1,32 @@
+{
+  "name": "bridgeit.xio.js",
+  "main": "lib/bridgeit.xio.js",
+  "ignore": [
+    "docs",
+    "bower.json",
+    "LICENCE",
+    "README.md",
+    "favicon.ico",
+    ".gitignore"
+  ],
+  "dependencies": {
+    "bridgeit.js": "#gh-pages",
+    "bridgeit.io.js": "#gh-pages"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "mobile",
+    "javascript",
+    "services"
+  ],
+  "homepage": "https://github.com/bridgeit/bridgeit.xio.js",
+  "_release": "3dfa9f0eb9",
+  "_resolution": {
+    "type": "branch",
+    "branch": "gh-pages",
+    "commit": "3dfa9f0eb95099b34c5fc426cceaf183b9ea9100"
+  },
+  "_source": "git://github.com/bridgeit/bridgeit.xio.js.git",
+  "_target": "gh-pages",
+  "_originalSource": "bridgeit/bridgeit.xio.js"
+}
