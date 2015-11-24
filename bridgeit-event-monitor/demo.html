@@ -125,10 +125,14 @@
 
 				  <div class="buttons">
 					  <button id="resetEditor" onclick="document.getElementById('queryEditor').resetEditor();">New/Reset</button>
-					  <button id="runQuery" onclick="document.getElementById('queryEditor').runQuery();">Run Query</button>
+					  <button id="runQuery" onclick="updateLimit(); document.getElementById('queryEditor').runQuery();">Run Query</button>
 					  <button id="saveQuery" onclick="document.getElementById('queryEditor').saveQuery();">Save Query</button>
 					  <button id="cloneQuery" onclick="document.getElementById('queryEditor').cloneQuery();">Clone Query</button>
 					  <button id="deleteQuery" onclick="document.getElementById('queryEditor').deleteQuery();">Delete Query</button>
+					  <br/>
+					  <label for="limitIn">Results Limit:</label>
+					  <input id="limitIn" type="text" value="100"></input>
+					  <button id="limitUp" onclick="updateLimit();">Update Limit</button>
 				  </div>
 				  <br/>
 				  <div>
@@ -178,6 +182,21 @@
                 }
             });
             
+            function updateLimit() {
+                var newLimit = document.getElementById('limitIn').value;
+                
+                if (!isNaN(newLimit)) {
+                    if (newLimit <= 0) {
+                        newLimit = 100;
+                    }
+                    else if (newLimit > 10000) {
+                        newLimit = 10000;
+                    }
+                    
+                    document.getElementById('queryEditor').options.limit = parseInt(newLimit);
+                }
+            }
+            
 			function login(event){
 				var account = document.getElementById('account').value;
 				var realm = document.getElementById('realm').value;
@@ -206,34 +225,37 @@
 					})
 				});
 			}
-
+			
 			function setCredentialsOnComponent(){
 				var elem = document.getElementById('queryEditor');
-
-				var account = bridgeit.io.auth.getLastKnownAccount();
-				if (account) {
-					elem.setAttribute('account', account);
-					document.getElementById('account').value = account;
-				}
-
-                var realm = bridgeit.io.auth.getLastKnownRealm();
-				if (realm) {
-					elem.setAttribute('realm', realm);
-					document.getElementById('realm').value = realm;
-				}
-
-				var token = bridgeit.io.auth.getLastAccessToken();
-				if (token) {
-					elem.setAttribute('accesstoken', token);
-					document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
-				}
+				
+				try{
+                    var account = bridgeit.io.auth.getLastKnownAccount();
+                    if (account) {
+                        elem.setAttribute('account', account);
+                        document.getElementById('account').value = account;
+                    }
+    
+                    var realm = bridgeit.io.auth.getLastKnownRealm();
+                    if (realm) {
+                        elem.setAttribute('realm', realm);
+                        document.getElementById('realm').value = realm;
+                    }
+    
+                    var token = bridgeit.io.auth.getLastAccessToken();
+                    if (token) {
+                        elem.setAttribute('accesstoken', token);
+                        document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
+                    }
+                }catch(err) { }
 			}
 
 			function initializeComponent() {
+                document.getElementById('queryEditor').setAttribute('service', 'metrics');
+                document.getElementById('queryEditor').setAttribute('collection', 'events');
+                
 			    var token = bridgeit.io.auth.getLastAccessToken();
 			    if (token) {
-                    document.getElementById('queryEditor').setAttribute('service', 'metrics');
-                    document.getElementById('queryEditor').setAttribute('collection', 'events');		
                     document.getElementById('queryEditor').reloadEditor();
                     document.getElementById('queryEditor').fetchQueryList();
                 }
