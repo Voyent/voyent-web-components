@@ -351,13 +351,13 @@ Example:
                                                                         <label>
                                                                             <span>{{property.title}}</span>
                                                                             <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                                <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                                                                                     <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
                                                                                                       softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
                                                                                                       data-groupid$="{{group.id}}" data-propertytype="oneOf"
-                                                                                                      data-oneofindex$="{{index}}"></juicy-ace-editor>
+                                                                                                      data-oneofindex$="{{index}}" data-propertytitle$="{{property.title}}"></juicy-ace-editor>
                                                                                 </template>
-                                                                                <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                                <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                                     <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
                                                                                            value="{{property.value::input}}">
                                                                                 </template>
@@ -371,12 +371,13 @@ Example:
                                                             <label>
                                                                 <span class="required">*</span><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                    <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                    <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                                                                         <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
                                                                                           softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                          data-groupid$="{{group.id}}" data-propertytype="required"></juicy-ace-editor>
+                                                                                          data-groupid$="{{group.id}}" data-propertytype="required"
+                                                                                          data-propertytitle$="{{property.title}}"></juicy-ace-editor>
                                                                     </template>
-                                                                    <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                    <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
                                                                                required value="{{property.value::input}}">
                                                                     </template>
@@ -387,12 +388,13 @@ Example:
                                                             <label>
                                                                 <span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                    <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                    <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                                                                         <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
                                                                                           softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                          data-groupid$="{{group.id}}" data-propertytype="optional"></juicy-ace-editor>
+                                                                                          data-groupid$="{{group.id}}" data-propertytype="optional"
+                                                                                          data-propertytitle$="{{property.title}}"></juicy-ace-editor>
                                                                     </template>
-                                                                    <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                    <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
                                                                                value="{{property.value::input}}">
                                                                     </template>
