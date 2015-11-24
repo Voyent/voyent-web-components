@@ -17,10 +17,6 @@
 		<!-- Load the webcomponents polyfill -->
 		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
 		
-		<script>
-		    var useMultipleEventMonitors = true;
-		</script>
-
         <!-- Load bridgeit event monitor component -->
         <link rel="import" href="bridgeit-event-monitor-repeat.html">
         <link rel="import" href="bridgeit-event-monitor.html">
@@ -133,6 +129,9 @@
 					  <label for="limitIn">Results Limit:</label>
 					  <input id="limitIn" type="text" value="100"></input>
 					  <button id="limitUp" onclick="updateLimit();">Update Limit</button>
+					  <br/>
+					  <label for="multiIn">Multiple Event Monitors:</label>
+					  <input id="multiIn" type="checkbox" checked="checked"></input>
 				  </div>
 				  <br/>
 				  <div>
@@ -143,10 +142,12 @@
 				  <br/>
 			</div>
 			
-			<div>
+			<div id="eventMonitorMulti">
 			    <bridgeit-event-monitor-repeat id="eventMonitorRepeat">
 			    </bridgeit-event-monitor-repeat>
-			    
+            </div>
+			
+            <div id="eventMonitorSingle" style="display: none;">
 			    <bridgeit-event-monitor id="eventMonitor">
 			    </bridgeit-event-monitor>
 			</div>
@@ -173,7 +174,14 @@
             });
             // Listen for queryExecuted event
             document.getElementById('queryEditor').addEventListener('queryExecuted', function(e) {
-                // Add our data to a new event monitor graph
+                // Determine if we're using single or multiple event monitors
+                var useMultipleEventMonitors = document.getElementById('multiIn').checked;
+                
+                // Change our divs to display the proper event monitor component
+                document.getElementById('eventMonitorMulti').style.display = useMultipleEventMonitors ? 'inline' : 'none';
+                document.getElementById('eventMonitorSingle').style.display = useMultipleEventMonitors ? 'none' : 'inline';
+                
+                // Then fire the relevant method
                 if (useMultipleEventMonitors) {
                     document.getElementById('eventMonitorRepeat').addEventMonitor(e.detail.results);
                 }
