@@ -188,9 +188,11 @@
                 if (!isNaN(newLimit)) {
                     if (newLimit <= 0) {
                         newLimit = 100;
+                        document.getElementById('limitIn').value = newLimit;
                     }
                     else if (newLimit > 10000) {
                         newLimit = 10000;
+                        document.getElementById('limitIn').value = newLimit;
                     }
                     
                     document.getElementById('queryEditor').options.limit = parseInt(newLimit);
