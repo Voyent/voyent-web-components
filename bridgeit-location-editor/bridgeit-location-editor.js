@@ -175,6 +175,7 @@ Polymer({
             _loc.startEditor(_loc.regionsTemp.concat(_loc.poisTemp));
         })['catch'](function (error) {
             console.log('<bridgeit-locations> Error: ' + ( error.message || error.responseText));
+            console.log(error);
         });
 
     },
@@ -189,7 +190,7 @@ Polymer({
             _loc.updateMainAutoComplete();
         }, 1000);
 
-        _loc._infoWindow.setContent($(_loc.$$('#infoWindow'))[0]);
+        _loc._infoWindow.setContent(_loc.$$('#infoWindow'));
 
         var searchBar = _loc.$$("#locationSearchBar");
         _loc.autoComplete = new Awesomplete(searchBar,{
@@ -237,13 +238,9 @@ Polymer({
 
         });
 
-        //listener fired when closing the infoWindow with the 'x' button
-        //google.maps.event.addListener(_loc._infoWindow,'closeclick',function(){
-        //$(_loc.$$('#locationIdBtn')).popover('destroy');
-        //});
 
         //if the escape key is pressed then stop drawing
-        $(window).keydown(function (event) {
+        window.addEventListener("keydown",function (event) {
             if (event.which === 27) {
                 if (_loc.drawingManager.getDrawingMode() !== null) {
                     _loc.drawingManager.setDrawingMode(null);
@@ -255,24 +252,27 @@ Polymer({
 
 
         function SearchControl(controlDiv) {
-            $(_loc.$$('#searchBarWrap')).show();
-            controlDiv.append(
-                $(_loc.$$('#searchBarWrap'))
+            _loc.$$('#searchBarWrap').style.display = '';
+            controlDiv.appendChild(
+                _loc.$$('#searchBarWrap')
             );
         }
 
-        var searchControlDiv = $(document.createElement('div'));
-        searchControlDiv.attr('style', 'padding-left:30px;padding-top:15px;width:30%;min-width:630px;');
+        var searchControlDiv = document.createElement('div');
+        searchControlDiv.style.paddingLeft='30px';
+        searchControlDiv.style.paddingTop='15px';
+        searchControlDiv.style.width='30%';
+        searchControlDiv.style.minWidth='630px';
         var searchControl = new SearchControl(searchControlDiv);
 
         searchControl.index = 1;
-        _loc._map.controls[google.maps.ControlPosition.TOP_LEFT].push(searchControlDiv[0]);
+        _loc._map.controls[google.maps.ControlPosition.TOP_LEFT].push(searchControlDiv);
 
         //Clear region/poi name input on click when "Auto-Named"
 
-        $(_loc.$$("#locationNameInput")).click(function () {
-            if ($(this).val() === "Auto-Named") {
-                $(this).val("");
+        _loc.$$("#locationNameInput").addEventListener("click",function () {
+            if (_loc.$$("#locationNameInput").value === "Auto-Named") {
+                _loc.$$("#locationNameInput").value = "";
             }
         });
         setup = true;
@@ -351,16 +351,13 @@ Polymer({
             var pos = _loc.$$("#map").querySelectorAll(".gmnoprint");
             for (var i = 0; i < pos.length; i++) {
                 var node = pos[i];
-                if ($(node).children().length === 5 && $(node).css("right") === "0px") {
-                    $(node).append(
-                        $(_loc.$$('#searchAddButtonWrap')),
-                        $(_loc.$$('#importButtonWrap'))
-                    );
-                    $(_loc.$$('#searchAddButtonWrap')).show();
-                    $(_loc.$$('#importButtonWrap')).show();
+                if (node.children.length === 5 && getComputedStyle(node)["right"] === "0px") {
+                    node.appendChild(_loc.$$('#searchAddButtonWrap'));
+                    node.appendChild(_loc.$$('#importButtonWrap'));
+                    _loc.$$('#searchAddButtonWrap').style.display = 'inline-block';
+                    _loc.$$('#importButtonWrap').style.display = 'inline-block';
                 }
             }
-            ;
         }, 1500);
     },
 
@@ -564,11 +561,7 @@ Polymer({
 
             }
         }
-        //_loc.showPropertiesDiv=false;
-        //_loc.showTagsDiv=false;
-        //_loc.showLocationList=false;
 
-        //$(_loc.$$('#locationIdBtn')).popover('destroy'); //kill the location ID popover if it's visible
         _loc._infoWindow.close();
 
         //set the new infoWindow position based on the type of location
@@ -584,15 +577,16 @@ Polymer({
         else { //shape === "point")
             _loc._infoWindow.setPosition(location.getPosition());
         }
-        $(_loc.$$('#infoWindow')).show(); //unhide the infoWindow div
         _loc._infoWindow.open(map, location);
-        $(_loc.$$("#locationName")).css("font-size", "30px").text(geoJSON.label ? geoJSON.label : geoJSON._id); //display the id if the label hasn't been set yet
-        _loc.revertNameEdit(); //start the infoWindow with an uneditable name and resize it if necessary
+        setTimeout(function () {
+            _loc.$$('#infoWindow').style.display = "block"; //unhide the infoWindow div
+            _loc.$$("#locationName").style.fontSize = "30px";
+            _loc.$$("#locationName").text = geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
+            _loc.revertNameEdit(); //start the infoWindow with an uneditable name and resize it if necessary
+        },0)
     },
 
     setupNameEdit: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
-        //something
         _loc.$$('#staticLocationName').style.display = 'none';
         _loc.$$('#editLocationName').style.display = '';
         _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id; //display the id if the label hasn't been set yet
@@ -608,57 +602,51 @@ Polymer({
     },
 
     setupViewID: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
-        //something
         _loc.$$('#staticLocationName').style.display = 'none';
-        $(_loc.$$('#viewId')).show();
+        _loc.$$('#viewId').style.display = '';
         _loc.currentId = _loc.activeLocation._id;
         _loc.adjustIdFontSize();
     },
 
     revertViewID: function () {
-        //$(_loc.$$('#locationIdBtn')).popover('hide');
-        //something
         _loc.$$('#viewId').style.display = 'none';
         _loc.$$('#staticLocationName').style.display = '';
     },
 
     adjustLocationFontSize: function () {
-        var elem = $(_loc.$$("#locationName"))[0];
-        var fontstep = 1;
-        var fontsize = parseInt($(elem).css('font-size').split('px')[0]);
-        if ($(elem).height() > $(elem).parent().height() || $(elem).width() > $(elem).parent().width()) {
-            fontsize = fontsize - fontstep;
-            $(elem).css('font-size', (fontsize) + 'px');
-            if (($(elem).height() > $(elem).parent().height() || $(elem).width() > $(elem).parent().width()) && fontsize > 9) { //don't decrease the font size past 9px
-                _loc.adjustLocationFontSize();
-            }
-        }
-        else {
-            fontsize = fontsize + fontstep;
-            $(elem).css('font-size', (fontsize) + 'px');
-            if (($(elem).height() < $(elem).parent().height() || $(elem).width() < $(elem).parent().width()) && fontsize < 30) { //don't increase the font size past 30px
-                _loc.adjustLocationFontSize();
-            }
-        }
+        var elem = _loc.$$("#locationName");
+        _loc.adjustFontSize(elem);
+
     },
 
     adjustIdFontSize: function () {
-        var elem = $(_loc.$$("#viewIDDiv"))[0];
+        var elem = _loc.$$("#viewIDDiv");
+        _loc.adjustFontSize(elem);
+    },
+
+    adjustFontSize:function(elem){
         var fontstep = 1;
-        var fontsize = parseInt($(elem).css('font-size').split('px')[0]);
-        if ($(elem).height() > $(elem).parent().height() || $(elem).width() > $(elem).parent().width()) {
+        var fontsize = parseInt(getComputedStyle(elem)["font-size"].split('px')[0]);
+        var elementHeight = elem.offsetHeight;
+        var parentHeight = elem.parentNode.offsetHeight;
+        var elementWidth = elem.offsetWidth;
+        var parentWidth =  elem.parentNode.offsetWidth;
+        if ( elementHeight > parentHeight || elementWidth > parentWidth) {
             fontsize = fontsize - fontstep;
-            $(elem).css('font-size', (fontsize) + 'px');
-            if (($(elem).height() > $(elem).parent().height() || $(elem).width() > $(elem).parent().width()) && fontsize > 9) { //don't decrease the font size past 9px
-                _loc.adjustLocationFontSize();
+            elem.style.fontSize = fontsize + 'px';
+            elementHeight = elem.offsetHeight;
+            elementWidth = elem.offsetWidth;
+            if ((elementHeight> parentHeight || elementWidth > parentWidth) && fontsize > 9) { //don't decrease the font size past 9px
+                _loc.adjustFontSize(elem);
             }
         }
         else {
             fontsize = fontsize + fontstep;
-            $(elem).css('font-size', (fontsize) + 'px');
-            if (($(elem).height() < $(elem).parent().height() || $(elem).width() < $(elem).parent().width()) && fontsize < 30) { //don't increase the font size past 30px
-                _loc.adjustLocationFontSize();
+            elem.style.fontSize = fontsize + 'px';
+            elementHeight = elem.offsetHeight;
+            elementWidth = elem.offsetWidth;
+            if ((elementHeight < parentHeight || elementWidth < parentWidth) && fontsize < 30) { //don't increase the font size past 30px
+                _loc.adjustFontSize(elem);
             }
         }
     },
@@ -685,12 +673,14 @@ Polymer({
         setTimeout(function () {
             if (!(_loc.isPOI)) {
                 _loc.colourProp = properties["Color"];
-                $(_loc.$$("#colourSelect")).find('option:selected').removeAttr('selected');
-                $(_loc.$$("#colourSelect")).find('option:contains("' + _loc.colourProp + '")').attr("selected", true);
+                var colourSelect = _loc.$$("#colourSelect");
+                colourSelect.options[colourSelect.selectedIndex].removeAttribute("selected");
+                _loc.$$("#colourSelect").querySelector('option[value="' + _loc.colourProp + '"]').setAttribute("selected", "selected");
             }
             _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
-            $(_loc.$$("#editableSelect")).find('option:selected').removeProp('selected');
-            $(_loc.$$("#editableSelect")).find('option[value="' + _loc.editableProp + '"]').prop("selected", true);
+            var editableSelect = _loc.$$("#editableSelect");
+            editableSelect.options[editableSelect.selectedIndex].removeAttribute("selected");
+            _loc.$$("#editableSelect").querySelector('option[value="' + _loc.editableProp + '"]').setAttribute("selected", "selected");
             var props = [];
             for (var property in properties) {
                 if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
@@ -845,7 +835,7 @@ Polymer({
             _loc.$$('#mapSearchBar').style.display = 'inline-block';
             _loc.$$("#mapSearchBar").focus();
             if (typeof mapQueryAutocomplete === "undefined" || mapQueryAutocomplete === null) {
-                mapQueryAutocomplete = new google.maps.places.Autocomplete($("#mapSearchBar")[0], {bounds: map.getBounds()});
+                mapQueryAutocomplete = new google.maps.places.Autocomplete(_loc.$$("#mapSearchBar"), {bounds: map.getBounds()});
                 mapQueryAutocomplete.bindTo('bounds', map); //bias the results to the map's viewport, even while that viewport changes.
                 _loc.mapQueryAutocomplete = mapQueryAutocomplete;
             }
@@ -882,8 +872,8 @@ Polymer({
 
                 var pos = _loc.$$("#massDeleteContainer").querySelectorAll(".locationName");
                 for (var i = 0; i < pos.length; i++) {
-                    $(pos[i]).mouseover(function () {
-                        var id = $(this).attr('title');
+                    pos[i].addEventListener("mouseover",function () {
+                        var id = this.getAttribute('title');
                         var coords;
                         var selectedLocation;
                         var type;
@@ -915,8 +905,8 @@ Polymer({
                             _loc._map.panTo(coords);
                         }
                     });
-                    $(pos[i]).mouseout(function () {
-                        var id = $(this).attr('title');
+                    pos[i].addEventListener("mouseout",function () {
+                        var id = this.getAttribute('title');
                         if (typeof allRegions[id] !== "undefined") {
                             allRegions[id][0].setOptions({fillOpacity: 0.4});
                         }
@@ -930,9 +920,14 @@ Polymer({
     },
 
     massDeleteLocations: function () {
-        var locations = $('input[name="location"]:checked').map(function () {
-            return this.value;
-        }).get();
+        //var locations = $('input[name="location"]:checked').map(function () {
+        //    return this.value;
+        //}).get();
+        var rawLocations = document.querySelectorAll('input[name="massDeleteLocation"]:checked');
+        var locations = [];
+        for (var i = 0; i < rawLocations.length; i++){
+            locations.push(rawLocations[i].getAttribute("value"));
+        }
         if (locations.length > 0) {
             _loc.toDeleteCount = locations.length;
             _loc.isMassDelete = true;
@@ -1034,8 +1029,9 @@ Polymer({
 
     updateEditableProperty: function () {
         var location = _loc.activeLocation;
-        _loc.editableProp = _loc.$$("#editableSelect").find(':selected').attr("value");
-        var editableProp = _loc.editableProp === 'true';
+        var selector = _loc.$$("#editableSelect");
+        _loc.editableProp = selector.options[selector.selectedIndex].getAttribute("value");
+        var editableProp = (_loc.editableProp.toLowerCase() === 'true' || _loc.editableProp === true);
         if (_loc.isPOI) {
             allPOIs[location._id][0].setDraggable(editableProp);
             allLocations[location._id][0].setDraggable(editableProp);
@@ -1057,16 +1053,18 @@ Polymer({
     },
 
     togglePropertiesDiv: function () {
-        if (!_loc.showTagsDiv) {
-            var newHeight = getComputedStyle(_loc.$$('#infoWindow'))['height'] == "305px" ? "100px" : "305px";
-            _loc.$$('#infoWindow').style.height= newHeight;
-        }
-        _loc.isPlacesSearch = false;
-        _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
-        if (_loc.showPropertiesDiv) {
-            _loc.populateProperties();
-            _loc.showTagsDiv = false;
-        }
+        setTimeout(function () {
+            if (!_loc.showTagsDiv) {
+                var newHeight = _loc.$$('#infoWindow').offsetHeight == 305 ? "100px" : "305px";
+                _loc.$$('#infoWindow').style.height = newHeight;
+            }
+            _loc.isPlacesSearch = false;
+            _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
+            if (_loc.showPropertiesDiv) {
+                _loc.populateProperties();
+                _loc.showTagsDiv = false;
+            }
+        },50);
     },
 
     togglePlacesPropertiesDiv: function () {
@@ -1078,6 +1076,7 @@ Polymer({
     },
 
     toggleTagsDiv: function () {
+        setTimeout(function () {
         if (!_loc.showPropertiesDiv) {
             var newHeight = getComputedStyle(_loc.$$('#infoWindow'))['height'] == "305px" ? "100px" : "305px";
             _loc.$$('#infoWindow').style.height= newHeight;
@@ -1087,7 +1086,7 @@ Polymer({
         if (_loc.showTagsDiv) {
             _loc.populateTags();
             _loc.showPropertiesDiv = false;
-        }
+        }},50);
     },
 
     togglePlacesTagsDiv: function () {
@@ -1126,41 +1125,9 @@ Polymer({
 
     },
 
-    clearFilter: function (selector, searchBar) {
-        /**TODO:Replace with Awesomeplete
-        if (selector !== "") {
-            $(_loc.$$(selector)).typeahead('val', ''); //clear the autocomplete input value
-        }
-        else { //no selector provided (clear filter button pressed) so just clear them all
-            $(_loc.$$('#locationSearchBar')).typeahead('val', '');
-            $(_loc.$$('#locationPropertySearchBar')).typeahead('val', '');
-            $(_loc.$$('#regionSearchBar')).typeahead('val', '');
-            $(_loc.$$('#regionPropertySearchBar')).typeahead('val', '');
-            $(_loc.$$('#poiSearchBar')).typeahead('val', '');
-            $(_loc.$$('#poiPropertySearchBar')).typeahead('val', '');
-            $(_loc.$$('#mapSearchBar')).val('');
-        }
-        //Was originally this.send(searchBar,'',false);
-        _loc.searchBar = '';
-         */
-    },
-
     clearFilterButton: function (e) {
-        $(_loc.$$('#locationSearchBar')).val("");
+        _loc.$$('#locationSearchBar').value ="";
         _loc.querySearch();
-        /**TODO:Replace with Awesomeplete
-        //no selector provided (clear filter button pressed) so just clear them all
-        $(_loc.$$('#locationSearchBar')).typeahead('val', '');
-        $(_loc.$$('#locationPropertySearchBar')).typeahead('val', '');
-        $(_loc.$$('#regionSearchBar')).typeahead('val', '');
-        $(_loc.$$('#regionPropertySearchBar')).typeahead('val', '');
-        $(_loc.$$('#poiSearchBar')).typeahead('val', '');
-        $(_loc.$$('#poiPropertySearchBar')).typeahead('val', '');
-        $(_loc.$$('#mapSearchBar')).val('');
-
-        //Was originally this.send(searchBar,'',false);
-        _loc.searchBar = '';
-         */
     },
 
     toggleLocations: function () {
@@ -1239,15 +1206,7 @@ Polymer({
         }
 
         if (searchBy === 'locations' || searchBy === 'regions' || searchBy === 'pois') {
-            if (searchBy === 'locations') {
-                searchQuery = optionalQuery ? optionalQuery.value : $(_loc.$$("#locationSearchBar")).val();
-            }
-            if (searchBy === 'regions') {
-                searchQuery = optionalQuery ? optionalQuery.value : $(_loc.$$("#regionSearchBar")).val();
-            }
-            if (searchBy === 'pois') {
-                searchQuery = optionalQuery ? optionalQuery.value : $(_loc.$$("#poiSearchBar")).val();
-            }
+            searchQuery = optionalQuery ? optionalQuery.value : _loc.$$("#locationSearchBar").value;
             for (locationId in locationList) {
                 googleLocation = locationList[locationId][0];
                 locationName = locationList[locationId][1].label ? locationList[locationId][1].label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
@@ -1262,7 +1221,7 @@ Polymer({
             }
         }
         else if (searchBy.indexOf('Properties') !== -1) { //searchBy === 'locationProperties' || 'regionProperties' || 'poiProperties'
-            searchQuery = optionalQuery ? optionalQuery.value : $(_loc.$$("#locationSearchBar")).val();
+            searchQuery = optionalQuery ? optionalQuery.value : _loc.$$("#locationSearchBar").value;
             for (locationId in locationList) {
                 googleLocation = locationList[locationId][0];
                 geoJSON = locationList[locationId][1];
@@ -1280,7 +1239,7 @@ Polymer({
             }
         }
         else { // searchBy === "map"
-            searchQuery = $(_loc.$$("#mapSearchBar")).val();
+            searchQuery = _loc.$$("#mapSearchBar").value;
             if (searchQuery && searchQuery.trim().length > 0) {
                 var geocoder = new google.maps.Geocoder();
                 var location = _loc._map.getCenter();
@@ -1297,53 +1256,6 @@ Polymer({
             }
         }
         _loc.matchingLocations = matchingLocations;
-    },
-
-
-    /**
-     * Utility method for initializing typeahead autocompletes and setting up click and keypress listeners for the inputs.
-     * @param inputId
-     * @param searchFunction
-     * @param sourceData
-     * @param sourceType
-     * @param sourceForceContains
-     * @param templates
-     */
-    updateAutoCompleteList: function (inputId, searchFunction, sourceData, sourceType, sourceForceContains, templates) {
-        /**
-         * TODO: Replace with awesomeplete
-         *
-        $(_loc.$$(inputId + '.typeahead')).typeahead('destroy');
-
-        var obj = {};
-        obj.displayKey = 'value';
-        obj.source = _loc.autoCompleteSearch(sourceData, sourceType, sourceForceContains);
-        if (templates) {
-            obj.templates = templates;
-        }
-
-        //initialize autocomplete input
-        $(_loc.$$(inputId + '.typeahead')).typeahead({
-                hint: true,
-                highlight: true,
-                minLength: 1
-            },
-            obj
-        );
-        //search when selecting an autocomplete list item
-        $(_loc.$$(inputId + '.typeahead')).unbind('typeahead:selected').bind('typeahead:selected', function (obj, datum, name) {
-            _loc.searchFunction = datum;
-        });
-        //add event listeners for the search bar
-        $(_loc.$$(inputId + '.typeahead')).unbind('keyup').keyup(function (event) {
-            if (event.which === 13) {
-                _loc.searchFunction = '';
-                $(inputId + '.typeahead').typeahead('close');
-            }
-        });
-        $(_loc.$$(inputId + '.typeahead')).unbind('dblclick').dblclick(function () {
-            _loc.clearFilter('#' + this.id, searchFunction);
-        });*/
     },
 
     /**
@@ -1379,7 +1291,7 @@ Polymer({
      * Setup the Places name input as an autocomplete field
      */
     setupPlacesAutocomplete: function () {
-        var placesAutocomplete = new google.maps.places.Autocomplete($(_loc.$$("#placesName"))[0], {bounds: _loc._map.getBounds()});
+        var placesAutocomplete = new google.maps.places.Autocomplete(_loc.$$("#placesName"), {bounds: _loc._map.getBounds()});
         google.maps.event.addListener(placesAutocomplete, 'place_changed', function () {
             var place = placesAutocomplete.getPlace();
             _loc.placesName = '';
@@ -1413,7 +1325,7 @@ Polymer({
         var placesSearchRank = _loc.placesSearchRank;
         var placesRadius = _loc.placesRadius;
         _loc.placesSearchStatus = '';
-        placesSearchRank = $(_loc.$$("input[name='placesSearchRank']:checked"))[0].value;
+        placesSearchRank = _loc.$$("input[name='placesSearchRank']:checked").value;
         if (placesSearchRank === 'DISTANCE') {
             if ((!placesName || placesName.toString().trim().length === 0) &&
                 (!placesTypes || placesTypes.toString().trim().length === 0) &&
@@ -1481,8 +1393,6 @@ Polymer({
                 return;
             }
 
-            //TODO:Update to work with modal
-            //$('#oneMoment').modal();
             searchResults = searchResults.concat(results);
 
             if (pagination && pagination.hasNextPage) {
@@ -1496,7 +1406,6 @@ Polymer({
                 });
                 _loc.placesSearchResults = searchResults; //used to populate the view (Ember can't render iteratively using an object (eg. placesSearchResultsMap) inside template)
                 _loc.placesSearchResultsMap = placesSearchResultsMap; //we use this to quickly find PlaceResult objects by place_id
-                //$('#oneMoment').modal('hide');
             }
         }
     },
@@ -1505,21 +1414,25 @@ Polymer({
      * Gets all locations that are to be created from within the Places Search and sets up the base geoJSON and google map objects.
      */
     createPlacesLocations: function () {
+        
         var tags = _loc.tags;
         var geoJSON;
         var locations = [];
         var placesSearchResultsMap = _loc.placesSearchResultsMap;
-        _loc.colourProp = $(_loc.$$("#colourSelect2")).find(':selected').text();
+        var selector = _loc.$$("#colourSelect2");
+        _loc.colourProp = selector == null? "" : selector.options[selector.selectedIndex].text;
         _loc.colourProp = _loc.colourProp == "" ? "Black" : _loc.colourProp;
-        _loc.editableProp = $(_loc.$$("#editableSelect2")).find(':selected').attr('value');
-        _loc.editableProp = _loc.editableProp == "" ? true : _loc.editableProp === 'true';
-        $('input[name="createPlace"]:checked').each(function () {
-            var place_id = $(this).val();
+        var selector2 = _loc.$$("#editableSelect2");
+        _loc.editableProp = selector2 == null? "" : selector2.options[selector2.selectedIndex].getAttribute("value");
+        _loc.editableProp = _loc.editableProp == "" ? true : (_loc.editableProp.toLowerCase() === 'true' || _loc.editableProp === true);
+        var checkedElements = document.querySelectorAll('input[name="createPlace"]:checked');
+        for(var i = 0; i < checkedElements.length; i++){
+            var place_id = checkedElements[i].getAttribute("value");
             var name = placesSearchResultsMap[place_id].name;
             var address = placesSearchResultsMap[place_id].vicinity;
-            var lat = placesSearchResultsMap[place_id].geometry.location.lat();//$(this).attr('data-lat');
-            var lng = placesSearchResultsMap[place_id].geometry.location.lng();//$(this).attr('data-lng');
-            var type = $(":radio[name='" + place_id + "']:checked").val();
+            var lat = placesSearchResultsMap[place_id].geometry.location.lat();
+            var lng = placesSearchResultsMap[place_id].geometry.location.lng();
+            var type = _loc.$$("input[type=radio][name='" + place_id + "']:checked").getAttribute("value");
 
             var googlePoint = new google.maps.LatLng(lat, lng);
             var location;
@@ -1532,7 +1445,7 @@ Polymer({
                 }
                 properties['tags'] = placesTags;
             }
-            var radius = $(_loc.$$(".radiusInput[name='" + place_id + "']")).val();
+            var radius = _loc.$$(".radiusInput[placeholder='" + place_id + "']").value;
             if (!radius || radius.toString().trim().length === 0) {
                 console.log('Please enter a radius for location "' + name + '".');
                 locations = [];
@@ -1579,7 +1492,7 @@ Polymer({
             }
             _loc.getCoordinates(location, geoJSON, shape);
             locations.push({"label": name, "location": geoJSON.location});
-        });
+        }
         if (locations.length > 0) {
             _loc.newPlacesLocationsCount = locations.length;
             _loc.placesSearchResults = [];
@@ -1650,7 +1563,7 @@ Polymer({
             obj.properties = geoJSON.location.properties;
             locationsAndProps.push(obj);
         }
-        //TODO: Something might be off here. Check.
+        
         _loc.locations = locationsAndProps;
         return locationsAndProps;
     },
@@ -1698,7 +1611,7 @@ Polymer({
      * @return {boolean}
      */
     compareStrings: function (value, query, exactMatch, forceContains) {
-        var searchType = $(_loc.$$("input[name='searchType']:checked"))[0] == null ? _loc.searchType : $(_loc.$$("input[name='searchType']:checked"))[0].value;
+        var searchType = _loc.$$("input[name='searchType']:checked") == null ? _loc.searchType : _loc.$$("input[name='searchType']:checked").value;
         value = value.toString();
         query = query.toString();
 
@@ -1786,15 +1699,14 @@ Polymer({
             _loc.searchBy = _loc.searchByPropVal;
         else if (_loc.searchByType == "map")
             _loc.searchBy = "map";
-        _loc.clearFilter('', 'querySearch');
         if(setup)
             _loc.updateMainAutoComplete();
         _loc.showSearchDialog = false;
     },
 
     changeSearchByType: function () {
-        //Need to change this
-        _loc.searchByType = $(_loc.$$("input[name='searchByType']:checked"))[0].value;
+
+        _loc.searchByType = _loc.$$("input[name='searchByType']:checked").value;
         _loc.changeSearchBy();
     },
 
@@ -1802,7 +1714,7 @@ Polymer({
      * Close the Search Options dialog after the searchType is changed.
      */
     changeSearchType: function () {
-        _loc.searchType = $(_loc.$$("input[name='searchType']:checked"))[0].value;
+        _loc.searchType = _loc.$$("input[name='searchType']:checked").value;
         switch(_loc.searchType){
             case "endsWith":
                 _loc.autoComplete.filter = _loc.FILTER_ENDS;
@@ -1873,11 +1785,13 @@ Polymer({
      * Update all radius inputs with the master input at the top of the Places Search Results table.
      */
     allLocationsRadiusChanged: function () {
+        
         var pos = _loc.$$("#placesBody") == null ? null : _loc.$$("#placesBody").querySelectorAll(".radiusInput[name='radiusInput']");
         if (pos != null) {
+            console.log(pos);
             for (var i = 0; i < pos.length; i++) {
                 var node = pos[i];
-                $(node).val(_loc.allLocationsRadius);
+                node.setAttribute("value",_loc.allLocationsRadius.toString());
             }
         }
 
@@ -1893,48 +1807,67 @@ Polymer({
             setTimeout(function () {
                 var place_id;
                 //toggle all create checkboxes
-                $("input[name='createAllPlaces']").unbind('change').change(function () {
-                    var checked = $(this).is(':checked');
-                    $("input[name='createPlace']").prop('checked', checked).trigger('change');
-                });
+                var event = document.createEvent('HTMLEvents');
+                event.initEvent('change', true, false);
+                var toggleBoxes = function () {
+                    var checked = this.checked;
+                     var boxes = _loc.$$("#placesBody").querySelectorAll("input[name='createPlace']");
+                    for (var i = 0; i < boxes.length; i++) {
+                        boxes[i].checked=checked;
+                        boxes[i].dispatchEvent(event);
+                    }
+                };
+                _loc.$$("input[name='createAllPlaces']").removeEventListener("change", toggleBoxes);
+                _loc.$$("input[name='createAllPlaces']").addEventListener("change", toggleBoxes);
 
-                //toggle all location types
-                $("input[name='allLocations']").unbind('change').change(function () {
-                    if ($(this).val() === 'allRegion') {
-                        $("input[data='placesType'][value='region']").prop('checked', true).trigger('change');
+
+                var toggleType = function () {
+                    var buttons;
+                    if (this.value === 'allRegion') {
+                        buttons = _loc.$$("#placesBody").querySelectorAll("input[data='placesType'][value='region']");
                     }
                     else {
-                        $("input[data='placesType'][value='poi']").prop('checked', true).trigger('change');
+                        buttons = _loc.$$("#placesBody").querySelectorAll("input[data='placesType'][value='poi']");
                     }
-                });
+                    for(var i=0;i<buttons.length;i++){
+                        buttons[i].checked = true;
+                        buttons[i].dispatchEvent(event);
+                    }
+                };
+                //toggle all location types
+                _loc.$$("input[name='allLocations'][value='allRegion']").removeEventListener("change", toggleType);
+                _loc.$$("input[name='allLocations'][value='allRegion']").addEventListener("change", toggleType);
+                _loc.$$("input[name='allLocations'][value='allPois']").removeEventListener("change", toggleType);
+                _loc.$$("input[name='allLocations'][value='allPois']").addEventListener("change", toggleType);
 
-                //change listener for individual 'create' checkboxes, used to toggle disabled on the places type radios
-                $("input[name='createPlace']").unbind('change').change(function () {
-                    var thisCheckbox = $(this);
-                    setTimeout(function () {
-                        place_id = thisCheckbox.val();
-                        if (thisCheckbox.is(':checked')) {
-                            $(":radio[name='" + place_id + "']").removeAttr('disabled'); //enable type radio buttons
 
-                            if ($(":radio[name='" + place_id + "']:checked").val() === 'region') {
-                                $(":text[data='" + place_id + "']").removeAttr('disabled'); //if region, enable radius input
-                            }
+                var individualCheck = function(){
+                    var thisCheckbox = this;
+                    //setTimeout(function () {
+                        place_id = thisCheckbox.getAttribute("value");
+                        var buttons = _loc.$$("#placesBody").querySelectorAll("input[type='radio'][name='" + place_id + "']");
+                        if (thisCheckbox.checked) {
+                            buttons[0].removeAttribute('disabled');
+                            buttons[1].removeAttribute('disabled');
+                            _loc.$$("input[type='text'][placeholder='" + place_id + "']").removeAttribute('disabled');
                         }
                         else {
-                            $(":radio[name='" + place_id + "']").attr('disabled', 'disabled'); //disable type radio buttons
-                            $(":text[data='" + place_id + "']").attr('disabled', 'disabled'); //disable radius input
+                            buttons[0].setAttribute('disabled', 'disabled');
+                            buttons[1].setAttribute('disabled', 'disabled');
+                            _loc.$$("input[type=text][placeholder='" + place_id + "']").setAttribute('disabled', 'disabled'); //disable radius input
                         }
-                    }, 0);
-                });
 
-                //change listener for individual 'type' radio buttons, used to toggle disabled on the radius input
-                /**$("input[data='placesType']").unbind('change').change(function () {
-                    var thisRadio = $(this);
-                    setTimeout(function () {
-                        place_id = thisRadio.attr('name');
+                    //}, 0);
+                };
+                //change listener for individual 'create' checkboxes, used to toggle disabled on the places type radios
+                var checkboxes = _loc.$$("#placesBody").querySelectorAll("input[name='createPlace']");
+                    for(var i = 0; i < checkboxes.length; i++) {
+                        checkboxes[i].removeEventListener("change",individualCheck);
+                        checkboxes[i].addEventListener("change",individualCheck);
+                    }
 
-                    }, 0);
-                });*/
+                //change all Radius inputs
+
             }, 0);
         }
     },
@@ -2063,7 +1996,6 @@ Polymer({
         if (type === "region") {
             delete allRegions[currentId];
             delete allLocations[currentId];
-
             _loc.isPOI = false;
 
         }

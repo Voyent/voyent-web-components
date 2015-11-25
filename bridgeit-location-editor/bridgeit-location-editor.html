@@ -1,9 +1,5 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
-<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../../paper-menu/paper-menu.html">
-<link rel="import" href="../../paper-item/paper-item.html">
-<script src="../../jquery/dist/jquery.js"></script>
 <script src="../../awesomplete/awesomplete.js"></script>
 <dom-module id="bridgeit-location-editor">
 <style type="text/css">
@@ -1120,79 +1116,6 @@ span.noBold strong {
     display:inline-block;
 }
 
-/**#searchBarDiv ::content span.twitter-typeahead ::content .tt-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: 1000;
-    display: none;
-    float: left;
-    min-width: 160px;
-    padding: 5px 0;
-    margin: 2px 0 0;
-    list-style: none;
-    font-size: 14px;
-    text-align: left;
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 4px;
-    -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-    background-clip: padding-box;
-}
-#searchBarDiv ::content span.twitter-typeahead ::content .tt-suggestion {
-    display: block;
-    padding: 3px 20px;
-    clear: both;
-    font-weight: normal;
-    line-height: 1.42857143;
-    color: #333333;
-    white-space: nowrap;
-}
-#searchBarDiv ::content span.twitter-typeahead .tt-suggestion:hover,
-#searchBarDiv ::content span.twitter-typeahead .tt-suggestion:focus {
-    color: #ffffff;
-    text-decoration: none;
-    outline: 0;
-    background-color: #428bca;
-}
-#searchBarDiv ::content span.twitter-typeahead ::content .tt-suggestion.tt-cursor {
-    color: #ffffff;
-    background-color: #428bca;
-}
-
-.placesSearchWrapper{
-    height:375px;
-}
-
-
-Custom stuff:
-
-#searchBarDiv ::content span.twitter-typeahead {
-    height: 100%;
-}
-
-#searchBarDiv ::content span.twitter-typeahead ::content .tt-menu {
-    min-width:565px;
-    max-width:565px;
-    overflow: hidden;
-}
-
-#searchBarDiv ::content .locationMonitorsSearchBar ::content span.twitter-typeahead .tt-menu {
-    min-width:258px;
-    max-width:258px;
-    overflow: hidden;
-}
-
-#searchBarDiv ::content .locationMonitorsSearchBar.placesSearch ::content span.twitter-typeahead .tt-menu {
-    min-width:475px;
-    max-width:475px;
-    overflow: hidden;
-}
-
-Awesomeplete stuff starts below
-**/
 #searchBarDiv ::content [hidden] { display: none; }
 
 #searchBarDiv ::content .visually-hidden {
@@ -1316,7 +1239,6 @@ Awesomeplete stuff starts below
     <div on-click="toggleDeleteDialog" class="btn btn-sm btn-danger mainSearchBarButton">
         <div>Delete<br><span>[[searchByTxt]]</span>s</div>
     </div>
-    <!--TODO: Test to make sure this is working. Originally had click on clearFilter "" querySearch-->
     <div id="clearFilterBttn" on-click="clearFilterButton" class="btn btn-sm btn-warning mainSearchBarButton">
         <div>Clear <br>Filter</div>
     </div>
@@ -1424,7 +1346,7 @@ Awesomeplete stuff starts below
             <div class="col-sm-1 noPadding">
                 <template is="dom-repeat" items="{{matchingLocations}}">
                     <div class="smlHeight">
-                        <input type="checkbox" name="location" value="{{item.id::change}}">
+                        <input type="checkbox" name="massDeleteLocation" value="{{item.id::change}}">
                     </div>
                 </template>
             </div>
@@ -1472,7 +1394,7 @@ Awesomeplete stuff starts below
                 </div>
             </div>
             <div id="viewId" style="display:none;">
-                <div style="height:50px; width:80%;display:inline;">
+                <div class="col-sm-6" style="height:50px;width:80%;">
                     <span id="viewIDDiv" style="font-size:xx-small;">{{currentId}}</span>
                 </div>
                 <div style="padding-left:20px; width:19%; display:inline;">
@@ -1632,7 +1554,7 @@ Awesomeplete stuff starts below
                 </th>
                 <th>
                     Radius (m)
-                    <input class='form-control' type='text' value="{{allLocationsRadius::change}}">
+                    <input name='allRadius' class='form-control' type='text' value="{{allLocationsRadius::change}}">
                 </th>
             </tr>
             </thead>
@@ -1646,7 +1568,7 @@ Awesomeplete stuff starts below
                     <td>
                         <label>
                             Region
-                            <input type="radio" data="placesType" value="region" disabled="disabled"
+                            <input type="radio" data="placesType" value="region" checked="checked" disabled="disabled"
                                    name="{{item.place_id::change}}">
                         </label>
                         <br/>
@@ -1656,8 +1578,8 @@ Awesomeplete stuff starts below
                                    name="{{item.place_id::change}}">
                         </label>
                     </td>
-                    <td><input class='form-control radiusInput' type='text' name='{{item.place_id::change}}'
-                               placeholder='' value='20'></td>
+                    <td><input class='form-control radiusInput' type='text' placeholder='{{item.place_id::change}}'
+                               placeholder='' name="radiusInput" disabled="disabled" value='20'></td>
                 </tr>
             </template>
             </tbody>
