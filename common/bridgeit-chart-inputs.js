@@ -4,8 +4,8 @@ Polymer({
     is: "bridgeit-chart-inputs",
 
     properties: {
-        independantOptions:Object,
-        dependantOptions:Object,
+        independentOptions:Object,
+        dependentOptions:Object,
         service:{
             type: String,
             notify: true,
@@ -16,27 +16,27 @@ Polymer({
 
     created: function () {
         poly = this;
-        this.independantOptions = [];
-        this.independantOptions["string"] = [];
-        this.independantOptions["time"] = [];
-        this.independantOptions["number"] = [];
-        this.independantOptions["string"]["common"]=["event","type","username","data.origin"];
-        this.independantOptions["string"]["storage"]=["data.mimetype","data.originalName"];
-        this.independantOptions["string"]["locate"]=[];
-        this.independantOptions["string"]["metrics"]=[];
-        this.independantOptions["time"]["common"]=["time"];
-        this.independantOptions["time"]["storage"]=[];
-        this.independantOptions["time"]["locate"]=[];
-        this.independantOptions["time"]["metrics"]=[];
-        this.independantOptions["number"]["common"]=["data.processTime"];
-        this.independantOptions["number"]["storage"]=[];
-        this.independantOptions["number"]["locate"]=[];
-        this.independantOptions["number"]["metrics"]=[];
-        this.dependantOptions = [];
-        this.dependantOptions["common"]=["data.processTime"];
-        this.dependantOptions["storage"]=["data.size"];
-        this.dependantOptions["locate"]=[];
-        this.dependantOptions["metrics"]=[];
+        this.independentOptions = [];
+        this.independentOptions["string"] = [];
+        this.independentOptions["time"] = [];
+        this.independentOptions["number"] = [];
+        this.independentOptions["string"]["common"]=["event","type","username","data.origin"];
+        this.independentOptions["string"]["storage"]=["data.mimetype","data.originalName"];
+        this.independentOptions["string"]["locate"]=[];
+        this.independentOptions["string"]["metrics"]=[];
+        this.independentOptions["time"]["common"]=["time"];
+        this.independentOptions["time"]["storage"]=[];
+        this.independentOptions["time"]["locate"]=[];
+        this.independentOptions["time"]["metrics"]=[];
+        this.independentOptions["number"]["common"]=["data.processTime"];
+        this.independentOptions["number"]["storage"]=[];
+        this.independentOptions["number"]["locate"]=[];
+        this.independentOptions["number"]["metrics"]=[];
+        this.dependentOptions = [];
+        this.dependentOptions["common"]=["data.processTime"];
+        this.dependentOptions["storage"]=["data.size"];
+        this.dependentOptions["locate"]=[];
+        this.dependentOptions["metrics"]=[];
     },
 
     ready: function () {
@@ -48,43 +48,43 @@ Polymer({
 
     //******************PRIVATE API******************
     _updateVariables: function () {
-        var dependentElement = this.$$("#dependant");
-        var independentElement = this.$$("#independant");
+        var dependentElement = this.$$("#dependent");
+        var independentElement = this.$$("#independent");
         var service = this.$$("#service").value;
         dependentElement.innerHTML = "";
         independentElement.innerHTML = "";
         var validTypes = this.configure.split(",");
         for (var varType in validTypes) {
-            for (var element in this.independantOptions[validTypes[varType]]["common"]) {
+            for (var element in this.independentOptions[validTypes[varType]]["common"]) {
                 var newOption = document.createElement("option");
-                newOption.innerHTML = this.capitalize(this.independantOptions[validTypes[varType]]["common"][element]);
-                newOption.value = this.independantOptions[validTypes[varType]]["common"][element];
+                newOption.innerHTML = this.capitalize(this.independentOptions[validTypes[varType]]["common"][element]);
+                newOption.value = this.independentOptions[validTypes[varType]]["common"][element];
                 if (independentElement.innerHTML == "")
                     newOption.setAttribute("selected", "selected");
                 independentElement.appendChild(newOption);
             }
-            for (var element in this.independantOptions[validTypes[varType]][service]) {
+            for (var element in this.independentOptions[validTypes[varType]][service]) {
                 var newOption = document.createElement("option");
-                newOption.innerHTML = this.capitalize(this.independantOptions[validTypes[varType]][service][element]);
-                newOption.value = this.independantOptions[validTypes[varType]][service][element];
+                newOption.innerHTML = this.capitalize(this.independentOptions[validTypes[varType]][service][element]);
+                newOption.value = this.independentOptions[validTypes[varType]][service][element];
                 independentElement.appendChild(newOption);
             }
         }
-        for (var element in this.dependantOptions["common"]) {
+        for (var element in this.dependentOptions["common"]) {
             var newOption = document.createElement("option");
-            newOption.innerHTML = this.capitalize(this.dependantOptions["common"][element]);
-            newOption.value = this.dependantOptions["common"][element];
+            newOption.innerHTML = this.capitalize(this.dependentOptions["common"][element]);
+            newOption.value = this.dependentOptions["common"][element];
             if (dependentElement.innerHTML == "")
                 newOption.setAttribute("selected", "selected");
             dependentElement.appendChild(newOption);
         }
-        for (var element in this.dependantOptions[service]) {
+        for (var element in this.dependentOptions[service]) {
             var newOption = document.createElement("option");
-            newOption.innerHTML = this.capitalize(this.dependantOptions[service][element]);
-            newOption.value = this.dependantOptions[service][element];
+            newOption.innerHTML = this.capitalize(this.dependentOptions[service][element]);
+            newOption.value = this.dependentOptions[service][element];
             dependentElement.appendChild(newOption);
         }
-        var selector = document.getElementById("independant");
+        var selector = document.getElementById("independent");
         if(selector[selector.selectedIndex].value == 'time') document.getElementById('timeVars').style.display=''; else document.getElementById('timeVars').style.display='none';
     },
 

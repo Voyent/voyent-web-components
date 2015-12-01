@@ -33,26 +33,26 @@ Polymer({
         },
 
         /**
-         * Defines the dependant variable to use while making a graph. To use an attribute in the data section, omit 'data' for now and just use the name. Ex: 'Data.size' should simply be 'size'.
+         * Defines the dependent variable to use while making a graph. To use an attribute in the data section, omit 'data' for now and just use the name. Ex: 'Data.size' should simply be 'size'.
          */
-        dependant: {
+        dependent: {
             type: String
         },
         /**
-         * Defines the independant variable to use while making a graph. To use an attribute in the data section, omit 'data' for now and just use the name. Ex: 'Data.size' should simply be 'size'.
-         * Special case: An independant variable of 'time' will plot the dependant variable over time, grouping by whatever period is defined by the 'period' attribute.
+         * Defines the independent variable to use while making a graph. To use an attribute in the data section, omit 'data' for now and just use the name. Ex: 'Data.size' should simply be 'size'.
+         * Special case: An independent variable of 'time' will plot the dependent variable over time, grouping by whatever period is defined by the 'period' attribute.
          */
-        independant: {
+        independent: {
             type: String
         },
         /**
-         * Defines the operation to apply to the dependant variable. Currently supported operations are 'sum', 'average' and 'count'. Ex: inependant='username',dependant='size',operation='average' will give the average size by username.
+         * Defines the operation to apply to the dependent variable. Currently supported operations are 'sum', 'average' and 'count'. Ex: independent='username',dependent='size',operation='average' will give the average size by username.
          */
         operation: {
             type: String
         },
         /**
-         * Only used for 'time' independant variable to determine the grouping periods. Accepted values are 'year','month','day','hour','minute' and 'second'.
+         * Only used for 'time' independent variable to determine the grouping periods. Accepted values are 'year','month','day','hour','minute' and 'second'.
          * @default 'hour'
          */
         period: {
@@ -143,11 +143,11 @@ Polymer({
         }
         var makeQuery = {};
         var makeFields = {};
-        if (poly.independant == null || poly.independant == "")
+        if (poly.independent == null || poly.independent == "")
             return;
-        makeFields[poly.independant] = 1;
-        if (poly.dependant != "")
-            makeFields[poly.dependant] = 1;
+        makeFields[poly.independent] = 1;
+        if (poly.dependent != "")
+            makeFields[poly.dependent] = 1;
         if (poly.service != "")
             makeQuery["service"] = poly.service;
         poly.startrange = poly.startrange == ""?null:poly.startrange;
@@ -174,8 +174,8 @@ Polymer({
                 return;
             }
             ChartBehaviors.results = results;
-            var realDep = ChartBehaviors.getRealVar(poly.dependant);
-            var realIndep = ChartBehaviors.getRealVar(poly.independant);
+            var realDep = ChartBehaviors.getRealVar(poly.dependent);
+            var realIndep = ChartBehaviors.getRealVar(poly.independent);
             var data;
             if (realIndep.toLowerCase() == "time")
                 data = ChartBehaviors.timeFunction(poly.period, realDep);
