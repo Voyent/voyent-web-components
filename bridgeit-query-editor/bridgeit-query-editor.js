@@ -95,11 +95,12 @@ Polymer({
 
         if( !('jQuery' in window) ){
             console.log('jQuery not in window, fetching');
-            var jqScript = document.createElement('script');
-            jqScript.async = true;
-            jqScript.src = '../../jquery/dist/jquery.js';
-            jqScript.onload = onAfterjQueryLoaded
-            document.head.appendChild(jqScript);
+            var link = this.importHref('../jquery-import/jquery-import.html', function(e){
+                document.head.appendChild(link.import.body);
+                onAfterjQueryLoaded();
+            }, function(err){
+                console.error('bridgeit-query-editor: error loading jquery', err);
+            });
         }
         else{
             onAfterjQueryLoaded();
