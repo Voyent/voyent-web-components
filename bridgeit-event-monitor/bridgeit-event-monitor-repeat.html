@@ -1,0 +1,41 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+
+<!--
+Displays a series of event monitor components in a manageable list (move, delete, select, etc.)
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-event-monitor-repeat">
+    <template>
+        <link type="text/css" rel="stylesheet" href="./bridgeit-event-monitor-repeat.css">
+        
+        <div id="globalButtons" style="display: none;">
+            Global Graph Controls:
+            <button type="button" on-click="removeSelectedEventMonitors">Remove Selected</button>
+            <button type="button" on-click="removeAllEventMonitors">Remove All</button>
+            <!--
+            <button type="button">Reset Zoom</button>
+            <button type="button">Reset Panning</button>
+            -->
+        </div>
+        
+        <template is="dom-repeat" as="item" items="{{items}}">
+            <div id="{{item.eventmonitor.id}}wrap" class="wrapBox">
+                <div style="float: left;">
+                    <input type="checkbox" checked="{{item.selected::change}}"></input>
+                </div>
+                <div class="buttonBox">
+                    <button type="button" on-click="moveTop">Move Top</button>
+                    <button type="button" on-click="moveUp">Move Up</button>
+                    <button type="button" on-click="moveDown">Move Down</button>
+                    <button type="button" on-click="moveBottom">Move Bottom</button>
+                    <button type="button" on-click="removeEventMonitor">Remove</button>
+                </div>
+                <!-- Event monitor graphs will be appended here via DOM manipulation in the JS -->
+            </div>
+        </template>
+    </template>
+</dom-module>
+
+<script src="./bridgeit-event-monitor-repeat.js"></script>

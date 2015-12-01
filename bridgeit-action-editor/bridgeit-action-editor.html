@@ -24,10 +24,15 @@ Example:
            .actionWrapper {
                @apply(--action-editor-wrapper);
            }
+           .itemsContainer {
+               width:130px;
+               @apply(--action-editor-item-container);
+           }
            .actionContainer {
                border: 1px solid #999;
                padding:10px;
                background-color:#efefef;
+               min-width:345px;
                @apply(--action-editor-action-container);
            }
            #actionForm {
@@ -249,7 +254,7 @@ Example:
                 </template>
             </div>
             <div class="actionWrapper layout horizontal">
-                <div class="flex-2" style="min-width:130px;">
+                <div class="itemsContainer">
                     <div class="layout vertical wrap">
                         <div class="taskPanel">
                             <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
@@ -271,7 +276,7 @@ Example:
                         </div>
                     </div>
                 </div>
-                <div class="actionContainer flex-10" style="min-width:345px;" on-dragover="_dragOverAction" on-drop="_dropInAction">
+                <div class="actionContainer flex" on-dragover="_dragOverAction" on-drop="_dropInAction">
                     <div class="layout vertical">
                         <form id="actionForm">
                             <div class="flex">
@@ -346,13 +351,13 @@ Example:
                                                                         <label>
                                                                             <span>{{property.title}}</span>
                                                                             <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                                <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                                                                                     <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
                                                                                                       softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
                                                                                                       data-groupid$="{{group.id}}" data-propertytype="oneOf"
-                                                                                                      data-oneofindex$="{{index}}"></juicy-ace-editor>
+                                                                                                      data-oneofindex$="{{index}}" data-propertytitle$="{{property.title}}"></juicy-ace-editor>
                                                                                 </template>
-                                                                                <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                                <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                                     <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
                                                                                            value="{{property.value::input}}">
                                                                                 </template>
@@ -366,12 +371,13 @@ Example:
                                                             <label>
                                                                 <span class="required">*</span><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                    <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                    <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                                                                         <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
                                                                                           softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                          data-groupid$="{{group.id}}" data-propertytype="required"></juicy-ace-editor>
+                                                                                          data-groupid$="{{group.id}}" data-propertytype="required"
+                                                                                          data-propertytitle$="{{property.title}}"></juicy-ace-editor>
                                                                     </template>
-                                                                    <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                    <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
                                                                                required value="{{property.value::input}}">
                                                                     </template>
@@ -382,12 +388,13 @@ Example:
                                                             <label>
                                                                 <span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                    <template is="dom-if" if="{{_isFunction(property.title)}}">
+                                                                    <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                                                                         <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
                                                                                           softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                          data-groupid$="{{group.id}}" data-propertytype="optional"></juicy-ace-editor>
+                                                                                          data-groupid$="{{group.id}}" data-propertytype="optional"
+                                                                                          data-propertytitle$="{{property.title}}"></juicy-ace-editor>
                                                                     </template>
-                                                                    <template is="dom-if" if="{{!_isFunction(property.title)}}">
+                                                                    <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
                                                                                value="{{property.value::input}}">
                                                                     </template>

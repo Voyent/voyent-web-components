@@ -87,6 +87,7 @@ Polymer({
     runQuery: function() {
         var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
+            this._processTimeFields(query,true);
             this._queryService(query);
         }
     },
@@ -203,6 +204,7 @@ Polymer({
         this.options = query.options || {};
         this.fields = query.fields || {};
         try {
+            this._processTimeFields(query.query,false);
             $(this.$.editor).queryBuilder('setRulesFromMongo',query.query);
             this.activeQuery = query;
             this._setQueryHeader(query);
@@ -319,6 +321,7 @@ Polymer({
         if (Object.keys(query).length === 0) {
             return null;
         }
+        this._processTimeFields(query,true);
         var queryToPost = {
             "query": query,
             "fields": this.getAttribute('fields') ? this.getAttribute('fields') : {},
@@ -396,8 +399,122 @@ Polymer({
     _refreshQuery: function() {
         var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
+            this._processTimeFields(query,true);
             this._updateQueryURL(query);
         }
+    },
+    _processTimeFields: function(query,toUTC) {
+        var _this = this;
+        var doProcess = function (query) {
+            for (var key in query) {
+                if (!query.hasOwnProperty(key)) {
+                    continue;
+                }
+                var value = query[key];
+                if (key === 'time') {
+                    if (typeof value === 'string' || value instanceof String) {
+                        if (toUTC) {
+                            query[key] = _this._toUTCTime(value);
+                        }
+                        else {
+                            query[key] = _this._toLocalTime(value);
+                        }
+                    }
+                    else if (value !== null && typeof value === 'object') {
+                        for (var op in value) {
+                            if (!value.hasOwnProperty(op)) {
+                                continue;
+                            }
+                            var timeValue = value[op];
+                            if (typeof timeValue === 'string' || timeValue instanceof String) {
+                                if (toUTC) {
+                                    value[op] = _this._toUTCTime(timeValue);
+                                }
+                                else {
+                                    value[op] = _this._toLocalTime(timeValue);
+                                }
+                            }
+                            else if (Array.isArray(timeValue)) {
+                                for (var i=0; i<timeValue.length; i++) {
+                                    if (toUTC) {
+                                        value[op][i] = _this._toUTCTime(timeValue[i]);
+                                    }
+                                    else {
+                                        value[op][i] = _this._toLocalTime(timeValue[i]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (value !== null && typeof value === 'object') {
+                        doProcess(value);
+                    }
+                }
+            }
+        };
+        doProcess(query);
+    },
+    _toUTCTime: function(val) {
+        var newVal;
+        try {
+            newVal = new Date(val).toISOString();
+        }
+        catch (e) {
+            try {
+                // If we have a '.' then assume milliseconds are present
+                // Such as the modified long format Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+                if (val.indexOf('.') !== -1) { //TODO - Need proper regex solution
+                    // First we parse out milliseconds, in the above example this would be "769"
+                    var millis = val.substring(val.indexOf('.')+1, val.indexOf(' ', val.indexOf('.')));
+                    // Then we rebuild the string without milliseconds, so back to the standard Date long format
+                    var toParse = val.substring(0, val.indexOf('.')) +
+                        val.substring(val.indexOf('.' + millis)+1+millis.length);
+                    // Now we parse a Date object from that long format
+                    var parsedDate = new Date(toParse);
+                    // And set in our milliseconds
+                    parsedDate.setMilliseconds(millis);
+                    // Then we convert this to ISO UTC format
+                    newVal = parsedDate.toISOString();
+                }
+            }
+            catch (e) { }
+        }
+        return newVal ? newVal : val;
+    },
+    _toLocalTime: function(val) {
+        var newVal;
+        try {
+            var dateObj = new Date(val);
+            // Get the original long format date to parse
+            var toParse = dateObj.toString();
+            if (toParse === 'Invalid Date') {
+                return val;
+            }
+            // Format the minute properly
+            var minute = dateObj.getMinutes(),
+                minuteFormatted = minute < 10 ? "0" + minute : minute, // pad with 0 as needed
+                second = dateObj.getSeconds(),
+                secondFormatted = second < 10 ? "0" + second : second; // pad with 0 as needed
+            // Now get the time string used in the long format, such as 12:46:35
+            var timeString = dateObj.getHours() + ":" + minuteFormatted + ":" + secondFormatted;
+            // Now we insert the milliseconds value from the date into our long format string
+            // This will turn: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
+            // into:           Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+            var milliseconds = dateObj.getMilliseconds().toString();
+            if (milliseconds.toString().length == 1) {
+                milliseconds = '00'+milliseconds;
+            }
+            else if (milliseconds.toString().length == 2) {
+                milliseconds = '0'+milliseconds;
+            }
+            newVal = toParse.substring(0, toParse.indexOf(timeString)+timeString.length) +
+                "." + milliseconds +
+                toParse.substring(toParse.indexOf(timeString)+timeString.length);
+        }
+        catch(e) { newVal = null; }
+        return newVal ? newVal : val;
     },
     _setQueryHeader: function(query) {
         var container = Polymer.dom(this.root).querySelector('#editor_group_0');
@@ -597,19 +714,6 @@ Polymer({
             var inputs = $(Polymer.dom(_this.root).querySelector('#'+rule.id + ' .rule-value-container')).children();
             if (inputs) {
                 $(inputs).bind("change",function() {
-                    if (rule.filter.id === 'time') {
-                        //prevent infinite change listener calls
-                        if (_this._lastRuleVal === rule.value) {
-                            _this._lastRuleVal = null;
-                            return;
-                        }
-                        //parse the date to ISO UTC format or if invalid reject the value
-                        var newVal;
-                        try { newVal = new Date(rule.value).toISOString(); }
-                        catch (e) { newVal = ''; }
-                        _this._lastRuleVal = newVal;
-                        rule.value = newVal;
-                    }
                     _this._refreshQuery();
                 });
             }

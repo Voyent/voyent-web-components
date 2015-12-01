@@ -6,8 +6,6 @@ Displays an event monitor used to graph historical data from the BridgeIt servic
 
 This uses D3 (http://d3js.org/) and an underlying SVG to achieve the graphing
 
-To display call the Javascript function "show(data)"
-
 @demo demo.html
 -->
 <dom-module id="bridgeit-event-monitor">
@@ -16,53 +14,54 @@ To display call the Javascript function "show(data)"
     <template>
         <link type="text/css" rel="stylesheet" href="./bridgeit-event-monitor.css">
         
-        <label>[[customTitle]]</label>
-        <svg id="eventmonitorsvg">
-        </svg>
+        <div id="{{id}}div">
+            <label style="float: left;">[[customTitle]]</label>
+            <!-- SVG will be appended here via DOM manipulation in the JS -->
         
-        <div id="eventDetails" style="display: none;">
-            <table style="margin-top: 20px;">
-            <thead><tr><td colspan="2">Clicked Event Details:</td></tr></thead>
-            <tr>
-            <td><label>Time:</label></td>
-            <td>[[clickedData.time]]</td>
-            </tr>
-            <tr>
-            <td><label>Account:</label></td>
-            <td>[[clickedData.account]]</td>
-            </tr>
-            <tr>
-            <td><label>Realm:</label></td>
-            <td>[[clickedData.realm]]</td>
-            </tr>
-            <tr>
-            <td><label>Service:</label></td>
-            <td>[[clickedData.service]]</td>
-            </tr>
-            <tr>
-            <td><label>Event:</label></td>
-            <td>[[clickedData.event]]</td>
-            </tr>
-            <tr>
-            <td><label>Type:</label></td>
-            <td>[[clickedData.type]]</td>
-            </tr>
-            <tr>
-            <td><label>Username:</label></td>
-            <td>[[clickedData.username]]</td>
-            </tr>
-            <tr>
-            <td><label>Data:</label></td>
-            <td>[[clickedDataFormatted]]</td>
-            </tr>
-            <tr>
-            <td><label>ID:</label></td>
-            <td>[[clickedData._id]]</td>
-            </tr>
-            <tfoot><tr><td colspan="2">
-            <button type="button" on-click="_hideData">Close</button>
-            </td></tr></tfoot>
-            </table>
+            <div id="{{detailsid}}.{{id}}" style="display: none;" class="detailsBox">
+                <table>
+                <thead><tr><td colspan="2">Clicked Event Details</td></tr></thead>
+                <tr>
+                <td><label>Time:</label></td>
+                <td>[[clickedData.time]]</td>
+                </tr>
+                <tr>
+                <td><label>Account:</label></td>
+                <td>[[clickedData.account]]</td>
+                </tr>
+                <tr>
+                <td><label>Realm:</label></td>
+                <td>[[clickedData.realm]]</td>
+                </tr>
+                <tr>
+                <td><label>Service:</label></td>
+                <td>[[clickedData.service]]</td>
+                </tr>
+                <tr>
+                <td><label>Event:</label></td>
+                <td>[[clickedData.event]]</td>
+                </tr>
+                <tr>
+                <td><label>Type:</label></td>
+                <td>[[clickedData.type]]</td>
+                </tr>
+                <tr>
+                <td><label>Username:</label></td>
+                <td>[[clickedData.username]]</td>
+                </tr>
+                <tr>
+                <td><label>Data:</label></td>
+                <td>[[clickedDataFormatted]]</td>
+                </tr>
+                <tr>
+                <td><label>ID:</label></td>
+                <td>[[clickedData._id]]</td>
+                </tr>
+                <tfoot><tr><td colspan="2">
+                <button type="button" on-click="hideDetails">Close Details</button>
+                </td></tr></tfoot>
+                </table>
+            </div>
         </div>
     </template>
 </dom-module>
