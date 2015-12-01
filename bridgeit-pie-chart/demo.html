@@ -1,0 +1,210 @@
+<!--
+	@license
+	Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+	This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	Code distributed by Google as part of the polymer project is also
+	subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <title>BridgeIt Web Components Demo</title>
+
+    <!-- Load the bridgeit.js and brideit.io.js scripts and ensure that your page has ES6 Promise support -->
+    <script src="//cdn.lukej.me/es6-promise/1.0.0/promise.min.js"></script>
+    <script>
+        if( !("Promise" in window)){
+            window.Promise = ES6Promise.Promise;
+        }
+    </script>
+    <script src="//bridgeit.github.io/bridgeit.js/src/bridgeit.js"></script>
+    <script src="//bridgeit.github.io/bridgeit.io.js/lib/bridgeit.io.js"></script>
+    <script src="http://d3js.org/d3.v3.js"></script>
+
+    <!-- Load the webcomponents polyfill -->
+    <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+    <!-- Load bridgeit pie chart component -->
+    <link rel="import" href="bridgeit-pie-chart.html">
+
+    <!-- Demo specific CSS -->
+    <link rel="stylesheet" href="../common/demo.css"/>
+
+    <!-- Load standard inputs-->
+    <link rel="import" href="../common/bridgeit-chart-inputs.html"/>
+
+    <!-- Define custom styling for the component (optional) -->
+    <style is="custom-style">
+
+    </style>
+
+</head>
+<body unresolved>
+
+<h1>BridgeIt Pie Chart Component Demo</h1>
+<h3>Login with your BridgeIt Account Information</h3>
+<hr/>
+<div class="container">
+    <form>
+        <div>
+            <label>Account:
+                <input id="account" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Realm:
+                <input id="realm" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Username:
+                <input id="username" type="text"/>
+            </label>
+        </div>
+        <div>
+            <label>Password:
+                <input id="password" type="password"/>
+            </label>
+        </div>
+        <br/>
+        <a onclick="login()">Login</a>
+        <br/>
+        <bridgeit-chart-inputs id="inputs" configure="string,number"></bridgeit-chart-inputs>
+        <div>
+            <label>Hue:
+                <select id="hue">
+                    <option selected="selected" value="random">Random</option>
+                    <option value="red">Red</option>
+                    <option value="orange">Orange</option>
+                    <option value="yellow">Yellow</option>
+                    <option value="green">Green</option>
+                    <option value="blue">Blue</option>
+                    <option value="purple">Purple</option>
+                    <option value="pink">Pink</option>
+                    <option value="monochrome">Monochrome</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>Luminosity:
+                <select id="brightness">
+                    <option selected="selected" value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="bright">Bright</option>
+                    <option value="random">Random</option>
+                </select>
+            </label>
+        </div>
+        <a onclick="graph()">Create graph</a>
+    </form>
+
+    <!-- 3. Declare the element by its tag. -->
+    <div style="width:100%;height:500px;">
+        <bridgeit-pie-chart showaxes id="bridgeitchart"></bridgeit-pie-chart>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var refreshState = true;
+    var services;
+    var serviceDependant;
+    var serviceIndependant;
+
+    function login(event){
+        var account = document.getElementById('account').value;
+        var realm = document.getElementById('realm').value;
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+        bridgeit.io.auth.connect({
+            account: account,
+            realm: realm,
+            username: username,
+            password: password
+        }).then(function(){
+            setCredentialsOnComponent();
+        })['catch'](function(){
+            //try to login as admin
+            bridgeit.io.auth.connect({
+                account: account,
+                realm: 'admin',
+                username: username,
+                password: password
+            }).then(function(){
+                setCredentialsOnComponent();
+                document.getElementById('bridgeitchart').setAttribute("username",username);
+                document.getElementById('bridgeitchart').setAttribute("password",password);
+                document.getElementById('bridgeitchart').setAttribute('realm', realm);
+            })
+        });
+    }
+
+    function graph(event) {
+        var dependant = document.getElementById('dependant').options[document.getElementById('dependant').selectedIndex].value;
+        var independant = document.getElementById('independant').options[document.getElementById('independant').selectedIndex].value;
+        var service = document.getElementById('service').options[document.getElementById('service').selectedIndex].value;
+        var operation = document.getElementById('operation').options[document.getElementById('operation').selectedIndex].value;
+        var brightness = document.getElementById('brightness').options[document.getElementById('brightness').selectedIndex].value;
+        var hue = document.getElementById('hue').options[document.getElementById('hue').selectedIndex].value;
+        var chart = document.getElementById('bridgeitchart');
+        var maxresults = document.getElementById('maxResults').value;
+        chart.setAttribute('dependant',dependant);
+        chart.setAttribute('independant',independant);
+        chart.setAttribute('service',service);
+        chart.setAttribute("operation",operation);
+        chart.setAttribute('maxresults',maxresults);
+        chart.setAttribute('brightness',brightness);
+        chart.setAttribute('hue',hue);
+        if(document.getElementById('period') != null) {
+            var period = document.getElementById('period').options[document.getElementById('period').selectedIndex].value;
+            var startRange = document.getElementById('startRange').value == "" ? "" : new Date(document.getElementById('startRange').value).toISOString();
+            var endRange = document.getElementById('endRange').value == "" ? "" : new Date(document.getElementById('endRange').value).toISOString();
+            chart.setAttribute("startrange", startRange);
+            chart.setAttribute("endrange", endRange);
+            chart.setAttribute('period', period);
+        }
+        chart._refreshGraph();
+    }
+
+    function setCredentialsOnComponent(){
+
+        var elem = document.getElementById('bridgeitchart');
+
+        var account = bridgeit.io.auth.getLastKnownAccount();
+        if( account ){
+            elem.setAttribute('account', account);
+            document.getElementById('account').value = account;
+        }
+
+        var realm = bridgeit.io.auth.getLastKnownRealm();
+        if( realm ){
+            elem.setAttribute('realm', realm);
+            document.getElementById('realm').value = realm;
+        }
+
+        var token = bridgeit.io.auth.getLastAccessToken();
+        if( token ){
+            elem.setAttribute('accessToken', token);
+            document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
+        }
+
+    }
+
+    function capitalize(s){
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+
+
+    function toggleBooleanAttribute(attribute, value) {
+        var bridgeitchart = document.getElementById('bridgeitchart');
+        value ? bridgeitchart.setAttribute(attribute, attribute) : bridgeitchart.removeAttribute(attribute);
+    }
+
+    //initialize known credentials
+    setCredentialsOnComponent();
+</script>
+</body>
+</html>

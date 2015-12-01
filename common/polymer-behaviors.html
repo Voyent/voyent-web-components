@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<script>
+    var chartBehaviours
+    ChartBehaviors = {
+
+        properties: {
+            results: {
+                type: Array
+            },
+            timeInterval: Number
+        },
+
+        created: function () {
+            chartBehaviours = this;
+        },
+
+        getRealVar: function (name) {
+            if (name.indexOf("data.") == 0) {
+                name = name.substring(5);
+                for (var entry in this.results) {
+                    this.results[entry][name] = this.results[entry]["data"][name];
+                }
+            }
+            return name;
+        },
+
+        parseData: function (independant, dependant) {
+            var groupedData;
+            if (poly.operation.toLowerCase() === "max")
+                groupedData = d3.nest().key(function(d){return d[independant]}).rollup(function(v){return d3.max(v,function(c){return c[dependant];}); }).entries(this.results);
+            else if (poly.operation.toLowerCase() === "min")
+                groupedData = d3.nest().key(function(d){return d[independant]}).rollup(function(v){return d3.min(v,function(c){return c[dependant];}); }).entries(this.results);
+            else if (poly.operation.toLowerCase() === "count")
+                groupedData = d3.nest().key(function(d){return d[independant]}).rollup(function(v){return v.length;}).entries(this.results);
+            else if (poly.operation.toLowerCase() === "average")
+                groupedData = d3.nest().key(function(d){return d[independant]}).rollup(function(v){return d3.mean(v,function(c){return c[dependant];}); }).entries(this.results);
+            else if (poly.operation.toLowerCase() === "sum")
+                groupedData = d3.nest().key(function(d){return d[independant]}).rollup(function(v){return d3.sum(v,function(c){return c[dependant];}); }).entries(this.results);
+            return groupedData;
+        },
+
+        timeFunction: function (period, dependant) {
+            var format = d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ");
+            var _this = this;
+            var groupedData = d3.nest().key(function(d){
+                var date = format.parse(d.time);
+                if (period == "year"){
+                    _this.timeInterval = 31556952000;
+                    var yearFormat = d3.time.format("%Y");
+                    return yearFormat.parse(d.time.substr(0,4))
+                }
+                else if (period == "month" ) {
+                    _this.timeInterval = 2629746000;
+                    return (new Date(date.getFullYear(), date.getMonth()));
+                }
+                else if (period == "day" ){
+                    _this.timeInterval = 86400000;
+                    return (new Date(date.getFullYear(), date.getMonth(), date.getDate()));
+                }
+                else if (period == "hour" ){
+                    _this.timeInterval = 3600000;
+                    return (new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()));
+                }
+                else if (period == "minute" ){
+                    _this.timeInterval = 60000;
+                    return (new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes()));
+                }
+                else if (period == "second" ){
+                    _this.timeInterval = 1000;
+                    return (new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()));
+                }
+                else{
+                    var totalMins = ((parseInt(period.substring(0,2)*24)+parseInt(period.substring(3,5)))*60) +
+                            parseInt(period.substring(6,8)) +
+                            (parseInt(period.substring(9,11))/60);
+                    var timeInMillis = 1000 * 60 * totalMins;
+                    this.timeInterval = timeInMillis;
+                    return new Date(Math.floor(date.getTime() / timeInMillis) * timeInMillis);
+                }
+            }).rollup(function(v){
+                if (poly.operation.toLowerCase() === "max")
+                    return d3.max(v,function(c){return c[dependant];});
+                else if (poly.operation.toLowerCase() === "min")
+                    return d3.min(v,function(c){return c[dependant];});
+                else if (poly.operation.toLowerCase() === "count")
+                    return v.length;
+                else if (poly.operation.toLowerCase() === "average")
+                    return d3.mean(v,function(c){return c[dependant];});
+                else if (poly.operation.toLowerCase() === "sum")
+                    return d3.sum(v,function(c){return c[dependant];});
+            }).entries(this.results);
+            return groupedData;
+        }
+    }
+</script>
+</html>
