@@ -80,11 +80,11 @@
       }
       if( !this.username ){
         this.error = 'Missing username';
-        return;
+        return Promise.reject(this.error);
       }
       if( !password ){
         this.error = 'Missing password';
-        return;
+        return Promise.reject(this.error);
       }
       this.error = '';
       var params = {

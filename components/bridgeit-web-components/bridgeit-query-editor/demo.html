@@ -16,9 +16,8 @@
 		<!-- Load the webcomponents polyfill -->
 		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
 
-		<!-- Load required jQuery dependency -->
-        <script src="../../jquery/dist/jquery.min.js"></script>
-
+		<link rel="import" href="../bridgeit-auth-provider/bridgeit-auth-provider.html">
+		<link rel="import" href="../bridgeit-login-paper-card/bridgeit-login-paper-card.html">
 		<!-- Load bridgeit query editor component -->
 		<link rel="import" href="bridgeit-query-editor.html">
 		<!-- Load supporting components (optional) -->
@@ -27,11 +26,7 @@
 
 		<!-- Demo specific CSS -->
 		<link rel="stylesheet" href="../common/demo.css"/>
-		<style type="text/css">
-			.buttons {text-align:center;}
-			.buttons button{font-size:13px;padding:5px 10px;color:rgb(239, 239, 239);background-color:rgb(62, 69, 140);margin:10px;}
-		</style>
-
+		
 		<!-- Define custom styling for the components (optional) -->
 		<style is="custom-style">
 			#queryList {
@@ -59,10 +54,12 @@
 					 padding: 8px;
 					 line-height: 1.42857143;
 					 vertical-align: top;
+					 font-size: 11px;
 				};
 				--query-results-th: {
 					 border-bottom-width: 2px;
 					 background-color: #EFEFEF;
+					 font-size: 11px;
 				};
 				/*
 				Other available styling options:
@@ -74,40 +71,39 @@
 		</style>
 	</head>
 	<body unresolved>
+		<template is="dom-bind" id="demo">
+			<div class="container">
 
-		<h1>BridgeIt Query Editor Component Demo</h1>
-		<h3>Login with your BridgeIt Account Information</h3>
-		<hr/>
-		<div id="listenerWrapper">
-			<div id="wrapper" class="container">
-				<form>
-					<div>
-						<label>Account:
-							<input id="account" type="text"/>
-						</label>
-					</div>
-					<div>
-						<label>Realm:
-							<input id="realm" type="text"/>
-						</label>
-					</div>
-					<div>
-						<label>Username:
-							<input id="username" type="text"/>
-						</label>
-					</div>
-					<div>
-						<label>Password:
-							<input id="password" type="password"/>
-						</label>
-					</div>
-					<a onclick="login()">Login</a>
+				<h1>BridgeIt Query Editor Component Demo</h1>
 
-					<div class="settings">
+				<bridgeit-auth-provider id="authProvider" account="[[account]]" realm="[[realm]]"
+					host="[[host]]" logged-in="{{isLoggedIn}}" error="{{loginError}}" timeout="120">
+				</bridgeit-auth-provider>
+				<bridgeit-login-paper-card heading="Demo Login" 
+					username="{{username}}" 
+					password="{{password}}"
+					realm="{{realm}}"
+					account="{{account}}"
+					error="{{loginError}}"
+					auth-provider="authProvider" 
+					submit-label="Login" 
+					cancel-label="Cancel" 
+					hidden="{{isLoggedIn}}" 
+					show-realm-input="true"
+					show-account-input="true">
+				</bridgeit-login-paper-card>
+
+				<template is="dom-if" if="{{isLoggedIn}}">
+				
+					<button onclick="handleLogout()" class="button logout-button">Logout</button>
+					
+					<h2>Settings</h2>
+					<div class="panel settings">
 						<div>
 							<label>Service:
-								<select id="service" onchange="serviceChanged()">
-									<option selected>documents</option>
+								<select id="service" value="{{service::change}}" onchange="demo.collection = '';">
+									<option disabled selected> -- select an option -- </option>
+									<option>documents</option>
 									<option>location</option>
 									<option>metrics</option>
 								</select>
@@ -117,7 +113,23 @@
 						<div>
 							<label>Collection:
 								<span id="collectionInput">
-									<input id="collection" type="text" onchange="document.getElementById('queryEditor').setAttribute('collection', this.value)"/>
+									<template is="dom-if" if="{{isEqual('documents', service)}}">
+										<input id="collection" type="text" value="{{collection::input}}"/>
+									</template>
+									<template is="dom-if" if="{{isEqual('location', service)}}">
+										<select id='collection' value="{{collection::change}}">
+											<option value=''> -- select an option -- </option>
+											<option>regions</option>
+											<option>pois</option>
+											<option>locations</option>
+										</select>
+									</template>
+									<template is="dom-if" if="{{isEqual('metrics', service)}}">
+										<select id='collection' value="{{collection::change}}">
+											<option value=''> -- select an option -- </option>
+											<option>events</option>
+										</select>
+									</template>
 								</span>
 							</label>
 						</div>
@@ -128,48 +140,50 @@
 							</label>
 						</div>
 					</div>
-				</form>
 
-				  <div>
-					  <label>Query URL:
-						  <a id="queryURL" target="_blank"></a>
-					  </label>
-				  </div>
+					<h2>Query URL:</h2>
+					<div class="panel">
+						<a id="queryURL" target="_blank"></a>
+					</div>
 
-				<!-- 3. Declare the element by its tag. -->
-				  <bridgeit-query-editor id="queryEditor"
-										 queryurltarget="queryURL">
-				  </bridgeit-query-editor>
+					<h2>Query Editor</h2>
+					<bridgeit-query-editor id="queryEditor" queryurltarget="queryURL"
+						account="[[account]]" realm="[[realm]]" service="[[service]]" collection="[[collection]]">
+					</bridgeit-query-editor>
 
 					<div>
 						<div id="msgs"></div>
 					</div>
 
-				  <div class="buttons">
-					  <button id="resetEditor" onclick="document.getElementById('queryEditor').resetEditor();">New/Reset</button>
-					  <button id="runQuery" onclick="document.getElementById('queryEditor').runQuery();">Run Query</button>
-					  <button id="saveQuery" onclick="document.getElementById('queryEditor').saveQueryWithPrompt();">Save Query</button>
-					  <button id="cloneQuery" onclick="document.getElementById('queryEditor').cloneQueryWithPrompt();">Clone Query</button>
-					  <button id="deleteQuery" onclick="document.getElementById('queryEditor').deleteQuery();">Delete Query</button>
-				  </div>
-				  <br/>
-				  <div>
-					  <label>Saved Queries:
-						  <bridgeit-query-list id="queryList" for="queryEditor"></bridgeit-query-list>
-					  </label>
-				  </div>
-				  <br/>
+					<div class="buttons">
+						<button id="resetEditor" class="button" onclick="document.getElementById('queryEditor').resetEditor();">New/Reset</button>
+						<button id="runQuery" class="button" onclick="document.getElementById('queryEditor').runQuery();">Run Query</button>
+						<button id="saveQuery" class="button" onclick="document.getElementById('queryEditor').saveQueryWithPrompt();">Save Query</button>
+						<button id="cloneQuery" class="button" onclick="document.getElementById('queryEditor').cloneQueryWithPrompt();">Clone Query</button>
+						<button id="deleteQuery" class="button" onclick="document.getElementById('queryEditor').deleteQuery();">Delete Query</button>
+					</div>
+					
+					<div>
+						<h2>Saved Queries:</h2>
+						<bridgeit-query-list id="queryList" for="queryEditor"></bridgeit-query-list>
+					</div>
+					<div>
+						<h2>Query Results:</h2>
+						<bridgeit-query-results id="queryResults" for="queryEditor" utc="false"></bridgeit-query-results>
+					</div>
+
+				</template>
 			</div>
-			<div>
-				<label>Query Results:
-					<bridgeit-query-results id="queryResults" for="queryEditor" utc="false"></bridgeit-query-results>
-				</label>
-			</div>
-		</div>
+		</template>
 
 		<script type="text/javascript">
+
+			function handleLogout(){
+				document.getElementById('authProvider').logout();
+			}
+
 			//Listen for the queryMsgUpdated event for all components
-			document.getElementById('listenerWrapper').addEventListener('queryMsgUpdated', function(e) {
+			window.addEventListener('queryMsgUpdated', function(e) {
 				var id = e.detail.id ? e.detail.id + ' : ' : '';
 				document.getElementById('msgs').innerHTML = id + e.detail.message;
 				//clear message 10 seconds after it's received
@@ -178,93 +192,29 @@
 					document.getElementById('msgs').innerHTML = '';
 				},10000);
 			});
-			//set the service on the component on change
-			function serviceChanged() {
-				var service = document.getElementById('service').options[document.getElementById('service').selectedIndex].value;
-				document.getElementById('queryEditor').setAttribute('service', service);
-				var collectionInput = document.getElementById('collectionInput');
-				switch (service) {
-					case 'documents':
-						collectionInput.innerHTML = "<input id='collection' type='text'/>";
-						document.getElementById('queryEditor').setAttribute('collection', 'documents');
-						break;
-					case 'location':
-						collectionInput.innerHTML = "<select id='collection'><option selected>regions</option><option>pois</option><option>locations</option></select>";
-						document.getElementById('queryEditor').setAttribute('collection', 'regions');
-						break;
-					case 'metrics':
-						collectionInput.innerHTML = "<select id='collection'><option selected>events</option></select>";
-						document.getElementById('queryEditor').setAttribute('collection', 'events');
-						break;
-				}
-			}
-			//set the collection on the component on change
-			document.getElementById('collectionInput').addEventListener('change',function() {
-				var collection = document.getElementById('collection');
-				document.getElementById('queryEditor').setAttribute('collection',collection.options ? collection.options[collection.selectedIndex].value : collection.value);
-			});
 
-			function login(event){
-				var account = document.getElementById('account').value;
-				var realm = document.getElementById('realm').value;
-				var username = document.getElementById('username').value;
-				var password = document.getElementById('password').value;
+			var demo = document.getElementById('demo');
 
-				bridgeit.io.auth.connect({
-					account: account,
-					realm: realm,
-					username: username,
-					password: password
-				}).then(function(){
-					setCredentialsOnComponent();
-					initializeComponent();
-				})['catch'](function(){
-					//try to login as admin
-					bridgeit.io.auth.connect({
-						account: account,
-						realm: 'admin',
-						username: username,
-						password: password
-					}).then(function(){
-						setCredentialsOnComponent();
-						document.getElementById('queryEditor').setAttribute('realm', realm);
-						initializeComponent();
-					})
-				});
-			}
+			demo.isEqual = function(val1, val2){
+				return val1 === val2;
+			};
 
-			function setCredentialsOnComponent(){
-				var elem = document.getElementById('queryEditor');
-
-				var account = bridgeit.io.auth.getLastKnownAccount();
-				if (account) {
-					elem.setAttribute('account', account);
-					document.getElementById('account').value = account;
-				}
-
-				var realm = bridgeit.io.auth.getLastKnownRealm();
-				if (realm) {
-					elem.setAttribute('realm', realm);
-					document.getElementById('realm').value = realm;
-				}
-
-				if (bridgeit.io.auth.isLoggedIn()) {
-					document.getElementById('username').value = bridgeit.io.auth.getLastKnownUsername();
-				}
-			}
+			demo.service = 'documents';
 
 			function initializeComponent() {
-				document.getElementById('queryEditor').reloadEditor();
-				document.getElementById('queryEditor').fetchQueryList();
+				//set the collection on the component on change
+				setTimeout( function(){
+					document.getElementById('collectionInput').addEventListener('change',function() {
+						var collection = document.getElementById('collection');
+						document.getElementById('queryEditor').setAttribute('collection',collection.options ? collection.options[collection.selectedIndex].value : collection.value);
+					});
+					document.getElementById('queryEditor').reloadEditor();
+					document.getElementById('queryEditor').fetchQueryList();
+				}, 100);				
 			}
 
-			window.addEventListener('WebComponentsReady', function() {
-				// imports are loaded and elements have been registered
-				console.log('WebComponentsReady');
+			window.addEventListener('onAfterLogin', initializeComponent, false);
 
-				//initialize known credentials
-				setCredentialsOnComponent();
-			});
 		</script>
 	</body>
 </html>

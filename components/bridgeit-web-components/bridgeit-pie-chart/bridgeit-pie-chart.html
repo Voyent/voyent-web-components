@@ -1,0 +1,45 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/polymer-behaviors.html">
+<script src="../../randomColor/randomColor.js"></script>
+<!--
+Example:
+
+    <bridgeit-pie-chart accesstoken="xxx"
+                               account="myAccount"
+                               realm="myRealm"
+                               independent="username"
+                               dependent="size"
+                               service="location"
+                               >
+    </bridgeit-pie-chart>
+
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-pie-chart">
+    <style type="text/css">
+        .wrapper {
+            width:100%;
+            height: 100%;
+        }
+        .wrapper ::content .arc text {
+            font: 10px sans-serif;
+            text-anchor: middle;
+        }
+
+        .wrapper ::content .arc path {
+            stroke: #fff;
+        }
+    </style>
+    <template>
+        <div class="wrapper">
+            <content>
+                <svg id="chart">
+
+                </svg>
+            </content>
+        </div>
+    </template>
+</dom-module>
+
+<script src="bridgeit-pie-chart.js"></script>

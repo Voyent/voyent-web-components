@@ -1,0 +1,55 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/polymer-behaviors.html">
+
+<!--
+<bridgeit-bar-chart accesstoken="xxx"
+                               account="myAccount"
+                               realm="myRealm"
+                               independent="username"
+                               dependent="size"
+                               service="location"
+                               >
+    </bridgeit-bar-chart>
+@demo demo.html
+-->
+
+<dom-module id="bridgeit-bar-chart">
+    <style type="text/css">
+        .wrapper {
+            width:100%;
+            height: 100%;
+        }
+
+        .wrapper ::content #chart g rect:hover {
+            @apply(--barHover);
+        }
+
+        .wrapper ::content #chart g rect {
+            @apply(--bar);
+        }
+
+        .wrapper ::content #chart .bartext {
+            fill: white;
+            font: 10px sans-serif;
+        }
+        .wrapper ::content .axis text {
+            @apply(--axisText)
+        }
+
+        .wrapper ::content .axis path,
+        .wrapper ::content .axis line {
+            @apply(--axis)
+        }
+    </style>
+    <template>
+        <div class="wrapper">
+            <content style="width:100%;height:100%">
+                <svg id="chart">
+
+                </svg>
+            </content>
+        </div>
+    </template>
+</dom-module>
+
+<script src="bridgeit-bar-chart.js"></script>

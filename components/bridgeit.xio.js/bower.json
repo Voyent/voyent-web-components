@@ -11,8 +11,8 @@
 		".gitignore"
 	],
 	"dependencies":{
-      "bridgeit.js": "#gh-pages",
-      "bridgeit.io.js": "#gh-pages"
+      "bridgeit.js": "1.0.7",
+      "bridgeit.io.js": "#dev"
 	},
 	"devDependencies":{},
 	"keywords":[

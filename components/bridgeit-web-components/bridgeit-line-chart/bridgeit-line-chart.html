@@ -1,0 +1,59 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/polymer-behaviors.html">
+
+<!--
+<bridgeit-line-chart accesstoken="xxx"
+                               account="myAccount"
+                               realm="myRealm"
+                               independent="time"
+                               dependent="size"
+                               service="location"
+                               >
+    </bridgeit-line-chart>
+@demo demo.html
+-->
+<dom-module id="bridgeit-line-chart">
+    <style type="text/css">
+        .wrapper {
+            width:100%;
+            height: 100%;
+        }
+
+        .wrapper ::content #chart .bartext {
+            fill: white;
+            font: 10px sans-serif;
+
+        }
+        .wrapper ::content .axis text {
+            font: 10px sans-serif;
+        }
+
+        .wrapper ::content .axis path,
+        .wrapper ::content .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .wrapper ::content .x.axis path {
+            display: none;
+        }
+
+        .wrapper ::content .line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
+    </style>
+    <template>
+        <div class="wrapper">
+            <content style="width:100%;height:100%">
+                <svg id="chart">
+
+                </svg>
+            </content>
+        </div>
+    </template>
+</dom-module>
+
+<script src="bridgeit-line-chart.js"></script>

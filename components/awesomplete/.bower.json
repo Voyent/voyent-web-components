@@ -1,0 +1,27 @@
+{
+  "name": "awesomplete",
+  "main": [
+    "./awesomplete.css",
+    "./awesomplete.js"
+  ],
+  "version": "1.0.0",
+  "homepage": "https://github.com/LeaVerou/awesomplete",
+  "authors": [
+    "Lea Verou <>"
+  ],
+  "description": "Ultra lightweight, usable autocomplete with zero dependencies.",
+  "keywords": [
+    "autocomplete",
+    "lightweight"
+  ],
+  "license": "MIT",
+  "_release": "1.0.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.0.0",
+    "commit": "63288167fd21b3c082c8f7e993782c11b6ca5950"
+  },
+  "_source": "https://github.com/LeaVerou/awesomplete.git",
+  "_target": "^1.0.0",
+  "_originalSource": "https://github.com/LeaVerou/awesomplete.git"
+}

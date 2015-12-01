@@ -17,9 +17,7 @@
       username: {
         notify: true,
         type: String,
-        value: function(){
-          return bridgeit.io.auth.getLastKnownUsername();
-        }
+        value: function(){ return bridgeit.io.auth.getLastKnownUsername();}
       },
       password: {
         notify: true,
@@ -52,6 +50,24 @@
       headerImage: {
         notify: true,
         type: String
+      },
+      showRealmInput: {
+        notify: true,
+        type: Boolean
+      },
+      showAccountInput: {
+        notify: true,
+        type: Boolean
+      },
+      realm: {
+        notify: true,
+        type: String,
+        value: function(){ return bridgeit.io.auth.getLastKnownRealm(); }
+      },
+      account: {
+        notify: true,
+        type: String,
+        value: function(){ return bridgeit.io.auth.getLastKnownAccount(); }
       }
     },
 
@@ -80,6 +96,14 @@
 
     _clearUsername: function(){
       this.username = '';
+    },
+
+    _clearRealm: function(){
+      this.realm = '';
+    },
+
+    _clearAccount: function(){
+      this.account = '';
     },
 
     // Overidden from Polymer.IronValidatableBehavior. Will set the `invalid`

@@ -10,8 +10,8 @@
     ".gitignore"
   ],
   "dependencies": {
-    "bridgeit.js": "#gh-pages",
-    "bridgeit.io.js": "#gh-pages"
+    "bridgeit.js": "1.0.7",
+    "bridgeit.io.js": "#dev"
   },
   "devDependencies": {},
   "keywords": [
@@ -20,11 +20,11 @@
     "services"
   ],
   "homepage": "https://github.com/bridgeit/bridgeit.xio.js",
-  "_release": "3dfa9f0eb9",
+  "_release": "1d8a3da2da",
   "_resolution": {
     "type": "branch",
     "branch": "gh-pages",
-    "commit": "3dfa9f0eb95099b34c5fc426cceaf183b9ea9100"
+    "commit": "1d8a3da2daf7ec6f49aaf9a33f14feb91314e923"
   },
   "_source": "git://github.com/bridgeit/bridgeit.xio.js.git",
   "_target": "gh-pages",

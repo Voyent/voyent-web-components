@@ -31,9 +31,10 @@
     "codemirror": "~5.8.0",
     "jsonlint": "~1.6.0",
     "juicy-ace-editor": "~1.1.1",
-    "handlebars": "https://github.com/components/handlebars.js.git",
-    "typeahead": "https://github.com/twitter/typeahead.js.git",
-    "components-font-awesome": "~4.4.0"
+    "awesomplete": "https://github.com/LeaVerou/awesomplete.git#^1.0.0",
+    "components-font-awesome": "~4.4.0",
+    "pikaday": "https://github.com/dbushell/Pikaday.git#1.4.0",
+    "randomColor": "https://github.com/davidmerfield/randomColor.git#0.4.1"
   },
   "devDependencies": {
     "web-component-tester": "*"
@@ -41,11 +42,11 @@
   "resolutions": {
     "bridgeit.io.js": "dev"
   },
-  "_release": "ef99cbe1d4",
+  "_release": "e7f8e775d2",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "ef99cbe1d4a4e1f56f30d0582c8a7b365c3ff165"
+    "commit": "e7f8e775d2468483b122e2029bdcc89abe306584"
   },
   "_source": "git://github.com/bridgeit/bridgeit-web-components.git",
   "_target": "master",
