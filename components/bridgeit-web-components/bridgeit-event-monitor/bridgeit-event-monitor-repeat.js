@@ -181,6 +181,31 @@ Polymer({
         Polymer.dom(_this.root).querySelector("#" + graphEM.id + "wrap")
                 .appendChild(graphEM);
         graphEM.show();
+        
+        // Add a custom zoom, that will override the existing zoom (because the listener name is the same)
+        // This zoom will enable "global" zooming, which means any selected (via checkbox) event monitors will
+        //  be kept in sync for zoom/pan
+        var _this = this;
+        var vis = d3.select("div#" + graphEM.id + "div").select("svg");
+        var zoom = d3.behavior.zoom();
+        vis.call(zoom.x(graphEM._ourxscale).on(graphEM._padID("zoom"), function() {
+            // Always fire our current zoom, regardless of selection
+            // This ensures the user gets immediate feedback when zooming a single graph
+            graphEM._externalZoom();
+            
+            // Loop through our items and fire zoom for any that are selected
+            var currentEM;
+            for (var i = 0; i < _this.items.length; i++) {
+                if (_this.items[i].selected) {
+                    currentEM = _this.items[i].eventmonitor;
+                    
+                    // Zoom the currently selected eventmonitor (if it isn't us, which would already be zoomed)
+                    if (currentEM != graphEM) {
+                        currentEM._externalZoom(graphEM._ourxscale.domain()[0], graphEM._ourxscale.domain()[1]);
+                    }
+                }
+            }
+        }));
     },
     
     /**

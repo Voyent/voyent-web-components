@@ -73,7 +73,19 @@ Polymer({
          * Defines the ID of the details pane container, used for consistency
          * @default eventDetails
          */
-        detailsid: { type: String, value: "eventDetails" }
+        detailsid: { type: String, value: "eventDetails" },
+        /**
+         * Defines our zoom that is used internally by D3
+         */
+        _ourzoom: { type: Object },
+        /**
+         * Defines our X-Scale, which is a series of dates and is used by the X-Axis
+         */
+        _ourxscale: { type: Object },
+        /**
+         * Defines our X-Axis that is used internally by D3
+         */
+        _ourxaxis: { type: Object }
     },
     
     /**
@@ -214,15 +226,16 @@ Polymer({
         }
         
         // Build our date scale
-        xScale = d3.time.scale().domain([d3.min(data, function(d) {
+        this._ourxscale = d3.time.scale().range([this.padding, calcWidth-this.padding]);
+        this._ourxscale.domain([d3.min(data, function(d) {
             return new Date(d.time);
         }), d3.max(data, function(d) {
             return new Date(d.time);
-        })]).range([this.padding, calcWidth-this.padding]);
+        })]);
         
         // Use the scale to make an axis
         // Remember to keep the number of ticks relative to the calculated width, to allow for responsive resizing
-        xAxis = d3.svg.axis().scale(xScale)
+        this._ourxaxis = d3.svg.axis().scale(this._ourxscale)
                     .orient("bottom")
                     .tickPadding(5)
                     .ticks(Math.max(calcWidth/120, 2));
@@ -231,18 +244,25 @@ Polymer({
         vis.append("g")
             .attr("class", "axis")
             .attr("transform", "translate(0," + (calcHeight/2) + ")")
-            .call(xAxis);
+            .call(this._ourxaxis);
             
         // Add zoom functionality
         if (this.usezoom == 'true') {
-            var zoom = d3.behavior.zoom();
-            vis.call(zoom
-                .x(xScale)
+            this._ourzoom = d3.behavior.zoom();
+            var _this = this;
+            vis.call(this._ourzoom
+                .x(this._ourxscale)
                 .on(this._padID("zoom"), function() {
-                    zoom.x(xScale);
-                    vis.select("g.axis").call(xAxis);
+                    // Perform the scale and translation from our event
+                    _this._ourzoom.scale(d3.event.scale);
+                    _this._ourzoom.translate(d3.event.translate);
+                    
+                    // Update the Axis (as our X-Scale domain has changed)
+                    vis.select("g.axis").call(_this._ourxaxis);
+                    
+                    // Finally redraw all our circles using the new X-Scale
                     vis.selectAll("circle")
-                        .attr("cx", function(d) { return xScale(new Date(d.time)); });
+                        .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); });
                 })
                 .on(this._padID("zoomstart"), function() {
                     vis.style("cursor", "zoom-in");
@@ -283,7 +303,7 @@ Polymer({
             .data(data)
             .enter().append("circle")
             .attr("cy", calcHeight/2)
-            .attr("cx", function(d) { return xScale(new Date(d.time)); })
+            .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); })
             .attr("r", this.circleradius)
             .attr("stroke", "black")
             .attr("stroke-width", 1)
@@ -396,6 +416,37 @@ Polymer({
         
         // Update our graph title with the proper count
         this.customTitle = "Graph of " + data.length + " Events:";
+    },
+    
+    /**
+     * Allow an external source to zoom this event monitor
+     * This is especially useful when multiple event monitors need to have their zoom synchronized
+     * @param domainMin date to use as the minimum for our X-Scale domain
+     * @param domainMax date to use as the maximum for our X-Scale domain
+     * @private
+     */
+    _externalZoom: function(domainMin, domainMax) {
+        // If we have a proper D3 event we apply the scale/translate to our zoom object
+        if (d3.event) {
+            if (d3.event.scale) {
+                this._ourzoom.scale(d3.event.scale);
+            }
+            if (d3.event.translate) {    
+                this._ourzoom.translate(d3.event.translate);
+            }
+        }
+        
+        // If we received a domain min/max we set that into our X-Scale
+        if (domainMin && domainMax) {
+            this._ourxscale.domain([domainMin, domainMax]);
+        }
+        
+        // Find our SVG element, update the axis, and redraw the circles as necessary
+        var _this = this;
+        var vis = d3.select("div#" + this.id + "div").select("svg");
+        vis.select("g.axis").call(this._ourxaxis);
+        vis.selectAll("circle")
+            .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); });
     },
     
     /**
