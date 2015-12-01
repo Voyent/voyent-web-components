@@ -79,7 +79,7 @@ Polymer({
 
         function onAfterjQueryLoaded(){
             console.log('onAfterjQueryLoaded()');
-            var link = _this.importHref('jquery-builder-import.html', function(e){
+            var link = _this.importHref('./jquery-builder-import.html', function(e){
                 document.head.appendChild(link.import.body);
                  _this.scriptsLoaded = true;
                 //if onReady has been called but we just finished loading scripts, 
