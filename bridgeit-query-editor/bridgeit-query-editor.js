@@ -49,7 +49,10 @@ Polymer({
         /**
          * A string representation of the results array returned from the `queriesRetrieved` event. Use when data binding is preferred over event listeners.
          */
-        querylistresults: { type: String, reflectToAttribute: true, readOnly: true }
+        querylistresults: { type: String, reflectToAttribute: true, readOnly: true },
+
+        scriptsLoaded: { type: Boolean, value: false},
+        readyCalled: { type: Boolean, value: false}
     },
 
     /**
@@ -70,7 +73,47 @@ Polymer({
      * @event queryMsgUpdated
      */
 
+    created: function(){
+
+        var _this = this;
+
+        function onAfterjQueryLoaded(){
+            console.log('onAfterjQueryLoaded()');
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = '../../jQuery-QueryBuilder/dist/js/query-builder.standalone.min.js';
+            s.onload = function(){
+                _this.scriptsLoaded = true;
+                //if onReady has been called but we just finished loading scripts, 
+                //we need to manually call onReady
+                if( _this.readyCalled ){
+                    _this.onReady();
+                }
+            };
+            document.head.appendChild(s);
+        }
+
+        if( !('jQuery' in window) ){
+            console.log('jQuery not in window, fetching');
+            var jqScript = document.createElement('script');
+            jqScript.async = true;
+            jqScript.src = '../../jquery/dist/jquery.js';
+            jqScript.onload = onAfterjQueryLoaded
+            document.head.appendChild(jqScript);
+        }
+        else{
+            onAfterjQueryLoaded();
+        }
+    },
+
     ready: function() {
+        if( this.scriptsLoaded && !this.readyCalled ){
+            this.onReady();
+        }
+        this.readyCalled = true;
+    },
+
+    onReady: function(){
         if (!this.realm) {
             this.realm = bridgeit.io.auth.getLastKnownRealm();
         }
