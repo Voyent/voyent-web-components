@@ -79,18 +79,17 @@ Polymer({
 
         function onAfterjQueryLoaded(){
             console.log('onAfterjQueryLoaded()');
-            var s = document.createElement('script');
-            s.async = true;
-            s.src = '../../jQuery-QueryBuilder/dist/js/query-builder.standalone.min.js';
-            s.onload = function(){
-                _this.scriptsLoaded = true;
+            var link = _this.importHref('jquery-builder-import.html', function(e){
+                document.head.appendChild(link.import.body);
+                 _this.scriptsLoaded = true;
                 //if onReady has been called but we just finished loading scripts, 
                 //we need to manually call onReady
                 if( _this.readyCalled ){
                     _this.onReady();
                 }
-            };
-            document.head.appendChild(s);
+            }, function(err){
+                console.error('bridgeit-query-editor: error loading jquery builder', err);
+            });
         }
 
         if( !('jQuery' in window) ){
