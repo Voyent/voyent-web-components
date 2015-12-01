@@ -79,7 +79,7 @@ Polymer({
 
         function onAfterjQueryLoaded(){
             console.log('onAfterjQueryLoaded()');
-            var link = _this.importHref('./jquery-builder-import.html', function(e){
+            var link = _this.importHref(jqueryBuilderURL, function(e){
                 document.head.appendChild(link.import.body);
                  _this.scriptsLoaded = true;
                 //if onReady has been called but we just finished loading scripts, 
@@ -91,6 +91,9 @@ Polymer({
                 console.error('bridgeit-query-editor: error loading jquery builder', err);
             });
         }
+
+        var jqueryBuilderURL = this.resolveUrl('./jquery-builder-import.html');
+        console.log('jquery builder url: ' + jqueryBuilderURL);
 
         if( !('jQuery' in window) ){
             console.log('jQuery not in window, fetching');
