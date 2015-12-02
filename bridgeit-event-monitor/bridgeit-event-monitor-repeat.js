@@ -74,7 +74,7 @@ Polymer({
      */
     moveTop: function(e) {
         var oldIndex = this.items.indexOf(e.model.item);
-        if (oldIndex != 0) {
+        if (oldIndex !== 0) {
             this._moveArrayItem(this.items, oldIndex, 0);
             this.refreshAll();
         }
@@ -185,7 +185,6 @@ Polymer({
         // Add a custom zoom, that will override the existing zoom (because the listener name is the same)
         // This zoom will enable "global" zooming, which means any selected (via checkbox) event monitors will
         //  be kept in sync for zoom/pan
-        var _this = this;
         var vis = d3.select("div#" + graphEM.id + "div").select("svg");
         var zoom = d3.behavior.zoom();
         vis.call(zoom.x(graphEM._ourxscale).on(graphEM._padID("zoom"), function() {
