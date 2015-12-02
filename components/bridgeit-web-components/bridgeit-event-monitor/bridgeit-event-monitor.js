@@ -249,7 +249,6 @@ Polymer({
         // Add zoom functionality
         if (this.usezoom == 'true') {
             this._ourzoom = d3.behavior.zoom();
-            var _this = this;
             vis.call(this._ourzoom
                 .x(this._ourxscale)
                 .on(this._padID("zoom"), function() {
