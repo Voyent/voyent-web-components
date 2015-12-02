@@ -47,7 +47,7 @@
 		<h1>BridgeIt Line Chart Component Demo</h1>
   		<h3>Login with your BridgeIt Account Information</h3>
   		<hr/>
-  		<div class="container">
+  		<div class="container" style="overflow:visible">
 	  		<form>
 	  			<div>
 					<label>Account:
@@ -73,11 +73,16 @@
                 <a onclick="login()">Login</a>
                 <br/>
                 <bridgeit-chart-inputs id="inputs" configure="time,number"></bridgeit-chart-inputs>
+                <div>
+                    <label>Zoomable Graph:
+                        <input type="checkbox" onclick="toggleBooleanAttribute('zoomable',this.checked);graph();"/>
+                    </label>
+                </div>
 				<a onclick="graph()">Create graph</a>
 			</form>
 
 			<!-- 3. Declare the element by its tag. -->
-            <div style="width:90%;height:300px;">
+            <div style="width:90%;height:250px;">
                 <bridgeit-line-chart showaxes id="bridgeitchart"></bridgeit-line-chart>
             </div>
 		</div>
