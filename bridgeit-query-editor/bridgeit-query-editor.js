@@ -49,10 +49,7 @@ Polymer({
         /**
          * A string representation of the results array returned from the `queriesRetrieved` event. Use when data binding is preferred over event listeners.
          */
-        querylistresults: { type: String, reflectToAttribute: true, readOnly: true },
-
-        scriptsLoaded: { type: Boolean, value: false},
-        readyCalled: { type: Boolean, value: false}
+        querylistresults: { type: String, reflectToAttribute: true, readOnly: true }
     },
 
     /**
@@ -73,50 +70,33 @@ Polymer({
      * @event queryMsgUpdated
      */
 
-    created: function(){
-
+    created: function() {
         var _this = this;
 
-        function onAfterjQueryLoaded(){
-            console.log('onAfterjQueryLoaded()');
-            var link = _this.importHref(jqueryBuilderURL, function(e){
-                document.head.appendChild(link.import.body);
-                 _this.scriptsLoaded = true;
-                //if onReady has been called but we just finished loading scripts, 
-                //we need to manually call onReady
-                if( _this.readyCalled ){
-                    _this.onReady();
-                }
-            }, function(err){
-                console.error('bridgeit-query-editor: error loading jquery builder', err);
-            });
-        }
-
         var jqueryBuilderURL = this.resolveUrl('./jquery-builder-import.html');
-        console.log('jquery builder url: ' + jqueryBuilderURL);
-
-        if( !('jQuery' in window) ){
-            console.log('jQuery not in window, fetching');
-            var link = this.importHref('../jquery-import/jquery-import.html', function(e){
+        if (!('jQuery' in window)) {
+            //load missing jQuery dependency
+            var link = this.importHref('../jquery-import/jquery-import.html', function(e) {
                 document.head.appendChild(link.import.body);
                 onAfterjQueryLoaded();
-            }, function(err){
+            }, function(err) {
                 console.error('bridgeit-query-editor: error loading jquery', err);
             });
         }
-        else{
-            onAfterjQueryLoaded();
+        else { onAfterjQueryLoaded(); }
+
+        function onAfterjQueryLoaded() {
+            //load jQuery-QueryBuilder dependency
+            var link = _this.importHref(jqueryBuilderURL, function(e) {
+                document.head.appendChild(link.import.body);
+                _this._initialize();
+            }, function(err) {
+                console.error('bridgeit-query-editor: error loading jquery builder', err);
+            });
         }
     },
 
-    ready: function() {
-        if( this.scriptsLoaded && !this.readyCalled ){
-            this.onReady();
-        }
-        this.readyCalled = true;
-    },
-
-    onReady: function(){
+    _initialize: function() {
         if (!this.realm) {
             this.realm = bridgeit.io.auth.getLastKnownRealm();
         }
