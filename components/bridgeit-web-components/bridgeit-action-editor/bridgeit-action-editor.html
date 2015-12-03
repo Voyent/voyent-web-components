@@ -110,6 +110,8 @@ Example:
                @apply(--action-editor-task-button-container);
            }
            .task-group .title {
+               margin-bottom: 10px;
+               font-size: 18px;
                cursor:pointer;
                @apply(--action-editor-task-group-title);
            }
@@ -150,7 +152,8 @@ Example:
                @apply(--action-editor-task-panel-arrow);
            }
            .task-group .arrow {
-               margin-top: 5px;
+               margin-top:8px;
+               margin-right: 5px;
                @apply(--action-editor-task-group-arrow);
            }
            .task .arrow {
@@ -174,6 +177,12 @@ Example:
                width:100%;
                margin:5px 0 10px 0;
                @apply(--action-editor-input);
+           }
+           .form-control-chk {
+               width:100%;
+               margin:5px 0 10px 0;
+               cursor:pointer;
+               @apply(--action-editor-checkbox);
            }
            input:invalid {
                border: 1px solid #a94442 !important;
@@ -219,10 +228,10 @@ Example:
            .taskPanel .header:last-child {
                border-bottom: 1px solid #999;
            }
-           .task-group:last-child {
+           .task-group:last-of-type {
                margin-bottom:0;
            }
-           .task:first-child {
+           .task:first-of-type {
                margin-top:10px;
            }
            .taskPanel.toggled {
@@ -240,7 +249,7 @@ Example:
                max-width:20px;
            }
         </style>
-        <template is="dom-if" if="{{_schemas}}">
+        <template is="dom-if" if="{{_taskGroupSchemas}}">
             <content select="bridgeit-action-list"></content>
             <div class="buttonContainer">
                 <button type="button" on-click="_resetEditor">New/Reset</button>
@@ -259,15 +268,17 @@ Example:
                         <div class="taskPanel">
                             <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
                             <div class="content layout vertical wrap">
-                                <div class="flex taskGroup taskItem" draggable="true" on-dragstart="_startDragGroup" title="Container for Tasks">
-                                    <div class="title">task-group</div>
-                                </div>
+                                <template is="dom-repeat" items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
+                                    <div class="flex taskGroup taskItem" draggable="true" on-dragstart="_startDragGroup" title$="{{item.description}}">
+                                        <div class="title">{{item.label}}</div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                         <div class="taskPanel">
                             <div class="header" on-click="_toggleTask">Tasks<div class="arrow"></div></div>
                             <div class="content layout vertical wrap">
-                                <template is="dom-repeat" items="{{_schemas}}" sort="_sortTaskItems">
+                                <template is="dom-repeat" items="{{_taskSchemas}}" sort="_sortTaskItems">
                                     <div class="flex taskItem" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
                                         <div class="title">{{item.label}}</div>
                                     </div>
@@ -310,22 +321,33 @@ Example:
                                             <button type="button" on-click="_moveTaskGroupDown">Down</button>
                                             <button type="button" on-click="_deleteTaskGroup">Remove</button>
                                         </div>
-                                        <div class="layout horizontal" on-drop="_preventDrop">
-                                            <div class="flex toggleable-area" on-click="_toggleTaskGroup">
-                                                <div class="arrow"></div>
-                                            </div>
-                                            <div class="flex">
-                                                <label title="The task group name">
-                                                    <span class="title" on-click="_toggleTaskGroup"><span class="required">*</span><span>Task Group Name</span></span>
-                                                    <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
-                                                </label>
-                                                <label title="Stop executing the action on error?">
-                                                    <span class="title">Quit Action On Error</span>
-                                                    <input type="checkbox" checked="{{group.exitOnError::change}}"/>
-                                                </label>
-                                            </div>
-                                        </div>
+                                        <div class="title" on-drop="_preventDrop" on-click="_toggleTask">{{group.schema.title}}<div class="arrow"></div></div>
                                         <div class="content">
+                                            <label title="The task group name" on-drop="_preventDrop">
+                                                <span class="required">*</span><span>Task Group Name</span>
+                                                <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
+                                            </label>
+                                            <template is="dom-repeat" items="{{_toArray(group.schema.properties.required)}}" as="property" sort="_sortProperties">
+                                                <label on-drop="_preventDrop">
+                                                    <span class="required">*</span><span>{{property.title}}</span>
+                                                    <template is="dom-if" if="{{_isString(property.type)}}">
+                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                               required value="{{property.value::input}}">
+                                                    </template>
+                                                </label>
+                                            </template>
+                                            <template is="dom-repeat" items="{{_toArray(group.schema.properties.optional)}}" as="property" sort="_sortProperties">
+                                                <label on-drop="_preventDrop">
+                                                    <span>{{property.title}}</span>
+                                                    <template is="dom-if" if="{{_isString(property.type)}}">
+                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                               value="{{property.value::input}}">
+                                                    </template>
+                                                    <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                        <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                    </template>
+                                                </label>
+                                            </template>
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
                                                 <div id$="{{task.id}}" class="task toggled" on-drop="_preventDrop">
                                                     <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
@@ -347,7 +369,7 @@ Example:
                                                             <template is="dom-repeat" items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
                                                                 <fieldset>
                                                                     <legend>Group <span>{{_toOneBasedIndex(index)}}</span></legend>
-                                                                    <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property">
+                                                                    <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
                                                                         <label>
                                                                             <span>{{property.title}}</span>
                                                                             <template is="dom-if" if="{{_isString(property.type)}}">
@@ -367,7 +389,7 @@ Example:
                                                                 </fieldset>
                                                             </template>
                                                         </template>
-                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property">
+                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                             <label>
                                                                 <span class="required">*</span><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
@@ -384,7 +406,7 @@ Example:
                                                                 </template>
                                                             </label>
                                                         </template>
-                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property">
+                                                        <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                             <label>
                                                                 <span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
