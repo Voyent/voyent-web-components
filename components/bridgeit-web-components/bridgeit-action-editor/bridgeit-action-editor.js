@@ -816,10 +816,12 @@ Polymer({
      * @private
      */
     _sortProperties: function(a,b) {
-        a = a.title.toLowerCase();
-        b = b.title.toLowerCase();
-        if (a < b) { return -1; }
-        else if (a > b) { return  1; }
+        if (a && b) {
+            a = a.title.toLowerCase();
+            b = b.title.toLowerCase();
+            if (a < b) { return -1; }
+            else if (a > b) { return  1; }
+        }
         return 0;
     },
 
