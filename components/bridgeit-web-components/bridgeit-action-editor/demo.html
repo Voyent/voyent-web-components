@@ -122,6 +122,7 @@
             --action-editor-task-arrow: { }; [Custom task toggle arrow styling]
             --action-editor-label: { }; [Custom label styling]
             --action-editor-function-input: { }; [Custom function input styling]
+            --action-editor-checkbox: { }; [Custom checkbox input styling]
             --action-editor-input-invalid: { }; [Custom invalid input styling]
             --action-editor-event-triggers: { }; [Custom event trigger div wrapper styling]
             --action-editor-required-asterisk: { }; [Custom required asterisk styling]
@@ -209,6 +210,7 @@
 			password: password
 		}).then(function(){
 			setCredentialsOnComponent();
+            document.getElementById('actionEditor').getTaskGroups();
             document.getElementById('actionEditor').getTasks();
             document.getElementById('actionEditor').getActions();
 		})['catch'](function(){
@@ -221,6 +223,7 @@
 			}).then(function(){
 				setCredentialsOnComponent();
 				document.getElementById('actionEditor').setAttribute('realm', realm);
+                document.getElementById('actionEditor').getTaskGroups();
                 document.getElementById('actionEditor').getTasks();
                 document.getElementById('actionEditor').getActions();
 			})

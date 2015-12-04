@@ -88,7 +88,13 @@ Polymer({
          * The end of the range of dates to pull metrics from. Send in standard ISO format, or null to ignore.
          * @default null
          */
-        endrange:{type:String}
+        endrange:{type:String},
+        /**
+         * Boolean attribute that determines whether or not zoom/pan functionality is enabled on the chart
+         * @default false
+         */
+        zoomable:{type:Boolean}
+
     },
 
     created: function () {
@@ -102,7 +108,6 @@ Polymer({
 
     _refreshGraph: function () {
         function gotData(db) {
-            console.log(db);
             var clientWidth = document.getElementsByClassName("wrapper")[0].clientWidth;
             var clientHeight = document.getElementsByClassName("wrapper")[0].clientHeight;
             var margin = {top: 20, right: 30, bottom: 30, left: 40},
@@ -111,14 +116,12 @@ Polymer({
             d3.select("#chart").selectAll("*").remove();
             var horizontalScale = poly.independent == "time"? d3.time.scale().range([0,width]) : d3.scale.linear().range([0,width]);
             var verticalScale = d3.scale.linear().range([height,0]);
-            var line = d3.svg.line()
-                .x(function(d) { return horizontalScale(new Date(d.key)); })
-                .y(function(d) { return verticalScale(d.values); });
-
-
-            var chart = poly.showaxes ? d3.select("#chart").attr("width", width + margin.right + margin.left).attr("height", height + margin.top + margin.bottom).append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")") : d3.select("#chart").attr("width", width).attr("height", height);
-
+            var xAxis = d3.svg.axis()
+                .scale(horizontalScale)
+                .orient("bottom");
+            var yAxis = d3.svg.axis()
+                .scale(verticalScale)
+                .orient("left");
             if(poly.independent == "time")
                 horizontalScale.domain(d3.extent(db, function(d) { return new Date(d.key); }));
             else {
@@ -130,26 +133,82 @@ Polymer({
                 }
             }
             verticalScale.domain(d3.extent(db, function(d) { return d.values; }));
+            var zoom = d3.behavior.zoom().x(horizontalScale).y(verticalScale).scaleExtent([1,10]).on('zoom',zoomed);
+            var line = d3.svg.line().interpolate("linear")
+                .x(function(d) { return horizontalScale(new Date(d.key)); })
+                .y(function(d) { return verticalScale(d.values); });
+
+            var chart = d3.select("#chart").attr("width", width + margin.right + margin.left).attr("height", height + margin.top + margin.bottom);
+            if(poly.zoomable)
+                chart.call(zoom);
+            chart = chart.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            chart.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis);
+
+            chart.append("g")
+                .attr("class", "y axis")
+                .call(yAxis);
+
+            chart.append("g")
+                .attr("class", "y axis")
+                .append("text")
+                .attr("class", "axis-label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", (-margin.left) + 10)
+                .attr("x", -height/2)
+                .text(poly.dependent);
+
+
+            chart.append("clipPath")
+                .attr("id", "clip")
+                .append("rect")
+                .attr("width", width)
+                .attr("height", height);
 
             chart.append("path")
                 .datum(db)
                 .attr("class", "line")
-                .attr("d", line);
+                .attr("d", line).attr("clip-path", "url(#clip)");
 
-            if (poly.showaxes) {
-                var xAxis = d3.svg.axis()
-                    .scale(horizontalScale)
-                    .orient("bottom");
-                var yAxis = d3.svg.axis()
-                    .scale(verticalScale)
-                    .orient("left");
-                chart.append("g")
-                    .attr("class", "x axis")
-                    .attr("transform", "translate(0," + height + ")")
-                    .call(xAxis);
-                chart.append("g")
-                    .attr("class", "y axis")
-                    .call(yAxis);
+            /*var points = chart.selectAll('.dots')
+                .data(db)
+                .enter()
+                .append("g")
+                .attr("class", "dots")
+                .attr("clip-path", "url(#clip)");
+
+            points.selectAll('.dot')
+                .data(function(d, index){
+                    var a = [];
+                    d.forEach(function(point,i){
+                        a.push({'index': index, 'point': point});
+                    });
+                    return a;
+                })
+                .enter()
+                .append('circle')
+                .attr('class','dot')
+                .attr("r", 2.5)
+                .attr('fill', function(d,i){
+                    return "blue";
+                })
+                .attr("transform", function(d) {
+                    return "translate(" + x(d.point.x) + "," + y(d.point.y) + ")"; }
+            );*/
+
+
+            function zoomed(){
+                chart.select(".x.axis").call(xAxis);
+                chart.select(".y.axis").call(yAxis);
+                chart.selectAll("path.line").attr('d',line);
+                /**
+                 * If points are added in.
+                 *
+                 );
+                 */
             }
 
         }

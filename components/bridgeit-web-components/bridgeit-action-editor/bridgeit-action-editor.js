@@ -29,10 +29,11 @@ Polymer({
         }
         if (bridgeit.io.auth.isLoggedIn()) {
             this.getActions();
+            this.getTaskGroups();
             this.getTasks();
         }
         this._loadedAction = null;
-        this._taskGroups = [{"id":"taskGroup0","tasks":[]}]; //initialize with one group by default
+        this._taskGroups = [];
         this._selectedEvents=[];
         this._events=[{event:'locationAdded',checked:false},{event:'locationChanged',checked:false},{event:'locationDeleted',checked:false},{event:'nearPointOfInterest',checked:false},{event:'enteredRegion',checked:false},{event:'exitedRegion',checked:false}];
         this._codeEditorProperties=['function','messagetemplate'];
@@ -54,12 +55,25 @@ Polymer({
 	},
 
     /**
+     * Fetch the list of available task groups from the Acton Service.
+     */
+    getTaskGroups: function() {
+        var _this = this;
+        bridgeit.io.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
+            _this._processSchemas(schemas,'_taskGroupSchemas');
+        }).catch(function(error) {
+            console.log('Error in getTaskGroups:',error);
+            _this.fire('bridgeit-error', {error: error});
+        });
+    },
+
+    /**
      * Fetch the list of available tasks from the Acton Service.
      */
     getTasks: function() {
         var _this = this;
         bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
-            _this._processSchemas(schemas);
+            _this._processSchemas(schemas,'_taskSchemas');
         }).catch(function(error) {
             console.log('Error in getTasks:',error);
             _this.fire('bridgeit-error', {error: error});
@@ -177,7 +191,7 @@ Polymer({
      * Reset the editor.
      */
     resetEditor: function() {
-        this._taskGroups = [{"id":"taskGroup0","tasks":[]}];
+        this._taskGroups = [];
         this._actionId = '';
         this._actionDesc = '';
         this._loadedAction = null;
@@ -297,39 +311,31 @@ Polymer({
         }
         var taskGroups = JSON.parse(JSON.stringify(this._taskGroups)); //clone array (it is valid JSON so this technique is sufficient)
         for (var i=0; i<taskGroups.length; i++) {
-            delete taskGroups[i].id; //remove id used by template
+            taskGroups[i].type = taskGroups[i].schema.title; //move title to type property
+            (function(taskGroup) {
+                this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
+                    //move the values of each property in the schema directly into the task group
+                    if (typeof property.value !== 'undefined' && property.value.toString().trim().length > 0) {
+                        taskGroup[property.title] = property.value;
+                    }
+                });
+            }.bind(this))(taskGroups[i]);
+            //cleanup values that aren't used in the action
+            delete taskGroups[i].id;
+            delete taskGroups[i].schema;
+
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
                 tasks[j].params = {}; //create action params object
                 tasks[j].type = tasks[j].schema.title; //move title to type property
-                var properties = tasks[j].schema.properties;
-                //convert the property template technique into a simple array of property objects so we can easily pull the values out
-                for (var type in properties) {
-                    if (!properties.hasOwnProperty(type)) {
-                        continue;
-                    }
-                    var typeGroup = properties[type];
-                    //we have an array if the typeGroup is "oneOf" so we'll collapse them into a single object before processing
-                    if (Array.isArray(typeGroup)) {
-                        var obj={};
-                        for (var l=0; l<typeGroup.length; l++) {
-                            for (var prop in typeGroup[l]) {
-                                if (typeGroup[l].hasOwnProperty(prop)) { obj[prop] = typeGroup[l][prop]; }
-                            }
-                        }
-                        typeGroup = obj;
-                    }
-                    for (var propName in typeGroup) {
-                        if (!typeGroup.hasOwnProperty(propName)) {
-                            continue;
-                        }
-                        var property = typeGroup[propName];
+                (function(task) {
+                    this._processProperties(task.schema.properties,function(type,propName,property) {
                         //move the values of each property in the schema to the params object
                         if (typeof property.value !== 'undefined' && property.value.toString().trim().length > 0) {
-                            tasks[j].params[property.title] = property.value;
+                            task.params[property.title] = property.value;
                         }
-                    }
-                }
+                    });
+                }.bind(this))(tasks[j]);
                 //cleanup values that aren't used in the action
                 delete tasks[j].id;
                 delete tasks[j].schema;
@@ -343,14 +349,15 @@ Polymer({
     //******************PRIVATE API******************
 
     /**
-     * Do some processing on the task schemas so they can be used to easily render out the template.
+     * Do some processing on the task group / task schemas so they can be used to easily render out the template.
      * @param schemas
+     * @param key
      * @private
      */
-    _processSchemas: function(schemas) {
+    _processSchemas: function(schemas,key) {
         for (var i=0; i<schemas.length; i++) {
-            //remove redundant '-task' from task item label
-            schemas[i].label = schemas[i].title.replace('-task','');
+            //remove redundant '-taskgroup' and '-task' from task item label
+            schemas[i].label = schemas[i].title.replace(/-taskgroup|-task/g,'');
             //do some pre-processing on the schema definition of oneOf properties
             var oneOfProps={};
             if (schemas[i].oneOf) {
@@ -374,7 +381,15 @@ Polymer({
                 }
                 isOptional=true;
                 //add value directly to property in schema so it can be used for data binding
-                properties[prop].value='';
+                if (properties[prop].type === 'string') {
+                    //properties[prop].value = properties[prop].default ? properties[prop].default : '';
+                    properties[prop].value = '';
+                }
+                else  if (properties[prop].type === 'boolean') {
+                    //properties[prop].value = properties[prop].default ? properties[prop].default : false;
+                    properties[prop].value = false;
+                }
+
                 //group the required properties under required object
                 if (schemas[i].required && schemas[i].required.indexOf(prop) > -1) {
                     if (!properties.required) {
@@ -414,13 +429,48 @@ Polymer({
             delete schemas[i].required;
             delete schemas[i].oneOf;
         }
-        this._schemas = schemas;
+        //save modified schemas to _taskSchemas or _taskGroupSchemas
+        this[key] = schemas;
+
         //map schema array to title property so we can easily find schemas later
         var schemaMap = {};
         schemas.forEach(function (schema) {
             schemaMap[schema.title] = schema;
         });
-        this._schemaMap = schemaMap;
+        //save schema mapping to _taskSchemasMap or _taskGroupSchemasMap
+        this[key+'Map'] = schemaMap;
+    },
+
+    /**
+     * Do some processing on the task group / task schema properties and return each property to the callback.
+     * @param properties
+     * @param cb
+     * @private
+     */
+    _processProperties: function(properties,cb) {
+        for (var type in properties) {
+            if (!properties.hasOwnProperty(type)) {
+                continue;
+            }
+            var typeGroup = properties[type];
+            //we have an array if the typeGroup is "oneOf" so we'll collapse them into a single object before processing
+            if (Array.isArray(typeGroup)) {
+                var obj={};
+                for (var l=0; l<typeGroup.length; l++) {
+                    for (var prop in typeGroup[l]) {
+                        if (typeGroup[l].hasOwnProperty(prop)) { obj[prop] = typeGroup[l][prop]; }
+                    }
+                }
+                typeGroup = obj;
+            }
+            //return each property to the callback
+            for (var propName in typeGroup) {
+                if (!typeGroup.hasOwnProperty(propName)) {
+                    continue;
+                }
+                cb(type,propName,typeGroup[propName]);
+            }
+        }
     },
 
     /**
@@ -501,41 +551,35 @@ Polymer({
         for (var i=0; i<taskGroups.length; i++) {
             //add uniqueID for drag/drop functionality
             taskGroups[i].id = 'taskGroup'+i;
+            //add schema inside task group for mapping UI values
+            taskGroups[i].schema = JSON.parse(JSON.stringify(this._taskGroupSchemasMap[taskGroups[i].type ? taskGroups[i].type : 'parallel-taskgroup'])); //clone object (it is valid JSON so this technique is sufficient)
+            (function(i) {
+                this._processProperties(taskGroups[i].schema.properties,function(type,propName,property) {
+                    //move the task group properties to the value of each property in the schema
+                    if (typeof taskGroups[i][property.title] !== 'undefined') {
+                        property.value = taskGroups[i][property.title];
+                        delete taskGroups[i][property.title]; //cleanup property since it's not used in UI
+                    }
+                });
+            }.bind(this))(i);
+            //cleanup type since it's not used in UI
+            delete taskGroups[i].type;
+
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
                 //add uniqueID for code editor functionality
                 tasks[j].id = 'task'+j;
                 //add schema inside task for mapping UI values
-                tasks[j].schema = JSON.parse(JSON.stringify(this._schemaMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
-                var params = tasks[j].params;
-                var properties = tasks[j].schema.properties;
-                //convert the property template technique into a simple array of property objects so we can easily pull the values out
-                for (var type in properties) {
-                    if (!properties.hasOwnProperty(type)) {
-                        continue;
-                    }
-                    var typeGroup = properties[type];
-                    //we have an array if the typeGroup is "oneOf" so we'll collapse them into a single object before processing
-                    if (Array.isArray(typeGroup)) {
-                        var obj={};
-                        for (var l=0; l<typeGroup.length; l++) {
-                            for (var prop in typeGroup[l]) {
-                                if (typeGroup[l].hasOwnProperty(prop)) { obj[prop] = typeGroup[l][prop]; }
-                            }
-                        }
-                        typeGroup = obj;
-                    }
-                    for (var propName in typeGroup) {
-                        if (!typeGroup.hasOwnProperty(propName)) {
-                            continue;
-                        }
-                        var property = typeGroup[propName];
+                tasks[j].schema = JSON.parse(JSON.stringify(this._taskSchemasMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
+                (function(tasks,j,i) {
+                    var _this = this;
+                    this._processProperties(tasks[j].schema.properties,function(type,propName,property) {
                         //move the params values to the value of each property in the schema
-                        if (params && typeof params[property.title] !== 'undefined') {
-                            property.value = params[property.title];
+                        if (tasks[j].params && typeof tasks[j].params[property.title] !== 'undefined') {
+                            property.value = tasks[j].params[property.title];
                         }
                         //keep a map of code editor DOM locations and their value selectors so we can know where to put the values when loading the action
-                        if (this._codeEditorProperties.indexOf(propName.toLowerCase()) > -1) {
+                        if (_this._codeEditorProperties.indexOf(propName.toLowerCase()) > -1) {
                             var selector = '_taskGroups.'+i+'.tasks.'+j+'.schema.properties.'+type;
                             if (type === 'oneOf') {
                                 selector = selector+'.'+property.oneOfGroupNum;
@@ -543,8 +587,8 @@ Polymer({
                             selector = selector+'.'+propName+'.value';
                             editorMappings.push({domSelector:'#'+taskGroups[i].id+' #'+tasks[j].id + ' juicy-ace-editor',valueSelector:selector});
                         }
-                    }
-                }
+                    });
+                }.bind(this))(tasks,j,i);
                 //cleanup values that aren't used in the UI
                 delete tasks[j].type;
                 delete tasks[j].params;
@@ -584,8 +628,8 @@ Polymer({
      * @private
      */
     _startDragGroup: function(e) {
-        e.dataTransfer.setData('action/group', true); //indicate that this item is a task group
-        this._lastDragged = null;
+        e.dataTransfer.setData('action/group', e.model.item); //indicate that this item is a task group
+        this._lastDragged = e.model.item;//reference task group schema so we can populate the UI on drop
     },
 
     /**
@@ -630,7 +674,8 @@ Polymer({
         //only allow task groups to be dropped inside actions
         if (!e.dataTransfer.getData('action/group')) { e.stopPropagation(); return; }
         //add new task group
-        this.push('_taskGroups',{"id":"taskGroup"+this._taskGroups.length,"tasks":[]});
+        var schema = JSON.parse(JSON.stringify(this._lastDragged)); //clone object (it is valid JSON so this technique is sufficient)
+        this.push('_taskGroups',{"id":"taskGroup"+this._taskGroups.length,"schema":schema,"tasks":[]});
     },
 
     /**
@@ -738,23 +783,7 @@ Polymer({
     },
 
     /**
-     * Toggle the content of a task group.
-     * @param e
-     * @private
-     */
-    _toggleTaskGroup: function(e) {
-        //find the task-group that we toggled
-        var parent = Polymer.dom(e.target).parentNode;
-        while (!parent.classList.contains('task-group')) {
-            parent = Polymer.dom(parent).parentNode;
-        }
-        parent.classList.toggle('toggled');
-        parent.querySelector('.content').classList.toggle('toggled');
-        parent.querySelector('.arrow').classList.toggle('toggled');
-    },
-
-    /**
-     * Toggle the content of a task.
+     * Toggle the content of a task group / task.
      * @param e
      * @private
      */
@@ -780,6 +809,23 @@ Polymer({
     },
 
     /**
+     * Sorts the list of properties alphabetically.
+     * @param a
+     * @param b
+     * @returns {number}
+     * @private
+     */
+    _sortProperties: function(a,b) {
+        if (a && a.title && b && b.title) {
+            a = a.title.toLowerCase();
+            b = b.title.toLowerCase();
+            if (a < b) { return -1; }
+            else if (a > b) { return  1; }
+        }
+        return 0;
+    },
+
+    /**
      * Template helper function.
      * @param properties
      * @returns {Array}
@@ -795,7 +841,7 @@ Polymer({
     },
 
     /**
-     * Template helper function
+     * Template helper function.
      * @param index
      * @private
      */
@@ -804,7 +850,7 @@ Polymer({
     },
 
     /**
-     * Template helper function
+     * Template helper function.
      * @param type
      * @returns {boolean}
      * @private
@@ -814,7 +860,17 @@ Polymer({
     },
 
     /**
-     * Template helper function
+     * Template helper function.
+     * @param type
+     * @returns {boolean}
+     * @private
+     */
+    _isBoolean: function(type) {
+        return type=='boolean';
+    },
+
+    /**
+     * Template helper function.
      * @param title
      * @returns {boolean}
      * @private
