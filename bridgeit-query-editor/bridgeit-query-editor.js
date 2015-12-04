@@ -140,7 +140,7 @@ Polymer({
         var queryId;
         if (!this.activeQuery) {
             queryId = window.prompt("Please enter the new query name","Auto-Named");
-            if (!queryId || queryId === "Auto-Named" || queryId.trim().length == 0) {
+            if (!queryId || queryId === "Auto-Named" || queryId.trim().length === 0) {
                 queryId = null;
             }
         }
@@ -178,7 +178,7 @@ Polymer({
         if (!this.validateQuery()) { return; }
         var queryId;
         queryId = window.prompt("Please enter the new query name","Auto-Named");
-        if (!queryId || queryId === "Auto-Named" || queryId.trim().length == 0) {
+        if (!queryId || queryId === "Auto-Named" || queryId.trim().length === 0) {
             queryId = null;
         }
         var query = this._buildQuery(queryId,null,null,true);
@@ -615,7 +615,7 @@ Polymer({
                             console.log('findRegions caught an error:', error);
                         });
                         break;
-                    case 'pois':
+                    case 'poi':
                         bridgeit.io.location.findPOIs(params).then(successCallback).catch(function(error){
                             console.log('findPOIs caught an error:', error);
                         });
@@ -662,66 +662,15 @@ Polymer({
                         if (_this.service === 'metrics' && metricsIgnoredFields.indexOf(keys[j]) > -1) {
                             continue;
                         }
-                        uniqueFields.push(keys[j]);
-                        var val = results[i][keys[j]];
-                        var type = $.type(val);
-                        var operators=[];
-                        var input='';
-                        var values={};
-                        if (type === 'string') {
-                            if (!dateRegex.test(val)) {
-                                operators=['equal','not_equal','begins_with','not_begins_with','contains','not_contains',
-                                    'ends_with','not_ends_with','is_empty','is_not_empty','is_null','is_not_null'];
-                            }
-                            else {
-                                type = 'datetime';
-                            }
-                        }
-                        else if (type === 'number') {
-                            if (val%1 === 0) {
-                                type = 'integer';
-                            }
-                            else {
-                                type = 'double';
-                            }
-                        }
-                        else if (type === 'boolean') {
-                            input='select';
-                            values={'true':'true','false':'false'};
-                        }
-                        else if (type === 'array') {
-                            operators=['in', 'not_in', 'is_null', 'is_not_null'];
-                        }
-
-                        if (type !== 'string' && type !== 'integer' &&
-                            type !== 'double' && type !== 'boolean' &&
-                            type !== 'datetime' && type !== 'date' &&
-                            type !== 'time') {
-                            type = 'string';
-                        }
-                        var filter = {
-                            id: keys[j],
-                            type: type,
-                            optgroup: _this.service
-                        };
-                        if (operators.length > 0) {
-                            filter.operators=operators;
-                        }
-                        if (input.length > 0) {
-                            filter.input = input;
-                        }
-                        if (Object.keys(values).length > 0) {
-                            filter.values = values;
-                        }
-                        filters.push(filter);
+                        determineType(keys[j],results[i][keys[j]]);
                     }
                 }
             }
 
             if (filters.length > 0 && uniqueFields.length > 0) {
-                _this.uniqueFields = uniqueFields;
+                _this.uniqueFields = uniqueFields.sort(_this._sortAlphabetically);
                 $(_this.$.editor).queryBuilder({
-                    filters: filters,
+                    filters: filters.sort(_this._sortAlphabetically),
                     icons: {
                         add_group: 'fa fa-plus-square',
                         add_rule: 'fa fa-plus-circle',
@@ -731,6 +680,65 @@ Polymer({
                     }
                 });
                 _this._setupListeners();
+            }
+            function determineType(key,val) {
+                var type = $.type(val);
+                var operators=[];
+                var input='';
+                var values={};
+                var default_value='';
+                var isArray=false;
+
+                //We need to support querying values inside arrays so we need to know what type of
+                //values the array holds. To determine this we will use the first item in the array.
+                if (type === 'array') {
+                    operators=['in', 'not_in', 'is_null', 'is_not_null'];
+                    val = val[0];
+                    type = $.type(val);
+                    isArray=true;
+                }
+
+                if (type === 'string') {
+                    if (!dateRegex.test(val) && !isArray) { //don't overwrite array operators
+                        operators=['equal','not_equal','begins_with','not_begins_with','contains','not_contains',
+                            'ends_with','not_ends_with','is_empty','is_not_empty','is_null','is_not_null'];
+                    }
+                    else { type = 'datetime'; }
+                }
+                else if (type === 'number') {
+                    type = val%1 === 0 ? 'integer' : 'double';
+                }
+                else if (type === 'boolean') {
+                    input='select';
+                    values={'true':'true','false':'false'};
+                    default_value = 'true';
+                }
+                else if (type === 'object') {
+                    for (var prop in val) {
+                        if (!val.hasOwnProperty(prop)) {
+                            continue;
+                        }
+                        var newItemKey = key+'.'+prop;
+                        if (uniqueFields.indexOf(newItemKey) === -1) {
+                            determineType(newItemKey,val[prop]);
+                        }
+                    }
+                    return;
+                }
+                else if (type === 'array') { type = 'string'; } //TODO - Need to support querying an arrays of arrays
+                else { type = 'string'; }
+
+                uniqueFields.push(key);
+                var filter = {
+                    id: key,
+                    type: type,
+                    optgroup: _this.service
+                };
+                if (operators.length > 0) { filter.operators=operators; }
+                if (input.length > 0) { filter.input = input; }
+                if (Object.keys(values).length > 0) { filter.values = values; }
+                if (default_value.toString().length > 0) { filter.default_value = default_value; }
+                filters.push(filter);
             }
         }
     },
@@ -750,5 +758,12 @@ Polymer({
                 _this._refreshQuery();
             }
         });
+    },
+    _sortAlphabetically: function(a,b) {
+        a = (a.id ? a.id : a).toLowerCase();
+        b = (b.id ? b.id : b).toLowerCase();
+        if (a < b) { return -1; }
+        else if (a > b) { return  1; }
+        return 0;
     }
 });
