@@ -112,7 +112,8 @@
 				<!-- 3. Declare the element by its tag. -->
 				  <bridgeit-query-editor id="queryEditor"
 										 queryurltarget="queryURL"
-										 options='{"limit":100,"sort":{"time":-1}}'>
+										 options='{"limit":100,"sort":{"time":-1}}'
+										 service="metrics" collection="events">
 				  </bridgeit-query-editor>
 
 					<div>
@@ -261,9 +262,6 @@
 			}
 
 			function initializeComponent() {
-                document.getElementById('queryEditor').setAttribute('service', 'metrics');
-                document.getElementById('queryEditor').setAttribute('collection', 'events');
-                
 			    var token = bridgeit.io.auth.getLastAccessToken();
 			    if (token) {
                     document.getElementById('queryEditor').reloadEditor();
