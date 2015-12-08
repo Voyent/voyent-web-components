@@ -1,4 +1,6 @@
-Polymer({
+var BridgeIt = BridgeIt || {};
+
+BridgeIt.QueryEditor = Polymer({
 
     is: "bridgeit-query-editor",
     properties: {
@@ -270,11 +272,11 @@ Polymer({
     },
 
     /**
-     * Get the currently active query.
-     * @return {object} Represents the currently active query or null if the there is no active query.
+     * Return the query that is currently built in the editor.
+     * @returns {object}
      */
-    getActiveQuery: function() {
-        return this.activeQuery || null;
+    getQuery: function() {
+        return $(this.$.editor).queryBuilder('getMongo');
     },
 
 
