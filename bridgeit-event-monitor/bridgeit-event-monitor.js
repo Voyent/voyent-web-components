@@ -161,7 +161,7 @@ Polymer({
         var calcHeight = parseInt(vis.style("height"));
         
         // Sizing minimum
-        if (calcWidth < 100 && window.innerWidth && window.innerWidth > 500) {
+        if (calcWidth <= 100 && window.innerWidth && window.innerWidth > 500) {
             calcWidth = window.innerWidth - 400;
         }
         
