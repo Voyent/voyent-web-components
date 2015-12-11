@@ -179,8 +179,8 @@ Example:
                @apply(--action-editor-input);
            }
            .form-control-chk {
-               width:100%;
-               margin:5px 0 10px 0;
+               width:85%;
+               margin:5px 0 5px 0;
                cursor:pointer;
                @apply(--action-editor-checkbox);
            }
@@ -191,22 +191,6 @@ Example:
            span.required {
                color: #a94442;
                @apply(--action-editor-required-asterisk);
-           }
-           .event-triggers {
-               max-height: 70px;
-               overflow-y: scroll;
-               overflow-x: hidden;
-               @apply(--action-editor-event-triggers);
-           }
-           .event-triggers label {
-               cursor:pointer;
-               color:#777;
-               font-weight:normal;
-               width:100%;
-               display: block;
-               margin:5px 0 10px 0;
-               background-color: white;
-               @apply(--action-editor-event-triggers-label);
            }
            fieldset {
                border: 1px solid #999;
@@ -244,9 +228,12 @@ Example:
            .content.toggled {
                display:none;
            }
-           .task-group .toggleable-area {
+           .eventHandlerLbl {
+               display:block;
+               margin-bottom:5px;
+           }
+           .pointer {
                cursor:pointer;
-               max-width:20px;
            }
         </style>
         <template is="dom-if" if="{{_taskGroupSchemas}}">
@@ -300,17 +287,12 @@ Example:
                                         <span>Description</span>
                                         <input class="form-control" type="text" placeholder="Action Description" title="The action description" value="{{_actionDesc::input}}">
                                     </label>
-                                    <label title="The event triggers">
-                                        <span>Event Triggers</span>
-                                        <div class="event-triggers">
-                                            <template id="triggerList" is="dom-repeat" items="{{_events}}" sort="_sortEventList">
-                                                <label title$="{{item.event}}">
-                                                    <span>{{item.event}}</span>
-                                                    <input type="checkbox" on-click="_toggleEvent" checked="{{item.checked::change}}"/>
-                                                </label>
-                                            </template>
-                                        </div>
+                                    <label title="The event handler query" class="eventHandlerLbl">Event Handler Query</label>
+                                    <label title="Whether this event handler is active" class="pointer">
+                                        <span>Active</span>
+                                        <input class="form-control-chk" type="checkbox" title="Toggles active state for the event handler" checked="{{_handlerIsActive::change}}"/>
                                     </label>
+                                    <div id="eventHandlerEditor"></div>
                                 </div>
                             </div>
                             <div class="actionPanel flex">
@@ -337,7 +319,7 @@ Example:
                                                 </label>
                                             </template>
                                             <template is="dom-repeat" items="{{_toArray(group.schema.properties.optional)}}" as="property" sort="_sortProperties">
-                                                <label on-drop="_preventDrop">
+                                                <label on-drop="_preventDrop" class$="{{_addBooleanClass(property.type)}}">
                                                     <span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"

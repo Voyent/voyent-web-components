@@ -28,14 +28,11 @@ Polymer({
             this.account = bridgeit.io.auth.getLastKnownAccount();
         }
         if (bridgeit.io.auth.isLoggedIn()) {
+            this.getTaskItems();
             this.getActions();
-            this.getTaskGroups();
-            this.getTasks();
         }
         this._loadedAction = null;
         this._taskGroups = [];
-        this._selectedEvents=[];
-        this._events=[{event:'locationAdded',checked:false},{event:'locationChanged',checked:false},{event:'locationDeleted',checked:false},{event:'nearPointOfInterest',checked:false},{event:'enteredRegion',checked:false},{event:'exitedRegion',checked:false}];
         this._codeEditorProperties=['function','messagetemplate'];
         //keep a reference to the code editor change event listener function for 'removeEventListener'
         this._editorEventListener = function(e) {
@@ -55,27 +52,21 @@ Polymer({
 	},
 
     /**
-     * Fetch the list of available task groups from the Acton Service.
+     * Fetch the list of available task groups and tasks from the Acton Service.
      */
-    getTaskGroups: function() {
+    getTaskItems: function() {
         var _this = this;
-        bridgeit.io.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
+        var promises = [];
+        promises.push(bridgeit.io.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
             _this._processSchemas(schemas,'_taskGroupSchemas');
-        }).catch(function(error) {
-            console.log('Error in getTaskGroups:',error);
-            _this.fire('bridgeit-error', {error: error});
-        });
-    },
-
-    /**
-     * Fetch the list of available tasks from the Acton Service.
-     */
-    getTasks: function() {
-        var _this = this;
-        bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
+        }));
+        promises.push(bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
             _this._processSchemas(schemas,'_taskSchemas');
-        }).catch(function(error) {
-            console.log('Error in getTasks:',error);
+        }));
+        return Promise.all(promises).then(function(){
+            _this._loadQueryEditor();
+        })['catch'](function(error) {
+            console.log('Error in getTaskItems:',error);
             _this.fire('bridgeit-error', {error: error});
         });
     },
@@ -195,11 +186,8 @@ Polymer({
         this._actionId = '';
         this._actionDesc = '';
         this._loadedAction = null;
-        //reset event triggers
-        this._selectedEvents=[];
-        for (var i=0; i<this._events.length; i++) {
-            this.set('_events.'+i+'.checked',false);
-        }
+        this._queryEditorRef.resetEditor();
+        this._handlerIsActive = false;
     },
 
     /**
@@ -207,6 +195,11 @@ Polymer({
      * @returns {boolean}
      */
     validateAction: function() {
+        //validate handler query
+        if (!this._queryEditorRef.validateQuery()) {
+            alert('Please enter a valid query.');
+            return false;
+        }
         //validate required fields
         if (!this.$$('#actionForm').checkValidity()) {
             alert('Please enter all required fields.');
@@ -471,6 +464,15 @@ Polymer({
                 cb(type,propName,typeGroup[propName]);
             }
         }
+    },
+
+    /**
+     * Initialize the query editor for building event handlers.
+     * @private
+     */
+    _loadQueryEditor: function() {
+        this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events');
+        Polymer.dom(this.root).querySelector('#eventHandlerEditor').appendChild(this._queryEditorRef);
     },
 
     /**
@@ -877,35 +879,17 @@ Polymer({
         return this._codeEditorProperties.indexOf(title.toLowerCase()) > -1;
     },
 
+    /**
+     * Template helper function.
+     * @param type
+     * @returns {string}
+     * @private
+     */
+    _addBooleanClass: function(type) {
+        return type=='boolean' ? 'pointer' : '';
+    },
+
     //event handler functions
-
-    /**
-     * Toggles selection of an event trigger.
-     * @param e
-     * @private
-     */
-    _toggleEvent: function(e) {
-        if (!e.model.item.checked) { //this listener fires before checked is changed to true
-            this._selectedEvents.push(e.model.item.event);
-            return;
-        }
-        this._selectedEvents.splice(this._selectedEvents.indexOf(e.model.item.event),1);
-    },
-
-    /**
-     * Sorts the list of event triggers alphabetically.
-     * @param a
-     * @param b
-     * @returns {number}
-     * @private
-     */
-    _sortEventList: function(a,b) {
-        a = a.event.toLowerCase();
-        b = b.event.toLowerCase();
-        if (a < b) { return -1; }
-        else if (a > b) { return  1; }
-        return 0;
-    },
 
     _getHandlers: function() {
         var _this = this;
@@ -930,7 +914,8 @@ Polymer({
 
     _convertUIToHandler: function() {
         return {
-            "events":this._selectedEvents,
+            "active":!!this._handlerIsActive,
+            "query":this._queryEditorRef.getQuery(),
             "actionId":this._actionId,
             "actionParams":{}
         };
@@ -939,13 +924,14 @@ Polymer({
     _loadHandler: function(id) {
         id = id + '_handler';
         var handler = this._handlers[id];
-        this._selectedEvents = handler && handler.events ? handler.events : [];
-        for (var i=0; i<this._events.length; i++) {
-            if (this._selectedEvents.indexOf(this._events[i].event) > -1) {
-                this.set('_events.'+i+'.checked',true);
-                continue;
-            }
-            this.set('_events.'+i+'.checked',false);
+        if (handler) {
+            this._handlerIsActive = !!handler.active;
+            var query = {query:handler && handler.query ? handler.query : {}};
+            Object.keys(query.query).length > 0 ? this._queryEditorRef.setEditorFromMongo(query) : this._queryEditorRef.resetEditor();
+        }
+        else {
+            this._handlerIsActive = false;
+            this._queryEditorRef.resetEditor();
         }
     },
 

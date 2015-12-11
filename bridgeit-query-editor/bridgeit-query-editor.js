@@ -1,8 +1,29 @@
 var BridgeIt = BridgeIt || {};
 
 BridgeIt.QueryEditor = Polymer({
-
     is: "bridgeit-query-editor",
+
+    /**
+     * Custom constructor. Sets any passed properties (or the defaults) and calls `reloadEditor`.
+     * @param account
+     * @param realm
+     * @param service
+     * @param collection
+     * @param fields
+     * @param options
+     * @param queryurltarget
+     */
+    factoryImpl: function(account,realm,service,collection,fields,options,queryurltarget) {
+        this.account = account || null;
+        this.realm = realm || null;
+        this.service = service || 'documents';
+        this.collection = collection || 'documents';
+        this.fields = fields || {};
+        this.options = options || {};
+        this.queryurltarget = queryurltarget || null;
+        this.reloadEditor();
+    },
+
     properties: {
         /**
          * Defines the BridgeIt realm to build queries for.
@@ -55,13 +76,13 @@ BridgeIt.QueryEditor = Polymer({
     },
 
     /**
-     * Fired after a query is executed, this occurs on the initial load and when calling `runQuery()` or `reloadEditor()`. Contains the query results and the unique fields.
+     * Fired after a query is executed, this occurs on the initial load and when calling `runQuery` or `reloadEditor`. Contains the query results and the unique fields.
      *
      * @event queryExecuted
      */
 
     /**
-     * Fired after the query list is retrieved, this occurs on the initial load and when calling `fetchQueryList()`, `saveQuery()`, `cloneQuery()`, `deleteQuery()`. Contains the list of saved queries in this realm.
+     * Fired after the query list is retrieved, this occurs on the initial load and when calling `fetchQueryList`, `saveQuery`, `cloneQuery`, `deleteQuery`. Contains the list of saved queries in this realm.
      *
      * @event queriesRetrieved
      */
@@ -88,13 +109,16 @@ BridgeIt.QueryEditor = Polymer({
         else { onAfterjQueryLoaded(); }
 
         function onAfterjQueryLoaded() {
-            //load jQuery-QueryBuilder dependency
-            var link = _this.importHref(jqueryBuilderURL, function(e) {
-                document.head.appendChild(link.import.body);
-                _this._initialize();
-            }, function(err) {
-                console.error('bridgeit-query-editor: error loading jquery builder', err);
-            });
+            //load missing jQuery-QueryBuilder dependency
+            if (!$.fn.queryBuilder) {
+                var link = _this.importHref(jqueryBuilderURL, function(e) {
+                    document.head.appendChild(link.import.body);
+                    _this._initialize();
+                }, function(err) {
+                    console.error('bridgeit-query-editor: error loading jquery builder', err);
+                });
+            }
+            else { _this._initialize(); }
         }
     },
 
@@ -258,8 +282,7 @@ BridgeIt.QueryEditor = Polymer({
         if (!bridgeit.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
             return;
         }
-        $(this.$.editor).queryBuilder('destroy');
-        this._queryService({});
+        this._queryService({},true);
         this._updateQueryURL();
     },
 
@@ -585,7 +608,7 @@ BridgeIt.QueryEditor = Polymer({
             }
         }
     },
-    _queryService: function(query) {
+    _queryService: function(query,destroy) {
         var _this = this;
         var params = {
             accessToken: bridgeit.io.auth.getLastAccessToken(),
@@ -671,6 +694,9 @@ BridgeIt.QueryEditor = Polymer({
 
             if (filters.length > 0 && uniqueFields.length > 0) {
                 _this.uniqueFields = uniqueFields.sort(_this._sortAlphabetically);
+                if (destroy) {
+                    $(_this.$.editor).queryBuilder('destroy');
+                }
                 $(_this.$.editor).queryBuilder({
                     filters: filters.sort(_this._sortAlphabetically),
                     icons: {
