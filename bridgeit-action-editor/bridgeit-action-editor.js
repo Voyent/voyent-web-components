@@ -790,9 +790,13 @@ Polymer({
      * @private
      */
     _toggleTask: function(e) {
-        Polymer.dom(e.target).parentNode.classList.toggle('toggled');
-        Polymer.dom(e.target).parentNode.querySelector('.content').classList.toggle('toggled');
-        Polymer.dom(e.target).querySelector('.arrow').classList.toggle('toggled');
+        var parent = Polymer.dom(e.target).parentNode;
+        if (e.target.classList.contains('arrow')) {
+            parent = Polymer.dom(parent).parentNode;
+        }
+        parent.classList.toggle('toggled');
+        parent.querySelector('.content').classList.toggle('toggled');
+        parent.querySelector('.arrow').classList.toggle('toggled');
     },
 
     /**
