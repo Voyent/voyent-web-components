@@ -78,12 +78,9 @@ Polymer({
         var _this = this;
         bridgeit.io.action.findActions({"realm":this.realm}).then(function(actions) {
             //save the list of action IDs so we can check for uniqueness
-                if (!Array.isArray(actions)) {
-                    actions = [actions];
-                }
-                _this._actionIds = actions.map(function(action) {
-                    return action._id;
-                });
+            _this._actionIds = actions.map(function(action) {
+                return action._id;
+            });
             _this.fire('actionsRetrieved',{actions:actions});
             _this._getHandlers();
         }).catch(function(error) {
@@ -900,14 +897,9 @@ Polymer({
         bridgeit.io.eventhub.findHandlers({"realm":this.realm}).then(function(handlers) {
             var handlerMap = {};
             if (handlers) {
-                if (Array.isArray(handlers)) {
-                    handlers.forEach(function (handler) {
-                        handlerMap[handler._id] = handler;
-                    });
-                }
-                else {
-                    handlerMap[handlers._id] = handlers;
-                }
+                handlers.forEach(function (handler) {
+                    handlerMap[handler._id] = handler;
+                });
             }
             _this._handlers = handlerMap;
         }).catch(function(error) {
