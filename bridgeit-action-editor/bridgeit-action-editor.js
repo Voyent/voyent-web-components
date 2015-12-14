@@ -471,7 +471,7 @@ Polymer({
      * @private
      */
     _loadQueryEditor: function() {
-        this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events');
+        this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
         Polymer.dom(this.root).querySelector('#eventHandlerEditor').appendChild(this._queryEditorRef);
     },
 
