@@ -55,26 +55,51 @@ Polymer({
             var tableHeaders = e.detail.uniqueFields;
             var tableRows=[];
             for (var i=0; i<res.length; i++) {
-                var document = res[i];
                 var row=[];
                 for (var j=0; j<tableHeaders.length; j++) {
-                    var key = tableHeaders[j];
-                    if (typeof document[key] !== 'undefined') {
-                        if (key === timeVar) {
-                            row.push(document[timeDisplayVar]);
-                        }
-                        else {
-                            row.push(document[key]);
-                        }
-                    }
-                    else {
-                        row.push(null);
-                    }
+                    buildRows(res[i],tableHeaders[j]);
                 }
                 tableRows.push(row);
             }
             _this._tableHeaders = tableHeaders;
             _this._tableRows = tableRows;
+
+            function buildRows(document,key) {
+                if (typeof document[key] !== 'undefined') {
+                    if (key === timeVar) {
+                        row.push(document[timeDisplayVar] ? document[timeDisplayVar] : document[timeVar]);
+                    }
+                    else {
+                        row.push(document[key]);
+                    }
+                }
+                else {
+                    if (key.indexOf('.') > -1) { //we have a nested property reference
+                        //convert the object dot notation into a mapping to the actual value
+                        var val = key.split('.').reduce(function(obj,key) {
+                            if ($.type(obj) === 'array') {
+                                //map property values across objects into a single array
+                                var temp = obj.map(function(val,i) {
+                                    return typeof obj[i][key] !== 'undefined' ? obj[i][key] : null;
+                                });
+                                //check the array, if it has nothing but null values
+                                //then the property wasn't found and we'll return null
+                                for (var i=0; i<temp.length; i++) {
+                                    if (temp[i] !== null) {
+                                        return temp;
+                                    }
+                                }
+                                return null;
+                            }
+                            return obj ? obj[key] : null;
+                        },document);
+                        row.push(val);
+                    }
+                    else {
+                        row.push(null);
+                    }
+                }
+            }
         });
     },
 
