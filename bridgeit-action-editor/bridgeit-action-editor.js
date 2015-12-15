@@ -20,7 +20,6 @@ Polymer({
      */
 
 	ready: function() {
-        var _this = this;
         if (!this.realm) {
             this.realm = bridgeit.io.auth.getLastKnownRealm();
         }
@@ -34,21 +33,6 @@ Polymer({
         this._loadedAction = null;
         this._taskGroups = [];
         this._codeEditorProperties=['function','messagetemplate'];
-        //keep a reference to the code editor change event listener function for 'removeEventListener'
-        this._editorEventListener = function(e) {
-            var editor = e.target;
-            var groupIndex = editor.getAttribute('data-groupid').slice(-1);
-            var taskIndex = editor.getAttribute('data-taskid').slice(-1);
-            var propertyType = editor.getAttribute('data-propertytype');
-            var propertyTitle = editor.getAttribute('data-propertytitle');
-            var oneOfIndex = editor.getAttribute('data-oneofindex');
-            var selector = '_taskGroups.'+groupIndex+'.tasks.'+taskIndex+'.schema.properties.'+propertyType;
-            if (propertyType === 'oneOf') {
-                selector = selector+'.'+oneOfIndex;
-            }
-            selector = selector+'.'+propertyTitle+'.value';
-            _this.set(selector,editor.editor.getValue());
-        };
 	},
 
     /**
@@ -98,16 +82,6 @@ Polymer({
         this._loadHandler(action._id);
         this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
         this._taskGroups = this._convertActionToUI(this._loadedAction);
-        this._setupCodeEditor(); //initialize code editor components
-        //set the values from the action into the code editor in the UI
-        setTimeout(function() {
-            if (_this._editorMappings) {
-                for (var i=0; i<_this._editorMappings.length; i++) {
-                    var editor = Polymer.dom(_this.root).querySelector(_this._editorMappings[i].domSelector);
-                    editor.editor.setValue(_this.get(_this._editorMappings[i].valueSelector),1);
-                }
-            }
-        },0);
     },
 
     /**
@@ -327,7 +301,6 @@ Polymer({
                     });
                 }.bind(this))(tasks[j]);
                 //cleanup values that aren't used in the action
-                delete tasks[j].id;
                 delete tasks[j].schema;
             }
         }
@@ -364,10 +337,6 @@ Polymer({
             for (var prop in properties) {
                 if (!properties.hasOwnProperty(prop)) {
                     continue;
-                }
-                if (this._codeEditorProperties.indexOf(prop.toLowerCase()) > -1) {
-                    //quick way to check if we should add event listeners for code editors when dropping a new task
-                    properties.hasCodeEditor = true;
                 }
                 isOptional=true;
                 //add value directly to property in schema so it can be used for data binding
@@ -468,8 +437,20 @@ Polymer({
      * @private
      */
     _loadQueryEditor: function() {
-        this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
-        Polymer.dom(this.root).querySelector('#eventHandlerEditor').appendChild(this._queryEditorRef);
+        var _this = this;
+        //only render the query editor once
+        if (Polymer.dom(_this.$$('#eventHandlerEditor')).querySelector('bridgeit-query-editor')) {
+            return;
+        }
+        _this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
+        //since the editor div is included dynamically in the
+        //template it's possible that it hasn't rendered yet
+        var checkExist = setInterval(function() {
+            if (_this.$$('#eventHandlerEditor')) {
+                _this.$$('#eventHandlerEditor').appendChild(_this._queryEditorRef);
+                clearInterval(checkExist);
+            }
+        },50);
     },
 
     /**
@@ -546,79 +527,41 @@ Polymer({
         this._actionId = action._id;
         this._actionDesc = action.desc && action.desc.trim().length > 0 ? action.desc : '';
         var taskGroups = action.taskGroups;
-        var editorMappings=[];
         for (var i=0; i<taskGroups.length; i++) {
             //add uniqueID for drag/drop functionality
             taskGroups[i].id = 'taskGroup'+i;
             //add schema inside task group for mapping UI values
             taskGroups[i].schema = JSON.parse(JSON.stringify(this._taskGroupSchemasMap[taskGroups[i].type ? taskGroups[i].type : 'parallel-taskgroup'])); //clone object (it is valid JSON so this technique is sufficient)
-            (function(i) {
-                this._processProperties(taskGroups[i].schema.properties,function(type,propName,property) {
+            (function(taskGroup) {
+                this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
                     //move the task group properties to the value of each property in the schema
-                    if (typeof taskGroups[i][property.title] !== 'undefined') {
-                        property.value = taskGroups[i][property.title];
-                        delete taskGroups[i][property.title]; //cleanup property since it's not used in UI
+                    if (typeof taskGroup[property.title] !== 'undefined') {
+                        property.value = taskGroup[property.title];
+                        delete taskGroup[property.title]; //cleanup property since it's not used in UI
                     }
                 });
-            }.bind(this))(i);
+            }.bind(this))(taskGroups[i]);
             //cleanup type since it's not used in UI
             delete taskGroups[i].type;
 
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
-                //add uniqueID for code editor functionality
-                tasks[j].id = 'task'+j;
                 //add schema inside task for mapping UI values
                 tasks[j].schema = JSON.parse(JSON.stringify(this._taskSchemasMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
-                (function(tasks,j,i) {
-                    var _this = this;
-                    this._processProperties(tasks[j].schema.properties,function(type,propName,property) {
+                (function(task) {
+                    this._processProperties(task.schema.properties,function(type,propName,property) {
                         //move the params values to the value of each property in the schema
-                        if (tasks[j].params && typeof tasks[j].params[property.title] !== 'undefined') {
-                            property.value = tasks[j].params[property.title];
-                        }
-                        //keep a map of code editor DOM locations and their value selectors so we can know where to put the values when loading the action
-                        if (_this._codeEditorProperties.indexOf(propName.toLowerCase()) > -1) {
-                            var selector = '_taskGroups.'+i+'.tasks.'+j+'.schema.properties.'+type;
-                            if (type === 'oneOf') {
-                                selector = selector+'.'+property.oneOfGroupNum;
-                            }
-                            selector = selector+'.'+propName+'.value';
-                            editorMappings.push({domSelector:'#'+taskGroups[i].id+' #'+tasks[j].id + ' juicy-ace-editor',valueSelector:selector});
+                        if (task.params && typeof task.params[property.title] !== 'undefined') {
+                            property.value = task.params[property.title];
                         }
                     });
-                }.bind(this))(tasks,j,i);
+                }.bind(this))(tasks[j]);
                 //cleanup values that aren't used in the UI
                 delete tasks[j].type;
                 delete tasks[j].params;
             }
         }
-        this._editorMappings = editorMappings;
         return taskGroups;
-    },
-
-    /**
-     * Setup code editor inputs for certain properties.
-     * @private
-     */
-    _setupCodeEditor: function() {
-        var _this = this;
-        //add event listener for function properties
-        setTimeout(function() {
-            var editors = Polymer.dom(_this.root).querySelectorAll('.code-editor');
-            if (editors && editors.length > 0) {
-                for (var i=0; i<editors.length; i++) {
-                    var editor = editors[i];
-                    editor.editor.$blockScrolling = Infinity; //disable console warning
-                    if (editor.getAttribute('data-propertytitle').toLowerCase() === 'messagetemplate') {
-                        //disable syntax checker for messageTemplate since the value can be a simple string
-                        editor.editor.session.setOption("useWorker", false);
-                    }
-                    editor.removeEventListener('change',_this._editorEventListener);
-                    editor.addEventListener('change',_this._editorEventListener);
-                }
-            }
-        },0);
     },
 
     /**
@@ -691,9 +634,6 @@ Polymer({
         var taskGroupIndex = e.target.id.slice(-1);
         var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
         this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
-        if (schema.properties.hasOwnProperty('hasCodeEditor')) {
-            this._setupCodeEditor();
-        }
     },
 
     /**
@@ -733,12 +673,8 @@ Polymer({
                 if (task == this._taskGroups[i].tasks[j]) {
                     this.splice('_taskGroups.'+i+'.tasks',j,1);
                 }
-                //must keep task IDs up to date for code editor functionality
-                this.set('_taskGroups.'+i+'.tasks.'+j+'.id',"task"+j);
             }
         }
-        //we initialize the editors again so we can properly map to the value property in the schema
-        this._setupCodeEditor();
     },
 
     /**
@@ -872,6 +808,16 @@ Polymer({
 
     /**
      * Template helper function.
+     * @param type
+     * @returns {string}
+     * @private
+     */
+    _addBooleanClass: function(type) {
+        return type=='boolean' ? 'pointer' : '';
+    },
+
+    /**
+     * Template helper function.
      * @param title
      * @returns {boolean}
      * @private
@@ -881,13 +827,14 @@ Polymer({
     },
 
     /**
-     * Template helper function.
-     * @param type
-     * @returns {string}
+     * Template helper function
+     * @param title
+     * @returns {boolean}
      * @private
      */
-    _addBooleanClass: function(type) {
-        return type=='boolean' ? 'pointer' : '';
+    _disableValidation: function(title) {
+        //disable syntax checker for messageTemplate since the value can be a simple string
+        return title.toLowerCase() === 'messagetemplate';
     },
 
     //event handler functions
@@ -923,7 +870,12 @@ Polymer({
         if (handler) {
             this._handlerIsActive = !!handler.active;
             var query = {query:handler && handler.query ? handler.query : {}};
-            Object.keys(query.query).length > 0 ? this._queryEditorRef.setEditorFromMongo(query) : this._queryEditorRef.resetEditor();
+            if (Object.keys(query.query).length > 0) {
+                this._queryEditorRef.setEditorFromMongo(query);
+            }
+            else {
+                this._queryEditorRef.resetEditor();
+            }
         }
         else {
             this._handlerIsActive = false;

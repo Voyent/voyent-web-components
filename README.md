@@ -36,6 +36,7 @@ Profit:
 
 [&lt;bridgeit-auth-provider&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-auth-provider/bridgeit-auth-provider/)  
 [&lt;bridgeit-action-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-action-editor/)  
+[&lt;bridgeit-code-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-code-editor/)  
 [&lt;bridgeit-event-monitor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-event-monitor/)  
 [&lt;bridgeit-location-simulator&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-location-simulator/)  
 [&lt;bridgeit-locations&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-locations/)  

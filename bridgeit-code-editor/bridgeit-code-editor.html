@@ -1,0 +1,27 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+
+<!--
+Displays a simple code editor input based on the Ace/Cloud9 Editor. You can access the ACE Editor programmatically using the `editor` property (< bridgeit-code-editor >.editor). More info available at: https://ace.c9.io/.
+
+Example:
+
+    <bridgeit-code-editor>
+    </bridgeit-code-editor>
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-code-editor">
+    <template>
+        <style type="text/css">
+            #editor {
+                width:100%;
+                min-height:200px;
+                @apply(--code-editor);
+            }
+        </style>
+        <div id="editor"></div>
+    </template>
+</dom-module>
+
+<script src="bridgeit-code-editor.js"></script>
