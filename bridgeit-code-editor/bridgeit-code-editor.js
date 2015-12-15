@@ -49,35 +49,29 @@ BridgeIt.CodeEditor = Polymer({
         if (!('ace' in window)) {
             _this.importHref(codeEditorURL, function(e) {
                 document.head.appendChild(document.importNode(e.target.import.body,true));
-                _this._initialize();
+                initialize();
             }, function(err) {
                 console.error('bridgeit-code-editor: error loading ace editor dependency', err);
             });
         }
-        else { _this._initialize(); }
+        else { initialize(); }
+
+        function initialize() {
+            //initialize editor
+            _this.editor = ace.edit(_this.$.editor);
+            //set some static defaults
+            _this.editor.setShowPrintMargin(false);
+            _this.editor.$blockScrolling = Infinity; //disable console warning
+            //set default properties
+            _this._setProperties();
+            //add any listeners
+            _this._addListeners();
+        }
     },
 
 
     //******************PRIVATE API******************
 
-    _initialize: function() {
-        //initialize editor
-        this.editor = ace.edit(this.$.editor);
-        //set some static defaults
-        this.editor.setShowPrintMargin(false);
-        this.editor.$blockScrolling = Infinity; //disable console warning
-        //set default properties
-        this._setProperties();
-        //add any listeners
-        this._addListeners();
-    },
-    _addListeners: function() {
-        var _this = this;
-        this.editor.addEventListener('change',function(e) {
-            _this._ignoreValueChange = true;
-            _this.value = _this.editor.getValue();
-        });
-    },
     _setProperties: function() {
         var session = this.editor.getSession();
 
@@ -109,55 +103,62 @@ BridgeIt.CodeEditor = Polymer({
             session.setValue(this.value);
         }
     },
-    _fontsizeChanged: function(newVal,oldVal) {
+    _addListeners: function() {
+        var _this = this;
+        this.editor.addEventListener('change',function(e) {
+            _this._ignoreValueChange = true;
+            _this.value = _this.editor.getValue();
+        });
+    },
+    _fontsizeChanged: function(newVal) {
         if (!this.editor || typeof newVal!=='number' || (newVal%1) !== 0) {
             return;
         }
         this.editor.setFontSize(newVal);
     },
-    _hardtabsChanged: function(newVal,oldVal) {
+    _hardtabsChanged: function(newVal) {
         if (!this.editor || (newVal !== true && newVal !== false)) {
             return;
         }
         this.editor.getSession().setUseSoftTabs(!newVal);
     },
-    _modeChanged: function(newVal,oldVal) {
+    _modeChanged: function(newVal) {
         if (!this.editor || !newVal || newVal.trim().length === 0) {
             return;
         }
         this.editor.getSession().setMode('ace/mode/'+newVal);
     },
-    _overwriteChanged: function(newVal,oldVal) {
+    _overwriteChanged: function(newVal) {
         if (!this.editor || (newVal !== true && newVal !== false)) {
             return;
         }
         this.editor.getSession().setOverwrite(newVal);
     },
-    _readonlyChanged: function(newVal,oldVal) {
+    _readonlyChanged: function(newVal) {
         if (!this.editor || (newVal !== true && newVal !== false)) {
             return;
         }
         this.editor.setReadOnly(newVal);
     },
-    _disablevalidationChanged: function(newVal,oldVal) {
+    _disablevalidationChanged: function(newVal) {
         if (!this.editor || (newVal !== true && newVal !== false)) {
             return;
         }
         this.editor.getSession().setOption("useWorker",!newVal);
     },
-    _tabsizeChanged: function(newVal,oldVal) {
+    _tabsizeChanged: function(newVal) {
         if (!this.editor || !newVal || newVal.trim().length === 0) {
             return;
         }
         this.editor.getSession().setTabSize(newVal);
     },
-    _themeChanged: function(newVal,oldVal) {
+    _themeChanged: function(newVal) {
         if (!this.editor || !newVal || newVal.trim().length === 0) {
             return;
         }
         this.editor.setTheme('ace/theme/'+newVal);
     },
-    _valueChanged: function(newVal,oldVal) {
+    _valueChanged: function(newVal) {
         if (!this.editor || this._ignoreValueChange) {
             this._ignoreValueChange = false;
             return;
