@@ -1,7 +1,7 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
-<link rel="import" href="../../juicy-ace-editor/juicy-ace-editor.html">
+<link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
 
 <!--
 Displays an action editor that can build actions and their associated event handlers.
@@ -331,7 +331,7 @@ Example:
                                                 </label>
                                             </template>
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                                <div id$="{{task.id}}" class="task toggled" on-drop="_preventDrop">
+                                                <div class="task toggled" on-drop="_preventDrop">
                                                     <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
                                                     <div class="title" on-click="_toggleTask">{{task.schema.title}}<div class="arrow toggled"></div></div>
                                                     <div class="content toggled">
@@ -356,10 +356,8 @@ Example:
                                                                             <span>{{property.title}}</span>
                                                                             <template is="dom-if" if="{{_isString(property.type)}}">
                                                                                 <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                    <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
-                                                                                                      softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                                      data-groupid$="{{group.id}}" data-propertytype="oneOf"
-                                                                                                      data-oneofindex$="{{index}}" data-propertytitle$="{{property.title}}"></juicy-ace-editor>
+                                                                                    <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                          disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
                                                                                 </template>
                                                                                 <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                                     <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
@@ -376,10 +374,8 @@ Example:
                                                                 <span class="required">*</span><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                        <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
-                                                                                          softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                          data-groupid$="{{group.id}}" data-propertytype="required"
-                                                                                          data-propertytitle$="{{property.title}}"></juicy-ace-editor>
+                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
@@ -393,10 +389,8 @@ Example:
                                                                 <span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                        <juicy-ace-editor class="code-editor" mode="ace/mode/javascript"
-                                                                                          softtabs="true" tabsize="4" data-taskid$="{{task.id}}"
-                                                                                          data-groupid$="{{group.id}}" data-propertytype="optional"
-                                                                                          data-propertytitle$="{{property.title}}"></juicy-ace-editor>
+                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"

@@ -68,11 +68,11 @@ BridgeIt.QueryEditor = Polymer({
         /**
          * A string representation of the object returned from the `queryExecuted` event. Use when data binding is preferred over event listeners.
          */
-        queryresults: { type: String, reflectToAttribute: true, readOnly: true },
+        queryresults: { type: String, notify: true, readOnly: true },
         /**
          * A string representation of the results array returned from the `queriesRetrieved` event. Use when data binding is preferred over event listeners.
          */
-        querylistresults: { type: String, reflectToAttribute: true, readOnly: true }
+        querylistresults: { type: String, notify: true, readOnly: true }
     },
 
     /**
@@ -99,8 +99,8 @@ BridgeIt.QueryEditor = Polymer({
         var jqueryBuilderURL = this.resolveUrl('./jquery-builder-import.html');
         if (!('jQuery' in window)) {
             //load missing jQuery dependency
-            var link = this.importHref('../jquery-import/jquery-import.html', function(e) {
-                document.head.appendChild(link.import.body);
+            this.importHref('../jquery-import/jquery-import.html', function(e) {
+                document.head.appendChild(document.importNode(e.target.import.body,true));
                 onAfterjQueryLoaded();
             }, function(err) {
                 console.error('bridgeit-query-editor: error loading jquery', err);
@@ -111,8 +111,8 @@ BridgeIt.QueryEditor = Polymer({
         function onAfterjQueryLoaded() {
             //load missing jQuery-QueryBuilder dependency
             if (!$.fn.queryBuilder) {
-                var link = _this.importHref(jqueryBuilderURL, function(e) {
-                    document.head.appendChild(link.import.body);
+                _this.importHref(jqueryBuilderURL, function(e) {
+                    document.head.appendChild(document.importNode(e.target.import.body,true));
                     _this._initialize();
                 }, function(err) {
                     console.error('bridgeit-query-editor: error loading jquery builder', err);
