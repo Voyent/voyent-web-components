@@ -68,11 +68,11 @@ BridgeIt.QueryEditor = Polymer({
         /**
          * A string representation of the object returned from the `queryExecuted` event. Use when data binding is preferred over event listeners.
          */
-        queryresults: { type: String, reflectToAttribute: true, readOnly: true },
+        queryresults: { type: String, notify: true, readOnly: true },
         /**
          * A string representation of the results array returned from the `queriesRetrieved` event. Use when data binding is preferred over event listeners.
          */
-        querylistresults: { type: String, reflectToAttribute: true, readOnly: true }
+        querylistresults: { type: String, notify: true, readOnly: true }
     },
 
     /**
