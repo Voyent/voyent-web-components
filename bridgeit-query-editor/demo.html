@@ -77,7 +77,8 @@
 				<h1>BridgeIt Query Editor Component Demo</h1>
 
 				<bridgeit-auth-provider id="authProvider" account="[[account]]" realm="[[realm]]"
-					host="[[host]]" logged-in="{{isLoggedIn}}" error="{{loginError}}" timeout="120">
+					host="[[host]]" logged-in="{{isLoggedIn}}" error="{{loginError}}" timeout="120"
+					fallback-to-admin="true">
 				</bridgeit-auth-provider>
 				<bridgeit-login-paper-card heading="Demo Login" 
 					username="{{username}}"
