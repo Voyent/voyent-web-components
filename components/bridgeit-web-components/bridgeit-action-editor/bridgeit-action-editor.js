@@ -26,31 +26,50 @@ Polymer({
         if (!this.account) {
             this.account = bridgeit.io.auth.getLastKnownAccount();
         }
-        if (bridgeit.io.auth.isLoggedIn()) {
-            this.getTaskItems();
-            this.getActions();
-        }
+        this.initializeEditor(true);
+        //set some default values
         this._loadedAction = null;
         this._taskGroups = [];
         this._codeEditorProperties=['function','messagetemplate'];
 	},
 
     /**
+     * Initializes the editor by loading the query editor and fetching the task group and task schemas. Optionally you can also load the actions available in the realm (if using the list component for example).
+     * @param loadActions
+     */
+    initializeEditor: function(loadActions) {
+        if (bridgeit.io.auth.isLoggedIn()) {
+            this.getTaskGroups();
+            this.getTasks();
+            this._loadQueryEditor();
+            if (loadActions) {
+                this.getActions();
+            }
+        }
+    },
+
+    /**
      * Fetch the list of available task groups and tasks from the Acton Service.
      */
-    getTaskItems: function() {
+    getTaskGroups: function() {
         var _this = this;
-        var promises = [];
-        promises.push(bridgeit.io.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
+        bridgeit.io.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
             _this._processSchemas(schemas,'_taskGroupSchemas');
-        }));
-        promises.push(bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
+        }).catch(function(error) {
+            console.log('Error in getTaskGroups:',error);
+            _this.fire('bridgeit-error', {error: error});
+        });
+    },
+
+    /**
+     * Fetch the list of available tasks from the Acton Service.
+     */
+    getTasks: function() {
+        var _this = this;
+        bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
             _this._processSchemas(schemas,'_taskSchemas');
-        }));
-        return Promise.all(promises).then(function(){
-            _this._loadQueryEditor();
-        })['catch'](function(error) {
-            console.log('Error in getTaskItems:',error);
+        }).catch(function(error) {
+            console.log('Error in getTasks:',error);
             _this.fire('bridgeit-error', {error: error});
         });
     },
@@ -78,7 +97,6 @@ Polymer({
      * @param action
      */
     loadAction: function(action) {
-        var _this = this;
         this._loadHandler(action._id);
         this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
         this._taskGroups = this._convertActionToUI(this._loadedAction);
@@ -439,16 +457,18 @@ Polymer({
     _loadQueryEditor: function() {
         var _this = this;
         //only render the query editor once
-        if (Polymer.dom(_this.$$('#eventHandlerEditor')).querySelector('bridgeit-query-editor')) {
+        if (Polymer.dom(this.$$('#eventHandlerEditor')).querySelector('bridgeit-query-editor')) {
             return;
         }
-        _this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
+        if (!_this._queryEditorRef) {
+            this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
+        }
         //since the editor div is included dynamically in the
         //template it's possible that it hasn't rendered yet
         var checkExist = setInterval(function() {
             if (_this.$$('#eventHandlerEditor')) {
-                _this.$$('#eventHandlerEditor').appendChild(_this._queryEditorRef);
                 clearInterval(checkExist);
+                _this.$$('#eventHandlerEditor').appendChild(_this._queryEditorRef);
             }
         },50);
     },
@@ -867,20 +887,8 @@ Polymer({
     _loadHandler: function(id) {
         id = id + '_handler';
         var handler = this._handlers[id];
-        if (handler) {
-            this._handlerIsActive = !!handler.active;
-            var query = {query:handler && handler.query ? handler.query : {}};
-            if (Object.keys(query.query).length > 0) {
-                this._queryEditorRef.setEditorFromMongo(query);
-            }
-            else {
-                this._queryEditorRef.resetEditor();
-            }
-        }
-        else {
-            this._handlerIsActive = false;
-            this._queryEditorRef.resetEditor();
-        }
+        this._handlerIsActive = !!(handler && handler.active ? handler.active : false);
+        this._queryEditorRef.setEditorFromMongo({query:handler && handler.query ? handler.query : {}});
     },
 
     _saveHandler: function(id) {
