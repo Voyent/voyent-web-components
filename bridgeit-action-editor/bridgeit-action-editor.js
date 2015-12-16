@@ -26,31 +26,50 @@ Polymer({
         if (!this.account) {
             this.account = bridgeit.io.auth.getLastKnownAccount();
         }
-        if (bridgeit.io.auth.isLoggedIn()) {
-            this.getTaskItems();
-            this.getActions();
-        }
+        this.initializeEditor(true);
+        //set some default values
         this._loadedAction = null;
         this._taskGroups = [];
         this._codeEditorProperties=['function','messagetemplate'];
 	},
 
     /**
+     * Initializes the editor by loading the query editor and fetching the task group and task schemas. Optionally you can also load the actions available in the realm (if using the list component for example).
+     * @param loadActions
+     */
+    initializeEditor: function(loadActions) {
+        if (bridgeit.io.auth.isLoggedIn()) {
+            this.getTaskGroups();
+            this.getTasks();
+            this._loadQueryEditor();
+            if (loadActions) {
+                this.getActions();
+            }
+        }
+    },
+
+    /**
      * Fetch the list of available task groups and tasks from the Acton Service.
      */
-    getTaskItems: function() {
+    getTaskGroups: function() {
         var _this = this;
-        var promises = [];
-        promises.push(bridgeit.io.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
+        bridgeit.io.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
             _this._processSchemas(schemas,'_taskGroupSchemas');
-        }));
-        promises.push(bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
+        }).catch(function(error) {
+            console.log('Error in getTaskGroups:',error);
+            _this.fire('bridgeit-error', {error: error});
+        });
+    },
+
+    /**
+     * Fetch the list of available tasks from the Acton Service.
+     */
+    getTasks: function() {
+        var _this = this;
+        bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
             _this._processSchemas(schemas,'_taskSchemas');
-        }));
-        return Promise.all(promises).then(function(){
-            _this._loadQueryEditor();
-        })['catch'](function(error) {
-            console.log('Error in getTaskItems:',error);
+        }).catch(function(error) {
+            console.log('Error in getTasks:',error);
             _this.fire('bridgeit-error', {error: error});
         });
     },
