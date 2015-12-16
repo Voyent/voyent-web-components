@@ -27,45 +27,91 @@
     },
 
     properties: {
+
+      /**
+       * Flag for the current logged-in status.
+       */
       loggedIn: {
         notify: true,
         reflectToAttribute: true
       },
+
+      /**
+       * The username parameter, which can be declaratively bound or passed in directly through the 'login' function.
+       */
       username: {
         notify: true,
         value: function(){
           return bridgeit.io.auth.getLastKnownUsername();
         }
       },
+
+      /**
+       * If true, will start the push service after authentication and refresh the push credentials when the access token
+       * is refreshed.
+       * @default false
+       */
       usePushService: {
         type: Boolean,
         value: false,
         notify: true
       },
+
+      /**
+       * The current error string for the last authentication attempt.
+       */
       error: {
         notify: true,
         type: String,
         reflectToAttribute: true
       },
+
+      /**
+       * The last HTTP response from the authentication service.
+       */
       authResponse: {
         notify: true,
         type: String
       },
+
+      /**
+       * The time remaining in ms before the current token expires.
+       */
       timeRemaining: {
         notify: true,
         type: Number
       },
+
+      /**
+       * Interval period to update the time remaining property.
+       */
       timeRemainingBeforeExpiryInterval: {
         type: Number
       },
+
+      /**
+       * The timeout, in minutes, of inactivity before the component will stop automatically refreshing the access token.
+       * @default 20
+       */
       timeout: {
         type: Number,
         notify: true
       },
+
+      /**
+       * Whether to login in as an account administrator, or as a realm user.
+       * @default false
+       */
       admin: {
         type: Boolean,
         notify: true
       },
+
+      /**
+       * Flag to instruct the component to attempt to login as an admin, if logging into the realm has failed. This may be useful for login 
+       * forms intended for both normal users and admins.
+       * @default false
+       */
       fallbackToAdmin: {
         type: Boolean
       }
@@ -75,6 +121,12 @@
       'doLogin': 'login'
     },
 
+    /**
+     * Attempts to authenticate. If the username, password and admin flag are not passed in, the bound component values will be used. 
+     * After the login is successful, the onAfterLogin event is then fired. If the login attempt is not successful, a bridgeit-error 
+     * event will be fired. A bridgeit-session-expired event will be fired when the session expires.
+     * @return {Promise} A promise with the response from bridgeit.io.auth.connect()
+     */
     login: function(username, password, admin){
       console.log('bridgeit-auth-provider.login()');
       var _this = this;
@@ -142,12 +194,21 @@
         _this.fire('bridgeit-error', {error: Error('Failed login: ' + this.error)});
       });
     },
+
+    /**
+     * Log out the current user and clear all credential and authentication information.
+     */
     logout: function(){
       bridgeit.io.auth.disconnect();
       this.loggedIn = false;
       this.accessToken = null;
       this.timeRemaining = 0;
     },
+
+    /** 
+     * Fired when the current session expired.
+     * @private
+     */
     onSessionExpiry: function(){
       this.fire('bridgeit-session-expired');
     }
