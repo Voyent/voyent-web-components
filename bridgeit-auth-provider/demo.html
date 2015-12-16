@@ -84,7 +84,8 @@
     <form is="iron-form" id="loginForm">
       <bridgeit-auth-provider id="bridgeitAuth" account="{{account}}" realm="{{realm}}" 
         username="{{username}}" password="{{password}}" time-remaining="{{msRemaining}}"
-        logged-in="{{isLoggedIn}}" error="{{loginError}}" access-token="{{hostAccessToken}}">
+        logged-in="{{isLoggedIn}}" error="{{loginError}}" access-token="{{hostAccessToken}}"
+        fallback-to-admin="true">
       </bridgeit-auth-provider>
       <paper-card class="settings">
         <span>

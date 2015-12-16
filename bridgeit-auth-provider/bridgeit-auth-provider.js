@@ -65,6 +65,9 @@
       admin: {
         type: Boolean,
         notify: true
+      },
+      fallbackToAdmin: {
+        type: Boolean
       }
     },
 
@@ -82,15 +85,21 @@
         this.error = 'Missing username';
         return Promise.reject(this.error);
       }
-      if( !password ){
+      if( password ){
+        this.password = password;
+      }
+      if( !this.password ){
         this.error = 'Missing password';
         return Promise.reject(this.error);
+      }
+      if( admin ){
+        this.admin = admin;
       }
       this.error = '';
       var params = {
         account: this.account,
         username: this.username,
-        password: password,
+        password: this.password,
         host: this.host,
         usePushService: this.usePushService,
         onSessionExpiry: this.onSessionExpiry,
@@ -102,15 +111,33 @@
       if( !admin ){
         params.realm = this.realm;
       }
-      return bridgeit.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
+
+      function onAfterConnect(authResponse){
         _this.authResponse = authResponse;
         bridgeit.io.setCurrentRealm(_this.realm);
         _this.accessToken = bridgeit.io.auth.getLastAccessToken();
         _this.loggedIn = true;
         _this.fire('onAfterLogin');
         _this.setupTimeRemainingInterval();
+      }
+
+      return bridgeit.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
+        onAfterConnect(authResponse);
       }).catch(function(error){
-        _this.error = error.responseText || error.message;
+
+        //if fallbackToAdmin try to login as admin
+        if( !_this.admin && _this.fallbackToAdmin ){
+          params.realm = 'admin';
+          return bridgeit.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
+            onAfterConnect(authResponse);
+          });
+        }
+        else{
+          Promise.reject(error);
+        }
+        _
+      }).catch(function(error){
+        this.error = error.responseText || error.message;
         console.log('bridgeit-auth-provider#login() error');
         _this.fire('bridgeit-error', {error: Error('Failed login: ' + this.error)});
       });
