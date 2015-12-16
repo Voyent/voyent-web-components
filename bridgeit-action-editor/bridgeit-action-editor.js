@@ -78,7 +78,6 @@ Polymer({
      * @param action
      */
     loadAction: function(action) {
-        var _this = this;
         this._loadHandler(action._id);
         this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
         this._taskGroups = this._convertActionToUI(this._loadedAction);
@@ -439,10 +438,10 @@ Polymer({
     _loadQueryEditor: function() {
         var _this = this;
         //only render the query editor once
-        if (Polymer.dom(_this.$$('#eventHandlerEditor')).querySelector('bridgeit-query-editor')) {
+        if (Polymer.dom(this.$$('#eventHandlerEditor')).querySelector('bridgeit-query-editor')) {
             return;
         }
-        _this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
+        this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
         //since the editor div is included dynamically in the
         //template it's possible that it hasn't rendered yet
         var checkExist = setInterval(function() {
@@ -867,20 +866,8 @@ Polymer({
     _loadHandler: function(id) {
         id = id + '_handler';
         var handler = this._handlers[id];
-        if (handler) {
-            this._handlerIsActive = !!handler.active;
-            var query = {query:handler && handler.query ? handler.query : {}};
-            if (Object.keys(query.query).length > 0) {
-                this._queryEditorRef.setEditorFromMongo(query);
-            }
-            else {
-                this._queryEditorRef.resetEditor();
-            }
-        }
-        else {
-            this._handlerIsActive = false;
-            this._queryEditorRef.resetEditor();
-        }
+        this._handlerIsActive = !!(handler && handler.active ? handler.active : false);
+        this._queryEditorRef.setEditorFromMongo({query:handler && handler.query ? handler.query : {}});
     },
 
     _saveHandler: function(id) {

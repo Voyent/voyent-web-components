@@ -113,24 +113,24 @@ BridgeIt.QueryEditor = Polymer({
             if (!$.fn.queryBuilder) {
                 _this.importHref(jqueryBuilderURL, function(e) {
                     document.head.appendChild(document.importNode(e.target.import.body,true));
-                    _this._initialize();
+                    initialize();
                 }, function(err) {
                     console.error('bridgeit-query-editor: error loading jquery builder', err);
                 });
             }
-            else { _this._initialize(); }
+            else { initialize(); }
         }
-    },
 
-    _initialize: function() {
-        if (!this.realm) {
-            this.realm = bridgeit.io.auth.getLastKnownRealm();
+        function initialize() {
+            if (!_this.realm) {
+                _this.realm = bridgeit.io.auth.getLastKnownRealm();
+            }
+            if (!_this.account) {
+                _this.account = bridgeit.io.auth.getLastKnownAccount();
+            }
+            _this.reloadEditor();
+            _this.fetchQueryList();
         }
-        if (!this.account) {
-            this.account = bridgeit.io.auth.getLastKnownAccount();
-        }
-        this.reloadEditor();
-        this.fetchQueryList();
     },
 
     /**
@@ -252,12 +252,20 @@ BridgeIt.QueryEditor = Polymer({
      * @param query - The query in object form.
      */
     setEditorFromMongo: function(query) {
+        if (!query || !query.query) {
+            return;
+        }
         this.skipListeners = true;
         this.options = query.options || {};
         this.fields = query.fields || {};
         try {
-            this._processTimeFields(query.query,false);
-            $(this.$.editor).queryBuilder('setRulesFromMongo',query.query);
+            if (Object.keys(query.query).length === 0) {
+                $(this.$.editor).queryBuilder('reset');
+            }
+            else {
+                this._processTimeFields(query.query,false);
+                $(this.$.editor).queryBuilder('setRulesFromMongo',query.query);
+            }
             this.activeQuery = query;
             this._setQueryHeader(query);
         }

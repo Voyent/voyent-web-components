@@ -192,8 +192,7 @@
 			password: password
 		}).then(function(){
 			setCredentialsOnComponent();
-            document.getElementById('actionEditor').getTaskItems();
-            document.getElementById('actionEditor').getActions();
+            document.getElementById('actionEditor').initializeEditor(true);
 		})['catch'](function(){
 			//try to login as admin
 			bridgeit.io.auth.connect({
@@ -204,12 +203,11 @@
 			}).then(function(){
 				setCredentialsOnComponent();
 				document.getElementById('actionEditor').setAttribute('realm', realm);
-                document.getElementById('actionEditor').getTaskItems();
-                document.getElementById('actionEditor').getActions();
+                document.getElementById('actionEditor').initializeEditor(true);
 			})
 		});
 	}
-    
+
 	function setCredentialsOnComponent(){
 		var elem = document.getElementById('actionEditor');
 
@@ -226,7 +224,7 @@
 		}
 
 	}
-	
+
     window.addEventListener('WebComponentsReady', function() {
         // imports are loaded and elements have been registered
         console.log('WebComponentsReady');
