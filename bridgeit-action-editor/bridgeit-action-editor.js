@@ -589,7 +589,8 @@ Polymer({
      * @private
      */
     _dragOverAction: function(e) {
-        if (e.dataTransfer.types.indexOf('action/group') > -1) {
+        if ((e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/group')) ||
+            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/group') > -1)) {
             e.preventDefault(); //only allow task groups to be dragged into the container
         }
     },
@@ -600,7 +601,8 @@ Polymer({
      * @private
      */
     _dragOverGroup: function(e) {
-        if (e.dataTransfer.types.indexOf('action/task') > -1) {
+        if ((e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/task')) ||
+            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/task') > -1)) {
             e.preventDefault(); //only allow tasks to be dragged into the task groups
         }
     },
