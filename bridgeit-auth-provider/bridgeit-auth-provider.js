@@ -114,6 +114,16 @@
        */
       fallbackToAdmin: {
         type: Boolean
+      },
+
+      /**
+       *  If set, the authentication token will be restricted to the given path, unless in development mode. Eg. the current token
+       *  will be valid for any URL paths beginning with '/myapp', such as '/myapp/page1', etc.
+       *  @default '/'
+       */
+      scopeToPath: {
+        type: String,
+        notify: true
       }
     },
 
@@ -155,7 +165,8 @@
         host: this.host,
         usePushService: this.usePushService,
         onSessionExpiry: this.onSessionExpiry,
-        admin: this.admin
+        admin: this.admin,
+        scopeToPath: this.scopeToPath
       };
       if( this.timeout ){
         params.connectionTimeout = this.timeout;
