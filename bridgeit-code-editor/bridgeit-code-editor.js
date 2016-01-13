@@ -100,14 +100,15 @@ BridgeIt.CodeEditor = Polymer({
             this.editor.setTheme('ace/theme/' + this.theme);
         }
         if (this.value) {
-            session.setValue(this.value);
+            this.editor.setValue(this.value,1);
         }
     },
     _addListeners: function() {
         var _this = this;
         this.editor.addEventListener('change',function(e) {
-            _this._ignoreValueChange = true;
-            _this.value = _this.editor.getValue();
+            if (_this.editor.getValue() !== _this.value) {
+                _this.value = _this.editor.getValue();
+            }
         });
     },
     _fontsizeChanged: function(newVal) {
@@ -159,10 +160,8 @@ BridgeIt.CodeEditor = Polymer({
         this.editor.setTheme('ace/theme/'+newVal);
     },
     _valueChanged: function(newVal) {
-        if (!this.editor || this._ignoreValueChange) {
-            this._ignoreValueChange = false;
-            return;
+        if (this.editor && newVal !== this.editor.getValue()) {
+            this.editor.setValue(newVal,1);
         }
-        this.editor.setValue(newVal);
     }
 });
