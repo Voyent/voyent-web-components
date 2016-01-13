@@ -1,0 +1,65 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+
+<!--
+Display a list of previously created recognizers.
+
+Example:
+
+    <bridgeit-recognizer-editor account="myAccount"
+                            realm="myRealm">
+        <bridgeit-recognizer-list></bridgeit-recognizer-list>
+    </bridgeit-recognizer-editor>
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-recognizer-list">
+    <template>
+        <style type="text/css">
+            .tableWrapper {
+                @apply(--recognizer-list-wrapper);
+            }
+            table {
+                margin:0 auto;
+                @apply(--recognizer-list-table);
+            }
+            tbody {
+                @apply(--recognizer-list-tbody);
+            }
+            tr {
+                @apply(--recognizer-list-tr);
+            }
+            td {
+                @apply(--recognizer-list-td);
+            }
+            button {
+                cursor:pointer;
+                @apply(--recognizer-list-button);
+            }
+            .noRecognizerTxt {
+                text-align: center;
+            }
+        </style>
+        <div class="tableWrapper">
+            <template is="dom-if" if="{{_allRecognizers}}">
+                <table>
+                    <tbody>
+                        <template is="dom-repeat" items="{{_allRecognizers}}" sort="_sortList">
+                            <tr>
+                                <td>{{item._id}}</td>
+                                <td>
+                                    <button on-click="_loadRecognizer">View</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </template>
+            <template is="dom-if" if="{{!_allRecognizers}}">
+                <div class="noRecognizerTxt">No existing recognizers found.</div>
+            </template>
+        </div>
+    </template>
+</dom-module>
+
+<script src="bridgeit-recognizer-list.js"></script>
