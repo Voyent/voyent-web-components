@@ -39,6 +39,7 @@
 				};
 				/*
 				Other available styling options:
+			    --query-list-wrapper: { key:value; };  [Custom table wrapper styling]
 				--query-list-table: { key:value; }; [Custom table styling]
 				--query-list-tbody: { key:value; }; [Custom tbody styling]
 				--query-list-tr { key:value; }; [Custom tr styling]
@@ -149,7 +150,8 @@
 
 					<h2>Query Editor</h2>
 					<bridgeit-query-editor id="queryEditor" queryurltarget="queryURL"
-						account="[[account]]" realm="[[realm]]" service="[[service]]" collection="[[collection]]">
+						account="[[account]]" realm="[[realm]]" service="[[service]]" collection="[[collection]]"
+					    options='{"limit":100,"sort":{"time":-1}}'>
 					</bridgeit-query-editor>
 
 					<div>
