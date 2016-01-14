@@ -38,11 +38,11 @@ BridgeIt.QueryEditor = Polymer({
         /**
          * The service that you would like to build the query for. Currently `documents`, `location` and `metrics` are supported.
          */
-        service: { type: String, value: 'documents' },
+        service: { type: String, value: 'metrics' },
         /**
          * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
          */
-        collection: { type: String, value: 'documents' },
+        collection: { type: String, value: 'events' },
         /**
          * Specify the inclusion or exclusion of fields to return in the result set.
          *
