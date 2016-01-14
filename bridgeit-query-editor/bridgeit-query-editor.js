@@ -16,8 +16,8 @@ BridgeIt.QueryEditor = Polymer({
     factoryImpl: function(account,realm,service,collection,fields,options,queryurltarget) {
         this.account = account || null;
         this.realm = realm || null;
-        this.service = service || 'documents';
-        this.collection = collection || 'documents';
+        this.service = service || 'metrics';
+        this.collection = collection || 'events';
         this.fields = fields || {};
         this.options = options || {};
         this.queryurltarget = queryurltarget || null;
