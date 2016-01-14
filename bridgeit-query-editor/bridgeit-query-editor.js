@@ -38,9 +38,9 @@ BridgeIt.QueryEditor = Polymer({
         /**
          * The service that you would like to build the query for. Currently `documents`, `location` and `metrics` are supported.
          */
-        service: { type: String, value: 'metrics' },
+        service: { type: String, value: 'metrics', observer: '_serviceChanged' },
         /**
-         * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
+         * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor. If `metrics` is used for the service then the collection will change automatically.
          */
         collection: { type: String, value: 'events' },
         /**
@@ -659,7 +659,6 @@ BridgeIt.QueryEditor = Polymer({
                 this.service_url = protocol+bridgeit.io.locateURL+path;
                 break;
             case 'metrics':
-                params.collection = this.collection;
                 this.service_url = protocol+bridgeit.io.metricsURL+path;
                 bridgeit.io.metrics.findEvents(params).then(successCallback).catch(function(error){
                     console.log('findEvents caught an error:', error);
@@ -801,5 +800,11 @@ BridgeIt.QueryEditor = Polymer({
         if (a < b) { return -1; }
         else if (a > b) { return  1; }
         return 0;
+    },
+
+    _serviceChanged: function(newVal) {
+        if (newVal.toLowerCase() === 'metrics') {
+            this.collection = 'events';
+        }
     }
 });
