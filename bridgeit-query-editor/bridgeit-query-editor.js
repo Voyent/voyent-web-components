@@ -36,11 +36,12 @@ BridgeIt.QueryEditor = Polymer({
          */
         account: { type: String },
         /**
-         * The service that you would like to build the query for. Currently `documents`, `location` and `metrics` are supported.
+         * The service that you would like to build the query for. Currently `documents`, `location`, `metrics` and `authadmin` are supported.
          */
         service: { type: String, value: 'metrics', observer: '_serviceChanged' },
         /**
-         * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor. If `metrics` is used for the service then the collection will change automatically.
+         * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
+         * Some services may only support one collection (eg. metrics, authadmin), in this case the collection will change automatically with the service.
          */
         collection: { type: String, value: 'events' },
         /**
@@ -664,6 +665,18 @@ BridgeIt.QueryEditor = Polymer({
                     console.log('findEvents caught an error:', error);
                 });
                 break;
+            case 'authadmin':
+                switch (this.collection.toLowerCase()) {
+                    case 'users':
+                        bridgeit.io.admin.getRealmUsers(params).then(successCallback).catch(function(error){
+                            console.log('getRealmUsers caught an error:', error);
+                        });
+                        break;
+                    default:
+                        this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'AuthAdmin Service Collection "' + this.collection + '" not supported.','type':'error'});
+                }
+                this.service_url = protocol+bridgeit.io.authAdminURL+path;
+                break;
             default:
                 this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Service "' + this.service + '" not supported.','type':'error'});
         }
@@ -803,8 +816,13 @@ BridgeIt.QueryEditor = Polymer({
     },
 
     _serviceChanged: function(newVal) {
-        if (newVal.toLowerCase() === 'metrics') {
-            this.collection = 'events';
+        switch(newVal.toLowerCase()) {
+            case 'metrics':
+                this.collection = 'events';
+                break;
+            case 'authadmin':
+                this.collection = 'users';
+                break;
         }
     }
 });
