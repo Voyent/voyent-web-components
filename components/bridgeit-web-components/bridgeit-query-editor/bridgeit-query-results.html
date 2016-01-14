@@ -53,7 +53,7 @@ Example:
                 <template is="dom-repeat" as="row" items="{{_tableRows}}">
                     <tr>
                         <template is="dom-repeat" as="column" items="{{row}}">
-                            <td class="text-center">{{column}}</td>
+                            <td class="text-center"><html-binder html="{{column}}"></html-binder></td>
                         </template>
                     </tr>
                 </template>
@@ -63,3 +63,23 @@ Example:
 </dom-module>
 
 <script src="./bridgeit-query-results.js"></script>
+
+<dom-module id="html-binder">
+    <template>
+        <span id="content"></span>
+    </template>
+    <script>
+        Polymer({
+            is: "html-binder",
+            properties: {
+                html: { type: String, observer:'_htmlChanged' }
+            },
+            ready: function(){
+                this.$.content.innerHTML = this.html;
+            },
+            _htmlChanged: function(newVal) {
+                this.$.content.innerHTML = newVal;
+            }
+        });
+    </script>
+</dom-module>

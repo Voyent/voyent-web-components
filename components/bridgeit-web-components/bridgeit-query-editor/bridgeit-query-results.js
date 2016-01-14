@@ -29,6 +29,9 @@ Polymer({
      */
     setupListener: function() {
         var _this = this;
+        var lastRow = -1;
+        var td = '';
+
         if (!this._validateFor()) { return; }
         this._queryEditor.addEventListener('queryExecuted', function(e) {
             var res = e.detail.results;
@@ -46,25 +49,38 @@ Polymer({
             // This is because the dates come from the queryEditor as UTC
             // But we want to display them in the table as the local timezone
             if ((_this.utc != 'true') && (res[0].hasOwnProperty(timeVar))) {
-                for (var k = 0; k < res.length; k++) {
-                    res[k].time = new Date(res[k].time);
-                    res[k][timeDisplayVar] = _this._formatDate(res[k].time);
+                for (var i = 0; i < res.length; i++) {
+                    res[i].time = new Date(res[i].time);
+                    res[i][timeDisplayVar] = _this._formatDate(res[i].time);
                 }
             }
             
-            var tableHeaders = e.detail.uniqueFields;
+            var uniqueFields = e.detail.uniqueFields;
             var tableRows=[];
-            for (var i=0; i<res.length; i++) {
+            var tableHeaders=[];
+            for (var j=0; j<res.length; j++) {
                 var row=[];
-                for (var j=0; j<tableHeaders.length; j++) {
-                    buildRows(res[i],tableHeaders[j]);
+                for (var k=0; k<uniqueFields.length; k++) {
+                    buildRows(res[j],uniqueFields[k],j);
+                    //collapse the nested properties into one column
+                    //we only want to do this once
+                    if (j === 0) {
+                        var th = uniqueFields[k];
+                        var dotIndex = th.indexOf('.');
+                        if (dotIndex > -1) {
+                            th = th.substr(0,dotIndex);
+                        }
+                        if (tableHeaders.indexOf(th) === -1) {
+                            tableHeaders.push(th);
+                        }
+                    }
                 }
                 tableRows.push(row);
             }
             _this._tableHeaders = tableHeaders;
             _this._tableRows = tableRows;
 
-            function buildRows(document,key) {
+            function buildRows(document,key,currentRow) {
                 if (typeof document[key] !== 'undefined') {
                     if (key === timeVar) {
                         row.push(document[timeDisplayVar] ? document[timeDisplayVar] : document[timeVar]);
@@ -91,9 +107,22 @@ Polymer({
                                 }
                                 return null;
                             }
-                            return obj ? obj[key] : null;
+                            if (obj && typeof obj[key] !== 'undefined') {
+                                return obj[key];
+                            }
+                            return null;
                         },document);
-                        row.push(val);
+                        //collapse the nested properties into one TD
+                        if (currentRow === lastRow) {
+                            if (val !== null) {
+                                td = td+'<strong>'+key.substr(key.indexOf('.')+1)+'</strong><br>'+val+'<br>';
+                            }
+                        }
+                        else {
+                            row.push(td);
+                            td = [];
+                        }
+                        lastRow = currentRow;
                     }
                     else {
                         row.push(null);

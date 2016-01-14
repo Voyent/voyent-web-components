@@ -175,6 +175,9 @@ if( ! ('bridgeit' in window)){
 	function validateRequiredHandler(params, reject){
 		validateParameter('handler', 'The handler parameter is required', params, reject);
 	}
+	function validateRequiredRecognizer(params, reject){
+		validateParameter('recognizer', 'The recognizer parameter is required', params, reject);
+	}
 
 	/* Locate */
 	function validateRequiredRegion(params, reject){
@@ -358,6 +361,7 @@ if( ! ('bridgeit' in window)){
 	var USER_STORE_SETTING_KEY = "bridgeitUserStoreSetting";
 	var LAST_UPDATED = "last_updated";
 	var PUSH_CALLBACKS = 'pushCallbacks';
+	var SCOPE_TO_PATH_KEY = "bridgeitScopeToPath";
 
 	b.$ = {
 
@@ -1565,6 +1569,7 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.password User password (required)
 		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {String} params.scopeToPath (default '/') If set, the authentication token will be restricted to the given path, unless on localhost.
 		 * @returns Promise with the following argument:
 		 *      {
 		 *          access_token: 'xxx',
@@ -1615,6 +1620,9 @@ if( ! ('bridgeit' in window)){
 					sessionStorage.setItem(btoa(REALM_KEY), btoa(params.realm));
 					sessionStorage.setItem(btoa(USERNAME_KEY), btoa(params.username));
 					sessionStorage.setItem(btoa(ADMIN_KEY), btoa(params.admin));
+					if( params.scopeToPath ){
+						sessionStorage.setItem(btoa(SCOPE_TO_PATH_KEY), btoa(params.scopeToPath));	
+					}
 
 					resolve(authResponse);
 				})['catch'](function(error){
@@ -1667,6 +1675,7 @@ if( ! ('bridgeit' in window)){
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Boolean} params.storeCredentials (default true) Whether to store encrypted credentials in session storage. If set to false, bridgeit will not attempt to relogin before the session expires.
 		 * @param {Function} params.onSessionExpiry Function callback to be called on session expiry. If you wish to ensure that disconnect is not called until after your onSessionExpiry callback has completed, please return a Promise from your function.
+		 * @param {String} params.scopeToPath (default '/') If set, the authentication token will be restricted to the given path, unless on localhost.
 		 * @returns Promise with service definitions
 		 *
 		 */
@@ -1784,6 +1793,9 @@ if( ! ('bridgeit' in window)){
 					onSessionExpiry: params.onSessionExpiry,
 					admin: params.admin
 				};
+				if( params.scopeToPath ){
+					settings.scopeToPath = params.scopeToPath;
+				}
 				sessionStorage.setItem(btoa(CONNECT_SETTINGS_KEY), btoa(JSON.stringify(settings)));
 
 				if( params.onSessionExpiry ){
@@ -1932,7 +1944,11 @@ if( ! ('bridgeit' in window)){
 				tokenExpiresIn = tokenExpiresInStr ? parseInt(tokenExpiresInStr,10) : null,
 				tokenSetAtStr = sessionStorage.getItem(btoa(TOKEN_SET_KEY)),
 				tokenSetAt = tokenSetAtStr ? parseInt(tokenSetAtStr,10) : null,
-				result = token && tokenExpiresIn && tokenSetAt && (new Date().getTime() < (tokenExpiresIn + tokenSetAt) );
+				scopeToPathCipher = sessionStorage.getItem(btoa(SCOPE_TO_PATH_KEY)),
+				scopeToPath = scopeToPathCipher ? atob(scopeToPathCipher) : '/',
+				isDev = window.location.port !== '',
+				currentPath = window.location.pathname,
+				result = token && tokenExpiresIn && tokenSetAt && (new Date().getTime() < (tokenExpiresIn + tokenSetAt) ) && (isDev || currentPath.indexOf(scopeToPath) === 0);
 			return !!result;
 		},
 
@@ -2058,7 +2074,7 @@ if( ! ('bridgeit' in window)){
 						resolve(false);
 					}
 					else{
-						reject(error);
+						reject(response);
 					}
 				});
 			});
@@ -2110,7 +2126,7 @@ if( ! ('bridgeit' in window)){
 						resolve(false);
 					}
 					else{
-						reject(error);
+						reject(response);
 					}
 				});
 			});
@@ -2133,6 +2149,35 @@ if( ! ('bridgeit' in window)){
 		 */
 		getLastActiveTimestamp: function(){
 			return sessionStorage.getItem(btoa(LAST_ACTIVE_TS_KEY));
+		},
+
+		forgotPassword: function(params){
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+				
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var username = validateAndReturnRequiredUsername(params, reject);
+
+				var protocol = params.ssl ? 'https://' : 'http://';
+				var txParam = getTransactionURLParam();
+				var url = protocol + services.authAdminURL + '/' + account + '/';
+
+				if( params.realm ){
+					url += 'realms/' + params.realm + '/users/' + username + '/emailpassword';
+				}
+				else{ //admin
+					url += 'admins/' + username + '/emailpassword';
+				}
+				url += (txParam ? '?' + txParam : '');
+				
+				b.$.post(url).then(function(response){
+					services.auth.updateLastActiveTimestamp();
+					resolve(true);
+				})['catch'](function(response){
+					reject(response);
+				});
+			});
 		}
 	};
 
@@ -2598,6 +2643,247 @@ if( ! ('bridgeit' in window)){
 						services.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Create a new event recognizer
+		 *
+		 * @alias createRecognizer
+		 * @param {Object} params params
+		 * @param {String} params.id The recognizer id
+		 * @param {Object} params.recognizer The event recognizer to be created
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {String} The resource URI
+		 */
+		createRecognizer: function(params) {
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredRecognizer(params, reject);
+
+					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+						'recognizers/' + (params.id ? params.id : ''), token, params.ssl);
+
+					b.$.post(url, params.recognizer).then(function(response) {
+						services.auth.updateLastActiveTimestamp();
+						resolve(response.uri);
+					})['catch'](function(error) {
+						reject(error);
+					});
+
+				}
+			);
+		},
+
+		/**
+		 * Update an event recognizer
+		 *
+		 * @alias updateRecognizer
+		 * @param {Object} params params
+		 * @param {String} params.id The recognizer id, the event recognizer to be updated
+		 * @param {Object} params.recognizer The new event recognizer
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 */
+		updateRecognizer: function(params) {
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+					validateRequiredRecognizer(params, reject);
+
+					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+						'recognizers/' + params.id, token, params.ssl);
+
+					b.$.put(url, params.recognizer).then(function() {
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function(error) {
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Fetch an event recognizer
+		 *
+		 * @alias getRecognizer
+		 * @param {Object} params params
+		 * @param {String} params.id The recognizer id, the event recognizer to fetch
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {Object} The event recognizer
+		 */
+		getRecognizer: function(params) {
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+
+					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+						'recognizers/' + params.id, token, params.ssl);
+
+					b.$.getJSON(url).then(function(recognizer) {
+						services.auth.updateLastActiveTimestamp();
+						resolve(recognizer);
+					})['catch'](function(error) {
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Searches for event recognizers in a realm based on a query
+		 *
+		 * @alias findRecognizers
+		 * @param {Object} params params
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Object} params.query A mongo query for the event recognizers
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
+		 * @returns {Object} The results
+		 */
+		findRecognizers: function(params) {
+			return new Promise(
+				function(resolve, reject) {
+
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+
+					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+						'recognizers/', token, params.ssl, {
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
+
+					b.$.getJSON(url).then(function(recognizers) {
+						services.auth.updateLastActiveTimestamp();
+						resolve(recognizers);
+					})['catch'](function(response) {
+						reject(response);
+					});
+
+				}
+			);
+		},
+
+		/**
+		 * Delete an event recognizer
+		 *
+		 * @alias deleteRecognizer
+		 * @param {Object} params params
+		 * @param {String} params.id The recognizer id, the event recognizer to be deleted
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 */
+		deleteRecognizer: function(params) {
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+
+					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+						'recognizers/' + params.id, token, params.ssl);
+
+					b.$.doDelete(url).then(function() {
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function(error) {
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Delete event recognizers in a realm based on a query
+		 *
+		 * @alias deleteRecognizers
+		 * @param {Object} params params
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Object} params.query A mongo query for the event recognizers
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
+		 */
+		deleteRecognizers: function(params) {
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+
+					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+						'recognizers/', token, params.ssl, {
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
+
+					b.$.doDelete(url).then(function() {
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function(error) {
 						reject(error);
 					});
 				}

@@ -4,7 +4,7 @@ BridgeIt.QueryEditor = Polymer({
     is: "bridgeit-query-editor",
 
     /**
-     * Custom constructor.
+     * Custom constructor. Sets any passed properties (or the defaults) and calls `reloadEditor`.
      * @param account
      * @param realm
      * @param service
@@ -21,6 +21,7 @@ BridgeIt.QueryEditor = Polymer({
         this.fields = fields || {};
         this.options = options || {};
         this.queryurltarget = queryurltarget || null;
+        this.reloadEditor();
     },
 
     properties: {
