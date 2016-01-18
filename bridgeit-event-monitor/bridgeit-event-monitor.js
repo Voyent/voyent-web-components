@@ -38,6 +38,11 @@ Polymer({
          */
         defaultcolor: { type: String, value: "orange" },
         /**
+         * Default polling interval in milliseconds, if usepolling is enabled
+         * @default 5000 (5 seconds)
+         */
+        pollinterval: { type: Number, value: 5000 },
+        /**
          * Defines whether to show the graph Legend or not
          * @default true
          */
@@ -70,6 +75,15 @@ Polymer({
          */
         useresize: { type: String, value: "true" },
         /**
+         * Defines whether polling should be enabled when the user scrolls to the end of the graph data
+         * @default true
+         */
+        usepolling: { type: String, value: "true" },
+        /**
+         * Date object of our last poll, to ensure we only get recent data
+         */
+        lastpoll: { type: Date },
+        /**
          * Defines the ID of the details pane container, used for consistency
          * @default eventDetails
          */
@@ -85,7 +99,17 @@ Polymer({
         /**
          * Defines our X-Axis that is used internally by D3
          */
-        _ourxaxis: { type: Object }
+        _ourxaxis: { type: Object },
+        /**
+         * Manages whether we should specifically be polling
+         * Basically our flag that we check in each recursive poll timeout call
+         * @default false
+         */
+        _enablepoll: { type: String, value: "false" },
+        /**
+         * Function called at every poll interval, when polling is enabled and started
+         */
+        _pollfn: { type: Object }
     },
     
     /**
@@ -105,6 +129,47 @@ Polymer({
      */
     show: function() {
         this._generateGraph(this._data);
+    },
+    
+    /**
+     * Append the passed data to our existing data
+     * This function assumes show or showData has already been called to do some initialization
+     */
+    appendData: function(data) {
+        if (data && typeof data !== 'undefined' && data.length > 0) {
+            this._data = this._data.concat(data);
+            this._updateGraph(this._data, data);
+        }
+    },
+    
+    /**
+     * Start polling using our current stored pollfn
+     * Used when we don't have a new poll function to specify
+     */
+    pollCurrent: function() {
+        this.poll(this._pollfn);
+    },
+    
+    /**
+     * Enable and customize polling for our graph, which normally means re-querying and displaying the data
+     */
+    poll: function(fn) {
+        if (this.usepolling == 'true') {
+            if (fn) {
+                this._pollfn = fn;
+            }
+            
+            var _this = this;
+            (function p() {
+                if (_this._enablepoll == 'true') {
+                    // Execute our function
+                    fn();
+                    
+                    // Recursively poll this call again
+                    setTimeout(p, _this.pollinterval);
+                }
+            })();
+        }
     },
     
     /**
@@ -171,6 +236,7 @@ Polymer({
             console.log("No data was passed to event monitor graph.");
             
             this.customTitle = null;
+            this._enablepoll = 'false';
             
             vis.call(d3.behavior.zoom().on(this._padID("zoom"), null));
             vis.call(d3.behavior.drag().on(this._padID("drag"), null));
@@ -184,19 +250,14 @@ Polymer({
             return;
         }
         
+        /* VALID DATA from here onwards */
         // Style our wrapper box
         wrapper.classed("emBox", true);
         
+        this._ourzoom = d3.behavior.zoom();
+        
         // Setup our colors
-        var colors = {};
-        colors['query'] = "crimson";
-        colors['storage'] = "purple";
-        colors['metrics'] = "gold";
-        colors['locate'] = "cornflowerblue";
-        colors['docs'] = "forestgreen";
-        colors['action'] = "sienna";
-        colors['eventhub'] = "darkturquoise";
-        colors['push'] = "hotpink";
+        var colors = this._getColors();
         
         // Generate a list of services used from the data
         // This is a bit complex, but we loop through our data and look for unique services
@@ -225,7 +286,14 @@ Polymer({
             }
         }
         
-        // Build our date scale
+        // Append our axis
+        // We'll set the data into this for proper scale later in the _updateGraph method
+        vis.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(0," + (calcHeight/2) + ")");
+            
+        // Set our initial scale
+        // We don't need to do this on update as it resets the zoom/pan view
         this._ourxscale = d3.time.scale().range([this.padding, calcWidth-this.padding]);
         this._ourxscale.domain([d3.min(data, function(d) {
             return new Date(d.time);
@@ -233,43 +301,29 @@ Polymer({
             return new Date(d.time);
         })]);
         
-        // Use the scale to make an axis
-        // Remember to keep the number of ticks relative to the calculated width, to allow for responsive resizing
-        this._ourxaxis = d3.svg.axis().scale(this._ourxscale)
-                    .orient("bottom")
-                    .tickPadding(5)
-                    .ticks(Math.max(calcWidth/120, 2));
+        // Using our data we want to update the graph with circles and proper axis
+        this._updateGraph(data);
         
-        // Vertically center the graph
-        vis.append("g")
-            .attr("class", "axis")
-            .attr("transform", "translate(0," + (calcHeight/2) + ")")
-            .call(this._ourxaxis);
-            
         // Add zoom functionality
         if (this.usezoom == 'true') {
-            this._ourzoom = d3.behavior.zoom();
-            vis.call(this._ourzoom
-                .x(this._ourxscale)
-                .on(this._padID("zoom"), function() {
-                    // Perform the scale and translation from our event
-                    _this._ourzoom.scale(d3.event.scale);
-                    _this._ourzoom.translate(d3.event.translate);
-                    
-                    // Update the Axis (as our X-Scale domain has changed)
-                    vis.select("g.axis").call(_this._ourxaxis);
-                    
-                    // Finally redraw all our circles using the new X-Scale
-                    vis.selectAll("circle")
-                        .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); });
-                })
-                .on(this._padID("zoomstart"), function() {
-                    vis.style("cursor", "zoom-in");
-                })
-                .on(this._padID("zoomend"), function() {
-                    vis.style("cursor", null);
-                })
-            );
+            this._ourzoom.on(this._padID("zoom"), function() {
+                // Perform the scale and translation from our event
+                _this._ourzoom.scale(d3.event.scale);
+                _this._ourzoom.translate(d3.event.translate);
+                
+                // Update the Axis (as our X-Scale domain has changed)
+                vis.select("g.axis").call(_this._ourxaxis);
+                
+                // Finally redraw all our circles using the new X-Scale
+                vis.selectAll("circle")
+                    .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); });
+            })
+            .on(this._padID("zoomstart"), function() {
+                vis.style("cursor", "zoom-in");
+            })
+            .on(this._padID("zoomend"), function() {
+                vis.style("cursor", null);
+            });
         }
         else {
             vis.call(d3.behavior.zoom().on(this._padID("zoom"), null));
@@ -277,8 +331,8 @@ Polymer({
             vis.call(d3.behavior.zoom().on(this._padID("zoomend"), null));
         }
         
+        // Add drag/pan functionality
         if (this.usedrag == 'true') {
-            // Customize our drag functionality
             vis.call(d3.behavior.drag()
                 .on(this._padID("dragstart"), function() {
                     vis.style("cursor", "move");
@@ -296,74 +350,13 @@ Polymer({
             vis.call(d3.behavior.drag().on(this._padID("dragend"), null));
         }
         
-        // Draw a circle for every piece of data
-        var clickedCircle; // Used to track SVG object that was clicked
-        vis.selectAll("circle.line")
-            .data(data)
-            .enter().append("circle")
-            .attr("cy", calcHeight/2)
-            .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); })
-            .attr("r", this.circleradius)
-            .attr("stroke", "black")
-            .attr("stroke-width", 1)
-            .attr("cursor", function() { return (_this.useclickable == 'true') ? "pointer" : null; })
-            .attr("title", function (d) { return new Date(d.time); })
-            .style("fill", function(d) {
-                var toReturn = colors[d.service];
-                if (!toReturn) {
-                    return _this.defaultcolor;
-                }
-                return toReturn; 
-            })
-            .on(this._padID("click"), function(d, i) {
-                if (_this.useclickable == 'true') {
-                    // Check if we're re-clicking the same circle, in which case we want to hide the details
-                    // This will basically function as a toggle
-                    if (d == _this.clickedData) {
-                        _this.hideDetails();
-                        
-                        return;
-                    }
-                    
-                    // Then we restore any previously clicked circle to the normal radius
-                    if (_this.clickedCircle) {
-                        var old = d3.select(_this.clickedCircle);
-                        old.attr("r", _this.circleradius);
-                        old.classed("clickedCircle", false);
-                    }
-                    
-                    // Otherwise set our data object for display on the page and show the details
-                    var sel = d3.select(this);
-                    sel.attr("r", _this.circleradius*2);
-                    sel.classed("clickedCircle", true);
-                    _this.clickedCircle = this;
-                    _this.clickedData = d;
-                    _this.clickedDataFormatted = JSON.stringify(d.data);
-                    _this.showDetails();
-                }
-            })
-            .on(this._padID("mouseover"), function(d, i) {
-                if (_this.usemouseover == 'true') {
-                    var sel = d3.select(this);
-                    // Only do mouseover radius functionality if we're not already clicked
-                    if (!sel.classed("clickedCircle")) {
-                        sel.attr("r", _this.circleradius+3);
-                    }
-                    // Always change stroke width and bring to the front though
-                    sel.transition().attr("stroke-width", 2);
-                    this.parentElement.appendChild(this);
-                }
-            })
-            .on(this._padID("mouseout"), function(d, i) {
-                if (_this.usemouseover == 'true') {
-                    var sel = d3.select(this);
-                    // Only do mouseout radius functionality if we're not already clicked
-                    if (!sel.classed("clickedCircle")) {
-                        sel.attr("r", _this.circleradius);
-                    }
-                    sel.transition().attr("stroke-width", 1);
-                }
+        // Add resize functionality
+        // This is a very simple resize that duplicates this method with a new width/height
+        if (this.useresize == 'true') {
+            d3.select(window).on(this._padID("resize"), function() {
+                _this.show();
             });
+        }
         
         // Add a legend showing service color and corresponding name
         if (this.uselegend == 'true') {
@@ -405,16 +398,118 @@ Polymer({
                   .text(d);
               });
         }
+    },
+    
+    /**
+     * Function to update our graph in a non-destructive way
+     * This means we add the passed newData to our existing fullData,
+     *  then resize the scale, redraw our circles, and update the title
+     * @private
+     */
+    _updateGraph: function(fullData, newData) {
+        var _this = this;
+        var wrapper = d3.select("div#" + this.id + "div");
+        var vis = wrapper.select("svg");
+        var calcWidth = parseInt(vis.style("width"))-this.padding;
+        var calcHeight = parseInt(vis.style("height"));
+        var colors = this._getColors();
         
-        // Add a very simple resize that duplicates this method with a new width/height
-        if (this.useresize == 'true') {
-            d3.select(window).on(this._padID("resize"), function() {
-                _this.show(data);
-            });
+        // First of all check if we have new data
+        // If we don't use the full data as our "new" data set
+        // This mainly happens when this function is called from an initial graph setup
+        if (!newData || typeof newData === 'undefined' || newData.length == 0) {
+            newData = fullData;
         }
         
+        // Use the existing scale to make an axis
+        // Remember to keep the number of ticks relative to the calculated width, to allow for responsive resizing
+        this._ourxaxis = d3.svg.axis().scale(this._ourxscale)
+                    .orient("bottom")
+                    .tickPadding(5)
+                    .ticks(Math.max(calcWidth/120, 2));
+        vis.select("g.axis").call(this._ourxaxis);
+        
+        // Update our zoom
+        /*
+        if (this.usezoom == 'true') {
+            this._ourzoom.x(this._ourxscale);
+            vis.call(this._ourzoom);
+        }
+        */
+        
+        // Draw a circle for every piece of data
+        var clickedCircle; // Used to track SVG object that was clicked
+        var circles = vis.selectAll("circle.line").data(newData);
+        
+        circles.enter().append("circle")
+            .attr("cy", calcHeight/2)
+            .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); })
+            .attr("r", this.circleradius)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .attr("cursor", function() { return (_this.useclickable == 'true') ? "pointer" : null; })
+            .attr("title", function (d) { return new Date(d.time); })
+            .style("fill", function(d) {
+                var toReturn = colors[d.service];
+                if (!toReturn) {
+                    return _this.defaultcolor;
+                }
+                return toReturn;
+            })
+            .on(this._padID("click"), function(d, i) {
+                if (_this.useclickable == 'true') {
+                    // Check if we're re-clicking the same circle, in which case we want to hide the details
+                    // This will basically function as a toggle
+                    if (d == _this.clickedData) {
+                        _this.hideDetails();
+                        
+                        return;
+                    }
+                    
+                    // Then we restore any previously clicked circle to the normal radius
+                    if (_this.clickedCircle) {
+                        var old = d3.select(_this.clickedCircle);
+                        old.attr("r", _this.circleradius);
+                        old.classed("clickedCircle", false);
+                    }
+                    
+                    // Otherwise set our data object for display on the page and show the details
+                    var sel = d3.select(this);
+                    sel.attr("r", _this.circleradius*2);
+                    sel.classed("clickedCircle", true);
+                    _this.clickedCircle = this;
+                    _this.clickedData = d;
+                    _this.clickedDataFormatted = JSON.stringify(d.fullData);
+                    _this.showDetails();
+                }
+            })
+            .on(this._padID("mouseover"), function(d, i) {
+                if (_this.usemouseover == 'true') {
+                    var sel = d3.select(this);
+                    // Only do mouseover radius functionality if we're not already clicked
+                    if (!sel.classed("clickedCircle")) {
+                        sel.attr("r", _this.circleradius+3);
+                    }
+                    // Always change stroke width and bring to the front though
+                    sel.transition().attr("stroke-width", 2);
+                    this.parentElement.appendChild(this);
+                }
+            })
+            .on(this._padID("mouseout"), function(d, i) {
+                if (_this.usemouseover == 'true') {
+                    var sel = d3.select(this);
+                    // Only do mouseout radius functionality if we're not already clicked
+                    if (!sel.classed("clickedCircle")) {
+                        sel.attr("r", _this.circleradius);
+                    }
+                    sel.transition().attr("stroke-width", 1);
+                }
+            });
+        
+        circles.exit().remove();
+            
         // Update our graph title with the proper count
-        this.customTitle = "Graph of " + data.length + " Events:";
+        this.customTitle = "Graph of " + fullData.length + " Events:";
     },
     
     /**
@@ -456,5 +551,23 @@ Polymer({
      */
     _padID: function(base) {
         return base + '.' + this.id;
+    },
+    
+    /**
+     * Return a list of services and their matching colors
+     * Used for styling our circle marbles on the graph
+     * @private
+     */
+    _getColors: function() {
+        var colors = {};
+        colors['query'] = "crimson";
+        colors['storage'] = "purple";
+        colors['metrics'] = "gold";
+        colors['locate'] = "cornflowerblue";
+        colors['docs'] = "forestgreen";
+        colors['action'] = "sienna";
+        colors['eventhub'] = "darkturquoise";
+        colors['push'] = "hotpink";
+        return colors;
     }
 });

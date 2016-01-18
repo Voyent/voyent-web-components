@@ -73,7 +73,11 @@ BridgeIt.QueryEditor = Polymer({
         /**
          * A string representation of the results array returned from the `queriesRetrieved` event. Use when data binding is preferred over event listeners.
          */
-        querylistresults: { type: String, notify: true, readOnly: true }
+        querylistresults: { type: String, notify: true, readOnly: true },
+        /**
+         * Last query object that was executed by our editor
+         */
+        lastquery: { type: Object, notify: true, readOnly: true }
     },
 
     /**
@@ -629,6 +633,10 @@ BridgeIt.QueryEditor = Polymer({
         };
         var protocol = 'http://';
         var path = '/'+this.account+'/realms/'+this.realm+'/'+this.collection;
+
+        // Store our last query before we execute
+        _this._setLastquery(query);
+        
         switch(this.service.toLowerCase()) {
             case 'documents':
                 params.collection = this.collection;
