@@ -196,7 +196,7 @@
                             
                             // Manually append a time constraint to ignore results before our last poll
                             var timedQuery = { "$and":[ { "time":{ "$gte": newEM.lastpoll.toISOString() } } ] };
-                            timedQuery['$and'].push(query);
+                            timedQuery.$and.push(query);
                             
                             // Set some basic params, everything else (auth token, etc.) will use the last known on the service
                             var params = {
@@ -204,11 +204,6 @@
                                 options: {"limit":10,"sort":{"time":-1}},
                                 query: timedQuery
                             };
-                            
-                            // Call our metrics service with our params
-                            bridgeit.io.metrics.findEvents(params).then(successCallback).catch(function(error){
-                                console.log('findEvents caught an error:', error);
-                            });
                             
                             function successCallback(results) {
                                 // Append any results
@@ -219,6 +214,11 @@
                                 newEM.lastpoll = new Date();
                                 newEM.lastpoll.setMilliseconds(newEM.lastpoll.getMilliseconds() - newEM.pollinterval);
                             }
+                            
+                            // Call our metrics service with our params
+                            bridgeit.io.metrics.findEvents(params).then(successCallback).catch(function(error){
+                                console.log('findEvents caught an error:', error);
+                            });
                         });
                     }
                 }
