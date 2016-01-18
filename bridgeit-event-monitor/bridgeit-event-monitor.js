@@ -417,7 +417,7 @@ Polymer({
         // First of all check if we have new data
         // If we don't use the full data as our "new" data set
         // This mainly happens when this function is called from an initial graph setup
-        if (!newData || typeof newData === 'undefined' || newData.length == 0) {
+        if (!newData || typeof newData === 'undefined' || newData.length === 0) {
             newData = fullData;
         }
         
