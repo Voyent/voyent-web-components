@@ -195,13 +195,13 @@
                             var query = document.getElementById('queryEditor').lastquery;
                             
                             // Manually append a time constraint to ignore results before our last poll
-                            var timedQuery = { "$and":[ { "time":{ "$gte": newEM.lastpoll.toISOString() } } ] };
+                            var timedQuery = { '$and':[ { 'time':{ '$gte': newEM.lastpoll.toISOString() } } ] };
                             timedQuery.$and.push(query);
                             
                             // Set some basic params, everything else (auth token, etc.) will use the last known on the service
                             var params = {
                                 collection: 'events',
-                                options: {"limit":10,"sort":{"time":-1}},
+                                options: {'limit':10,'sort':{'time':-1}},
                                 query: timedQuery
                             };
                             
