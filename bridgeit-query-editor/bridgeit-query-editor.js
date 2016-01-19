@@ -632,7 +632,7 @@ BridgeIt.QueryEditor = Polymer({
             options: this.options
         };
         var protocol = 'http://';
-        var path = '/'+this.account+'/realms/'+this.realm+'/'+this.collection;
+        var path = '/'+this.account+'/realms/'+this.realm;
 
         // Store our last query before we execute
         _this._setLastquery(query);
@@ -640,12 +640,13 @@ BridgeIt.QueryEditor = Polymer({
         switch(this.service.toLowerCase()) {
             case 'documents':
                 params.collection = this.collection;
-                this.service_url = protocol+bridgeit.io.documentsURL+path;
+                this.service_url = protocol+bridgeit.io.documentsURL+path+'/'+this.collection;
                 bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
                     console.log('findDocuments caught an error:', error);
                 });
                 break;
             case 'location':
+                this.service_url = protocol+bridgeit.io.locateURL+path+'/'+this.collection;
                 switch (this.collection.toLowerCase()) {
                     case 'locations':
                         bridgeit.io.location.findLocations(params).then(successCallback).catch(function(error){
@@ -665,17 +666,17 @@ BridgeIt.QueryEditor = Polymer({
                     default:
                         this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Location Service Collection "' + this.collection + '" not supported.','type':'error'});
                 }
-                this.service_url = protocol+bridgeit.io.locateURL+path;
                 break;
             case 'metrics':
                 this.collection = 'events';
-                this.service_url = protocol+bridgeit.io.metricsURL+path;
+                this.service_url = protocol+bridgeit.io.metricsURL+path+'/'+this.collection;
                 bridgeit.io.metrics.findEvents(params).then(successCallback).catch(function(error){
                     console.log('findEvents caught an error:', error);
                 });
                 break;
             case 'authadmin':
                 this.collection = 'users';
+                this.service_url = protocol+bridgeit.io.authAdminURL+path+'/'+this.collection;
                 switch (this.collection.toLowerCase()) {
                     case 'users':
                         bridgeit.io.admin.getRealmUsers(params).then(successCallback).catch(function(error){
@@ -685,7 +686,13 @@ BridgeIt.QueryEditor = Polymer({
                     default:
                         this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'AuthAdmin Service Collection "' + this.collection + '" not supported.','type':'error'});
                 }
-                this.service_url = protocol+bridgeit.io.authAdminURL+path;
+                break;
+            case 'mailbox':
+                this.collection = 'mailboxes';
+                this.service_url = protocol+bridgeit.io.mailboxURL+path+'/'+this.collection;
+                bridgeit.io.mailbox.findMailboxes(params).then(successCallback).catch(function(error){
+                    console.log('findMailboxes caught an error:', error);
+                });
                 break;
             default:
                 this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Service "' + this.service + '" not supported.','type':'error'});
@@ -756,8 +763,8 @@ BridgeIt.QueryEditor = Polymer({
                     isArray=true;
                 }
 
-                if (type === 'string') {
-                    if (!dateRegex.test(val) && !isArray) { //don't overwrite array operators
+                if (type === 'string' && !isArray) { //don't overwrite array operators
+                    if (!dateRegex.test(val)) {
                         operators=['equal','not_equal','begins_with','not_begins_with','contains','not_contains',
                             'ends_with','not_ends_with','is_empty','is_not_empty','is_null','is_not_null'];
                     }
@@ -783,7 +790,7 @@ BridgeIt.QueryEditor = Polymer({
                     }
                     return;
                 }
-                else if (type === 'array') { type = 'string'; } //TODO - Need to support querying an arrays of arrays
+                //else if (type === 'array') {  } //TODO - Need to support querying an arrays of arrays
                 else { type = 'string'; }
 
                 uniqueFields.push(key);
