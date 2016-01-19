@@ -42,16 +42,12 @@ Polymer({
                 return;
             }
             
-            var timeVar = 'time';
-            var timeDisplayVar = 'timeDisplay';
-            
             // Before we process the data we want to change the dates (data.time field)
             // This is because the dates come from the queryEditor as UTC
             // But we want to display them in the table as the local timezone
-            if ((_this.utc != 'true') && (res[0].hasOwnProperty(timeVar))) {
+            if ((_this.utc != 'true') && (res[0].hasOwnProperty('time'))) {
                 for (var i = 0; i < res.length; i++) {
-                    res[i].time = new Date(res[i].time);
-                    res[i][timeDisplayVar] = _this._formatDate(res[i].time);
+                    res[i].time = _this._formatDate(res[i].time);
                 }
             }
             
@@ -82,12 +78,7 @@ Polymer({
 
             function buildRows(document,key,currentRow) {
                 if (typeof document[key] !== 'undefined') {
-                    if (key === timeVar) {
-                        row.push(document[timeDisplayVar] ? document[timeDisplayVar] : document[timeVar]);
-                    }
-                    else {
-                        row.push(document[key]);
-                    }
+                    row.push(document[key]);
                 }
                 else {
                     if (key.indexOf('.') > -1) { //we have a nested property reference
@@ -173,35 +164,26 @@ Polymer({
      * Specially formats a date for presentation using a modified long format that includes milliseconds
      * Traditional Date.toString() returns: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
      * This method would return the above with milliseconds appended as ".XYZ", such as:
-     *  Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+     * Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
      * This allows greater accuracy when matching the result to a new query editor rule with time
      * @return {string} of the formatted date
      * @private
      */
-    _formatDate: function(date) {
-        // Format the minute properly
-        var minute = date.getMinutes(),
-            minuteFormatted = minute < 10 ? "0" + minute : minute, // pad with 0 as needed
-            second = date.getSeconds(),
-            secondFormatted = second < 10 ? "0" + second : second; // pad with 0 as needed
-
+    _formatDate: function(ISODate) {
+        var date = new Date(ISODate);
+        // Format the values properly (make sure we have sufficient zeroes)
+        var minuteFormatted = ('0'+date.getMinutes()).slice(-2),
+            secondFormatted = ('0'+date.getSeconds()).slice(-2),
+            millisecondFormatted = ('00'+date.getMilliseconds()).slice(-3);
         // Get the original long format date to parse
         var toParse = date.toString();
         // Now get the time string used in the long format, such as 12:46:35
         var timeString = date.getHours() + ":" + minuteFormatted + ":" + secondFormatted;
-
         // Now we insert the milliseconds value from the date into our long format string
-        // This will turn: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
-        // into:           Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
-        var milliseconds = date.getMilliseconds().toString();
-        if (milliseconds.toString().length == 1) {
-            milliseconds = '00'+milliseconds;
-        }
-        else if (milliseconds.toString().length == 2) {
-            milliseconds = '0'+milliseconds;
-        }
-        return toParse.substring(0, toParse.indexOf(timeString)+timeString.length) +
-            "." + milliseconds +
-            toParse.substring(toParse.indexOf(timeString)+timeString.length);
+        var datetime = toParse.substring(0, toParse.indexOf(timeString)+timeString.length) + "." + millisecondFormatted;
+        // Now we get the timezone from the original date
+        var timezone = toParse.substring(toParse.indexOf(timeString)+timeString.length);
+        // Return new modified long format date
+        return datetime+timezone;
     }
 });
