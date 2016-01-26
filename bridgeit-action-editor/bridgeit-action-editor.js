@@ -522,6 +522,7 @@ Polymer({
      * @returns {{}}
      */
     _convertActionToUI: function(action) {
+        var _this = this;
         //move action id and description to inputs
         this._actionId = action._id;
         this._actionDesc = action.desc && action.desc.trim().length > 0 ? action.desc : '';
@@ -532,14 +533,14 @@ Polymer({
             //add schema inside task group for mapping UI values
             taskGroups[i].schema = JSON.parse(JSON.stringify(this._taskGroupSchemasMap[taskGroups[i].type ? taskGroups[i].type : 'parallel-taskgroup'])); //clone object (it is valid JSON so this technique is sufficient)
             (function(taskGroup) {
-                this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
+                _this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
                     //move the task group properties to the value of each property in the schema
                     if (typeof taskGroup[property.title] !== 'undefined') {
-                        property.value = taskGroup[property.title];
+                        property.value = taskGroup[property.title]; //TODO - This is not sufficient for setting the values on select inputs
                         delete taskGroup[property.title]; //cleanup property since it's not used in UI
                     }
                 });
-            }.bind(this))(taskGroups[i]);
+            })(taskGroups[i]);
             //cleanup type since it's not used in UI
             delete taskGroups[i].type;
 
@@ -548,13 +549,13 @@ Polymer({
                 //add schema inside task for mapping UI values
                 tasks[j].schema = JSON.parse(JSON.stringify(this._taskSchemasMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
                 (function(task) {
-                    this._processProperties(task.schema.properties,function(type,propName,property) {
+                    _this._processProperties(task.schema.properties,function(type,propName,property) {
                         //move the params values to the value of each property in the schema
                         if (task.params && typeof task.params[property.title] !== 'undefined') {
-                            property.value = task.params[property.title];
+                            property.value = task.params[property.title]; //TODO - This is not sufficient for setting the values on select inputs
                         }
                     });
-                }.bind(this))(tasks[j]);
+                })(tasks[j]);
                 //cleanup values that aren't used in the UI
                 delete tasks[j].type;
                 delete tasks[j].params;
@@ -828,7 +829,7 @@ Polymer({
     },
 
     /**
-     * Template helper function
+     * Template helper function.
      * @param title
      * @returns {boolean}
      * @private
@@ -836,6 +837,16 @@ Polymer({
     _disableValidation: function(title) {
         //disable syntax checker for messageTemplate since the value can be a simple string
         return title.toLowerCase() === 'messagetemplate';
+    },
+
+    /**
+     * Template helper function.
+     * @param enumArray
+     * @returns {boolean}
+     * @private
+     */
+    _hasEnum: function(enumArray) {
+        return enumArray && enumArray.length > 0;
     },
 
     //event handler functions
