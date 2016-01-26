@@ -81,6 +81,10 @@ Polymer({
         this._loadHandler(action._id);
         this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
         this._taskGroups = this._convertActionToUI(this._loadedAction);
+        //hack way to get any select components in the action to properly select the loaded value
+        setTimeout(function() {
+            this.set('_taskGroups',JSON.parse(JSON.stringify(this._taskGroups)));
+        }.bind(this),0);
     },
 
     /**
@@ -536,7 +540,7 @@ Polymer({
                 _this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
                     //move the task group properties to the value of each property in the schema
                     if (typeof taskGroup[property.title] !== 'undefined') {
-                        property.value = taskGroup[property.title]; //TODO - This is not sufficient for setting the values on select inputs
+                        property.value = taskGroup[property.title];
                         delete taskGroup[property.title]; //cleanup property since it's not used in UI
                     }
                 });
@@ -552,7 +556,7 @@ Polymer({
                     _this._processProperties(task.schema.properties,function(type,propName,property) {
                         //move the params values to the value of each property in the schema
                         if (task.params && typeof task.params[property.title] !== 'undefined') {
-                            property.value = task.params[property.title]; //TODO - This is not sufficient for setting the values on select inputs
+                            property.value = task.params[property.title];
                         }
                     });
                 })(tasks[j]);
