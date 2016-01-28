@@ -22,6 +22,8 @@ Polymer({
         this._tableHeaders = [];
         this._tableRows = [];
         this._td = '';
+        this.timeVar = 'time';
+        this.timeDisplayVar = 'timeDisplay';
         this.setupListener();
     },
 
@@ -42,9 +44,12 @@ Polymer({
             }
 
             //If the UTC property is false we must change the datetime field (data.time) into local time
-            if ((_this.utc != 'true') && (records[0].hasOwnProperty('time'))) {
+            if ((_this.utc != 'true') && (records[0].hasOwnProperty(_this.timeVar))) {
                 for (var i = 0; i < records.length; i++) {
-                    records[i].time = _this._formatDate(records[i].time);
+                    records[i].time = new Date(records[i].time);
+                    //don't modify the original time record, store the formatted time in a separate
+                    //property that we will display if the user wants to be shown local time.
+                    records[i][_this.timeDisplayVar] = _this._formatDate(records[i].time);
                 }
             }
 
@@ -162,7 +167,13 @@ Polymer({
     _buildTD: function (record,key) {
         //we have a basic property reference (eg. data.prop)
         if (typeof record[key] !== 'undefined') {
-            this._td = record[key];
+            if (key === this.timeVar) {
+                //display the local time if available
+                this._td = document[this.timeDisplayVar] ? document[this.timeDisplayVar] : document[this.timeVar];
+            }
+            else {
+                this._td = record[key];
+            }
         }
         //we have a nested property reference (eg. data.obj.subprop)
         else if (key.indexOf('.' > -1)) {
