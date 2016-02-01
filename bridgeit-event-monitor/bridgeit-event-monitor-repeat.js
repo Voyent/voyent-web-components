@@ -11,12 +11,30 @@ Polymer({
          * Internal ID maintained as we add/remove event monitors
          */
         _currentid: { type: Number, value: 0 },
+        /**
+         * Flag declaring whether we're polling or not
+         */
+        polling: { type: String, value: "false", reflectToAttribute: true }
+    },
+    
+    /**
+     * Switch our polling state to the opposite
+     */
+    toggleAllPolling: function() {
+        if (this.polling === 'true') {
+            this.stopAllPolling();
+        }
+        else {
+            this.startAllPolling();
+        }
     },
     
     /**
      * Stop polling on all our children event monitor graphs
      */
     stopAllPolling: function() {
+        this.polling = 'false';
+        
         this._stopPolling(this.items);
     },
     
@@ -25,6 +43,8 @@ Polymer({
      * This will use the previously defined poll method via pollCurrent
      */
     startAllPolling: function() {
+        this.polling = 'true';
+        
         for (var i = 0; i < this.items.length; i++) {
             if (this.items[i].eventmonitor._enablepoll == 'false') {
                 this.items[i].eventmonitor._enablepoll = 'true';
@@ -41,9 +61,12 @@ Polymer({
      */
     addEventMonitor: function(data) {
         var newEM = document.createElement('bridgeit-event-monitor');
+        newEM.useresize = false; // We don't use any internal resize, since we'll globally override those
+        newEM.usezoom = false; // Similarly we don't use an internal zoom
         newEM.id = "eventmonitor" + this._currentid++;
         newEM._data = data;
         
+        // Add our new event monitor in a wrapper
         this.unshift('items', { selected: true, eventmonitor: newEM });
         
         // Append the new graph, but don't redraw the others so they maintain their zoom/pan state
@@ -53,8 +76,17 @@ Polymer({
             _this._showSingleGraph(_this, newEM);
         },0);
         
+        // Set a global resize that refreshes all graphs
+        // This is necessary over using an individual event monitor resize since we need to re-add our overriden methods
+        d3.select(window).on("resize", function() {
+            _this.refreshGraphs();
+        });
+        
         // Finally check our global button state for rendering
         this._checkGlobalButtons();
+        
+        // We stop all polling and just have the user restart it once a new EM is added
+        this.stopAllPolling();
         
         return newEM;
     },

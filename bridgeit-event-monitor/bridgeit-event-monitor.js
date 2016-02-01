@@ -295,18 +295,14 @@ Polymer({
         // Set our initial scale
         // We don't need to do this on update as it resets the zoom/pan view
         this._ourxscale = d3.time.scale().range([this.padding, calcWidth-this.padding]);
-        this._ourxscale.domain([d3.min(data, function(d) {
-            return new Date(d.time);
-        }), d3.max(data, function(d) {
-            return new Date(d.time);
-        })]);
+        this._ourxaxis = d3.svg.axis();
         
         // Using our data we want to update the graph with circles and proper axis
         this._updateGraph(data);
         
         // Add zoom functionality
         if (this.usezoom == 'true') {
-            this._ourzoom.on(this._padID("zoom"), function() {
+            this._ourzoom.x(this._ourxscale).on(this._padID("zoom"), function() {
                 // Perform the scale and translation from our event
                 _this._ourzoom.scale(d3.event.scale);
                 _this._ourzoom.translate(d3.event.translate);
@@ -324,6 +320,7 @@ Polymer({
             .on(this._padID("zoomend"), function() {
                 vis.style("cursor", null);
             });
+            vis.call(this._ourzoom);
         }
         else {
             vis.call(d3.behavior.zoom().on(this._padID("zoom"), null));
@@ -417,33 +414,37 @@ Polymer({
         // First of all check if we have new data
         // If we don't use the full data as our "new" data set
         // This mainly happens when this function is called from an initial graph setup
+        var isPoll = true;
         if (!newData || typeof newData === 'undefined' || newData.length === 0) {
             newData = fullData;
+            isPoll = false;
         }
         
         // Use the existing scale to make an axis
         // Remember to keep the number of ticks relative to the calculated width, to allow for responsive resizing
-        this._ourxaxis = d3.svg.axis().scale(this._ourxscale)
+        this._ourxscale.domain([d3.min(fullData, function(d) {
+            return new Date(d.time);
+        }), d3.max(fullData, function(d) {
+            return new Date(d.time);
+        })]);
+        
+        // We'll use the "nice" feature to ensure our data domain is properly rounded for the view
+        this._ourxscale.nice(1);
+        
+        // Wrap our scale in an axis and transition draw it
+        this._ourxaxis.scale(this._ourxscale)
                     .orient("bottom")
                     .tickPadding(5)
                     .ticks(Math.max(calcWidth/120, 2));
-        vis.select("g.axis").call(this._ourxaxis);
+        vis.select("g.axis").transition().duration(300).call(this._ourxaxis);
         
-        // Update our zoom
-        /*
-        if (this.usezoom == 'true') {
-            this._ourzoom.x(this._ourxscale);
-            vis.call(this._ourzoom);
-        }
-        */
-        
-        // Draw a circle for every piece of data
+        // Draw a circle for every piece of new data
         var clickedCircle; // Used to track SVG object that was clicked
         var circles = vis.selectAll("circle.line").data(newData);
         
         circles.enter().append("circle")
             .attr("cy", calcHeight/2)
-            .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); })
+            .attr("cx", isPoll ? (calcWidth+100) : function(d) { return _this._ourxscale(new Date(d.time)); })
             .attr("r", this.circleradius)
             .attr("stroke", "black")
             .attr("stroke-width", 1)
@@ -506,8 +507,15 @@ Polymer({
                 }
             });
         
+        // Update all circles (including the old ones) instead of having to manually redraw them all
+        // Besides performance the other upside is we maintain minor state details like hover and z height
+        // In addition we can transition to match the scale animation
+        vis.selectAll("circle").transition().duration(500)
+            .attr("cx", function(d) { return _this._ourxscale(new Date(d.time)); });
+        
+        // Remove any circle that isn't used in the future
         circles.exit().remove();
-            
+        
         // Update our graph title with the proper count
         this.customTitle = "Graph of " + fullData.length + " Events:";
     },
