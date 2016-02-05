@@ -36,12 +36,12 @@ BridgeIt.QueryEditor = Polymer({
          */
         account: { type: String },
         /**
-         * The service that you would like to build the query for. Currently `documents`, `location`, `metrics` and `authadmin` are supported.
+         * The service that you would like to build the query for. Currently `documents`, `location`, `metrics`, `authadmin` and `mailbox` are supported.
          */
         service: { type: String, value: 'metrics' },
         /**
          * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
-         * Some services may only support one collection (eg. metrics, authadmin), in this case the collection will change automatically with the service.
+         * Some services may only support one collection (eg. metrics, authadmin, etc..), in this case the collection will change automatically with the service.
          */
         collection: { type: String, value: 'events' },
         /**
@@ -75,7 +75,11 @@ BridgeIt.QueryEditor = Polymer({
          */
         querylistresults: { type: String, notify: true, readOnly: true },
         /**
-         * Last query object that was executed by our editor
+         * Current query object that is built.
+         */
+        currentquery: { type: Object, notify: true, readOnly: true },
+        /**
+         * Last query object that was executed by our editor.
          */
         lastquery: { type: Object, notify: true, readOnly: true }
     },
@@ -305,14 +309,6 @@ BridgeIt.QueryEditor = Polymer({
      */
     validateQuery: function() {
         return Object.keys($(this.$.editor).queryBuilder('getMongo')).length > 0;
-    },
-
-    /**
-     * Return the query that is currently built in the editor.
-     * @returns {object}
-     */
-    getQuery: function() {
-        return $(this.$.editor).queryBuilder('getMongo');
     },
 
 
@@ -606,6 +602,7 @@ BridgeIt.QueryEditor = Polymer({
     },
     _updateQueryURL: function(query) {
         var queryURLTarget = this.queryurltarget;
+        this._setCurrentquery(query); //update currentquery property
         if (queryURLTarget && document.getElementById(queryURLTarget)) {
             var q = query ? JSON.stringify(query) : '{}';
             var params = '?access_token='+bridgeit.io.auth.getLastAccessToken()+'&query='+q+'&fields='+JSON.stringify(this.fields)+'&options='+JSON.stringify(this.options);
@@ -823,6 +820,8 @@ BridgeIt.QueryEditor = Polymer({
                 _this._refreshQuery();
             }
         });
+
+        this.editor = $(this.$.editor); //expose jQuery QueryBuilder programmatically
     },
     _sortAlphabetically: function(a,b) {
         a = (a.id ? a.id : a).toLowerCase();

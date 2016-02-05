@@ -881,7 +881,7 @@ Polymer({
     _convertUIToHandler: function() {
         return {
             "active":!!this._handlerIsActive,
-            "query":this._queryEditorRef.getQuery(),
+            "query":this._queryEditorRef.currentquery,
             "actionId":this._actionId,
             "actionParams":{}
         };
