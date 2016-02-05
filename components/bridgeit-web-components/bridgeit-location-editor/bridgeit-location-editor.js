@@ -371,8 +371,8 @@ Polymer({
             _loc.postPOI(location, geoJSON, shape);
         }
         _loc.infoWindowSetup(location, geoJSON, shape);
-        _loc.setupNameEdit();
-        _loc.locationNameInput = "Auto-Named";
+        setTimeout(function(){_loc.setupNameEdit();_loc.locationNameInput = "Auto-Named";},200);
+        _loc.regionProperties = [];
     },
 
     getCoordinates: function (location, geoJSON, shape) {
@@ -1414,7 +1414,7 @@ Polymer({
      * Gets all locations that are to be created from within the Places Search and sets up the base geoJSON and google map objects.
      */
     createPlacesLocations: function () {
-        
+
         var tags = _loc.tags;
         var geoJSON;
         var locations = [];
@@ -1563,7 +1563,7 @@ Polymer({
             obj.properties = geoJSON.location.properties;
             locationsAndProps.push(obj);
         }
-        
+
         _loc.locations = locationsAndProps;
         return locationsAndProps;
     },
@@ -1785,7 +1785,7 @@ Polymer({
      * Update all radius inputs with the master input at the top of the Places Search Results table.
      */
     allLocationsRadiusChanged: function () {
-        
+
         var pos = _loc.$$("#placesBody") == null ? null : _loc.$$("#placesBody").querySelectorAll(".radiusInput[name='radiusInput']");
         if (pos != null) {
             console.log(pos);
@@ -2144,3 +2144,4 @@ Polymer({
 
 
 });
+

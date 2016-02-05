@@ -173,6 +173,7 @@
                     document.getElementById('msgs').innerHTML = '';
                 },10000);
             });
+            
             // Listen for queryExecuted event
             document.getElementById('queryEditor').addEventListener('queryExecuted', function(e) {
                 // Determine if we're using single or multiple event monitors
@@ -184,7 +185,42 @@
                 
                 // Then fire the relevant method
                 if (useMultipleEventMonitors) {
-                    document.getElementById('eventMonitorRepeat').addEventMonitor(e.detail.results);
+                    var newEM = document.getElementById('eventMonitorRepeat').addEventMonitor(e.detail.results);
+                    
+                    if (newEM) {
+                        newEM.lastpoll = new Date();
+                        newEM.lastpoll.setMilliseconds(newEM.lastpoll.getMilliseconds() - newEM.pollinterval);
+                        
+                        newEM.poll(function() {
+                            var query = document.getElementById('queryEditor').lastquery;
+                            
+                            // Manually append a time constraint to ignore results before our last poll
+                            var timedQuery = { '$and':[ { 'time':{ '$gt': newEM.lastpoll.toISOString() } } ] };
+                            timedQuery.$and.push(query);
+                            
+                            // Set some basic params, everything else (auth token, etc.) will use the last known on the service
+                            var params = {
+                                collection: 'events',
+                                options: {'limit':10,'sort':{'time':-1}},
+                                query: timedQuery
+                            };
+                            
+                            function successCallback(results) {
+                                // Append any results
+                                // The validity of results will be checked inside the appendData function
+                                newEM.appendData(results);
+                                
+                                // Update our last poll date
+                                newEM.lastpoll = new Date();
+                                newEM.lastpoll.setMilliseconds(newEM.lastpoll.getMilliseconds() - newEM.pollinterval);
+                            }
+                            
+                            // Call our metrics service with our params
+                            bridgeit.io.metrics.findEvents(params).then(successCallback).catch(function(error){
+                                console.log('findEvents caught an error:', error);
+                            });
+                        });
+                    }
                 }
                 else {
                     document.getElementById('eventMonitor').showData(e.detail.results);

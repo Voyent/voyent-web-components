@@ -74,6 +74,39 @@ describe('bridgeit.io.admin', function(){
 
 	});
 
+	describe('#createAccount()', function(done){
+
+		it('should create an account', function (done) {
+
+			var ts =  new Date().getTime();
+			var account = {
+				account: 'test_account_' + ts,
+				description: 'a test account',
+				username: 'test_admin_ts',
+				password: 'secretest',
+				firstname: 'Test',
+				lastname: 'Admin',
+				email: 'test@email.com'
+			};
+
+			bridgeit.io.admin.createAccount(account).then(function(token){
+				console.log('token: ' + JSON.stringify(token));
+				if( !token ){
+					assert(false, 'createAccount() failed, no token returned');
+				}
+				if( !bridgeit.io.auth.isLoggedIn()){
+					assert(false, 'createAccount() failed, did not automatically log in');
+				}
+				else{
+					done();
+				}
+			}).catch(function(error){
+				assert(false, 'createAccount failed ' + error);
+			});
+		});
+
+	});
+
 	describe('#getLogs()', function(done){
 		it('should return a list of service logs for the account', function (done) {
 

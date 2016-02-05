@@ -21,6 +21,9 @@ Polymer({
     ready: function() {
         this._tableHeaders = [];
         this._tableRows = [];
+        this._td = '';
+        this.timeVar = 'time';
+        this.timeDisplayVar = 'timeDisplay';
         this.setupListener();
     },
 
@@ -29,106 +32,65 @@ Polymer({
      */
     setupListener: function() {
         var _this = this;
-        var lastRow = -1;
-        var td = '';
 
         if (!this._validateFor()) { return; }
         this._queryEditor.addEventListener('queryExecuted', function(e) {
-            var res = e.detail.results;
-            if (Object.keys(res).length === 0) {
+            var records = e.detail.results;
+            if (Object.keys(records).length === 0) {
                 _this._tableHeaders = [];
                 _this._tableRows = [];
                 _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query results empty.','type':'error'});
                 return;
             }
-            
-            var timeVar = 'time';
-            var timeDisplayVar = 'timeDisplay';
-            
-            // Before we process the data we want to change the dates (data.time field)
-            // This is because the dates come from the queryEditor as UTC
-            // But we want to display them in the table as the local timezone
-            if ((_this.utc != 'true') && (res[0].hasOwnProperty(timeVar))) {
-                for (var i = 0; i < res.length; i++) {
-                    res[i].time = new Date(res[i].time);
-                    res[i][timeDisplayVar] = _this._formatDate(res[i].time);
-                }
-            }
-            
-            var uniqueFields = e.detail.uniqueFields;
-            var tableRows=[];
-            var tableHeaders=[];
-            for (var j=0; j<res.length; j++) {
-                var row=[];
-                for (var k=0; k<uniqueFields.length; k++) {
-                    buildRows(res[j],uniqueFields[k],j);
-                    //collapse the nested properties into one column
-                    //we only want to do this once
-                    if (j === 0) {
-                        var th = uniqueFields[k];
-                        var dotIndex = th.indexOf('.');
-                        if (dotIndex > -1) {
-                            th = th.substr(0,dotIndex);
-                        }
-                        if (tableHeaders.indexOf(th) === -1) {
-                            tableHeaders.push(th);
-                        }
-                    }
-                }
-                tableRows.push(row);
-            }
-            _this._tableHeaders = tableHeaders;
-            _this._tableRows = tableRows;
 
-            function buildRows(document,key,currentRow) {
-                if (typeof document[key] !== 'undefined') {
-                    if (key === timeVar) {
-                        row.push(document[timeDisplayVar] ? document[timeDisplayVar] : document[timeVar]);
-                    }
-                    else {
-                        row.push(document[key]);
-                    }
-                }
-                else {
-                    if (key.indexOf('.') > -1) { //we have a nested property reference
-                        //convert the object dot notation into a mapping to the actual value
-                        var val = key.split('.').reduce(function(obj,key) {
-                            if ($.type(obj) === 'array') {
-                                //map property values across objects into a single array
-                                var temp = obj.map(function(val,i) {
-                                    return typeof obj[i][key] !== 'undefined' ? obj[i][key] : null;
-                                });
-                                //check the array, if it has nothing but null values
-                                //then the property wasn't found and we'll return null
-                                for (var i=0; i<temp.length; i++) {
-                                    if (temp[i] !== null) {
-                                        return temp;
-                                    }
-                                }
-                                return null;
-                            }
-                            if (obj && typeof obj[key] !== 'undefined') {
-                                return obj[key];
-                            }
-                            return null;
-                        },document);
-                        //collapse the nested properties into one TD
-                        if (currentRow === lastRow) {
-                            if (val !== null) {
-                                td = td+'<strong>'+key.substr(key.indexOf('.')+1)+'</strong><br>'+val+'<br>';
-                            }
-                        }
-                        else {
-                            row.push(td);
-                            td = [];
-                        }
-                        lastRow = currentRow;
-                    }
-                    else {
-                        row.push(null);
-                    }
+            //If the UTC property is false we must change the datetime field (data.time) into local time
+            if ((_this.utc != 'true') && (records[0].hasOwnProperty(_this.timeVar))) {
+                for (var i = 0; i < records.length; i++) {
+                    records[i].time = new Date(records[i].time);
+                    //don't modify the original time record, store the formatted time in a separate
+                    //property that we will display if the user wants to be shown local time.
+                    records[i][_this.timeDisplayVar] = _this._formatDate(records[i].time);
                 }
             }
+
+            var uniqueFields = e.detail.uniqueFields;
+            var tableColumns={};
+
+            //Collapse the nested properties into their column headers
+            for (var j=0; j<uniqueFields.length; j++) {
+                var th = uniqueFields[j];
+                var dotIndex = th.indexOf('.');
+                if (dotIndex > -1) {
+                    th = th.substr(0,dotIndex);
+                }
+                if (!tableColumns[th]) {
+                    tableColumns[th] = [];
+                }
+                tableColumns[th].push(uniqueFields[j]);
+            }
+
+            var tableRows=[];
+            for (var k=0; k<records.length; k++) {
+                _this._row = []; //each record represents one row of data
+                for (var columnHeader in tableColumns) {
+                    if (!tableColumns.hasOwnProperty(columnHeader)) {
+                        continue;
+                    }
+                    //Loop through all the properties that belong in a single TD (one or more)
+                    for (var l=0; l<tableColumns[columnHeader].length; l++) {
+                        _this._buildTD(records[k],tableColumns[columnHeader][l]);
+                    }
+                    //add the TD to the row
+                    _this._row.push(_this._td);
+                    //reset the TD
+                    _this._td='';
+                }
+                //add the row to the table
+                tableRows.push(_this._row);
+            }
+
+            _this._tableHeaders = _this._toArray(tableColumns);
+            _this._tableRows = tableRows;
         });
     },
 
@@ -173,35 +135,91 @@ Polymer({
      * Specially formats a date for presentation using a modified long format that includes milliseconds
      * Traditional Date.toString() returns: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
      * This method would return the above with milliseconds appended as ".XYZ", such as:
-     *  Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
+     * Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
      * This allows greater accuracy when matching the result to a new query editor rule with time
      * @return {string} of the formatted date
      * @private
      */
-    _formatDate: function(date) {
-        // Format the minute properly
-        var minute = date.getMinutes(),
-            minuteFormatted = minute < 10 ? "0" + minute : minute, // pad with 0 as needed
-            second = date.getSeconds(),
-            secondFormatted = second < 10 ? "0" + second : second; // pad with 0 as needed
-
+    _formatDate: function(ISODate) {
+        var date = new Date(ISODate);
+        // Format the values properly (make sure we have sufficient zeroes)
+        var minuteFormatted = ('0'+date.getMinutes()).slice(-2),
+            secondFormatted = ('0'+date.getSeconds()).slice(-2),
+            millisecondFormatted = ('00'+date.getMilliseconds()).slice(-3);
         // Get the original long format date to parse
         var toParse = date.toString();
         // Now get the time string used in the long format, such as 12:46:35
         var timeString = date.getHours() + ":" + minuteFormatted + ":" + secondFormatted;
-
         // Now we insert the milliseconds value from the date into our long format string
-        // This will turn: Fri Nov 20 2015 12:26:38 GMT-0700 (MST)
-        // into:           Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
-        var milliseconds = date.getMilliseconds().toString();
-        if (milliseconds.toString().length == 1) {
-            milliseconds = '00'+milliseconds;
+        var datetime = toParse.substring(0, toParse.indexOf(timeString)+timeString.length) + "." + millisecondFormatted;
+        // Now we get the timezone from the original date
+        var timezone = toParse.substring(toParse.indexOf(timeString)+timeString.length);
+        // Return new modified long format date
+        return datetime+timezone;
+    },
+
+    /**
+     * Generate a TD for the table, combining multiple nested properties into one TD if necessary.
+     * @param record
+     * @param key
+     * @private
+     */
+    _buildTD: function (record,key) {
+        //we have a basic property reference (eg. data.prop)
+        if (typeof record[key] !== 'undefined') {
+            if (key === this.timeVar) {
+                //display the local time if available
+                this._td = document[this.timeDisplayVar] ? document[this.timeDisplayVar] : document[this.timeVar];
+            }
+            else {
+                this._td = record[key];
+            }
         }
-        else if (milliseconds.toString().length == 2) {
-            milliseconds = '0'+milliseconds;
+        //we have a nested property reference (eg. data.obj.subprop)
+        else if (key.indexOf('.' > -1)) {
+            //convert the object dot notation into a mapping to the actual value
+            var val = key.split('.').reduce(function(obj,key) {
+                //handle array nested properties (eg. data.obj.subprop = [])
+                if ($.type(obj) === 'array') {
+                    //map property values across objects into a single array
+                    var temp = obj.map(function(val,i) {
+                        return typeof obj[i][key] !== 'undefined' ? obj[i][key] : null;
+                    });
+                    //check the array, if it has nothing but null values
+                    //then the property wasn't found and we'll return null
+                    for (var i=0; i<temp.length; i++) {
+                        if (temp[i] !== null) {
+                            return temp;
+                        }
+                    }
+                }
+                //handle basic nested properties (eg. data.obj.subprop = 'someProp')
+                else if (obj && typeof obj[key] !== 'undefined') {
+                    return obj[key];
+                }
+                return null;
+            },record);
+
+            //group the nested properties into one TD
+            if (val !== null) {
+                this._td += '<strong>'+key.substr(key.indexOf('.')+1)+'</strong><br>'+val+'<br>';
+            }
         }
-        return toParse.substring(0, toParse.indexOf(timeString)+timeString.length) +
-            "." + milliseconds +
-            toParse.substring(toParse.indexOf(timeString)+timeString.length);
+        //this record has no data for this property (eg. data.prop = undefined)
+        else {
+            this._td = null;
+        }
+    },
+
+    /**
+     * Helper function.
+     * @param object
+     * @returns {Array}
+     * @private
+     */
+    _toArray: function(object) {
+        return object ? Object.keys(object).map(function(key) {
+            return key;
+        }) : [];
     }
 });

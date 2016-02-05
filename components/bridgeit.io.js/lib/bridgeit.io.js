@@ -167,6 +167,36 @@ if( ! ('bridgeit' in window)){
 		}
 	}
 
+	function validateAndReturnRequiredEmail(params, reject){
+		var email = params.email;
+		if( email ){
+			return email;
+		}
+		else{
+			return reject(Error('The BridgeIt email parameter is required'));
+		}
+	}
+
+	function validateAndReturnRequiredFirstname(params, reject){
+		var firstname = params.firstname;
+		if( firstname ){
+			return firstname;
+		}
+		else{
+			return reject(Error('The BridgeIt firstname parameter is required'));
+		}
+	}
+
+	function validateAndReturnRequiredLastname(params, reject){
+		var lastname = params.lastname;
+		if( lastname ){
+			return lastname;
+		}
+		else{
+			return reject(Error('The BridgeIt lastname parameter is required'));
+		}
+	}
+
 	function validateRequiredUsername(params, reject){
 		validateParameter('username', 'The username parameter is required', params, reject);
 	}
@@ -207,6 +237,11 @@ if( ! ('bridgeit' in window)){
 	/* Metrics */
 	function validateRequiredEvent(params, reject){
 		validateParameter('event', 'The event parameter is required', params, reject);
+	}
+
+	/* Mailbox */
+	function validateRequiredMailbox(params, reject){
+		validateParameter('handler', 'The mailbox parameter is required', params, reject);
 	}
 
 	/* Storage */
@@ -642,6 +677,7 @@ if( ! ('bridgeit' in window)){
 		services.queryURL = baseURL + (isLocal ? ':55110' : '') + '/query';
 		services.actionURL = baseURL + (isLocal ? ':55130' : '') + '/action';
 		services.eventhubURL = baseURL + (isLocal ? ':55200' : '') + '/eventhub';
+		services.mailboxURL = baseURL + (isLocal ? ':55120' : '') + '/mailbox';
 	};
 
 	services.checkHost = function(params){
@@ -1043,6 +1079,86 @@ if( ! ('bridgeit' in window)){
 			});
 		},
 
+		/**
+		 * Create a new BridgeIt Account. After successfully creating the account, the new administrator will
+		 * be automatically logged in.
+		 *
+		 * @alias createAccount
+		 * @param {Object} params params
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {String} params.account The name of the new account (required)
+		 * @param {String} params.username The username for the new administrator (required)
+		 * @param {String} params.email The email of the new administrator (required)
+		 * @param {String} params.firstname The first name of the new administrator (required)
+		 * @param {String} params.lastname The last name of the new administrator (required)
+		 * @param {String} params.password The password of the new administrator (required)
+		 * @returns Promise with an access token for the new administrator
+		 *
+		 */
+		 createAccount: function(params){
+
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				services.checkHost(params);
+				
+				//validate
+				var account = {admins: []};
+				var accountname = validateAndReturnRequiredAccount(params, reject);
+				account.accountname = accountname;
+
+				if( params.description ){
+					account.description = params.description;
+				}
+
+				var admin = {};
+				var username = validateAndReturnRequiredUsername(params, reject);
+				admin.username = username;
+				validateRequiredPassword(params, reject);
+				admin.password = params.password;
+				admin.email = validateAndReturnRequiredEmail(params, reject);
+				admin.firstname = validateAndReturnRequiredFirstname(params, reject);
+				admin.lastname = validateAndReturnRequiredLastname(params, reject);
+
+				admin.permissions = [
+					'bridgeit.auth.viewAccount',
+				    'bridgeit.auth.createAccount',
+				    'bridgeit.auth.editAccount',
+				    'bridgeit.auth.deleteAccount',
+
+				    'bridgeit.auth.createUser',
+				    'bridgeit.auth.viewUser',
+				    'bridgeit.auth.editUser',
+				    'bridgeit.auth.deleteUser',
+
+				    'bridgeit.auth.viewServices',
+				    'bridgeit.auth.registerContext',
+				    'bridgeit.auth.createContext',
+				    'bridgeit.auth.deleteContext',
+				    'bridgeit.auth.editContext'];
+				account.admins.push(admin);
+				
+				var protocol = params.ssl ? 'https://' : 'http://';
+				var txParam = getTransactionURLParam();
+				var url = protocol + services.authAdminURL + '/' + (txParam ? '&' + txParam : '');
+				var loggedInAt = new Date().getTime();
+				b.$.post(url, {account: account}).then(function(json){
+					services.auth.updateLastActiveTimestamp();
+
+					sessionStorage.setItem(btoa(TOKEN_KEY), json.token.access_token);
+					sessionStorage.setItem(btoa(TOKEN_EXPIRES_KEY), json.token.expires_in);
+					sessionStorage.setItem(btoa(TOKEN_SET_KEY), loggedInAt);
+					sessionStorage.setItem(btoa(ACCOUNT_KEY), btoa(accountname));
+					sessionStorage.setItem(btoa(USERNAME_KEY), btoa(username));
+					sessionStorage.setItem(btoa(ADMIN_KEY), btoa('true'));
+					resolve(json.token.access_token);
+				})['catch'](function(error){
+					reject(error);
+				});
+		
+			});
+		},
+
 		/* Realm admin */		
 
 		getRealms: function(params){
@@ -1173,9 +1289,14 @@ if( ! ('bridgeit' in window)){
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealmName(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
-				
-				var url = getRealmResourceURL(services.authAdminURL, account, realm, 
-					'users', token, params.ssl);
+
+				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+					'users/', token, params.ssl, {
+						'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+						'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+						'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+					}
+				);
 
 				b.$.getJSON(url).then(function(json){
 					services.auth.updateLastActiveTimestamp();
@@ -1470,6 +1591,8 @@ if( ! ('bridgeit' in window)){
 				});
 			});
 		},
+
+
 
 	};
 
@@ -3655,6 +3778,249 @@ if( ! ('bridgeit' in window)){
 		},
 	};
 
+	services.mailbox = {
+		/**
+		 * Create a new mailbox
+		 *
+		 * @alias createMailbox
+		 * @param {Object} params params
+		 * @param {String} params.id The user id
+		 * @param {Object} params.mailbox The mailbox to be created
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {String} The resource URI
+		 */
+		createMailbox: function (params) {
+			return new Promise(
+				function (resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredMailbox(params, reject);
+
+					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+						'mailboxes/' + (params.id ? params.id : ''), token, params.ssl);
+
+					b.$.post(url, params.mailbox).then(function (response) {
+						services.auth.updateLastActiveTimestamp();
+						resolve(response.uri);
+					})['catch'](function (error) {
+						reject(error);
+					});
+
+				}
+			);
+		},
+
+		/**
+		 * Update a mailbox
+		 *
+		 * @alias updateMailbox
+		 * @param {Object} params params
+		 * @param {String} params.id The user id, the user's mailbox to be updated
+		 * @param {Object} params.mailbox The new mailbox
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 */
+		updateMailbox: function (params) {
+			return new Promise(
+				function (resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+					validateRequiredMailbox(params, reject);
+
+					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+						'mailboxes/' + params.id, token, params.ssl);
+
+					b.$.put(url, params.mailbox).then(function () {
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function (error) {
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Fetch a mailbox
+		 *
+		 * @alias getMailbox
+		 * @param {Object} params params
+		 * @param {String} params.id The user id, the user's mailbox to fetch
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {Object} The mailbox
+		 */
+		getMailbox: function (params) {
+			return new Promise(
+				function (resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+
+					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+						'mailboxes/' + params.id, token, params.ssl);
+
+					b.$.getJSON(url).then(function (mailbox) {
+						services.auth.updateLastActiveTimestamp();
+						resolve(mailbox);
+					})['catch'](function (error) {
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Searches for mailboxes in a realm based on a query
+		 *
+		 * @alias findMailboxes
+		 * @param {Object} params params
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Object} params.query A mongo query for the mailboxes
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
+		 * @returns {Object} The results
+		 */
+		findMailboxes: function (params) {
+			return new Promise(
+				function (resolve, reject) {
+
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+
+					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+						'mailboxes/', token, params.ssl, {
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
+
+					b.$.getJSON(url).then(function (mailboxes) {
+						services.auth.updateLastActiveTimestamp();
+						resolve(mailboxes);
+					})['catch'](function (response) {
+						reject(response);
+					});
+
+				}
+			);
+		},
+
+		/**
+		 * Delete a mailbox
+		 *
+		 * @alias deleteMailbox
+		 * @param {Object} params params
+		 * @param {String} params.id The user id, the user's mailbox to be deleted
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 */
+		deleteMailbox: function (params) {
+			return new Promise(
+				function (resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+
+					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+						'mailboxes/' + params.id, token, params.ssl);
+
+					b.$.doDelete(url).then(function () {
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function (error) {
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Delete mailboxes in a realm based on a query
+		 *
+		 * @alias deleteMailboxes
+		 * @param {Object} params params
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Object} params.query A mongo query for the mailboxes
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
+		 */
+		deleteMailboxes: function (params) {
+			return new Promise(
+				function (resolve, reject) {
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+
+					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+						'mailboxes/', token, params.ssl, {
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
+
+					b.$.doDelete(url).then(function () {
+						services.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function (error) {
+						reject(error);
+					});
+				}
+			);
+		}
+	};
+
 	/* METRICS SERVICE */
 	services.metrics = {
 
@@ -4051,10 +4417,14 @@ if( ! ('bridgeit' in window)){
 					}
 					*/
 					if (ice && ice.push && ice.push.configuration.contextPath) {
-						ice.push.notify(params.group, {
-							subject: params.subject,
-							detail: params.detail
-						});
+						var post = {};
+						if( params.subject ){
+							post.subject = params.subject;
+						}
+						if( params.detail ){
+							post.detail = params.detail;
+						}
+						ice.push.notify(params.group, post);
 						resolve();
 					} else {
 						reject('Push service is not active');

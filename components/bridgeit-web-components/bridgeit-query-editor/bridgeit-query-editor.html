@@ -2,14 +2,15 @@
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 
 <!--
-Displays a query editor that can build queries for data stored by the BridgeIt Services.
+Displays a query editor based on jQuery-QueryBuilder that can build queries for data stored by the BridgeIt Services.
+You can access the Query Editor programmatically using the editor property (< bridgeit-query-editor >.editor).
+<a target="_blank" href="http://mistic100.github.io/jQuery-QueryBuilder/">More Info</a>
 
 Example:
 
-		<bridgeit-query-editor 
-													 realm="myRealm"
-													 account="myAccount"
-													 queryurltarget="queryURL">
+		<bridgeit-query-editor realm="myRealm"
+                           account="myAccount"
+                           queryurltarget="queryURL">
 		</bridgeit-query-editor>
 
 @demo demo.html

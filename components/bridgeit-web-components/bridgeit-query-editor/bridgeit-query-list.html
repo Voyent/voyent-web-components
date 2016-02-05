@@ -13,6 +13,9 @@ Example:
 <dom-module id="bridgeit-query-list">
     <template>
         <style type="text/css">
+            .tableWrapper {
+                @apply(--query-list-wrapper);
+            }
             table {
                 margin:0 auto;
                 @apply(--query-list-table);
@@ -27,21 +30,24 @@ Example:
                 @apply(--query-list-td);
             }
             button {
+                cursor:pointer;
                 @apply(--query-list-button);
             }
         </style>
-        <table>
-            <tbody>
-                <template is="dom-repeat" items="{{_allQueries}}">
-                    <tr>
-                        <td>{{item._id}}</td>
-                        <td>
-                            <button on-click="_viewQuery">View</button>
-                        </td>
-                    </tr>
-                </template>
-            </tbody>
-        </table>
+        <div class="tableWrapper">
+            <table>
+                <tbody>
+                    <template is="dom-repeat" items="{{_allQueries}}">
+                        <tr>
+                            <td>{{item._id}}</td>
+                            <td>
+                                <button on-click="_viewQuery">View</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
     </template>
 </dom-module>
 

@@ -172,6 +172,7 @@ Example:
            }
            label {
                font-weight: 700;
+               display:block;
                @apply(--action-editor-label);
            }
            .form-control {
@@ -218,6 +219,9 @@ Example:
            .task:first-of-type {
                margin-top:10px;
            }
+           .task .content fieldset:last-of-type {
+               margin-bottom:10px;
+           }
            .taskPanel.toggled {
                height:0;
            }
@@ -229,10 +233,10 @@ Example:
                display:none;
            }
            .eventHandlerLbl {
-               display:block;
                margin-bottom:5px;
            }
            .pointer {
+               margin:5px 0 5px 0;
                cursor:pointer;
            }
         </style>
@@ -296,6 +300,10 @@ Example:
                                 </div>
                             </div>
                             <div class="actionPanel flex">
+                                <!-- The template code below requires a lot of duplication but this approach gives us the most flexibility for the
+                                     the various task group and task sections. One improvement that could be made is to find a way to template out
+                                     the duplicate code and then insert this template into each section instead of manually duplicating it.
+                                 -->
                                 <template is="dom-repeat" items="{{_taskGroups}}" as="group">
                                     <div id$="{{group.id}}" class="task-group" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
                                         <div class="buttons" on-drop="_preventDrop">
@@ -313,8 +321,18 @@ Example:
                                                 <label on-drop="_preventDrop">
                                                     <span class="required">*</span><span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
-                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                               required value="{{property.value::input}}">
+                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                            <select class="form-control" required value="{{property.value::change}}">
+                                                                <option value="" selected>Select one...</option>
+                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                    <option value="{{item}}">{{item}}</option>
+                                                                </template>
+                                                            </select>
+                                                        </template>
+                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                   required value="{{property.value::input}}">
+                                                        </template>
                                                     </template>
                                                 </label>
                                             </template>
@@ -322,8 +340,18 @@ Example:
                                                 <label on-drop="_preventDrop" class$="{{_addBooleanClass(property.type)}}">
                                                     <span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
-                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                               value="{{property.value::input}}">
+                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                            <select class="form-control" value="{{property.value::change}}">
+                                                                <option value="" selected>Select one...</option>
+                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                    <option value="{{item}}">{{item}}</option>
+                                                                </template>
+                                                            </select>
+                                                        </template>
+                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                   value="{{property.value::input}}">
+                                                        </template>
                                                     </template>
                                                     <template is="dom-if" if="{{_isBoolean(property.type)}}">
                                                         <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
@@ -352,7 +380,7 @@ Example:
                                                                 <fieldset>
                                                                     <legend>Group <span>{{_toOneBasedIndex(index)}}</span></legend>
                                                                     <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
-                                                                        <label>
+                                                                        <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span>{{property.title}}</span>
                                                                             <template is="dom-if" if="{{_isString(property.type)}}">
                                                                                 <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
@@ -360,9 +388,22 @@ Example:
                                                                                                           disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
                                                                                 </template>
                                                                                 <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                           value="{{property.value::input}}">
+                                                                                    <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                                        <select class="form-control" value="{{property.value::change}}">
+                                                                                            <option value="" selected>Select one...</option>
+                                                                                            <template is="dom-repeat" items="{{property.enum}}">
+                                                                                                <option value="{{item}}">{{item}}</option>
+                                                                                            </template>
+                                                                                        </select>
+                                                                                    </template>
+                                                                                    <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                               value="{{property.value::input}}">
+                                                                                    </template>
                                                                                 </template>
+                                                                            </template>
+                                                                            <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                                <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
                                                                             </template>
                                                                         </label>
                                                                     </template>
@@ -370,7 +411,7 @@ Example:
                                                             </template>
                                                         </template>
                                                         <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
-                                                            <label>
+                                                            <label class$="{{_addBooleanClass(property.type)}}">
                                                                 <span class="required">*</span><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
@@ -378,14 +419,27 @@ Example:
                                                                                               disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                               required value="{{property.value::input}}">
+                                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                            <select class="form-control" required value="{{property.value::change}}">
+                                                                                <option value="" selected>Select one...</option>
+                                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                                    <option value="{{item}}">{{item}}</option>
+                                                                                </template>
+                                                                            </select>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                   required value="{{property.value::input}}">
+                                                                        </template>
                                                                     </template>
+                                                                </template>
+                                                                <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                    <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
                                                                 </template>
                                                             </label>
                                                         </template>
                                                         <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
-                                                            <label>
+                                                            <label class$="{{_addBooleanClass(property.type)}}">
                                                                 <span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
@@ -393,9 +447,22 @@ Example:
                                                                                               disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                               value="{{property.value::input}}">
+                                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                            <select class="form-control" value="{{property.value::change}}">
+                                                                                <option value="" selected>Select one...</option>
+                                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                                    <option value="{{item}}">{{item}}</option>
+                                                                                </template>
+                                                                            </select>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                   value="{{property.value::input}}">
+                                                                        </template>
                                                                     </template>
+                                                                </template>
+                                                                <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                    <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
                                                                 </template>
                                                             </label>
                                                         </template>
