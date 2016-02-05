@@ -689,6 +689,7 @@ Polymer({
      * @private
      */
     _moveTaskGroupUp: function(e) {
+        var _this = this;
         var taskGroup = e.model.group;
         var currPos = this._taskGroups.indexOf(taskGroup);
         var newPos = currPos-1;
@@ -699,8 +700,11 @@ Polymer({
         this.splice('_taskGroups',currPos,1);
         this.splice('_taskGroups',newPos,0,taskGroup);
         //keep the taskGroup IDs in sync
-        this.set('_taskGroups.'+currPos+'.id','taskGroup'+currPos);
-        this.set('_taskGroups.'+newPos+'.id','taskGroup'+newPos);
+        setTimeout(function() {
+            _this.set('_taskGroups.'+currPos+'.id','taskGroup'+currPos);
+            _this.set('_taskGroups.'+newPos+'.id','taskGroup'+newPos);
+        },0);
+
     },
 
     /**
@@ -709,6 +713,7 @@ Polymer({
      * @private
      */
     _moveTaskGroupDown: function(e) {
+        var _this = this;
         var taskGroup = e.model.group;
         var currPos = this._taskGroups.indexOf(taskGroup);
         var newPos = currPos+1;
@@ -719,8 +724,10 @@ Polymer({
         this.splice('_taskGroups',currPos,1);
         this.splice('_taskGroups',newPos,0,taskGroup);
         //keep the taskGroup IDs in sync
-        this.set('_taskGroups.'+currPos+'.id','taskGroup'+currPos);
-        this.set('_taskGroups.'+newPos+'.id','taskGroup'+newPos);
+        setTimeout(function() {
+            _this.set('_taskGroups.'+currPos+'.id','taskGroup'+currPos);
+            _this.set('_taskGroups.'+newPos+'.id','taskGroup'+newPos);
+        },0);
     },
 
     /**
