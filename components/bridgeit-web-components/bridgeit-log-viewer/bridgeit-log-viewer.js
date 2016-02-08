@@ -51,7 +51,11 @@ Polymer({
         /**
          * Flag indicating if the footer titles should be rendered.
          */
-        footer: { type: Boolean, value: false }
+        footer: { type: Boolean, value: false },
+        /**
+         * Flag indicating if the debug logs should be shown rather than the audit.
+         */
+        debug: { type: Boolean, value: false }
     },
 
     ready: function() {
@@ -66,7 +70,6 @@ Polymer({
      * Retrieve the log information from the Auth Service.
      */
     fetchLogs: function() {
-        var _this = this;
         if( !this.account ){
             this.account = bridgeit.io.auth.getLastKnownAccount();
         }
@@ -82,38 +85,12 @@ Polymer({
         this._username = true;
         this._message = true;
 
-        bridgeit.io.admin.getLogs({
-            account: this.account,
-            query: this.query,
-            options: this.options,
-            fields: this.fields
-        }).then(function(logs) {
-            if (logs.length === 0) {
-                _this._logs = null;
-                _this._noLogs = true;
-                return;
-            }
-            if ((logs.length > _this.pagesize) && (_this.pagesize !== 0)) {
-                _this._currentPage = logs.slice(logs.length-_this.pagesize,logs.length);
-                _this._logIndex = logs.length-_this.pagesize;
-                _this._hasPreviousPage = true;
-            }
-            else {
-                _this._currentPage = logs;
-                _this._hasPreviousPage = false;
-            }
-            _this._hasNextPage = false;
-            _this._logs = logs;
-            _this._hasLogs = true;
-            _this._noLogs = false;
-
-            if (Object.keys(_this.fields).length > 0) {
-                _this._hideColumns();
-            }
-        }).catch(function(error){
-            console.log('fetchLogs caught an error:', error);
-            _this.fire('bridgeit-error', {error: error});
-        });
+        if (this.debug) {
+            this._getDebugLogs();
+        }
+        else {
+            this._getAuditLogs();
+        }
     },
 
     /**
@@ -187,6 +164,72 @@ Polymer({
 
 
     //******************PRIVATE API******************
+
+    /**
+     * Retrieve audit logs from the auth service.
+     * @private
+     */
+    _getAuditLogs: function() {
+        var _this = this;
+        bridgeit.io.admin.getLogs({
+            account: this.account,
+            query: this.query,
+            options: this.options,
+            fields: this.fields
+        }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
+            console.log('fetchLogs (audit) caught an error:', error);
+            _this.fire('bridgeit-error', {error: error});
+            _this._noLogs = true;
+        });
+    },
+
+    /**
+     * Retrieve debug logs from the auth service.
+     * @private
+     */
+    _getDebugLogs: function() {
+        var _this = this;
+        bridgeit.io.admin.getDebugLogs({
+            account: this.account,
+            query: this.query,
+            options: this.options,
+            fields: this.fields
+        }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
+            console.log('fetchLogs (debug) caught an error:', error);
+            _this.fire('bridgeit-error', {error: error});
+            _this._noLogs = true;
+        });
+    },
+
+    /**
+     * Processes the logs returned from the auth service.
+     * @param logs
+     * @private
+     */
+    _fetchLogsCallback: function(logs) {
+        if (logs.length === 0) {
+            this._logs = null;
+            this._noLogs = true;
+            return;
+        }
+        if ((logs.length > this.pagesize) && (this.pagesize !== 0)) {
+            this._currentPage = logs.slice(logs.length-this.pagesize,logs.length);
+            this._logIndex = logs.length-this.pagesize;
+            this._hasPreviousPage = true;
+        }
+        else {
+            this._currentPage = logs;
+            this._hasPreviousPage = false;
+        }
+        this._hasNextPage = false;
+        this._logs = logs;
+        this._hasLogs = true;
+        this._noLogs = false;
+
+        if (Object.keys(this.fields).length > 0) {
+            this._hideColumns();
+        }
+    },
 
     /**
      * Validates the pagesize attribute. If invalid, the old value, or the default will be used.
