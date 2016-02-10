@@ -52,7 +52,7 @@ Polymer({
                 // We will reverse this process if the sidebar would naturally be visible again
                 // This is necessary beyond a standard "position: fixed" to ensure the sidebar doesn't
                 //  stay fixed to the top of the page when it doesn't need to
-                if (document.documentElement.scrollTop > _this.offset) {
+                if ((document.documentElement.scrollTop || document.body.scrollTop) > _this.offset) {
                     ourDiv.style.position = 'fixed';
                     ourDiv.style.top = 0;
                 }
