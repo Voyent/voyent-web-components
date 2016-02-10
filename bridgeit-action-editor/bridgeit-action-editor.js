@@ -11,7 +11,8 @@ Polymer({
          * Defines the BridgeIt realm to build actions for.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
-        realm: { type: String }
+        realm: { type: String },
+        barpad: { type: Number, value: 0, reflectToAttribute: true, notify: true }
     },
 
     /**
@@ -42,8 +43,26 @@ Polymer({
             var ourDiv = document.getElementById("fixedDiv");
             
             if (ourDiv) {
+                // Set our component offset if we haven't already
                 if (_this.offset < 0) {
                     _this.offset = ourDiv.offsetTop;
+                }
+                
+                // Normally we can just use the document "scrollTop" (via a few browser compatible ways)
+                // But there is a chance our component will be used inside a scrollable container
+                // In that case we need to get the scrollTop of any valid parent container
+                // So basically if we can't get the scrollTop a normal way, we reverse traverse the
+                //  parent nodes until we find a valid scrollTop, or hit the top of the document (when parentNode = null)
+                var compareTop = (document.documentElement.scrollTop || document.body.scrollTop);
+                if (compareTop <= 0) {
+                    var currentNode = ourDiv.parentNode;
+                    while (currentNode != null) {
+                        if (currentNode.scrollTop > 0) {
+                            compareTop = currentNode.scrollTop;
+                            break;
+                        }
+                        currentNode = currentNode.parentNode;
+                    }
                 }
                 
                 // If the top of our scroll is beyond the sidebar offset it means
@@ -52,15 +71,16 @@ Polymer({
                 // We will reverse this process if the sidebar would naturally be visible again
                 // This is necessary beyond a standard "position: fixed" to ensure the sidebar doesn't
                 //  stay fixed to the top of the page when it doesn't need to
-                if ((document.documentElement.scrollTop || document.body.scrollTop) > _this.offset) {
+                if (compareTop > _this.offset) {
                     ourDiv.style.position = 'fixed';
-                    ourDiv.style.top = 0;
+                    ourDiv.style.top = _this.barpad + 'px';
                 }
                 else {
                     ourDiv.style.position = 'relative';
+                    ourDiv.style.top = 0;
                 }
             }
-        });
+        }, true);
 	},
 
     /**
