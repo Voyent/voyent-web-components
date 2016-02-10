@@ -57,19 +57,24 @@ Example:
                line-height: 20px;
                @apply(--action-editor-task-panel-header);
            }
-           .taskPanel .taskItem {
+           .taskPanel .taskItemPos, .taskPanel .taskClump {
                height: 25px;
                min-height: 25px;
                line-height:25px;
+               min-width: 70px;
+               width: 90%;
+           }
+           .taskPanel .taskClump {
+               font-weight: bold;
+           }
+           .taskPanel .taskItem {
                margin: 5px auto;
                padding:2px;
-               text-align:center;
-               width: 90%;
-               min-width: 70px;
                cursor:move;
+               text-align: center;
                border-radius: 5px;
-               font-size: 12px;
                background-color:#e5e5e5;
+               font-size: 12px;
                @apply(--action-editor-task-panel-item);
            }
            .taskPanel .taskItem:hover {
@@ -270,7 +275,7 @@ Example:
                                 <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane">
                                     <template is="dom-repeat" items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
-                                        <div class="flex taskGroup taskItem" draggable="true" on-dragstart="_startDragGroup" title$="{{item.description}}">
+                                        <div class="flex taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" title$="{{item.description}}">
                                             <div class="title">{{item.label}}</div>
                                         </div>
                                     </template>
@@ -280,9 +285,9 @@ Example:
                                 <div class="header" on-click="_toggleTask">Tasks<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane taskPane">
                                     <template is="dom-repeat" items="{{_taskSchemasUI}}">
-                                        <b>{{item.label}}</b>
+                                        <div class="taskClump">{{item.label}}</div>
                                         <template is="dom-repeat" items="{{item.schemas}}">
-                                            <div class="flex taskItem" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
+                                            <div class="flex taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
                                                 <div class="title">{{item.labelUI}}</div>
                                             </div>
                                         </template>
