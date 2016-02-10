@@ -29,6 +29,9 @@ Example:
                width:160px;
                @apply(--action-editor-item-container);
            }
+           .fixedDiv {
+               width:160px;
+           }
            .actionContainer {
                border: 1px solid #999;
                padding:10px;
@@ -269,7 +272,7 @@ Example:
             </div>
             <div class="actionWrapper layout horizontal">
                 <div class="itemsContainer">
-                    <div id="fixedDiv" class="itemsContainer">
+                    <div id="fixedDiv" class="fixedDiv">
                         <div class="layout vertical wrap">
                             <div class="taskPanel">
                                 <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>

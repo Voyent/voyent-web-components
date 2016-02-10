@@ -77,7 +77,7 @@ Polymer({
                 }
                 else {
                     ourDiv.style.position = 'relative';
-                    ourDiv.style.top = 0;
+                    ourDiv.style.top = null;
                 }
             }
         }, true);
