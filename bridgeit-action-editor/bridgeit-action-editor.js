@@ -56,7 +56,7 @@ Polymer({
                 var compareTop = (document.documentElement.scrollTop || document.body.scrollTop);
                 if (compareTop <= 0) {
                     var currentNode = ourDiv.parentNode;
-                    while (currentNode != null) {
+                    while (currentNode !== null) {
                         if (currentNode.scrollTop > 0) {
                             compareTop = currentNode.scrollTop;
                             break;
@@ -490,18 +490,20 @@ Polymer({
                     // For example locate-dir just becomes dir
                     // We can fairly safely assume there will be a dash in the service name, but we double check just in case
                     if (currentSchema.label.indexOf('-') > -1) {
-                        currentSchema['labelUI'] =
+                        currentSchema.labelUI =
                             currentSchema.label.substring(
                                 currentSchema.label.indexOf(serviceArray[s].label + '-')+serviceArray[s].label.length+1);
                     }
                     else {
-                        currentSchema['labelUI'] =
+                        currentSchema.labelUI =
                             currentSchema.label.substring(
                                 currentSchema.label.indexOf(serviceArray[s].label)+serviceArray[s].label.length);
                     }
                     
                     // Add the modified schema to our service array for use in the UI
                     serviceArray[s].schemas.push(currentSchema);
+                    
+                    break;
                 }
             }
             
@@ -510,7 +512,7 @@ Polymer({
                 for (var j=0; j<serviceArray.length; j++) {
                     if (serviceArray[j].label === defaultService) {
                         // Duplicate our unformatted label into labelUI
-                        currentSchema['labelUI'] = currentSchema.label;
+                        currentSchema.labelUI = currentSchema.label;
                         
                         serviceArray[j].schemas.push(currentSchema);
                         break;
