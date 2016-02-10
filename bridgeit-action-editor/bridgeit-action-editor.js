@@ -71,7 +71,8 @@ Polymer({
                 // We will reverse this process if the sidebar would naturally be visible again
                 // This is necessary beyond a standard "position: fixed" to ensure the sidebar doesn't
                 //  stay fixed to the top of the page when it doesn't need to
-                if (compareTop > _this.offset) {
+                // Note we include our "barpad" attribute, to ensure the shifting happens right away
+                if ((compareTop+_this.barpad) > _this.offset) {
                     ourDiv.style.position = 'fixed';
                     ourDiv.style.top = _this.barpad + 'px';
                 }
