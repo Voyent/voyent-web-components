@@ -109,6 +109,7 @@ Polymer({
             lastPageIndex = pageSize;
         }
         this._currentPage = logs.slice(0,lastPageIndex);
+        this._currentPage.reverse();
         this._logIndex = lastPageIndex;
         this._hasPreviousPage = false;
         this._hasNextPage = true;
@@ -127,6 +128,7 @@ Polymer({
         }
 
         this._currentPage =  logs.slice(logIndex-pageSize,logIndex);
+        this._currentPage.reverse();
         this._logIndex =  logIndex-pageSize;
         this._hasNextPage =  true;
 
@@ -145,6 +147,7 @@ Polymer({
         var logIndex = this.lastAction === 'previousPage' ? this._logIndex + pageSize : this._logIndex;
 
         this._currentPage =  logs.slice(logIndex,logIndex+pageSize);
+        this._currentPage.reverse();
         this._logIndex =  logIndex+pageSize;
         this._hasPreviousPage =  true;
 
@@ -161,6 +164,7 @@ Polymer({
         var logs = this._logs;
         var pageSize = this.pagesize;
         this._currentPage = logs.slice(logs.length-pageSize,logs.length);
+        this._currentPage.reverse();
         this._logIndex = logs.length-pageSize;
         this._hasNextPage = false;
         this._hasPreviousPage = true;
@@ -211,6 +215,7 @@ Polymer({
      * @private
      */
     _fetchLogsCallback: function(logs) {
+        logs.reverse();
         if (logs.length === 0) {
             this._logs = null;
             this._noLogs = true;
@@ -225,6 +230,7 @@ Polymer({
             this._currentPage = logs;
             this._hasPreviousPage = false;
         }
+        this._currentPage.reverse();
         this._hasNextPage = false;
         this._logs = logs;
         this._hasLogs = true;
