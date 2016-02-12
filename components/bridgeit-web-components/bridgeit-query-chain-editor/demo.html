@@ -1,0 +1,76 @@
+<!--
+	@license
+	Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+	This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	Code distributed by Google as part of the polymer project is also
+	subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <title>BridgeIt Web Components Demo</title>
+
+    <!-- Load the webcomponents polyfill -->
+    <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+    <link rel="import" href="../bridgeit-auth-provider/bridgeit-auth-provider.html">
+    <link rel="import" href="../bridgeit-login-paper-card/bridgeit-login-paper-card.html">
+    <!-- Load bridgeit query chain editor component -->
+    <link rel="import" href="bridgeit-query-chain-editor.html">
+
+    <!-- Demo specific CSS -->
+    <link rel="stylesheet" href="../common/demo.css"/>
+
+    <!-- Define custom styling for the components (optional) -->
+    <style is="custom-style">
+
+    </style>
+</head>
+<body unresolved>
+<template id="demo" is="dom-bind">
+    <div>
+
+        <h1>BridgeIt Query Chain Editor Component Demo</h1>
+
+        <bridgeit-auth-provider id="authProvider" account="[[account]]" realm="[[realm]]"
+                                host="[[host]]" logged-in="{{isLoggedIn}}" error="{{loginError}}" timeout="120"
+                                fallback-to-admin="true">
+        </bridgeit-auth-provider>
+        <bridgeit-login-paper-card heading="Demo Login"
+                                   username="{{username}}"
+                                   password="{{password}}"
+                                   realm="{{realm}}"
+                                   account="{{account}}"
+                                   error="{{loginError}}"
+                                   auth-provider="authProvider"
+                                   submit-label="Login"
+                                   cancel-label="Cancel"
+                                   hidden="{{isLoggedIn}}"
+                                   show-realm-input="true"
+                                   show-account-input="true">
+        </bridgeit-login-paper-card>
+
+        <template is="dom-if" if="{{isLoggedIn}}">
+            <button onclick="handleLogout()" class="button logout-button">Logout</button>
+            <div style="clear:both;"></div>
+            <bridgeit-query-chain-editor account="[[account]]" realm="[[realm]]"></bridgeit-query-chain-editor>
+        </template>
+    </div>
+</template>
+
+<script type="text/javascript">
+    function handleLogout(){
+        document.getElementById('authProvider').logout();
+    }
+    /*function initializeComponent() {
+        setTimeout( function(){
+
+        }, 100);
+    }
+    window.addEventListener('onAfterLogin', initializeComponent, false);*/
+</script>
+</body>
+</html>

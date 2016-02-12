@@ -79,10 +79,10 @@ Example:
         <template is="dom-if" if="{{_hasLogs}}">
             <template is="dom-if" if="{{paginator}}">
                 <div class="buttonContainer">
-                    <button on-click="lastPage" disabled="{{!_hasPreviousPage}}">Last</button>
-                    <button on-click="previousPage" disabled="{{!_hasPreviousPage}}">Previous Page</button>
-                    <button on-click="nextPage" disabled="{{!_hasNextPage}}">Next Page</button>
-                    <button on-click="firstPage" disabled="{{!_hasNextPage}}">First</button>
+                    <button on-click="lastPage" disabled="{{!_hasPreviousPage}}">{{lastPageLabel}}</button>
+                    <button on-click="previousPage" disabled="{{!_hasPreviousPage}}">{{previousPageLabel}}</button>
+                    <button on-click="nextPage" disabled="{{!_hasNextPage}}">{{nextPageLabel}}</button>
+                    <button on-click="firstPage" disabled="{{!_hasNextPage}}">{{firstPageLabel}}</button>
                 </div>
             </template>
             <table>
@@ -112,7 +112,7 @@ Example:
                     <template is="dom-repeat" items="{{_currentPage}}">
                         <tr class$="{{item.level}}">
                             <template is="dom-if" if="{{_time}}">
-                                <td>{{item.time}}</td>
+                                <td>{{_formatDate(item.time)}}</td>
                             </template>
                             <template is="dom-if" if="{{_tx}}">
                                 <td>{{item.tx}}</td>
@@ -157,10 +157,10 @@ Example:
             </table>
             <template is="dom-if" if="{{paginator}}">
                 <div class="buttonContainer">
-                    <button on-click="lastPage" disabled="{{!_hasPreviousPage}}">Last</button>
-                    <button on-click="previousPage" disabled="{{!_hasPreviousPage}}">Previous Page</button>
-                    <button on-click="nextPage" disabled="{{!_hasNextPage}}">Next Page</button>
-                    <button on-click="firstPage" disabled="{{!_hasNextPage}}">First</button>
+                    <button on-click="lastPage" disabled="{{!_hasPreviousPage}}">{{lastPageLabel}}</button>
+                    <button on-click="previousPage" disabled="{{!_hasPreviousPage}}">{{previousPageLabel}}</button>
+                    <button on-click="nextPage" disabled="{{!_hasNextPage}}">{{nextPageLabel}}</button>
+                    <button on-click="firstPage" disabled="{{!_hasNextPage}}">{{firstPageLabel}}</button>
                 </div>
             </template>
         </template>

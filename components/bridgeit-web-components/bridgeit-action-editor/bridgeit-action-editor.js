@@ -11,14 +11,14 @@ Polymer({
          * Defines the BridgeIt realm to build actions for.
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
-        realm: { type: String }
+        realm: { type: String },
+        barpad: { type: Number, value: 0, reflectToAttribute: true, notify: true }
     },
 
     /**
      * Fired after the actions list is retrieved, this occurs on the initial load and whenever a CRUD operation is performed. Contains the list of saved actions.
      * @event actionsRetrieved
      */
-
 	ready: function() {
         if (!this.realm) {
             this.realm = bridgeit.io.auth.getLastKnownRealm();
@@ -33,6 +33,55 @@ Polymer({
         this._loadedAction = null;
         this._taskGroups = [];
         this._codeEditorProperties=['function','messagetemplate'];
+        
+        // Setup our sidebar to scroll alongside the action editor
+        // This is necessary in case the action editor is quite long (such as many tasks)
+        // Because we still want to see the draggable containers/tasks list
+        this.offset = -1;
+        var _this = this;
+        window.addEventListener("scroll", function() {
+            var ourDiv = document.getElementById("fixedDiv");
+            
+            if (ourDiv) {
+                // Set our component offset if we haven't already
+                if (_this.offset < 0) {
+                    _this.offset = ourDiv.offsetTop;
+                }
+                
+                // Normally we can just use the document "scrollTop" (via a few browser compatible ways)
+                // But there is a chance our component will be used inside a scrollable container
+                // In that case we need to get the scrollTop of any valid parent container
+                // So basically if we can't get the scrollTop a normal way, we reverse traverse the
+                //  parent nodes until we find a valid scrollTop, or hit the top of the document (when parentNode = null)
+                var compareTop = (document.documentElement.scrollTop || document.body.scrollTop);
+                if (compareTop <= 0) {
+                    var currentNode = ourDiv.parentNode;
+                    while (currentNode !== null) {
+                        if (currentNode.scrollTop > 0) {
+                            compareTop = currentNode.scrollTop;
+                            break;
+                        }
+                        currentNode = currentNode.parentNode;
+                    }
+                }
+                
+                // If the top of our scroll is beyond the sidebar offset it means
+                //  the sidebar would no longer be visible
+                // At that point we switch to a fixed position with a top of 0
+                // We will reverse this process if the sidebar would naturally be visible again
+                // This is necessary beyond a standard "position: fixed" to ensure the sidebar doesn't
+                //  stay fixed to the top of the page when it doesn't need to
+                // Note we include our "barpad" attribute, to ensure the shifting happens right away
+                if ((compareTop+_this.barpad) > _this.offset) {
+                    ourDiv.style.position = 'fixed';
+                    ourDiv.style.top = _this.barpad + 'px';
+                }
+                else {
+                    ourDiv.style.position = 'relative';
+                    ourDiv.style.top = null;
+                }
+            }
+        }, true);
 	},
 
     /**
@@ -45,7 +94,13 @@ Polymer({
             _this._processSchemas(schemas,'_taskGroupSchemas');
         }));
         promises.push(bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
-            _this._processSchemas(schemas,'_taskSchemas');
+            var key = '_taskSchemas';
+            _this._processSchemas(schemas,key);
+            
+            // We also want to group/organize the tasks
+            // Unfortunately we have to hardcode some of the services here until the meta is updated
+            // We use a separate map for this so we don't interfere with existing functionality, just the display on the page
+            _this._organizeSchemas(_this[key],key);
         }));
         return Promise.all(promises).then(function(){
             _this._loadQueryEditor();
@@ -401,6 +456,75 @@ Polymer({
         });
         //save schema mapping to _taskSchemasMap or _taskGroupSchemasMap
         this[key+'Map'] = schemaMap;
+    },
+    
+    /**
+     * An additional step of processing for task schemas specific to the UI
+     * For readability we want to group the tasks into a few service groups
+     * This is done purely for the UI, so we still back the template with our core schemas created in processSchemas
+     * @param schemas
+     * @param key
+     * @private
+     */
+    _organizeSchemas: function(schemas,key) {
+        // We use 4 hardcoded services to sort: doc, locate, mailbox, user
+        // Anything else goes into misc
+        var defaultService = 'misc';
+        var serviceArray = [ { label: 'doc', schemas: [] },
+                             { label: 'locate', schemas: [] },
+                             { label: 'mailbox', schemas: [] },
+                             { label: 'user', schemas: [] },
+                             { label: defaultService, schemas: [] } ];
+        
+        // Loop through the passed list of schemas, which would be the tasks
+        for (var i=0; i<schemas.length; i++) {
+            var currentSchema = schemas[i];
+            var hasMatch = false;
+            
+            // For each schema we want to find if it matches a service
+            // If not we'll default to using the "misc" group
+            for (var s=0; s<serviceArray.length; s++) {
+                if (currentSchema.label.startsWith(serviceArray[s].label)) {
+                    hasMatch = true;
+                    
+                    // Add a UI label that removes the group name from the label
+                    // For example locate-dir just becomes dir
+                    // We can fairly safely assume there will be a dash in the service name, but we double check just in case
+                    if (currentSchema.label.indexOf('-') > -1) {
+                        currentSchema.labelUI =
+                            currentSchema.label.substring(
+                                currentSchema.label.indexOf(serviceArray[s].label + '-')+serviceArray[s].label.length+1);
+                    }
+                    else {
+                        currentSchema.labelUI =
+                            currentSchema.label.substring(
+                                currentSchema.label.indexOf(serviceArray[s].label)+serviceArray[s].label.length);
+                    }
+                    
+                    // Add the modified schema to our service array for use in the UI
+                    serviceArray[s].schemas.push(currentSchema);
+                    
+                    break;
+                }
+            }
+            
+            // If we don't have a match just add to our "misc" service group
+            if (!hasMatch) {
+                for (var j=0; j<serviceArray.length; j++) {
+                    if (serviceArray[j].label === defaultService) {
+                        // Duplicate our unformatted label into labelUI
+                        currentSchema.labelUI = currentSchema.label;
+                        
+                        serviceArray[j].schemas.push(currentSchema);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // We store this UI specific list of schemas in an appropriately named map
+        // This map will then be used in a template
+        this[key+'UI'] = serviceArray;
     },
 
     /**

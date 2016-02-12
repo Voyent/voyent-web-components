@@ -28,12 +28,12 @@ Polymer({
          */
         fields: { type: Object, value: {} },
         /**
-         * Additional query options such as limit and sort.
+         * Additional query options such as limit and sort. Only one sort parameter can be specified in the options (others will be ignored).
          *
          * Example:
          *
-         *      //all records + sort by service (ascending)
-         *      {"limit":0,"sort":{"service":1}}
+         *      //500 log records + sort by time (descending)
+         *      {"limit":500,"sort":{"time":-1}}
          */
         options: { type: Object, value: {} },
         /**
@@ -41,21 +41,25 @@ Polymer({
          */
         pagesize: { type: Number, value: 100, observer: '_validatePageSize' },
         /**
-         * Flag indicating if the pagination buttons should be rendered. Alternatively, the pagination functions can be accessed directly.
+         * Indicates if the pagination buttons should be rendered. Alternatively, the pagination functions can be accessed programmatically.
          */
         paginator: { type: Boolean, value: false },
         /**
-         * Flag indicating if the header titles should be rendered.
+         * Indicates if the header titles should be rendered.
          */
         header: { type: Boolean, value: false },
         /**
-         * Flag indicating if the footer titles should be rendered.
+         * Indicates if the footer titles should be rendered.
          */
         footer: { type: Boolean, value: false },
         /**
-         * Flag indicating if the debug logs should be shown rather than the audit.
+         * Indicates if the debug logs should be shown rather than the audit.
          */
-        debug: { type: Boolean, value: false }
+        debug: { type: Boolean, value: false },
+        /**
+         * Indicates if we should use local time in the table instead of UTC.
+         */
+        local: { type: Boolean, value: false }
     },
 
     ready: function() {
@@ -105,6 +109,7 @@ Polymer({
             lastPageIndex = pageSize;
         }
         this._currentPage = logs.slice(0,lastPageIndex);
+        this._currentPage.reverse();
         this._logIndex = lastPageIndex;
         this._hasPreviousPage = false;
         this._hasNextPage = true;
@@ -123,6 +128,7 @@ Polymer({
         }
 
         this._currentPage =  logs.slice(logIndex-pageSize,logIndex);
+        this._currentPage.reverse();
         this._logIndex =  logIndex-pageSize;
         this._hasNextPage =  true;
 
@@ -141,6 +147,7 @@ Polymer({
         var logIndex = this.lastAction === 'previousPage' ? this._logIndex + pageSize : this._logIndex;
 
         this._currentPage =  logs.slice(logIndex,logIndex+pageSize);
+        this._currentPage.reverse();
         this._logIndex =  logIndex+pageSize;
         this._hasPreviousPage =  true;
 
@@ -157,6 +164,7 @@ Polymer({
         var logs = this._logs;
         var pageSize = this.pagesize;
         this._currentPage = logs.slice(logs.length-pageSize,logs.length);
+        this._currentPage.reverse();
         this._logIndex = logs.length-pageSize;
         this._hasNextPage = false;
         this._hasPreviousPage = true;
@@ -207,6 +215,7 @@ Polymer({
      * @private
      */
     _fetchLogsCallback: function(logs) {
+        logs.reverse();
         if (logs.length === 0) {
             this._logs = null;
             this._noLogs = true;
@@ -221,6 +230,7 @@ Polymer({
             this._currentPage = logs;
             this._hasPreviousPage = false;
         }
+        this._currentPage.reverse();
         this._hasNextPage = false;
         this._logs = logs;
         this._hasLogs = true;
@@ -229,6 +239,52 @@ Polymer({
         if (Object.keys(this.fields).length > 0) {
             this._hideColumns();
         }
+        this._determinePaginatorLabels();
+    },
+
+    /**
+     * Dynamically determine the paginator labels based on what order the logs are displayed in.
+     * @private
+     */
+    _determinePaginatorLabels: function() {
+        if (this._logs[0].time > this._logs[this._logs.length-1].time) {
+            this.lastPageLabel = 'Latest';
+            this.previousPageLabel = 'Later';
+            this.nextPageLabel= 'Earlier';
+            this.firstPageLabel = 'Earliest';
+        }
+        else {
+            this.lastPageLabel = 'Earliest';
+            this.previousPageLabel = 'Earlier';
+            this.nextPageLabel= 'Later';
+            this.firstPageLabel = 'Latest';
+        }
+    },
+
+    /**
+     * Format the time into a special long format that includes milliseconds.
+     * @return {string} of the formatted date
+     * @private
+     */
+    _formatDate: function(ISODate) {
+        if (!this.local) {
+            return ISODate;
+        }
+        var date = new Date(ISODate);
+        // Format the values properly (make sure we have sufficient zeroes)
+        var minuteFormatted = ('0'+date.getMinutes()).slice(-2),
+            secondFormatted = ('0'+date.getSeconds()).slice(-2),
+            millisecondFormatted = ('00'+date.getMilliseconds()).slice(-3);
+        // Get the original long format date to parse
+        var toParse = date.toString();
+        // Now get the time string used in the long format, such as 12:46:35
+        var timeString = date.getHours() + ":" + minuteFormatted + ":" + secondFormatted;
+        // Now we insert the milliseconds value from the date into our long format string
+        var datetime = toParse.substring(0, toParse.indexOf(timeString)+timeString.length) + "." + millisecondFormatted;
+        // Now we get the timezone from the original date
+        var timezone = toParse.substring(toParse.indexOf(timeString)+timeString.length);
+        // Return new modified long format date
+        return datetime+timezone;
     },
 
     /**

@@ -1,0 +1,326 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+<link rel="import" href="../../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-item/paper-item-body.html">
+<link rel="import" href="../../paper-tabs/paper-tabs.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../iron-selector/iron-selector.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../../iron-icon/iron-icon.html">
+<link rel="import" href="../../iron-label/iron-label.html">
+<link rel="import" href="../../iron-pages/iron-pages.html">
+<link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../bridgeit-query-editor/bridgeit-query-editor.html">
+<link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
+
+<!--
+Displays an editor that can be used for building cross collection query chains for data stored by the BridgeIt Services.
+
+Example:
+
+		<bridgeit-query-chain-editor realm="myRealm"
+                                 account="myAccount">
+		</bridgeit-query-chain-editor>
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-query-chain-editor">
+    <template>
+        <style is="custom-style" type="text/css">
+            /* Customizable Styles */
+            .section {
+                @apply(--query-chain-editor-section);
+            }
+            .palette {
+                @apply(--query-chain-editor-palette);
+            }
+            .palette-item {
+                cursor:move;
+                @apply(--query-chain-editor-palette-item);
+            }
+            .workflow {
+                @apply(--query-chain-editor-workflow);
+            }
+            .workflow-drop-area {
+                padding-bottom:100px;
+                @apply(--query-chain-editor-workflow-drop-area);
+            }
+            .execute {
+                text-align:center;
+                @apply(--query-chain-editor-execute);
+            }
+            .execute-item {
+                height:300px;
+                @apply(--query-chain-editor-execute);
+            }
+            .results {
+                @apply(--query-chain-editor-results);
+            }
+            .header-panel {
+                height:300px;
+                @apply(--query-chain-editor-header-panel);
+            }
+            .tab-content {
+                height:260px;
+                border:1px solid #777;
+                overflow-y:scroll;
+                @apply(--query-chain-editor-tab-content);
+            }
+            /* Preset Styles */
+            .palette, .workflow, .execute {
+                padding-right:10px;
+            }
+            .container {
+                max-width:none;
+            }
+            .execute-item paper-button {
+                position: relative;
+                top: 50%;
+                transform: translateY(-50%);
+                -webkit-transform: translateY(-50%);
+                -ms-transform: translateY(-50%);
+            }
+            iron-label {
+                font-family: 'Roboto', 'Noto', sans-serif;
+                -webkit-font-smoothing: antialiased;
+                font-size: 16px;
+                font-weight: 400;
+            }
+            .empty-span {
+                height:300px;
+                display:block;
+            }
+            .no-padding {
+                padding:0;
+            }
+            .right {
+                text-align: right;
+            }
+            .hidden-header {
+                color:transparent;
+            }
+            /* Custom Styles */
+            paper-toolbar {
+                --paper-toolbar-height: 40px;
+            }
+            paper-tabs {
+                --paper-tabs: {
+                    height:40px;
+                };
+            }
+            paper-tab {
+                --paper-tab: {
+                    background: #3f51b5;
+                    color: #ffffff;
+                    height:40px;
+                };
+            }
+            paper-dropdown-menu {
+                --paper-dropdown-menu: {
+                    width:100%;
+                };
+            }
+            bridgeit-code-editor {
+                --code-editor: {
+                    height:260px;
+                };
+            }
+        </style>
+        <div class="container flex layout horizontal">
+            <div class="flex-4 section palette">
+                <h2>Palette</h2>
+                <div class="container flex layout vertical no-padding">
+                    <div class="flex">
+                        <div class="header-panel">
+                            <paper-header-panel>
+                                <paper-toolbar><div>Queries</div></paper-toolbar>
+                                <template is="dom-repeat" items="{{_queries}}" as="query">
+                                    <paper-item class="palette-item" draggable="true" on-dragstart="_startDragQuery">
+                                        <paper-item-body>
+                                            <div>{{query._id}}</div>
+                                        </paper-item-body>
+                                        <iron-icon icon="search"></iron-icon>
+                                    </paper-item>
+                                </template>
+                            </paper-header-panel>
+                        </div>
+                    </div>
+                    <div class="flex">
+                        <div class="header-panel">
+                            <paper-header-panel>
+                                <paper-toolbar><div>Transformers</div></paper-toolbar>
+                                <template is="dom-repeat" items="{{_transformers}}" as="transformer">
+                                    <paper-item class="palette-item" draggable="true" on-dragstart="_startDragTransformer" >
+                                        <paper-item-body>
+                                            <div>{{transformer._id}}</div>
+                                        </paper-item-body>
+                                        <iron-icon icon="compare-arrows"></iron-icon>
+                                    </paper-item>
+                                </template>
+                            </paper-header-panel>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-4 section workflow">
+                <h2>Workflow</h2>
+                <div class="container flex layout vertical no-padding">
+                    <div class="flex workflow-drop-area" on-dragover="_dragOverWorkflow" on-drop="_dropInWorkflow">
+                        <div class="header-panel">
+                            <paper-header-panel>
+                                <paper-toolbar><div>Request Parameters</div></paper-toolbar>
+                                <bridgeit-code-editor value="{{workflowItem.value}}"></bridgeit-code-editor>
+                            </paper-header-panel>
+                        </div>
+                        <template is="dom-repeat" items="{{_workflow}}" as="workflowItem">
+                            <template is="dom-if" if="{{_isQuery(workflowItem.type)}}">
+                                <paper-tabs selected="{{workflowItem.selected}}" no-bar>
+                                    <paper-tab>Properties</paper-tab>
+                                    <paper-tab>Params</paper-tab>
+                                    <paper-tab>Query</paper-tab>
+                                    <paper-tab>Raw</paper-tab>
+                                </paper-tabs>
+
+                                <iron-pages selected="{{workflowItem.selected}}">
+                                    <div class="tab-content"> <!-- Properties Page -->
+                                        <div class="container flex layout vertical">
+                                            <div class="flex">
+                                                <paper-input label="Query ID:" value="{{workflowItem.bindings.properties.id}}"></paper-input>
+                                            </div>
+                                            <div class="flex">
+                                                <paper-dropdown-menu label="Service:">
+                                                    <iron-selector class="dropdown-content" attr-for-selected="name" selected="{{workflowItem.bindings.properties.service}}">
+                                                        <div name="location">Location</div>
+                                                    </iron-selector>
+                                                </paper-dropdown-menu>
+                                            </div>
+                                            <div class="flex">
+                                                <paper-dropdown-menu label="Collection:">
+                                                    <iron-selector class="dropdown-content" attr-for-selected="name" selected="{{workflowItem.bindings.properties.collection}}">
+                                                        <div name="regions">Regions</div>
+                                                    </iron-selector>
+                                                </paper-dropdown-menu>
+                                            </div>
+                                            <div class="flex">
+                                                <iron-label>
+                                                    Query Type
+                                                    <paper-radio-group selected="{{workflowItem.bindings.properties.type}}">
+                                                        <paper-radio-button name="find">Find</paper-radio-button>
+                                                        <paper-radio-button name="aggregate">Aggregate</paper-radio-button>
+                                                    </paper-radio-group>
+                                                </iron-label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-content"> <!-- Params Page -->
+                                        <table>
+                                            <thead>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Description</th>
+                                                <th>Default</th>
+                                            </thead>
+                                            <template is="dom-repeat" items="{{workflowItem.bindings.params}}" as="param">
+                                                <tr>
+                                                    <td>
+                                                        <paper-input value="{{param.name}}"></paper-input>
+                                                    </td>
+                                                    <td>
+                                                        <paper-input value="{{param.type}}"></paper-input>
+                                                    </td>
+                                                    <td>
+                                                        <paper-input value="{{param.description}}"></paper-input>
+                                                    </td>
+                                                    <td>
+                                                        <paper-input value="{{param.default}}"></paper-input>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <tr>
+                                                <td colspan="4" class="right">
+                                                    <paper-button on-click="_addParam" data-workflow-item$="{{workflowItem.id}}">
+                                                        <iron-icon icon="add-circle" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                    </paper-button>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="tab-content"> <!-- Query Page -->
+                                        <template is="dom-if" if="{{_isAggregate(workflowItem.bindings.properties.type)}}">
+                                            Aggregate Editor
+                                        </template>
+                                        <template is="dom-if" if="{{_isFind(workflowItem.bindings.properties.type)}}">
+                                            <bridgeit-query-editor account="[[account]]" realm="[[realm]]"
+                                                                   service="[[workflowItem.bindings.properties.service]]"
+                                                                   collection="[[workflowItem.bindings.properties.collection]]"></bridgeit-query-editor>
+                                        </template>
+                                    </div>
+                                    <div class="tab-content"> <!-- Raw Page -->
+                                        <bridgeit-code-editor></bridgeit-code-editor>
+                                    </div>
+                                </iron-pages>
+                            </template>
+                            <template is="dom-if" if="{{_isTransformer(workflowItem.type)}}">
+                                <paper-tabs selected="{{workflowItem.selected}}" no-bar>
+                                    <paper-tab>Properties</paper-tab>
+                                    <paper-tab>Transformer</paper-tab>
+                                    <paper-tab>Raw</paper-tab>
+                                </paper-tabs>
+
+                                <iron-pages selected="{{workflowItem.selected}}">
+                                    <div class="tab-content"> <!-- Properties Page -->
+                                        <div class="container flex layout vertical">
+                                            <div class="flex">
+                                                <paper-input label="Transformer ID:" value="{{workflowItem.bindings.properties.id}}"></paper-input>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-content"> <!-- Transformer Page -->
+                                        Transformer Page
+                                    </div>
+                                    <div class="tab-content"> <!-- Raw Page -->
+                                        <bridgeit-code-editor></bridgeit-code-editor>
+                                    </div>
+                                </iron-pages>
+                            </template>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 section execute">
+                <h2 class="hidden-header">Execute</h2>
+                <span class="empty-span"></span>
+                <template is="dom-repeat" items="{{_workflow}}" as="transformer">
+                    <div class="execute-item">
+                        <paper-button raised>
+                            <iron-icon icon="arrow-forward"></iron-icon>
+                        </paper-button>
+                    </div>
+                </template>
+            </div>
+            <div class="flex-3 section results">
+                <h2 class="hidden-header">Results</h2>
+                <div class="container flex layout vertical no-padding">
+                    <div class="flex">
+                        <span class="empty-span"></span>
+                        <template is="dom-repeat" items="{{_workflow}}" as="transformer">
+                            <div class="header-panel">
+                                <paper-header-panel>
+                                    <paper-toolbar><div>Result</div></paper-toolbar>
+                                    <bridgeit-code-editor readonly></bridgeit-code-editor>
+                                </paper-header-panel>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</dom-module>
+
+<script src="./bridgeit-query-chain-editor.js"></script>

@@ -26,14 +26,18 @@ Example:
                @apply(--action-editor-wrapper);
            }
            .itemsContainer {
-               width:130px;
+               width:160px;
                @apply(--action-editor-item-container);
+           }
+           .fixedDiv {
+               width:160px;
            }
            .actionContainer {
                border: 1px solid #999;
                padding:10px;
                background-color:#efefef;
                min-width:345px;
+               min-height:600px;
                @apply(--action-editor-action-container);
            }
            #actionForm {
@@ -57,18 +61,24 @@ Example:
                line-height: 20px;
                @apply(--action-editor-task-panel-header);
            }
-           .taskPanel .taskItem {
+           .taskPanel .taskItemPos, .taskPanel .taskClump {
                height: 25px;
+               min-height: 25px;
                line-height:25px;
-               margin: 10px auto;
+               min-width: 70px;
+               width: 90%;
+           }
+           .taskPanel .taskClump {
+               font-weight: bold;
+           }
+           .taskPanel .taskItem {
+               margin: 5px auto;
                padding:2px;
-               text-align:center;
-               width: 100px;
                cursor:move;
+               text-align: center;
                border-radius: 5px;
-               font-size: 12px;
-               overflow:hidden;
                background-color:#e5e5e5;
+               font-size: 12px;
                @apply(--action-editor-task-panel-item);
            }
            .taskPanel .taskItem:hover {
@@ -172,7 +182,6 @@ Example:
            }
            label {
                font-weight: 700;
-               display:block;
                @apply(--action-editor-label);
            }
            .form-control {
@@ -233,11 +242,20 @@ Example:
                display:none;
            }
            .eventHandlerLbl {
+               display:block;
                margin-bottom:5px;
            }
            .pointer {
-               margin:5px 0 5px 0;
                cursor:pointer;
+           }
+           .leftPane {
+               overflow-y: scroll;
+           }
+           .taskPane {
+               height: 500px;
+           }
+           .taskBuffer {
+               margin-bottom: 15px;
            }
         </style>
         <template is="dom-if" if="{{_taskGroupSchemas}}">
@@ -255,25 +273,31 @@ Example:
             </div>
             <div class="actionWrapper layout horizontal">
                 <div class="itemsContainer">
-                    <div class="layout vertical wrap">
-                        <div class="taskPanel">
-                            <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
-                            <div class="content layout vertical wrap">
-                                <template is="dom-repeat" items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
-                                    <div class="flex taskGroup taskItem" draggable="true" on-dragstart="_startDragGroup" title$="{{item.description}}">
-                                        <div class="title">{{item.label}}</div>
-                                    </div>
-                                </template>
+                    <div id="fixedDiv" class="fixedDiv">
+                        <div class="layout vertical wrap">
+                            <div class="taskPanel">
+                                <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
+                                <div class="content layout vertical leftPane">
+                                    <template is="dom-repeat" items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
+                                        <div class="flex taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" title$="{{item.description}}">
+                                            <div class="title">{{item.label}}</div>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
-                        </div>
-                        <div class="taskPanel">
-                            <div class="header" on-click="_toggleTask">Tasks<div class="arrow"></div></div>
-                            <div class="content layout vertical wrap">
-                                <template is="dom-repeat" items="{{_taskSchemas}}" sort="_sortTaskItems">
-                                    <div class="flex taskItem" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
-                                        <div class="title">{{item.label}}</div>
-                                    </div>
-                                </template>
+                            <div class="taskPanel">
+                                <div class="header" on-click="_toggleTask">Tasks<div class="arrow"></div></div>
+                                <div class="content layout vertical leftPane taskPane">
+                                    <template is="dom-repeat" items="{{_taskSchemasUI}}">
+                                        <div class="taskClump">{{item.label}}</div>
+                                        <template is="dom-repeat" items="{{item.schemas}}">
+                                            <div class="flex taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
+                                                <div class="title">{{item.labelUI}}</div>
+                                            </div>
+                                        </template>
+                                        <div class="taskBuffer"/>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                     </div>
