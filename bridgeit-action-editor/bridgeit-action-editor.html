@@ -257,6 +257,30 @@ Example:
            .taskBuffer {
                margin-bottom: 15px;
            }
+           @-webkit-keyframes yellow-fade {   
+               0% {background: #ffff79;}
+               100% {background: none;}
+           }
+           @keyframes yellow-fade {
+               0% {background: #ffff79;}
+               100% {background: none;}
+           }
+           @-webkit-keyframes grow-bubble {
+               0% {transform: scale(0.2);}
+               100% {transform: scale(1.0);}
+           }
+           @keyframes grow-bubble {
+               0% {transform: scale(0.2);}
+               100% {transform: scale(1.0);}
+           }
+           .highlight {
+               -webkit-animation: yellow-fade 2s ease-in 1;
+               animation: yellow-fade 2s ease-in 1;
+           }
+           .growbubble {
+               -webkit-animation: grow-bubble 500ms;
+               animation: grow-bubble 500ms;
+           }
         </style>
         <template is="dom-if" if="{{_taskGroupSchemas}}">
             <content select="bridgeit-action-list"></content>
@@ -279,7 +303,7 @@ Example:
                                 <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane">
                                     <template is="dom-repeat" items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
-                                        <div class="flex taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" title$="{{item.description}}">
+                                        <div class="flex taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                             <div class="title">{{item.label}}</div>
                                         </div>
                                     </template>
@@ -291,7 +315,7 @@ Example:
                                     <template is="dom-repeat" items="{{_taskSchemasUI}}">
                                         <div class="taskClump">{{item.label}}</div>
                                         <template is="dom-repeat" items="{{item.schemas}}">
-                                            <div class="flex taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
+                                            <div class="flex taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                                 <div class="title">{{item.labelUI}}</div>
                                             </div>
                                         </template>

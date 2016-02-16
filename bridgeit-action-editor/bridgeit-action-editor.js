@@ -691,7 +691,7 @@ Polymer({
         }
         return taskGroups;
     },
-
+    
     /**
      * Task group ondragstart event handler.
      * @param e
@@ -700,6 +700,12 @@ Polymer({
     _startDragGroup: function(e) {
         e.dataTransfer.setData('action/group', e.model.item); //indicate that this item is a task group
         this._lastDragged = e.model.item;//reference task group schema so we can populate the UI on drop
+        
+        // Add a highlight effect showing all droppable areas for groups
+        var acont = this.querySelectorAll('.actionContainer');
+        Array.prototype.forEach.call(acont, function(el, i) {
+            el.classList.add('highlight');
+        });
     },
 
     /**
@@ -710,8 +716,31 @@ Polymer({
     _startDragTask: function(e) {
         e.dataTransfer.setData('action/task', e.model.item); //indicate that this item is a task
         this._lastDragged = e.model.item; //reference task schema so we can populate the UI on drop
+        
+        // Add a highlight effect showing all droppable areas for tasks
+        var tgroups = this.querySelectorAll('.task-group');
+        Array.prototype.forEach.call(tgroups, function(el, i) {
+            el.classList.add('highlight');
+        });
     },
-
+    
+    /**
+     * Action ondragend common handler to remove all existing highlights
+     * @param e
+     * @private
+     */
+    _dragEndCommon: function(e) {
+        var tgroups = this.querySelectorAll('.task-group');
+        Array.prototype.forEach.call(tgroups, function(el, i) {
+            el.classList.remove('highlight');
+        });
+        
+        var acont = this.querySelectorAll('.actionContainer');
+        Array.prototype.forEach.call(acont, function(el, i) {
+            el.classList.remove('highlight');
+        });
+    },
+    
     /**
      * Action ondragover event handler.
      * @param e
@@ -747,7 +776,25 @@ Polymer({
         if (!e.dataTransfer.getData('action/group')) { e.stopPropagation(); return; }
         //add new task group
         var schema = JSON.parse(JSON.stringify(this._lastDragged)); //clone object (it is valid JSON so this technique is sufficient)
-        this.push('_taskGroups',{"id":"taskGroup"+this._taskGroups.length,"schema":schema,"tasks":[]});
+        var newid = "taskGroup"+this._taskGroups.length;
+        this.push('_taskGroups',{"id":newid,"schema":schema,"tasks":[]});
+        
+        // We'll play a "grow" animation when an action is added
+        var _this = this;
+        setTimeout(function() {
+            var justadded = _this.querySelector('#' + newid);
+            if (justadded) {
+                justadded.classList.add('growbubble');
+            }
+        },0);
+        
+        // Remove the grow animation after it's complete, so that the highlight keyframe still works properly
+        setTimeout(function() {
+            var justadded = _this.querySelector('#' + newid);
+            if (justadded) {
+                justadded.classList.remove('growbubble');
+            }
+        },550);
     },
 
     /**
@@ -765,7 +812,7 @@ Polymer({
         var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
         this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
     },
-
+    
     /**
      * Misc ondrop event handler for preventing drops.
      * @param e
@@ -774,7 +821,7 @@ Polymer({
     _preventDrop: function(e) {
         e.stopPropagation();
     },
-
+    
     /**
      * Delete a task group.
      * @param e
