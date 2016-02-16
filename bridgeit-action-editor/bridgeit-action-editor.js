@@ -12,6 +12,11 @@ Polymer({
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
         realm: { type: String },
+        /**
+         * Defines how much top padding (without units) we want for the sidebar (containing actions / tasks)
+         * This is because the sidebar will "sticky scroll" to always be in view
+         * But we might have an absolutely positioned header or similar that we want to account for
+         */
         barpad: { type: Number, value: 0, reflectToAttribute: true, notify: true }
     },
 
