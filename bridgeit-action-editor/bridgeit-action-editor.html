@@ -363,19 +363,19 @@ Example:
                                  -->
                                 <template is="dom-repeat" items="{{_taskGroups}}" as="group">
                                     <div id$="{{group.id}}" class="task-group" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
-                                        <div class="buttons" on-drop="_preventDrop">
+                                        <div class="buttons">
                                             <button type="button" on-click="_moveTaskGroupUp">Up</span></button>
                                             <button type="button" on-click="_moveTaskGroupDown">Down</button>
                                             <button type="button" on-click="_deleteTaskGroup">Remove</button>
                                         </div>
-                                        <div class="title" on-drop="_preventDrop" on-click="_toggleTask">{{group.schema.title}} <span class="smallerF">([[group.schema.taskcount]] tasks)</span><div class="arrow"></div></div>
+                                        <div class="title" on-click="_toggleTask">{{group.schema.title}} <span class="smallerF">([[group.schema.taskcount]] tasks)</span><div class="arrow"></div></div>
                                         <div class="content">
-                                            <label title="The task group name" on-drop="_preventDrop">
+                                            <label title="The task group name">
                                                 <span class="required">*</span><span>Task Group Name</span>
                                                 <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
                                             </label>
                                             <template is="dom-repeat" items="{{_toArray(group.schema.properties.required)}}" as="property" sort="_sortProperties">
-                                                <label on-drop="_preventDrop">
+                                                <label>
                                                     <span class="required">*</span><span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
@@ -394,7 +394,7 @@ Example:
                                                 </label>
                                             </template>
                                             <template is="dom-repeat" items="{{_toArray(group.schema.properties.optional)}}" as="property" sort="_sortProperties">
-                                                <label on-drop="_preventDrop" class$="{{_addBooleanClass(property.type)}}">
+                                                <label class$="{{_addBooleanClass(property.type)}}">
                                                     <span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
@@ -416,7 +416,7 @@ Example:
                                                 </label>
                                             </template>
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                                <div class="task toggled" on-drop="_preventDrop">
+                                                <div class="task toggled">
                                                     <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
                                                     <div class="title" on-click="_toggleTask">{{task.schema.title}}<span class="details"> (Task Name: {{task.name}})</span><div class="arrow toggled"></div></div>
                                                     <div class="content toggled">

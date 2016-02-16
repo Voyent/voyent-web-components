@@ -817,24 +817,34 @@ Polymer({
         //add new task (with schema reference) to task group
         var schema = JSON.parse(JSON.stringify(this._lastDragged)); //clone object (it is valid JSON so this technique is sufficient)
         
+        // Try to get our task group index from the target ID
+        // However there is a chance the user dropped the element on a component inside the container
+        // In that case our target ID will be invalid
+        // If that happens we will reverse traverse looking for "taskGroupX" ID to strip and use
         var taskGroupIndex = e.target.id.slice(-1);
-        var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
+        if (!taskGroupIndex) {
+            var currentParent = e.target.parentNode;
+            do {
+                if (currentParent.id && currentParent.id.startsWith('taskGroup')) {
+                    taskGroupIndex = currentParent.id.slice(-1);
+                    break;
+                }
+                
+                currentParent = currentParent.parentNode;
+            } while(currentParent);
+        }
         
-        // Increase our task count and reflect the new number on the UI
-        this._taskGroups[taskGroupIndex].schema.taskcount++;
-        this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', this._taskGroups[taskGroupIndex].schema.taskcount);
-        
-        // Update our task group list
-        this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
-    },
-    
-    /**
-     * Misc ondrop event handler for preventing drops.
-     * @param e
-     * @private
-     */
-    _preventDrop: function(e) {
-        e.stopPropagation();
+        // Only add if we actually have a proper index figured out
+        if (taskGroupIndex) {
+            var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
+            
+            // Increase our task count and reflect the new number on the UI
+            this._taskGroups[taskGroupIndex].schema.taskcount++;
+            this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', this._taskGroups[taskGroupIndex].schema.taskcount);
+            
+            // Update our task group list
+            this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
+        }
     },
     
     /**
