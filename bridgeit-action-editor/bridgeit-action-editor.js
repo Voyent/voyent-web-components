@@ -781,6 +781,9 @@ Polymer({
         if (!e.dataTransfer.getData('action/group')) { e.stopPropagation(); return; }
         //add new task group
         var schema = JSON.parse(JSON.stringify(this._lastDragged)); //clone object (it is valid JSON so this technique is sufficient)
+        
+        schema.taskcount = 0;
+        
         var newid = "taskGroup"+this._taskGroups.length;
         this.push('_taskGroups',{"id":newid,"schema":schema,"tasks":[]});
         
@@ -813,8 +816,15 @@ Polymer({
         if (!e.dataTransfer.getData('action/task')) { e.stopPropagation(); return; }
         //add new task (with schema reference) to task group
         var schema = JSON.parse(JSON.stringify(this._lastDragged)); //clone object (it is valid JSON so this technique is sufficient)
+        
         var taskGroupIndex = e.target.id.slice(-1);
         var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
+        
+        // Increase our task count and reflect the new number on the UI
+        this._taskGroups[taskGroupIndex].schema.taskcount++;
+        this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', this._taskGroups[taskGroupIndex].schema.taskcount);
+        
+        // Update our task group list
         this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
     },
     
@@ -853,6 +863,11 @@ Polymer({
         for (var i=this._taskGroups.length-1; i>=0; i--) {
             for (var j=this._taskGroups[i].tasks.length-1; j>=0; j--) {
                 if (task == this._taskGroups[i].tasks[j]) {
+                    // Reduce our task count for the action container parent
+                    this._taskGroups[i].schema.taskcount--;
+                    this.set('_taskGroups.'+i+'.schema.taskcount', this._taskGroups[i].schema.taskcount);
+                    
+                    // Then remove the entire task itself
                     this.splice('_taskGroups.'+i+'.tasks',j,1);
                 }
             }
@@ -912,13 +927,18 @@ Polymer({
      * @private
      */
     _toggleTask: function(e) {
+        // Get our parent element to toggle
+        // We also have to account for the arrow or smaller span text being clicked
         var parent = Polymer.dom(e.target).parentNode;
-        if (e.target.classList.contains('arrow')) {
+        if ((e.target.classList.contains('arrow')) ||
+           (e.target.tagName === 'SPAN')) {
             parent = Polymer.dom(parent).parentNode;
         }
+        
         parent.classList.toggle('toggled');
         parent.querySelector('.content').classList.toggle('toggled');
         parent.querySelector('.arrow').classList.toggle('toggled');
+        parent.querySelector('.details').classList.toggle('toggled');
     },
 
     /**

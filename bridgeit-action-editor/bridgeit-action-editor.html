@@ -44,6 +44,15 @@ Example:
                background-color:transparent;
                @apply(--action-editor-form);
            }
+           .smallerF, .details {
+               font-size: smaller;
+           }
+           .details {
+               display: inline;
+           }
+           .details.toggled {
+               display: none;
+           }
            .taskPanel {
                border: 1px solid #999;
                border-bottom:0;
@@ -359,7 +368,7 @@ Example:
                                             <button type="button" on-click="_moveTaskGroupDown">Down</button>
                                             <button type="button" on-click="_deleteTaskGroup">Remove</button>
                                         </div>
-                                        <div class="title" on-drop="_preventDrop" on-click="_toggleTask">{{group.schema.title}}<div class="arrow"></div></div>
+                                        <div class="title" on-drop="_preventDrop" on-click="_toggleTask">{{group.schema.title}} <span class="smallerF">([[group.schema.taskcount]] tasks)</span><div class="arrow"></div></div>
                                         <div class="content">
                                             <label title="The task group name" on-drop="_preventDrop">
                                                 <span class="required">*</span><span>Task Group Name</span>
@@ -409,7 +418,7 @@ Example:
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
                                                 <div class="task toggled" on-drop="_preventDrop">
                                                     <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
-                                                    <div class="title" on-click="_toggleTask">{{task.schema.title}}<div class="arrow toggled"></div></div>
+                                                    <div class="title" on-click="_toggleTask">{{task.schema.title}}<span class="details"> (Task Name: {{task.name}})</span><div class="arrow toggled"></div></div>
                                                     <div class="content toggled">
                                                         <label title="The task name">
                                                             <span class="required">*</span><span>Task Name</span>
