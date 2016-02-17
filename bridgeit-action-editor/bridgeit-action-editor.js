@@ -141,6 +141,7 @@ Polymer({
         this._loadHandler(action._id);
         this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
         this._taskGroups = this._convertActionToUI(this._loadedAction);
+        
         //hack way to get any select components in the action to properly select the loaded value
         setTimeout(function() {
             this.set('_taskGroups',JSON.parse(JSON.stringify(this._taskGroups)));
@@ -665,6 +666,7 @@ Polymer({
             taskGroups[i].id = 'taskGroup'+i;
             //add schema inside task group for mapping UI values
             taskGroups[i].schema = JSON.parse(JSON.stringify(this._taskGroupSchemasMap[taskGroups[i].type ? taskGroups[i].type : 'parallel-taskgroup'])); //clone object (it is valid JSON so this technique is sufficient)
+            taskGroups[i].schema.taskcount = 0;
             (function(taskGroup) {
                 _this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
                     //move the task group properties to the value of each property in the schema
@@ -681,6 +683,7 @@ Polymer({
             for (var j=0; j<tasks.length; j++) {
                 //add schema inside task for mapping UI values
                 tasks[j].schema = JSON.parse(JSON.stringify(this._taskSchemasMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
+                taskGroups[i].schema.taskcount++;
                 (function(task) {
                     _this._processProperties(task.schema.properties,function(type,propName,property) {
                         //move the params values to the value of each property in the schema
