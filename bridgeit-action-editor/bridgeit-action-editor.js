@@ -788,7 +788,7 @@ Polymer({
         schema.taskcount = 0;
         
         var newid = "taskGroup"+this._taskGroups.length;
-        this.push('_taskGroups',{"id":newid,"schema":schema,"tasks":[]});
+        this.push('_taskGroups',{"id":newid,"name":'',"schema":schema,"tasks":[]});
         
         // We'll play a "grow" animation when an action is added
         var _this = this;
@@ -951,7 +951,9 @@ Polymer({
         parent.classList.toggle('toggled');
         parent.querySelector('.content').classList.toggle('toggled');
         parent.querySelector('.arrow').classList.toggle('toggled');
-        parent.querySelector('.details').classList.toggle('toggled');
+        if (parent.querySelector('.details')) {
+            parent.querySelector('.details').classList.toggle('toggled');
+        }
     },
 
     /**
@@ -1046,6 +1048,51 @@ Polymer({
      */
     _isCodeEditor: function(title) {
         return this._codeEditorProperties.indexOf(title.toLowerCase()) > -1;
+    },
+    
+    /**
+     * Template helper function
+     * Format the passed name with brackets and spacing as necessary
+     * This is meant to be used in the collapsed title of a task group
+     * @param name
+     * @returns {string}
+     * @private
+     */
+    _formatTaskName: function(name) {
+        if (typeof name !== 'undefined' && name) {
+            return ' (' + name + ')';
+        }
+    },
+    
+    /**
+     * Template helper function
+     * Format the passed name and task count with brackets and spacing as necessary
+     * Desired return format is (Name, X tasks)
+     * This is meant to be used in the title of an action container element
+     * @param name
+     * @param taskcount
+     * @return {string}
+     * @private
+     */
+    _formatContainerName: function(name, taskcount) {
+        var toReturn = ' (';
+        
+        if (typeof taskcount === 'undefined' || !taskcount) {
+            taskcount = 0;
+        }
+        
+        if (typeof name !== 'undefined' && name) {
+            toReturn += name + ', ';
+        }
+        
+        toReturn += taskcount + ' task';
+        // Pluralize if necessary
+        if (taskcount !== 1) {
+            toReturn += 's';
+        }
+        
+        toReturn += ')';
+        return toReturn;
     },
 
     /**
@@ -1144,11 +1191,5 @@ Polymer({
             console.log('Error in deleteHandler:',error);
             _this.fire('bridgeit-error', {error: error});
         });
-    },
-    
-    _formatTaskName: function(name) {
-        if (name) {
-            return " (" + name + ")";
-        }
     }
 });

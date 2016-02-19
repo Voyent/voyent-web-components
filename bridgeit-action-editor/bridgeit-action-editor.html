@@ -367,7 +367,7 @@ Example:
                                             <button type="button" on-click="_moveTaskGroupDown">Down</button>
                                             <button type="button" on-click="_deleteTaskGroup">Remove</button>
                                         </div>
-                                        <div class="title" on-click="_toggleTask">{{group.schema.title}} <span class="smallerF">([[group.schema.taskcount]] tasks)</span><div class="arrow"></div></div>
+                                        <div class="title" on-click="_toggleTask">{{group.schema.title}}<span class="smallerF">{{_formatContainerName(group.name, group.schema.taskcount)}}</span><div class="arrow"></div></div>
                                         <div class="content">
                                             <label title="The task group name">
                                                 <span class="required">*</span><span>Task Group Name</span>
