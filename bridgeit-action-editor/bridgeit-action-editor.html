@@ -416,7 +416,7 @@ Example:
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
                                                 <div class="task toggled">
                                                     <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
-                                                    <div class="title" on-click="_toggleTask">{{task.schema.title}}<span class="details"> (Task Name: {{task.name}})</span><div class="arrow toggled"></div></div>
+                                                    <div class="title" on-click="_toggleTask">{{task.schema.title}}<span class="details">{{_formatTaskName(task.name)}}</span><div class="arrow toggled"></div></div>
                                                     <div class="content toggled">
                                                         <label title="The task name">
                                                             <span class="required">*</span><span>Task Name</span>

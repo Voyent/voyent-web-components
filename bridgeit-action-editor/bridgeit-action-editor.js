@@ -1144,5 +1144,11 @@ Polymer({
             console.log('Error in deleteHandler:',error);
             _this.fire('bridgeit-error', {error: error});
         });
+    },
+    
+    _formatTaskName: function(name) {
+        if (name) {
+            return " (" + name + ")";
+        }
     }
 });
