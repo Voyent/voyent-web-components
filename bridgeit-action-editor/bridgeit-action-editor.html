@@ -1,6 +1,7 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../bridgeit-query-editor/bridgeit-query-editor.html">
 <link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
 
@@ -292,14 +293,14 @@ Example:
         <template is="dom-if" if="{{_taskGroupSchemas}}">
             <content select="bridgeit-action-list"></content>
             <div class="buttonContainer">
-                <button type="button" on-click="_resetEditor">New/Reset</button>
+                <paper-button raised on-click="_resetEditor">New/Reset</paper-button>
                 <template is="dom-if" if="{{!_loadedAction}}">
-                    <button type="button" on-click="_saveAction">Save</button>
+                    <paper-button raised on-click="_saveAction">Save</paper-button>
                 </template>
                 <template is="dom-if" if="{{_loadedAction}}">
-                    <button type="button" on-click="_updateAction">Update</button>
-                    <button type="button" on-click="_cloneAction">Clone<!-- (Save as new)--></button>
-                    <button type="button" on-click="_deleteAction">Delete</button>
+                    <paper-button raised on-click="_updateAction">Update</paper-button>
+                    <paper-button raised on-click="_cloneAction">Clone<!-- (Save as new)--></paper-button>
+                    <paper-button raised on-click="_deleteAction">Delete</paper-button>
                 </template>
             </div>
             <div class="actionWrapper layout horizontal">
