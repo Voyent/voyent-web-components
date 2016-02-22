@@ -214,6 +214,7 @@
       this.loggedIn = false;
       this.accessToken = null;
       this.timeRemaining = 0;
+      this.fire('bridgeit-session-disconnected');
     },
 
     /** 
