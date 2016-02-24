@@ -12,7 +12,7 @@
     properties: {
       heading: {
         notify: true,
-        type: String,
+        type: String
       },
       username: {
         notify: true,
