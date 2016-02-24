@@ -51,11 +51,11 @@
         notify: true,
         type: String
       },
-      showRealmInput: {
+      showrealminput: {
         notify: true,
         type: Boolean
       },
-      showAccountInput: {
+      showaccountinput: {
         notify: true,
         type: Boolean
       },
@@ -80,6 +80,12 @@
         return;
       }
       this.$$('#loginSpinner').active = true;
+      if(_this.showrealminput) {
+        authProvider.setAttribute("realm",_this.realm);
+      }
+      if(_this.showaccountinput){
+        authProvider.setAttribute("account",_this.account)
+      }
       authProvider.login(this.username, this.password, this.loginAsAdmin).then(function(){
         //clear password
         _this.password = '';
@@ -116,6 +122,6 @@
       this.username = '';
       this.password = '';
     }
-    
+
   });
 })();

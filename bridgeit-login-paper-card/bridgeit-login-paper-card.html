@@ -85,38 +85,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           max-height: 80px;
         }
       }
-      
-     
+
+
     </style>
-      <form is="iron-form" id="loginForm" on-submit="handleLogin">
-        <paper-card heading="{{heading}}" image="{{headerImage}}">
-          <div class="card-content">
-            <paper-input label="Username" required placeholder="Enter your username" value="{{username}}">
-               <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
+    <form is="iron-form" id="loginForm" on-submit="handleLogin">
+      <paper-card heading="{{heading}}" image="{{headerImage}}">
+        <div class="card-content">
+          <paper-input label="Username" required placeholder="Enter your username" value="{{username}}">
+            <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
+          </paper-input>
+          <paper-input type="password" required label="Password" placeholder="Enter your password" value="{{password}}">
+            <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1"></paper-icon-button>
+          </paper-input>
+          <template is="dom-if" if="[[showrealminput]]">
+            <paper-input required label="Realm" placeholder="Enter the realm" value="{{realm}}">
+              <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
             </paper-input>
-            <paper-input type="password" required label="Password" placeholder="Enter your password" value="{{password}}">
-              <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1"></paper-icon-button>
+          </template>
+          <template is="dom-if" if="[[showaccountinput]]">
+            <paper-input required label="Account" placeholder="Enter the account" value="{{account}}">
+              <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
             </paper-input>
-            <template is="dom-if" if="[[showRealmInput]]">
-              <paper-input required label="Realm" placeholder="Enter the realm" value="{{realm}}">
-                <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
-              </paper-input>
-            </template>
-            <template is="dom-if" if="[[showAccountInput]]">
-              <paper-input required label="Account" placeholder="Enter the account" value="{{account}}">
-                <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
-              </paper-input>
-            </template>
-            <content></content>
-          </div>
-          <div class="card-actions" style="text-align: right">
-            <paper-spinner id="loginSpinner" class="orange"></paper-spinner>
-            <div class="error"><span>{{error}}</span></div>
-            <paper-button raised colored on-click="cancel"><span>{{cancelLabel}}</span></paper-button>
-            <paper-button type="submit" raised colored on-click="handleLogin"><button><span>{{submitLabel}}</span></button></paper-button>
-          </div>
-        </paper-card>
-      </form>
+          </template>
+          <content></content>
+        </div>
+        <div class="card-actions" style="text-align: right">
+          <paper-spinner id="loginSpinner" class="orange"></paper-spinner>
+          <div class="error"><span>{{error}}</span></div>
+          <paper-button raised colored on-click="cancel"><span>{{cancelLabel}}</span></paper-button>
+          <paper-button type="submit" raised colored on-click="handleLogin"><button><span>{{submitLabel}}</span></button></paper-button>
+        </div>
+      </paper-card>
+    </form>
     </div>
   </template>
 </dom-module>
