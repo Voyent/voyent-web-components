@@ -490,7 +490,7 @@ Polymer({
             // For each schema we want to find if it matches a service
             // If not we'll default to using the "misc" group
             for (var s=0; s<serviceArray.length; s++) {
-                if (currentSchema.label.startsWith(serviceArray[s].label)) {
+                if (currentSchema.label.indexOf(serviceArray[s].label) === 0) {
                     hasMatch = true;
                     
                     // Add a UI label that removes the group name from the label
@@ -828,7 +828,7 @@ Polymer({
         if (!taskGroupIndex) {
             var currentParent = e.target.parentNode;
             do {
-                if (currentParent.id && currentParent.id.startsWith('taskGroup')) {
+                if (currentParent.id && currentParent.id.indexOf('taskGroup') === 0) {
                     taskGroupIndex = currentParent.id.slice(-1);
                     break;
                 }
