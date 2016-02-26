@@ -9,7 +9,6 @@
 <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
-<link rel="import" href="../../iron-selector/iron-selector.html">
 <link rel="import" href="../../iron-icons/iron-icons.html">
 <link rel="import" href="../../iron-icon/iron-icon.html">
 <link rel="import" href="../../iron-label/iron-label.html">
@@ -44,7 +43,20 @@ Example:
                 @apply(--query-chain-editor-palette-item);
             }
             .workflow {
+                border: 1px dotted transparent;
+                background-color: transparent;
                 @apply(--query-chain-editor-workflow);
+            }
+            @-webkit-keyframes yellow-fade {   
+                0% {background: #ffff79;}
+            }
+            @keyframes yellow-fade {
+                0% {background: #ffff79;}
+            }
+            .dropzone {
+                border: 1px dotted black;
+                -webkit-animation: yellow-fade 1500ms ease-in 1;
+                animation: yellow-fade 1500ms ease-in 1;
             }
             .workflow-drop-area {
                 padding-bottom:100px;
@@ -63,17 +75,18 @@ Example:
             }
             .header-panel {
                 height:300px;
+                border: 1px solid #777;
                 @apply(--query-chain-editor-header-panel);
             }
             .tab-content {
                 height:260px;
-                border:1px solid #777;
+                border: 1px solid #777;
                 overflow-y:scroll;
                 @apply(--query-chain-editor-tab-content);
             }
             /* Preset Styles */
             .palette, .workflow, .execute {
-                padding-right:10px;
+                padding: 0 10px 0 10px;
             }
             .container {
                 max-width:none;
@@ -107,6 +120,10 @@ Example:
             /* Custom Styles */
             paper-toolbar {
                 --paper-toolbar-height: 40px;
+                --paper-toolbar: {
+                    background: rgba(2, 114, 68, 0.8);
+                    color: #ffffff;
+                }
             }
             paper-tabs {
                 --paper-tabs: {
@@ -115,7 +132,7 @@ Example:
             }
             paper-tab {
                 --paper-tab: {
-                    background: #3f51b5;
+                    background: rgba(2, 114, 68, 0.8);
                     color: #ffffff;
                     height:40px;
                 };
@@ -132,21 +149,73 @@ Example:
             }
         </style>
         <div class="container flex layout horizontal">
-            <div class="flex-4 section palette">
+            <div class="flex-2">
+                <h3>Current Name</h3>
+                
+                <div class="flex layout vertical">
+                    <paper-input label="Query Chain Workflow Name" value="{{_workflowName}}" required="true" minlength="3" maxlength="25"></paper-input>
+                    <div class="flex layout horizontal">
+                        <paper-button on-click="_saveWorkflow">Save</paper-button>
+                        <paper-button on-click="_resetWorkflow">Reset</paper-button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex-3">
+                <h3>Saved Workflows</h3>
+                
+                <div class="flex">
+                    <table>
+                        <tbody>
+                            <template is="dom-repeat" items="[[_savedWorkflows]]" as="savedItem">
+                                <tr>
+                                    <td>[[savedItem.name]]</td>
+                                    <td><paper-button on-click="_loadWorkflow" data-workflow-item$="{{savedItem.id}}">View</paper-button></td>
+                                    <td><paper-button on-click="_removeWorkflow" data-workflow-item$="{{savedItem.id}}">Delete</paper-button></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="flex-1">
+            </div>
+            
+            <div class="flex-2">
+            </div>
+        </div>
+        
+        <div class="container flex layout horizontal">
+            <div class="flex-2 section palette">
                 <h2>Palette</h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
                         <div class="header-panel">
                             <paper-header-panel>
                                 <paper-toolbar><div>Queries</div></paper-toolbar>
-                                <template is="dom-repeat" items="{{_queries}}" as="query">
-                                    <paper-item class="palette-item" draggable="true" on-dragstart="_startDragQuery">
-                                        <paper-item-body>
-                                            <div>{{query._id}}</div>
-                                        </paper-item-body>
-                                        <iron-icon icon="search"></iron-icon>
-                                    </paper-item>
-                                </template>
+                                
+                                <div class="layout horizontal flex">
+                                    <paper-dropdown-menu label="Category">
+                                        <paper-listbox class="dropdown-content" selected="{{selectedQuery}}">
+                                            <template is="dom-repeat" items="[[_queryCategories]]" as="qcategory">
+                                                <paper-item>[[qcategory.name]]</paper-item>
+                                            </template>
+                                        </paper-listbox>
+                                    </paper-dropdown>
+                                </div>
+                                
+                                <div class="flex">
+                                    <template is="dom-repeat" items="{{_queries}}" as="query">
+                                        <paper-item class="palette-item" draggable="true"
+                                                    on-dragstart="_startDragQuery" on-dragend="_commonDragEnd">
+                                            <paper-item-body>
+                                                <div>{{query._id}}</div>
+                                            </paper-item-body>
+                                            <iron-icon icon="search"></iron-icon>
+                                        </paper-item>
+                                    </template>
+                                </div>
                             </paper-header-panel>
                         </div>
                     </div>
@@ -154,20 +223,34 @@ Example:
                         <div class="header-panel">
                             <paper-header-panel>
                                 <paper-toolbar><div>Transformers</div></paper-toolbar>
-                                <template is="dom-repeat" items="{{_transformers}}" as="transformer">
-                                    <paper-item class="palette-item" draggable="true" on-dragstart="_startDragTransformer" >
-                                        <paper-item-body>
-                                            <div>{{transformer._id}}</div>
-                                        </paper-item-body>
-                                        <iron-icon icon="compare-arrows"></iron-icon>
-                                    </paper-item>
-                                </template>
+                                
+                                <div class="layout horizontal flex">
+                                    <paper-dropdown-menu label="Category">
+                                        <paper-listbox class="dropdown-content" selected="{{selectedTransformer}}">
+                                            <template is="dom-repeat" items="[[_transformerCategories]]" as="tcategory">
+                                                <paper-item>[[tcategory.name]]</paper-item>
+                                            </template>
+                                        </paper-listbox>
+                                    </paper-dropdown>
+                                </div>
+                                
+                                <div class="flex">
+                                    <template is="dom-repeat" items="{{_transformers}}" as="transformer">
+                                        <paper-item class="palette-item" draggable="true"
+                                                    on-dragstart="_startDragTransformer" on-dragend="_commonDragEnd">
+                                            <paper-item-body>
+                                                <div>{{transformer._id}}</div>
+                                            </paper-item-body>
+                                            <iron-icon icon="compare-arrows"></iron-icon>
+                                        </paper-item>
+                                    </template>
+                                </div>
                             </paper-header-panel>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="flex-4 section workflow">
+            <div id="workflow" class="flex-3 section workflow">
                 <h2>Workflow</h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex workflow-drop-area" on-dragover="_dragOverWorkflow" on-drop="_dropInWorkflow">
@@ -184,6 +267,9 @@ Example:
                                     <paper-tab>Params</paper-tab>
                                     <paper-tab>Query</paper-tab>
                                     <paper-tab>Raw</paper-tab>
+                                    <paper-button on-click="_removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                        <iron-icon icon="cancel" on-click="_removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                    </paper-button>
                                 </paper-tabs>
 
                                 <iron-pages selected="{{workflowItem.selected}}">
@@ -194,16 +280,16 @@ Example:
                                             </div>
                                             <div class="flex">
                                                 <paper-dropdown-menu label="Service:">
-                                                    <iron-selector class="dropdown-content" attr-for-selected="name" selected="{{workflowItem.bindings.properties.service}}">
-                                                        <div name="location">Location</div>
-                                                    </iron-selector>
+                                                    <paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{workflowItem.bindings.properties.service}}">
+                                                        <paper-item name="location">Location</paper-item>
+                                                    </paper-listbox>
                                                 </paper-dropdown-menu>
                                             </div>
                                             <div class="flex">
                                                 <paper-dropdown-menu label="Collection:">
-                                                    <iron-selector class="dropdown-content" attr-for-selected="name" selected="{{workflowItem.bindings.properties.collection}}">
-                                                        <div name="regions">Regions</div>
-                                                    </iron-selector>
+                                                    <paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{workflowItem.bindings.properties.collection}}">
+                                                        <paper-item name="regions">Regions</paper-item>
+                                                    </paper-listbox>
                                                 </paper-dropdown-menu>
                                             </div>
                                             <div class="flex">
@@ -246,6 +332,9 @@ Example:
                                                     <paper-button on-click="_addParam" data-workflow-item$="{{workflowItem.id}}">
                                                         <iron-icon icon="add-circle" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                                     </paper-button>
+                                                    <paper-button on-click="_removeParam" data-workflow-item$="{{workflowItem.id}}">
+                                                        <iron-icon icon="remove-circle" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                    </paper-button>
                                                 </td>
                                             </tr>
                                         </table>
@@ -255,6 +344,7 @@ Example:
                                             Aggregate Editor
                                         </template>
                                         <template is="dom-if" if="{{_isFind(workflowItem.bindings.properties.type)}}">
+                                            Query Editor
                                             <bridgeit-query-editor account="[[account]]" realm="[[realm]]"
                                                                    service="[[workflowItem.bindings.properties.service]]"
                                                                    collection="[[workflowItem.bindings.properties.collection]]"></bridgeit-query-editor>
@@ -270,6 +360,9 @@ Example:
                                     <paper-tab>Properties</paper-tab>
                                     <paper-tab>Transformer</paper-tab>
                                     <paper-tab>Raw</paper-tab>
+                                    <paper-button on-click="_removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                        <iron-icon icon="cancel" on-click="_removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                    </paper-button>
                                 </paper-tabs>
 
                                 <iron-pages selected="{{workflowItem.selected}}">
@@ -281,7 +374,31 @@ Example:
                                         </div>
                                     </div>
                                     <div class="tab-content"> <!-- Transformer Page -->
-                                        Transformer Page
+                                        <div class="layout horizontal">
+                                            <div class="flex">
+                                                <paper-listbox selected="{{workflowItem.bindings.selectedFrom}}">
+                                                    <template is="dom-repeat" items="[[workflowItem.bindings.transformer.from]]" as="from">
+                                                        <paper-item>[[from]]</paper-item>
+                                                    </template>
+                                                </paper-listbox>
+                                            </div>
+                                            <div class="horizontal layout center">
+                                                <iron-icon icon="chevron-right"></iron-icon>
+                                            </div>
+                                            <div class="flex">
+                                                <paper-listbox selected="{{workflowItem.bindings.selectedTo}}">
+                                                    <template is="dom-repeat" items="[[workflowItem.bindings.transformer.to]]" as="to">
+                                                        <paper-item>[[to]]</paper-item>
+                                                    </template>
+                                                </paper-listbox>
+                                            </div>
+                                        </div>
+                                        
+                                        <label>Raw version of the transform:</label>
+                                        <div class="flex">
+                                            <bridgeit-code-editor value="[[workflowItem.bindings.selectedFrom]] [[workflowItem.bindings.selectedTo]]">
+                                            </bridgeit-code-editor>
+                                        </div>
                                     </div>
                                     <div class="tab-content"> <!-- Raw Page -->
                                         <bridgeit-code-editor></bridgeit-code-editor>
@@ -293,26 +410,25 @@ Example:
                 </div>
             </div>
             <div class="flex-1 section execute">
-                <h2 class="hidden-header">Execute</h2>
                 <span class="empty-span"></span>
-                <template is="dom-repeat" items="{{_workflow}}" as="transformer">
+                <template is="dom-repeat" items="{{_workflow}}" as="workflowItem">
                     <div class="execute-item">
-                        <paper-button raised>
-                            <iron-icon icon="arrow-forward"></iron-icon>
+                        <paper-button raised on-click="_executeWorkflow" data-workflow-item$="{{workflowItem.id}}">
+                            <iron-icon icon="arrow-forward" on-click="_executeWorkflow" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                         </paper-button>
                     </div>
                 </template>
             </div>
-            <div class="flex-3 section results">
-                <h2 class="hidden-header">Results</h2>
+            <div class="flex-2 section results">
+                <h2>Results</h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
                         <span class="empty-span"></span>
-                        <template is="dom-repeat" items="{{_workflow}}" as="transformer">
+                        <template is="dom-repeat" items="{{_workflow}}" as="workflowItem">
                             <div class="header-panel">
                                 <paper-header-panel>
                                     <paper-toolbar><div>Result</div></paper-toolbar>
-                                    <bridgeit-code-editor readonly></bridgeit-code-editor>
+                                    <bridgeit-code-editor readonly value="{{workflowItem.result}}"></bridgeit-code-editor>
                                 </paper-header-panel>
                             </div>
                         </template>
