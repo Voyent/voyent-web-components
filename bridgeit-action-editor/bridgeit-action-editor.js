@@ -38,6 +38,7 @@ Polymer({
         this._loadedAction = null;
         this._taskGroups = [];
         this._codeEditorProperties=['function','messagetemplate'];
+        this._taskGroupBaseId = 'taskGroup';
         
         // Setup our sidebar to scroll alongside the action editor
         // This is necessary in case the action editor is quite long (such as many tasks)
@@ -663,7 +664,7 @@ Polymer({
         var taskGroups = action.taskGroups;
         for (var i=0; i<taskGroups.length; i++) {
             //add uniqueID for drag/drop functionality
-            taskGroups[i].id = 'taskGroup'+i;
+            taskGroups[i].id = this._taskGroupBaseId+i;
             //add schema inside task group for mapping UI values
             taskGroups[i].schema = JSON.parse(JSON.stringify(this._taskGroupSchemasMap[taskGroups[i].type ? taskGroups[i].type : 'parallel-taskgroup'])); //clone object (it is valid JSON so this technique is sufficient)
             taskGroups[i].schema.taskcount = 0;
@@ -779,33 +780,120 @@ Polymer({
      * @private
      */
     _dropInAction: function(e) {
+        // Requirement for drag and drop
         e.preventDefault();
-        //only allow task groups to be dropped inside actions
-        if (!e.dataTransfer.getData('action/group')) { e.stopPropagation(); return; }
-        //add new task group
-        var schema = JSON.parse(JSON.stringify(this._lastDragged)); //clone object (it is valid JSON so this technique is sufficient)
         
+        // Only allow task groups to be dropped inside actions
+        if (!e.dataTransfer.getData('action/group')) { e.stopPropagation(); return; }
+        // Add new task group from the dropped item, as well as some default values
+        var schema = JSON.parse(JSON.stringify(this._lastDragged)); // Clone object (it is valid JSON so this technique is sufficient)
         schema.taskcount = 0;
         
-        var newid = "taskGroup"+this._taskGroups.length;
-        this.push('_taskGroups',{"id":newid,"name":'',"schema":schema,"tasks":[]});
-        
-        // We'll play a "grow" animation when an action is added
-        var _this = this;
-        setTimeout(function() {
-            var justadded = _this.querySelector('#' + newid);
-            if (justadded) {
-                justadded.classList.add('growbubble');
+        // If we have existing action containers (aka task groups) we need to check if the
+        //  user tried to drop between them
+        // In that case we'll want to insert the dropped task group instead of appending it to the bottom
+        var appendBottom = true;
+        var newid = this._taskGroupBaseId + this._taskGroups.length;
+        if (this._taskGroups.length > 0) {
+            // First we determine the absolute Y position we dropped at
+            // This is a combination of the scrollbar position (via scrollTop) and our event clientY
+            //  which shows where in the viewport the mouse was at drop
+            // We can add these two together to get an absolute Y of the page
+            // Note we also have to get a bit fancy to reliably determine scrollTop
+            //  since our component might be in a scrollable container, instead of just a body scrollbar
+            var compareTop = (document.documentElement.scrollTop || document.body.scrollTop);
+            if (compareTop <= 0) {
+                var currentNode = e.target.parentNode;
+                while (currentNode !== null) {
+                    if (currentNode.scrollTop > 0) {
+                        compareTop = currentNode.scrollTop;
+                        break;
+                    }
+                    currentNode = currentNode.parentNode;
+                }
             }
-        },0);
-        
-        // Remove the grow animation after it's complete, so that the highlight keyframe still works properly
-        setTimeout(function() {
-            var justadded = _this.querySelector('#' + newid);
-            if (justadded) {
-                justadded.classList.remove('growbubble');
+            
+            // The important takeaway from the calculations above: our absolute Y position of the drop
+            var dropY = e.clientY + compareTop;
+            
+            // Next we look at our current task groups
+            // For each task group we'll figure out the offsetTop
+            // If our dropY is greater than that offsetTop we know we're still below that task group
+            // However if our dropY is less we know we're above that task group
+            // Using this approach we can figure out where to insert our dropped item
+            // We store the task group that we're below in the "maybeBelow" var
+            // If "maybeBelow" is undefined (such as when we're dropped above all tasks) then we will append
+            var maybeBelow;
+            var currentTaskGroup;
+            for (var i = 0; i < this._taskGroups.length; i++) {
+                currentTaskGroup = this.querySelector('#' + this._taskGroups[i].id);
+                if (currentTaskGroup) {
+                    if (dropY > currentTaskGroup.offsetTop) {
+                        maybeBelow = currentTaskGroup;
+                    }
+                    else {
+                        break;
+                    }
+                }
             }
-        },550);
+            
+            // If we have a "maybeBelow" it means we figured out a task group the item was dropped below
+            // We will then try to insert the item below that task group
+            if (maybeBelow) {
+                appendBottom = false;
+                
+                var insertIndex = maybeBelow.id.slice(-1);
+                insertIndex++; // We want to increase our insert to be BELOW the item
+                
+                // If the inserted index is below our maximum task group length we'll simply append instead
+                if (insertIndex >= this._taskGroups.length) {
+                    appendBottom = true;
+                }
+                // Otherwise we figure out our new ID and splice the dropped item into our task group array
+                else {
+                    newid = this._taskGroupBaseId + insertIndex;
+                    
+                    this.splice('_taskGroups', insertIndex, 0, {"id":newid,"name":'',"schema":schema,"tasks":[]});
+                }
+            }
+            // Otherwise if we don't have a "maybeBelow" it means we just append to the bottom
+            else {
+                appendBottom = true;
+            }
+        }
+        
+        // If we reached here and still have "appendBottom" set to true we will add our dropped item to the bottom
+        //  of the task group array via push
+        if (appendBottom) {
+            this.push('_taskGroups', {"id":newid,"name":'',"schema":schema,"tasks":[]});
+        }
+        else {
+            // If we didn't append bottom, which means we inserted an item, we need to
+            //  update the entire array of IDs to make sure they're correct
+            for (var i = 0; i < this._taskGroups.length; i++) {
+                this.set('_taskGroups.' + i + '.id', this._taskGroupBaseId+i);
+            }
+        }
+        
+        // Finally if we have a valid new ID we'll get that task group item and play
+        //  a "grow" animation to draw attention to it
+        if (newid) {
+            var _this = this;
+            setTimeout(function() {
+                var justadded = _this.querySelector('#' + newid);
+                if (justadded) {
+                    justadded.classList.add('growbubble');
+                }
+            },0);
+            
+            // Remove the grow animation after it's complete, so that the highlight keyframe still works properly
+            setTimeout(function() {
+                var justadded = _this.querySelector('#' + newid);
+                if (justadded) {
+                    justadded.classList.remove('growbubble');
+                }
+            },550);
+        }
     },
 
     /**
@@ -828,7 +916,7 @@ Polymer({
         if (!taskGroupIndex) {
             var currentParent = e.target.parentNode;
             do {
-                if (currentParent.id && currentParent.id.indexOf('taskGroup') === 0) {
+                if (currentParent.id && currentParent.id.indexOf(this._taskGroupBaseId) === 0) {
                     taskGroupIndex = currentParent.id.slice(-1);
                     break;
                 }
@@ -862,7 +950,7 @@ Polymer({
                 this.splice('_taskGroups',i,1);
             }
             //must keep the taskGroup IDs up to date for drag/drop functionality
-            this.set('_taskGroups.'+i+'.id','taskGroup'+i);
+            this.set('_taskGroups.'+i+'.id',this._taskGroupBaseId+i);
         }
     },
 
@@ -905,10 +993,9 @@ Polymer({
         this.splice('_taskGroups',newPos,0,taskGroup);
         //keep the taskGroup IDs in sync
         setTimeout(function() {
-            _this.set('_taskGroups.'+currPos+'.id','taskGroup'+currPos);
-            _this.set('_taskGroups.'+newPos+'.id','taskGroup'+newPos);
+            _this.set('_taskGroups.'+currPos+'.id',_this._taskGroupBaseId+currPos);
+            _this.set('_taskGroups.'+newPos+'.id',_this._taskGroupBaseId+newPos);
         },0);
-
     },
 
     /**
@@ -929,8 +1016,8 @@ Polymer({
         this.splice('_taskGroups',newPos,0,taskGroup);
         //keep the taskGroup IDs in sync
         setTimeout(function() {
-            _this.set('_taskGroups.'+currPos+'.id','taskGroup'+currPos);
-            _this.set('_taskGroups.'+newPos+'.id','taskGroup'+newPos);
+            _this.set('_taskGroups.'+currPos+'.id',_this._taskGroupBaseId+currPos);
+            _this.set('_taskGroups.'+newPos+'.id',_this._taskGroupBaseId+newPos);
         },0);
     },
 
