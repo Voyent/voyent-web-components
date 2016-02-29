@@ -870,8 +870,8 @@ Polymer({
         else {
             // If we didn't append bottom, which means we inserted an item, we need to
             //  update the entire array of IDs to make sure they're correct
-            for (var i = 0; i < this._taskGroups.length; i++) {
-                this.set('_taskGroups.' + i + '.id', this._taskGroupBaseId+i);
+            for (var j = 0; j < this._taskGroups.length; j++) {
+                this.set('_taskGroups.' + j + '.id', this._taskGroupBaseId+j);
             }
         }
         
