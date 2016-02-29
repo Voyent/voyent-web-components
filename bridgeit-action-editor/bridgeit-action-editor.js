@@ -821,42 +821,39 @@ Polymer({
             // If our dropY is greater than that offsetTop we know we're still below that task group
             // However if our dropY is less we know we're above that task group
             // Using this approach we can figure out where to insert our dropped item
-            // We store the task group that we're below in the "maybeBelow" var
-            // If "maybeBelow" is undefined (such as when we're dropped above all tasks) then we will append
-            var maybeBelow;
+            // We store the task group index we should insert at in the "insertIndex" var
+            // If "insertIndex" is undefined (such as when we're dropped above all tasks) then we will append
+            var insertIndex;
             var currentTaskGroup;
             for (var i = 0; i < this._taskGroups.length; i++) {
                 currentTaskGroup = this.querySelector('#' + this._taskGroups[i].id);
                 if (currentTaskGroup) {
                     if (dropY > currentTaskGroup.offsetTop) {
-                        maybeBelow = currentTaskGroup;
+                        insertIndex = currentTaskGroup.id.slice(-1);
+                        insertIndex++; // Note we increase our insertIndex since we want to be BELOW the current item
                     }
                     else {
+                        // There is a chance here we're either at the end of our task group list
+                        // Or the dropY was so low because it was inserted ABOVE the task group list
+                        // So if we're in this case and still on the first loop we know we're above
+                        // Note we use a 30 buffer to match the margins of the acceptable drop area above the task group list
+                        if (i === 0 && dropY > (currentTaskGroup.offsetTop - 30)) {
+                            insertIndex = 0;
+                        }
+                        
                         break;
                     }
                 }
             }
             
-            // If we have a "maybeBelow" it means we figured out a task group the item was dropped below
-            // We will then try to insert the item below that task group
-            if (maybeBelow) {
+            // If we have an "insertIndex" it means we figured out where the task group should be inserted
+            if (typeof insertIndex !== 'undefined' && insertIndex < this._taskGroups.length) {
                 appendBottom = false;
                 
-                var insertIndex = maybeBelow.id.slice(-1);
-                insertIndex++; // We want to increase our insert to be BELOW the item
-                
-                // If the inserted index is below our maximum task group length we'll simply append instead
-                if (insertIndex >= this._taskGroups.length) {
-                    appendBottom = true;
-                }
-                // Otherwise we figure out our new ID and splice the dropped item into our task group array
-                else {
-                    newid = this._taskGroupBaseId + insertIndex;
-                    
-                    this.splice('_taskGroups', insertIndex, 0, {"id":newid,"name":'',"schema":schema,"tasks":[]});
-                }
+                newid = this._taskGroupBaseId + insertIndex;
+                this.splice('_taskGroups', insertIndex, 0, {"id":newid,"name":'',"schema":schema,"tasks":[]});
             }
-            // Otherwise if we don't have a "maybeBelow" it means we just append to the bottom
+            // Otherwise if we don't have an "insertIndex" it means we just append to the bottom
             else {
                 appendBottom = true;
             }
