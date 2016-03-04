@@ -94,7 +94,5 @@ Polymer({
 
     dataChanged: function(){
         poly.$$('.solicitMain').classList.remove('removed');
-        console.log("DATA IS")
-        console.log(poly.data);
     }
 });
