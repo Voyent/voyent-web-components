@@ -1,4 +1,8 @@
 <link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 
 <!--
@@ -76,7 +80,22 @@ Example:
                 @apply(--log-viewer-p);
             }
         </style>
+        
         <template is="dom-if" if="{{_hasLogs}}">
+            <div class="buttonContainer">
+            <paper-dropdown-menu label="Filter by Service">
+                <paper-listbox class="dropdown-content" attr-for-selected="service" selected="{{filterService}}">
+                    <template is="dom-repeat" items="[[_serviceList]]" as="currentLoop">
+                        <paper-item service="[[currentLoop]]">[[currentLoop]]</paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
+            
+                <div>
+                    <button on-click="_resetFilters">Reset Filters</paper-button>
+                </div>
+            </div>
+            
             <template is="dom-if" if="{{paginator}}">
                 <div class="buttonContainer">
                     <button on-click="lastPage" disabled="{{!_hasPreviousPage}}">{{lastPageLabel}}</button>
