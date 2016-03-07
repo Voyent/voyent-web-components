@@ -70,21 +70,25 @@ Polymer({
     answerGiven: function(e){
         var element = e.srcElement.closest('.solicitMain');
         element.classList.add('hidden');
+        element.classList.remove('visible');
         setTimeout(function(){
+            poly.data = {};
             element.classList.add('removed');
         },700);
         var params = {};
-        if(poly.account !== null){
+        if(poly.account){
             params.account = poly.account;
         }
-        if(poly.realm !== null){
+        if(poly.realm){
             params.realm = poly.realm;
         }
-        if (poly.accessToken !== null){
+        if (poly.accessToken){
             params.accessToken = poly.accessToken;
         }
         params.event = poly.data.event;
-        params.event.data = e.model.item.value;
+        params.event.data = {'result': e.model.item.value};
+        params.event.data.pass = params.event.pass;
+        delete params.event.pass;
         bridgeit.io.metrics.createCustomEvent(params);
     },
 
@@ -93,6 +97,10 @@ Polymer({
     },
 
     dataChanged: function(){
-        poly.$$('.solicitMain').classList.remove('removed');
+        if(poly.data !== {}) {
+            poly.$$('.solicitMain').classList.remove('removed');
+            poly.$$('.solicitMain').classList.remove('hidden');
+            poly.$$('.solicitMain').classList.add('visible');
+        }
     }
 });
