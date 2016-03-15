@@ -68,7 +68,14 @@ Polymer({
     //******************PRIVATE API******************
 
     answerGiven: function(e){
-        var element = e.srcElement.closest('.solicitMain');
+      console.log(e);
+        var element;
+        if(e.srcElement){
+          element = e.srcElement.closest('.solicitMain');
+        }
+        else{
+          element = e.target.closest('.solicitMain');
+        }
         element.classList.add('hidden');
         element.classList.remove('visible');
         setTimeout(function(){
@@ -85,11 +92,13 @@ Polymer({
         if (poly.accessToken){
             params.accessToken = poly.accessToken;
         }
-        params.event = poly.data.event;
-        params.event.data = {'result': e.model.item.value};
-        params.event.data.pass = params.event.pass;
-        delete params.event.pass;
-        bridgeit.io.metrics.createCustomEvent(params);
+        if(params.event){
+          params.event = poly.data.event;
+          params.event.data = {'result': e.model.item.value};
+          params.event.data.pass = params.event.pass;
+          delete params.event.pass;
+          bridgeit.io.metrics.createCustomEvent(params);
+        }
     },
 
     getURLParameter: function(name) {
@@ -104,3 +113,4 @@ Polymer({
         }
     }
 });
+
