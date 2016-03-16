@@ -11,6 +11,26 @@
       this.loggedIn = loggedIn;
       if( loggedIn){
         this.setupTimeRemainingInterval();
+        /* check connect settings */
+        var connectSettings = bridgeit.io.auth.getConnectSettings();
+        if( !connectSettings ){
+          connectSettings = {};
+        }
+        connectSettings.account = this.account;
+        connectSettings.username = this.username;
+        connectSettings.password = this.password;
+        connectSettings.host = this.host;
+        connectSettings.usePushService = this.usePushService;
+        connectSettings.onSessionExpiry = this.onSessionExpiry;
+        connectSettings.admin = this.admin;
+        connectSettings.scopeToPath = this.scopeToPath;
+        if( this.timeout ){
+          connectSettings.connectionTimeout = this.timeout;
+        }
+        if( !this.admin ){
+          connectSettings.realm = this.realm;
+        }
+        bridgeit.io.auth.connect(connectSettings);
       }
     },
 
@@ -222,7 +242,12 @@
      * @private
      */
     onSessionExpiry: function(){
-      this.fire('bridgeit-session-expired');
+      //'this' is not the component context during the callback
+      var _this = document.querySelector('bridgeit-auth-provider');
+      _this.loggedIn = false;
+      _this.accessToken = null;
+      _this.timeRemaining = 0;
+      _this.fire('bridgeit-session-expired');
     }
   });
 })();
