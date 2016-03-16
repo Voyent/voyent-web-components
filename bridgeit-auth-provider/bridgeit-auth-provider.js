@@ -21,7 +21,6 @@
         connectSettings.password = this.password;
         connectSettings.host = this.host;
         connectSettings.usePushService = this.usePushService;
-        connectSettings.onSessionExpiry = this.onSessionExpiry;
         connectSettings.admin = this.admin;
         connectSettings.scopeToPath = this.scopeToPath;
         if( this.timeout ){
@@ -184,7 +183,6 @@
         password: this.password,
         host: this.host,
         usePushService: this.usePushService,
-        onSessionExpiry: this.onSessionExpiry,
         admin: this.admin,
         scopeToPath: this.scopeToPath
       };
