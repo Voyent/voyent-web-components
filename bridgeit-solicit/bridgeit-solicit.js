@@ -92,7 +92,7 @@ Polymer({
         if (poly.accessToken){
             params.accessToken = poly.accessToken;
         }
-        if(params.event){
+        if(poly.data.event){
           params.event = poly.data.event;
           params.event.data = {'result': e.model.item.value};
           params.event.data.pass = params.event.pass;
@@ -113,4 +113,5 @@ Polymer({
         }
     }
 });
+
 
