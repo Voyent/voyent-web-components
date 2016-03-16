@@ -44,7 +44,7 @@ BridgeIt.CodeEditor = Polymer({
 
     ready: function() {
         var _this = this;
-        var codeEditorURL = this.resolveUrl('./code-editor-import.html');
+        var codeEditorURL = this.resolveUrl('../common/ace-import.html');
         //load missing ace-editor dependency
         if (!('ace' in window)) {
             _this.importHref(codeEditorURL, function(e) {
