@@ -23,6 +23,7 @@
         connectSettings.usePushService = this.usePushService;
         connectSettings.admin = this.admin;
         connectSettings.scopeToPath = this.scopeToPath;
+        connectSettings.onSessionExpiry = this.onSessionExpiry;
         if( this.timeout ){
           connectSettings.connectionTimeout = this.timeout;
         }
@@ -184,6 +185,7 @@
         host: this.host,
         usePushService: this.usePushService,
         admin: this.admin,
+        onSessionExpiry: this.onSessionExpiry,
         scopeToPath: this.scopeToPath
       };
       if( this.timeout ){
