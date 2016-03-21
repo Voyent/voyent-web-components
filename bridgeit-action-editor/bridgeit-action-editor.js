@@ -237,9 +237,18 @@ Polymer({
             return false;
         }
         //validate required fields
+        /* This approach fails for unknown reasons when loading multiple actions consecutively
+           so reverting back to a plain loop that checks the value of each required field
         if (!this.$$('#actionForm').checkValidity()) {
             alert('Please enter all required fields.');
             return false;
+        }*/
+        var required = Polymer.dom(this.$$('#actionForm')).querySelectorAll('input:required');
+        for (var h=0; h<required.length; h++) {
+            if (!required[h].value) {
+                alert('Please enter all required fields.');
+                return false;
+            }
         }
         var hasTasks = false;
         var taskGroupNames=[];
