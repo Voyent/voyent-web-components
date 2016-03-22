@@ -66,6 +66,8 @@ BridgeIt.CodeEditor = Polymer({
             _this._setProperties();
             //add any listeners
             _this._addListeners();
+            //setup resizable corner
+            _this._setupResizable();
         }
     },
 
@@ -110,6 +112,29 @@ BridgeIt.CodeEditor = Polymer({
                 _this.value = _this.editor.getValue();
             }
         });
+    },
+    _setupResizable: function() {
+        //Move expandable corner to correct div
+        var scroller = Polymer.dom(this.root).querySelector(".ace_scroller");
+        Polymer.dom(scroller).appendChild(this.$.resizable)
+    },
+    _resizeEditor: function(e) {
+        var _this = this;
+        var container = this.$.editor;
+        var rect = container.getBoundingClientRect();
+        var startX = rect.width  + rect.left - e.clientX;
+        var startY = rect.height  + rect.top - e.clientY;
+        var mouseMove = function(e) {
+            container.style.width = e.clientX - rect.left + startX + "px";
+            container.style.height = e.clientY - rect.top + startY + "px";
+            _this.editor.resize();
+        };
+        var mouseUp = function(e) {
+            document.removeEventListener("mousemove",mouseMove,true);
+            document.removeEventListener("mouseup",mouseUp,true);
+        };
+        document.addEventListener("mousemove",mouseMove,true);
+        document.addEventListener("mouseup",mouseUp,true);
     },
     _fontsizeChanged: function(newVal) {
         if (!this.editor || typeof newVal!=='number' || (newVal%1) !== 0) {
