@@ -1,0 +1,168 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+<link rel="import" href="../bridgeit-action-editor/bridgeit-action-list.html">
+<link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
+<link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-item/paper-item-body.html">
+<link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+
+<!--
+Displays a detailed view of the backpack contents for an action sequence
+
+Example:
+
+    <bridgeit-backpack-log>
+    </bridgeit-backpack-log>
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-backpack-log">
+    <template>
+        <style type="text/css">
+            paper-dropdown-menu {
+                --paper-dropdown-menu: {
+                    width:100%;
+                };
+            }
+            
+            .container {
+                width: 95% !important;
+                max-width: 95% !important;
+            }
+            
+            .dropWrap {
+                text-align: center;
+                width: 80%;
+            }
+            
+            .taskGroup, .taskItem {
+                border-radius: 3px;
+                align-items: top;
+                vertical-align: top;
+            }
+            
+            .taskGroup {
+                position: relative;
+                padding: 10px;
+                margin-bottom: 10px;
+                background-color: #DBDBDB;
+            }
+            
+            .taskItem {
+                padding: 5px;
+                margin-left: 15px;
+                margin-bottom: 5px;
+                background-color: #E5E5E5;
+            }
+            
+            .taskHeader {
+                cursor: pointer;
+            }
+            
+            table {
+                table-layout: fixed;
+                width: 100%;
+                border: 1px solid #ddd;
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+            thead, th, td {
+                border: 1px solid #ddd;
+            }
+            th {
+                background-color: #444444;
+                color: white;
+            }
+            td {
+                word-wrap: break-word;
+                padding: 5px;
+            }
+            .highlight {
+                background-color: #FFFFCC;
+                border: 2px solid black;
+            }
+        </style>
+        
+        <div class="container flex layout horizontal">
+            <div class="flex-2">
+                <div class="dropWrap">
+                    <paper-dropdown-menu label="Saved Actions" required="true">
+                        <paper-listbox class="dropdown-content" selected="{{selectedAction}}">
+                            <template is="dom-repeat" items="[[_savedActions]]" as="saction">
+                                <paper-item>[[saction._id]]</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                </div>
+            </div>
+            <div class="flex-2">
+                <div class="dropWrap">
+                    <paper-dropdown-menu label="Time Limit" required="true">
+                        <paper-listbox class="dropdown-content" selected="{{selectedLimit}}">
+                            <template is="dom-repeat" items="[[_timeLimits]]" as="tlimit">
+                                <paper-item>[[tlimit.name]]</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                </div>
+            </div>
+            <div class="flex-1">
+                <paper-button raised on-click="_submit">View Backpack</paper-button>           
+            </div>
+        </div>
+        
+        <div class="container flex layout horizontal">
+        <div class="flex-1" style="margin-right: 10px;">
+            <template is="dom-repeat" items="{{_taskGroups}}" as="group">
+                <div class="taskGroup">
+                    <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" title="{{group.type}}" class="taskHeader">
+                        {{group.name}}
+                    </div>
+                
+                    <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                        <div on-click="_viewItem" data-workflow-item$="{{task.name}}" title="{{task.type}}" class="taskItem taskHeader">
+                            {{task.name}}
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+        <template is="dom-if" if="{{_hasLogs}}">
+            <div class="flex-3">
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="3">{{_logSize}} Items</th>
+                        </tr>
+                        <tr>
+                            <th>Time</th>
+                            <th>Task</th>
+                            <th>Backpack Contents</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <template is="dom-repeat" items="{{_backpack}}" as="backpack">
+                        <tr class$="{{backpackStyle(backpack.highlight)}}">
+                            <td>{{backpack.timeFormat}}</td>
+                            <td>{{backpack.taskGroup}} - {{backpack.taskItem}}</td>
+                            <td>{{backpack.messageFormat}}</td>
+                            <!-- TODO TEMPORARY Find a way to format our JSON results
+                            <td>
+                                <bridgeit-code-editor value="{{backpack.messageFormat}}"></bridgeit-code-editor>
+                            </td>
+                            -->
+                        </tr>
+                    </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+        </div>
+    </template>
+</dom-module>
+
+<script src="bridgeit-backpack-log.js"></script>
