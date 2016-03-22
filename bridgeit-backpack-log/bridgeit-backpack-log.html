@@ -63,6 +63,16 @@ Example:
                 cursor: pointer;
             }
             
+            .taskPanel {
+                margin-right: 10px;
+            }
+            
+            .twrap {
+                overflow-x: hidden;
+                overflow-y: scroll;
+                height: 1024px;
+            }
+            
             table {
                 table-layout: fixed;
                 width: 100%;
@@ -115,8 +125,10 @@ Example:
             </div>
         </div>
         
+        <br/>
+        
         <div class="container flex layout horizontal">
-        <div class="flex-1" style="margin-right: 10px;">
+        <div class="flex-1 taskPanel">
             <template is="dom-repeat" items="{{_taskGroups}}" as="group">
                 <div class="taskGroup">
                     <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" title="{{group.type}}" class="taskHeader">
@@ -132,7 +144,7 @@ Example:
             </template>
         </div>
         <template is="dom-if" if="{{_hasLogs}}">
-            <div class="flex-3">
+            <div class="flex-3 twrap">
                 <table>
                     <thead>
                         <tr>

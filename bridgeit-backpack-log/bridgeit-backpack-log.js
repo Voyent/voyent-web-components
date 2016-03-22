@@ -56,14 +56,9 @@ Polymer({
      * We also set some default variables
      */
 	ready: function() {
-	    /** TODO TEMPORARY Since our realm keeps getting reset to admin
         if (!this.realm) {
             this.realm = bridgeit.io.auth.getLastKnownRealm();
         }
-        */
-        this.realm = 'freight';
-        // END TEMPORARY
-        
         if (!this.account) {
             this.account = bridgeit.io.auth.getLastKnownAccount();
         }
