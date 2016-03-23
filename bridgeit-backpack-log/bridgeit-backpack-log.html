@@ -22,49 +22,13 @@ Example:
 -->
 <dom-module id="bridgeit-backpack-log">
     <template>
+        <link type="text/css" rel="stylesheet" href="./bridgeit-backpack-log.css">
+        
         <style type="text/css">
             paper-dropdown-menu {
                 --paper-dropdown-menu: {
                     width:100%;
                 };
-            }
-            
-            .throbber-wrapper {
-                width: 100%;
-                text-align: center;
-            }
-            .throbber-loader:not(:required) {
-              -moz-animation: throbber-loader 2000ms 300ms infinite ease-out;
-              -webkit-animation: throbber-loader 2000ms 300ms infinite ease-out;
-              animation: throbber-loader 2000ms 300ms infinite ease-out;
-              background: #dde2e7;
-              display: inline-block;
-              position: relative;
-              text-indent: -9999px;
-              width: 0.9em;
-              height: 1.5em;
-              margin: 0 1.6em;
-            }
-            .throbber-loader:not(:required):before, .throbber-loader:not(:required):after {
-              background: #dde2e7;
-              content: '\x200B';
-              display: inline-block;
-              width: 0.9em;
-              height: 1.5em;
-              position: absolute;
-              top: 0;
-            }
-            .throbber-loader:not(:required):before {
-              -moz-animation: throbber-loader 2000ms 150ms infinite ease-out;
-              -webkit-animation: throbber-loader 2000ms 150ms infinite ease-out;
-              animation: throbber-loader 2000ms 150ms infinite ease-out;
-              left: -1.6em;
-            }
-            .throbber-loader:not(:required):after {
-              -moz-animation: throbber-loader 2000ms 450ms infinite ease-out;
-              -webkit-animation: throbber-loader 2000ms 450ms infinite ease-out;
-              animation: throbber-loader 2000ms 450ms infinite ease-out;
-              right: -1.6em;
             }
             
             .container {
@@ -225,12 +189,10 @@ Example:
         </div>
         
         <template is="dom-if" if="{{_loading}}">
-            <center>
+            <div class="throbber-wrapper">
                 <p>One moment, loading logs...</p>
-                <div class="throbber-wrapper">
-                    <div class="throbber-loader">...</div>
-                </div>
-            </center>
+                <div class="throbber-loader">...</div>
+            </div>
         </template>
     </template>
 </dom-module>
