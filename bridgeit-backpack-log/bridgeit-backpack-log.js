@@ -70,6 +70,7 @@ Polymer({
         this._gotLogs = false;
         this._logSize = 0;
         this._loading = false;
+        this._backpack = [];
         this._taskGroups = [];
         this._matchCount = 0;
 	},
@@ -142,6 +143,11 @@ Polymer({
             return;
         }
         
+        // Reset our state variables before processing the new request
+        this._gotLogs = false;
+        this._logSize = 0;
+        this._loading = false;
+        
         // Store our currently selected saved action as a set of task groups
         this._taskGroups = this._savedActions[this.selectedAction].taskGroups;
         
@@ -150,9 +156,11 @@ Polymer({
         for (var i = 0; i < this._taskGroups.length; i++) {
             currentTaskGroup = this._taskGroups[i];
             currentTaskGroup.highlight = false;
+            this.notifyPath('_taskGroups.' + i + '.highlight', false);
             
             for (var j = 0; j < currentTaskGroup.tasks.length; j++) {
                 currentTaskGroup.tasks[j].highlight = false;
+                this.notifyPath('_taskGroups.' + i + '.tasks.' + j + '.highlight', false);
             }
         }
         
@@ -188,7 +196,7 @@ Polymer({
      * @private
      */
     _fetchLogsCallback: function(logs) {
-        this._backpack = [];
+        this._backpack.length = 0;
         
         // We're looking for messages of this format:
         //  Task Result: [ managerMessage ][ managerPush ] = {}
