@@ -155,12 +155,10 @@ Polymer({
         var currentTaskGroup = null;
         for (var i = 0; i < this._taskGroups.length; i++) {
             currentTaskGroup = this._taskGroups[i];
-            currentTaskGroup.highlight = false;
-            this.notifyPath('_taskGroups.' + i + '.highlight', false);
+            this.set('_taskGroups.' + i + '.highlight', false);
             
             for (var j = 0; j < currentTaskGroup.tasks.length; j++) {
-                currentTaskGroup.tasks[j].highlight = false;
-                this.notifyPath('_taskGroups.' + i + '.tasks.' + j + '.highlight', false);
+                this.set('_taskGroups.' + i + '.tasks.' + j + '.highlight', false);
             }
         }
         
@@ -290,6 +288,11 @@ Polymer({
         }
     },
     
+    /**
+     * Format time and date for display on the page
+     * Desired format is YYYY-MM-DD, HH:MM:SS.MLS
+     * @param time
+     */
     _formatTime: function(time) {
         var date = new Date(time);
         
@@ -311,13 +314,11 @@ Polymer({
         for (var i = 0; i < this._taskGroups.length; i++) {
             // Set our highlight
             match = (taskName === this._taskGroups[i].name);
-            this._taskGroups[i].highlight = match;
-            this.notifyPath('_taskGroups.' + i + '.highlight', match);
+            this.set('_taskGroups.' + i + '.highlight', match);
             
             // Reset all task items to not highlighted
             for (var j = 0; j < this._taskGroups[i].tasks.length; j++) {
-                this._taskGroups[i].tasks[j].highlight = false;
-                this.notifyPath('_taskGroups.' + i + '.tasks.' + j + '.highlight', false);
+                this.set('_taskGroups.' + i + '.tasks.' + j + '.highlight', false);
             }
         }
         
@@ -346,13 +347,11 @@ Polymer({
                     innerMatch = (taskName === this._taskGroups[i].tasks[j].name);
                 }
                 
-                this._taskGroups[i].tasks[j].highlight = innerMatch;
-                this.notifyPath('_taskGroups.' + i + '.tasks.' + j + '.highlight', innerMatch);
+                this.set('_taskGroups.' + i + '.tasks.' + j + '.highlight', innerMatch);
             }
             
             // Reset the task group highlight regardless, since we want to highlight a task item
-            this._taskGroups[i].highlight = false;
-            this.notifyPath('_taskGroups.' + i + '.highlight', false);
+            this.set('_taskGroups.' + i + '.highlight', false);
         }
         
         this._viewGeneric(taskName, 'taskItem');
@@ -371,8 +370,7 @@ Polymer({
         var match = false;
         for (var i = 0; i < this._backpack.length; i++) {
             match = (taskName === this._backpack[i][compareTo]);
-            this._backpack[i].highlight = match;
-            this.notifyPath('_backpack.' + i + '.highlight', match);
+            this.set('_backpack.' + i + '.highlight', match);
             
             if (match) {
                 this._matchCount++;
