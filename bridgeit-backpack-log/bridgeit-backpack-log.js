@@ -223,6 +223,7 @@ Polymer({
                 // Once stored we'll strip the entire starter and basically keep everything after the equal (=) sign
                 currentMessage = currentMessage.substring(currentMessage.indexOf('=')+1).trim();
                 toAdd.messageFormat = currentMessage;
+                // TODO Format so the JSON displays properly spaced and pretty
                 //toAdd.messageFormat = JSON.stringify(JSON.parse(currentMessage), null, 4);
                 //toAdd.messageFormat = JSON.stringify(currentMessage, null, 4);
                 //toAdd.messageFormat = JSON.stringify(toAdd.message, null, 4);
@@ -254,7 +255,7 @@ Polymer({
         console.log("Backpack size is " + this._backpack.length + " from " + logs.length + " log entries");
         
         // Clear our old full logs, mark that we have retrieved logs, and their size
-        delete logs;
+        logs.length = 0;
         this._gotLogs = true;
         this._logSize = this._backpack.length;
         
