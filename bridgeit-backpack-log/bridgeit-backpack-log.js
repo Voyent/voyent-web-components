@@ -208,7 +208,7 @@ Polymer({
             if (logs[i].message.indexOf(taskResultStr) !== -1) {
                 toAdd = logs[i];
                 toAdd.highlight = false;
-                toAdd.timeFormat = new Date(toAdd.time);
+                toAdd.timeFormat = new Date(toAdd.time).toLocaleString();
                 
                 // We want to strip off "Task Result:"
                 currentMessage = toAdd.message.substring(taskResultStr.length).trim();
@@ -222,11 +222,12 @@ Polymer({
                 
                 // Once stored we'll strip the entire starter and basically keep everything after the equal (=) sign
                 currentMessage = currentMessage.substring(currentMessage.indexOf('=')+1).trim();
-                toAdd.messageFormat = currentMessage;
+                //toAdd.messageFormat = currentMessage;
                 // TODO Format so the JSON displays properly spaced and pretty
-                //toAdd.messageFormat = JSON.stringify(JSON.parse(currentMessage), null, 4);
-                //toAdd.messageFormat = JSON.stringify(currentMessage, null, 4);
-                //toAdd.messageFormat = JSON.stringify(toAdd.message, null, 4);
+                toAdd.messageFormat = currentMessage;
+                try{
+                    toAdd.messageFormat = JSON.stringify(JSON.parse(currentMessage), null, 4);
+                }catch (error) { };
                 
                 // If we have a valid taskGroup check our current action for validity
                 // Basically we don't want to pollute the logs with items from other actions
