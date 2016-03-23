@@ -208,7 +208,7 @@ Polymer({
             if (logs[i].message.indexOf(taskResultStr) !== -1) {
                 toAdd = logs[i];
                 toAdd.highlight = false;
-                toAdd.timeFormat = new Date(toAdd.time).toLocaleString();
+                toAdd.timeFormat = this._formatTime(toAdd.time);
                 
                 // We want to strip off "Task Result:"
                 currentMessage = toAdd.message.substring(taskResultStr.length).trim();
@@ -222,8 +222,8 @@ Polymer({
                 
                 // Once stored we'll strip the entire starter and basically keep everything after the equal (=) sign
                 currentMessage = currentMessage.substring(currentMessage.indexOf('=')+1).trim();
-                //toAdd.messageFormat = currentMessage;
-                // TODO Format so the JSON displays properly spaced and pretty
+                
+                // Format the JSON if we can
                 toAdd.messageFormat = currentMessage;
                 try{
                     toAdd.messageFormat = JSON.stringify(JSON.parse(currentMessage), null, 4);
@@ -288,6 +288,13 @@ Polymer({
             }
             this.push('_timeLimits', {name: name, date: currentDate });
         }
+    },
+    
+    _formatTime: function(time) {
+        var date = new Date(time);
+        
+        return date.getFullYear() + "-" + ('0'+(date.getMonth()+1)).slice(-2) + "-" + date.getDate() + ", " +
+               date.getHours() + ":" + ('0'+date.getMinutes()).slice(-2) + ":" + ('0'+date.getSeconds()).slice(-2) + "." + ('00'+date.getMilliseconds()).slice(-3);
     },
     
     /**

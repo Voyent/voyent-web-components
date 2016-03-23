@@ -1,7 +1,6 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 <link rel="import" href="../bridgeit-action-editor/bridgeit-action-list.html">
-<link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
 <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
 <link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../../paper-input/paper-input.html">
@@ -72,7 +71,7 @@ Example:
             .twrap {
                 overflow-x: scroll;
                 overflow-y: scroll;
-                height: 1024px;
+                max-height: 800px;
                 border: 1px inset black;
             }
             
@@ -173,10 +172,6 @@ Example:
                             <tr>
                                 <th colspan="2">{{_logSize}} Items</th>
                             </tr>
-                            <tr>
-                                <th>Time</th>
-                                <th>Task</th>
-                            </tr>
                         </thead>
                         <tbody>
                         <template is="dom-repeat" items="{{_backpack}}" as="backpack">
@@ -186,11 +181,6 @@ Example:
                             </tr>
                             <tr class$="bottomB {{highlightStyle(backpack.highlight)}}">
                                 <td colspan="2"><pre>{{backpack.messageFormat}}</pre></td>
-                                <!-- TODO TEMPORARY Find a way to format our JSON results
-                                <td>
-                                    <bridgeit-code-editor value="{{backpack.messageFormat}}"></bridgeit-code-editor>
-                                </td>
-                                -->
                             </tr>
                         </template>
                         </tbody>
