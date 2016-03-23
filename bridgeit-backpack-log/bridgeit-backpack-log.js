@@ -120,6 +120,14 @@ Polymer({
         return highlight ? 'highlight' : '';
     },
     
+    /**
+     * Computed binding function
+     * Check whether we have a valid log size to display
+     */
+    hasLogs: function() {
+        return this._logSize > 0;
+    },
+    
     //******************PRIVATE API******************
     /**
      * Function to get our logs and load our actions

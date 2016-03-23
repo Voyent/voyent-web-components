@@ -186,8 +186,8 @@ Example:
                         </div>
                     </template>
                 </div>
+                <template is="dom-if" if="{{hasLogs()}}">
                 <div class="flex-3 twrap">
-                    <template is="dom-if" if="{{_logSize > 0}}">
                     <table>
                         <thead>
                             <tr>
@@ -214,11 +214,13 @@ Example:
                         </template>
                         </tbody>
                     </table>
-                    </template>
-                    <template is="dom-if" if="{{_logSize <= 0}}">
-                        <p>No logs were found for that action and time limit.</p>
-                    </template>
                 </div>
+                </template>
+                <template is="dom-if" if="{{!hasLogs()}}">
+                    <div class="flex-3">
+                        <h2>No logs were found for that action and time limit.</h2>
+                    </div>
+                </template>
             </template>
         </div>
         
