@@ -29,6 +29,44 @@ Example:
                 };
             }
             
+            .throbber-wrapper {
+                width: 100%;
+                text-align: center;
+            }
+            .throbber-loader:not(:required) {
+              -moz-animation: throbber-loader 2000ms 300ms infinite ease-out;
+              -webkit-animation: throbber-loader 2000ms 300ms infinite ease-out;
+              animation: throbber-loader 2000ms 300ms infinite ease-out;
+              background: #dde2e7;
+              display: inline-block;
+              position: relative;
+              text-indent: -9999px;
+              width: 0.9em;
+              height: 1.5em;
+              margin: 0 1.6em;
+            }
+            .throbber-loader:not(:required):before, .throbber-loader:not(:required):after {
+              background: #dde2e7;
+              content: '\x200B';
+              display: inline-block;
+              width: 0.9em;
+              height: 1.5em;
+              position: absolute;
+              top: 0;
+            }
+            .throbber-loader:not(:required):before {
+              -moz-animation: throbber-loader 2000ms 150ms infinite ease-out;
+              -webkit-animation: throbber-loader 2000ms 150ms infinite ease-out;
+              animation: throbber-loader 2000ms 150ms infinite ease-out;
+              left: -1.6em;
+            }
+            .throbber-loader:not(:required):after {
+              -moz-animation: throbber-loader 2000ms 450ms infinite ease-out;
+              -webkit-animation: throbber-loader 2000ms 450ms infinite ease-out;
+              animation: throbber-loader 2000ms 450ms infinite ease-out;
+              right: -1.6em;
+            }
+            
             .container {
                 width: 95% !important;
                 max-width: 95% !important;
@@ -71,6 +109,7 @@ Example:
                 overflow-x: hidden;
                 overflow-y: scroll;
                 height: 1024px;
+                border: 1px inset black;
             }
             
             table {
@@ -93,6 +132,9 @@ Example:
             }
             .highlight {
                 background-color: #FFFFCC;
+            }
+            
+            .highlight td {
                 border: 2px solid black;
             }
         </style>
@@ -128,52 +170,66 @@ Example:
         <br/>
         
         <div class="container flex layout horizontal">
-        <div class="flex-1 taskPanel">
-            <template is="dom-repeat" items="{{_taskGroups}}" as="group">
-                <div class="taskGroup">
-                    <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" title="{{group.type}}" class="taskHeader">
-                        {{group.name}}
-                    </div>
-                
-                    <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                        <div on-click="_viewItem" data-workflow-item$="{{task.name}}" title="{{task.type}}" class="taskItem taskHeader">
-                            {{task.name}}
+            <template is="dom-if" if="{{_gotLogs}}">
+                <div class="flex-1 taskPanel">
+                    <template is="dom-repeat" items="{{_taskGroups}}" as="group">
+                        <div class$="taskGroup {{highlightStyle(group.highlight)}}">
+                            <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" title="{{group.type}}" class="taskHeader">
+                                {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{_matchCount}})</template>
+                            </div>
+                        
+                            <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
+                                    {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{_matchCount}})</template>
+                                </div>
+                            </template>
                         </div>
+                    </template>
+                </div>
+                <div class="flex-3 twrap">
+                    <template is="dom-if" if="{{_logSize > 0}}">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th colspan="3">{{_logSize}} Items</th>
+                            </tr>
+                            <tr>
+                                <th>Time</th>
+                                <th>Task</th>
+                                <th>Backpack Contents</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <template is="dom-repeat" items="{{_backpack}}" as="backpack">
+                            <tr class$="{{highlightStyle(backpack.highlight)}}">
+                                <td>{{backpack.timeFormat}}</td>
+                                <td>{{backpack.taskGroup}} - {{backpack.taskItem}}</td>
+                                <td>{{backpack.messageFormat}}</td>
+                                <!-- TODO TEMPORARY Find a way to format our JSON results
+                                <td>
+                                    <bridgeit-code-editor value="{{backpack.messageFormat}}"></bridgeit-code-editor>
+                                </td>
+                                -->
+                            </tr>
+                        </template>
+                        </tbody>
+                    </table>
+                    </template>
+                    <template is="dom-if" if="{{_logSize <= 0}}">
+                        <p>No logs were found for that action and time limit.</p>
                     </template>
                 </div>
             </template>
         </div>
-        <template is="dom-if" if="{{_hasLogs}}">
-            <div class="flex-3 twrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th colspan="3">{{_logSize}} Items</th>
-                        </tr>
-                        <tr>
-                            <th>Time</th>
-                            <th>Task</th>
-                            <th>Backpack Contents</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <template is="dom-repeat" items="{{_backpack}}" as="backpack">
-                        <tr class$="{{backpackStyle(backpack.highlight)}}">
-                            <td>{{backpack.timeFormat}}</td>
-                            <td>{{backpack.taskGroup}} - {{backpack.taskItem}}</td>
-                            <td>{{backpack.messageFormat}}</td>
-                            <!-- TODO TEMPORARY Find a way to format our JSON results
-                            <td>
-                                <bridgeit-code-editor value="{{backpack.messageFormat}}"></bridgeit-code-editor>
-                            </td>
-                            -->
-                        </tr>
-                    </template>
-                    </tbody>
-                </table>
-            </div>
+        
+        <template is="dom-if" if="{{_loading}}">
+            <center>
+                <p>One moment, loading logs...</p>
+                <div class="throbber-wrapper">
+                    <div class="throbber-loader">...</div>
+                </div>
+            </center>
         </template>
-        </div>
     </template>
 </dom-module>
 

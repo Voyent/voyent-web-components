@@ -64,12 +64,14 @@ Polymer({
         }
         if (bridgeit.io.auth.isLoggedIn()) {
             this.getActions();
-            this.getTimeLimits();
         }
         
-        this._hasLogs = false;
+        this.getTimeLimits();
+        this._gotLogs = false;
         this._logSize = 0;
+        this._loading = false;
         this._taskGroups = [];
+        this._matchCount = 0;
 	},
 	
     /**
@@ -114,7 +116,7 @@ Polymer({
      * Polymer 1.0 doesn't support direct inline string class binding so we have to do this workaround
      * See: http://stackoverflow.com/questions/30607379/polymer-1-0-binding-css-classes
      */
-    backpackStyle: function(highlight) {
+    highlightStyle: function(highlight) {
         return highlight ? 'highlight' : '';
     },
     
@@ -135,9 +137,20 @@ Polymer({
         // Store our currently selected saved action as a set of task groups
         this._taskGroups = this._savedActions[this.selectedAction].taskGroups;
         
-        /** TODO Can't query by date at the moment because the underlying MongoDB requires an ISODate object, and we can only pass strings
+        // Loop through the task groups and items and mark each one not highlighted
+        var currentTaskGroup = null;
+        for (var i = 0; i < this._taskGroups.length; i++) {
+            currentTaskGroup = this._taskGroups[i];
+            currentTaskGroup.highlight = false;
+            
+            for (var j = 0; j < currentTaskGroup.tasks.length; j++) {
+                currentTaskGroup.tasks[j].highlight = false;
+            }
+        }
+        
+        /** TODO NTFY-214 Can't query by date at the moment because the underlying MongoDB requires an ISODate object
         if (this._timeLimits[this.selectedLimit].date !== null) {
-            this.query = {"$and":[{"time":{"$gte":this._timeLimits[this.selectedLimit].date.toISOString()}}]};
+            this.query = {"$and":[{"time":{"$gte":{"$date": this._timeLimits[this.selectedLimit].date.toISOString()}}}]};
         }
         else {
             delete this.query.time;
@@ -148,6 +161,7 @@ Polymer({
         this.query.service = 'Action';
         
         // Grab our logs
+        this._loading = true;
         var _this = this;
         bridgeit.io.admin.getLogs({
             account: this.account,
@@ -167,8 +181,6 @@ Polymer({
      */
     _fetchLogsCallback: function(logs) {
         this._backpack = [];
-        
-        console.log("Log callback, result size " + logs.length);
         
         // We're looking for messages of this format:
         //  Task Result: [ managerMessage ][ managerPush ] = {}
@@ -223,12 +235,15 @@ Polymer({
             }
         }
         
-        console.log("Backpack size: " + this._backpack.length);
+        console.log("Backpack size is " + this._backpack.length + " from " + logs.length + " log entries");
         
+        // Clear our old full logs, mark that we have retrieved logs, and their size
+        delete logs;
+        this._gotLogs = true;
         this._logSize = this._backpack.length;
-        if (this._logSize > 0) {
-            this._hasLogs = true;
-        }
+        
+        // Done
+        this._loading = false;
     },
     
     /**
@@ -265,7 +280,23 @@ Polymer({
      * @private
      */
     _viewGroup: function(e) {
-        this._viewGeneric(e.target.getAttribute('data-workflow-item'), 'taskGroup');
+        var taskName = e.target.getAttribute('data-workflow-item');
+        
+        var match = false;
+        for (var i = 0; i < this._taskGroups.length; i++) {
+            // Set our highlight
+            match = (taskName === this._taskGroups[i].name);
+            this._taskGroups[i].highlight = match;
+            this.notifyPath('_taskGroups.' + i + '.highlight', match);
+            
+            // Reset all task items to not highlighted
+            for (var j = 0; j < this._taskGroups[i].tasks.length; j++) {
+                this._taskGroups[i].tasks[j].highlight = false;
+                this.notifyPath('_taskGroups.' + i + '.tasks.' + j + '.highlight', false);
+            }
+        }
+        
+        this._viewGeneric(taskName, 'taskGroup');
     },
     
     /**
@@ -276,7 +307,30 @@ Polymer({
      * @private
      */
     _viewItem: function(e) {
-        this._viewGeneric(e.target.getAttribute('data-workflow-item'), 'taskItem');
+        var parent = JSON.parse(e.target.getAttribute('data-parent-item'));
+        var taskName = e.target.getAttribute('data-workflow-item');
+        
+        var match = false;
+        var innerMatch = false;
+        for (var i = 0; i < this._taskGroups.length; i++) {
+            match = (parent.name === this._taskGroups[i].name);
+            innerMatch = false;
+            
+            for (var j = 0; j < this._taskGroups[i].tasks.length; j++) {
+                if (match) {
+                    innerMatch = (taskName === this._taskGroups[i].tasks[j].name);
+                }
+                
+                this._taskGroups[i].tasks[j].highlight = innerMatch;
+                this.notifyPath('_taskGroups.' + i + '.tasks.' + j + '.highlight', innerMatch);
+            }
+            
+            // Reset the task group highlight regardless, since we want to highlight a task item
+            this._taskGroups[i].highlight = false;
+            this.notifyPath('_taskGroups.' + i + '.highlight', false);
+        }
+        
+        this._viewGeneric(taskName, 'taskItem');
     },
     
     /**
@@ -288,7 +342,7 @@ Polymer({
      */
     _viewGeneric: function(taskName, compareTo) {
         // We want to loop through our backpack messages and highlight any in the passed task item
-        var matchCount = 0;
+        this._matchCount = 0;
         var match = false;
         for (var i = 0; i < this._backpack.length; i++) {
             match = (taskName === this._backpack[i][compareTo]);
@@ -296,10 +350,8 @@ Polymer({
             this.notifyPath('_backpack.' + i + '.highlight', match);
             
             if (match) {
-                matchCount++;
+                this._matchCount++;
             }
         }
-        
-        alert("Found " + matchCount + " matching log messages for '" + taskName + "'.");
     }
 });
