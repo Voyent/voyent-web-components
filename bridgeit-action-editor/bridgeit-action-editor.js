@@ -1028,6 +1028,54 @@ Polymer({
     },
 
     /**
+     * Move a task up.
+     * @param e
+     * @private
+     */
+    _moveTaskUp: function(e) {
+        var task = e.model.task;
+        for (var i=this._taskGroups.length-1; i>=0; i--) {
+            for (var j=this._taskGroups[i].tasks.length-1; j>=0; j--) {
+                if (task == this._taskGroups[i].tasks[j]) {
+                    var currPos = j;
+                    var newPos = currPos-1;
+                    if (newPos < 0) {
+                        return;
+                    }
+                    //move the task up
+                    this.splice('_taskGroups.'+i+'.tasks',currPos,1);
+                    this.splice('_taskGroups.'+i+'.tasks',newPos,0,task);
+                    return;
+                }
+            }
+        }
+    },
+
+    /**
+     * Move a task down.
+     * @param e
+     * @private
+     */
+    _moveTaskDown: function(e) {
+        var task = e.model.task;
+        for (var i=this._taskGroups.length-1; i>=0; i--) {
+            for (var j=this._taskGroups[i].tasks.length-1; j>=0; j--) {
+                if (task == this._taskGroups[i].tasks[j]) {
+                    var currPos = j;
+                    var newPos = currPos+1;
+                    if (newPos == this._taskGroups[i].tasks.length) {
+                        return;
+                    }
+                    //move the task down
+                    this.splice('_taskGroups.'+i+'.tasks',currPos,1);
+                    this.splice('_taskGroups.'+i+'.tasks',newPos,0,task);
+                    return;
+                }
+            }
+        }
+    },
+
+    /**
      * Toggle the content of a task group / task.
      * @param e
      * @private
