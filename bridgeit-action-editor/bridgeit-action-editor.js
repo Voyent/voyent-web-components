@@ -32,6 +32,7 @@ Polymer({
             this.account = bridgeit.io.auth.getLastKnownAccount();
         }
         if (bridgeit.io.auth.isLoggedIn()) {
+            this._loadQueryEditor();
             this.getTaskItems();
             this.getActions();
         }
@@ -108,8 +109,9 @@ Polymer({
             // We use a separate map for this so we don't interfere with existing functionality, just the display on the page
             _this._organizeSchemas(_this[key],key);
         }));
-        return Promise.all(promises).then(function(){
-            _this._loadQueryEditor();
+        return Promise.all(promises).then(function() {
+            //This div will be rendered now so append the queryEditor to it
+            _this.$$('#eventHandlerEditor').appendChild(_this._queryEditorRef);
         })['catch'](function(error) {
             console.log('Error in getTaskItems:',error);
             _this.fire('bridgeit-error', {error: error});
@@ -580,20 +582,7 @@ Polymer({
      * @private
      */
     _loadQueryEditor: function() {
-        var _this = this;
-        //only render the query editor once
-        if (Polymer.dom(this.$$('#eventHandlerEditor')).querySelector('bridgeit-query-editor')) {
-            return;
-        }
         this._queryEditorRef = new BridgeIt.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
-        //since the editor div is included dynamically in the
-        //template it's possible that it hasn't rendered yet
-        var checkExist = setInterval(function() {
-            if (_this.$$('#eventHandlerEditor')) {
-                _this.$$('#eventHandlerEditor').appendChild(_this._queryEditorRef);
-                clearInterval(checkExist);
-            }
-        },50);
     },
 
     /**
