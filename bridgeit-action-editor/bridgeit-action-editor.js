@@ -110,8 +110,14 @@ Polymer({
             _this._organizeSchemas(_this[key],key);
         }));
         return Promise.all(promises).then(function() {
-            //This div will be rendered now so append the queryEditor to it
-            _this.$$('#eventHandlerEditor').appendChild(_this._queryEditorRef);
+            //since the editor div is included dynamically in the
+            //template it's possible that it hasn't rendered yet
+            var checkExist = setInterval(function() {
+                if (_this.$$('#eventHandlerEditor')) {
+                    _this.$$('#eventHandlerEditor').appendChild(_this._queryEditorRef);
+                    clearInterval(checkExist);
+                }
+            },10);
         })['catch'](function(error) {
             console.log('Error in getTaskItems:',error);
             _this.fire('bridgeit-error', {error: error});
@@ -810,10 +816,10 @@ Polymer({
                     currentNode = currentNode.parentNode;
                 }
             }
-            
+
             // The important takeaway from the calculations above: our absolute Y position of the drop
             var dropY = e.clientY + compareTop;
-            
+
             // Next we look at our current task groups
             // For each task group we'll figure out the offsetTop
             // If our dropY is greater than that offsetTop we know we're still below that task group
@@ -838,16 +844,16 @@ Polymer({
                         if (i === 0 && dropY > (currentTaskGroup.offsetTop - 30)) {
                             insertIndex = 0;
                         }
-                        
+
                         break;
                     }
                 }
             }
-            
+
             // If we have an "insertIndex" it means we figured out where the task group should be inserted
             if (typeof insertIndex !== 'undefined' && insertIndex < this._taskGroups.length) {
                 appendBottom = false;
-                
+
                 newid = this._taskGroupBaseId + insertIndex;
                 this.splice('_taskGroups', insertIndex, 0, {"id":newid,"name":'',"schema":schema,"tasks":[]});
             }
