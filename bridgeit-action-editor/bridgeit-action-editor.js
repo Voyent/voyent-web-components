@@ -32,9 +32,7 @@ Polymer({
             this.account = bridgeit.io.auth.getLastKnownAccount();
         }
         if (bridgeit.io.auth.isLoggedIn()) {
-            this._loadQueryEditor();
-            this.getTaskItems();
-            this.getActions();
+            this.initialize();
         }
         this._loadedAction = null;
         this._taskGroups = [];
@@ -90,6 +88,15 @@ Polymer({
             }
         }, true);
 	},
+
+    /**
+     * If authentication is not provided on component load then this function can be used to initialize the component.
+     */
+    initialize: function() {
+        this._loadQueryEditor();
+        this.getTaskItems();
+        this.getActions();
+    },
 
     /**
      * Fetch the list of available task groups and tasks from the Acton Service.
