@@ -38,6 +38,7 @@ Polymer({
         this._taskGroups = [];
         this._codeEditorProperties=['function','messagetemplate'];
         this._taskGroupBaseId = 'taskGroup';
+        this._taskBaseId = 'task';
         
         // Setup our sidebar to scroll alongside the action editor
         // This is necessary in case the action editor is quite long (such as many tasks)
@@ -52,30 +53,15 @@ Polymer({
                 if (_this.offset < 0) {
                     _this.offset = ourDiv.offsetTop;
                 }
-                
-                // Normally we can just use the document "scrollTop" (via a few browser compatible ways)
-                // But there is a chance our component will be used inside a scrollable container
-                // In that case we need to get the scrollTop of any valid parent container
-                // So basically if we can't get the scrollTop a normal way, we reverse traverse the
-                //  parent nodes until we find a valid scrollTop, or hit the top of the document (when parentNode = null)
-                var compareTop = (document.documentElement.scrollTop || document.body.scrollTop);
-                if (compareTop <= 0) {
-                    var currentNode = ourDiv.parentNode;
-                    while (currentNode !== null) {
-                        if (currentNode.scrollTop > 0) {
-                            compareTop = currentNode.scrollTop;
-                            break;
-                        }
-                        currentNode = currentNode.parentNode;
-                    }
-                }
-                
+
+                var compareTop = _this._calculateScrollbarPos(ourDiv.parentNode);
+
                 // If the top of our scroll is beyond the sidebar offset it means
-                //  the sidebar would no longer be visible
+                // the sidebar would no longer be visible
                 // At that point we switch to a fixed position with a top of 0
                 // We will reverse this process if the sidebar would naturally be visible again
                 // This is necessary beyond a standard "position: fixed" to ensure the sidebar doesn't
-                //  stay fixed to the top of the page when it doesn't need to
+                // stay fixed to the top of the page when it doesn't need to
                 // Note we include our "barpad" attribute, to ensure the shifting happens right away
                 if ((compareTop+_this.barpad) > _this.offset) {
                     ourDiv.style.position = 'fixed';
@@ -812,19 +798,8 @@ Polymer({
             // We can add these two together to get an absolute Y of the page
             // Note we also have to get a bit fancy to reliably determine scrollTop
             //  since our component might be in a scrollable container, instead of just a body scrollbar
-            var compareTop = (document.documentElement.scrollTop || document.body.scrollTop);
-            if (compareTop <= 0) {
-                var currentNode = e.target.parentNode;
-                while (currentNode !== null) {
-                    if (currentNode.scrollTop > 0) {
-                        compareTop = currentNode.scrollTop;
-                        break;
-                    }
-                    currentNode = currentNode.parentNode;
-                }
-            }
-
-            // The important takeaway from the calculations above: our absolute Y position of the drop
+            var compareTop = this._calculateScrollbarPos(e.target.parentNode);
+            //absolute Y position of the drop
             var dropY = e.clientY + compareTop;
 
             // Next we look at our current task groups
@@ -840,7 +815,7 @@ Polymer({
                 currentTaskGroup = this.querySelector('#' + this._taskGroups[i].id);
                 if (currentTaskGroup) {
                     if (dropY > currentTaskGroup.offsetTop) {
-                        insertIndex = currentTaskGroup.id.slice(-1);
+                        insertIndex = currentTaskGroup.id.replace(/^\D+/g, ''); //get the id by replacing all non-digits until we encounter a number
                         insertIndex++; // Note we increase our insertIndex since we want to be BELOW the current item
                     }
                     else {
@@ -869,7 +844,7 @@ Polymer({
                 appendBottom = true;
             }
         }
-        
+
         // If we reached here and still have "appendBottom" set to true we will add our dropped item to the bottom
         //  of the task group array via push
         if (appendBottom) {
@@ -883,24 +858,10 @@ Polymer({
             }
         }
         
-        // Finally if we have a valid new ID we'll get that task group item and play
-        //  a "grow" animation to draw attention to it
+        // Finally if we have a valid new ID we'll get that task group
+        // item and play a "grow" animation to draw attention to it
         if (newid) {
-            var _this = this;
-            setTimeout(function() {
-                var justadded = _this.querySelector('#' + newid);
-                if (justadded) {
-                    justadded.classList.add('growbubble');
-                }
-            },0);
-            
-            // Remove the grow animation after it's complete, so that the highlight keyframe still works properly
-            setTimeout(function() {
-                var justadded = _this.querySelector('#' + newid);
-                if (justadded) {
-                    justadded.classList.remove('growbubble');
-                }
-            },550);
+            this._doGrowAnimation('#'+newid);
         }
     },
 
@@ -920,12 +881,12 @@ Polymer({
         // However there is a chance the user dropped the element on a component inside the container
         // In that case our target ID will be invalid
         // If that happens we will reverse traverse looking for "taskGroupX" ID to strip and use
-        var taskGroupIndex = e.target.id.slice(-1);
+        var taskGroupIndex = e.target.id.indexOf(this._taskGroupBaseId) === 0 ? e.target.id.replace(/^\D+/g, '') : null;
         if (!taskGroupIndex) {
             var currentParent = e.target.parentNode;
             do {
                 if (currentParent.id && currentParent.id.indexOf(this._taskGroupBaseId) === 0) {
-                    taskGroupIndex = currentParent.id.slice(-1);
+                    taskGroupIndex = currentParent.id.replace(/^\D+/g, '');
                     break;
                 }
                 
@@ -935,15 +896,108 @@ Polymer({
         
         // Only add if we actually have a proper index figured out
         if (taskGroupIndex) {
-            var taskIndex = this._taskGroups[taskGroupIndex].tasks.length;
-            
-            // Increase our task count and reflect the new number on the UI
-            this._taskGroups[taskGroupIndex].schema.taskcount++;
-            this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', this._taskGroups[taskGroupIndex].schema.taskcount);
-            
-            // Update our task group list
-            this.push('_taskGroups.'+taskGroupIndex+'.tasks',{"id":"task"+taskIndex,"schema":schema});
+            //This section below is the same technique as above (_dropInAction), see that function for comments
+            var tasks = this.get('_taskGroups.'+taskGroupIndex+'.tasks');
+            var appendBottom = true;
+            var newid = this._taskBaseId + tasks.length;
+            if (tasks.length > 0) {
+                var scrollbarPos = this._calculateScrollbarPos(e.target.parentNode);
+                var dropY = e.clientY + scrollbarPos;
+
+                var insertIndex;
+                var currentTask;
+                for (var i = 0; i < tasks.length; i++) {
+                    currentTask = this.querySelector('#' + this._taskGroupBaseId + taskGroupIndex + ' [data-id="' + tasks[i].id + '"]');
+                    if (currentTask) {
+                        var currentTaskPos = currentTask.getBoundingClientRect().top + scrollbarPos;
+                        if (dropY > currentTaskPos) {
+                            insertIndex = currentTask.getAttribute('data-id').replace(/^\D+/g, '');
+                            insertIndex++;
+                        }
+                        else {
+                            if (i === 0) {
+                                insertIndex = 0;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if (typeof insertIndex !== 'undefined' && insertIndex < tasks.length) {
+                    appendBottom = false;
+
+                    newid = this._taskBaseId + insertIndex;
+                    this.splice('_taskGroups.' + taskGroupIndex + '.tasks', insertIndex, 0, {"id": newid,"schema": schema});
+                }
+                else {
+                    appendBottom = true;
+                }
+            }
+
+            if (appendBottom) {
+                this.push('_taskGroups.'+taskGroupIndex+'.tasks', {"id":newid,"schema":schema});
+            }
+            else {
+                for (var j = 0; j < tasks.length; j++) {
+                    this.set('_taskGroups.' + taskGroupIndex + '.tasks.'+j+'.id', this._taskBaseId+j);
+                }
+            }
+
+            if (newid) {
+                this._doGrowAnimation('#'+this._taskGroupBaseId+taskGroupIndex + ' [data-id="' + newid + '"]');
+            }
+
+            this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', this._taskGroups[taskGroupIndex].schema.taskcount+1);
         }
+    },
+
+    /**
+     * Return the current vertical position of the scroll bar.
+     * @param parent
+     * @returns {number}
+     * @private
+     */
+    _calculateScrollbarPos: function(parent) {
+        // Normally we can just use the document "scrollTop" (via a few browser compatible ways)
+        // But there is a chance our component will be used inside a scrollable container
+        // In that case we need to get the scrollTop of any valid parent container
+        // So basically if we can't get the scrollTop a normal way, we reverse traverse the
+        // parent nodes until we find a valid scrollTop, or hit the top of the document (when parentNode = null)
+        var position = (document.documentElement.scrollTop || document.body.scrollTop);
+        if (position <= 0) {
+            var currentNode = parent;
+            while (currentNode !== null) {
+                if (currentNode.scrollTop > 0) {
+                    position = currentNode.scrollTop;
+                    break;
+                }
+                currentNode = currentNode.parentNode;
+            }
+        }
+        return position;
+    },
+
+    /**
+     * Generates a grow animation when dropping task groups and tasks.
+     * @param selector
+     * @private
+     */
+    _doGrowAnimation: function(selector) {
+        var _this = this;
+        setTimeout(function() {
+            var justadded = _this.querySelector(selector);
+            if (justadded) {
+                justadded.classList.add('growbubble');
+            }
+        },0);
+
+        // Remove the grow animation after it's complete, so that the highlight keyframe still works properly
+        setTimeout(function() {
+            var justadded = _this.querySelector(selector);
+            if (justadded) {
+                justadded.classList.remove('growbubble');
+            }
+        },550);
     },
     
     /**
