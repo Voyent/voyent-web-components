@@ -1,0 +1,207 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+<link rel="import" href="../bridgeit-action-editor/bridgeit-action-list.html">
+<link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-item/paper-item-body.html">
+<link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+
+<!--
+Displays a detailed view of the backpack contents for an action sequence
+
+Example:
+
+    <bridgeit-backpack-log>
+    </bridgeit-backpack-log>
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-backpack-log">
+    <template>
+        <link type="text/css" rel="stylesheet" href="./bridgeit-backpack-log.css">
+        
+        <style type="text/css">
+            paper-dropdown-menu {
+                --paper-dropdown-menu: {
+                    width:100%;
+                };
+            }
+            
+            .container {
+                width: 95% !important;
+                max-width: 95% !important;
+            }
+            
+            .dropWrap {
+                text-align: center;
+                width: 80%;
+            }
+            
+            .taskGroup, .taskItem {
+                border-radius: 3px;
+                align-items: top;
+                vertical-align: top;
+            }
+            
+            .taskGroup {
+                position: relative;
+                padding: 10px;
+                margin-bottom: 10px;
+                background-color: #DBDBDB;
+            }
+            
+            .taskItem {
+                padding: 5px;
+                margin-left: 15px;
+                margin-bottom: 5px;
+                background-color: #E5E5E5;
+            }
+            
+            .taskHeader {
+                cursor: pointer;
+            }
+            
+            .taskPanel {
+                margin-right: 10px;
+            }
+            
+            .twrap {
+                overflow-x: scroll;
+                overflow-y: scroll;
+                max-height: 800px;
+                border: 1px inset black;
+            }
+            
+            table {
+                table-layout: fixed;
+                width: 100%;
+                border: 1px solid #ddd;
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+            
+            thead, th {
+                border: 1px solid #ddd;
+            }
+            
+            th {
+                background-color: #444444;
+                color: white;
+            }
+            
+            td {
+                word-wrap: break-word;
+                padding: 5px;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+            
+            .topB td {
+                border-top: 1px solid #ddd;
+            }
+            
+            .bottomB td {
+                border-bottom: 1px solid #ddd;
+            }
+            
+            .highlight {
+                background-color: #FFFFCC;
+            }
+            .highlight td {
+                border-top: 2px solid black;
+                border-bottom: 2px solid black;
+                border-left: 2px solid black;
+                border-right: 2px solid black;
+            }
+        </style>
+        
+        <div class="container flex layout horizontal">
+            <div class="flex-2">
+                <div class="dropWrap">
+                    <paper-dropdown-menu label="Saved Actions" required="true">
+                        <paper-listbox class="dropdown-content" selected="{{selectedAction}}">
+                            <template is="dom-repeat" items="[[_savedActions]]" as="saction">
+                                <paper-item>[[saction._id]]</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                </div>
+            </div>
+            <div class="flex-2">
+                <div class="dropWrap">
+                    <paper-dropdown-menu label="Time Limit" required="true">
+                        <paper-listbox class="dropdown-content" selected="{{selectedLimit}}">
+                            <template is="dom-repeat" items="[[_timeLimits]]" as="tlimit">
+                                <paper-item>[[tlimit.name]]</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                </div>
+            </div>
+            <div class="flex-1">
+                <paper-button raised on-click="_submit">View Backpack</paper-button>           
+            </div>
+        </div>
+        
+        <br/>
+        
+        <div class="container flex layout horizontal">
+            <template is="dom-if" if="{{_gotLogs}}">
+                <div class="flex-1 taskPanel">
+                    <template is="dom-repeat" items="{{_taskGroups}}" as="group">
+                        <div class$="taskGroup {{highlightStyle(group.highlight)}}">
+                            <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" title="{{group.type}}" class="taskHeader">
+                                {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{_matchCount}})</template>
+                            </div>
+                        
+                            <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
+                                    {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{_matchCount}})</template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+                <template is="dom-if" if="{{hasLogs()}}">
+                <div class="flex-3 twrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th colspan="2">{{_logSize}} Items</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <template is="dom-repeat" items="{{_backpack}}" as="backpack">
+                            <tr class$="topB {{highlightStyle(backpack.highlight)}}">
+                                <td>{{backpack.timeFormat}}</td>
+                                <td>{{backpack.taskGroup}} - {{backpack.taskItem}}</td>
+                            </tr>
+                            <tr class$="bottomB {{highlightStyle(backpack.highlight)}}">
+                                <td colspan="2"><pre>{{backpack.messageFormat}}</pre></td>
+                            </tr>
+                        </template>
+                        </tbody>
+                    </table>
+                </div>
+                </template>
+                <template is="dom-if" if="{{!hasLogs()}}">
+                    <div class="flex-3">
+                        <h2>No logs were found for that action and time limit.</h2>
+                    </div>
+                </template>
+            </template>
+        </div>
+        
+        <template is="dom-if" if="{{_loading}}">
+            <div class="throbber-wrapper">
+                <p>One moment, loading logs...</p>
+                <div class="throbber-loader">...</div>
+            </div>
+        </template>
+    </template>
+</dom-module>
+
+<script src="bridgeit-backpack-log.js"></script>
