@@ -16,7 +16,6 @@ Polymer({
         data:{
             type:Object,
             notify: true,
-            observer:'dataChanged',
             reflectToAttribute:true
         },
         showChoices:{
@@ -54,6 +53,7 @@ Polymer({
         if(solicitURLData !== null){
             solicitURLData = JSON.parse(solicitURLData);
             poly.data = solicitURLData;
+            poly.showSolicit();
         }
         else {
             if (poly.data) {
@@ -68,7 +68,6 @@ Polymer({
     //******************PRIVATE API******************
 
     answerGiven: function(e){
-      console.log(e);
         var element;
         if(e.srcElement){
           element = e.srcElement.closest('.solicitMain');
@@ -76,12 +75,12 @@ Polymer({
         else{
           element = e.target.closest('.solicitMain');
         }
-        element.classList.add('hidden');
-        element.classList.remove('visible');
-        setTimeout(function(){
-            poly.data = {};
-            element.classList.add('removed');
-        },700);
+        //element.classList.add('hidden');
+        //element.classList.remove('visible');
+        //setTimeout(function(){
+            //poly.data = {};
+            //element.classList.add('removed');
+        //},100);
         var params = {};
         if(poly.account){
             params.account = poly.account;
@@ -111,7 +110,20 @@ Polymer({
             poly.$$('.solicitMain').classList.remove('hidden');
             poly.$$('.solicitMain').classList.add('visible');
         }
-    }
+    },
+
+    hideSolicit: function () {
+      poly.$$('.solicitMain').classList.add('hidden');
+      poly.$$('.solicitMain').classList.remove('visible');
+      poly.$$('.solicitMain').classList.add('removed');
+    },
+
+  showSolicit: function(){
+      poly.$$('.solicitMain').classList.remove('removed');
+      poly.$$('.solicitMain').classList.remove('hidden');
+      poly.$$('.solicitMain').classList.add('visible');
+  }
 });
+
 
 
