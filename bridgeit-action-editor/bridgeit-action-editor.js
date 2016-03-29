@@ -61,7 +61,7 @@ Polymer({
                 ourDiv.style.top = null;
                 
                 // Only bother to sticky the container if our main content is big enough to need it
-                if (document.getElementById("mainContainer").clientHeight > ourDiv.clientHeight) {
+                if (document.getElementById("aeMain").clientHeight > ourDiv.clientHeight) {
                     // If the top of our scroll is beyond the sidebar offset it means
                     // the sidebar would no longer be visible
                     // At that point we switch to a fixed position with a top of 0
