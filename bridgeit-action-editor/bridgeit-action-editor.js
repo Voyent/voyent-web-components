@@ -53,15 +53,40 @@ Polymer({
                 if (_this.offset < 0) {
                     _this.offset = ourDiv.offsetTop;
                 }
-
                 var compareTop = _this._calculateScrollbarPos(ourDiv.parentNode);
+                
+                // There is a chance we need to resize our left pane contents a bit
+                // This would be necessary when the viewport is smaller than our left pane
+                // If we don't do this the left pane will sticky to the top and make it so the user can never reach the bottom
+                var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+                if (h) {
+                    // Get all left pane contents
+                    var panes = document.querySelectorAll(".leftPane");
+                    for (var i = 0; i < panes.length; i++) {
+                        // Calculate a height with some generous padding
+                        var calcH = h-300;
+                        panes[i].style.height = null;
+                        
+                        // If we are below a bare minimum of 100px reset to 100 and force the height
+                        if (calcH < 100) {
+                            calcH = 100;
+                            
+                            panes[i].style.height = calcH + 'px';
+                        }
+                        
+                        // Set the max height to our calculated value
+                        panes[i].style.maxHeight = calcH + 'px';
+                    }
+                }
                 
                 // Use the unstickied version by default
                 ourDiv.style.position = 'relative';
                 ourDiv.style.top = null;
                 
                 // Only bother to sticky the container if our main content is big enough to need it
-                if (document.getElementById("aeMain").clientHeight > ourDiv.clientHeight) {
+                // Similarly only sticky if our viewport is big enough that the user won't get stuck scrolling
+                if ((document.getElementById("aeMain").clientHeight > ourDiv.clientHeight) &&
+                    (h >= ourDiv.clientHeight)) {
                     // If the top of our scroll is beyond the sidebar offset it means
                     // the sidebar would no longer be visible
                     // At that point we switch to a fixed position with a top of 0

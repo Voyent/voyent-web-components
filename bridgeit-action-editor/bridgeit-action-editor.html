@@ -71,7 +71,7 @@ Example:
                line-height: 20px;
                @apply(--action-editor-task-panel-header);
            }
-           .taskPanel .taskItemPos, .taskPanel .taskClump {
+           .taskItemPos, .taskPanel .taskClump {
                height: 25px;
                min-height: 25px;
                line-height:25px;
@@ -265,7 +265,7 @@ Example:
                overflow-y: scroll;
            }
            .taskPane {
-               height: 500px;
+               max-height: 500px;
            }
            .taskBuffer {
                margin-bottom: 15px;
@@ -314,7 +314,7 @@ Example:
                                 <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane">
                                     <template is="dom-repeat" items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
-                                        <div class="flex taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" title$="{{item.description}}">
+                                        <div class="taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                             <div class="title">{{item.label}}</div>
                                         </div>
                                     </template>
@@ -326,7 +326,7 @@ Example:
                                     <template is="dom-repeat" items="{{_taskSchemasUI}}">
                                         <div class="taskClump">{{item.label}}</div>
                                         <template is="dom-repeat" items="{{item.schemas}}">
-                                            <div class="flex taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon" title$="{{item.description}}">
+                                            <div class="taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                                 <div class="title">{{item.labelUI}}</div>
                                             </div>
                                         </template>
