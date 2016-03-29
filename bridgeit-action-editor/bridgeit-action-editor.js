@@ -55,21 +55,24 @@ Polymer({
                 }
 
                 var compareTop = _this._calculateScrollbarPos(ourDiv.parentNode);
-
-                // If the top of our scroll is beyond the sidebar offset it means
-                // the sidebar would no longer be visible
-                // At that point we switch to a fixed position with a top of 0
-                // We will reverse this process if the sidebar would naturally be visible again
-                // This is necessary beyond a standard "position: fixed" to ensure the sidebar doesn't
-                // stay fixed to the top of the page when it doesn't need to
-                // Note we include our "barpad" attribute, to ensure the shifting happens right away
-                if ((compareTop+_this.barpad) > _this.offset) {
-                    ourDiv.style.position = 'fixed';
-                    ourDiv.style.top = _this.barpad + 'px';
-                }
-                else {
-                    ourDiv.style.position = 'relative';
-                    ourDiv.style.top = null;
+                
+                // Use the unstickied version by default
+                ourDiv.style.position = 'relative';
+                ourDiv.style.top = null;
+                
+                // Only bother to sticky the container if our main content is big enough to need it
+                if (document.getElementById("mainContainer").clientHeight > ourDiv.clientHeight) {
+                    // If the top of our scroll is beyond the sidebar offset it means
+                    // the sidebar would no longer be visible
+                    // At that point we switch to a fixed position with a top of 0
+                    // We will reverse this process if the sidebar would naturally be visible again
+                    // This is necessary beyond a standard "position: fixed" to ensure the sidebar doesn't
+                    // stay fixed to the top of the page when it doesn't need to
+                    // Note we include our "barpad" attribute, to ensure the shifting happens right away
+                    if ((compareTop+_this.barpad) > _this.offset) {
+                        ourDiv.style.position = 'fixed';
+                        ourDiv.style.top = _this.barpad + 'px';
+                    }
                 }
             }
         }, true);
