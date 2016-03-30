@@ -147,7 +147,7 @@ Polymer({
      * Used to figure out if the passed date exists
      */
     hasDate: function(date) {
-        return date && date != null;
+        return date && date !== null;
     },
     
     /**
