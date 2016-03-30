@@ -39,11 +39,7 @@ Polymer({
          *      //500 log records + sort by time (descending)
          *      {"limit":500,"sort":{"time":-1}}
          */
-        options: { type: Object, value: {"sort":{"time":-1}} },
-        /**
-         * Selected index of the saved action dropdown
-         */
-        selectedAction: { type: Number, value: 0, notify: true },
+        options: { type: Object, value: {"limit":2000,"sort":{"time":-1}} },
         /**
          * Selected index of the time limit dropdown
          */
@@ -66,13 +62,22 @@ Polymer({
             this.getActions();
         }
         
+        // Some static variables
         this.getTimeLimits();
-        this._gotLogs = false;
-        this._logSize = 0;
-        this._loading = false;
-        this._backpack = [];
-        this._taskGroups = [];
-        this._matchCount = 0;
+        this.miscName = "Uncategorized";
+        
+        // Some state variables for changing the view
+        this._gotLogs = false; // Track whether we made a service call to get logs, even if it returned nothing
+        this._loading = false; // Track whether we're currently making a request to the log service
+        this._tableView = false; // Track whether we're on the second tier view of the table log entries
+        
+        this._allLogs = []; // Store the entire set of our parsed and formatted logs
+        this._currentAction = null; // Currently selected action for the table view
+        this._savedActions = []; // List of saved actions from action service
+        this._pastActions = []; // List of past executed action names parsed from logs
+        this._taskGroups = []; // Current task groups for our second tier view
+        this._backpack = []; // Current backpack content for our third tier view
+        this._matchCount = 0; // Used for highlighting items in our second tier view
 	},
 	
     /**
@@ -87,7 +92,7 @@ Polymer({
             _this.fire('bridgeit-error', {error: error});
         });
     },
-    
+	
     /**
      * Generate a list of time limits for use in a dropdown
      */
@@ -123,10 +128,47 @@ Polymer({
     
     /**
      * Computed binding function
-     * Check whether we have a valid log size to display
+     * Used to figure out if our backpack array has logs
      */
     hasLogs: function() {
-        return this._logSize > 0;
+        return this._backpack.length > 0;
+    },
+    
+    /**
+     * Computed binding function
+     * Used to figure out if our past actions array has any content
+     */
+    hasActions: function() {
+        return this._pastActions.length > 0;
+    },
+    
+    /**
+     * Computed binding function
+     * Used to figure out if the passed date exists
+     */
+    hasDate: function(date) {
+        return date && date != null;
+    },
+    
+    /**
+     * Computed binding function
+     * Return a valid string format for our action/taskGroup/taskItem container
+     * If we don't have a valid action we will return null, otherwise we'll try to
+     *  populate any data we have, separated by dashes
+     */
+    formatContainer: function(backpack) {
+        if (backpack.action === null) {
+            return null;
+        }
+        
+        var toReturn = backpack.action;
+        if (backpack.taskGroup !== null) {
+            toReturn += ' - ' + backpack.taskGroup;
+        }
+        if (backpack.taskItem !== null) {
+            toReturn += ' - ' + backpack.taskItem;
+        }
+        return toReturn + ': ';
     },
     
     //******************PRIVATE API******************
@@ -136,31 +178,24 @@ Polymer({
      * We will also pull the taskGroup/taskItems for the saved action we selected
      * @private
      */
-    _submit: function() {
-        // Check selectedAction and selectedLimit for validity.
-        if (this.selectedAction === null || this.selectedLimit === null) {
-            console.error("Select an action and limit");
+    _getLogs: function() {
+        // Check selectedLimit for validity.
+        if (this.selectedLimit === null) {
+            console.error("Select a time limit");
             return;
         }
         
         // Reset our state variables before processing the new request
         this._gotLogs = false;
-        this._logSize = 0;
+        this._tableView = false;
         this._loading = false;
         
-        // Store our currently selected saved action as a set of task groups
-        this._taskGroups = this._savedActions[this.selectedAction].taskGroups;
-        
-        // Loop through the task groups and items and mark each one not highlighted
-        var currentTaskGroup = null;
-        for (var i = 0; i < this._taskGroups.length; i++) {
-            currentTaskGroup = this._taskGroups[i];
-            this.set('_taskGroups.' + i + '.highlight', false);
-            
-            for (var j = 0; j < currentTaskGroup.tasks.length; j++) {
-                this.set('_taskGroups.' + i + '.tasks.' + j + '.highlight', false);
-            }
-        }
+        // Reset to a clean state of data
+        this.splice("_allLogs", 0, this._allLogs.length);
+        this.splice("_backpack", 0, this._backpack.length);
+        this.splice("_pastActions", 0, this._pastActions.length);
+        // Note we don't splice here since we're using the savedAction copy of the array, and we don't want to clear it
+        this.set("_taskGroups", []);
         
         /** TODO NTFY-214 Can't query by date at the moment because the underlying MongoDB requires an ISODate object
         if (this._timeLimits[this.selectedLimit].date !== null) {
@@ -170,9 +205,8 @@ Polymer({
             delete this.query.time;
         }
         */
-        
         // TODO TEMPORARY Limit to action service
-        this.query.service = 'Action';
+        this.query.service = 'action';
         
         // Grab our logs
         this._loading = true;
@@ -185,6 +219,7 @@ Polymer({
         }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
             console.log('fetchLogs (audit) caught an error:', error);
             _this.fire('bridgeit-error', {error: error});
+            this._loading = false; // Stop loading on error
         });
     },
     
@@ -194,72 +229,204 @@ Polymer({
      * @private
      */
     _fetchLogsCallback: function(logs) {
-        this._backpack.length = 0;
-        
-        // We're looking for messages of this format:
-        //  Task Result: [ managerMessage ][ managerPush ] = {}
-        // Any matching messages will be parsed and stored in our backpack list
-        var taskResultStr = 'Task Result:';
-        var currentMessage = null;
-        var toAdd = null;
+        // Loop through the returned logs
+        // We want to achieve a few things here
+        // 1. Populate the pastAction list and subsequent dropdown with a unique list of actions, including uncategorized
+        // 2. Parse action/taskGroup/taskName from any log messages
+        var strStart = 'start';
+        var strEnd = 'end';
+        var strTaskResult = 'Task Result';
+        var currentLog = null;
         for (var i = 0; i < logs.length; i++) {
-            if (logs[i].message.indexOf(taskResultStr) !== -1) {
-                toAdd = logs[i];
-                toAdd.highlight = false;
-                toAdd.timeFormat = this._formatTime(toAdd.time);
-                
-                // We want to strip off "Task Result:"
-                currentMessage = toAdd.message.substring(taskResultStr.length).trim();
-                
-                // We want to store the taskGroup (first [ ITEM ])
-                toAdd.taskGroup = currentMessage.substring(currentMessage.indexOf('[')+1, currentMessage.indexOf(']')).trim();
-                
-                // We want to store the taskItem (second [ ITEM ])
-                currentMessage = currentMessage.substring(currentMessage.indexOf(']')+1).trim();
-                toAdd.taskItem = currentMessage.substring(currentMessage.indexOf('[')+1, currentMessage.indexOf(']')).trim();
-                
-                // Once stored we'll strip the entire starter and basically keep everything after the equal (=) sign
-                currentMessage = currentMessage.substring(currentMessage.indexOf('=')+1).trim();
-                
-                // Format the JSON if we can
-                toAdd.messageFormat = currentMessage;
-                try{
-                    toAdd.messageFormat = JSON.stringify(JSON.parse(currentMessage), null, 4);
-                }catch (error) { };
-                
-                // If we have a valid taskGroup check our current action for validity
-                // Basically we don't want to pollute the logs with items from other actions
-                if (toAdd.taskGroup) {
-                    var foundMatch = false;
-                    for (var j = 0; j < this._taskGroups.length; j++) {
-                        if (this._taskGroups[j].name === toAdd.taskGroup) {
-                            foundMatch = true;
-                            break;
+            currentLog = logs[i];
+            currentLog.highlight = false;
+            currentLog.action = null;
+            currentLog.taskGroup = null;
+            currentLog.taskItem = null;
+            
+            // If we find a "start" string we have a new past action
+            if (currentLog.message.indexOf(strStart) !== -1) {
+                // There could be starts for taskGroups as well. We just want actions
+                // The desired format is: start [action]
+                // So look for exactly 2 brackets
+                if (currentLog.message.split("[").length-1 === 1 && currentLog.message.split("]").length-1 === 1) {
+                    // Trim out "start [action]" to "action"
+                    currentLog.action = currentLog.message.substring((strStart + " [").length);
+                    currentLog.action = currentLog.action.substring(0, currentLog.action.indexOf("]")).trim();
+                    
+                    // Now we check if the parsed action matches a saved action for this user
+                    // If not we ignore it, otherwise we'll continue
+                    var match = false;
+                    for (var savedAction = 0; savedAction < this._savedActions.length; savedAction++) {
+                        if (currentLog.action === this._savedActions[savedAction]._id) {
+                            match = true;
                         }
                     }
                     
-                    // If we didn't find a match reset our object and abandon
-                    if (!foundMatch) {
-                        toAdd = null;
+                    if (match) {
+                        // First we look for a previous start of the same transaction code
+                        // If we can't find it, we continue. This ensures we only have unique past actions
+                        match = false;
+                        for (var loopAction in this._pastActions) {
+                            if ((currentLog.action === loopAction.name) && (currentLog.tx === loopAction.tx)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!match) {
+                            this.push('_pastActions', {"name":currentLog.action,"tx":currentLog.tx,"startDate":this._formatTime(currentLog.time)});
+                        }
                     }
                 }
                 
-                // Finally if we still have a valid toAdd object push it to the backpack list
-                if (toAdd !== null) {
-                    this.push('_backpack', toAdd);
+                // Always parse "start" from the message string so it can be handled properly later
+                currentLog.message = currentLog.message.substring(strStart.length).trim();
+                currentLog.message += strStart;
+            }
+            // We also want to account for the "end" string that marks the end of an action
+            else if (currentLog.message.indexOf(strEnd) !== -1) {
+                if (currentLog.message.split("[").length-1 === 1 && currentLog.message.split("]").length-1 === 1) {
+                    currentLog.action = currentLog.message.substring((strEnd + " [").length);
+                    currentLog.action = currentLog.action.substring(0, currentLog.action.indexOf("]")).trim();
+                    
+                    // Loop through our current past actions to try to find the start object
+                    for (var endLoop = 0; endLoop < this._pastActions.length; endLoop++) {
+                        if ((currentLog.action === this._pastActions[endLoop].name) && (currentLog.tx === this._pastActions[endLoop].tx)) {
+                            // We only want to set the end date if it's valuable, namely different from start
+                            if (this._pastActions[endLoop].startDate !== this._formatTime(currentLog.time)) {
+                                this.set('_pastActions.' + endLoop + '.endDate', this._formatTime(currentLog.time));
+                            }
+                        }
+                    }
+                }
+                
+                // Always parse "end" from the message string so it can be handled properly later
+                currentLog.message = currentLog.message.substring(strEnd.length).trim();
+                currentLog.message += strEnd;
+            }
+            // Account for Task Result, which is backpack content
+            else if (currentLog.message.indexOf(strTaskResult) !== -1) {
+                currentLog.message = currentLog.message.substring(strTaskResult.length).trim();
+            }
+            
+            // Finally add our log entry if it's still valid
+            if (currentLog !== null) {
+                // Trim the action, taskGroup, and taskItem, as well as the remaining message
+                if (currentLog.message.indexOf("[") === 0) {
+                    this._trimContainer(currentLog, 'action');
+                }
+                if (currentLog.message.indexOf("[") === 0) {
+                    this._trimContainer(currentLog, 'taskGroup');
+                }
+                if (currentLog.message.indexOf("[") === 0) {
+                    this._trimContainer(currentLog, 'taskItem');
+                }
+                
+                // If we have an equal sign (=) starting our message, trim it, since the rest is probably JSON
+                if (currentLog.message.indexOf("=") === 0) {
+                    currentLog.message = currentLog.message.substring(1).trim();
+                }
+                
+                // Final trim, just in case
+                currentLog.message = currentLog.message.trim();
+                
+                // Store our finished log entry
+                this.push('_allLogs', currentLog);
+            }
+        }
+        
+        // Notify the user
+        console.log("Log size is " + this._allLogs.length + " from " + logs.length + " entries");
+        
+        // Sort our past actions by time
+        this._pastActions.sort(function(a,b) {
+            return a.startDate - b.startDate;
+        });
+        
+        // Always add an uncategorized option that encompasses log entries not associated with anything
+        this.splice('_pastActions', 0, 0, {"name":this.miscName});
+        
+        // Clear our old full logs
+        logs.length = 0;
+        
+        // Done
+        this._gotLogs = true;
+        this._loading = false;
+    },
+    
+    /**
+     * Function fired when the user clicks a past action to view the detailed contents in tier two
+     * @param e event
+     * @private
+     */
+    _viewBackpack: function(e) {
+        this._currentAction = this._pastActions[e.target.getAttribute('data-workflow-item')];
+        
+        // Clear the old task groups
+        this.set("_taskGroups", []);
+        
+        // Store our currently selected saved action as a set of task groups
+        if (this._currentAction.name !== this.miscName) {
+            for (var i = 0; i < this._savedActions.length; i++) {
+                if (this._currentAction.name === this._savedActions[i]._id) {
+                    this.set('_taskGroups', this._savedActions[i].taskGroups);
+                    break;
+                }
+            }
+        
+            // Loop through the task groups and items and mark each one not highlighted
+            var currentTaskGroup = null;
+            for (var outerLoop = 0; outerLoop < this._taskGroups.length; outerLoop++) {
+                currentTaskGroup = this._taskGroups[outerLoop];
+                this.set('_taskGroups.' + outerLoop + '.highlight', false);
+                
+                for (var innerLoop = 0; innerLoop < currentTaskGroup.tasks.length; innerLoop++) {
+                    this.set('_taskGroups.' + outerLoop + '.tasks.' + innerLoop + '.highlight', false);
                 }
             }
         }
         
-        console.log("Backpack size is " + this._backpack.length + " from " + logs.length + " log entries");
+        // Try to find matching log entries from our allLogs
+        // Matches have the same action name, and most importantly the same tx code
+        var loopLog = null;
+        for (var j = 0; j < this._allLogs.length; j++) {
+            loopLog = this._allLogs[j];
+            
+            // Account for Uncategorized entries
+            if (loopLog.action === null) {
+                if (this._currentAction.name === this.miscName) {
+                    this.push('_backpack', this._allLogs[j]);
+                }
+            }
+            // Otherwise check action name and tx
+            else if (loopLog.action === this._currentAction.name) {
+                if (loopLog.tx === this._currentAction.tx) {
+                    this.push('_backpack', this._allLogs[j]);
+                }
+            }
+        }
         
-        // Clear our old full logs, mark that we have retrieved logs, and their size
-        logs.length = 0;
-        this._gotLogs = true;
-        this._logSize = this._backpack.length;
+        // Reset our scrollbar for the table view to the top
+        setTimeout(function() {
+            if (document.getElementById('tableWrap')) {
+                document.getElementById('tableWrap').scrollTop = 0;
+            }
+        },0);
         
-        // Done
-        this._loading = false;
+        // Show the proper view
+        this._tableView = true;
+    },
+    
+    /**
+     * Function called when the user clicks to view a different backpack, which
+     *  means returning from tier two to tier one
+     * @private
+     */
+    _chooseAnother: function() {
+        this.set("_taskGroups", []);
+        this.splice("_backpack", 0, this._backpack.length);
+        this._tableView = false;
     },
     
     /**
@@ -298,6 +465,19 @@ Polymer({
         
         return date.getFullYear() + "-" + ('0'+(date.getMonth()+1)).slice(-2) + "-" + date.getDate() + ", " +
                date.getHours() + ":" + ('0'+date.getMinutes()).slice(-2) + ":" + ('0'+date.getSeconds()).slice(-2) + "." + ('00'+date.getMilliseconds()).slice(-3);
+    },
+    
+    /**
+     * Format the past log entry container element, as well as the message
+     * For example this will parse "[action] = text" to "= text", while also storing action
+     * @param currentLog entry
+     * @param container action, taskGroup, or taskItem
+     * @private
+     */
+    _trimContainer: function(currentLog, container) {
+        currentLog[container] = currentLog.message.substring(currentLog.message.indexOf("[")+1);
+        currentLog[container] = currentLog[container].substring(0, currentLog[container].indexOf("]")).trim();
+        currentLog.message = currentLog.message.substring(currentLog[container].length+2).trim(); // Remove [taskItem]
     },
     
     /**

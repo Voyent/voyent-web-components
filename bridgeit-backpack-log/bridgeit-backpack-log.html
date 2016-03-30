@@ -118,86 +118,116 @@ Example:
             }
         </style>
         
-        <div class="container flex layout horizontal">
-            <div class="flex-2">
-                <div class="dropWrap">
-                    <paper-dropdown-menu label="Saved Actions" required="true">
-                        <paper-listbox class="dropdown-content" selected="{{selectedAction}}">
-                            <template is="dom-repeat" items="[[_savedActions]]" as="saction">
-                                <paper-item>[[saction._id]]</paper-item>
-                            </template>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
+        <template is="dom-if" if="{{!_tableView}}">
+            <div class="container flex layout horizontal">
+                <div class="flex-2">
+                    <div class="dropWrap">
+                        <paper-dropdown-menu label="Time Limit" required="true">
+                            <paper-listbox class="dropdown-content" selected="{{selectedLimit}}">
+                                <template is="dom-repeat" items="[[_timeLimits]]" as="tlimit">
+                                    <paper-item>[[tlimit.name]]</paper-item>
+                                </template>
+                            </paper-listbox>
+                        </paper-dropdown-menu>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <paper-button raised on-click="_getLogs">Retrieve Actions</paper-button>
                 </div>
             </div>
-            <div class="flex-2">
-                <div class="dropWrap">
-                    <paper-dropdown-menu label="Time Limit" required="true">
-                        <paper-listbox class="dropdown-content" selected="{{selectedLimit}}">
-                            <template is="dom-repeat" items="[[_timeLimits]]" as="tlimit">
-                                <paper-item>[[tlimit.name]]</paper-item>
-                            </template>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
+        </template>
+        
+        <template is="dom-if" if="{{_gotLogs}}">
+            <div class="container flex layout horizontal">
+                <template is="dom-if" if="{{!_tableView}}">
+                    <template is="dom-if" if="{{hasActions()}}">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th colspan="3">Recent {{_pastActions.length}} Actions</th>
+                                </tr>
+                                <tr>
+                                    <th></th>
+                                    <th>Name</th>
+                                    <th>Time</th>
+                                </tr>
+                            </head>
+                            <tbody>
+                                <template is="dom-repeat" items="{{_pastActions}}" as="paction">
+                                    <tr>
+                                        <td><paper-button raised on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</paper-button></td>
+                                        <td><span title="Transaction Code: [[paction.tx]]">[[paction.name]]</span></td>
+                                        <td>[[paction.startDate]] <template is="dom-if" if="{{hasDate(paction.endDate)}}">to [[paction.endDate]]</template></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </template>
+                </template>
+                <template is="dom-if" if="{{!hasActions()}}">
+                    <h3>No valid actions were found for that time limit</h3>
+                </template>
+            </div>
+        
+            <template is="dom-if" if="{{_tableView}}">
+                <div class="container flex layout horizontal">
+                    <paper-button raised on-click="_chooseAnother">Choose Different Action</paper-button>
                 </div>
-            </div>
-            <div class="flex-1">
-                <paper-button raised on-click="_submit">View Backpack</paper-button>           
-            </div>
-        </div>
-        
-        <br/>
-        
-        <div class="container flex layout horizontal">
-            <template is="dom-if" if="{{_gotLogs}}">
-                <div class="flex-1 taskPanel">
-                    <template is="dom-repeat" items="{{_taskGroups}}" as="group">
-                        <div class$="taskGroup {{highlightStyle(group.highlight)}}">
-                            <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" title="{{group.type}}" class="taskHeader">
-                                {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{_matchCount}})</template>
-                            </div>
-                        
-                            <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
-                                    {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{_matchCount}})</template>
+                
+                <div class="container flex layout horizontal">
+                    <div class="flex-1 taskPanel">
+                        <table>
+                            <thead><tr><th colspan="2">Current Action</th></tr></thead>
+                            <tbody>
+                                <tr><td>Name</td><td><span title="Transaction Code: {{_currentAction.tx}}">{{_currentAction.name}}</span></td></tr>
+                                <template is="dom-if" if="{{hasDate(_currentAction.startDate)}}"><tr><td>Start</td><td>{{_currentAction.startDate}}</td></tr></template>
+                                <template is="dom-if" if="{{hasDate(_currentAction.endDate)}}"><tr><td>End</td><td>[[_currentAction.endDate]]</td></tr></template>
+                            </tbody>
+                            </table>
+                        <template is="dom-repeat" items="{{_taskGroups}}" as="group">
+                            <div class$="taskGroup {{highlightStyle(group.highlight)}}">
+                                <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" title="{{group.type}}" class="taskHeader">
+                                    {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{_matchCount}})</template>
                                 </div>
-                            </template>
+                            
+                                <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                    <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
+                                        {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{_matchCount}})</template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                    <template is="dom-if" if="{{hasLogs()}}">
+                        <div id="tableWrap" class="flex-3 twrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>{{_backpack.length}} Items</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <template is="dom-repeat" items="{{_backpack}}" as="backpack">
+                                    <tr class$="bottomB {{highlightStyle(backpack.highlight)}}">
+                                        <td>{{formatContainer(backpack)}}<pre>{{backpack.message}}</pre></td>
+                                    </tr>
+                                </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template is="dom-if" if="{{!hasLogs()}}">
+                        <div class="flex-3">
+                            <h2>No logs were found for that action and time limit.</h2>
                         </div>
                     </template>
                 </div>
-                <template is="dom-if" if="{{hasLogs()}}">
-                <div class="flex-3 twrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th colspan="2">{{_logSize}} Items</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <template is="dom-repeat" items="{{_backpack}}" as="backpack">
-                            <tr class$="topB {{highlightStyle(backpack.highlight)}}">
-                                <td>{{backpack.timeFormat}}</td>
-                                <td>{{backpack.taskGroup}} - {{backpack.taskItem}}</td>
-                            </tr>
-                            <tr class$="bottomB {{highlightStyle(backpack.highlight)}}">
-                                <td colspan="2"><pre>{{backpack.messageFormat}}</pre></td>
-                            </tr>
-                        </template>
-                        </tbody>
-                    </table>
-                </div>
-                </template>
-                <template is="dom-if" if="{{!hasLogs()}}">
-                    <div class="flex-3">
-                        <h2>No logs were found for that action and time limit.</h2>
-                    </div>
-                </template>
             </template>
-        </div>
+        </template>
         
         <template is="dom-if" if="{{_loading}}">
             <div class="throbber-wrapper">
-                <p>One moment, loading logs...</p>
+                <p>One moment, loading...</p>
                 <div class="throbber-loader">...</div>
             </div>
         </template>
