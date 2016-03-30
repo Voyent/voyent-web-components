@@ -418,10 +418,11 @@ Example:
                                                 </label>
                                             </template>
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                                <div class="task toggled" data-id$="{{task.id}}">
+                                                <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon">
                                                     <div class="buttons">
                                                         <button type="button" on-click="_moveTaskUp">Up</span></button>
                                                         <button type="button" on-click="_moveTaskDown">Down</button>
+                                                        <button type="button" on-click="_cloneTask">Clone</button>
                                                         <button type="button" on-click="_deleteTask">Remove</button>
                                                     </div>
                                                     <div class="title" on-click="_toggleTask">{{task.schema.title}}<span class="details">{{_formatTaskName(task.name)}}</span><div class="arrow toggled"></div></div>

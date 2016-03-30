@@ -404,6 +404,7 @@ Polymer({
                     });
                 }.bind(this))(tasks[j]);
                 //cleanup values that aren't used in the action
+                delete tasks[j].id;
                 delete tasks[j].schema;
             }
         }
@@ -707,6 +708,8 @@ Polymer({
 
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
+                //add uniqueID for drag/drop functionality
+                tasks[j].id = this._taskBaseId+j;
                 //add schema inside task for mapping UI values
                 tasks[j].schema = JSON.parse(JSON.stringify(this._taskSchemasMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
                 taskGroups[i].schema.taskcount++;
@@ -748,8 +751,14 @@ Polymer({
      * @private
      */
     _startDragTask: function(e) {
-        e.dataTransfer.setData('action/task', e.model.item); //indicate that this item is a task
-        this._lastDragged = e.model.item; //reference task schema so we can populate the UI on drop
+        if (e.model.item) {
+            e.dataTransfer.setData('action/task/new', e.model.item); //indicate that this item is a new task
+            this._lastDragged = e.model.item; //reference task schema so we can populate the UI on drop
+        }
+        else {
+            e.dataTransfer.setData('action/task/existing', e.model.task); //indicate that this item is an existing task (already in a group)
+            this._lastDragged = {'task':e.model.task,'groupIndex':this._stripIndex(e.target.getAttribute('data-group-id'))}; //reference task and the group it is from
+        }
         
         // Add a highlight effect showing all droppable areas for tasks
         var tgroups = this.querySelectorAll('.task-group');
@@ -793,8 +802,10 @@ Polymer({
      * @private
      */
     _dragOverGroup: function(e) {
-        if ((e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/task')) ||
-            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/task') > -1)) {
+        if ((e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/task/new')) ||
+            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/task/new') > -1) ||
+            (e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/task/existing')) ||
+            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/task/existing') > -1)) {
             e.preventDefault(); //only allow tasks to be dragged into the task groups
         }
     },
@@ -843,7 +854,7 @@ Polymer({
                 currentTaskGroup = this.querySelector('#' + this._taskGroups[i].id);
                 if (currentTaskGroup) {
                     if (dropY > currentTaskGroup.offsetTop) {
-                        insertIndex = currentTaskGroup.id.replace(/^\D+/g, ''); //get the id by replacing all non-digits until we encounter a number
+                        insertIndex = this._stripIndex(currentTaskGroup.id);
                         insertIndex++; // Note we increase our insertIndex since we want to be BELOW the current item
                     }
                     else {
@@ -899,22 +910,35 @@ Polymer({
      * @private
      */
     _dropInGroup: function(e) {
+        // Requirement for drag and drop
         e.preventDefault();
+
+        var _this = this;
         //only allow tasks to be dropped inside task groups
-        if (!e.dataTransfer.getData('action/task')) { e.stopPropagation(); return; }
-        //add new task (with schema reference) to task group
-        var schema = JSON.parse(JSON.stringify(this._lastDragged)); //clone object (it is valid JSON so this technique is sufficient)
-        
+        var data;
+        var previousGroupIndex;
+        if (e.dataTransfer.getData('action/task/new')) {
+            data = JSON.parse(JSON.stringify(this._lastDragged)); //clone schema obj
+        }
+        else if (e.dataTransfer.getData('action/task/existing')) {
+            data = this._lastDragged.task;
+            previousGroupIndex = this._lastDragged.groupIndex;
+        }
+        else {
+            e.stopPropagation();
+            return;
+        }
+
         // Try to get our task group index from the target ID
         // However there is a chance the user dropped the element on a component inside the container
         // In that case our target ID will be invalid
         // If that happens we will reverse traverse looking for "taskGroupX" ID to strip and use
-        var taskGroupIndex = e.target.id.indexOf(this._taskGroupBaseId) === 0 ? e.target.id.replace(/^\D+/g, '') : null;
+        var taskGroupIndex = e.target.id.indexOf(this._taskGroupBaseId) === 0 ? this._stripIndex(e.target.id) : null;
         if (!taskGroupIndex) {
             var currentParent = e.target.parentNode;
             do {
                 if (currentParent.id && currentParent.id.indexOf(this._taskGroupBaseId) === 0) {
-                    taskGroupIndex = currentParent.id.replace(/^\D+/g, '');
+                    taskGroupIndex = this._stripIndex(currentParent.id);
                     break;
                 }
                 
@@ -924,14 +948,15 @@ Polymer({
         
         // Only add if we actually have a proper index figured out
         if (taskGroupIndex) {
-            //This section below is the same technique as above (_dropInAction), see that function for comments
-            var tasks = this.get('_taskGroups.'+taskGroupIndex+'.tasks');
+            var tasks = this._taskGroups[taskGroupIndex].tasks;
             var appendBottom = true;
-            var newid = this._taskBaseId + tasks.length;
+            var newid;
             if (tasks.length > 0) {
+                //calculate absolute Y position of the drop
                 var scrollbarPos = this._calculateScrollbarPos(e.target.parentNode);
                 var dropY = e.clientY + scrollbarPos;
 
+                //determine where the Y position is in relative to the other tasks
                 var insertIndex;
                 var currentTask;
                 for (var i = 0; i < tasks.length; i++) {
@@ -939,7 +964,7 @@ Polymer({
                     if (currentTask) {
                         var currentTaskPos = currentTask.getBoundingClientRect().top + scrollbarPos;
                         if (dropY > currentTaskPos) {
-                            insertIndex = currentTask.getAttribute('data-id').replace(/^\D+/g, '');
+                            insertIndex = this._stripIndex(currentTask.getAttribute('data-id'));
                             insertIndex++;
                         }
                         else {
@@ -951,11 +976,29 @@ Polymer({
                     }
                 }
 
-                if (typeof insertIndex !== 'undefined' && insertIndex < tasks.length) {
-                    appendBottom = false;
+                //get the current position of the task in its origin group
+                if (previousGroupIndex) {
+                    var currPos = this._taskGroups[previousGroupIndex].tasks.indexOf(data);
+                }
 
-                    newid = this._taskBaseId + insertIndex;
-                    this.splice('_taskGroups.' + taskGroupIndex + '.tasks', insertIndex, 0, {"id": newid,"schema": schema});
+                //if we have an "insertIndex" it means we figured out where the task group should be inserted
+                if (typeof insertIndex !== 'undefined' && insertIndex < tasks.length) {
+                    newid = this._taskBaseId + insertIndex.toString();
+                    appendBottom = false;
+                    if (e.dataTransfer.getData('action/task/new')) {
+                        this.splice('_taskGroups.' + taskGroupIndex + '.tasks', insertIndex, 0,  {"id": newid,"schema": data});
+                    }
+                    else {
+                        //if the position hasn't changed do nothing
+                        if ((previousGroupIndex === taskGroupIndex) &&
+                            (currPos === insertIndex)) {
+                            return;
+                        }
+                        //move from current position to new position
+                        this.splice('_taskGroups.'+previousGroupIndex+'.tasks',currPos,1);
+                        this.splice('_taskGroups.'+taskGroupIndex+'.tasks',insertIndex,0,data);
+                    }
+
                 }
                 else {
                     appendBottom = true;
@@ -963,20 +1006,47 @@ Polymer({
             }
 
             if (appendBottom) {
-                this.push('_taskGroups.'+taskGroupIndex+'.tasks', {"id":newid,"schema":schema});
-            }
-            else {
-                for (var j = 0; j < tasks.length; j++) {
-                    this.set('_taskGroups.' + taskGroupIndex + '.tasks.'+j+'.id', this._taskBaseId+j);
+                if (e.dataTransfer.getData('action/task/new')) {
+                    newid = this._taskBaseId + tasks.length.toString();
+                    this.push('_taskGroups.'+taskGroupIndex+'.tasks', {"id":newid,"schema":data});
+                }
+                else {
+                    //if the position hasn't changed do nothing
+                    if ((previousGroupIndex === taskGroupIndex) &&
+                        (currPos === this._taskGroups[taskGroupIndex].tasks.length-1)) {
+                        return;
+                    }
+                    //remove from current position and push to end of task
+                    this.splice('_taskGroups.'+previousGroupIndex+'.tasks',currPos,1);
+                    this.push('_taskGroups.'+taskGroupIndex+'.tasks', data);
+                    newid = this._taskBaseId + (this._taskGroups[taskGroupIndex].tasks.length-1).toString();
                 }
             }
 
-            if (newid) {
-                this._doGrowAnimation('#'+this._taskGroupBaseId+taskGroupIndex + ' [data-id="' + newid + '"]');
-            }
-
-            this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', this._taskGroups[taskGroupIndex].schema.taskcount+1);
+            setTimeout(function() {
+                //keep the task ids up to date for drag/drop functionality
+                for (var j = 0; j < _this._taskGroups[taskGroupIndex].tasks.length; j++) {
+                    _this.set('_taskGroups.' + taskGroupIndex + '.tasks.'+j+'.id', _this._taskBaseId+j);
+                }
+                //play a "grow" animation to draw attention to the new task
+                if (newid) {
+                    _this._doGrowAnimation('#'+_this._taskGroupBaseId+taskGroupIndex + ' [data-id="' + newid + '"]');
+                }
+                //set the task count for the group
+                _this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', _this._taskGroups[taskGroupIndex].tasks.length);
+            },0);
         }
+    },
+
+    /**
+     * Get the index based on a task group id.
+     * @param id
+     * @returns {string}
+     * @private
+     */
+    _stripIndex: function(id) {
+        //strip the numbers from the end of the string
+        return id.replace(/^\D+/g, '');
     },
 
     /**
@@ -1034,13 +1104,12 @@ Polymer({
      * @private
      */
     _deleteTaskGroup: function(e) {
-        var groupId = e.model.group.id;
-        for (var i=this._taskGroups.length-1; i>=0; i--) {
-            if (this._taskGroups[i].id == groupId) {
-                this.splice('_taskGroups',i,1);
-            }
-            //must keep the taskGroup IDs up to date for drag/drop functionality
-            this.set('_taskGroups.'+i+'.id',this._taskGroupBaseId+i);
+        var groupIndex = this._stripIndex(e.model.group.id);
+        this.splice('_taskGroups',groupIndex,1);
+
+        //keep the task group ids up to date for drag/drop functionality
+        for (var i=0; i<this._taskGroups.length; i++) {
+            this.set('_taskGroups.'+i+'.id',this._taskGroupBaseId+i); 
         }
     },
 
@@ -1050,17 +1119,21 @@ Polymer({
      * @private
      */
     _deleteTask: function(e) {
-        var task = e.model.task;
-        for (var i=this._taskGroups.length-1; i>=0; i--) {
-            for (var j=this._taskGroups[i].tasks.length-1; j>=0; j--) {
-                if (task == this._taskGroups[i].tasks[j]) {
-                    // Reduce our task count for the action container parent
-                    this._taskGroups[i].schema.taskcount--;
-                    this.set('_taskGroups.'+i+'.schema.taskcount', this._taskGroups[i].schema.taskcount);
-                    
-                    // Then remove the entire task itself
-                    this.splice('_taskGroups.'+i+'.tasks',j,1);
-                }
+        var taskElem = Polymer.dom(e.target.parentNode).parentNode;
+        var groupIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-group-id')));
+        var taskIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
+
+        // Reduce our task count for the action container parent
+        this._taskGroups[groupIndex].schema.taskcount--;
+        this.set('_taskGroups.'+groupIndex+'.schema.taskcount', this._taskGroups[groupIndex].schema.taskcount);
+
+        // Then remove the entire task itself
+        this.splice('_taskGroups.'+groupIndex+'.tasks',taskIndex,1);
+
+        //keep the task ids up to date for drag/drop functionality
+        for (var i=0; i<this._taskGroups.length; i++) {
+            for (var j=0; j<this._taskGroups[i].tasks.length; j++) {
+                this.set('_taskGroups.'+i+'.tasks.'+j+'.id',this._taskBaseId+j);
             }
         }
     },
@@ -1117,22 +1190,24 @@ Polymer({
      * @private
      */
     _moveTaskUp: function(e) {
+        var _this = this;
         var task = e.model.task;
-        for (var i=this._taskGroups.length-1; i>=0; i--) {
-            for (var j=this._taskGroups[i].tasks.length-1; j>=0; j--) {
-                if (task == this._taskGroups[i].tasks[j]) {
-                    var currPos = j;
-                    var newPos = currPos-1;
-                    if (newPos < 0) {
-                        return;
-                    }
-                    //move the task up
-                    this.splice('_taskGroups.'+i+'.tasks',currPos,1);
-                    this.splice('_taskGroups.'+i+'.tasks',newPos,0,task);
-                    return;
-                }
-            }
+        var taskElem = Polymer.dom(e.target.parentNode).parentNode;
+        var groupIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-group-id')));
+        var currPos = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
+        var newPos = currPos-1;
+        if (newPos < 0) {
+            return;
         }
+        //move the task up
+        this.splice('_taskGroups.'+groupIndex+'.tasks',currPos,1);
+        this.splice('_taskGroups.'+groupIndex+'.tasks',newPos,0,task);
+
+        //keep the task ids in sync
+        setTimeout(function() {
+            _this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.id',_this._taskBaseId+currPos);
+            _this.set('_taskGroups.'+groupIndex+'.tasks.'+newPos+'.id',_this._taskBaseId+newPos);
+        },0);
     },
 
     /**
@@ -1141,22 +1216,51 @@ Polymer({
      * @private
      */
     _moveTaskDown: function(e) {
+        var _this = this;
         var task = e.model.task;
-        for (var i=this._taskGroups.length-1; i>=0; i--) {
-            for (var j=this._taskGroups[i].tasks.length-1; j>=0; j--) {
-                if (task == this._taskGroups[i].tasks[j]) {
-                    var currPos = j;
-                    var newPos = currPos+1;
-                    if (newPos == this._taskGroups[i].tasks.length) {
-                        return;
-                    }
-                    //move the task down
-                    this.splice('_taskGroups.'+i+'.tasks',currPos,1);
-                    this.splice('_taskGroups.'+i+'.tasks',newPos,0,task);
-                    return;
-                }
+        var taskElem = Polymer.dom(e.target.parentNode).parentNode;
+        var groupIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-group-id')));
+        var currPos = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
+        var newPos = currPos+1;
+        if (newPos == this._taskGroups[groupIndex].tasks.length) {
+            return;
+        }
+        //move the task down
+        this.splice('_taskGroups.'+groupIndex+'.tasks',currPos,1);
+        this.splice('_taskGroups.'+groupIndex+'.tasks',newPos,0,task);
+
+        //keep the task ids in sync
+        setTimeout(function() {
+            _this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.id',_this._taskBaseId+currPos);
+            _this.set('_taskGroups.'+groupIndex+'.tasks.'+newPos+'.id',_this._taskBaseId+newPos);
+        },0);
+    },
+
+    /**
+     * Clone a task.
+     * @param e
+     * @private
+     */
+    _cloneTask: function(e) {
+        var taskElem = Polymer.dom(e.target.parentNode).parentNode;
+        var groupIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-group-id')));
+        var taskIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
+        var newIndex = taskIndex+1;
+
+        var clonedTask = JSON.parse(JSON.stringify(e.model.task));
+        clonedTask.name = clonedTask.name+'_clone';
+
+        //by default add the cloned task after the one that was cloned
+        this.splice('_taskGroups.'+groupIndex+'.tasks',newIndex,0,clonedTask);
+
+        //keep the task ids up to date for drag/drop functionality
+        for (var i=0; i<this._taskGroups.length; i++) {
+            for (var j=0; j<this._taskGroups[i].tasks.length; j++) {
+                this.set('_taskGroups.'+i+'.tasks.'+j+'.id',this._taskBaseId+j);
             }
         }
+        this._doGrowAnimation('#'+this._taskGroupBaseId+groupIndex + ' [data-id="' + this._taskBaseId+newIndex.toString() + '"]');
+        this.set('_taskGroups.'+groupIndex+'.schema.taskcount', this._taskGroups[groupIndex].tasks.length);
     },
 
     /**
