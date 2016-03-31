@@ -372,6 +372,7 @@ Polymer({
      * @returns {{}}
      */
     convertUIToAction: function() {
+        var _this = this;
         var action = {"_id": this._actionId};
         if (this._actionDesc && this._actionDesc.trim().length > 0) {
             action.desc = this._actionDesc;
@@ -379,14 +380,7 @@ Polymer({
         var taskGroups = JSON.parse(JSON.stringify(this._taskGroups)); //clone array (it is valid JSON so this technique is sufficient)
         for (var i=0; i<taskGroups.length; i++) {
             taskGroups[i].type = taskGroups[i].schema.title; //move title to type property
-            (function(taskGroup) {
-                this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
-                    //move the values of each property in the schema directly into the task group
-                    if (typeof property.value !== 'undefined' && property.value.toString().trim().length > 0) {
-                        taskGroup[property.title] = property.value;
-                    }
-                });
-            }.bind(this))(taskGroups[i]);
+            processTaskGroups(taskGroups[i]);
             //cleanup values that aren't used in the action
             delete taskGroups[i].id;
             delete taskGroups[i].schema;
@@ -395,14 +389,7 @@ Polymer({
             for (var j=0; j<tasks.length; j++) {
                 tasks[j].params = {}; //create action params object
                 tasks[j].type = tasks[j].schema.title; //move title to type property
-                (function(task) {
-                    this._processProperties(task.schema.properties,function(type,propName,property) {
-                        //move the values of each property in the schema to the params object
-                        if (typeof property.value !== 'undefined' && property.value.toString().trim().length > 0) {
-                            task.params[property.title] = property.value;
-                        }
-                    });
-                }.bind(this))(tasks[j]);
+                processTasks(tasks[j]);
                 //cleanup values that aren't used in the action
                 delete tasks[j].id;
                 delete tasks[j].schema;
@@ -410,6 +397,23 @@ Polymer({
         }
         action.taskGroups = taskGroups;
         return action;
+
+        function processTaskGroups(taskGroup) {
+            _this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
+                //move the values of each property in the schema directly into the task group
+                if (typeof property.value !== 'undefined' && property.value.toString().trim().length > 0) {
+                    taskGroup[property.title] = property.value;
+                }
+            });
+        }
+        function processTasks(task) {
+            _this._processProperties(task.schema.properties,function(type,propName,property) {
+                //move the values of each property in the schema to the params object
+                if (typeof property.value !== 'undefined' && property.value.toString().trim().length > 0) {
+                    task.params[property.title] = property.value;
+                }
+            });
+        }
     },
 
 
@@ -694,15 +698,7 @@ Polymer({
             //add schema inside task group for mapping UI values
             taskGroups[i].schema = JSON.parse(JSON.stringify(this._taskGroupSchemasMap[taskGroups[i].type ? taskGroups[i].type : 'parallel-taskgroup'])); //clone object (it is valid JSON so this technique is sufficient)
             taskGroups[i].schema.taskcount = 0;
-            (function(taskGroup) {
-                _this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
-                    //move the task group properties to the value of each property in the schema
-                    if (typeof taskGroup[property.title] !== 'undefined') {
-                        property.value = taskGroup[property.title];
-                        delete taskGroup[property.title]; //cleanup property since it's not used in UI
-                    }
-                });
-            })(taskGroups[i]);
+            processTaskGroups(taskGroups[i]);
             //cleanup type since it's not used in UI
             delete taskGroups[i].type;
 
@@ -713,20 +709,31 @@ Polymer({
                 //add schema inside task for mapping UI values
                 tasks[j].schema = JSON.parse(JSON.stringify(this._taskSchemasMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
                 taskGroups[i].schema.taskcount++;
-                (function(task) {
-                    _this._processProperties(task.schema.properties,function(type,propName,property) {
-                        //move the params values to the value of each property in the schema
-                        if (task.params && typeof task.params[property.title] !== 'undefined') {
-                            property.value = task.params[property.title];
-                        }
-                    });
-                })(tasks[j]);
+                processTasks(tasks[j]);
                 //cleanup values that aren't used in the UI
                 delete tasks[j].type;
                 delete tasks[j].params;
             }
         }
         return taskGroups;
+
+        function processTaskGroups(taskGroup) {
+            _this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
+                //move the task group properties to the value of each property in the schema
+                if (typeof taskGroup[property.title] !== 'undefined') {
+                    property.value = taskGroup[property.title];
+                    delete taskGroup[property.title]; //cleanup property since it's not used in UI
+                }
+            });
+        }
+        function processTasks(task) {
+            _this._processProperties(task.schema.properties,function(type,propName,property) {
+                //move the params values to the value of each property in the schema
+                if (task.params && typeof task.params[property.title] !== 'undefined') {
+                    property.value = task.params[property.title];
+                }
+            });
+        }
     },
     
     /**
@@ -951,6 +958,7 @@ Polymer({
             var tasks = this._taskGroups[taskGroupIndex].tasks;
             var appendBottom = true;
             var newid;
+            var currPos;
             if (tasks.length > 0) {
                 //calculate absolute Y position of the drop
                 var scrollbarPos = this._calculateScrollbarPos(e.target.parentNode);
@@ -978,7 +986,7 @@ Polymer({
 
                 //get the current position of the task in its origin group
                 if (previousGroupIndex) {
-                    var currPos = this._taskGroups[previousGroupIndex].tasks.indexOf(data);
+                    currPos = this._taskGroups[previousGroupIndex].tasks.indexOf(data);
                 }
 
                 //if we have an "insertIndex" it means we figured out where the task group should be inserted
