@@ -941,7 +941,7 @@ Polymer({
         // In that case our target ID will be invalid
         // If that happens we will reverse traverse looking for "taskGroupX" ID to strip and use
         var taskGroupIndex = e.target.id.indexOf(this._taskGroupBaseId) === 0 ? this._stripIndex(e.target.id) : null;
-        if (!taskGroupIndex) {
+        if (typeof taskGroupIndex !== 'number') {
             var currentParent = e.target.parentNode;
             do {
                 if (currentParent.id && currentParent.id.indexOf(this._taskGroupBaseId) === 0) {
@@ -954,11 +954,15 @@ Polymer({
         }
         
         // Only add if we actually have a proper index figured out
-        if (taskGroupIndex) {
+        if (typeof taskGroupIndex === 'number') {
             var tasks = this._taskGroups[taskGroupIndex].tasks;
             var appendBottom = true;
             var newid;
+            //get the current position of the task in its origin group
             var currPos;
+            if (typeof previousGroupIndex === 'number') {
+                currPos = this._taskGroups[previousGroupIndex].tasks.indexOf(data);
+            }
             if (tasks.length > 0) {
                 //calculate absolute Y position of the drop
                 var scrollbarPos = this._calculateScrollbarPos(e.target.parentNode);
@@ -982,11 +986,6 @@ Polymer({
                             break;
                         }
                     }
-                }
-
-                //get the current position of the task in its origin group
-                if (previousGroupIndex) {
-                    currPos = this._taskGroups[previousGroupIndex].tasks.indexOf(data);
                 }
 
                 //if we have an "insertIndex" it means we figured out where the task group should be inserted
@@ -1040,7 +1039,10 @@ Polymer({
                 if (newid) {
                     _this._doGrowAnimation('#'+_this._taskGroupBaseId+taskGroupIndex + ' [data-id="' + newid + '"]');
                 }
-                //set the task count for the group
+                //set the task count for the group(s)
+                if (typeof previousGroupIndex === 'number') {
+                    _this.set('_taskGroups.'+previousGroupIndex+'.schema.taskcount', _this._taskGroups[previousGroupIndex].tasks.length);
+                }
                 _this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', _this._taskGroups[taskGroupIndex].tasks.length);
             },0);
         }
@@ -1049,12 +1051,14 @@ Polymer({
     /**
      * Get the index based on a task group id.
      * @param id
-     * @returns {string}
+     * @returns {number}
      * @private
      */
     _stripIndex: function(id) {
         //strip the numbers from the end of the string
-        return id.replace(/^\D+/g, '');
+        var index = id.replace(/^\D+/g, '');
+        index = parseInt(index);
+        return index;
     },
 
     /**
