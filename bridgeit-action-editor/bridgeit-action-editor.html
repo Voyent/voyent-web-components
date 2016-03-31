@@ -344,7 +344,8 @@ Example:
                                 <div>
                                     <label title="The action ID">
                                         <span class="required">*</span><span>Action Name</span>
-                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name" value="{{_actionId::input}}" required>
+                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name"
+                                               required value="{{_actionId::input}}" data-label="Action Name" >
                                     </label>
                                     <label title="The action description">
                                         <span>Description</span>
@@ -375,14 +376,16 @@ Example:
                                         <div class="content">
                                             <label title="The task group name">
                                                 <span class="required">*</span><span>Task Group Name</span>
-                                                <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
+                                                <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name"
+                                                       required value="{{group.name::input}}" data-label="Task Group Name" data-group-id$="{{group.id}}">
                                             </label>
                                             <template is="dom-repeat" items="{{_toArray(group.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                 <label>
                                                     <span class="required">*</span><span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                            <select class="form-control" required value="{{property.value::change}}">
+                                                            <select class="form-control" required value="{{property.value::change}}"
+                                                                    data-label$="{{property.title}}" data-group-id$="{{group.id}}">
                                                                 <option value="" selected>Select one...</option>
                                                                 <template is="dom-repeat" items="{{property.enum}}">
                                                                     <option value="{{item}}">{{item}}</option>
@@ -391,7 +394,7 @@ Example:
                                                         </template>
                                                         <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
                                                             <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                   required value="{{property.value::input}}">
+                                                                   required value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}">
                                                         </template>
                                                     </template>
                                                 </label>
@@ -430,7 +433,8 @@ Example:
                                                     <div class="content toggled">
                                                         <label title="The task name">
                                                             <span class="required">*</span><span>Task Name</span>
-                                                            <input class="form-control" type="text" placeholder="Task Name" title="The task name" value="{{task.name::input}}" required>
+                                                            <input class="form-control" type="text" placeholder="Task Name" title="The task name" required value="{{task.name::input}}"
+                                                                   data-label="Task Name" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
                                                         </label>
                                                         <label title="The task description">
                                                             <span>Description</span>
@@ -485,7 +489,8 @@ Example:
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                            <select class="form-control" required value="{{property.value::change}}">
+                                                                            <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
+                                                                                    data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
                                                                                 <option value="" selected>Select one...</option>
                                                                                 <template is="dom-repeat" items="{{property.enum}}">
                                                                                     <option value="{{item}}">{{item}}</option>
@@ -493,8 +498,8 @@ Example:
                                                                             </select>
                                                                         </template>
                                                                         <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                   required value="{{property.value::input}}">
+                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
+                                                                                   value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
                                                                         </template>
                                                                     </template>
                                                                 </template>

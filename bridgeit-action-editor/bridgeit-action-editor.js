@@ -275,7 +275,24 @@ Polymer({
         var required = Polymer.dom(this.$$('#actionForm')).querySelectorAll('input:required');
         for (var h=0; h<required.length; h++) {
             if (!required[h].value) {
-                alert('Please enter all required fields.');
+                var label = required[h].getAttribute('data-label');
+                var groupId = required[h].getAttribute('data-group-id');
+                var taskId = required[h].getAttribute('data-task-id');
+                var groupStr,taskStr;
+                if (groupId) {
+                    var groupIndex = this._stripIndex(groupId);
+                    groupStr = this._taskGroups[groupIndex].name || 'Task Group #'+(groupIndex+1).toString();
+                }
+                if (taskId) {
+                    var taskIndex = this._stripIndex(taskId);
+                    taskStr = this._taskGroups[groupIndex].tasks[taskIndex].name || 'Task #'+(taskIndex+1).toString();
+                }
+                var alertStr = 'You must define "' + label+'"';
+                if (groupStr || taskStr) {
+                    alertStr += '\n\n [' + (groupStr ? (groupStr) : '') + (taskStr ? (' > '+taskStr) : '') + ' > ' + label+']';
+                }
+                alert(alertStr);
+                required[h].focus();
                 return false;
             }
         }
