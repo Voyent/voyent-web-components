@@ -186,20 +186,34 @@ Example:
                             </table>
                         <template is="dom-repeat" items="{{_taskGroups}}" as="group">
                             <div class$="taskGroup {{highlightStyle(group.highlight)}}">
-                                <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" title="{{group.type}}" class="taskHeader">
-                                    {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{_matchCount}})</template>
+                                <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" class="taskHeader" title="{{group.type}}">
+                                    {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{matchCount()}})
+                                        <template is="dom-if" if="{{hasMatches()}}">
+                                            <div>
+                                                <button on-click="_scrollPrevItem" title="Previous Item">&lt;</button>
+                                                <button on-click="_scrollNextItem" title="Next Item">&gt;</button>
+                                            </div>
+                                        </template>
+                                    </template>
                                 </div>
-                            
+                                
                                 <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                    <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
-                                        {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{_matchCount}})</template>
+                                    <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
+                                        {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
+                                            <template is="dom-if" if="{{hasMatches()}}">
+                                                <div>
+                                                    <button on-click="_scrollPrevItem" title="Previous Item">&lt;</button>
+                                                    <button on-click="_scrollNextItem" title="Next Item">&gt;</button>
+                                                </div>
+                                            </template>
+                                        </template>
                                     </div>
                                 </template>
                             </div>
                         </template>
                     </div>
                     <template is="dom-if" if="{{hasLogs()}}">
-                        <div id="tableWrap" class="flex-3 twrap">
+                        <div id="[[tableWrapId]]" class="flex-3 twrap">
                             <table>
                                 <thead>
                                     <tr>
@@ -208,7 +222,7 @@ Example:
                                 </thead>
                                 <tbody>
                                 <template is="dom-repeat" items="{{_backpack}}" as="backpack">
-                                    <tr class$="bottomB {{highlightStyle(backpack.highlight)}}">
+                                    <tr id$="item{{index}}" class$="bottomB {{highlightStyle(backpack.highlight)}}">
                                         <td>{{formatContainer(backpack)}}<pre>{{backpack.message}}</pre></td>
                                     </tr>
                                 </template>

@@ -65,6 +65,7 @@ Polymer({
         // Some static variables
         this.getTimeLimits();
         this.miscName = "Uncategorized";
+        this.tableWrapId = "tableWrap";
         
         // Some state variables for changing the view
         this._gotLogs = false; // Track whether we made a service call to get logs, even if it returned nothing
@@ -77,7 +78,8 @@ Polymer({
         this._pastActions = []; // List of past executed action names parsed from logs
         this._taskGroups = []; // Current task groups for our second tier view
         this._backpack = []; // Current backpack content for our third tier view
-        this._matchCount = 0; // Used for highlighting items in our second tier view
+        this._matchList = []; // Used for scrolling and highlighting items in our second tier view
+        this._currentMatchIndex = 0; // Used for tracking our currently scrolled item in our second tier view
 	},
 	
     /**
@@ -152,13 +154,29 @@ Polymer({
     
     /**
      * Computed binding function
+     * Returns the size of our matchList
+     */
+    matchCount: function() {
+        return this._matchList.length;
+    },
+    
+    /**
+     * Computed binding function
+     * Determine if we have any match list entries
+     */
+    hasMatches: function() {
+        return this._matchList.length > 0;
+    },
+    
+    /**
+     * Computed binding function
      * Return a valid string format for our action/taskGroup/taskItem container
      * If we don't have a valid action we will return null, otherwise we'll try to
      *  populate any data we have, separated by dashes
      */
     formatContainer: function(backpack) {
         if (backpack.action === null) {
-            return null;
+            return this._currentAction.name === this.miscName ? null : this.miscName;
         }
         
         var toReturn = backpack.action;
@@ -191,11 +209,11 @@ Polymer({
         this._loading = false;
         
         // Reset to a clean state of data
-        this.splice("_allLogs", 0, this._allLogs.length);
-        this.splice("_backpack", 0, this._backpack.length);
-        this.splice("_pastActions", 0, this._pastActions.length);
+        this.splice('_allLogs', 0, this._allLogs.length);
+        this.splice('_backpack', 0, this._backpack.length);
+        this.splice('_pastActions', 0, this._pastActions.length);
         // Note we don't splice here since we're using the savedAction copy of the array, and we don't want to clear it
-        this.set("_taskGroups", []);
+        this.set('_taskGroups', []);
         
         /** TODO NTFY-214 Can't query by date at the moment because the underlying MongoDB requires an ISODate object
         if (this._timeLimits[this.selectedLimit].date !== null) {
@@ -363,9 +381,6 @@ Polymer({
     _viewBackpack: function(e) {
         this._currentAction = this._pastActions[e.target.getAttribute('data-workflow-item')];
         
-        // Clear the old task groups
-        this.set("_taskGroups", []);
-        
         // Store our currently selected saved action as a set of task groups
         if (this._currentAction.name !== this.miscName) {
             for (var i = 0; i < this._savedActions.length; i++) {
@@ -374,7 +389,7 @@ Polymer({
                     break;
                 }
             }
-        
+            
             // Loop through the task groups and items and mark each one not highlighted
             var currentTaskGroup = null;
             for (var outerLoop = 0; outerLoop < this._taskGroups.length; outerLoop++) {
@@ -386,31 +401,46 @@ Polymer({
                 }
             }
         }
+        else {
+            // Clear the old task groups
+            this.set('_taskGroups', []);
+        }
         
         // Try to find matching log entries from our allLogs
         // Matches have the same action name, and most importantly the same tx code
         var loopLog = null;
         for (var j = 0; j < this._allLogs.length; j++) {
+            // Always reset our highlight state to false
+            this.set('_allLogs.' + j + '.highlight', false);
+            
             loopLog = this._allLogs[j];
             
-            // Account for Uncategorized entries
-            if (loopLog.action === null) {
-                if (this._currentAction.name === this.miscName) {
-                    this.push('_backpack', this._allLogs[j]);
-                }
+            // Account for Uncategorized action
+            if ((this._currentAction.name === this.miscName) &&
+                (loopLog.action === null)) {
+                // Insert our item at the start, which means we'll end up sorted with oldest entries first
+                this.splice('_backpack', 0, 0, this._allLogs[j]);
             }
             // Otherwise check action name and tx
-            else if (loopLog.action === this._currentAction.name) {
-                if (loopLog.tx === this._currentAction.tx) {
-                    this.push('_backpack', this._allLogs[j]);
+            else {
+                if (loopLog.action === null) {
+                    // TODO If we want to add Uncategorized messages to the backpack uncomment below
+                    //this.splice('_backpack', 0, 0, this._allLogs[j]);
+                }
+                else if (loopLog.action === this._currentAction.name) {
+                    if (loopLog.tx === this._currentAction.tx) {
+                        // Insert our item at the start, which means we'll end up sorted with oldest entries first
+                        this.splice('_backpack', 0, 0, this._allLogs[j]);
+                    }
                 }
             }
         }
         
         // Reset our scrollbar for the table view to the top
+        var _this = this;
         setTimeout(function() {
-            if (document.getElementById('tableWrap')) {
-                document.getElementById('tableWrap').scrollTop = 0;
+            if (document.getElementById(_this.tableWrapId)) {
+                document.getElementById(_this.tableWrapId).scrollTop = 0;
             }
         },0);
         
@@ -424,8 +454,8 @@ Polymer({
      * @private
      */
     _chooseAnother: function() {
-        this.set("_taskGroups", []);
-        this.splice("_backpack", 0, this._backpack.length);
+        this.set('_taskGroups', []);
+        this.splice('_backpack', 0, this._backpack.length);
         this._tableView = false;
     },
     
@@ -490,6 +520,10 @@ Polymer({
     _viewGroup: function(e) {
         var taskName = e.target.getAttribute('data-workflow-item');
         
+        if (taskName === null) {
+            return;
+        }
+        
         var match = false;
         for (var i = 0; i < this._taskGroups.length; i++) {
             // Set our highlight
@@ -513,13 +547,17 @@ Polymer({
      * @private
      */
     _viewItem: function(e) {
-        var parent = JSON.parse(e.target.getAttribute('data-parent-item'));
+        var parent = e.target.getAttribute('data-parent-item');
         var taskName = e.target.getAttribute('data-workflow-item');
+        
+        if (parent === null || taskName === null) {
+            return;
+        }
         
         var match = false;
         var innerMatch = false;
         for (var i = 0; i < this._taskGroups.length; i++) {
-            match = (parent.name === this._taskGroups[i].name);
+            match = (parent === this._taskGroups[i].name);
             innerMatch = false;
             
             for (var j = 0; j < this._taskGroups[i].tasks.length; j++) {
@@ -546,15 +584,51 @@ Polymer({
      */
     _viewGeneric: function(taskName, compareTo) {
         // We want to loop through our backpack messages and highlight any in the passed task item
-        this._matchCount = 0;
+        this.splice('_matchList', 0, this._matchList.length);
+        
         var match = false;
         for (var i = 0; i < this._backpack.length; i++) {
             match = (taskName === this._backpack[i][compareTo]);
             this.set('_backpack.' + i + '.highlight', match);
             
             if (match) {
-                this._matchCount++;
+                this.push('_matchList', {"index":i});
             }
         }
-    }
+        
+        // Automatically scroll to the first item
+        if (this.hasMatches()) {
+            this._scrollGenericItem(0);
+        }
+    },
+    
+    _scrollNextItem: function() {
+        this._scrollGenericItem(this._currentMatchIndex+1);
+    },
+    
+    _scrollPrevItem: function() {
+        this._scrollGenericItem(this._currentMatchIndex-1);
+    },
+    
+    _scrollGenericItem: function(scrollIndex) {
+        this._currentMatchIndex = scrollIndex;
+        
+        // Account for the start/end of the list
+        if (this._currentMatchIndex < 0) {
+            this._currentMatchIndex = 0;
+        }
+        if (this._currentMatchIndex > (this._matchList.length-1)) {
+            this._currentMatchIndex = this._matchList.length-1;
+        }
+        
+        var _this = this;
+        setTimeout(function() {
+            if (document.getElementById(_this.tableWrapId)) {
+                var childItem = document.getElementById('item' + _this._matchList[_this._currentMatchIndex].index);
+                if (childItem) {
+                    document.getElementById(_this.tableWrapId).scrollTop = childItem.offsetTop;
+                }
+            }
+        },0);
+    },
 });
