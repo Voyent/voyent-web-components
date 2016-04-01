@@ -69,7 +69,7 @@ Example:
             }
             
             .twrap {
-                overflow-x: scroll;
+                overflow-x: auto;
                 overflow-y: scroll;
                 max-height: 800px;
                 border: 1px inset black;
@@ -115,6 +115,14 @@ Example:
                 border-bottom: 2px solid black;
                 border-left: 2px solid black;
                 border-right: 2px solid black;
+            }
+            
+            pre {
+                white-space: pre-wrap;
+                white-space: -moz-pre-wrap;
+                white-space: -pre-wrap;
+                white-space: -o-pre-wrap;
+                word-wrap: break-word;
             }
         </style>
         
