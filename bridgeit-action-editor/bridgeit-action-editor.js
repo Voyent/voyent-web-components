@@ -44,6 +44,7 @@ Polymer({
         // This is necessary in case the action editor is quite long (such as many tasks)
         // Because we still want to see the draggable containers/tasks list
         this.offset = -1;
+        this.lastScroll = -1;
         var _this = this;
         window.addEventListener("scroll", function() {
             var ourDiv = document.getElementById("fixedDiv");
@@ -55,6 +56,13 @@ Polymer({
                 }
                 var compareTop = _this._calculateScrollbarPos(ourDiv.parentNode);
                 
+                // Skip out if our comparison is the same as our last scroll
+                // This most likely happens when an unrelated scrollbar (rather than the main container) is used
+                if (compareTop === _this.lastScroll) {
+                    return;
+                }
+                _this.lastScroll = compareTop;
+                
                 // There is a chance we need to resize our left pane contents a bit
                 // This would be necessary when the viewport is smaller than our left pane
                 // If we don't do this the left pane will sticky to the top and make it so the user can never reach the bottom
@@ -62,20 +70,27 @@ Polymer({
                 if (h) {
                     // Get all left pane contents
                     var panes = document.querySelectorAll(".leftPane");
-                    for (var i = 0; i < panes.length; i++) {
-                        // Calculate a height with some generous padding
-                        var calcH = h-300;
-                        panes[i].style.height = null;
-                        
-                        // If we are below a bare minimum of 100px reset to 100 and force the height
-                        if (calcH < 100) {
-                            calcH = 100;
+                    
+                    // Note we only want to bother looping our panes if we have the exact right amount
+                    // This is a bit of a magic number, but refers to the container and item panes on the left
+                    // So we know there are exactly 2 of them
+                    if (panes.length === 2) {
+                        for (var i = 0; i < panes.length; i++) {
+                            // Calculate a height to 40% of the total page
+                            // Between the two panels this leaves a padding buffer of 20%
+                            var calcH = Math.round(h*0.4);
+                            panes[i].style.height = null;
                             
-                            panes[i].style.height = calcH + 'px';
+                            // If we are below a bare minimum of 100px reset to 100 and force the height
+                            if (calcH < 100) {
+                                calcH = 100;
+                                
+                                panes[i].style.height = calcH + 'px';
+                            }
+                            
+                            // Set the max height to our calculated value
+                            panes[i].style.maxHeight = calcH + 'px';
                         }
-                        
-                        // Set the max height to our calculated value
-                        panes[i].style.maxHeight = calcH + 'px';
                     }
                 }
                 
