@@ -80,6 +80,15 @@ Polymer({
         this._backpack = []; // Current backpack content for our third tier view
         this._matchList = []; // Used for scrolling and highlighting items in our second tier view
         this._currentMatchIndex = 0; // Used for tracking our currently scrolled item in our second tier view
+        
+        // Store our max recommended height for backpack log elements
+        // This will be 80% of the view port, up to a maximum of 800px
+        var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        var calcH = Math.round(h*0.8);
+        if (calcH > 800) {
+            calcH = 800;
+        }
+        this.set('_maxHeight', calcH);
 	},
 	
     /**
@@ -493,7 +502,7 @@ Polymer({
     _formatTime: function(time) {
         var date = new Date(time);
         
-        return date.getFullYear() + "-" + ('0'+(date.getMonth()+1)).slice(-2) + "-" + date.getDate() + ", " +
+        return date.getFullYear() + "-" + ('0'+(date.getMonth()+1)).slice(-2) + "-" + ('0'+date.getDate()).slice(-2) + ", " +
                date.getHours() + ":" + ('0'+date.getMinutes()).slice(-2) + ":" + ('0'+date.getSeconds()).slice(-2) + "." + ('00'+date.getMilliseconds()).slice(-3);
     },
     
