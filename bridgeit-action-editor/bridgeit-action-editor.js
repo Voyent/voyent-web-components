@@ -288,6 +288,7 @@ Polymer({
             return false;
         }*/
         var required = Polymer.dom(this.$$('#actionForm')).querySelectorAll('input:required');
+        var groupIndex;
         for (var h=0; h<required.length; h++) {
             if (!required[h].value) {
                 var label = required[h].getAttribute('data-label');
@@ -295,7 +296,7 @@ Polymer({
                 var taskId = required[h].getAttribute('data-task-id');
                 var groupStr,taskStr;
                 if (groupId) {
-                    var groupIndex = this._stripIndex(groupId);
+                    groupIndex = this._stripIndex(groupId);
                     groupStr = this._taskGroups[groupIndex].name || 'Task Group #'+(groupIndex+1).toString();
                 }
                 if (taskId) {
