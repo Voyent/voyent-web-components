@@ -926,10 +926,12 @@ Polymer({
                         if (i === 0 && dropY > (currentTaskGroup.offsetTop - 30)) {
                             insertIndex = 0;
                         }
-
                         break;
                     }
                 }
+            }
+            if (insertIndex > currPos) {
+                insertIndex -= 1;
             }
 
             // If we have an "insertIndex" it means we figured out where the task group should be inserted
@@ -1058,6 +1060,9 @@ Polymer({
                             break;
                         }
                     }
+                }
+                if (insertIndex > currPos) {
+                    insertIndex -= 1;
                 }
 
                 //if we have an "insertIndex" it means we figured out where the task group should be inserted
