@@ -365,14 +365,18 @@ Example:
                                      the duplicate code and then insert this template into each section instead of manually duplicating it.
                                  -->
                                 <template is="dom-repeat" items="{{_taskGroups}}" as="group">
-                                    <div id$="{{group.id}}" class="task-group" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
+                                    <div id$="{{group.id}}" class="task-group" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
                                         <div class="buttons">
                                             <button type="button" on-click="_moveTaskGroupUp">Up</span></button>
                                             <button type="button" on-click="_moveTaskGroupDown">Down</button>
                                             <button type="button" on-click="_cloneTaskGroup">Clone</button>
                                             <button type="button" on-click="_deleteTaskGroup">Remove</button>
                                         </div>
-                                        <div class="title" on-click="_toggleTask">{{group.schema.title}}<span class="smallerF">{{_formatContainerName(group.name, group.schema.taskcount)}}</span><div class="arrow"></div></div>
+                                        <div class="title" on-click="_toggleTask" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" >
+                                            {{group.schema.title}}
+                                            <span class="smallerF">{{_formatContainerName(group.name, group.schema.taskcount)}}</span>
+                                            <div class="arrow"></div>
+                                        </div>
                                         <div class="content">
                                             <label title="The task group name">
                                                 <span class="required">*</span><span>Task Group Name</span>
@@ -422,14 +426,18 @@ Example:
                                                 </label>
                                             </template>
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                                <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon">
+                                                <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
                                                     <div class="buttons">
                                                         <button type="button" on-click="_moveTaskUp">Up</span></button>
                                                         <button type="button" on-click="_moveTaskDown">Down</button>
                                                         <button type="button" on-click="_cloneTask">Clone</button>
                                                         <button type="button" on-click="_deleteTask">Remove</button>
                                                     </div>
-                                                    <div class="title" on-click="_toggleTask">{{task.schema.title}}<span class="details">{{_formatTaskName(task.name)}}</span><div class="arrow toggled"></div></div>
+                                                    <div class="title" data-group-id$="{{group.id}}" on-click="_toggleTask" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon">
+                                                        {{task.schema.title}}
+                                                        <span class="details">{{_formatTaskName(task.name)}}</span>
+                                                        <div class="arrow toggled"></div>
+                                                    </div>
                                                     <div class="content toggled">
                                                         <label title="The task name">
                                                             <span class="required">*</span><span>Task Name</span>
