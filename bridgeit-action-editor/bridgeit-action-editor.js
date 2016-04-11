@@ -957,19 +957,14 @@ Polymer({
                 appendBottom = true;
             }
         }
-
         // If we reached here and still have "appendBottom" set to true we will add our dropped item to the bottom
         //  of the task group array via push
         if (appendBottom) {
-            newid = this._taskGroupBaseId + (this._taskGroups.length-1).toString();
+            newid = this._taskGroupBaseId + (this._taskGroups.length).toString();
             if (e.dataTransfer.getData('action/group/new')) {
                 this.push('_taskGroups', {"id": newid, "name": '', "schema": data, "tasks": []});
             }
             else {
-                //if the position hasn't changed do nothing
-                if (currPos === this._taskGroups.length-1) {
-                    return;
-                }
                 //remove from current position and push to end of action
                 this.splice('_taskGroups',currPos,1);
                 this.push('_taskGroups',data);
@@ -1028,7 +1023,6 @@ Polymer({
                     taskGroupIndex = this._stripIndex(currentParent.id);
                     break;
                 }
-                
                 currentParent = currentParent.parentNode;
             } while(currentParent);
         }
@@ -1062,7 +1056,7 @@ Polymer({
                         }
                     }
                 }
-                if (insertIndex > currPos) {
+                if ((previousGroupIndex === taskGroupIndex) && (insertIndex > currPos)) {
                     insertIndex -= 1;
                 }
 
@@ -1096,12 +1090,7 @@ Polymer({
                     this.push('_taskGroups.'+taskGroupIndex+'.tasks', {"id":newid,"schema":data});
                 }
                 else {
-                    //if the position hasn't changed do nothing
-                    if ((previousGroupIndex === taskGroupIndex) &&
-                        (currPos === this._taskGroups[taskGroupIndex].tasks.length-1)) {
-                        return;
-                    }
-                    newid = this._taskBaseId + (this._taskGroups[taskGroupIndex].tasks.length-1).toString();
+                    newid = this._taskBaseId + (this._taskGroups[taskGroupIndex].tasks.length).toString();
                     //remove from current position and push to end of task
                     this.splice('_taskGroups.'+previousGroupIndex+'.tasks',currPos,1);
                     this.push('_taskGroups.'+taskGroupIndex+'.tasks', data);
