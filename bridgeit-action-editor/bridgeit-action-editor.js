@@ -36,7 +36,7 @@ Polymer({
         }
         this._loadedAction = null;
         this._taskGroups = [];
-        this._codeEditorProperties=['function','messagetemplate'];
+        this._codeEditorProperties=['function','messagetemplate','query','payload','userrecord','pushmessage'];
         this._taskGroupBaseId = 'taskGroup';
         this._taskBaseId = 'task';
         
