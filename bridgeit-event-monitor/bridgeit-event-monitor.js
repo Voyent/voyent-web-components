@@ -480,7 +480,7 @@ Polymer({
                     sel.classed("clickedCircle", true);
                     _this.clickedCircle = this;
                     _this.clickedData = d;
-                    _this.clickedDataFormatted = JSON.stringify(d.fullData);
+                    _this.clickedDataFormatted = JSON.stringify(d.data, undefined, 2);
                     _this.showDetails();
                 }
             })
