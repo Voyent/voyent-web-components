@@ -148,6 +148,7 @@ BridgeIt.QueryEditor = Polymer({
     runQuery: function() {
         var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
+            this._setCurrentquery(query);
             this._processTimeFields(query,true);
             this._queryService(query);
         }
@@ -308,7 +309,12 @@ BridgeIt.QueryEditor = Polymer({
      * @return {boolean} Indicates if the query is valid.
      */
     validateQuery: function() {
-        return Object.keys($(this.$.editor).queryBuilder('getMongo')).length > 0;
+        var query = $(this.$.editor).queryBuilder('getMongo');
+        if (Object.keys(query).length > 0) {
+            this._setCurrentquery(query);
+            return true;
+        }
+        return false;
     },
 
 
@@ -381,6 +387,7 @@ BridgeIt.QueryEditor = Polymer({
         if (Object.keys(query).length === 0) {
             return null;
         }
+        this._setCurrentquery(query);
         this._processTimeFields(query,true);
         var queryToPost = {
             "query": query,
@@ -459,6 +466,7 @@ BridgeIt.QueryEditor = Polymer({
     _refreshQuery: function() {
         var query = $(this.$.editor).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
+            this._setCurrentquery(query);
             this._processTimeFields(query,true);
             this._updateQueryURL(query);
         }
@@ -602,7 +610,6 @@ BridgeIt.QueryEditor = Polymer({
     },
     _updateQueryURL: function(query) {
         var queryURLTarget = this.queryurltarget;
-        this._setCurrentquery(query); //update currentquery property
         if (queryURLTarget && document.getElementById(queryURLTarget)) {
             var q = query ? JSON.stringify(query) : '{}';
             var params = '?access_token='+bridgeit.io.auth.getLastAccessToken()+'&query='+q+'&fields='+JSON.stringify(this.fields)+'&options='+JSON.stringify(this.options);
