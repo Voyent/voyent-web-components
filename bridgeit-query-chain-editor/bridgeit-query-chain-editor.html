@@ -88,6 +88,16 @@ Example:
                 overflow-y:scroll;
                 @apply(--query-chain-editor-tab-content);
             }
+            .collapsed {
+                width: 50px;
+                max-width: 80px;
+            }
+            .collapsed .flex {
+                visibility: hidden;
+            }
+            .collapsed h2 {
+                font-size: small;
+            }
             /* Preset Styles */
             .palette, .workflow, .execute {
                 padding: 0 10px 0 10px;
@@ -242,8 +252,11 @@ Example:
         <hr/>
         
         <div class="container flex layout horizontal">
-            <div class="flex-2 section palette">
-                <h2>Palette</h2>
+            <div id="palette" class="flex-2 section palette">
+                <h2>
+                    <button on-click="toggleColumn" data-id="palette" data-class="flex-2">&lt;-&gt;</button>
+                    Palette
+                </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
                         <div class="header-panel">
@@ -297,7 +310,10 @@ Example:
             </div>
             
             <div id="workflow" class="flex-3 section workflow">
-                <h2>Workflow ([[_arrayLength(_workflow.query.*)]] items)</h2>
+                <h2>
+                    <button on-click="toggleColumn" data-id="workflow" data-class="flex-3">&lt;-&gt;</button>
+                    Workflow ([[_arrayLength(_workflow.query.*)]] items)
+                </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex workflow-drop-area" on-dragover="_dragOverWorkflow" on-drop="_dropInWorkflow">
                         <template is="dom-repeat" items="{{_workflow.query}}" as="workflowItem">
@@ -462,8 +478,11 @@ Example:
                     </div>
                 </template>
             </div>
-            <div class="flex-2 section results">
-                <h2>Results</h2>
+            <div id="results" class="flex-2 section results">
+                <h2>
+                    <button on-click="toggleColumn" data-id="results" data-class="flex-2">&lt;-&gt;</button>
+                    Results
+                </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
                         <template is="dom-repeat" items="{{_workflow.query}}" as="workflowItem">

@@ -144,6 +144,35 @@ BridgeIt.QueryChainEditor = Polymer({
         });
     },
     
+    /**
+     * Swap some CSS to toggle the Palette column size
+     * This gives more room for the Workflow
+     * @param e
+     */
+    toggleColumn: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        
+        var id = e.target.getAttribute('data-id');
+        var baseClass = e.target.getAttribute('data-class');
+        
+        if (!id || !baseClass) {
+            return;
+        }
+        
+        var ourDiv = this.querySelector('#' + id);
+        
+        if (ourDiv) {
+            if (ourDiv.classList.contains('collapsed')) {
+                ourDiv.classList.remove('collapsed');
+                ourDiv.classList.add(baseClass);
+            }
+            else {
+                ourDiv.classList.add('collapsed');
+                ourDiv.classList.remove(baseClass);
+            }
+        }
+    },
+    
     /** Adds parameters to the main workflow
      * @param e
      */
