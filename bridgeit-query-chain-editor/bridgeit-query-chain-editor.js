@@ -32,7 +32,7 @@ BridgeIt.QueryChainEditor = Polymer({
         // For terminology we use "chain" at the service level and "workflow" for the UI
         this.resetWorkflow();
         
-        // TODO MANUAL For now we do some manual GET/POST/etc. until support is added to the bridgeit client library (related code with TODO MANUAL)
+        // TODO MANUAL For now we do some manual GET/POST/etc. until support is added to the bridgeit client library
         this.tempUrl = 'http://dev.bridgeit.io/';
         this.tempQueryService = 'query/';
         this.tempTransformerResource = 'transformers/';
@@ -134,7 +134,7 @@ BridgeIt.QueryChainEditor = Polymer({
         this._transformers = [];
         
         var _this = this;
-        // TODO MANUAL
+        // TODO MANUAL Should have a client library function to GET all transformers from the service
         bridgeit.$.getJSON(this.buildUrl(this.tempQueryService, this.tempTransformerResource)).then(function(results) {
             if (results && results.length > 0) {
                 _this._transformers = results;
@@ -348,8 +348,10 @@ BridgeIt.QueryChainEditor = Polymer({
     _executeWorkflow: function(callback) {
         console.log("Exec: " + this._workflow._id);
         
-        // TODO Eventually we need to still be able to execute a single, non-chain query/transformer. This would change the UI a bit, and also use a different execution approach
-        // TODO Eventually we need to pass a "stopHere" with the selected workflow item, to ensure chain execution halts at a certain query/transformer
+        // TODO LATER we need to pass a "stopHere" with the selected workflow item ID, to ensure chain execution halts at a certain query/transformer
+        // TODO LATER we need to pass along workflow request parameters (from this._workflow.properties.testData), such as status=active. These will be in JSON which the client library will convert
+        
+        // TODO Still be able to execute a single, non-chain query/transformer. This would change the UI a bit, and also use a different execution approach
         
         // Persist our queries/transformers, then the entire chain, and finally execute
         // These asynchronous functions need a bunch of callbacks because processing can't continue until the previous step completes
@@ -357,8 +359,8 @@ BridgeIt.QueryChainEditor = Polymer({
         var _this = this;
         this._persistWorkflowQueries(function() {_this._persistWorkflowChain(function() {
             // TODO MANUAL We should have a way to execute a query from our client library
-            // TODO Also pass along workflow request parameters (as URL & params), such as status=active, see this._workflow.properties.testData (may not exist)
-            bridgeit.$.getJSON(_this.buildUrl(_this.tempQueryService, _this.tempQueryResource, _this._workflow._id) + "&exec=true&op=execute&mode=debug")
+            var urlParams = "&exec=true&mode=debug";
+            bridgeit.$.getJSON(_this.buildUrl(_this.tempQueryService, _this.tempQueryResource, _this._workflow._id) + urlParams)
                       .then(function(results) {
                 // Loop through results and set them into each workflowItem
                 var currentWorkflow = null;
