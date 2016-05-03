@@ -30,7 +30,7 @@ BridgeIt.QueryChainEditor = Polymer({
         
         // The current data we are working on in our view
         // For terminology we use "chain" at the service level and "workflow" for the UI
-        this._resetWorkflow();
+        this.resetWorkflow();
         
         // TODO MANUAL For now we do some manual GET/POST/etc. until support is added to the bridgeit client library (related code with TODO MANUAL)
         this.tempUrl = 'http://dev.bridgeit.io/';
@@ -39,6 +39,10 @@ BridgeIt.QueryChainEditor = Polymer({
         this.tempQueryResource = 'queries/';
     },
     
+    /**
+     * Reset the internal ID and initialize our data
+     * If our account and realm are valid we will try to load query services and transformers for our palette
+     */
     initializeData: function() {
         this._internalId = 0;
         
@@ -115,7 +119,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 }
             }
         }).catch(function(error){
-            console.error("Error when trying to find queries: " + error);
+            console.error("Error when trying to find queries: " + error.toSource());
         });
     },
     
@@ -140,22 +144,10 @@ BridgeIt.QueryChainEditor = Polymer({
         });
     },
     
-    //******************PRIVATE API******************
-    /**
-     * Function called when the query service is changed
-     * @private
-     */
-    _selectedQueryChanged: function() {
-        if (this._queryServices) {
-            this._queries = this._queryServices[this.selectedQuery].queries;
-        }
-    },
-    
     /** Adds parameters to the main workflow
      * @param e
-     * @private
      */
-    _addMainParam: function(e) {
+    addMainParam: function(e) {
         e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
         
         this.push('_workflow.properties.parameters', {"name":"","type":"","desc":"","default":""});
@@ -164,9 +156,8 @@ BridgeIt.QueryChainEditor = Polymer({
     /**
      * Removes parameters from the main workflow
      * @param e
-     * @private
      */
-    _removeMainParam: function(e) {
+    removeMainParam: function(e) {
         e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
         
         if (this._workflow.properties.parameters.length > 0) {
@@ -177,9 +168,8 @@ BridgeIt.QueryChainEditor = Polymer({
     /**
      * Adds parameters to query dialogs
      * @param e
-     * @private
      */
-    _addItemParam: function(e) {
+    addItemParam: function(e) {
         e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
         
         var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
@@ -191,9 +181,8 @@ BridgeIt.QueryChainEditor = Polymer({
     /**
      * Removes parameters from query dialogs
      * @param e
-     * @private
      */
-    _removeItemParam: function(e) {
+    removeItemParam: function(e) {
         e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
         
         var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
@@ -208,9 +197,8 @@ BridgeIt.QueryChainEditor = Polymer({
     /**
      * Remove the current workflow item, such as a query or transformer
      * @param e
-     * @private
      */
-    _removeWorkflowItem: function(e) {
+    removeWorkflowItem: function(e) {
         e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
         
         var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
@@ -218,7 +206,336 @@ BridgeIt.QueryChainEditor = Polymer({
             this.splice('_workflow.query', this._workflow.query.indexOf(item), 1);
         }
     },
+    
+    /**
+     * Public UI method to execute a workflow
+     * @param e
+     */
+    executeWorkflow: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        this._executeWorkflow();
+    },
 
+    /**
+     * Public UI method to persist workflow queries
+     * @param e
+     */
+    persistWorkflowQueries: function(e) {
+        this._persistWorkflowQueries();
+    },
+    
+    /**
+     * Public UI method to persist the workflow chain
+     * @param e
+     */
+    persistWorkflowChain: function(e) {
+        // Save our workflow queries/transformers first, then when that's done try to save our chain
+        var _this = this;
+        this._persistWorkflowQueries(function() {_this._persistWorkflowChain() });
+    },
+    
+    /**
+     * Load a saved workflow, including id, name, and content
+     * @param e
+     */
+    loadWorkflow: function(e) {
+        var loadId = e.target.getAttribute('data-workflow-item');
+        
+        // First we find the workflow that was requested from our savedWorkflow list
+        // We will assign that over our existing workflow
+        for (var i = 0; i < this._savedWorkflows.length; i++) {
+            if (loadId === this._savedWorkflows[i]._id) {
+                this._workflow = JSON.parse(JSON.stringify(this._savedWorkflows[i])); // clone
+                this._workflow.selected = 0;
+                break;
+            }
+        }
+        
+        // Loop through our query/transformer items and convert them to a format the UI will understand
+        var loadedItems = [];
+        var currentQuery = null;
+        var pulledItem = null;
+        for (var i = 0; i < this._workflow.query.length; i++) {
+            currentQuery = this._workflow.query[i];
+            pulledItem = null;
+            
+            if (currentQuery.type === 'query') {
+                for (var j = 0; j < this._queryServices.length; j++) {
+                    for (var subQuery = 0; subQuery < this._queryServices[j].queries.length; subQuery++) {
+                        if (currentQuery.id === this._queryServices[j].queries[subQuery]._id) {
+                            pulledItem = this._queryServices[j].queries[subQuery];
+                            break;
+                        }
+                    }
+                }
+            }
+            else if (currentQuery.type === 'transform') {
+                for (var j = 0; j < this._transformers.length; j++) {
+                    if (currentQuery.id === this._transformers[j]._id) {
+                        pulledItem = this._transformers[j];
+                        break;
+                    }
+                }
+            }
+            else {
+                console.error('Unrecognized chain item type (looking for query or transform): found '+ currentQuery.type);
+                pulledItem = null;
+            }
+            
+            // Check if we have a pulled JSON item to make a workflow item from
+            if (pulledItem) {
+                loadedItems.push(this._makeWorkflowItem(currentQuery.type, JSON.parse(JSON.stringify(pulledItem))));
+            }
+        }
+        
+        // Clear our old query array since we've converted it from type/id to workflow items
+        this.splice('_workflow.query', 0, this._workflow.query.length);
+        
+        // Because Polymer doesn't support more complex array operations (like concat) we have to loop through our loadedItems and push each one
+        for (var insert = 0; insert < loadedItems.length; insert++) {
+            this.push('_workflow.query', loadedItems[insert]);
+        }
+    },
+    
+    /**
+     * Delete a saved workflow from our list
+     * @param e
+     */
+    removeWorkflow: function(e) {
+        var removeId = e.target.getAttribute('data-workflow-item');
+        
+        if (!window.confirm("Are you sure you want to delete the '" + removeId + "' workflow?")) {
+            return;
+        }
+        
+        var deleteIndex = -1;
+        for (var i = 0; i < this._savedWorkflows.length; i++) {
+            if (removeId === this._savedWorkflows[i]._id) {
+                deleteIndex = i;
+                break;
+            }
+        }
+        
+        if (deleteIndex >= 0) {
+            var _this = this;
+            bridgeit.io.query.deleteQuery({
+                account: this.account,
+                realm: this.realm,
+                id: removeId
+            }).then(function() {
+                _this.splice('_savedWorkflows', deleteIndex, 1);
+            }).catch(function(error) {
+                 console.error('Failed to delete workflow chain ' + removeId + ':' + error.toSource());
+            });
+        }
+    },
+    
+    /**
+     * Clear the workflow state, including id, name, and content
+     * @param e
+     */
+    resetWorkflow: function(e) {
+        this._workflow = { "_id":"newWorkflow", "selected": 0, "properties": { "title":"New Workflow", "parameters":[] }, "query":[] }
+    },
+    
+    //******************PRIVATE API******************
+    
+    /**
+     * Execute the passed step of the desired workflow
+     * We will store the results as JSON in 'result'
+     * @param callback
+     */
+    _executeWorkflow: function(callback) {
+        console.log("Exec: " + this._workflow._id);
+        
+        // TODO Eventually we need to still be able to execute a single, non-chain query/transformer. This would change the UI a bit, and also use a different execution approach
+        // TODO Eventually we need to pass a "stopHere" with the selected workflow item, to ensure chain execution halts at a certain query/transformer
+        
+        // Persist our queries/transformers, then the entire chain, and finally execute
+        // These asynchronous functions need a bunch of callbacks because processing can't continue until the previous step completes
+        // For example we want to ensure our queries are saved/updated properly before we try to execute anything
+        var _this = this;
+        this._persistWorkflowQueries(function() {_this._persistWorkflowChain(function() {
+            // TODO MANUAL We should have a way to execute a query from our client library
+            // TODO Also pass along workflow request parameters (as URL & params), such as status=active, see this._workflow.properties.testData (may not exist)
+            bridgeit.$.getJSON(_this.buildUrl(_this.tempQueryService, _this.tempQueryResource, _this._workflow._id) + "&exec=true&op=execute&mode=debug")
+                      .then(function(results) {
+                // Loop through results and set them into each workflowItem
+                var currentWorkflow = null;
+                for (var i = 0; i < _this._workflow.query.length; i++) {
+                    currentWorkflow = _this._workflow.query[i];
+                    
+                    // Reset our results in case we don't get new ones
+                    _this.set('_workflow.query.' + i + '.result', "");
+                    
+                    if (results && results[currentWorkflow.item._id]) {
+                        _this.set('_workflow.query.' + i + '.result', JSON.stringify(results[currentWorkflow.item._id], undefined, 4));
+                    }
+                }
+                
+                if (callback) { callback(); }
+            }).catch(function(error){
+                console.error("Error when trying to execute query: " + error.toSource());
+                
+                if (callback) { callback(); }
+            });
+        })});
+    },
+    
+    /**
+     * Save or update all the current queries and transformers for the workflow
+     * The callback will be fired after every query/transformer is properly handled, not on a per-item basis
+     * @param callback
+     */
+    _persistWorkflowQueries: function(callback) {
+        var _this = this;
+        var loopWorkflowItem = null;
+        var completeLength = 0;
+        var loopCallback = function() {
+            completeLength++;
+            if (completeLength == _this._workflow.query.length) {
+                if (callback) {
+                    callback();
+                }
+            }
+        };
+        
+        // Try to persist (create/update) each query/transformer in our current workflow
+        for (var i = 0; i < this._workflow.query.length; i++) {
+            loopWorkflowItem = this._workflow.query[i];
+            
+            // Check if our current query/transformer even changed since the last persist
+            // If it didn't we don't need to hit the service again
+            if (JSON.stringify(loopWorkflowItem.item) != JSON.stringify(loopWorkflowItem.originalItem)) {
+                // Now if our workflow item DID change, we want to see if the ID changed
+                // If the ID did change we'll want to try to POST (create), otherwise PUT (update)
+                if (loopWorkflowItem.originalItem._id != loopWorkflowItem.item._id) {
+                    this._saveWorkflowItem(loopWorkflowItem, loopCallback);
+                }
+                else {
+                    this._updateWorkflowItem(loopWorkflowItem, loopCallback);
+                }
+                
+                // Also update our internal item to know the changed version is now the current version
+                // Technically we should only do this on a valid save/update from the service
+                loopWorkflowItem.originalItem = JSON.parse(JSON.stringify(loopWorkflowItem.item));
+            }
+            else {
+                loopCallback();
+            }
+        }
+    },
+    
+    /**
+     * Save the current workflow
+     * The content will be saved (either new or updated)
+     * @param callback
+     */
+    _persistWorkflowChain: function(callback) {
+        // Check for an existing saved workflow with the same ID
+        // If we find it override it, otherwise save the workflow as new
+        var updateIndex = -1;
+        for (var i = 0; i < this._savedWorkflows.length; i++) {
+            if (this._workflow._id === this._savedWorkflows[i]._id) {
+                updateIndex = i;
+                break;
+            }
+        }
+        
+        // We need to convert our workflow object to a valid service-level chain
+        // First set the basic JSON outline of the chain. We can use our existing properties and ID
+        var toPersist = {"_id": this._workflow._id, "properties": this._workflow.properties, "query": []};
+        toPersist.properties.type = "chain";
+        
+        // Loop through our query list (which are workflowItem objects) and convert to a chain style id/type
+        var currentLoopItem = null;
+        for (var j = 0; j < this._workflow.query.length; j++) {
+            currentLoopItem = this._workflow.query[j];
+            toPersist.query.push({"type": currentLoopItem.type, "id": currentLoopItem.item._id});
+        }
+        
+        // If our updateIndex is -1 it means it's still the default, so we didn't find an existing chain and will POST
+        if (updateIndex === -1) {
+            // POST to the service with our new query chain
+            var _this = this;
+            bridgeit.io.query.createQuery({
+                account: this.account,
+                realm: this.realm,
+                id: this._workflow._id,
+                query: toPersist
+            }).then(function(uri) {
+                // Update our UI level list on success
+                _this.push('_savedWorkflows', toPersist);
+                
+                if (callback) { callback(); }
+            }).catch(function(error) {
+                console.error('Failed to save workflow chain: ' + error.toSource());
+                
+                if (callback) { callback(); }
+            });
+        }
+        // Otherwise we found an existing chain and will update instead
+        else {
+            // Do a PUT via the update call
+            var _this = this;
+            bridgeit.io.query.updateQuery({
+                account: this.account,
+                realm: this.realm,
+                id: this._workflow._id,
+                query: toPersist
+            }).then(function(uri){
+                // Update our UI level list on success
+                _this.set('_savedWorkflows.' + updateIndex, toPersist);
+                
+                if (callback) { callback(); }
+            }).catch(function(error){
+                 console.error('Failed to update workflow chain: ' + error.toSource());
+                 
+                if (callback) { callback(); }
+            });
+        }
+    },
+    
+    /**
+     * Save/create the passed workflow query/transformer
+     * The callback will be fired on success or error of the POST
+     * Note this function will try to call updateWorkflowQuery if the save/create fails
+     *  This could be because the resource already exists, etc.
+     * @param workflowItem
+     * @param callback
+     * @private
+     */
+    _saveWorkflowItem: function(workflowItem, callback) {
+        // TODO MANUAL Need to determine if we use the query or transformer service for our save
+        var desiredResource = workflowItem.type === 'query' ? this.tempQueryResource : this.tempTransformerResource;
+        bridgeit.$.post(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
+            if (callback) { callback(); }
+        }).catch(function(error) {
+            console.error("Failed to save individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
+            
+            if (callback) { callback(); }
+        });
+    },
+
+    /**
+     * Update the passed workflow query/transformer
+     * The callback will be fired on success or error of the PUT
+     * @param workflowItem
+     * @param callback
+     * @private
+     */
+    _updateWorkflowItem: function(workflowItem, callback) {
+        // TODO MANUAL Need to determine if we use the query or transformer service for our update
+        var desiredResource = workflowItem.type === 'query' ? this.tempQueryResource : this.tempTransformerResource;
+        bridgeit.$.put(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
+            if (callback) { callback(); }
+        }).catch(function(error) {
+            console.error("Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
+            
+            if (callback) { callback(); }
+        });
+    },
+    
     /**
      * Query ondragstart event handler.
      * @param e
@@ -291,175 +608,6 @@ BridgeIt.QueryChainEditor = Polymer({
     },
     
     /**
-     * Create a new workflow item JSON object from the passed type and item content
-     * This basically wraps service-level content with UI specific workflow data, such as selected
-     * This will use internalId to maintain a UI level ID (mainly for drag and drop)
-     * @param type
-     * @param item
-     * @private
-     */
-    _makeWorkflowItem: function(type, item) {
-        this._internalId++;
-        return {"id":"workflowItem" + this._internalId, "type":type, "selected":0, "item":item, "result":""};
-    },
-    
-    /**
-     * Execute the passed step of the desired workflow
-     * We will store the results as JSON in 'result'
-     * @param e
-     * @private
-     */
-    _executeWorkflow: function(e) {
-        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
-        console.log("Exec: " + this._workflow._id);
-        
-        // TODO Eventually we need to still be able to execute a single, non-chain query/transformer. This would change the UI a bit, and also use a different execution approach
-        // TODO Eventually we need to pass a "stopHere" with the selected workflow item, to ensure chain execution halts at a certain query/transformer
-        
-        // TODO Need to figure out if we POST/PUT all queries/transformers/chain data first, since we use the saved ID only
-        
-        var _this = this;
-        // TODO MANUAL We should have a way to execute a query from our client library
-        // TODO Also pass along workflow request parameters (as URL & params), such as status=active, see this._workflow.properties.testData (may not exist)
-        bridgeit.$.getJSON(this.buildUrl(this.tempQueryService, this.tempQueryResource, this._workflow._id) + "&exec=true&op=execute&mode=debug")
-                  .then(function(results) {
-            // Loop through results and set them into each workflowItem
-            var currentWorkflow = null;
-            for (var i = 0; i < _this._workflow.query.length; i++) {
-                currentWorkflow = _this._workflow.query[i];
-                
-                // Reset our results in case we don't get new ones
-                _this.set('_workflow.query.' + i + '.result', "");
-                
-                if (results && results[currentWorkflow.item._id]) {
-                    _this.set('_workflow.query.' + i + '.result', JSON.stringify(results[currentWorkflow.item._id], undefined, 4));
-                }
-            }
-        }).catch(function(error){
-            console.error("Error when trying to execute query: " + error.toSource());
-        });
-    },
-    
-    /**
-     * Save the current workflow
-     * This will give a default workflow name if there isn't one
-     * We'll similarly generate a unique ID as needed
-     * The content will be saved (either new or updated)
-     * @param e
-     * @private
-     */
-    _saveWorkflow: function(e) {
-        // TODO Need to convert our workflow to the proper chain JSON, then POST/PUT to the query service
-        
-        // Check for an existing saved workflow with the same ID
-        // If we find it override it, otherwise save the workflow as new
-        var alreadyAdded = false;
-        for (var i = 0; i < this._savedWorkflows.length; i++) {
-            if (this._workflow._id === this._savedWorkflows[i]._id) {
-                alreadyAdded = true;
-                
-                this.set('_savedWorkflows.' + i, this._workflow);
-                
-                break;
-            }
-        }
-        
-        if (!alreadyAdded) {
-            this.push('_savedWorkflows', this._workflow);
-        }
-    },
-    
-    /**
-     * Load a saved workflow, including id, name, and content
-     * @param e
-     * @private
-     */
-    _loadWorkflow: function(e) {
-        var loadId = e.target.getAttribute('data-workflow-item');
-        
-        // First we find the workflow that was requested from our savedWorkflow list
-        // We will assign that over our existing workflow
-        for (var i = 0; i < this._savedWorkflows.length; i++) {
-            if (loadId === this._savedWorkflows[i]._id) {
-                this._workflow = JSON.parse(JSON.stringify(this._savedWorkflows[i])); // clone
-                this._workflow.selected = 0;
-                break;
-            }
-        }
-        
-        // Loop through our query/transformer items and convert them to a format the UI will understand
-        var loadedItems = [];
-        var currentQuery = null;
-        var pulledItem = null;
-        for (var i = 0; i < this._workflow.query.length; i++) {
-            currentQuery = this._workflow.query[i];
-            pulledItem = null;
-            
-            if (currentQuery.type === 'query') {
-                for (var j = 0; j < this._queryServices.length; j++) {
-                    for (var subQuery = 0; subQuery < this._queryServices[j].queries.length; subQuery++) {
-                        if (currentQuery.id === this._queryServices[j].queries[subQuery]._id) {
-                            pulledItem = this._queryServices[j].queries[subQuery];
-                            break;
-                        }
-                    }
-                }
-            }
-            else if (currentQuery.type === 'transform') {
-                for (var j = 0; j < this._transformers.length; j++) {
-                    if (currentQuery.id === this._transformers[j]._id) {
-                        pulledItem = this._transformers[j];
-                        break;
-                    }
-                }
-            }
-            else {
-                console.error('Unrecognized chain item type (looking for query or transform): found '+ currentQuery.type);
-                pulledItem = null;
-            }
-            
-            // Check if we have a pulled JSON item to make a workflow item from
-            if (pulledItem) {
-                loadedItems.push(this._makeWorkflowItem(currentQuery.type, JSON.parse(JSON.stringify(pulledItem))));
-            }
-        }
-        
-        // Clear our old query array since we've converted it from type/id to workflow items
-        this.splice('_workflow.query', 0, this._workflow.query.length);
-        
-        // Because Polymer doesn't support more complex array operations (like concat) we have to loop through our loadedItems and push each one
-        for (var insert = 0; insert < loadedItems.length; insert++) {
-            this.push('_workflow.query', loadedItems[insert]);
-        }
-    },
-    
-    /**
-     * Delete a saved workflow from our list
-     * @param e
-     * @private
-     */
-    _removeWorkflow: function(e) {
-        var removeId = e.target.getAttribute('data-workflow-item');
-        
-        for (var i = 0; i < this._savedWorkflows.length; i++) {
-            if (removeId === this._savedWorkflows[i]._id) {
-                this.splice('_savedWorkflows', i, 1);
-                
-                break;
-            }
-        }
-    },
-    
-    /**
-     * Clear the workflow state, including id, name, and content
-     * @param e
-     * @private
-     */
-    _resetWorkflow: function(e) {
-        this._workflow = { "_id":"newWorkflow", "selected": 0, "properties": { "title":"New Workflow", "parameters":[] }, "query":[] }
-    },
-    
-    /**
      * Template helper function.
      * @param type
      * @returns {boolean}
@@ -520,6 +668,30 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _arrayLength: function(change) {
         return change.base.length;
+    },
+    
+    /**
+     * Function called when the query service is changed
+     * @private
+     */
+    _selectedQueryChanged: function() {
+        if (this._queryServices) {
+            this._queries = this._queryServices[this.selectedQuery].queries;
+        }
+    },
+    
+    /**
+     * Create a new workflow item JSON object from the passed type and item content
+     * This basically wraps service-level content with UI specific workflow data, such as selected
+     * This will use internalId to maintain a UI level ID (mainly for drag and drop)
+     * @param type
+     * @param item
+     * @private
+     */
+    _makeWorkflowItem: function(type, item) {
+        this._internalId++;
+        return {"id":"workflowItem" + this._internalId, "originalItem":JSON.parse(JSON.stringify(item)),
+                "type":type, "selected":0, "item":item, "result":""};
     },
     
     /**

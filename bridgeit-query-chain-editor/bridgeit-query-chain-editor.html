@@ -160,8 +160,8 @@ Example:
                     <paper-input label="Query Chain ID" value="{{_workflow._id}}" required="true" minlength="1" maxlength="50"></paper-input>
                     <paper-input label="Query Chain Title" value="{{_workflow.properties.title}}" required="true" minlength="3" maxlength="25"></paper-input>
                     <div class="flex layout horizontal">
-                        <paper-button on-click="_saveWorkflow">Save/Update</paper-button>
-                        <paper-button on-click="_resetWorkflow">Reset All</paper-button>
+                        <paper-button on-click="persistWorkflowChain">Save/Update</paper-button>
+                        <paper-button on-click="resetWorkflow">Reset All</paper-button>
                     </div>
                 </div>
             </div>
@@ -202,11 +202,11 @@ Example:
                                 </template>
                                 <tr>
                                     <td colspan="4" class="right">
-                                        <paper-button on-click="_addMainParam">
-                                            <iron-icon icon="add-circle" on-click="_addMainParam"></iron-icon>
+                                        <paper-button on-click="addMainParam">
+                                            <iron-icon icon="add-circle" on-click="addMainParam"></iron-icon>
                                         </paper-button>
-                                        <paper-button on-click="_removeMainParam">
-                                            <iron-icon icon="remove-circle" on-click="_removeMainParam"></iron-icon>
+                                        <paper-button on-click="removeMainParam">
+                                            <iron-icon icon="remove-circle" on-click="removeMainParam"></iron-icon>
                                         </paper-button>
                                     </td>
                                 </tr>
@@ -229,8 +229,8 @@ Example:
                             <template is="dom-repeat" items="[[_savedWorkflows]]" as="savedItem">
                                 <tr>
                                     <td>[[savedItem.properties.title]] ([[savedItem._id]])</td>
-                                    <td><paper-button on-click="_loadWorkflow" data-workflow-item$="{{savedItem._id}}">Load</paper-button></td>
-                                    <td><paper-button on-click="_removeWorkflow" data-workflow-item$="{{savedItem._id}}">Delete</paper-button></td>
+                                    <td><paper-button on-click="loadWorkflow" data-workflow-item$="{{savedItem._id}}">Load</paper-button></td>
+                                    <td><paper-button on-click="removeWorkflow" data-workflow-item$="{{savedItem._id}}">Delete</paper-button></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -307,8 +307,8 @@ Example:
                                     <paper-tab>Params</paper-tab>
                                     <paper-tab>Query</paper-tab>
                                     <paper-tab>Raw</paper-tab>
-                                    <paper-button on-click="_removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
-                                        <iron-icon icon="cancel" on-click="_removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                    <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                        <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                     </paper-button>
                                 </paper-tabs>
 
@@ -361,11 +361,11 @@ Example:
                                             </template>
                                             <tr>
                                                 <td colspan="4" class="right">
-                                                    <paper-button on-click="_addItemParam" data-workflow-item$="{{workflowItem.id}}">
-                                                        <iron-icon icon="add-circle" on-click="_addItemParam" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                    <paper-button on-click="addItemParam" data-workflow-item$="{{workflowItem.id}}">
+                                                        <iron-icon icon="add-circle" on-click="addItemParam" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                                     </paper-button>
-                                                    <paper-button on-click="_removeItemParam" data-workflow-item$="{{workflowItem.id}}">
-                                                        <iron-icon icon="remove-circle" on-click="_removeItemParam" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                    <paper-button on-click="removeItemParam" data-workflow-item$="{{workflowItem.id}}">
+                                                        <iron-icon icon="remove-circle" on-click="removeItemParam" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                                     </paper-button>
                                                 </td>
                                             </tr>
@@ -394,8 +394,8 @@ Example:
                                     <paper-tab>Properties</paper-tab>
                                     <paper-tab>Transformer</paper-tab>
                                     <paper-tab>Raw</paper-tab>
-                                    <paper-button on-click="_removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
-                                        <iron-icon icon="cancel" on-click="_removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                    <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                        <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                     </paper-button>
                                 </paper-tabs>
 
@@ -457,8 +457,8 @@ Example:
             <div class="flex-1 section execute">
                 <template is="dom-repeat" items="{{_workflow.query}}" as="workflowItem">
                     <div class="execute-item">
-                        <paper-button raised on-click="_executeWorkflow" data-workflow-item$="{{workflowItem.id}}">
-                            <iron-icon on-click="_executeWorkflow" data-workflow-item$="{{workflowItem.id}}" icon="arrow-forward"></iron-icon>
+                        <paper-button raised on-click="executeWorkflow" data-workflow-item$="{{workflowItem.id}}">
+                            <iron-icon on-click="executeWorkflow" data-workflow-item$="{{workflowItem.id}}" icon="arrow-forward"></iron-icon>
                         </paper-button>
                     </div>
                 </template>
