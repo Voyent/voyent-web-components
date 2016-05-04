@@ -770,7 +770,8 @@ BridgeIt.QueryEditor = Polymer({
                 if (type === 'string' && !isArray) { //don't overwrite array operators
                     if (!dateRegex.test(val)) {
                         operators=['equal','not_equal','begins_with','not_begins_with','contains','not_contains',
-                            'ends_with','not_ends_with','is_empty','is_not_empty','is_null','is_not_null'];
+                            'ends_with','not_ends_with','less','less_or_equal','greater','greater_or_equal',
+                            'between','not_between','is_empty','is_not_empty','is_null','is_not_null'];
                     }
                     else { type = 'datetime'; }
                 }
