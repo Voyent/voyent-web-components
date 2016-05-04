@@ -237,11 +237,24 @@ BridgeIt.QueryChainEditor = Polymer({
     },
     
     /**
-     * Public UI method to execute a workflow
+     * Public UI method to execute up to the passed workflow item
+     * @param e
+     */
+    executeWorkflowItem: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        
+        var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
+        if (item) {
+            // TODO LATER we need to pass a "stopHere" with the selected workflow item ID, to ensure chain execution halts at a certain query/transformer
+            this._executeWorkflow();
+        }
+    },
+    
+    /**
+     * Public UI method to execute the entire workflow
      * @param e
      */
     executeWorkflow: function(e) {
-        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
         this._executeWorkflow();
     },
 
@@ -377,8 +390,6 @@ BridgeIt.QueryChainEditor = Polymer({
     _executeWorkflow: function(callback) {
         console.log("Exec: " + this._workflow._id);
         
-        // TODO LATER we need to pass a "stopHere" with the selected workflow item ID, to ensure chain execution halts at a certain query/transformer
-        
         // TODO Still be able to execute a single, non-chain query/transformer. This would change the UI a bit, and also use a different execution approach
         
         // Persist our queries/transformers, then the entire chain, and finally execute
@@ -391,7 +402,7 @@ BridgeIt.QueryChainEditor = Polymer({
             
             // If this workflow has exec params, which are basically user specified JSON parameters, we need to encode that and pass it as execParams
             if (_this._workflow.properties.execParams) {
-                urlParams += "&execParams=" + encodeURIComponent(JSON.stringify(_this._workflow.properties.execParams));
+                urlParams += ("&execParams=" + encodeURIComponent(JSON.stringify(_this._workflow.properties.execParams)));
             }
             
             bridgeit.$.getJSON(_this.buildUrl(_this.tempQueryService, _this.tempQueryResource, _this._workflow._id) + urlParams)

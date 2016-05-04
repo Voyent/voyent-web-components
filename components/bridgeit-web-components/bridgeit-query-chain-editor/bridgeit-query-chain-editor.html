@@ -170,8 +170,9 @@ Example:
                     <paper-input label="Query Chain ID" value="{{_workflow._id}}" required="true" minlength="1" maxlength="50"></paper-input>
                     <paper-input label="Query Chain Title" value="{{_workflow.properties.title}}" required="true" minlength="3" maxlength="25"></paper-input>
                     <div class="flex layout horizontal">
-                        <paper-button on-click="persistWorkflowChain">Save/Update</paper-button>
-                        <paper-button on-click="resetWorkflow">Reset All</paper-button>
+                        <paper-button raised on-click="executeWorkflow">Execute</paper-button>
+                        <paper-button raised on-click="persistWorkflowChain">Save/Update</paper-button>
+                        <paper-button raised on-click="resetWorkflow">Reset</paper-button>
                     </div>
                 </div>
             </div>
@@ -239,8 +240,8 @@ Example:
                             <template is="dom-repeat" items="[[_savedWorkflows]]" as="savedItem">
                                 <tr>
                                     <td>[[savedItem.properties.title]] ([[savedItem._id]])</td>
-                                    <td><paper-button on-click="loadWorkflow" data-workflow-item$="{{savedItem._id}}">Load</paper-button></td>
-                                    <td><paper-button on-click="removeWorkflow" data-workflow-item$="{{savedItem._id}}">Delete</paper-button></td>
+                                    <td><paper-button raised on-click="loadWorkflow" data-workflow-item$="{{savedItem._id}}">Load</paper-button></td>
+                                    <td><paper-button raised on-click="removeWorkflow" data-workflow-item$="{{savedItem._id}}">Delete</paper-button></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -472,8 +473,8 @@ Example:
             <div class="flex-1 section execute">
                 <template is="dom-repeat" items="{{_workflow.query}}" as="workflowItem">
                     <div class="execute-item">
-                        <paper-button raised on-click="executeWorkflow" data-workflow-item$="{{workflowItem.id}}">
-                            <iron-icon on-click="executeWorkflow" data-workflow-item$="{{workflowItem.id}}" icon="arrow-forward"></iron-icon>
+                        <paper-button raised on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                            <iron-icon on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" icon="arrow-forward"></iron-icon>
                         </paper-button>
                     </div>
                 </template>
