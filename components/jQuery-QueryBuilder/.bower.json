@@ -1,6 +1,6 @@
 {
   "name": "jQuery-QueryBuilder",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "authors": [
     {
       "name": "Damien \"Mistic\" Sorel",
@@ -51,13 +51,13 @@
     "Gruntfile.js",
     "CONTRIBUTING.md"
   ],
-  "_release": "2.3.1",
+  "_release": "2.3.2",
   "_resolution": {
     "type": "version",
-    "tag": "2.3.1",
-    "commit": "d55bcaadb11f12ea93dc1e85d7681f0a57cbe73c"
+    "tag": "2.3.2",
+    "commit": "4809b8b53a1b700aacb06b006c3ed0ca7b931915"
   },
-  "_source": "git://github.com/mistic100/jQuery-QueryBuilder.git",
+  "_source": "https://github.com/mistic100/jQuery-QueryBuilder.git",
   "_target": "~2.3",
   "_originalSource": "jQuery-QueryBuilder"
 }

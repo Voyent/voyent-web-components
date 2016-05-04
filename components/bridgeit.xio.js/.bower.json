@@ -20,11 +20,11 @@
     "services"
   ],
   "homepage": "https://github.com/bridgeit/bridgeit.xio.js",
-  "_release": "1d8a3da2da",
+  "_release": "098d0cd5a6",
   "_resolution": {
     "type": "branch",
     "branch": "gh-pages",
-    "commit": "1d8a3da2daf7ec6f49aaf9a33f14feb91314e923"
+    "commit": "098d0cd5a61be0ecee58593c0c0444c69198f533"
   },
   "_source": "git://github.com/bridgeit/bridgeit.xio.js.git",
   "_target": "gh-pages",

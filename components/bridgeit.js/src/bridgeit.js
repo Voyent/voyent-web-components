@@ -60,6 +60,113 @@ if (!window.console) {
  */
 (function(b) {
 
+	function useLocalStorage(){
+		if( !('bridgeit_useLocalStorage' in window )){
+			if( 'localStorage' in window ){
+				try{
+					var testdate = new Date().toString();
+					localStorage.setItem('testdate', testdate);
+					if( localStorage.getItem('testdate') === testdate ){
+						window.bridgeit_useLocalStorage = true;
+					}
+					else{
+						window.bridgeit_useLocalStorage = false;
+					}
+					localStorage.removeItem('testdate');
+				}
+				catch(e){
+					window.bridgeit_useLocalStorage = false;
+				}
+			}
+			else{
+				window.bridgeit_useLocalStorage = false;
+			}
+			
+		}
+		return window.bridgeit_useLocalStorage;
+	}
+	b.useLocalStorage = useLocalStorage;
+
+	function getLocalStorageItem(key){
+		if( useLocalStorage() ){
+			return localStorage.getItem(key);
+		}
+		else{
+			return getCookie(key);
+		}
+	}
+	b.getLocalStorageItem = getLocalStorageItem;
+
+	function getSessionStorageItem(key){
+		if( useLocalStorage() ){
+			return sessionStorage.getItem(key);
+		}
+		else{
+			return getCookie(key);
+		}
+	}
+	b.getSessionStorageItem = getSessionStorageItem;
+
+	function getCookie(cname) {
+		var name = cname + "=";
+		var ca = document.cookie.split(';');
+		for(var i=0; i<ca.length; i++) {
+			var c = ca[i];
+			while (c.charAt(0)==' ') c = c.substring(1);
+			if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+		}
+		return "";
+	}
+	b.getCookie = getCookie;
+
+	function setLocalStorageItem(key, value){
+		if( useLocalStorage() ){
+			return localStorage.setItem(key, value);
+		}
+		else{
+			return setCookie(key, value);
+		}
+	}
+	b.setLocalStorageItem = setLocalStorageItem;
+
+	function removeSessionStorageItem(key){
+		if( useLocalStorage() ){
+			sessionStorage.removeItem(key);
+		}
+		else{
+			setCookie(key, null);
+		}
+	}
+	b.removeSessionStorageItem = removeSessionStorageItem;
+
+	function removeLocalStorageItem(key){
+		if( useLocalStorage() ){
+			localStorage.removeItem(key);
+		}
+		else{
+			setCookie(key, null);
+		}
+	}
+	b.removeLocalStorageItem = removeLocalStorageItem;
+
+	function setSessionStorageItem(key, value){
+		if( useLocalStorage() ){
+			return sessionStorage.setItem(key, value);
+		}
+		else{
+			return setCookie(key, value, 1);
+		}
+	}
+	b.setSessionStorageItem = setSessionStorageItem;
+
+	function setCookie(cname, cvalue, days) {
+		var d = new Date();
+		d.setTime(d.getTime() + ((days || 1)*24*60*60*1000));
+		var expires = "expires="+d.toUTCString();
+		document.cookie = cname + "=" + cvalue + "; " + expires;
+	}
+	b.setCookie = setCookie;
+
 	/* *********************** PRIVATE ******************************/
 	function serializeForm(formId, typed) {
 		var form = document.getElementById(formId);
@@ -671,17 +778,12 @@ if (!window.console) {
 	}
 	var CLOUD_PUSH_KEY = "ice.notifyBack";
 	function setCloudPushId(id)  {
-		//rely on local storage since cloud push is on modern platforms
-		if (localStorage)  {
-			localStorage.setItem(CLOUD_PUSH_KEY, id);
-		}
+		setLocalStorageItem(CLOUD_PUSH_KEY, id);
 	}
 	function getCloudPushId()  {
-		if (localStorage)  {
-			return localStorage.getItem(CLOUD_PUSH_KEY);
-		}
-		return null;
+		return getLocalStorageItem(CLOUD_PUSH_KEY);
 	}
+	b.getCloudPushId = getCloudPushId;
 
 	function setupCloudPush()  {
 		var cloudPushId = getCloudPushId();
@@ -725,10 +827,8 @@ if (!window.console) {
 						lastPage.length - locHash.length)
 			}
 		}
-		if (localStorage)  {
-			localStorage.setItem(LAST_PAGE_KEY, lastPage);
-			console.log("bridgeit storeLastPage " + lastPage);
-		}
+		setLocalStorageItem(LAST_PAGE_KEY, lastPage);
+		console.log("bridgeit storeLastPage " + lastPage);
 	}
 	/* Page event handling */
 	if (window.addEventListener) {
@@ -912,7 +1012,7 @@ if (!window.console) {
 						if (callbacks.indexOf(" " + callbackName + " ") < 0)  {
 							callbacks += callbackName + " ";
 						}
-						localStorage.setItem(CLOUD_CALLBACKS_KEY, callbacks);
+						setLocalStorageItem(CLOUD_CALLBACKS_KEY, callbacks);
 					}
 				}
 			}
@@ -927,32 +1027,26 @@ if (!window.console) {
 
 	function hasInstalledToken(){
 		var result = false;
-		if( window.localStorage){
-			var installTimestamp = localStorage.getItem(BRIDGEIT_INSTALLED_KEY);
-			if( installTimestamp ){
-				if( !window.sessionStorage.getItem(BRIDGEIT_INSTALLED_LOG_KEY) ){
-					console.log('bridgeit installed '
-						+ new Date( parseInt(localStorage.getItem(BRIDGEIT_INSTALLED_KEY))).toGMTString());
-					window.sessionStorage.setItem(BRIDGEIT_INSTALLED_LOG_KEY, 'true');
-				}
-				result = true;
+		var installTimestamp = getLocalStorageItem(BRIDGEIT_INSTALLED_KEY);
+		if( installTimestamp ){
+			if( !getSessionStorageItem(BRIDGEIT_INSTALLED_LOG_KEY) ){
+				console.log('bridgeit installed '
+					+ new Date( parseInt(getLocalStorageItem(BRIDGEIT_INSTALLED_KEY))).toGMTString());
+				setSessionStorageItem(BRIDGEIT_INSTALLED_LOG_KEY, 'true');
 			}
+			result = true;
 		}
 		return result;
 	}
 
 	function setInstalledToken(){
-		if( window.localStorage ){
-			localStorage.setItem(BRIDGEIT_INSTALLED_KEY, '' + new Date().getTime());
-		}
+		setLocalStorageItem(BRIDGEIT_INSTALLED_KEY, '' + new Date().getTime());
 	}
 
 	var LASTVERSION_KEY = "bridgeit.lastappversion";
 
 	function setLastAppVersion(version)  {
-		if (window.localStorage)  {
-			localStorage.setItem(LASTVERSION_KEY, version);
-		}
+		setLocalStorageItem(LASTVERSION_KEY, version);
 	}
 
 	function addOptions(base, options)  {
@@ -1020,17 +1114,14 @@ if (!window.console) {
 	 * The version of bridgeit.js
 	 * @property {String}
 	 */
-	b.version = "1.0.4";
+	b.version = "1.0.8";
 
 	/**
 	 * The last detected version of tje BridgeIt App
 	 * @alias plugin.lastAppVersion
 	 */
 	b.lastAppVersion = function()  {
-		if (localStorage)  {
-			return(localStorage.getItem(LASTVERSION_KEY));
-		}
-		return null;
+		return getLocalStorageItem(LASTVERSION_KEY);
 	};
 
 	/**
@@ -1295,6 +1386,16 @@ if (!window.console) {
 		deviceCommand("register", id, callback, options);
 	};
 
+	/* Remove client from cloud push notifications
+	 * Currently this just removes the cloud push id (notifyBackURI)
+	 * but in the future will make a call to the push service 
+	 * when an unregister api is available
+	 */
+	b.unregisterCloudPush = function(){
+		removeLocalStorageItem(CLOUD_PUSH_KEY);
+	};
+
+
 	/**
 	 * Verify that BridgeIt Cloud Push is registered.
 	 *
@@ -1558,18 +1659,14 @@ if (!window.console) {
 	b.getId = function()  {
 		var JGUID_KEY = "bridgeit.jguid";
 		if (!jguid)  {
-			if (localStorage)  {
-				jguid = localStorage.getItem(JGUID_KEY);
-			}
+			jguid = getLocalStorageItem(JGUID_KEY);
 			if (!jguid)  {
 				jguid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
 					function(c) {
 						var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
 						return v.toString(16);
 					});
-				if (localStorage)  {
-					localStorage.setItem(JGUID_KEY, jguid);
-				}
+				setLocalStorageItem(JGUID_KEY, jguid);
 			}
 
 		}
@@ -1596,7 +1693,7 @@ if (!window.console) {
 	 * @private
 	 */
 	b.handleCloudPush = function ()  {
-		var callbacks = localStorage.getItem(CLOUD_CALLBACKS_KEY);
+		var callbacks = getLocalStorageItem(CLOUD_CALLBACKS_KEY);
 		var parts = callbacks.split(" ");
 		var callback;
 		for (var i = 0; i < parts.length; i++) {

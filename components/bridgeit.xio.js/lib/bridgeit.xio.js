@@ -34,42 +34,28 @@ if (!('io' in window)) {
         return getNamespaceGroupEvent(groupName, 'notify');
     }
 
-    var ICE_NOTIFY_BACK_KEY = "ice.notifyBack";
     var XIO_CLOUD_URI_KEY = "xio.cloudURI";
 
-    function getStoredNotifyBackURI() {
-        if (localStorage) {
-            return localStorage.getItem(ICE_NOTIFY_BACK_KEY);
-        }
-        return null;
-    }
-
     function getStoredCloudPushURI() {
-        if (localStorage) {
-            var cloudURI = localStorage.getItem(XIO_CLOUD_URI_KEY);
-            if (cloudURI) {
-                return cloudURI;
-            }
+        var cloudURI = bridgeit.getLocalStorageItem(XIO_CLOUD_URI_KEY);
+        if (cloudURI) {
+            return cloudURI;
+        }
 
-            var notifyBack = getStoredNotifyBackURI();
-            if (notifyBack) {
-                setStoredCloudPushURI(notifyBack);
-                return notifyBack;
-            }
+        var notifyBack = bridgeit.getCloudPushId();
+        if (notifyBack) {
+            setStoredCloudPushURI(notifyBack);
+            return notifyBack;
         }
         return null;
     }
 
     function setStoredCloudPushURI(cloudPushURI) {
-        if (localStorage) {
-            localStorage.setItem(XIO_CLOUD_URI_KEY, cloudPushURI);
-        }
+        bridgeit.setLocalStorageItem(XIO_CLOUD_URI_KEY, cloudPushURI);
     }
 
     function removeStoredCloudPushURI(cloudPushURI) {
-        if (localStorage) {
-            localStorage.removeItem(XIO_CLOUD_URI_KEY);
-        }
+        bridgeit.removeLocalStorageItem(XIO_CLOUD_URI_KEY);
     }
 
     //Unfortunately, cloud push URI values are unsuitable as database ids which
@@ -256,6 +242,7 @@ if (!('io' in window)) {
         client: null,
         listener: null,
         groups: [],
+        maxReconnectAttempts: 10,
 
         connectWithToken: function (parsedURL, username, access_token) {
 
@@ -268,7 +255,8 @@ if (!('io' in window)) {
                 transports: ['polling'],
                 forceNew: true
             };
-            console.log('connectionOptions', JSON.stringify(connectionOptions, null, 4));
+
+            console.debug('connectionOptions', JSON.stringify(connectionOptions, null, 4));
 
             this.client = io('http://' + parsedURL.host, connectionOptions);
 
@@ -276,10 +264,10 @@ if (!('io' in window)) {
             //client manually.
             xio.push.client = this.client;
 
-            console.log('new client', this.client);
+            //console.debug('new push client', this.client);
 
             this.client.on('connect', function () {
-                console.log('client connected');
+                console.log('push client connected');
                 xio.push.connected = true;
                 xio.push.rejoinGroups();
 
@@ -288,17 +276,38 @@ if (!('io' in window)) {
             });
 
             this.client.on('reconnect', function () {
-                console.log('client reconnected');
+                console.log('push client reconnected');
                 xio.push.rejoinGroups();
+            });
+
+            this.client.on('reconnecting', function (attemptNumber) {
+                console.log('push client reconnection attempt ' + attemptNumber + ' of ' + xio.push.maxReconnectAttempts);
+                if(attemptNumber >= xio.push.maxReconnectAttempts){
+                    console.warn('push client reconnection attempts exceeded, disconnecting');
+                    xio.push.disconnect();
+                }
+            });
+
+            //Seems to be behave pretty much the same as the event handler for 'reconnecting'
+            //this.client.on('reconnect_attempt', function (attemptNumber) {
+            //    console.log('push client reconnect attempt ' + attemptNumber + ' of ' + xio.push.maxReconnectAttempts);
+            //    if(attemptNumber >= xio.push.maxReconnectAttempts){
+            //        console.warn('reconnect attempts exceeded, disconnecting');
+            //        xio.push.disconnect();
+            //    }
+            //});
+
+            this.client.on('reconnect_error', function (err) {
+                console.error('push client reconnect error', err);
             });
 
             this.client.on('disconnect', function () {
                 xio.push.connected = false;
-                console.log('client disconnected');
+                console.warn('push client disconnected');
             });
 
             this.client.on('error', function (err) {
-                console.log('client error', new Error(err));
+                console.error('push client connection error', new Error(err));
             });
 
         },
@@ -335,16 +344,14 @@ if (!('io' in window)) {
             console.log('connecting via bridgeit.xio', JSON.stringify(connectionInfo, null, 4));
 
             return b.io.auth.connect(connectionInfo).then(function () {
-                //Once we connect, we should be able to connect our socket.io client.
-                var lastToken = b.io.auth.getLastAccessToken();
-                console.log('successfully logged into services', connectionInfo.host, lastToken);
-                connectionInfo.connectSocketIO(connectionInfo.pushURL, connectionInfo.username, lastToken);
-            })
-            .catch(function (error) {
-                console.log('error connecting', error);
-                //Just use a dummy token for testing when directly connected to the service.
-                //connectionInfo.connectSocketIO(connectionInfo.pushURL, 'dummyToken');
-            });
+                    //Once we connect, we should be able to connect our socket.io client.
+                    var lastToken = b.io.auth.getLastAccessToken();
+                    console.log('successfully logged into services', connectionInfo.host, lastToken);
+                    connectionInfo.connectSocketIO(connectionInfo.pushURL, connectionInfo.username, lastToken);
+                })
+                .catch(function (error) {
+                    console.log('push client error connecting', error);
+                });
         },
 
         /**
@@ -363,7 +370,7 @@ if (!('io' in window)) {
             }
 
             this.pushURL = parseURL(pushURLString);
-            console.log('parsedURL', this.pushURL);
+            //console.debug('parsedURL', this.pushURL);
 
             console.log('attaching via bridgeit.xio', JSON.stringify(this.pushURL, null, 4));
 
@@ -372,7 +379,11 @@ if (!('io' in window)) {
         },
 
         disconnect: function () {
-            b.io.auth.disconnect();
+
+            //Calling auth.disconnect here removes all the relevant data from
+            //from the browser's session storage which causes problems when
+            //trying refreshConnection().
+            //b.io.auth.disconnect();
 
             if (this.client) {
                 console.log('disconnecting socket.io client');
@@ -383,7 +394,10 @@ if (!('io' in window)) {
         refreshConnection: function () {
             console.log('refreshing connection');
             xio.push.disconnect();
-            xio.push.connectWithToken(xio.push.pushURL, b.io.auth.getLastAccessToken());
+            xio.push.connectWithToken(
+                xio.push.pushURL,
+                b.io.auth.getLastKnownUsername(),
+                b.io.auth.getLastAccessToken());
         },
 
         addListener: function (listener) {
@@ -481,12 +495,11 @@ if (!('io' in window)) {
                     });
                 }
 
-                if (localStorage) {
-                    localStorage.setItem('xio.host', host);
-                    localStorage.setItem('xio.account', account);
-                    localStorage.setItem('xio.realm', realm);
-                    localStorage.setItem('xio.username', username);
-                }
+                bridgeit.setLocalStorageItem('xio.host', host);
+                bridgeit.setLocalStorageItem('xio.account', account);
+                bridgeit.setLocalStorageItem('xio.realm', realm);
+                bridgeit.setLocalStorageItem('xio.username', username);
+
                 //intercept launchFailed to report a reject, then set it back
                 var origLaunchFailed = bridgeit.launchFailed;
                 bridgeit.launchFailed = function(){
@@ -497,10 +510,10 @@ if (!('io' in window)) {
                 window.xioCloudRegistrationCallback = function(results) {
                     console.log('global cloud registration callback called', results);
                     bridgeit.xio.push.registerCloudPush(
-                        sessionStorage.getItem('xio.host'),
-                        sessionStorage.getItem('xio.account'),
-                        sessionStorage.getItem('xio.realm'),
-                        sessionStorage.getItem('xio.username')
+                        bridgeit.getLocalStorageItem('xio.host'),
+                        bridgeit.getLocalStorageItem('xio.account'),
+                        bridgeit.getLocalStorageItem('xio.realm'),
+                        bridgeit.getLocalStorageItem('xio.username')
                     );
                     bridgeit.launchFailed = origLaunchFailed;
                     resolve();
@@ -528,6 +541,7 @@ if (!('io' in window)) {
 
         unregisterCloudPush: function (host, account, realm) {
             var cloudPushURI = getStoredCloudPushURI();
+            bridgeit.unregisterCloudPush();
             if (cloudPushURI) {
                 removeStoredCloudPushURI();
                 return deleteCloudPushConfiguration(host, account, realm, cloudPushURI);
