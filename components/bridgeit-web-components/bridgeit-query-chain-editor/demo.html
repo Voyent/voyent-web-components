@@ -31,46 +31,109 @@
 </head>
 <body unresolved>
 <template id="demo" is="dom-bind">
-    <div>
-
         <h1>BridgeIt Query Chain Editor Component Demo</h1>
-
-        <bridgeit-auth-provider id="authProvider" account="[[account]]" realm="[[realm]]"
-                                host="[[host]]" logged-in="{{isLoggedIn}}" error="{{loginError}}" timeout="120"
-                                fallback-to-admin="true">
-        </bridgeit-auth-provider>
-        <bridgeit-login-paper-card heading="Demo Login"
-                                   username="{{username}}"
-                                   password="{{password}}"
-                                   realm="{{realm}}"
-                                   account="{{account}}"
-                                   error="{{loginError}}"
-                                   auth-provider="authProvider"
-                                   submit-label="Login"
-                                   cancel-label="Cancel"
-                                   hidden="{{isLoggedIn}}"
-                                   show-realm-input="true"
-                                   show-account-input="true">
-        </bridgeit-login-paper-card>
-
-        <template is="dom-if" if="{{isLoggedIn}}">
-            <button onclick="handleLogout()" class="button logout-button">Logout</button>
-            <div style="clear:both;"></div>
-            <bridgeit-query-chain-editor account="[[account]]" realm="[[realm]]"></bridgeit-query-chain-editor>
-        </template>
+        <h3>Login with your BridgeIt Account Information</h3>
+        <hr/>
+        <div class="container">
+            <form>
+                <div>
+                    <label>Account:
+                        <input id="account" type="text"/>
+                    </label>
+                </div>
+                <div>
+                    <label>Realm:
+                        <input id="realm" type="text"/>
+                    </label>
+                </div>
+                <div>
+                    <label>Username:
+                        <input id="username" type="text"/>
+                    </label>
+                </div>
+                <div>
+                    <label>Password:
+                        <input id="password" type="password"/>
+                    </label>
+                </div>
+                <a onclick="login()">Login</a>
+        
+                <div class="settings">
+                    &nbsp;
+                </div>
+            </form>
     </div>
+    
+    <bridgeit-query-chain-editor id="queryChain"></bridgeit-query-chain-editor>
 </template>
 
 <script type="text/javascript">
-    function handleLogout(){
-        document.getElementById('authProvider').logout();
-    }
-    /*function initializeComponent() {
-        setTimeout( function(){
+	function login(event){
+		var account = document.getElementById('account').value;
+		var realm = document.getElementById('realm').value;
+		var username = document.getElementById('username').value;
+		var password = document.getElementById('password').value;
 
-        }, 100);
-    }
-    window.addEventListener('onAfterLogin', initializeComponent, false);*/
+		bridgeit.io.auth.connect({
+			account: account,
+			realm: realm,
+			username: username,
+			password: password
+		}).then(function(){
+			setCredentialsOnComponent(realm);
+			initializeComponent();
+		})['catch'](function(){
+			//try to login as admin
+			bridgeit.io.auth.connect({
+				account: account,
+				realm: 'admin',
+				username: username,
+				password: password
+			}).then(function(){
+			    setCredentialsOnComponent(realm);
+			    initializeComponent();
+			})
+		});
+	}
+
+	function setCredentialsOnComponent(realm) {
+		var elem = document.getElementById('queryChain');
+		
+		var account = bridgeit.io.auth.getLastKnownAccount();
+		if (account) {
+		    if (elem) {
+			    elem.setAttribute('account', account);
+            }
+			document.getElementById('account').value = account;
+		}
+
+		if (!realm) {
+            realm = bridgeit.io.auth.getLastKnownRealm();
+        }
+        
+        if (realm) {
+            if (elem) {
+                elem.setAttribute('realm', realm);
+            }
+            document.getElementById('realm').value = realm;
+        }
+	}
+	
+	function initializeComponent() {
+	    var elem = document.getElementById('queryChain');
+	    if (elem) {
+	        elem.initializeData();
+        }
+	}
+
+    window.addEventListener('WebComponentsReady', function() {
+        // imports are loaded and elements have been registered
+        console.log('WebComponentsReady');
+
+        //initialize known credentials
+        setCredentialsOnComponent();
+        initializeComponent();
+    });
 </script>
 </body>
 </html>
