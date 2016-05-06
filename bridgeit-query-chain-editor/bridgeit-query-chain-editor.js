@@ -182,16 +182,10 @@ BridgeIt.QueryChainEditor = Polymer({
     transformerTabChange: function(e) {
         var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
         
-        if (item) {
-            // Have to use hardcoded tab numbers, with 0 = Properties, 1 = Transformer, 2 = Raw
-            // So basically if we're going to Transformer convert our raw JSON to UI controls
-            if (item.selected === 1) {
-                this._convertMapperToControl(item);
-            }
-            // And if we're going to Raw convert our UI controls to raw JSON
-            else if (item.selected === 2) {
-                this._convertControlToMapper(item);
-            }
+        // Have to use hardcoded tab numbers, with 0 = Properties, 1 = Transformer, 2 = Raw
+        // So basically if we're going to Raw convert our UI controls to raw JSON so the view is updated
+        if (item && item.selected === 2) {
+            this._convertControlToMapper(item);
         }
     },
     
