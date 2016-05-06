@@ -238,7 +238,7 @@ Polymer({
         // Grab our logs
         this._loading = true;
         var _this = this;
-        bridgeit.io.admin.getLogs({
+        bridgeit.io.admin.getDebugLogs({
             account: this.account,
             query: this.query,
             options: this.options,
