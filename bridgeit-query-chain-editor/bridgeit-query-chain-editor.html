@@ -497,7 +497,12 @@ Example:
                                         </div>
                                     </template>
                                     <div class="tab-content"> <!-- Raw Page -->
-                                        <bridgeit-code-editor value="{{_formatTransformer(workflowItem.item.properties.type, workflowItem.item.transform)}}" readonly></bridgeit-code-editor>
+                                        <template is="dom-if" if="{{_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                            <bridgeit-code-editor value="{{_formatJSON(workflowItem.item.transform)}}" readonly></bridgeit-code-editor>
+                                        </template>
+                                        <template is="dom-if" if="{{!_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                            <bridgeit-code-editor value="{{workflowItem.item.transform}}"></bridgeit-code-editor>
+                                        </template>
                                     </div>
                                 </iron-pages>
                             </template>

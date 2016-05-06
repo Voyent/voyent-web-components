@@ -779,23 +779,6 @@ BridgeIt.QueryChainEditor = Polymer({
     },
     
     /**
-     * Template helper function.
-     * This will format a transformer based on it's type
-     * Mapper will be converted to proper JSON, and everything else will just return in the same format
-     * @param type
-     * @param raw
-     * @return {String}
-     * @private
-     */
-    _formatTransformer: function(type, raw) {
-        // TODO If our transformer type is 'function' we need to format our Javascript with proper indents/spacing/etc.
-        if (type === 'mapper') {
-            return this._formatJSON(raw);
-        }
-        return raw;
-    },
-    
-    /**
      * Function called when the query service is changed
      * @private
      */
