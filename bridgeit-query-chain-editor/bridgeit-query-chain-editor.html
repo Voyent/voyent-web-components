@@ -406,28 +406,34 @@ Example:
                                 </iron-pages>
                             </template>
                             <template is="dom-if" if="{{_isTransformer(workflowItem.type)}}">
-                                <paper-tabs selected="{{workflowItem.selected}}" no-bar>
-                                    <paper-tab>Properties</paper-tab>
-                                    <template is="dom-if" if="{{_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                <template is="dom-if" if="{{_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                    <paper-tabs selected="{{workflowItem.selected}}" on-iron-select="transformerTabChange" data-workflow-item$="{{workflowItem.id}}" no-bar>
+                                        <paper-tab>Properties</paper-tab>
                                         <paper-tab>Transformer</paper-tab>
                                         <paper-tab>Raw</paper-tab>
-                                    </template>
-                                    <template is="dom-if" if="{{!_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                        <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                            <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                        </paper-button>
+                                    </paper-tabs>
+                                </template>
+                                
+                                <template is="dom-if" if="{{!_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                    <paper-tabs selected="{{workflowItem.selected}}" no-bar>
+                                        <paper-tab>Properties</paper-tab>
                                         <paper-tab>Transformer Function</paper-tab>
-                                    </template>
-                                    <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
-                                        <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
-                                    </paper-button>
-                                </paper-tabs>
+                                        <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                            <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                        </paper-button>
+                                    </paper-tabs>
+                                </template>
 
                                 <iron-pages selected="{{workflowItem.selected}}">
-                                    <!-- TODO Eventually the tooling should support pre-populating our "from" and "to" based on the previous/next workflow item (especially if it's a query) -->
                                     <div class="tab-content"> <!-- Properties Page -->
                                         <div class="container flex layout vertical">
                                             <div class="flex">
                                                 <paper-input label="Transformer ID:" value="{{workflowItem.item._id}}"></paper-input>
                                             </div>
-                                            <div class="flex">    
+                                            <div class="flex">
                                                 <paper-input label="Title:" value="{{workflowItem.item.properties.title}}"></paper-input>
                                             </div>
                                             <div class="flex">
@@ -445,31 +451,48 @@ Example:
                                         </div>
                                     </div>
                                     <template is="dom-if" if="{{_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                        <!-- TODO Eventually the tooling should support pre-populating our "from" and "to" based on the previous/next workflow item (especially if it's a query) -->
                                         <div class="tab-content"> <!-- Transformer Page -->
-                                            <!-- TODO Create a proper view and tooling for modifying transformers -->
-                                            <div class="layout horizontal">
-                                                <div class="flex">
-                                                    <paper-listbox selected="{{workflowItem.item.selectedFrom}}">
-                                                        <template is="dom-repeat" items="[[workflowItem.item.transformer.from]]" as="from">
-                                                            <paper-item>[[from]]</paper-item>
-                                                        </template>
-                                                    </paper-listbox>
-                                                </div>
-                                                <div class="horizontal layout center">
-                                                    <iron-icon icon="chevron-right"></iron-icon>
-                                                </div>
-                                                <div class="flex">
-                                                    <paper-listbox selected="{{workflowItem.item.selectedTo}}">
-                                                        <template is="dom-repeat" items="[[workflowItem.item.transformer.to]]" as="to">
-                                                            <paper-item>[[to]]</paper-item>
-                                                        </template>
-                                                    </paper-listbox>
-                                                </div>
-                                            </div>
+                                            <table>
+                                                <thead>
+                                                    <th>From</th>
+                                                    <th>To</th>
+                                                    <th>Default</th>
+                                                    <th>Options</th>
+                                                </thead>
+                                                <template is="dom-repeat" items="{{workflowItem.controls}}" as="mapper">
+                                                    <tr>
+                                                        <td>
+                                                            <paper-input value="{{mapper.from}}"></paper-input>
+                                                        </td>
+                                                        <td>
+                                                            <paper-input value="{{mapper.to}}"></paper-input>
+                                                        </td>
+                                                        <td>
+                                                            <paper-input value="{{mapper.default}}"></paper-input>
+                                                        </td>
+                                                        <td>
+                                                            Wrap:
+                                                            <input type="checkbox" checked="{{mapper.options.wrap::change}}"/>
+                                                            Flatten:
+                                                            <input type="checkbox" checked="{{mapper.options.flatten::change}}"/>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                                <tr>
+                                                    <td colspan="4" class="right">
+                                                        <paper-button on-click="addTransformerControl" data-workflow-item$="{{workflowItem.id}}">
+                                                            <iron-icon icon="add-circle" on-click="addTransformerControl" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                        </paper-button>
+                                                        <paper-button on-click="removeTransformerControl" data-workflow-item$="{{workflowItem.id}}">
+                                                            <iron-icon icon="remove-circle" on-click="removeTransformerControl" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                        </paper-button>
+                                                    </td>
+                                                </tr>
+                                            </table>
                                         </div>
                                     </template>
                                     <div class="tab-content"> <!-- Raw Page -->
-                                        <!-- TODO If our transformer type is 'function' we need to format our Javascript with proper indents/spacing/etc. -->
                                         <bridgeit-code-editor value="{{_formatTransformer(workflowItem.item.properties.type, workflowItem.item.transform)}}"></bridgeit-code-editor>
                                     </div>
                                 </iron-pages>

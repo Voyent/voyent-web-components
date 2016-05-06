@@ -173,6 +173,28 @@ BridgeIt.QueryChainEditor = Polymer({
         }
     },
     
+    /**
+     * Called when a tab is selected for a Transformer workflow item
+     * This is used to keep our UI controls in sync with the raw JSON, and vice versa
+     * Note this will only be called for Mapper types
+     * @param e
+     */
+    transformerTabChange: function(e) {
+        var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
+        
+        if (item) {
+            // Have to use hardcoded tab numbers, with 0 = Properties, 1 = Transformer, 2 = Raw
+            // So basically if we're going to Transformer convert our raw JSON to UI controls
+            if (item.selected === 1) {
+                this._convertMapperToControl(item);
+            }
+            // And if we're going to Raw convert our UI controls to raw JSON
+            else if (item.selected === 2) {
+                this._convertControlToMapper(item);
+            }
+        }
+    },
+    
     /** Adds parameters to the main workflow
      * @param e
      */
@@ -219,6 +241,35 @@ BridgeIt.QueryChainEditor = Polymer({
             var index = this._workflow.query.indexOf(item);
             if (this._workflow.query[index].item.properties.parameters.length > 0) {
                 this.pop('_workflow.query.'+index+'.item.properties.parameters');
+            }
+        }
+    },
+    
+    /**
+     * Adds a set of controls for the current transformer workflow item
+     * @param e
+     */
+    addTransformerControl: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        
+        var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
+        if (item) {
+            this.push('_workflow.query.' + this._workflow.query.indexOf(item) + '.controls', this._makeTransformerControl());
+        }
+    },
+    
+    /**
+     * Removes a set of controls for the current transformer workflow item
+     * @param e
+     */
+    removeTransformerControl: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        
+        var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
+        if (item) {
+            var index = this._workflow.query.indexOf(item);
+            if (this._workflow.query[index].controls.length > 0) {
+                this.pop('_workflow.query.' + index + '.controls');
             }
         }
     },
@@ -311,7 +362,7 @@ BridgeIt.QueryChainEditor = Polymer({
                     }
                 }
             }
-            else if (currentQuery.type === 'transform') {
+            else if (this._isTransformer(currentQuery.type)) {
                 for (var j = 0; j < this._transformers.length; j++) {
                     if (currentQuery.id === this._transformers[j]._id) {
                         pulledItem = this._transformers[j];
@@ -377,7 +428,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @param e
      */
     resetWorkflow: function(e) {
-        this.set('_workflow', { "_id":"newWorkflow", "selected": 0, "properties": { "title":"New Workflow", "parameters":[] }, "query":[] });
+        this.set('_workflow', { "_id":"newWorkflow", "selected": 0, "properties": { "title":"New Workflow", "parameters":[], "execParams": "" }, "query":[] });
     },
     
     //******************PRIVATE API******************
@@ -450,6 +501,12 @@ BridgeIt.QueryChainEditor = Polymer({
         // Try to persist (create/update) each query/transformer in our current workflow
         for (var i = 0; i < this._workflow.query.length; i++) {
             loopWorkflowItem = this._workflow.query[i];
+            
+            // If we are interacting with a "mapper" type of Transformer we need to convert our UI controls to raw JSON data
+            // Basically ensuring that any changes the user made at the UI level are reflected in the data we're trying to persist
+            if (this._isTransformer(loopWorkflowItem.type) && this._isTransformerMapper(loopWorkflowItem.item.properties.type)) {
+                this._convertControlToMapper(loopWorkflowItem);
+            }
             
             // Check if our current query/transformer even changed since the last persist
             // If it didn't we don't need to hit the service again
@@ -737,6 +794,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _formatTransformer: function(type, raw) {
+        // TODO If our transformer type is 'function' we need to format our Javascript with proper indents/spacing/etc.
         if (type === 'mapper') {
             return this._formatJSON(raw);
         }
@@ -763,8 +821,87 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _makeWorkflowItem: function(type, item) {
         this._internalId++;
-        return {"id":"workflowItem" + this._internalId, "originalItem":JSON.parse(JSON.stringify(item)),
-                "type":type, "selected":0, "item":item, "result":""};
+
+        var toReturn = {"id":"workflowItem" + this._internalId, "originalItem":JSON.parse(JSON.stringify(item)),
+                        "type":type, "selected":0, "item":item, "result":""};
+        
+        if (this._isTransformer(type)) {
+            // Set our default controls
+            toReturn.controls = [];
+            
+            // Next we convert any transformer JSON data into a valid UI control scheme
+            if (this._isTransformerMapper(item.properties.type) && item.transform) {
+                this._convertMapperToControl(toReturn);
+            }
+        }
+        
+        return toReturn;
+    },
+    
+    /**
+     * Create a new set of transformer controls for a workflow item
+     * The attributes will have default values, but the structure is correct
+     * @private
+     */
+    _makeTransformerControl: function() {
+        return { "from": "", "to": "", "default": "", "options": { "wrap": false, "flatten": false } };
+    },
+    
+    /**
+     * Convert mapper transformer JSON data into valid UI controls
+     * Basically convert workflowItem.item.transform into workflowItem.controls
+     * @param workflowItem
+     * @private
+     */
+    _convertMapperToControl: function(workflowItem) {
+        var _this = this;
+        var index = this._workflow.query.indexOf(workflowItem);
+        var toPush = null;
+        var currentData = null;
+        workflowItem.controls = [];
+        
+        Object.keys(workflowItem.item.transform).forEach(function(k) {
+            toPush = _this._makeTransformerControl();
+            currentData = workflowItem.item.transform[k];
+            
+            toPush.from = currentData.path;
+            toPush.to = k;
+            toPush.default = currentData.default;
+            if (currentData.options) {
+                toPush.options.wrap = (currentData.options.wrap || currentData.options.wrap == "true");
+                toPush.options.flatten = (currentData.options.flatten || currentData.options.flatten == "true");
+            }
+            
+            workflowItem.controls.push(toPush);
+        });
+        this.notifyPath('_workflow.query.' + index + '.controls', workflowItem.controls);
+    },
+    
+    /**
+     * Convert UI controls to valid mapper transformer JSON data
+     * Basically convert workflowItem.controls into workflowItem.item.transform
+     * @param workflowItem
+     * @private
+     */
+    _convertControlToMapper: function(workflowItem) {
+        var index = this._workflow.query.indexOf(workflowItem);
+        var originalData = JSON.parse(JSON.stringify(workflowItem.item.transform));
+        var currentControl = null;
+        workflowItem.item.transform = {};
+        
+        for (var i = 0; i < workflowItem.controls.length; i++) {
+            currentControl = workflowItem.controls[i];
+            
+            workflowItem.item.transform[currentControl.to] =
+                {"path": currentControl.from,
+                 "default": currentControl.default,
+                 "options": {
+                    "wrap": currentControl.options.wrap,
+                    "flatten": currentControl.options.flatten
+                 }
+                };
+        }
+        this.notifyPath('_workflow.query.' + index + '.item.transform', workflowItem.item.transform);
     },
     
     /**
