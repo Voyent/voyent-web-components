@@ -343,7 +343,7 @@ Example:
                                             </div>
                                             <div class="flex">
                                                 <iron-label>
-                                                    Query Type
+                                                    Type:
                                                     <paper-radio-group selected="{{workflowItem.item.properties.type}}">
                                                         <paper-radio-button name="find">Find</paper-radio-button>
                                                         <paper-radio-button name="aggregate">Aggregate</paper-radio-button>
@@ -408,14 +408,20 @@ Example:
                             <template is="dom-if" if="{{_isTransformer(workflowItem.type)}}">
                                 <paper-tabs selected="{{workflowItem.selected}}" no-bar>
                                     <paper-tab>Properties</paper-tab>
-                                    <paper-tab>Transformer</paper-tab>
-                                    <paper-tab>Raw</paper-tab>
+                                    <template is="dom-if" if="{{_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                        <paper-tab>Transformer</paper-tab>
+                                        <paper-tab>Raw</paper-tab>
+                                    </template>
+                                    <template is="dom-if" if="{{!_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                        <paper-tab>Transformer Function</paper-tab>
+                                    </template>
                                     <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
                                         <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                     </paper-button>
                                 </paper-tabs>
 
                                 <iron-pages selected="{{workflowItem.selected}}">
+                                    <!-- TODO Eventually the tooling should support pre-populating our "from" and "to" based on the previous/next workflow item (especially if it's a query) -->
                                     <div class="tab-content"> <!-- Properties Page -->
                                         <div class="container flex layout vertical">
                                             <div class="flex">
@@ -425,44 +431,46 @@ Example:
                                                 <paper-input label="Title:" value="{{workflowItem.item.properties.title}}"></paper-input>
                                             </div>
                                             <div class="flex">
-                                                <paper-input label="Type:" value="{{workflowItem.item.properties.type}}"></paper-input>
-                                            </div>
-                                            <div class="flex">
                                                 <paper-input label="Description:" value="{{workflowItem.item.properties.desc}}"></paper-input>
                                             </div>
+                                            <div class="flex">
+                                                <iron-label>
+                                                    Type:
+                                                    <paper-radio-group selected="{{workflowItem.item.properties.type}}">
+                                                        <paper-radio-button name="mapper">Mapper</paper-radio-button>
+                                                        <paper-radio-button name="function">Function</paper-radio-button>
+                                                    </paper-radio-group>
+                                                </iron-label>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="tab-content"> <!-- Transformer Page -->
-                                        <!-- TODO Create a proper view and tooling for modifying transformers -->
-                                        <div class="layout horizontal">
-                                            <div class="flex">
-                                                <paper-listbox selected="{{workflowItem.item.selectedFrom}}">
-                                                    <template is="dom-repeat" items="[[workflowItem.item.transformer.from]]" as="from">
-                                                        <paper-item>[[from]]</paper-item>
-                                                    </template>
-                                                </paper-listbox>
-                                            </div>
-                                            <div class="horizontal layout center">
-                                                <iron-icon icon="chevron-right"></iron-icon>
-                                            </div>
-                                            <div class="flex">
-                                                <paper-listbox selected="{{workflowItem.item.selectedTo}}">
-                                                    <template is="dom-repeat" items="[[workflowItem.item.transformer.to]]" as="to">
-                                                        <paper-item>[[to]]</paper-item>
-                                                    </template>
-                                                </paper-listbox>
+                                    <template is="dom-if" if="{{_isTransformerMapper(workflowItem.item.properties.type)}}">
+                                        <div class="tab-content"> <!-- Transformer Page -->
+                                            <!-- TODO Create a proper view and tooling for modifying transformers -->
+                                            <div class="layout horizontal">
+                                                <div class="flex">
+                                                    <paper-listbox selected="{{workflowItem.item.selectedFrom}}">
+                                                        <template is="dom-repeat" items="[[workflowItem.item.transformer.from]]" as="from">
+                                                            <paper-item>[[from]]</paper-item>
+                                                        </template>
+                                                    </paper-listbox>
+                                                </div>
+                                                <div class="horizontal layout center">
+                                                    <iron-icon icon="chevron-right"></iron-icon>
+                                                </div>
+                                                <div class="flex">
+                                                    <paper-listbox selected="{{workflowItem.item.selectedTo}}">
+                                                        <template is="dom-repeat" items="[[workflowItem.item.transformer.to]]" as="to">
+                                                            <paper-item>[[to]]</paper-item>
+                                                        </template>
+                                                    </paper-listbox>
+                                                </div>
                                             </div>
                                         </div>
-                                        
-                                        <label>Raw version of the transform:</label>
-                                        <div class="flex">
-                                            <!-- TODO Output the raw version of the transformer -->
-                                            <bridgeit-code-editor value="[[workflowItem.item.selectedFrom]] [[workflowItem.item.selectedTo]]">
-                                            </bridgeit-code-editor>
-                                        </div>
-                                    </div>
+                                    </template>
                                     <div class="tab-content"> <!-- Raw Page -->
-                                        <bridgeit-code-editor value="{{_formatJSON(workflowItem.item.transform)}}"></bridgeit-code-editor>
+                                        <!-- TODO If our transformer type is 'function' we need to format our Javascript with proper indents/spacing/etc. -->
+                                        <bridgeit-code-editor value="{{_formatTransformer(workflowItem.item.properties.type, workflowItem.item.transform)}}"></bridgeit-code-editor>
                                     </div>
                                 </iron-pages>
                             </template>

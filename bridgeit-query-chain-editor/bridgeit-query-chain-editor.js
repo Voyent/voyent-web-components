@@ -287,8 +287,8 @@ BridgeIt.QueryChainEditor = Polymer({
         // We will assign that over our existing workflow
         for (var i = 0; i < this._savedWorkflows.length; i++) {
             if (loadId === this._savedWorkflows[i]._id) {
-                this._workflow = JSON.parse(JSON.stringify(this._savedWorkflows[i])); // clone
-                this._workflow.selected = 0;
+                this.set('_workflow', JSON.parse(JSON.stringify(this._savedWorkflows[i])));
+                this.set('_workflow.selected', 0);
                 break;
             }
         }
@@ -377,7 +377,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @param e
      */
     resetWorkflow: function(e) {
-        this._workflow = { "_id":"newWorkflow", "selected": 0, "properties": { "title":"New Workflow", "parameters":[] }, "query":[] }
+        this.set('_workflow', { "_id":"newWorkflow", "selected": 0, "properties": { "title":"New Workflow", "parameters":[] }, "query":[] });
     },
     
     //******************PRIVATE API******************
@@ -402,7 +402,7 @@ BridgeIt.QueryChainEditor = Polymer({
             
             // If this workflow has exec params, which are basically user specified JSON parameters, we need to encode that and pass it as execParams
             if (_this._workflow.properties.execParams) {
-                urlParams += ("&execParams=" + encodeURIComponent(JSON.stringify(_this._workflow.properties.execParams)));
+                urlParams += ("&execParams=" + encodeURIComponent(_this._workflow.properties.execParams));
             }
             
             bridgeit.$.getJSON(_this.buildUrl(_this.tempQueryService, _this.tempQueryResource, _this._workflow._id) + urlParams)
@@ -696,6 +696,16 @@ BridgeIt.QueryChainEditor = Polymer({
     
     /**
      * Template helper function.
+     * @param type
+     * @returns {boolean}
+     * @private
+     */
+    _isTransformerMapper: function(type) {
+        return type === 'mapper';
+    },
+    
+    /**
+     * Template helper function.
      * @param json
      * @returns {String}
      * @private
@@ -715,6 +725,22 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _arrayLength: function(change) {
         return change.base.length;
+    },
+    
+    /**
+     * Template helper function.
+     * This will format a transformer based on it's type
+     * Mapper will be converted to proper JSON, and everything else will just return in the same format
+     * @param type
+     * @param raw
+     * @return {String}
+     * @private
+     */
+    _formatTransformer: function(type, raw) {
+        if (type === 'mapper') {
+            return this._formatJSON(raw);
+        }
+        return raw;
     },
     
     /**
