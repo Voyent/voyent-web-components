@@ -186,6 +186,10 @@ BridgeIt.CodeEditor = Polymer({
     },
     _valueChanged: function(newVal) {
         if (this.editor && newVal !== this.editor.getValue()) {
+            if (!newVal) {
+                this.value = '';
+                return;
+            }
             this.editor.setValue(newVal,1);
         }
     }
