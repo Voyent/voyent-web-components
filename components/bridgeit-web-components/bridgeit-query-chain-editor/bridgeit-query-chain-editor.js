@@ -702,6 +702,20 @@ BridgeIt.QueryChainEditor = Polymer({
         var item = JSON.parse(JSON.stringify(this._lastDragged));
         var type = e.dataTransfer.getData('query') ? 'query' : 'transform'; //determine the dropped item type
         
+        // TODO TEMPORARY NTFY-378 For now we manually load the query editor with our JSON query data. Eventually this will be done at the page level via a parameter
+        if (type === 'query') {
+            var _this = this;
+            
+            // We need to timeout for ~2 seconds to ensure the query editor is loaded
+            setTimeout(function() {
+                var comp = document.getElementById('queryEditor');
+                if (comp) {
+                    // Format the passed query and values in the proper way
+                    comp.setEditorFromMongo({"query": item.query.find, "options": item.query.options, "fields": item.query.fields });
+                }
+            },2000);
+        }
+        
         this.push('_workflow.query', this._makeWorkflowItem(type, item));
     },
     
@@ -776,6 +790,23 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _arrayLength: function(change) {
         return change.base.length;
+    },
+    
+    /**
+     * Template helper function.
+     * This will strip any prefix service from our collection name
+     * @param service
+     * @param collection
+     * @returns {String}
+     * @private
+     */
+    _stripCollection: function(service, collection) {
+        if (service && collection) {
+            if (collection.indexOf(service + '.') !== -1) {
+                return collection.substring(collection.indexOf(service + '.')+service.length+1);
+            }
+        }
+        return collection;
     },
     
     /**
