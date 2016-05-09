@@ -642,7 +642,7 @@ BridgeIt.QueryEditor = Polymer({
         _this._setLastquery(query);
         
         switch(this.service.toLowerCase()) {
-            case 'documents':
+            case 'documents': case 'docs':
                 params.collection = this.collection;
                 this.service_url = protocol+bridgeit.io.documentsURL+path+'/'+this.collection;
                 bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
