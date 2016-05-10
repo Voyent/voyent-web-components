@@ -67,11 +67,11 @@
         setTimeout(function(){
           if( tinymce.activeEditor ){
             _this._editor = tinymce.activeEditor;
-            _this._editor.setContent(_this.serializedDocumentProperty);
             _this._editor.on('SaveContent', function(e) {
               _this._updateDocumentFromEditor(_this);
             });
             _this._editor.show();
+            _this._editor.setContent(_this.serializedDocumentProperty);
           }
           else{
             console.log('bridgeit-document-editor has no active editor');
