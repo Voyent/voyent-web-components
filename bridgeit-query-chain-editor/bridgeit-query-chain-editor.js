@@ -346,7 +346,7 @@ BridgeIt.QueryChainEditor = Polymer({
             currentQuery = this._workflow.query[i];
             pulledItem = null;
             
-            if (currentQuery.type === 'query') {
+            if (this._isQuery(currentQuery.type)) {
                 for (var j = 0; j < this._queryServices.length; j++) {
                     for (var subQuery = 0; subQuery < this._queryServices[j].queries.length; subQuery++) {
                         if (currentQuery.id === this._queryServices[j].queries[subQuery]._id) {
@@ -501,6 +501,12 @@ BridgeIt.QueryChainEditor = Polymer({
             if (this._isTransformer(loopWorkflowItem.type) && this._isTransformerMapper(loopWorkflowItem.item.properties.type)) {
                 this._convertControlToMapper(loopWorkflowItem);
             }
+            // Also if we have a query (aggregate) we need to convert the raw JSON to our internal object
+            if (this._isQuery(loopWorkflowItem.type) && this._isAggregate(loopWorkflowItem.item.properties.type)) {
+                if (loopWorkflowItem.queryFormatted) {
+                    loopWorkflowItem.item.query = JSON.parse(loopWorkflowItem.queryFormatted);
+                }
+            }
             
             // Check if our current query/transformer even changed since the last persist
             // If it didn't we don't need to hit the service again
@@ -605,7 +611,7 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _saveWorkflowItem: function(workflowItem, callback) {
         // TODO MANUAL Need to determine if we use the query or transformer service for our save
-        var desiredResource = workflowItem.type === 'query' ? this.tempQueryResource : this.tempTransformerResource;
+        var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
         bridgeit.$.post(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
         }).catch(function(error) {
@@ -624,7 +630,7 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _updateWorkflowItem: function(workflowItem, callback) {
         // TODO MANUAL Need to determine if we use the query or transformer service for our update
-        var desiredResource = workflowItem.type === 'query' ? this.tempQueryResource : this.tempTransformerResource;
+        var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
         bridgeit.$.put(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
         }).catch(function(error) {
@@ -703,7 +709,7 @@ BridgeIt.QueryChainEditor = Polymer({
         var type = e.dataTransfer.getData('query') ? 'query' : 'transform'; //determine the dropped item type
         
         // TODO TEMPORARY NTFY-378 For now we manually load the query editor with our JSON query data. Eventually this will be done at the page level via a parameter
-        if (type === 'query') {
+        if (this._isQuery(type)) {
             var _this = this;
             
             // We need to timeout for ~2 seconds to ensure the query editor is loaded
@@ -833,6 +839,7 @@ BridgeIt.QueryChainEditor = Polymer({
         var toReturn = {"id":"workflowItem" + this._internalId, "originalItem":JSON.parse(JSON.stringify(item)),
                         "type":type, "selected":0, "item":item, "result":""};
         
+        // For transformers we need to map our JSON data to UI elements
         if (this._isTransformer(type)) {
             // Set our default controls
             toReturn.controls = [];
@@ -841,6 +848,10 @@ BridgeIt.QueryChainEditor = Polymer({
             if (this._isTransformerMapper(item.properties.type) && item.transform) {
                 this._convertMapperToControl(toReturn);
             }
+        }
+        // For queries we need to format the JSON for raw output
+        if (this._isQuery(type)) {
+            toReturn.queryFormatted = this._formatJSON(item.query);
         }
         
         return toReturn;

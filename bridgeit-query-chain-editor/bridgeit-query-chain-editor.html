@@ -321,8 +321,13 @@ Example:
                                 <paper-tabs selected="{{workflowItem.selected}}" no-bar>
                                     <paper-tab>Properties</paper-tab>
                                     <paper-tab>Params</paper-tab>
-                                    <paper-tab>Query</paper-tab>
-                                    <paper-tab>Raw</paper-tab>
+                                    <template is="dom-if" if="{{_isFind(workflowItem.item.properties.type)}}">
+                                        <paper-tab>Find</paper-tab>
+                                    </template>
+                                    <paper-tab>
+                                        <template is="dom-if" if="{{_isAggregate(workflowItem.item.properties.type)}}">Aggregate</template>
+                                        <template is="dom-if" if="{{_isFind(workflowItem.item.properties.type)}}">Raw</template>
+                                    </paper-tab>
                                     <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
                                         <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                     </paper-button>
@@ -387,12 +392,9 @@ Example:
                                             </tr>
                                         </table>
                                     </div>
-                                    <div class="tab-content"> <!-- Query Page -->
-                                        <template is="dom-if" if="{{_isAggregate(workflowItem.item.properties.type)}}">
-                                            <!-- TODO Edit raw JSON for aggregate for now, but eventually make new tooling -->
-                                            Aggregate Editor
-                                        </template>
-                                        <template is="dom-if" if="{{_isFind(workflowItem.item.properties.type)}}">
+                                    <!-- TODO LATER Create tooling for managing Aggregate type JSON, instead of direct raw edits -->
+                                    <template is="dom-if" if="{{_isFind(workflowItem.item.properties.type)}}">
+                                        <div class="tab-content"> <!-- Query Page -->
                                             <!-- TODO NTFY-378 Eventually pass the current query JSON as a parameter -->
                                             <bridgeit-query-editor id="queryEditor"
                                                                    service="[[workflowItem.item.properties.service]]"
@@ -400,10 +402,17 @@ Example:
                                                                    options="[[workflowItem.item.options]]"
                                                                    fields="[[workflowItem.item.fields]]">
                                             </bridgeit-query-editor>
-                                        </template>
-                                    </div>
+                                        </div>
+                                    </template>
                                     <div class="tab-content"> <!-- Raw Page -->
-                                        <bridgeit-code-editor value="{{_formatJSON(workflowItem.item.query)}}" readonly></bridgeit-code-editor>
+                                        <!-- Make the aggregate raw JSON editable as it's the primary way of interacting with the data -->
+                                        <template is="dom-if" if="{{_isAggregate(workflowItem.item.properties.type)}}">
+                                            <bridgeit-code-editor value="{{workflowItem.queryFormatted}}"></bridgeit-code-editor>
+                                        </template>
+                                        <!-- The find type queries have readonly raw JSON because we use the provided query editor tooling -->
+                                        <template is="dom-if" if="{{_isFind(workflowItem.item.properties.type)}}">
+                                            <bridgeit-code-editor value="{{workflowItem.queryFormatted}}" readonly></bridgeit-code-editor>
+                                        </template>
                                     </div>
                                 </iron-pages>
                             </template>
