@@ -164,12 +164,18 @@ Example:
         </style>
         <div class="container flex layout horizontal">
             <div class="flex">
+                <!-- TODO Need a unified approach to displaying error/info log messages on the UI -->
                 <h3>Current Workflow</h3>
                 
-                <!-- TODO Have a checkbox for "Not a Chain" for executing single queries? -->
                 <div class="flex layout vertical">
-                    <paper-input label="Query Chain ID" value="{{_workflow._id}}" required="true" minlength="1" maxlength="50"></paper-input>
-                    <paper-input label="Query Chain Title" value="{{_workflow.properties.title}}" required="true" minlength="3" maxlength="25"></paper-input>
+                    <label>
+                        <input type="checkbox" checked="{{_workflow.isChain::change}}"/>
+                        This workflow is a chain
+                    </label>
+                    <template is="dom-if" if="{{_workflow.isChain}}">
+                        <paper-input label="Query Chain ID" value="{{_workflow._id}}" required="true" minlength="1" maxlength="50"></paper-input>
+                        <paper-input label="Query Chain Title" value="{{_workflow.properties.title}}" required="true" minlength="3" maxlength="25"></paper-input>
+                    </template>
                     <div class="flex layout horizontal">
                         <paper-button raised on-click="executeWorkflow">Execute</paper-button>
                         <paper-button raised on-click="persistWorkflowChain">Save/Update</paper-button>
@@ -318,10 +324,16 @@ Example:
                 </div>
             </div>
             
+            <!-- TODO Have a way to organize (re-order mainly) a set of workflow chain items -->
             <div id="workflow" class="flex-3 section workflow">
                 <h2>
                     <button on-click="toggleColumn" data-id="workflow" data-class="flex-3">&lt;-&gt;</button>
-                    Workflow ([[_arrayLength(_workflow.query.*)]] items)
+                    <template is="dom-if" if="{{_workflow.isChain}}">
+                        Workflow ([[_arrayLength(_workflow.query.*)]] items)
+                    </template>
+                    <template is="dom-if" if="{{!_workflow.isChain}}">
+                        Single Item
+                    </template>
                 </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex workflow-drop-area" on-dragover="_dragOverWorkflow" on-drop="_dropInWorkflow">
@@ -404,7 +416,7 @@ Example:
                                     <!-- TODO LATER Create tooling for managing Aggregate type JSON, instead of direct raw edits -->
                                     <template is="dom-if" if="{{_isFind(workflowItem.item.properties.type)}}">
                                         <div class="tab-content"> <!-- Query Page -->
-                                            <!-- TODO TEMPORARY NTFY-378 Eventually pass the current query JSON as a parameter -->
+                                            <!-- TEMPORARY NTFY-378 Eventually pass the current query JSON as a parameter -->
                                             <bridgeit-query-editor id="queryEditor"
                                                                    service="[[workflowItem.item.properties.service]]"
                                                                    collection="[[_stripCollection(workflowItem.item.properties.service, workflowItem.item.properties.collection)]]"
