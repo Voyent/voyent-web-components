@@ -62,10 +62,6 @@ Example:
                 -webkit-animation: yellow-fade 1500ms ease-in 1;
                 animation: yellow-fade 1500ms ease-in 1;
             }
-            .workflow-drop-area {
-                padding-bottom:100px;
-                @apply(--query-chain-editor-workflow-drop-area);
-            }
             .execute {
                 text-align:center;
                 @apply(--query-chain-editor-execute);
@@ -325,7 +321,7 @@ Example:
             </div>
             
             <!-- TODO Have a way to organize (re-order mainly) a set of workflow chain items -->
-            <div id="workflow" class="flex-3 section workflow">
+            <div id="workflow" class="flex-3 section workflow" on-dragover="_dragOverWorkflow" on-drop="_dropInWorkflow">
                 <h2>
                     <button on-click="toggleColumn" data-id="workflow" data-class="flex-3">&lt;-&gt;</button>
                     <template is="dom-if" if="{{_workflow.isChain}}">
@@ -336,7 +332,7 @@ Example:
                     </template>
                 </h2>
                 <div class="container flex layout vertical no-padding">
-                    <div class="flex workflow-drop-area" on-dragover="_dragOverWorkflow" on-drop="_dropInWorkflow">
+                    <div class="flex">
                         <template is="dom-repeat" items="{{_workflow.query}}" as="workflowItem">
                             <template is="dom-if" if="{{_isQuery(workflowItem.type)}}">
                                 <paper-tabs selected="{{workflowItem.selected}}" no-bar>
