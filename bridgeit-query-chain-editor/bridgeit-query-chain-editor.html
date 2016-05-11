@@ -166,6 +166,7 @@ Example:
             <div class="flex">
                 <h3>Current Workflow</h3>
                 
+                <!-- TODO Have a checkbox for "Not a Chain" for executing single queries? -->
                 <div class="flex layout vertical">
                     <paper-input label="Query Chain ID" value="{{_workflow._id}}" required="true" minlength="1" maxlength="50"></paper-input>
                     <paper-input label="Query Chain Title" value="{{_workflow.properties.title}}" required="true" minlength="3" maxlength="25"></paper-input>
@@ -277,10 +278,14 @@ Example:
                                     <template is="dom-repeat" items="{{_queries}}" as="query">
                                         <paper-item class="palette-item" draggable="true"
                                                     on-dragstart="_startDragQuery" on-dragend="_commonDragEnd">
+                                            <iron-icon icon="search"></iron-icon>
                                             <paper-item-body>
                                                 <div>{{query._id}}</div>
                                             </paper-item-body>
-                                            <iron-icon icon="search"></iron-icon>
+                                            <paper-button on-click="removePaletteQuery" data-workflow-item$="{{query._id}}">
+                                                <iron-icon icon="cancel" on-click="removePaletteQuery" data-workflow-item$="{{query._id}}"
+                                                           title="Delete this query"></iron-icon>
+                                            </paper-button>
                                         </paper-item>
                                     </template>
                                 </div>
@@ -296,10 +301,14 @@ Example:
                                     <template is="dom-repeat" items="{{_transformers}}" as="transformer">
                                         <paper-item class="palette-item" draggable="true"
                                                     on-dragstart="_startDragTransformer" on-dragend="_commonDragEnd">
+                                            <iron-icon icon="compare-arrows"></iron-icon>
                                             <paper-item-body>
                                                 <div>{{transformer._id}}</div>
                                             </paper-item-body>
-                                            <iron-icon icon="compare-arrows"></iron-icon>
+                                            <paper-button on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}">
+                                                <iron-icon icon="cancel" on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}"
+                                                           title="Delete this transformer"></iron-icon>
+                                            </paper-button>
                                         </paper-item>
                                     </template>
                                 </div>
@@ -395,7 +404,7 @@ Example:
                                     <!-- TODO LATER Create tooling for managing Aggregate type JSON, instead of direct raw edits -->
                                     <template is="dom-if" if="{{_isFind(workflowItem.item.properties.type)}}">
                                         <div class="tab-content"> <!-- Query Page -->
-                                            <!-- TODO NTFY-378 Eventually pass the current query JSON as a parameter -->
+                                            <!-- TODO TEMPORARY NTFY-378 Eventually pass the current query JSON as a parameter -->
                                             <bridgeit-query-editor id="queryEditor"
                                                                    service="[[workflowItem.item.properties.service]]"
                                                                    collection="[[_stripCollection(workflowItem.item.properties.service, workflowItem.item.properties.collection)]]"
