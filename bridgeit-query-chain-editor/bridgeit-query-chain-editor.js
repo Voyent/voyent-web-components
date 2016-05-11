@@ -363,6 +363,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @param e
      */
     loadWorkflow: function(e) {
+        // TODO Show some kind of loading/animated progress on the UI when loading a workflow
         var loadId = e.target.getAttribute('data-workflow-item');
         
         // First we find the workflow that was requested from our savedWorkflow list
@@ -714,13 +715,14 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _saveWorkflowItem: function(workflowItem, callback) {
         // MANUAL Need to determine if we use the query or transformer service for our save
+        var _this = this;
         var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
         bridgeit.$.post(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
         }).catch(function(error) {
-            console.error("Failed to save individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
+            console.error("Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error.toSource());
             
-            if (callback) { callback(); }
+            _this._updateWorkflowItem(workflowItem, callback);
         });
     },
 
