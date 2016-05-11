@@ -32,7 +32,7 @@ BridgeIt.QueryChainEditor = Polymer({
         // For terminology we use "chain" at the service level and "workflow" for the UI
         this.resetWorkflow();
         
-        // TODO MANUAL For now we do some manual GET/POST/etc. until support is added to the bridgeit client library
+        // MANUAL For now we do some manual GET/POST/etc. until support is added to the bridgeit client library
         this.tempUrl = 'http://dev.bridgeit.io/';
         this.tempQueryService = 'query/';
         this.tempTransformerResource = 'transformers/';
@@ -54,7 +54,7 @@ BridgeIt.QueryChainEditor = Polymer({
         this.getTransformers();
     },
     
-    /** TODO MANUAL */
+    /** MANUAL */
     buildUrl: function(service, resource, custom) {
         var toReturn = this.tempUrl + service + this.account + '/realms/' + this.realm + '/' + resource;
         if (custom) {
@@ -66,13 +66,15 @@ BridgeIt.QueryChainEditor = Polymer({
     
     /**
      * Function to initialize the palette, specifically the queries and their service grouping
+     * The optional callback will be fired after our processing is done
+     * @param callback
      */
-    getQueryServices: function() {
+    getQueryServices: function(callback) {
         if (!this.account || !this.realm) {
             return;
         }
         
-        this._queryServices = [];
+        this.set('_queryServices', []);
         this._savedWorkflows = [];
         
         var _this = this;
@@ -116,7 +118,12 @@ BridgeIt.QueryChainEditor = Polymer({
                 // Select a default service if we can
                 if (_this._queryServices.length > 0) {
                     _this.set('selectedQuery', 0);
+                    _this.set('_queries', _this._queryServices[_this.selectedQuery].queries);
                 }
+            }
+            
+            if (callback) {
+                callback();
             }
         }).catch(function(error){
             console.error("Error when trying to find queries: " + error.toSource());
@@ -134,7 +141,7 @@ BridgeIt.QueryChainEditor = Polymer({
         this._transformers = [];
         
         var _this = this;
-        // TODO MANUAL Should have a client library function to GET all transformers from the service
+        // MANUAL Should have a client library function to GET all transformers from the service
         bridgeit.$.getJSON(this.buildUrl(this.tempQueryService, this.tempTransformerResource)).then(function(results) {
             if (results && results.length > 0) {
                 _this._transformers = results;
@@ -282,6 +289,30 @@ BridgeIt.QueryChainEditor = Polymer({
     },
     
     /**
+     * Remove the current palette query item
+     * This is necessary since we can add items so we need a way to manage the list
+     * @param e
+     */
+    removePaletteQuery: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        var removeId = e.target.getAttribute('data-workflow-item');
+        
+        this._removePaletteGeneric('query', removeId, this._queries, '_queries');
+    },
+    
+    /**
+     * Remove the current palette transformer item
+     * This is necessary since we can add items so we need a way to manage the list
+     * @param e
+     */
+    removePaletteTransformer: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        var removeId = e.target.getAttribute('data-workflow-item');
+        
+        this._removePaletteGeneric('transformer', removeId, this._transformers, '_transformers');
+    },
+    
+    /**
      * Public UI method to execute up to the passed workflow item
      * @param e
      */
@@ -316,9 +347,15 @@ BridgeIt.QueryChainEditor = Polymer({
      * @param e
      */
     persistWorkflowChain: function(e) {
-        // Save our workflow queries/transformers first, then when that's done try to save our chain
-        var _this = this;
-        this._persistWorkflowQueries(function() {_this._persistWorkflowChain() });
+        // First we need to determine if we're a chain or not
+        // Either way we'll save our queries, then maybe save our chain
+        if (this._workflow.isChain) {
+            var _this = this;
+            this._persistWorkflowQueries(function() {_this._persistWorkflowChain() });
+        }
+        else {
+            this._persistWorkflowQueries();
+        }
     },
     
     /**
@@ -334,6 +371,7 @@ BridgeIt.QueryChainEditor = Polymer({
             if (loadId === this._savedWorkflows[i]._id) {
                 this.set('_workflow', JSON.parse(JSON.stringify(this._savedWorkflows[i])));
                 this.set('_workflow.selected', 0);
+                this.set('_workflow.isChain', true);
                 break;
             }
         }
@@ -346,7 +384,7 @@ BridgeIt.QueryChainEditor = Polymer({
             currentQuery = this._workflow.query[i];
             pulledItem = null;
             
-            if (currentQuery.type === 'query') {
+            if (this._isQuery(currentQuery.type)) {
                 for (var j = 0; j < this._queryServices.length; j++) {
                     for (var subQuery = 0; subQuery < this._queryServices[j].queries.length; subQuery++) {
                         if (currentQuery.id === this._queryServices[j].queries[subQuery]._id) {
@@ -373,15 +411,25 @@ BridgeIt.QueryChainEditor = Polymer({
             if (pulledItem) {
                 loadedItems.push(this._makeWorkflowItem(currentQuery.type, JSON.parse(JSON.stringify(pulledItem))));
             }
+            // If we don't have an item it means the workflow chain had an invalid or outdated query/transformer
+            // We will note this in the logs
+            else {
+                console.error("Failed to add " + currentQuery.id + " to workflow (outdated query/transformer?)"); 
+            }
         }
         
         // Clear our old query array since we've converted it from type/id to workflow items
         this.splice('_workflow.query', 0, this._workflow.query.length);
         
         // Because Polymer doesn't support more complex array operations (like concat) we have to loop through our loadedItems and push each one
-        for (var insert = 0; insert < loadedItems.length; insert++) {
-            this.push('_workflow.query', loadedItems[insert]);
-        }
+        // We also need to use a setTimeout to ensure the previous state is applied properly first
+        //  Namely clearing any previous results in the UI
+        var _this = this;
+        setTimeout(function() {
+            for (var insert = 0; insert < loadedItems.length; insert++) {
+                _this.push('_workflow.query', loadedItems[insert]);
+            }
+        },0);
     },
     
     /**
@@ -422,7 +470,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @param e
      */
     resetWorkflow: function(e) {
-        this.set('_workflow', { "_id":"newWorkflow", "selected": 0, "properties": { "title":"New Workflow", "parameters":[], "execParams": "" }, "query":[] });
+        this.set('_workflow', { "_id":"newWorkflow", "selected": 0, "isChain": true, "properties": { "title":"New Workflow", "parameters":[], "execParams": "" }, "query":[] });
     },
     
     //******************PRIVATE API******************
@@ -433,45 +481,79 @@ BridgeIt.QueryChainEditor = Polymer({
      * @param callback
      */
     _executeWorkflow: function(callback) {
-        console.log("Exec: " + this._workflow._id);
-        
-        // TODO Still be able to execute a single, non-chain query/transformer. This would change the UI a bit, and also use a different execution approach
-        
-        // Persist our queries/transformers, then the entire chain, and finally execute
-        // These asynchronous functions need a bunch of callbacks because processing can't continue until the previous step completes
-        // For example we want to ensure our queries are saved/updated properly before we try to execute anything
         var _this = this;
-        this._persistWorkflowQueries(function() {_this._persistWorkflowChain(function() {
-            // TODO MANUAL We should have a way to execute a query from our client library
-            var urlParams = "&exec=true&mode=debug";
+        var executeCallback = function() {
+            // MANUAL We should have a way to execute a query from our client library
+            var urlParams = "&exec=true";
+            
+            // If we're a chain we want to execute in debug mode
+            if (_this._workflow.isChain) {
+                urlParams += "&mode=debug";
+            }
             
             // If this workflow has exec params, which are basically user specified JSON parameters, we need to encode that and pass it as execParams
             if (_this._workflow.properties.execParams) {
                 urlParams += ("&execParams=" + encodeURIComponent(_this._workflow.properties.execParams));
             }
             
-            bridgeit.$.getJSON(_this.buildUrl(_this.tempQueryService, _this.tempQueryResource, _this._workflow._id) + urlParams)
-                      .then(function(results) {
-                // Loop through results and set them into each workflowItem
-                var currentWorkflow = null;
-                for (var i = 0; i < _this._workflow.query.length; i++) {
-                    currentWorkflow = _this._workflow.query[i];
-                    
-                    // Reset our results in case we don't get new ones
-                    _this.set('_workflow.query.' + i + '.result', "");
-                    
-                    if (results && results[currentWorkflow.item._id]) {
-                        _this.set('_workflow.query.' + i + '.result', JSON.stringify(results[currentWorkflow.item._id], undefined, 4));
-                    }
+            // If we are a chain we use the workflow query chain ID as the execution target
+            // Otherwise we use the single item to process
+            var executeId = _this._workflow._id;
+            var executeResource = _this.tempQueryResource;
+            if (!_this._workflow.isChain) {
+                executeId = _this._workflow.query[0].item._id;
+                if (_this._isTransformer(_this._workflow.query[0].type)) {
+                    executeResource = _this.tempTransformerResource;
                 }
+            }
+            
+            if (executeId) {
+                var executeUrl = _this.buildUrl(_this.tempQueryService, executeResource, executeId) + urlParams;
+                console.log("Exec: " + executeId + " to " + executeUrl);
                 
-                if (callback) { callback(); }
-            }).catch(function(error){
-                console.error("Error when trying to execute query: " + error.toSource());
-                
-                if (callback) { callback(); }
-            });
-        })});
+                bridgeit.$.getJSON(executeUrl)
+                          .then(function(results) {
+                    if (_this._workflow.isChain) {              
+                        // Loop through results and set them into each workflowItem
+                        var currentWorkflow = null;
+                        for (var i = 0; i < _this._workflow.query.length; i++) {
+                            currentWorkflow = _this._workflow.query[i];
+                            
+                            // Reset our results in case we don't get new ones
+                            _this.set('_workflow.query.' + i + '.result', "");
+                            
+                            if (results && results[currentWorkflow.item._id]) {
+                                _this.set('_workflow.query.' + i + '.result', JSON.stringify(results[currentWorkflow.item._id], undefined, 4));
+                            }
+                        }
+                    }
+                    else {
+                        _this.set('_workflow.query.0.result', "");
+                        _this.set('_workflow.query.0.result', JSON.stringify(results, undefined, 4));
+                    }
+                    
+                    if (callback) { callback(); }
+                }).catch(function(error){
+                    console.error("Error when trying to execute query: " + error.toSource());
+                    
+                    if (callback) { callback(); }
+                });
+            }
+        };
+        
+        // Persist our queries/transformers, then the entire chain, and finally execute
+        // These asynchronous functions need a bunch of callbacks because processing can't continue until the previous step completes
+        // For example we want to ensure our queries are saved/updated properly before we try to execute anything
+        // Note we could have a non-chain, in which case we save just our queries/transformers and execute
+        if (this._workflow.isChain) {
+            this._persistWorkflowQueries(function() {_this._persistWorkflowChain(executeCallback) });
+        }
+        else {
+            // Only bother executing if we have an actual query/transformer
+            if (this._workflow.query.length > 0) {
+                this._persistWorkflowQueries(executeCallback);
+            }
+        }
     },
     
     /**
@@ -482,44 +564,71 @@ BridgeIt.QueryChainEditor = Polymer({
     _persistWorkflowQueries: function(callback) {
         var _this = this;
         var loopWorkflowItem = null;
+        var refreshPalette = false;
         var completeLength = 0;
         var loopCallback = function() {
             completeLength++;
-            if (completeLength == _this._workflow.query.length) {
-                if (callback) {
-                    callback();
+            if (completeLength === _this._workflow.query.length) {
+                // Refresh our lists if we added something
+                if (refreshPalette) {
+                    _this.getQueryServices(function() {
+                        _this.getTransformers();
+                        if (callback) {
+                            callback();
+                        }
+                    });
+                }
+                else {
+                    if (callback) {
+                        callback();
+                    }
                 }
             }
         };
         
         // Try to persist (create/update) each query/transformer in our current workflow
-        for (var i = 0; i < this._workflow.query.length; i++) {
-            loopWorkflowItem = this._workflow.query[i];
-            
-            // If we are interacting with a "mapper" type of Transformer we need to convert our UI controls to raw JSON data
-            // Basically ensuring that any changes the user made at the UI level are reflected in the data we're trying to persist
-            if (this._isTransformer(loopWorkflowItem.type) && this._isTransformerMapper(loopWorkflowItem.item.properties.type)) {
-                this._convertControlToMapper(loopWorkflowItem);
-            }
-            
-            // Check if our current query/transformer even changed since the last persist
-            // If it didn't we don't need to hit the service again
-            if (JSON.stringify(loopWorkflowItem.item) != JSON.stringify(loopWorkflowItem.originalItem)) {
-                // Now if our workflow item DID change, we want to see if the ID changed
-                // If the ID did change we'll want to try to POST (create), otherwise PUT (update)
-                if (loopWorkflowItem.originalItem._id != loopWorkflowItem.item._id) {
-                    this._saveWorkflowItem(loopWorkflowItem, loopCallback);
+        if (this._workflow.query.length > 0) {
+            for (var i = 0; i < this._workflow.query.length; i++) {
+                loopWorkflowItem = this._workflow.query[i];
+                
+                // If we are interacting with a "mapper" type of Transformer we need to convert our UI controls to raw JSON data
+                // Basically ensuring that any changes the user made at the UI level are reflected in the data we're trying to persist
+                if (this._isTransformer(loopWorkflowItem.type) && this._isTransformerMapper(loopWorkflowItem.item.properties.type)) {
+                    this._convertControlToMapper(loopWorkflowItem);
                 }
-                else {
-                    this._updateWorkflowItem(loopWorkflowItem, loopCallback);
+                // Also if we have a query (aggregate) we need to convert the raw JSON to our internal object
+                if (this._isQuery(loopWorkflowItem.type) && this._isAggregate(loopWorkflowItem.item.properties.type)) {
+                    if (loopWorkflowItem.queryFormatted) {
+                        loopWorkflowItem.item.query = JSON.parse(loopWorkflowItem.queryFormatted);
+                    }
                 }
                 
-                // Also update our internal item to know the changed version is now the current version
-                // Technically we should only do this on a valid save/update from the service
-                loopWorkflowItem.originalItem = JSON.parse(JSON.stringify(loopWorkflowItem.item));
+                // Check if our current query/transformer even changed since the last persist
+                // If it didn't we don't need to hit the service again
+                if (JSON.stringify(loopWorkflowItem.item) != JSON.stringify(loopWorkflowItem.originalItem)) {
+                    // Now if our workflow item DID change, we want to see if the ID changed
+                    // If the ID did change we'll want to try to POST (create), otherwise PUT (update)
+                    if (loopWorkflowItem.originalItem._id != loopWorkflowItem.item._id) {
+                        refreshPalette = true;
+                        this._saveWorkflowItem(loopWorkflowItem, loopCallback);
+                    }
+                    else {
+                        this._updateWorkflowItem(loopWorkflowItem, loopCallback);
+                    }
+                    
+                    // Also update our internal item to know the changed version is now the current version
+                    // Technically we should only do this on a valid save/update from the service
+                    loopWorkflowItem.originalItem = JSON.parse(JSON.stringify(loopWorkflowItem.item));
+                }
+                else {
+                    loopCallback();
+                }
             }
-            else {
-                loopCallback();
+        }
+        // If we don't have any workflow items to save just execute our callback
+        else {
+            if (callback) {
+                callback();
             }
         }
     },
@@ -604,8 +713,8 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _saveWorkflowItem: function(workflowItem, callback) {
-        // TODO MANUAL Need to determine if we use the query or transformer service for our save
-        var desiredResource = workflowItem.type === 'query' ? this.tempQueryResource : this.tempTransformerResource;
+        // MANUAL Need to determine if we use the query or transformer service for our save
+        var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
         bridgeit.$.post(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
         }).catch(function(error) {
@@ -623,8 +732,8 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _updateWorkflowItem: function(workflowItem, callback) {
-        // TODO MANUAL Need to determine if we use the query or transformer service for our update
-        var desiredResource = workflowItem.type === 'query' ? this.tempQueryResource : this.tempTransformerResource;
+        // MANUAL Need to determine if we use the query or transformer service for our update
+        var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
         bridgeit.$.put(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
         }).catch(function(error) {
@@ -632,6 +741,53 @@ BridgeIt.QueryChainEditor = Polymer({
             
             if (callback) { callback(); }
         });
+    },
+    
+    /**
+     * Search the passed list looking for an item with the matching removeId, then delete it
+     * This will make a call to deleteQuery, so this is used for deleting queries OR transformers from the palette
+     * This will also update the UI level palette
+     * @param type ('query' or 'transformer')
+     * @param removeId
+     * @param list
+     * @param listName
+     * @private
+     */
+    _removePaletteGeneric: function(type, removeId, list, listName) {
+        if (!window.confirm("Are you sure you want to delete the '" + removeId + "' " + type + "'?")) {
+            return;
+        }
+        
+        var deleteIndex = -1;
+        for (var i = 0; i < list.length; i++) {
+            if (removeId === list[i]._id) {
+                deleteIndex = i;
+                break;
+            }
+        }
+        
+        if (deleteIndex >= 0) {
+            var _this = this;
+            if (this._isQuery(type)) {
+                bridgeit.io.query.deleteQuery({
+                    account: this.account,
+                    realm: this.realm,
+                    id: removeId
+                }).then(function() {
+                    _this.splice(listName, deleteIndex, 1);
+                }).catch(function(error) {
+                     console.error('Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
+                });
+            }
+            // MANUAL Need a way to delete transformers from the client library
+            else if (this._isTransformer(type)) {
+                bridgeit.$.doDelete(this.buildUrl(this.tempQueryService, this.tempTransformerResource, removeId)).then(function() {
+                    _this.splice(listName, deleteIndex, 1);
+                }).catch(function(error){
+                    console.error('Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
+                });
+            }
+        }
     },
     
     /**
@@ -702,8 +858,8 @@ BridgeIt.QueryChainEditor = Polymer({
         var item = JSON.parse(JSON.stringify(this._lastDragged));
         var type = e.dataTransfer.getData('query') ? 'query' : 'transform'; //determine the dropped item type
         
-        // TODO TEMPORARY NTFY-378 For now we manually load the query editor with our JSON query data. Eventually this will be done at the page level via a parameter
-        if (type === 'query') {
+        // TEMPORARY NTFY-378 For now we manually load the query editor with our JSON query data. Eventually this will be done at the page level via a parameter
+        if (this._isQuery(type)) {
             var _this = this;
             
             // We need to timeout for ~2 seconds to ensure the query editor is loaded
@@ -716,6 +872,12 @@ BridgeIt.QueryChainEditor = Polymer({
             },2000);
         }
         
+        // Note that if we're not in a chain we need to limit our list to a single item
+        if (!this._workflow.isChain) {
+            this.splice('_workflow.query', 0, this._workflow.query.length);
+        }
+        
+        // Then add our item
         this.push('_workflow.query', this._makeWorkflowItem(type, item));
     },
     
@@ -756,7 +918,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _isTransformer: function(type) {
-        return type === 'transform';
+        return type === 'transform' || type === 'transformer';
     },
     
     /**
@@ -815,7 +977,7 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _selectedQueryChanged: function() {
         if (this._queryServices) {
-            this._queries = this._queryServices[this.selectedQuery].queries;
+            this.set('_queries', this._queryServices[this.selectedQuery].queries);
         }
     },
     
@@ -833,6 +995,7 @@ BridgeIt.QueryChainEditor = Polymer({
         var toReturn = {"id":"workflowItem" + this._internalId, "originalItem":JSON.parse(JSON.stringify(item)),
                         "type":type, "selected":0, "item":item, "result":""};
         
+        // For transformers we need to map our JSON data to UI elements
         if (this._isTransformer(type)) {
             // Set our default controls
             toReturn.controls = [];
@@ -841,6 +1004,10 @@ BridgeIt.QueryChainEditor = Polymer({
             if (this._isTransformerMapper(item.properties.type) && item.transform) {
                 this._convertMapperToControl(toReturn);
             }
+        }
+        // For queries we need to format the JSON for raw output
+        if (this._isQuery(type)) {
+            toReturn.queryFormatted = this._formatJSON(item.query);
         }
         
         return toReturn;
