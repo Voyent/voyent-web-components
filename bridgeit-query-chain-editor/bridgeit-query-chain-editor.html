@@ -356,6 +356,7 @@ Example:
                                             <div class="flex">
                                                 <paper-input label="Query ID:" value="{{workflowItem.item._id}}"></paper-input>
                                             </div>
+                                            <!-- TODO NTFY-378 The service input should be a dropdown with all services pull from our meta list -->
                                             <div class="flex">
                                                 <paper-input label="Service:" value="{{workflowItem.item.properties.service}}"></paper-input>
                                             </div>
@@ -409,10 +410,10 @@ Example:
                                             </tr>
                                         </table>
                                     </div>
-                                    <!-- TODO LATER Create tooling for managing Aggregate type JSON, instead of direct raw edits -->
+                                    <!-- TODO NTFY-386 Create tooling for managing Aggregate type JSON, instead of direct raw edits -->
                                     <template is="dom-if" if="{{_isFind(workflowItem.item.properties.type)}}">
                                         <div class="tab-content"> <!-- Query Page -->
-                                            <!-- TEMPORARY NTFY-378 Eventually pass the current query JSON as a parameter -->
+                                            <!-- TEMPORARY NTFY-382 Eventually pass the current query JSON as a parameter -->
                                             <bridgeit-query-editor id="queryEditor"
                                                                    service="[[workflowItem.item.properties.service]]"
                                                                    collection="[[_stripCollection(workflowItem.item.properties.service, workflowItem.item.properties.collection)]]"
