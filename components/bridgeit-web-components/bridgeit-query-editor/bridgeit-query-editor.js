@@ -116,8 +116,13 @@ BridgeIt.QueryEditor = Polymer({
      * @event queryMsgUpdated
      */
 
-    created: function() {
+    //we use ready instead of created so that the properties get initialized first
+    ready: function() {
         var _this = this;
+
+        //generate a unique ID for the editor div so we can render
+        //multiple query editors on the same page without conflicts
+        this._uniqueId = 'a'+(Date.now()+Math.floor(Math.random() * Date.now()));
 
         var jqueryBuilderURL = this.resolveUrl('./jquery-builder-import.html');
         if (!('jQuery' in window)) {
@@ -159,12 +164,6 @@ BridgeIt.QueryEditor = Polymer({
         this.addEventListener('queryEditorInitialized', function(e) {
             this.setEditorFromMongo(this._parseQueryProperty(this.query));
         });
-    },
-
-    ready: function() {
-        //generate a unique ID for the editor div so we can render
-        //multiple query editors on the same page without conflicts
-        this._uniqueId = 'a'+(Date.now()+Math.floor(Math.random() * Date.now()));
     },
 
     /**

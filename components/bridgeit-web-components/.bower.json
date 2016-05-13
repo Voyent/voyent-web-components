@@ -42,11 +42,11 @@
   "resolutions": {
     "bridgeit.io.js": "dev"
   },
-  "_release": "e5374ebc65",
+  "_release": "6e14999b12",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "e5374ebc6526e6680b37e9ed61a5486133b29a4f"
+    "commit": "6e14999b1256b9056063dcb2616b4d6504566bf0"
   },
   "_source": "git://github.com/bridgeit/bridgeit-web-components.git",
   "_target": "master",
