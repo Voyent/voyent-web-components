@@ -16,7 +16,7 @@ BridgeIt.QueryEditor = Polymer({
     factoryImpl: function(account,realm,service,collection,fields,options,queryurltarget) {
         this.account = account || null;
         this.realm = realm || null;
-        this.service = service || 'metrics';
+        this.service = service || 'event';
         this.collection = collection || 'events';
         this.fields = fields || {};
         this.options = options || {};
@@ -36,14 +36,22 @@ BridgeIt.QueryEditor = Polymer({
          */
         account: { type: String },
         /**
-         * The service that you would like to build the query for. Currently `documents`, `location`, `metrics`, `authadmin` and `mailbox` are supported.
+         * The service that you would like to build the query for. Currently `documents`, `location`, `event`, `authadmin` and `mailbox` are supported.
          */
-        service: { type: String, value: 'metrics' },
+        service: { type: String, value: 'event' },
         /**
          * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
-         * Some services may only support one collection (eg. metrics, authadmin, etc..), in this case the collection will change automatically with the service.
+         * Some services may only support one collection (eg. event, authadmin, etc..), in this case the collection will change automatically with the service.
          */
         collection: { type: String, value: 'events' },
+        /**
+         * Specifies the raw mongo query that should be loaded into the editor.
+         *
+         * Example:
+         *
+         *      {"$and":[{"state":{"$ne":null}}]}
+         */
+        query: { type: Object, value: {}, observer: '_queryChanged' },
         /**
          * Specify the inclusion or exclusion of fields to return in the result set.
          *
@@ -83,6 +91,12 @@ BridgeIt.QueryEditor = Polymer({
          */
         lastquery: { type: Object, notify: true, readOnly: true }
     },
+
+    /**
+     * Fired after the query editor is completely initialized.
+     *
+     * @event queryEditorInitialized
+     */
 
     /**
      * Fired after a query is executed, this occurs on the initial load and when calling `runQuery` or `reloadEditor`. Contains the query results and the unique fields.
@@ -140,14 +154,26 @@ BridgeIt.QueryEditor = Polymer({
             _this.reloadEditor();
             _this.fetchQueryList();
         }
+
+        //make sure we initialize any queries that are defined in the query property
+        this.addEventListener('queryEditorInitialized', function(e) {
+            this.setEditorFromMongo(this._parseQueryProperty(this.query));
+        });
+    },
+
+    ready: function() {
+        //generate a unique ID for the editor div so we can render
+        //multiple query editors on the same page without conflicts
+        this._uniqueId = 'a'+(Date.now()+Math.floor(Math.random() * Date.now()));
     },
 
     /**
      * Execute the current query.
      */
     runQuery: function() {
-        var query = $(this.$.editor).queryBuilder('getMongo');
+        var query = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
+            this._setCurrentquery(query);
             this._processTimeFields(query,true);
             this._queryService(query);
         }
@@ -237,7 +263,7 @@ BridgeIt.QueryEditor = Polymer({
      * Clears the query editor and restores the `fields` and `options` attributes to their original values.
      */
     resetEditor: function() {
-        $(this.$.editor).queryBuilder('reset');
+        $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('reset');
         this.options = JSON.parse(this.getAttribute('options')) || {};
         this.fields = JSON.parse(this.getAttribute('fields')) || {};
         this.activeQuery = null;
@@ -269,11 +295,11 @@ BridgeIt.QueryEditor = Polymer({
         this.fields = query.fields || {};
         try {
             if (Object.keys(query.query).length === 0) {
-                $(this.$.editor).queryBuilder('reset');
+                $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('reset');
             }
             else {
                 this._processTimeFields(query.query,false);
-                $(this.$.editor).queryBuilder('setRulesFromMongo',query.query);
+                $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('setRulesFromMongo',query.query);
             }
             this.activeQuery = query;
             this._setQueryHeader(query);
@@ -308,7 +334,12 @@ BridgeIt.QueryEditor = Polymer({
      * @return {boolean} Indicates if the query is valid.
      */
     validateQuery: function() {
-        return Object.keys($(this.$.editor).queryBuilder('getMongo')).length > 0;
+        var query = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('getMongo');
+        if (Object.keys(query).length > 0) {
+            this._setCurrentquery(query);
+            return true;
+        }
+        return false;
     },
 
 
@@ -377,10 +408,11 @@ BridgeIt.QueryEditor = Polymer({
         });
     },
     _buildQuery: function(id,description,services,isClone) {
-        var query = $(this.$.editor).queryBuilder('getMongo');
+        var query = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('getMongo');
         if (Object.keys(query).length === 0) {
             return null;
         }
+        this._setCurrentquery(query);
         this._processTimeFields(query,true);
         var queryToPost = {
             "query": query,
@@ -457,8 +489,9 @@ BridgeIt.QueryEditor = Polymer({
         }
     },
     _refreshQuery: function() {
-        var query = $(this.$.editor).queryBuilder('getMongo');
+        var query = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
+            this._setCurrentquery(query);
             this._processTimeFields(query,true);
             this._updateQueryURL(query);
         }
@@ -577,7 +610,7 @@ BridgeIt.QueryEditor = Polymer({
         return newVal ? newVal : val;
     },
     _setQueryHeader: function(query) {
-        var container = Polymer.dom(this.root).querySelector('#editor_group_0');
+        var container = Polymer.dom(this.root).querySelector('#'+this._uniqueId+'_group_0');
         if (!query || !query._id) {
             if (Polymer.dom(this.root).querySelector('#queryTitle')) {
                 container.removeChild(Polymer.dom(this.root).querySelector('#queryTitle'));
@@ -602,7 +635,6 @@ BridgeIt.QueryEditor = Polymer({
     },
     _updateQueryURL: function(query) {
         var queryURLTarget = this.queryurltarget;
-        this._setCurrentquery(query); //update currentquery property
         if (queryURLTarget && document.getElementById(queryURLTarget)) {
             var q = query ? JSON.stringify(query) : '{}';
             var params = '?access_token='+bridgeit.io.auth.getLastAccessToken()+'&query='+q+'&fields='+JSON.stringify(this.fields)+'&options='+JSON.stringify(this.options);
@@ -635,7 +667,7 @@ BridgeIt.QueryEditor = Polymer({
         _this._setLastquery(query);
         
         switch(this.service.toLowerCase()) {
-            case 'documents':
+            case 'documents': case 'docs':
                 params.collection = this.collection;
                 this.service_url = protocol+bridgeit.io.documentsURL+path+'/'+this.collection;
                 bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
@@ -664,10 +696,10 @@ BridgeIt.QueryEditor = Polymer({
                         this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Location Service Collection "' + this.collection + '" not supported.','type':'error'});
                 }
                 break;
-            case 'metrics':
+            case 'event': case 'metrics': //'metrics' is here for backwards compatibility
                 this.collection = 'events';
                 this.service_url = protocol+bridgeit.io.metricsURL+path+'/'+this.collection;
-                bridgeit.io.metrics.findEvents(params).then(successCallback).catch(function(error){
+                bridgeit.io.event.findEvents(params).then(successCallback).catch(function(error){
                     console.log('findEvents caught an error:', error);
                 });
                 break;
@@ -718,7 +750,8 @@ BridgeIt.QueryEditor = Polymer({
                 var keys = Object.keys(results[i]);
                 for (var j=0; j<keys.length; j++) {
                     if (uniqueFields.indexOf(keys[j]) === -1) {
-                        if (_this.service === 'metrics' && metricsIgnoredFields.indexOf(keys[j]) > -1) {
+                        //'metrics' is here for backwards compatibility
+                        if ((_this.service === 'event' || _this.service === 'metrics') && metricsIgnoredFields.indexOf(keys[j]) > -1) {
                             continue;
                         }
                         determineType(keys[j],results[i][keys[j]]);
@@ -729,9 +762,9 @@ BridgeIt.QueryEditor = Polymer({
             if (filters.length > 0 && uniqueFields.length > 0) {
                 _this.uniqueFields = uniqueFields.sort(_this._sortAlphabetically);
                 if (destroy) {
-                    $(_this.$.editor).queryBuilder('destroy');
+                    $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
                 }
-                $(_this.$.editor).queryBuilder({
+                $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
                     filters: filters.sort(_this._sortAlphabetically),
                     icons: {
                         add_group: 'fa fa-plus-square',
@@ -763,7 +796,8 @@ BridgeIt.QueryEditor = Polymer({
                 if (type === 'string' && !isArray) { //don't overwrite array operators
                     if (!dateRegex.test(val)) {
                         operators=['equal','not_equal','begins_with','not_begins_with','contains','not_contains',
-                            'ends_with','not_ends_with','is_empty','is_not_empty','is_null','is_not_null'];
+                            'ends_with','not_ends_with','less','less_or_equal','greater','greater_or_equal',
+                            'between','not_between','is_empty','is_not_empty','is_null','is_not_null'];
                     }
                     else { type = 'datetime'; }
                 }
@@ -806,7 +840,7 @@ BridgeIt.QueryEditor = Polymer({
     },
     _setupListeners: function() {
         var _this = this;
-        $(this.$.editor).on('afterCreateRuleInput.queryBuilder', function(e, rule) {
+        $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).on('afterCreateRuleInput.queryBuilder', function(e, rule) {
             var inputs = $(Polymer.dom(_this.root).querySelector('#'+rule.id + ' .rule-value-container')).children();
             if (inputs) {
                 $(inputs).bind("change",function() {
@@ -815,13 +849,25 @@ BridgeIt.QueryEditor = Polymer({
             }
         });
 
-        $(this.$.editor).on('afterUpdateRuleOperator.queryBuilder', function(e, rule) {
+        $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).on('afterUpdateRuleOperator.queryBuilder', function(e, rule) {
             if (!_this.skipListeners) {
                 _this._refreshQuery();
             }
         });
 
-        this.editor = $(this.$.editor); //expose jQuery QueryBuilder programmatically
+        this.editor = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)); //expose jQuery QueryBuilder programmatically
+
+        //fire queryEditorInitialized event only once
+        if (!this._queryEditorInitialized) {
+            //and fire it after the query editor is actually visible on the page
+            var checkExist = setInterval(function() {
+                if (_this.$$('#'+_this._uniqueId+'_group_0')) {
+                    _this._queryEditorInitialized = true;
+                    _this.fire('queryEditorInitialized');
+                    clearInterval(checkExist);
+                }
+            },10);
+        }
     },
     _sortAlphabetically: function(a,b) {
         a = (a.id ? a.id : a).toLowerCase();
@@ -829,5 +875,26 @@ BridgeIt.QueryEditor = Polymer({
         if (a < b) { return -1; }
         else if (a > b) { return  1; }
         return 0;
+    },
+    _queryChanged: function(query) {
+        //If the query editor is not initialized yet then don't proceed. We will call
+        //setEditorFromMongo again after in the queryEditorInitialized event listener
+        if (!this._queryEditorInitialized) {
+            return;
+        }
+        this.setEditorFromMongo(this._parseQueryProperty(query));
+    },
+    _parseQueryProperty: function(query) {
+        if (!query || Object.keys(query).length === 0) {
+            return null;
+        }
+        var parsedQuery;
+        try {
+            parsedQuery = JSON.parse(query);
+        }
+        catch (e) {
+            parsedQuery = query;
+        }
+        return {"query":parsedQuery};
     }
 });

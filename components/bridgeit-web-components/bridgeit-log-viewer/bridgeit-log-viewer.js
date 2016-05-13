@@ -59,13 +59,18 @@ Polymer({
         /**
          * Indicates if we should use local time in the table instead of UTC.
          */
-        local: { type: Boolean, value: false }
+        local: { type: Boolean, value: false },
+        /**
+         * Track what service (if any) is selected to filter on
+         */
+        filterService: { type: String, notify: true, observer: '_filterChanged' }
     },
-
+    
     ready: function() {
         if (!this.account) {
             this.account = bridgeit.io.auth.getLastKnownAccount()
         }
+        this._serviceList = null;
         this.fetchLogs();
         this._noLogs = false;
     },
@@ -88,7 +93,15 @@ Polymer({
         this._realmName = true;
         this._username = true;
         this._message = true;
-
+        
+        // Set any filters into our query
+        if (this.filterService !== null && typeof this.filterService !== 'undefined') {
+            this.query.service = this.filterService;
+        }
+        else {
+            delete this.query.service;
+        }
+        
         if (this.debug) {
             this._getDebugLogs();
         }
@@ -169,10 +182,17 @@ Polymer({
         this._hasNextPage = false;
         this._hasPreviousPage = true;
     },
-
-
+    
     //******************PRIVATE API******************
-
+    
+    _resetFilters: function(e) {
+        this.filterService = null;
+    },
+    
+    _filterChanged: function() {
+        this.fetchLogs();
+    },
+    
     /**
      * Retrieve audit logs from the auth service.
      * @private
@@ -221,6 +241,7 @@ Polymer({
             this._noLogs = true;
             return;
         }
+        
         if ((logs.length > this.pagesize) && (this.pagesize !== 0)) {
             this._currentPage = logs.slice(logs.length-this.pagesize,logs.length);
             this._logIndex = logs.length-this.pagesize;
@@ -235,6 +256,20 @@ Polymer({
         this._logs = logs;
         this._hasLogs = true;
         this._noLogs = false;
+        
+        // If we haven't generated a services list yet from the returned logs we will now
+        if (this._serviceList === null) {
+            this._serviceList = [];
+            var currentLog;
+            for (var i = 0; i < this._logs.length; i++) {
+                currentLog = this._logs[i];
+                
+                if (this._serviceList.indexOf(currentLog.service) === -1) {
+                    this.push('_serviceList', currentLog.service);
+                    //this._serviceList.push(currentLog.service);
+                }
+            }
+        }
 
         if (Object.keys(this.fields).length > 0) {
             this._hideColumns();

@@ -32,7 +32,7 @@ BridgeIt.QueryChainEditor = Polymer({
         // For terminology we use "chain" at the service level and "workflow" for the UI
         this.resetWorkflow();
         
-        // MANUAL For now we do some manual GET/POST/etc. until support is added to the bridgeit client library
+        // NTFY-385 MANUAL For now we do some low level GET/POST/etc. until support is added to the bridgeit client library
         this.tempUrl = 'http://dev.bridgeit.io/';
         this.tempQueryService = 'query/';
         this.tempTransformerResource = 'transformers/';
@@ -54,7 +54,7 @@ BridgeIt.QueryChainEditor = Polymer({
         this.getTransformers();
     },
     
-    /** MANUAL */
+    /** NTFY-385 MANUAL */
     buildUrl: function(service, resource, custom) {
         var toReturn = this.tempUrl + service + this.account + '/realms/' + this.realm + '/' + resource;
         if (custom) {
@@ -141,7 +141,7 @@ BridgeIt.QueryChainEditor = Polymer({
         this._transformers = [];
         
         var _this = this;
-        // MANUAL Should have a client library function to GET all transformers from the service
+        // NTFY-385 MANUAL Should have a client library function to GET all transformers from the service
         bridgeit.$.getJSON(this.buildUrl(this.tempQueryService, this.tempTransformerResource)).then(function(results) {
             if (results && results.length > 0) {
                 _this._transformers = results;
@@ -484,10 +484,11 @@ BridgeIt.QueryChainEditor = Polymer({
     _executeWorkflow: function(callback) {
         var _this = this;
         var executeCallback = function() {
-            // MANUAL We should have a way to execute a query from our client library
+            // NTFY-385 MANUAL We should have a way to execute a query from our client library
             var urlParams = "&exec=true";
             
             // If we're a chain we want to execute in debug mode
+            // TODO NTFY-384 This should work for non-chains as well. May require some result parsing changes below
             if (_this._workflow.isChain) {
                 urlParams += "&mode=debug";
             }
@@ -714,7 +715,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _saveWorkflowItem: function(workflowItem, callback) {
-        // MANUAL Need to determine if we use the query or transformer service for our save
+        // NTFY-385 MANUAL Need to determine if we use the query or transformer service for our save
         var _this = this;
         var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
         bridgeit.$.post(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
@@ -734,7 +735,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _updateWorkflowItem: function(workflowItem, callback) {
-        // MANUAL Need to determine if we use the query or transformer service for our update
+        // NTFY-385 MANUAL Need to determine if we use the query or transformer service for our update
         var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
         bridgeit.$.put(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
@@ -781,7 +782,7 @@ BridgeIt.QueryChainEditor = Polymer({
                      console.error('Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
                 });
             }
-            // MANUAL Need a way to delete transformers from the client library
+            // NTFY-385 MANUAL Need a way to delete transformers from the client library
             else if (this._isTransformer(type)) {
                 bridgeit.$.doDelete(this.buildUrl(this.tempQueryService, this.tempTransformerResource, removeId)).then(function() {
                     _this.splice(listName, deleteIndex, 1);
@@ -860,7 +861,7 @@ BridgeIt.QueryChainEditor = Polymer({
         var item = JSON.parse(JSON.stringify(this._lastDragged));
         var type = e.dataTransfer.getData('query') ? 'query' : 'transform'; //determine the dropped item type
         
-        // TEMPORARY NTFY-378 For now we manually load the query editor with our JSON query data. Eventually this will be done at the page level via a parameter
+        // TEMPORARY NTFY-382 For now we load the query editor by hand with our JSON query data. Eventually this will be done at the page level via a parameter
         if (this._isQuery(type)) {
             var _this = this;
             

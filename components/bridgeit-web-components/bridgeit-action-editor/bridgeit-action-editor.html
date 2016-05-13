@@ -1,6 +1,7 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../bridgeit-query-editor/bridgeit-query-editor.html">
 <link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
 
@@ -44,6 +45,15 @@ Example:
                background-color:transparent;
                @apply(--action-editor-form);
            }
+           .smallerF, .details {
+               font-size: smaller;
+           }
+           .details {
+               display: inline;
+           }
+           .details.toggled {
+               display: none;
+           }
            .taskPanel {
                border: 1px solid #999;
                border-bottom:0;
@@ -61,7 +71,7 @@ Example:
                line-height: 20px;
                @apply(--action-editor-task-panel-header);
            }
-           .taskPanel .taskItemPos, .taskPanel .taskClump {
+           .taskItemPos, .taskPanel .taskClump {
                height: 25px;
                min-height: 25px;
                line-height:25px;
@@ -92,7 +102,7 @@ Example:
                position:relative;
                border-radius: 5px;
                padding:10px;
-               margin-bottom: 10px;
+               margin-bottom: 30px;
                background-color:#dbdbdb;
                @apply(--action-editor-task-group);
            }
@@ -182,6 +192,7 @@ Example:
            }
            label {
                font-weight: 700;
+               display:block;
                @apply(--action-editor-label);
            }
            .form-control {
@@ -211,6 +222,7 @@ Example:
            .actionPanel,
            .task-group {
                padding-bottom: 40px !important;
+               padding-top: 20px;
            }
            .actionContainer,
            .taskItem,
@@ -247,28 +259,51 @@ Example:
            }
            .pointer {
                cursor:pointer;
+               margin-bottom:5px;
            }
            .leftPane {
                overflow-y: scroll;
            }
            .taskPane {
-               height: 500px;
+               max-height: 500px;
            }
            .taskBuffer {
                margin-bottom: 15px;
+           }
+           @-webkit-keyframes yellow-fade {   
+               0% {background: #ffff79;}
+           }
+           @keyframes yellow-fade {
+               0% {background: #ffff79;}
+           }
+           @-webkit-keyframes grow-bubble {
+               0% {transform: scale(0.2);}
+               100% {transform: scale(1.0);}
+           }
+           @keyframes grow-bubble {
+               0% {transform: scale(0.2);}
+               100% {transform: scale(1.0);}
+           }
+           .highlight {
+               -webkit-animation: yellow-fade 2s ease-in 1;
+               animation: yellow-fade 2s ease-in 1;
+           }
+           .growbubble {
+               -webkit-animation: grow-bubble 500ms;
+               animation: grow-bubble 500ms;
            }
         </style>
         <template is="dom-if" if="{{_taskGroupSchemas}}">
             <content select="bridgeit-action-list"></content>
             <div class="buttonContainer">
-                <button type="button" on-click="_resetEditor">New/Reset</button>
+                <paper-button raised on-click="_resetEditor">New/Reset</paper-button>
                 <template is="dom-if" if="{{!_loadedAction}}">
-                    <button type="button" on-click="_saveAction">Save</button>
+                    <paper-button raised on-click="_saveAction">Save</paper-button>
                 </template>
                 <template is="dom-if" if="{{_loadedAction}}">
-                    <button type="button" on-click="_updateAction">Update</button>
-                    <button type="button" on-click="_cloneAction">Clone<!-- (Save as new)--></button>
-                    <button type="button" on-click="_deleteAction">Delete</button>
+                    <paper-button raised on-click="_updateAction">Update</paper-button>
+                    <paper-button raised on-click="_cloneAction">Clone<!-- (Save as new)--></paper-button>
+                    <paper-button raised on-click="_deleteAction">Delete</paper-button>
                 </template>
             </div>
             <div class="actionWrapper layout horizontal">
@@ -279,7 +314,7 @@ Example:
                                 <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane">
                                     <template is="dom-repeat" items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
-                                        <div class="flex taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" title$="{{item.description}}">
+                                        <div class="taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                             <div class="title">{{item.label}}</div>
                                         </div>
                                     </template>
@@ -291,7 +326,7 @@ Example:
                                     <template is="dom-repeat" items="{{_taskSchemasUI}}">
                                         <div class="taskClump">{{item.label}}</div>
                                         <template is="dom-repeat" items="{{item.schemas}}">
-                                            <div class="flex taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" title$="{{item.description}}">
+                                            <div class="taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                                 <div class="title">{{item.labelUI}}</div>
                                             </div>
                                         </template>
@@ -302,14 +337,15 @@ Example:
                         </div>
                     </div>
                 </div>
-                <div class="actionContainer flex" on-dragover="_dragOverAction" on-drop="_dropInAction">
+                <div id="aeMain" class="actionContainer flex" on-dragover="_dragOverAction" on-drop="_dropInAction">
                     <div class="layout vertical">
                         <form id="actionForm">
                             <div class="flex">
                                 <div>
                                     <label title="The action ID">
                                         <span class="required">*</span><span>Action Name</span>
-                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name" value="{{_actionId::input}}" required>
+                                        <input class="form-control" type="text" placeholder="Action Name" title="The action name"
+                                               required value="{{_actionId::input}}" data-label="Action Name" >
                                     </label>
                                     <label title="The action description">
                                         <span>Description</span>
@@ -330,23 +366,30 @@ Example:
                                  -->
                                 <template is="dom-repeat" items="{{_taskGroups}}" as="group">
                                     <div id$="{{group.id}}" class="task-group" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
-                                        <div class="buttons" on-drop="_preventDrop">
+                                        <div class="buttons">
                                             <button type="button" on-click="_moveTaskGroupUp">Up</span></button>
                                             <button type="button" on-click="_moveTaskGroupDown">Down</button>
+                                            <button type="button" on-click="_cloneTaskGroup">Clone</button>
                                             <button type="button" on-click="_deleteTaskGroup">Remove</button>
                                         </div>
-                                        <div class="title" on-drop="_preventDrop" on-click="_toggleTask">{{group.schema.title}}<div class="arrow"></div></div>
+                                        <div class="title" on-click="_toggleTask" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" >
+                                            {{group.schema.title}}
+                                            <span class="smallerF">{{_formatContainerName(group.name, group.schema.taskcount)}}</span>
+                                            <div class="arrow"></div>
+                                        </div>
                                         <div class="content">
-                                            <label title="The task group name" on-drop="_preventDrop">
+                                            <label title="The task group name">
                                                 <span class="required">*</span><span>Task Group Name</span>
-                                                <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name" value="{{group.name::input}}" required>
+                                                <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name"
+                                                       required value="{{group.name::input}}" data-label="Task Group Name" data-group-id$="{{group.id}}">
                                             </label>
                                             <template is="dom-repeat" items="{{_toArray(group.schema.properties.required)}}" as="property" sort="_sortProperties">
-                                                <label on-drop="_preventDrop">
+                                                <label>
                                                     <span class="required">*</span><span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                            <select class="form-control" required value="{{property.value::change}}">
+                                                            <select class="form-control" required value="{{property.value::change}}"
+                                                                    data-label$="{{property.title}}" data-group-id$="{{group.id}}">
                                                                 <option value="" selected>Select one...</option>
                                                                 <template is="dom-repeat" items="{{property.enum}}">
                                                                     <option value="{{item}}">{{item}}</option>
@@ -355,13 +398,13 @@ Example:
                                                         </template>
                                                         <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
                                                             <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                   required value="{{property.value::input}}">
+                                                                   required value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}">
                                                         </template>
                                                     </template>
                                                 </label>
                                             </template>
                                             <template is="dom-repeat" items="{{_toArray(group.schema.properties.optional)}}" as="property" sort="_sortProperties">
-                                                <label on-drop="_preventDrop" class$="{{_addBooleanClass(property.type)}}">
+                                                <label class$="{{_addBooleanClass(property.type)}}">
                                                     <span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
@@ -383,13 +426,23 @@ Example:
                                                 </label>
                                             </template>
                                             <template is="dom-repeat" items="{{group.tasks}}" as="task">
-                                                <div class="task toggled" on-drop="_preventDrop">
-                                                    <div class="buttons"><button type="button" on-click="_deleteTask">Remove</button></div>
-                                                    <div class="title" on-click="_toggleTask">{{task.schema.title}}<div class="arrow toggled"></div></div>
+                                                <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
+                                                    <div class="buttons">
+                                                        <button type="button" on-click="_moveTaskUp">Up</span></button>
+                                                        <button type="button" on-click="_moveTaskDown">Down</button>
+                                                        <button type="button" on-click="_cloneTask">Clone</button>
+                                                        <button type="button" on-click="_deleteTask">Remove</button>
+                                                    </div>
+                                                    <div class="title" data-group-id$="{{group.id}}" on-click="_toggleTask" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon">
+                                                        {{task.schema.title}}
+                                                        <span class="details">{{_formatTaskName(task.name)}}</span>
+                                                        <div class="arrow toggled"></div>
+                                                    </div>
                                                     <div class="content toggled">
                                                         <label title="The task name">
                                                             <span class="required">*</span><span>Task Name</span>
-                                                            <input class="form-control" type="text" placeholder="Task Name" title="The task name" value="{{task.name::input}}" required>
+                                                            <input class="form-control" type="text" placeholder="Task Name" title="The task name" required value="{{task.name::input}}"
+                                                                   data-label="Task Name" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
                                                         </label>
                                                         <label title="The task description">
                                                             <span>Description</span>
@@ -444,7 +497,8 @@ Example:
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                            <select class="form-control" required value="{{property.value::change}}">
+                                                                            <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
+                                                                                    data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
                                                                                 <option value="" selected>Select one...</option>
                                                                                 <template is="dom-repeat" items="{{property.enum}}">
                                                                                     <option value="{{item}}">{{item}}</option>
@@ -452,8 +506,8 @@ Example:
                                                                             </select>
                                                                         </template>
                                                                         <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                   required value="{{property.value::input}}">
+                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
+                                                                                   value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
                                                                         </template>
                                                                     </template>
                                                                 </template>

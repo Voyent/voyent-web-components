@@ -19,8 +19,19 @@ Example:
                 min-height:200px;
                 @apply(--code-editor);
             }
+            #resizable {
+                cursor: nw-resize !important;
+                position: absolute;
+                right: 0;
+                bottom: 0;
+                height: 12px;
+                width: 12px;
+                background-image: url("resize_handle.gif");
+                background-size: 12px 12px;
+            }
         </style>
         <div id="editor"></div>
+        <div id="resizable" on-mousedown="_resizeEditor"></div>
     </template>
 </dom-module>
 
