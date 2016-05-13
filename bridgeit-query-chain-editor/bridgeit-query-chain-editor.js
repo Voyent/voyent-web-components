@@ -6,18 +6,16 @@ BridgeIt.QueryChainEditor = Polymer({
     properties: {
         /**
          * Defines the BridgeIt realm to build query chains for.
-         * @default bridgeit.io.auth.getLastKnownRealm()
          */
         realm: { type: String },
         /**
          * Defines the BridgeIt account to build query chains for.
-         * @default bridgeit.io.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
          * Defines the currently selected query service category, including the observer that will fire the changed function
          */
-        selectedQuery: { type: Number, default: 0, notify: true, observer: '_selectedQueryChanged' }
+        selectedQuery: { type: Number, value: 0, notify: true, observer: '_selectedQueryChanged' }
     },
     
     /**
@@ -861,20 +859,6 @@ BridgeIt.QueryChainEditor = Polymer({
         var item = JSON.parse(JSON.stringify(this._lastDragged));
         var type = e.dataTransfer.getData('query') ? 'query' : 'transform'; //determine the dropped item type
         
-        // TEMPORARY NTFY-382 For now we load the query editor by hand with our JSON query data. Eventually this will be done at the page level via a parameter
-        if (this._isQuery(type)) {
-            var _this = this;
-            
-            // We need to timeout for ~2 seconds to ensure the query editor is loaded
-            setTimeout(function() {
-                var comp = document.getElementById('queryEditor');
-                if (comp) {
-                    // Format the passed query and values in the proper way
-                    comp.setEditorFromMongo({"query": item.query.find, "options": item.query.options, "fields": item.query.fields });
-                }
-            },2000);
-        }
-        
         // Note that if we're not in a chain we need to limit our list to a single item
         if (!this._workflow.isChain) {
             this.splice('_workflow.query', 0, this._workflow.query.length);
@@ -1011,6 +995,11 @@ BridgeIt.QueryChainEditor = Polymer({
         // For queries we need to format the JSON for raw output
         if (this._isQuery(type)) {
             toReturn.queryFormatted = this._formatJSON(item.query);
+            
+            // Workaround for computed bindings in a dynamic template repeat being passed to Polymer components that initialize with ready
+            // Basically the computed binding isn't called early enough and is considered undefined in the ready
+            // So we replicate the computed binding here and store it as a separate property that can be directly accessed in the lifecycle
+            toReturn.collectionFormatted = this._stripCollection(item.properties.service, item.properties.collection);
         }
         
         return toReturn;
