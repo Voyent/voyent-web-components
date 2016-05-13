@@ -1,6 +1,6 @@
 {
   "name": "jQuery-QueryBuilder",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "authors": [
     {
       "name": "Damien \"Mistic\" Sorel",
@@ -22,9 +22,9 @@
   },
   "devDependencies": {
     "blanket": "^1.1.0",
-    "qunit": "^1.17.0",
-    "bootstrap-select": "^1.6.0",
-    "bootbox": "^4.3.0",
+    "qunit": "^1.23.0",
+    "bootstrap-select": "^1.10.0",
+    "bootbox": "^4.4.0",
     "awesome-bootstrap-checkbox": "^0.3.0",
     "sql-parser": "^1.0.0"
   },
@@ -51,11 +51,11 @@
     "Gruntfile.js",
     "CONTRIBUTING.md"
   ],
-  "_release": "2.3.2",
+  "_release": "2.3.3",
   "_resolution": {
     "type": "version",
-    "tag": "2.3.2",
-    "commit": "4809b8b53a1b700aacb06b006c3ed0ca7b931915"
+    "tag": "2.3.3",
+    "commit": "11259a944c4143e46c883ca684524f9ad7c5d09f"
   },
   "_source": "https://github.com/mistic100/jQuery-QueryBuilder.git",
   "_target": "~2.3",

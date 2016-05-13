@@ -1860,7 +1860,7 @@ if( ! ('bridgeit' in window)){
 					console.log('bridgeit.io.auth.connect: ms until timeout: ' + millisUntilTimeoutExpires + '(' + (millisUntilTimeoutExpires/1000/60) + ' mins)');
 					
 					//if we haven't exceeded the connection timeout, reconnect
-					if( millisUntilTimeoutExpires - timeoutPadding > 0 ){
+					if( millisUntilTimeoutExpires > 0 ){
 						console.log(new Date().toISOString() + ' bridgeit.io.auth.connect: timeout has not been exceeded, ' + 
 							services.auth.getTimeRemainingBeforeExpiry()/1000/60 + ' mins remaining before token expires, ' + 
 							millisUntilTimeoutExpires/1000/60 + ' mins remaining before timeout expires');
@@ -1868,10 +1868,15 @@ if( ! ('bridgeit' in window)){
 						//if we the time remaining before expiry is less than the session timeout
 						//refresh the access token and set the timeout 
 						if( timeoutMillis > millisUntilTimeoutExpires ){
-							services.auth.refreshAccessToken();
+							services.auth.refreshAccessToken().then(function(){
+								var cbId = setTimeout(connectCallback, services.auth.getExpiresIn() - timeoutPadding);
+								b.setSessionStorageItem(btoa(RELOGIN_CB_KEY), cbId);
+								console.log( new Date().toISOString() + ' bridgeit.io.auth.connect: setting next connection check to ' + services.auth.getExpiresIn() / 1000 / 60 + ' mins, expiresIn: ' +
+									(services.auth.getExpiresIn()/1000/60) + ' mins, remaining: '  +
+									(services.auth.getTimeRemainingBeforeExpiry()/1000/60) + ' mins');
+								
+							});
 						}
-						var cbId = setTimeout(connectCallback, millisUntilTimeoutExpires - timeoutPadding);
-						b.setSessionStorageItem(btoa(RELOGIN_CB_KEY), cbId);
 					}
 					else{
 						console.log( new Date().toISOString() + ' bridgeit.io.auth.connect: timeout has expired, disconnecting..');
@@ -1933,15 +1938,7 @@ if( ! ('bridgeit' in window)){
 					//otherwise the disired timeout is less then the token expiry
 					//so set the callback to happen just at specified timeout
 					else{
-						//var now = new Date().getTime();
 						callbackTimeout = connectionTimeoutMillis;
-						//callbackTimeout = connectionTimeoutMillis - (now - services.auth.getLastActiveTimestamp());
-						/**if((now - services.auth.getLastActiveTimestamp()) < connectionTimeoutMillis){
-						callbackTimeout = now - services.auth.getLastActiveTimestamp();
-						}
-						else{
-						callbackTimeout = connectionTimeoutMillis;
-						}*/
 					}
 
 					var tokenSetAt = new Date();
@@ -2144,8 +2141,9 @@ if( ! ('bridgeit' in window)){
 				scopeToPathCipher = b.getSessionStorageItem(btoa(SCOPE_TO_PATH_KEY)),
 				scopeToPath = scopeToPathCipher ? atob(scopeToPathCipher) : '/',
 				isDev = window.location.port !== '',
-				currentPath = window.location.pathname,
-				result = token && tokenExpiresIn && tokenSetAt && (new Date().getTime() < (tokenExpiresIn + tokenSetAt) ) && (isDev || currentPath.indexOf(scopeToPath) === 0);
+				currentPath = window.location.pathname;
+			//console.log('bridgeit.io.auth.isLoggedIn: token=' + token + ' tokenExpiresIn=' + tokenExpiresIn + 'tokenSetAt=' + tokenSetAt + ' (new Date().getTime() < (tokenExpiresIn + tokenSetAt))=' + (new Date().getTime() < (tokenExpiresIn + tokenSetAt)) + ' (currentPath.indexOf(scopeToPath) === 0)=' + (currentPath.indexOf(scopeToPath) === 0));
+			var result = token && tokenExpiresIn && tokenSetAt && (new Date().getTime() < (tokenExpiresIn + tokenSetAt) ) && (isDev || currentPath.indexOf(scopeToPath) === 0);
 			return !!result;
 		},
 
@@ -4092,6 +4090,53 @@ if( ! ('bridgeit' in window)){
 					});
 				}
 			);
+		},
+
+		/**
+		 * Searches for mail in a user's mailbox based on a query
+		 *
+		 * @alias findMail
+		 * @param {Object} params params
+		 * @param {String} params.id The user id, the user's mail to search
+		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Object} params.query A mongo query for the mail
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional query options such as limit and sort
+		 * @returns {Object} Matching mail records
+		 */
+		findMail: function (params) {
+			return new Promise(
+				function (resolve, reject) {
+
+					params = params ? params : {};
+					services.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+
+					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+						'mailboxes/' + params.id + '/mail', token, params.ssl, {
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
+
+					b.$.getJSON(url).then(function (mail) {
+						services.auth.updateLastActiveTimestamp();
+						resolve(mail);
+					})['catch'](function (response) {
+						reject(response);
+					});
+
+				}
+			);
 		}
 	};
 
@@ -4227,8 +4272,10 @@ if( ! ('bridgeit' in window)){
 
 
 	};
-
-	/* EVENT SERVICE. */
+var eventArray = [];
+  var eventsRunning;
+  var eventIndex = 0;
+	/* EVENTS SERVICE. */
 	services.event = {
 
 		/**
@@ -4323,7 +4370,6 @@ if( ! ('bridgeit' in window)){
      * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
      * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
      * @param {Object} params.eventArray An array of events that you want to fire. Events should include a 'delay' property, with the number of milliseconds to wait since the last event before firing.
-     * @returns {String} The resource URI
      */
     createCustomEvents: function(params){
       return new Promise(
@@ -4339,30 +4385,96 @@ if( ! ('bridgeit' in window)){
           //validateEventArray(params, reject);
           var url = getRealmResourceURL(services.eventURL, account, realm,
             'events', token, params.ssl);
-          //Below needs to be in the loop.
-          function recursion(index){
-            setTimeout(function(){
-              var date = new Date();
-              b.$.post(url, params.eventArray[index]).then(function(response){
-                services.auth.updateLastActiveTimestamp();
-                if(index === params.eventArray.length - 1){
-                  resolve();
-                }
-                else{
-                  recursion(index + 1);
-                }
-              })['catch'](function(error){
-                reject(error);
-              });
-            },params.eventArray[index].delay)
-          }
 
-          recursion(0);
+          eventArray = params.eventArray;
+          eventsRunning = true;
+          eventIndex=0;
+          console.log(this);
+          services.event._eventRecursion(resolve,reject,url);
+        }
+      );
+    },
+    /**
+     * Convenience method to reduce code-reuse.
+     */
+    _eventRecursion: function(resolve,reject,url){
+        if(eventsRunning) {
+          setTimeout(function () {
+            var date = new Date();
+            b.$.post(url, eventArray[eventIndex]).then(function (response) {
+              services.auth.updateLastActiveTimestamp();
+              if (eventIndex === eventArray.length - 1) {
+                resolve();
+              }
+              else {
+                eventIndex += 1;
+                services.event._eventRecursion(resolve,reject,url);
+              }
+            })['catch'](function (error) {
+              reject(error);
+            });
+          }, eventArray[eventIndex].delay)
+        }
+    },
 
+    /**
+     * Convenience method for stopping multiple events midway through
+     *
+     * @alias stopEvents.
+     */
+    stopEvents: function(){
+      eventsRunning = false;
+    },
+
+
+    /**
+     * Restart a previously paused event array
+     *
+     * @alias restartEvents.
+     * @param {Object} params params
+     * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
+     * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+     * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+     * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+     * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+     */
+    restartEvents:function(params){
+      eventsRunning = true;
+      return new Promise(
+        function(resolve, reject) {
+          params = params ? params : {};
+          services.checkHost(params);
+
+          //validate
+          var account = validateAndReturnRequiredAccount(params, reject);
+          var realm = validateAndReturnRequiredRealm(params, reject);
+          var token = validateAndReturnRequiredAccessToken(params, reject);
+          //validateRequiredEvent(params, reject);
+          //validateEventArray(params, reject);
+          var url = getRealmResourceURL(services.eventURL, account, realm,
+            'events', token, params.ssl);
+          services.event._eventRecursion(resolve,reject,url);
         }
       );
     },
 
+    /**
+     * Convenience method for getting the total number of events being process
+     *
+     * @alias getEventsSize.
+     */
+    getEventsSize: function(){
+      return eventArray.length;
+    },
+
+    /**
+     * Convenience method for getting the currenty running event
+     *
+     * @alias getCurrentEvent.
+     */
+    getCurrentEvent: function(){
+      return eventIndex;
+    },
 		/**
 		 * Retrieve the time difference in milliseconds between the provided time and the event server time.
 		 *

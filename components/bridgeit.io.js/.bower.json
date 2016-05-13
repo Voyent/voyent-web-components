@@ -19,11 +19,11 @@
     "services"
   ],
   "homepage": "https://github.com/bridgeit/bridgeit.io.js",
-  "_release": "5af3da0a79",
+  "_release": "d633a2fad8",
   "_resolution": {
     "type": "branch",
     "branch": "dev",
-    "commit": "5af3da0a79d49e87fe31a98f0f73302d0a59b0a6"
+    "commit": "d633a2fad840d4a499d4eee55aa384863e182e63"
   },
   "_source": "https://github.com/bridgeit/bridgeit.io.js.git",
   "_target": "dev",
