@@ -39,9 +39,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         padding:0;
         background-color: #028E54;
         border: 1px solid #C1C1C1;
+        @apply(--bridgeit-login-button);
       }
       paper-button[type='submit']:hover {
         background-color: #01A762;
+        @apply(--bridgeit-login-button-hover);
       }
       paper-button[type='submit']::shadow .button-content {
         padding:0;
@@ -79,13 +81,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       :host ::content .header.paper-card{
         max-height: 200px;
         border-bottom: 10px solid #027244;
+        @apply(--bridgeit-login-header);
       }
       @media (max-height: 600px) {
         :host ::content .header.paper-card{
           max-height: 80px;
         }
       }
-
 
     </style>
     <form is="iron-form" id="loginForm" on-submit="handleLogin">
