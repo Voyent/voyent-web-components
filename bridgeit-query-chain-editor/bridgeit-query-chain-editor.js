@@ -43,6 +43,7 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     initializeData: function() {
         this._internalId = 0;
+        this.loading = false;
         
         if (!this.account || !this.realm) {
             return;
@@ -194,6 +195,50 @@ BridgeIt.QueryChainEditor = Polymer({
         }
     },
     
+    /**
+     * Create a new blank query in the workflow
+     * Useful for non-chain editing
+     * @param e
+     */
+    createNewQuery: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        
+        this._addGeneric({"_id": "newQuery", "properties": {"type": "find", "service": "docs", "collection": "docs.status", "parameters": []}, "query": {"find": {}, "fields": {}, "options": {}}},
+                         'query');
+    },
+    
+    /**
+     * Create a new blank transformer in the workflow
+     * Useful for non-chain editing
+     * @param e
+     */
+    createNewTransformer: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        
+        this._addGeneric({"_id": "newTransformer", "properties": {"type": "mapper"}, "transform": {}},
+                         'transform');
+    },
+    
+    /**
+     * Add a query item to the workflow
+     * @param e
+     */
+    addQueryToWorkflow: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        
+        this._addGeneric(e.model.query, 'query');
+    },
+    
+    /**
+     * Add a transformer item to the workflow
+     * @param e
+     */
+    addTransformerToWorkflow: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        
+        this._addGeneric(e.model.transformer, 'transform');
+    },
+
     /** Adds parameters to the main workflow
      * @param e
      */
@@ -271,6 +316,24 @@ BridgeIt.QueryChainEditor = Polymer({
                 this.pop('_workflow.query.' + index + '.controls');
             }
         }
+    },
+    
+    /**
+     * Move the current workflow item up in the order
+     * @param e
+     */
+    moveUpWorkflowItem: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        this._moveGenericWorkflowItem(e.model.workflowItem, true);
+    },
+    
+    /**
+     * Move the current workflow item down in the order
+     * @param e
+     */
+    moveDownWorkflowItem: function(e) {
+        e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
+        this._moveGenericWorkflowItem(e.model.workflowItem, false);
     },
     
     /**
@@ -361,7 +424,8 @@ BridgeIt.QueryChainEditor = Polymer({
      * @param e
      */
     loadWorkflow: function(e) {
-        // TODO Show some kind of loading/animated progress on the UI when loading a workflow
+        this.set('loading', true);
+        
         var loadId = e.target.getAttribute('data-workflow-item');
         
         // First we find the workflow that was requested from our savedWorkflow list
@@ -428,6 +492,8 @@ BridgeIt.QueryChainEditor = Polymer({
             for (var insert = 0; insert < loadedItems.length; insert++) {
                 _this.push('_workflow.query', loadedItems[insert]);
             }
+            
+            _this.set('loading', false);
         },0);
     },
     
@@ -755,7 +821,7 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _removePaletteGeneric: function(type, removeId, list, listName) {
-        if (!window.confirm("Are you sure you want to delete the '" + removeId + "' " + type + "'?")) {
+        if (!window.confirm("Are you sure you want to delete the '" + removeId + "' " + type + "?")) {
             return;
         }
         
@@ -789,6 +855,23 @@ BridgeIt.QueryChainEditor = Polymer({
                 });
             }
         }
+    },
+    
+    /**
+     * Move the passed item up or down in the workflow order
+     * @param item
+     * @param isUp
+     * @private
+     */
+    _moveGenericWorkflowItem: function(item, isUp) {
+        var currPos = this._workflow.query.indexOf(item);
+        var newPos = isUp ? currPos-1 : currPos+1;
+        if (newPos < 0 || newPos == this._workflow.query.length) {
+            return;
+        }
+        
+        this.splice('_workflow.query',currPos,1);
+        this.splice('_workflow.query',newPos,0,item);
     },
     
     /**
@@ -847,7 +930,7 @@ BridgeIt.QueryChainEditor = Polymer({
             workflowDiv.classList.remove('dropzone');
         }
     },
-
+    
     /**
      * Workflow ondrop event handler.
      * @param e
@@ -856,9 +939,17 @@ BridgeIt.QueryChainEditor = Polymer({
     _dropInWorkflow: function(e) {
         e.preventDefault();
         
-        var item = JSON.parse(JSON.stringify(this._lastDragged));
-        var type = e.dataTransfer.getData('query') ? 'query' : 'transform'; //determine the dropped item type
-        
+        this._addGeneric(JSON.parse(JSON.stringify(this._lastDragged)),
+                         e.dataTransfer.getData('query') ? 'query' : 'transform');
+    },
+    
+    /**
+     * Add a generic item (either query or transformer) to our workflow
+     * @param item
+     * @param type
+     * @private
+     */
+    _addGeneric: function(item, type) {
         // Note that if we're not in a chain we need to limit our list to a single item
         if (!this._workflow.isChain) {
             this.splice('_workflow.query', 0, this._workflow.query.length);

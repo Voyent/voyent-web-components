@@ -95,8 +95,8 @@ Example:
                 font-size: small;
             }
             /* Preset Styles */
-            .palette, .workflow, .execute {
-                padding: 0 10px 0 10px;
+            .palette, .workflow, .results {
+                padding: 0 5px 0 5px;
             }
             .container {
                 max-width:none;
@@ -128,6 +128,9 @@ Example:
                 color:transparent;
             }
             /* Custom Styles */
+            paper-button {
+                min-width: 16px;
+            }
             paper-toolbar {
                 --paper-toolbar-height: 40px;
                 --paper-toolbar: {
@@ -248,6 +251,13 @@ Example:
                             </template>
                         </tbody>
                     </table>
+                    
+                    <template is="dom-if" if="[[loading]]">
+                        <center>
+                            <h3>Loading Workflow...</h3>
+                            <iron-icon icon="fingerprint"></iron-icon>
+                        </center>
+                    </template>
                 </div>
             </div>
         </div>
@@ -255,16 +265,23 @@ Example:
         <hr/>
         
         <div class="container flex layout horizontal">
-            <div id="palette" class="flex-2 section palette">
+            <div id="palette" class="flex-1 section palette">
                 <h2>
-                    <button on-click="toggleColumn" data-id="palette" data-class="flex-2">&lt;-&gt;</button>
+                    <button on-click="toggleColumn" data-id="palette" data-class="flex-1">&lt;-&gt;</button>
                     Palette
                 </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
                         <div class="header-panel">
                             <paper-header-panel>
-                                <paper-toolbar><div>Queries</div></paper-toolbar>
+                                <paper-toolbar>
+                                    <div>
+                                        <paper-button on-click="createNewQuery" title="Create a new query">
+                                            <iron-icon icon="add-circle" on-click="createNewQuery"></iron-icon>
+                                        </paper-button>
+                                        Queries
+                                    </div>
+                                </paper-toolbar>
                                 
                                 <div class="layout horizontal flex">
                                     <paper-dropdown-menu label="Service">
@@ -280,13 +297,14 @@ Example:
                                     <template is="dom-repeat" items="[[_queries]]" as="query">
                                         <paper-item class="palette-item" draggable="true"
                                                     on-dragstart="_startDragQuery" on-dragend="_commonDragEnd">
-                                            <iron-icon icon="search"></iron-icon>
+                                            <paper-button on-click="addQueryToWorkflow" title="Add this query to the workflow">                                                    
+                                                <iron-icon icon="search" on-click="addQuery"></iron-icon>
+                                            </paper-button>
                                             <paper-item-body>
                                                 <div>{{query._id}}</div>
                                             </paper-item-body>
-                                            <paper-button on-click="removePaletteQuery" data-workflow-item$="{{query._id}}">
-                                                <iron-icon icon="cancel" on-click="removePaletteQuery" data-workflow-item$="{{query._id}}"
-                                                           title="Delete this query"></iron-icon>
+                                            <paper-button on-click="removePaletteQuery" data-workflow-item$="{{query._id}}" title="Delete this query">
+                                                <iron-icon icon="cancel" on-click="removePaletteQuery" data-workflow-item$="{{query._id}}"></iron-icon>
                                             </paper-button>
                                         </paper-item>
                                     </template>
@@ -297,19 +315,27 @@ Example:
                     <div class="flex">
                         <div class="header-panel">
                             <paper-header-panel>
-                                <paper-toolbar><div>Transformers</div></paper-toolbar>
+                                <paper-toolbar>
+                                    <div>
+                                        <paper-button on-click="createNewTransformer" title="Create a new transformer">
+                                            <iron-icon icon="add-circle" on-click="createNewTransformer"></iron-icon>
+                                        </paper-button>
+                                        Transformers
+                                    </div>
+                                </paper-toolbar>
                                 
                                 <div class="flex">
                                     <template is="dom-repeat" items="[[_transformers]]" as="transformer">
                                         <paper-item class="palette-item" draggable="true"
                                                     on-dragstart="_startDragTransformer" on-dragend="_commonDragEnd">
-                                            <iron-icon icon="compare-arrows"></iron-icon>
+                                            <paper-button on-click="addTransformerToWorkflow" title="Add this transformer to the workflow">                                                    
+                                                <iron-icon icon="compare-arrows" on-click="addTransformer"></iron-icon>
+                                            </paper-button>
                                             <paper-item-body>
                                                 <div>{{transformer._id}}</div>
                                             </paper-item-body>
-                                            <paper-button on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}">
-                                                <iron-icon icon="cancel" on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}"
-                                                           title="Delete this transformer"></iron-icon>
+                                            <paper-button on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}" title="Delete this transformer">
+                                                <iron-icon icon="cancel" on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}"></iron-icon>
                                             </paper-button>
                                         </paper-item>
                                     </template>
@@ -321,9 +347,9 @@ Example:
             </div>
             
             <!-- TODO Have a way to organize (re-order mainly) a set of workflow chain items -->
-            <div id="workflow" class="flex-3 section workflow" on-dragover="_dragOverWorkflow" on-drop="_dropInWorkflow">
+            <div id="workflow" class="flex-4 section workflow" on-dragover="_dragOverWorkflow" on-drop="_dropInWorkflow">
                 <h2>
-                    <button on-click="toggleColumn" data-id="workflow" data-class="flex-3">&lt;-&gt;</button>
+                    <button on-click="toggleColumn" data-id="workflow" data-class="flex-4">&lt;-&gt;</button>
                     <template is="dom-if" if="[[_workflow.isChain]]">
                         Workflow ([[_arrayLength(_workflow.query.*)]] items)
                     </template>
@@ -345,7 +371,13 @@ Example:
                                         <template is="dom-if" if="[[_isAggregate(workflowItem.item.properties.type)]]">Aggregate</template>
                                         <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">Raw</template>
                                     </paper-tab>
-                                    <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                    <paper-button on-click="moveUpWorkflowItem" title="Move item up">
+                                        <iron-icon icon="arrow-upward" on-click="moveUpWorkflowItem"></iron-icon>
+                                    </paper-button>
+                                    <paper-button on-click="moveDownWorkflowItem" title="Move item down">
+                                        <iron-icon icon="arrow-downward" on-click="moveDownWorkflowItem"></iron-icon>
+                                    </paper-button>
+                                    <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Remove item">
                                         <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                     </paper-button>
                                 </paper-tabs>
@@ -439,7 +471,13 @@ Example:
                                         <paper-tab>Properties</paper-tab>
                                         <paper-tab>Transformer</paper-tab>
                                         <paper-tab>Raw</paper-tab>
-                                        <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                        <paper-button on-click="moveUpWorkflowItem" title="Move item up">
+                                            <iron-icon icon="arrow-upward" on-click="moveUpWorkflowItem"></iron-icon>
+                                        </paper-button>
+                                        <paper-button on-click="moveDownWorkflowItem" title="Move item down">
+                                            <iron-icon icon="arrow-downward" on-click="moveDownWorkflowItem"></iron-icon>
+                                        </paper-button>
+                                        <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Remove item">
                                             <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
                                         </paper-button>
                                     </paper-tabs>
@@ -539,15 +577,6 @@ Example:
                     </div>
                 </div>
             </div>
-            <div class="flex-1 section execute">
-                <template is="dom-repeat" items="[[_workflow.query]]" as="workflowItem">
-                    <div class="execute-item">
-                        <paper-button raised on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
-                            <iron-icon on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" icon="arrow-forward"></iron-icon>
-                        </paper-button>
-                    </div>
-                </template>
-            </div>
             <div id="results" class="flex-2 section results">
                 <h2>
                     <button on-click="toggleColumn" data-id="results" data-class="flex-2">&lt;-&gt;</button>
@@ -558,7 +587,14 @@ Example:
                         <template is="dom-repeat" items="[[_workflow.query]]" as="workflowItem">
                             <div class="header-panel">
                                 <paper-header-panel>
-                                    <paper-toolbar><div>Result ([[workflowItem.item._id]])</div></paper-toolbar>
+                                    <paper-toolbar>
+                                        <div>
+                                            <paper-button raised on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Execute workflow to here">
+                                                <iron-icon on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" icon="arrow-forward"></iron-icon>
+                                            </paper-button>
+                                            Result ([[workflowItem.item._id]])
+                                        </div>
+                                    </paper-toolbar>
                                     <bridgeit-code-editor readonly value="{{workflowItem.result}}"></bridgeit-code-editor>
                                 </paper-header-panel>
                             </div>
