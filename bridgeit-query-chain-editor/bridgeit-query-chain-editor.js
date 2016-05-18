@@ -203,7 +203,7 @@ BridgeIt.QueryChainEditor = Polymer({
     createNewQuery: function(e) {
         e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
         
-        this._addGeneric({"_id": "newQuery", "properties": {"type": "find", "service": "docs", "collection": "docs.status", "parameters": []}, "query": {"find": {}, "fields": {}, "options": {}}},
+        this._addGeneric({"_id": "newQuery", "properties": {"type": "find", "service": "event", "collection": "event.events", "parameters": []}, "query": {"find": {}, "fields": {}, "options": {}}},
                          'query');
     },
     
