@@ -16,15 +16,14 @@ Polymer({
          * Allow the Cloud transport to be used
          */
         allowCloud: { type: Boolean, value: true, reflectToAttribute: true, notify: true },
-        // TODO Implement Email and SMS once we have client library support for them
         /**
          * Allow the SMS transport to be used
          */
-        allowSMS: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        allowSMS: { type: Boolean, value: true, reflectToAttribute: true, notify: true },
         /**
          * Allow the Email transport to be used
          */
-        allowEmail: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        allowEmail: { type: Boolean, value: true, reflectToAttribute: true, notify: true },
         /**
          * The value of the Browser transport checkbox
          * This will be overridden if allowBrowser=false
@@ -39,12 +38,12 @@ Polymer({
          * The value of the SMS transport checkbox
          * This will be overridden if allowSMS=false
          */        
-        defaultSMS: { type: Boolean, value: true, reflectToAttribute: true, notify: true },
+        defaultSMS: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
         /**
          * The value of the Email transport checkbox
          * This will be overridden if allowEmail=false
          */        
-        defaultEmail: { type: Boolean, value: true, reflectToAttribute: true, notify: true },
+        defaultEmail: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
     },
     
     /**
@@ -129,9 +128,8 @@ Polymer({
 	 * This will also log the data to the web console
 	 */
 	debugSubmit: function() {
-	    this.debugJSON = this.getTemplateJSON();
-	    console.log(this.debugJSON.toSource());
-	    this.debugJSON = JSON.stringify(this.debugJSON, null, 4);
+	    this.set('debugJSON', JSON.stringify(this.getTemplateJSON(), null, 4));
+	    console.log(this.debugJSON);
 	},
 	
 	/**
@@ -167,6 +165,18 @@ Polymer({
 	        }
 	        
 	        toReturn.cloud.data.metadata = this._generateMetadata("cloud");
+	    }
+	    if (this.allowEmail && this.tool.transport.email) {
+	        toReturn.email = {
+	            "data": { }
+	        };
+	        toReturn.email.data.metadata = this._generateMetadata("email");
+	    }
+	    if (this.allowSMS && this.tool.transport.sms) {
+	        toReturn.sms = {
+	            "data": { }
+	        };
+	        toReturn.sms.data.metadata = this._generateMetadata("sms");
 	    }
 	    
 	    return toReturn;
