@@ -3,6 +3,10 @@ Polymer({
 
     properties: {
         /**
+         * Enable debug mode, where the component can be manually submitted and the template JSON viewed
+         */
+        debug: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        /**
          * Allow the Browser transport to be used
          * If this (or any "allow" flag is false) the user won't be able to interact with that transport
          *  on the UI page level, as we will not show any related control elements
@@ -120,6 +124,12 @@ Polymer({
         };
 	},
 	
+	debugSubmit: function() {
+	    this.debugJSON = this.getTemplateJSON();
+	    console.log(this.debugJSON.toSource());
+	    this.debugJSON = JSON.stringify(this.debugJSON, null, 4);
+	},
+	
 	/**
 	 * Convert our UI controls into JSON data format usable by actionable notifications
 	 * Basically we want to take all the user choices (like which checkboxes they have) and figure out the
@@ -139,11 +149,19 @@ Polymer({
 	    }
 	    if (this.allowCloud && this.tool.transport.cloud) {
 	        toReturn.cloud = {
-	            "details": this._getField("details", "cloud"),
-	            "subject": this._getField("subject", "cloud"),
-	            "url": this._getField("url", "cloud"),
 	            "data": { }
 	        };
+	        
+	        if (this._hasField("details", "cloud")) {
+	            toReturn.cloud.details = this._getField("details", "cloud");
+	        }
+	        if (this._hasField("subject", "cloud")) {
+	            toReturn.cloud.subject = this._getField("subject", "cloud");
+	        }
+	        if (this._hasField("url", "cloud")) {
+	            toReturn.cloud.url = this._getField("url", "cloud");
+	        }
+	        
 	        toReturn.cloud.data.metadata = this._generateMetadata("cloud");
 	    }
 	    

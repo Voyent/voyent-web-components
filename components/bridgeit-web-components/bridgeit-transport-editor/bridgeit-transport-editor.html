@@ -22,6 +22,10 @@ Displays a transport editor that can build message templates for various technol
            .indentTd {
                padding-left: 10px;
            }
+           .code-editor {
+               width: 100%;
+               min-height: 200px;
+           }
            .form-control {
                 display: inline;
                 width: 90%;
@@ -312,6 +316,15 @@ Displays a transport editor that can build message templates for various technol
             
             </template>
             </table>
+            
+            <template is="dom-if" if="[[debug]]">
+                <hr/>
+                <h2>
+                    Notification JSON
+                    <button on-click="debugSubmit">Test Submit</button>
+                </h2>
+                <pre>[[debugJSON]]</pre>
+            </template>
         </div>
     </template>
 </dom-module>
