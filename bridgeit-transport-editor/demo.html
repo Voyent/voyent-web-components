@@ -73,7 +73,6 @@
 			password: password
 		}).then(function(){
 			setCredentialsOnComponent();
-            document.getElementById('actionEditor').initialize();
 		})['catch'](function(){
 			//try to login as admin
 			bridgeit.io.auth.connect({
@@ -88,17 +87,13 @@
 	}
 
 	function setCredentialsOnComponent(){
-		var elem = document.getElementById('actionEditor');
-
 		var account = bridgeit.io.auth.getLastKnownAccount();
 		if( account ){
-			elem.setAttribute('account', account);
 			document.getElementById('account').value = account;
 		}
 
 		var realm = bridgeit.io.auth.getLastKnownRealm();
 		if( realm ){
-			elem.setAttribute('realm', realm);
 			document.getElementById('realm').value = realm;
 		}
 	}
