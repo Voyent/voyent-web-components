@@ -124,6 +124,10 @@ Polymer({
         };
 	},
 	
+	/**
+	 * Function to debug our JSON notification template and allow it to be displayed to the user
+	 * This will also log the data to the web console
+	 */
 	debugSubmit: function() {
 	    this.debugJSON = this.getTemplateJSON();
 	    console.log(this.debugJSON.toSource());
@@ -145,7 +149,7 @@ Polymer({
 	                "payload": this.tool.payload
 	            }
             };
-            toReturn.browser.metadata = this._generateMetadata("browser");
+            toReturn.browser.message.metadata = this._generateMetadata("browser");
 	    }
 	    if (this.allowCloud && this.tool.transport.cloud) {
 	        toReturn.cloud = {
