@@ -2,6 +2,7 @@
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
 <link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../bridgeit-transport-editor/bridgeit-transport-editor.html">
 <link rel="import" href="../bridgeit-query-editor/bridgeit-query-editor.html">
 <link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
 
@@ -461,8 +462,13 @@ Example:
                                                                             <span>{{property.title}}</span>
                                                                             <template is="dom-if" if="{{_isString(property.type)}}">
                                                                                 <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                    <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                          disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                    <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                                        <bridgeit-transport-editor></bridgeit-transport-editor>
+                                                                                    </template>
+                                                                                    <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                    </template>
                                                                                 </template>
                                                                                 <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                                     <template is="dom-if" if="{{_hasEnum(property.enum)}}">
@@ -492,8 +498,13 @@ Example:
                                                                 <span class="required">*</span><span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                        <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                            <bridgeit-transport-editor></bridgeit-transport-editor>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                            <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                  disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                        </template>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
@@ -521,8 +532,13 @@ Example:
                                                                 <span>{{property.title}}</span>
                                                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                                                     <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                        <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                            <bridgeit-transport-editor></bridgeit-transport-editor>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">                                                                    
+                                                                            <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                  disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                        </template>
                                                                     </template>
                                                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">

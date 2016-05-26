@@ -1487,6 +1487,16 @@ Polymer({
     },
     
     /**
+     * Template helper function.
+     * @param title
+     * @return {boolean}
+     * @private
+     */
+    _isTransportEditor: function(title) {
+        return title.toLowerCase() === 'messagetemplate';
+    },
+    
+    /**
      * Template helper function
      * Format the passed name with brackets and spacing as necessary
      * This is meant to be used in the collapsed title of a task group

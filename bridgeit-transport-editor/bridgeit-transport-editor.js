@@ -69,7 +69,7 @@ Polymer({
                 "usecloud": true,
                 "usesms": true,
                 "useemail": true,
-                "generic": null,
+                "global": null,
                 "browser": null,
                 "cloud": null,
                 "sms": null,
@@ -80,7 +80,7 @@ Polymer({
                 "usecloud": true,
                 "usesms": true,
                 "useemail": true,
-                "generic": null,
+                "global": null,
                 "browser": null,
                 "cloud": null,
                 "sms": null,
@@ -91,18 +91,18 @@ Polymer({
                 "usecloud": true,
                 "usesms": true,
                 "useemail": true,
-                "generic": null,
+                "global": null,
                 "browser": null,
                 "cloud": null,
                 "sms": null,
                 "email": null
             },
-            "expiryDate": {
+            "expiryTime": {
                 "usebrowser": true,
                 "usecloud": true,
                 "usesms": true,
                 "useemail": true,
-                "generic": null,
+                "global": 4320,
                 "browser": null,
                 "cloud": null,
                 "sms": null,
@@ -113,13 +113,13 @@ Polymer({
                 "usecloud": true,
                 "usesms": true,
                 "useemail": true,
-                "generic": null,
+                "global": "info",
                 "browser": null,
                 "cloud": null,
                 "sms": null,
                 "email": null
             },
-            "payload": ""
+            "payload": "{}"
         };
 	},
 	
@@ -141,81 +141,67 @@ Polymer({
 	getTemplateJSON: function() {
 	    var toReturn = {};
 	    
+	    // First add our global JSON
+	    toReturn.global = {
+	        "subject": this.tool.subject.global,
+	        "details": this.tool.details.global,
+	        "url": this.tool.url.global,
+	        "priority": this.tool.priority.global,
+	        "expire_time": this.tool.expiryTime.global,
+	        "sent_time": new Date(),
+	        "payload": JSON.parse(this.tool.payload)
+	    };
+	    
 	    if (this.allowBrowser && this.tool.transport.browser) {
-	        toReturn.browser = {
-	            "message": {
-	                "payload": this.tool.payload
-	            }
-            };
-            toReturn.browser.message.metadata = this._generateMetadata("browser");
+	        toReturn.browser = this._getOverrideData("browser");
 	    }
 	    if (this.allowCloud && this.tool.transport.cloud) {
-	        toReturn.cloud = {
-	            "data": { }
-	        };
-	        
-	        if (this._hasField("details", "cloud")) {
-	            toReturn.cloud.details = this._getField("details", "cloud");
-	        }
-	        if (this._hasField("subject", "cloud")) {
-	            toReturn.cloud.subject = this._getField("subject", "cloud");
-	        }
-	        if (this._hasField("url", "cloud")) {
-	            toReturn.cloud.url = this._getField("url", "cloud");
-	        }
-	        
-	        toReturn.cloud.data.metadata = this._generateMetadata("cloud");
+	        toReturn.cloud = this._getOverrideData("cloud");
 	    }
 	    if (this.allowEmail && this.tool.transport.email) {
-	        toReturn.email = {
-	            "data": { }
-	        };
-	        toReturn.email.data.metadata = this._generateMetadata("email");
+	        toReturn.email = this._getOverrideData("email");
 	    }
 	    if (this.allowSMS && this.tool.transport.sms) {
-	        toReturn.sms = {
-	            "data": { }
-	        };
-	        toReturn.sms.data.metadata = this._generateMetadata("sms");
+	        toReturn.sms = this._getOverrideData("sms");
 	    }
 	    
 	    return toReturn;
 	},
 	
 	/**
-	 * Function to generate metadata JSON for the passed transport
+	 * Function to generate override data JSON for the passed transport
 	 * This will pull data from our internal UI controls and populate (if available):
-	 *  desc, url, expiryDate, priority
+	 *  subject, details, url, priority
 	 * @param transport
 	 */
-	_generateMetadata: function(transport) {
-	    var metadata = { };
+	_getOverrideData: function(transport) {
+	    var toReturn = { };
 	    
+	    if (this._hasField("subject", transport)) {
+	        toReturn.desc = this._getField("details", transport);
+	    }
 	    if (this._hasField("details", transport)) {
-	        metadata.desc = this._getField("details", transport);
+	        toReturn.desc = this._getField("details", transport);
 	    }
 	    if (this._hasField("url", transport)) {
-	        metadata.url = this._getField("url", transport);
-	    }
-	    if (this._hasField("expiryDate", transport)) {
-	        metadata.expiryDate = this._getField("expiryDate", transport);
+	        toReturn.url = this._getField("url", transport);
 	    }
 	    if (this._hasField("priority", transport)) {
-	        metadata.priority = this._getField("priority", transport);
+	        toReturn.priority = this._getField("priority", transport);
 	    }
 	    
-	    return metadata;
+	    return toReturn;
 	},
 	
 	/**
 	 * Function to return the value of a single field from our UI controls
 	 * This will determine if the user requested we use the generic global value or a specific override value
-	 * Basically look at the "useTransport" flag and return data for either "generic" or "transport"
+	 * Basically look at the "useTransport" flag and return data for either "global" or "transport"
 	 * @param field such as "details" or "url"
 	 * @param transport such as "browser" or "cloud"
 	 */
 	_getField: function(field, transport) {
-	    return this.tool[field]['use' + transport] ? this.tool[field]['generic'] : this.tool[field][transport];
+	    return this.tool[field]['use' + transport] ? null : this.tool[field][transport];
 	},
 	
 	/**
@@ -226,6 +212,7 @@ Polymer({
 	 */
 	_hasField: function(field, transport) {
 	    var toCheck = this._getField(field, transport);
+	    //var toCheck = this.tool[field][transport];
 	    
 	    return typeof toCheck !== 'undefined' && toCheck !== null;
 	}
