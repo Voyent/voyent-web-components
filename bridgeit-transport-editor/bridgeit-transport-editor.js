@@ -60,7 +60,7 @@ Polymer({
                       '_tool.details.usebrowser, _tool.details.usecloud, _tool.details.usesms, _tool.details.useemail, _tool.details.global, _tool.details.browser, _tool.details.cloud, _tool.details.sms, _tool.details.email,' +
                       '_tool.url.usebrowser, _tool.url.usecloud, _tool.url.usesms, _tool.url.useemail, _tool.url.global, _tool.url.browser, _tool.url.cloud, _tool.url.sms, _tool.url.email,' +
                       '_tool.priority.usebrowser, _tool.priority.usecloud, _tool.priority.usesms, _tool.priority.useemail, _tool.priority.global, _tool.priority.browser, _tool.priority.cloud, _tool.priority.sms, _tool.priority.email,' +
-                      '_tool.expiryTime.global, _tool.payload)'
+                      '_tool.expire_time.global, _tool.payload)'
     ],
     
     /**
@@ -77,7 +77,7 @@ Polymer({
 	    }
 	    
 	    // If we don't have a valid tool state (such as nothing being passed via 'value') we default
-	    if (typeof this._tool === 'undefined' || this._tool === null) {
+	    if (!this._isDefined(this._tool)) {
 	        this._setDefaultTool();
 	    }
 	},
@@ -92,10 +92,14 @@ Polymer({
 	    var toReturn = {};
 	    
 	    // Payload may be in the process of updating, so ignore any errors for now
+	    // Also restore to default if we're blanked out or undefined
+	    if (!this._isDefined(this._tool.payload) || this._tool.payload == "" || this._tool.payload.trim().length === 0) {
+	        this._tool.payload = "{}";
+	    }
 	    this.validPayload = {};
-	    try{
-	        validPayload = JSON.parse(this._tool.payload);
-	    }catch(ignored) { }
+        try{
+            validPayload = JSON.parse(this._tool.payload);
+        }catch(ignored) {}
 	    
 	    // First add our global JSON
 	    toReturn.global = {
@@ -103,7 +107,7 @@ Polymer({
 	        "details": this._tool.details.global,
 	        "url": this._tool.url.global,
 	        "priority": this._tool.priority.global,
-	        "expire_time": this._tool.expiryTime.global,
+	        "expire_time": this._tool.expire_time.global,
 	        "sent_time": new Date(),
 	        "payload": validPayload
 	    };
@@ -132,7 +136,65 @@ Polymer({
 	    // First clear the state of our tool, or populate defaults as necessary
 	    this._setDefaultTool();
 	    
-	    // TODO Next try to convert the incoming JSON to valid UI tool state
+	    // Update our global fields if possible
+	    if (this._isDefined(json['global'])) {
+	        // Set our generic fields and then our individual fields
+	        this._setTransportFromJSON(json, 'global');
+	        this._setFieldFromJSON(json, 'global', 'expire_time');
+	        
+	        // Also update the payload accordingly
+	        if (this._isDefined(json['global']['payload'])) {
+	            this.set('_tool.payload', JSON.stringify(json['global']['payload']));
+	        }
+	    }
+	    
+	    // Check our incoming data for each transport type
+	    this._setTransportFromJSON(json, 'browser');
+	    this._setTransportFromJSON(json, 'cloud');
+	    this._setTransportFromJSON(json, 'sms');
+	    this._setTransportFromJSON(json, 'email');
+	},
+	
+	/**
+	 * Function to set a transport chunk into our UI tooling, such as Browser
+	 * This will check if the desired transport is available in our passed JSON,
+	 *  and if so will toggle our checkbox and try to populate:
+	 *  subject, details, url, priority
+	 * @param json
+	 * @param transport
+	 */
+	_setTransportFromJSON: function(json, transport) {
+	    if (this._isDefined(json[transport])) {
+	        if ('global' !== transport) {
+	            this.set('_tool.transport.' + transport, true);
+	        }
+	        this._setFieldFromJSON(json, transport, 'subject');
+	        this._setFieldFromJSON(json, transport, 'details');
+	        this._setFieldFromJSON(json, transport, 'url');
+	        this._setFieldFromJSON(json, transport, 'priority');
+	    }
+	},
+	
+	/**
+	 * Function to set an individual field (such as Subject for Browser) in our UI tooling
+	 * @param json to set from
+	 * @param transport
+	 * @param path
+	 */
+	_setFieldFromJSON: function(json, transport, path) {
+	    if (this._isDefined(json[transport][path])) {
+	        this.set('_tool.' + path + '.' + transport, json[transport][path]);
+	        this.set('_tool.' + path + '.use' + transport, false);
+	    }
+	},
+	
+	/**
+	 * Check if the passed value is defined and not null
+	 * @param value
+	 * @return {boolean}
+	 */
+	_isDefined: function(value) {
+	    return typeof value !== 'undefined' && value !== null;
 	},
 	
 	/**
@@ -180,7 +242,7 @@ Polymer({
 	_hasField: function(field, transport) {
 	    var toCheck = this._getField(field, transport);
 	    
-	    return typeof toCheck !== 'undefined' && toCheck !== null && toCheck != "";
+	    return this._isDefined(toCheck) && toCheck != "";
 	},
 	
 	/**
@@ -190,18 +252,14 @@ Polymer({
         // If we're triggered from a tool change we just ignore
         // The only time we want to do anything with our new data is if it's set from a non-tool change
         // Such as an initial load from an attribute specified on the page
-        var setDebugData = this.value;
         if (!this.triggeredFromTool) {
             this.convertJSONToUI(this.value);
-        }
-        else {
-            setDebugData = this.convertUIToJSON();
         }
         this.triggeredFromTool = false;
         
         // Update our debug panel if visible
         if (this.debug) {
-            this.set('debugJSON', JSON.stringify(setDebugData, null, 4));
+            this.set('debugJSON', JSON.stringify(this.value, null, 4));
         }
     },
     
@@ -257,9 +315,6 @@ Polymer({
                 "sms": null,
                 "email": null
             },
-            "expiryTime": {
-                "global": 4320,
-            },
             "priority": {
                 "usebrowser": true,
                 "usecloud": true,
@@ -270,6 +325,9 @@ Polymer({
                 "cloud": null,
                 "sms": null,
                 "email": null
+            },
+            "expire_time": {
+                "global": 4320,
             },
             "payload": "{}"
         });
