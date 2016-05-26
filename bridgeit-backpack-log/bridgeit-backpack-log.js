@@ -39,7 +39,7 @@ Polymer({
          *      //500 log records + sort by time (descending)
          *      {"limit":500,"sort":{"time":-1}}
          */
-        options: { type: Object, value: {"limit":2000,"sort":{"time":-1}} },
+        options: { type: Object, value: {"limit":500,"sort":{"time":-1}} },
         /**
          * Selected index of the time limit dropdown
          */
@@ -272,7 +272,7 @@ Polymer({
             currentLog.taskItem = null;
             
             // If we find a "start" string we have a new past action
-            if (currentLog.message.indexOf(strStart) !== -1) {
+            if (currentLog.message.lastIndexOf(strStart, 0) === 0) {
                 // There could be starts for taskGroups as well. We just want actions
                 // The desired format is: start [action]
                 // So look for exactly 2 brackets
@@ -312,7 +312,7 @@ Polymer({
                 currentLog.message += strStart;
             }
             // We also want to account for the "end" string that marks the end of an action
-            else if (currentLog.message.indexOf(strEnd) !== -1) {
+            else if (currentLog.message.lastIndexOf(strEnd, 0) === 0) {
                 if (currentLog.message.split("[").length-1 === 1 && currentLog.message.split("]").length-1 === 1) {
                     currentLog.action = currentLog.message.substring((strEnd + " [").length);
                     currentLog.action = currentLog.action.substring(0, currentLog.action.indexOf("]")).trim();
@@ -333,7 +333,7 @@ Polymer({
                 currentLog.message += strEnd;
             }
             // Account for Task Result, which is backpack content
-            else if (currentLog.message.indexOf(strTaskResult) !== -1) {
+            else if (currentLog.message.lastIndexOf(strTaskResult, 0) === 0) {
                 currentLog.message = currentLog.message.substring(strTaskResult.length).trim();
             }
             
