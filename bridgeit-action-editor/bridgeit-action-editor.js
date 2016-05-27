@@ -419,14 +419,31 @@ Polymer({
             delete taskGroups[i].schema;
 
             var tasks = taskGroups[i].tasks;
-            for (var j=0; j<tasks.length; j++) {
+            for (var j=tasks.length-1; j>=0; j--) {
                 tasks[j].params = {}; //create action params object
                 tasks[j].type = tasks[j].schema.title; //move title to type property
                 processTasks(tasks[j]);
-                //cleanup values that aren't used in the action
-                delete tasks[j].id;
-                delete tasks[j].schema;
+                if (!tasks[j].schema.isElseTask) {
+                    //cleanup values that aren't used in the action
+                    delete tasks[j].id;
+                    delete tasks[j].schema;
+                }
+                else {
+                    //we have a conditional task group and an else task so move the task item to the elseTasks list
+                    if (!taskGroups[i].elseTasks) {
+                        taskGroups[i].elseTasks = [];
+                    }
+                    //add task to elseTasks
+                    taskGroups[i].elseTasks.push(tasks[j]);
+                    //remove task from tasks
+                    taskGroups[i].tasks.splice(j,1);
+                    //cleanup values that aren't used in the action
+                    delete taskGroups[i].elseTasks[taskGroups[i].elseTasks.length-1].id;
+                    delete taskGroups[i].elseTasks[taskGroups[i].elseTasks.length-1].schema;
+                }
             }
+            //since we looped backwards (to accommodate the splice) the elseTasks will be in the reverse order
+            taskGroups[i].elseTasks.reverse();
         }
         action.taskGroups = taskGroups;
         return action;
@@ -734,21 +751,33 @@ Polymer({
             processTaskGroups(taskGroups[i]);
             //cleanup type since it's not used in UI
             delete taskGroups[i].type;
-
+            //process tasks
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
-                //add uniqueID for drag/drop functionality
-                tasks[j].id = this._taskBaseId+j;
-                //add schema inside task for mapping UI values
-                tasks[j].schema = JSON.parse(JSON.stringify(this._taskSchemasMap[tasks[j].type])); //clone object (it is valid JSON so this technique is sufficient)
-                taskGroups[i].schema.taskcount++;
-                processTasks(tasks[j]);
-                //cleanup values that aren't used in the UI
-                delete tasks[j].type;
-                delete tasks[j].params;
+                convertTasks(tasks[j],false);
+            }
+            //process elseTasks (for conditional task groups)
+            var elseTasks = taskGroups[i].elseTasks;
+            if (elseTasks) {
+                for (var k=0; k<elseTasks.length; k++) {
+                    convertTasks(elseTasks[k],true);
+                }
+                //combine the two arrays into one for the template
+                taskGroups[i].tasks = tasks.concat(elseTasks);
+                delete taskGroups[i].elseTasks;
             }
         }
         return taskGroups;
+
+        function convertTasks(task,isElseTask) {
+            //add uniqueID for drag/drop functionality
+            task.id = _this._taskBaseId+j;
+            //add schema inside task for mapping UI values
+            task.schema = JSON.parse(JSON.stringify(_this._taskSchemasMap[task.type])); //clone object (it is valid JSON so this technique is sufficient)
+            task.schema.isElseTask = isElseTask;
+            taskGroups[i].schema.taskcount++;
+            processTasks(task);
+        }
 
         function processTaskGroups(taskGroup) {
             _this._processProperties(taskGroup.schema.properties,function(type,propName,property) {
@@ -812,7 +841,14 @@ Polymer({
         // Add a highlight effect showing all droppable areas for tasks
         var tgroups = this.querySelectorAll('.task-group');
         Array.prototype.forEach.call(tgroups, function(el, i) {
-            el.classList.add('highlight');
+            if (el.getAttribute('data-title') === 'conditional-taskgroup') {
+                //for a conditional task group only the if/else sections are highlighted
+                el.querySelector('.if').classList.add('highlight');
+                el.querySelector('.else').classList.add('highlight');
+            }
+            else {
+                el.classList.add('highlight');
+            }
         });
     },
     
@@ -824,7 +860,14 @@ Polymer({
     _dragEndCommon: function(e) {
         var tgroups = this.querySelectorAll('.task-group');
         Array.prototype.forEach.call(tgroups, function(el, i) {
-            el.classList.remove('highlight');
+            if (el.getAttribute('data-title') === 'conditional-taskgroup') {
+                //for a conditional task group only the if/else sections are highlighted
+                el.querySelector('.if').classList.remove('highlight');
+                el.querySelector('.else').classList.remove('highlight');
+            }
+            else {
+                el.classList.remove('highlight');
+            }
         });
         
         var acont = this.querySelectorAll('.actionContainer');
@@ -1010,10 +1053,13 @@ Polymer({
             e.stopPropagation();
             return;
         }
+        //determine if the task was dropped in the conditional task group else area
+        data.isElseTask = !!(e.target.className.indexOf('conditional-task-group') > -1 && e.target.className.indexOf('else') > -1);
 
         // Try to get our task group index from the target ID
         // However there is a chance the user dropped the element on a component inside the container
-        // In that case our target ID will be invalid
+        // or that the user dropped into a conditional task group drop area
+        // In these cases our target ID will be invalid
         // If that happens we will reverse traverse looking for "taskGroupX" ID to strip and use
         var taskGroupIndex = e.target.id.indexOf(this._taskGroupBaseId) === 0 ? this._stripIndex(e.target.id) : null;
         if (typeof taskGroupIndex !== 'number') {
@@ -1405,6 +1451,15 @@ Polymer({
         if (a < b) { return -1; }
         else if (a > b) { return  1; }
         return 0;
+    },
+
+    /**
+     * Template helper function.
+     * @param title
+     * @private
+     */
+    _isConditionalTaskGroup: function(title) {
+        return title === 'conditional-taskgroup';
     },
 
     /**
