@@ -355,7 +355,7 @@ Polymer({
                     var definedCount=0;
                     var propertyVal = oneOfGroups[k];
                     for (var l=0; l<propertyVal.length; l++) {
-                        if (propertyVal[l] && propertyVal[l].trim().length > 0) {
+                        if (propertyVal[l] && propertyVal[l].toString().trim().length > 0) {
                             definedCount++;
                         }
                     }
