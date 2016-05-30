@@ -1082,10 +1082,7 @@ Polymer({
         }
         
         //Only add if we actually have a proper index figured out +
-        //For conditional task groups, don't allow dropping outside of if/else areas
-        if (typeof taskGroupIndex !== 'number') { /*||
-            (this._taskGroups[taskGroupIndex].schema.title === 'conditional-taskgroup' &&
-            e.target.className.indexOf('conditional-task-group') === -1)) {*/
+        if (typeof taskGroupIndex !== 'number' ) {
             return;
         }
 
@@ -1128,14 +1125,15 @@ Polymer({
                     this.splice('_taskGroups.' + taskGroupIndex + '.tasks', insertIndex, 0,  {"id": newid,"schema": data});
                 }
                 else {
-                    //if the position hasn't changed do nothing
-                    if ((previousGroupIndex === taskGroupIndex) &&
-                        (currPos === insertIndex)) {
-                        return;
+                    //always set the isElseTask flag in case it changed
+                    this.set('_taskGroups.'+previousGroupIndex+'.tasks.'+currPos+'.schema.isElseTask',data.schema.isElseTask);
+                    //if the position hasn't changed then there's nothing to move
+                    if (!((previousGroupIndex === taskGroupIndex) &&
+                        (currPos === insertIndex))) {
+                        //move from current position to new position
+                        this.splice('_taskGroups.'+previousGroupIndex+'.tasks',currPos,1);
+                        this.splice('_taskGroups.'+taskGroupIndex+'.tasks',insertIndex,0,data);
                     }
-                    //move from current position to new position
-                    this.splice('_taskGroups.'+previousGroupIndex+'.tasks',currPos,1);
-                    this.splice('_taskGroups.'+taskGroupIndex+'.tasks',insertIndex,0,data);
                 }
 
             }
@@ -1346,8 +1344,9 @@ Polymer({
         var currPos = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
         var newPos = currPos-1;
         if (newPos < 0) {
-            //it's possible the that we have a conditional task group and there are no tasks
-            //inside the "if" section, if that's the case then we can "move" this one up
+            //it's possible the that we have a conditional task group and there
+            //are no tasks inside the "if" section, if that's the case then we
+            //can "move" this one up by changing the isElseTask flag
             if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
                 this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask) {
                 this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',false);
@@ -1355,10 +1354,13 @@ Polymer({
             return;
         }
 
-        //special handling for conditional task groups so we can move task items between the if / else sections
+        //special handling for conditional task groups for moving tasks between the if / else sections
         if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
+            this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask &&
             !this._taskGroups[groupIndex].tasks[newPos].schema.isElseTask) {
                 this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',false);
+                //don't splice since we just "moved" between a conditional if/else group
+                return;
         }
 
         //move the task up
@@ -1385,8 +1387,9 @@ Polymer({
         var currPos = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
         var newPos = currPos+1;
         if (newPos == this._taskGroups[groupIndex].tasks.length) {
-            //it's possible the that we have a conditional task group and there are no tasks
-            //inside the "else" section, if that's the case then we can "move" this one down
+            //it's possible the that we have a conditional task group and there
+            //are no tasks inside the "else" section, if that's the case then we
+            //can "move" this one down by changing the isElseTask flag
             if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
                 !this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask) {
                 this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',true);
@@ -1394,11 +1397,13 @@ Polymer({
             return;
         }
 
-        //special handling for conditional task groups so we can move task items between the if / else sections
-        if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup') {
-            if (this._taskGroups[groupIndex].tasks[newPos].schema.isElseTask) {
-                this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',true);
-            }
+        //special handling for conditional task groups for moving tasks between the if / else sections
+        if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
+            !this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask &&
+            this._taskGroups[groupIndex].tasks[newPos].schema.isElseTask) {
+            this.set('_taskGroups.' + groupIndex + '.tasks.' + currPos + '.schema.isElseTask', true);
+            //don't splice since we just "moved" between a conditional if/else group
+            return;
         }
 
         //move the task down
