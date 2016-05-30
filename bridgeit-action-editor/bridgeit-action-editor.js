@@ -445,6 +445,10 @@ Polymer({
             //since we looped backwards (to accommodate the splice) the elseTasks will be in the reverse order
             if (taskGroups[i].elseTasks) {
                 taskGroups[i].elseTasks.reverse();
+                if (taskGroups[i].tasks.length === 0) {
+                    //remove unused tasks array
+                    delete taskGroups[i].tasks;
+                }
             }
         }
         action.taskGroups = taskGroups;
