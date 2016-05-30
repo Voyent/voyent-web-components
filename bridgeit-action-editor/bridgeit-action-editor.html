@@ -434,7 +434,7 @@ Example:
 
                                             <template is="dom-if" if="{{_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
                                                 <fieldset class="conditional-task-group if">
-                                                    <legend>True</legend>
+                                                    <legend>If</legend>
                                                     <template is="dom-repeat" items="{{group.tasks}}" as="task">
                                                         <template is="dom-if" if="{{!task.schema.isElseTask}}">
                                                             <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
@@ -576,7 +576,7 @@ Example:
                                                     </template>
                                                 </fieldset>
                                                 <fieldset class="conditional-task-group else">
-                                                    <legend>False</legend>
+                                                    <legend>Else</legend>
                                                     <template is="dom-repeat" items="{{group.tasks}}" as="task">
                                                         <template is="dom-if" if="{{task.schema.isElseTask}}">
                                                             <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">

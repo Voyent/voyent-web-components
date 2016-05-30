@@ -754,12 +754,18 @@ Polymer({
             //process tasks
             var tasks = taskGroups[i].tasks;
             for (var j=0; j<tasks.length; j++) {
+                //add uniqueID for drag/drop functionality
+                tasks[j].id = _this._taskBaseId+j;
                 convertTasks(tasks[j],false);
             }
             //process elseTasks (for conditional task groups)
             var elseTasks = taskGroups[i].elseTasks;
             if (elseTasks) {
                 for (var k=0; k<elseTasks.length; k++) {
+                    //add uniqueID for drag/drop functionality
+                    //id is based on entire group not just the elseTasks section
+                    //so we account for the number of "if" tasks as well
+                    elseTasks[k].id = _this._taskBaseId+(tasks.length+k);
                     convertTasks(elseTasks[k],true);
                 }
                 //combine the two arrays into one for the template
@@ -770,8 +776,6 @@ Polymer({
         return taskGroups;
 
         function convertTasks(task,isElseTask) {
-            //add uniqueID for drag/drop functionality
-            task.id = _this._taskBaseId+j;
             //add schema inside task for mapping UI values
             task.schema = JSON.parse(JSON.stringify(_this._taskSchemasMap[task.type])); //clone object (it is valid JSON so this technique is sufficient)
             task.schema.isElseTask = isElseTask;
@@ -1042,9 +1046,13 @@ Polymer({
         var previousGroupIndex;
         if (e.dataTransfer.getData('action/task/new')) {
             data = JSON.parse(JSON.stringify(this._lastDragged)); //clone schema obj
+            //determine if the task was dropped in the conditional task group else area
+            data.isElseTask = !!(e.target.className.indexOf('conditional-task-group') > -1 && e.target.className.indexOf('else') > -1);
         }
         else if (e.dataTransfer.getData('action/task/existing')) {
             data = this._lastDragged.task; //reference existing task
+            //determine if the task was dropped in the conditional task group else area
+            data.schema.isElseTask = !!(e.target.className.indexOf('conditional-task-group') > -1 && e.target.className.indexOf('else') > -1);
             previousGroupIndex = this._lastDragged.groupIndex;
             //get the current position of the task in its origin group
             currPos = this._taskGroups[previousGroupIndex].tasks.indexOf(data);
@@ -1053,8 +1061,6 @@ Polymer({
             e.stopPropagation();
             return;
         }
-        //determine if the task was dropped in the conditional task group else area
-        data.isElseTask = !!(e.target.className.indexOf('conditional-task-group') > -1 && e.target.className.indexOf('else') > -1);
 
         // Try to get our task group index from the target ID
         // However there is a chance the user dropped the element on a component inside the container
@@ -1073,90 +1079,95 @@ Polymer({
             } while(currentParent);
         }
         
-        // Only add if we actually have a proper index figured out
-        if (typeof taskGroupIndex === 'number') {
-            var tasks = this._taskGroups[taskGroupIndex].tasks;
-            var appendBottom = true;
-            var newid;
-            if (tasks.length > 0) {
-                //calculate absolute Y position of the drop
-                var scrollbarPos = this._calculateScrollbarPos(e.target.parentNode);
-                var dropY = e.clientY + scrollbarPos;
+        //Only add if we actually have a proper index figured out +
+        //For conditional task groups, don't allow dropping outside of if/else areas
+        if (typeof taskGroupIndex !== 'number') { /*||
+            (this._taskGroups[taskGroupIndex].schema.title === 'conditional-taskgroup' &&
+            e.target.className.indexOf('conditional-task-group') === -1)) {*/
+            return;
+        }
 
-                //determine where the Y position is in relative to the other tasks
-                var insertIndex;
-                var currentTask;
-                for (var i = 0; i < tasks.length; i++) {
-                    currentTask = this.querySelector('#' + this._taskGroupBaseId + taskGroupIndex + ' [data-id="' + tasks[i].id + '"]');
-                    if (currentTask) {
-                        var currentTaskPos = currentTask.getBoundingClientRect().top + scrollbarPos;
-                        if (dropY > currentTaskPos) {
-                            insertIndex = this._stripIndex(currentTask.getAttribute('data-id'));
-                            insertIndex++;
-                        }
-                        else {
-                            if (i === 0) {
-                                insertIndex = 0;
-                            }
-                            break;
-                        }
-                    }
-                }
-                if ((previousGroupIndex === taskGroupIndex) && (insertIndex > currPos)) {
-                    insertIndex -= 1;
-                }
+        var tasks = this._taskGroups[taskGroupIndex].tasks;
+        var appendBottom = true;
+        var newid;
+        if (tasks.length > 0) {
+            //calculate absolute Y position of the drop
+            var scrollbarPos = this._calculateScrollbarPos(e.target.parentNode);
+            var dropY = e.clientY + scrollbarPos;
 
-                //if we have an "insertIndex" it means we figured out where the task group should be inserted
-                if (typeof insertIndex !== 'undefined' && insertIndex < tasks.length) {
-                    appendBottom = false;
-                    newid = this._taskBaseId + insertIndex.toString();
-                    if (e.dataTransfer.getData('action/task/new')) {
-                        this.splice('_taskGroups.' + taskGroupIndex + '.tasks', insertIndex, 0,  {"id": newid,"schema": data});
+            //determine where the Y position is in relative to the other tasks
+            var insertIndex;
+            var currentTask;
+            for (var i = 0; i < tasks.length; i++) {
+                currentTask = this.querySelector('#' + this._taskGroupBaseId + taskGroupIndex + ' [data-id="' + tasks[i].id + '"]');
+                if (currentTask) {
+                    var currentTaskPos = currentTask.getBoundingClientRect().top + scrollbarPos;
+                    if (dropY > currentTaskPos) {
+                        insertIndex = this._stripIndex(currentTask.getAttribute('data-id'));
+                        insertIndex++;
                     }
                     else {
-                        //if the position hasn't changed do nothing
-                        if ((previousGroupIndex === taskGroupIndex) &&
-                            (currPos === insertIndex)) {
-                            return;
+                        if (i === 0) {
+                            insertIndex = 0;
                         }
-                        //move from current position to new position
-                        this.splice('_taskGroups.'+previousGroupIndex+'.tasks',currPos,1);
-                        this.splice('_taskGroups.'+taskGroupIndex+'.tasks',insertIndex,0,data);
+                        break;
                     }
-
-                }
-                else {
-                    appendBottom = true;
                 }
             }
+            if ((previousGroupIndex === taskGroupIndex) && (insertIndex > currPos)) {
+                insertIndex -= 1;
+            }
 
-            if (appendBottom) {
+            //if we have an "insertIndex" it means we figured out where the task group should be inserted
+            if (typeof insertIndex !== 'undefined' && insertIndex < tasks.length) {
+                appendBottom = false;
+                newid = this._taskBaseId + insertIndex.toString();
                 if (e.dataTransfer.getData('action/task/new')) {
-                    newid = this._taskBaseId + tasks.length.toString();
-                    this.push('_taskGroups.'+taskGroupIndex+'.tasks', {"id":newid,"schema":data});
+                    this.splice('_taskGroups.' + taskGroupIndex + '.tasks', insertIndex, 0,  {"id": newid,"schema": data});
                 }
                 else {
-                    newid = this._taskBaseId + (this._taskGroups[taskGroupIndex].tasks.length).toString();
-                    //remove from current position and push to end of task
+                    //if the position hasn't changed do nothing
+                    if ((previousGroupIndex === taskGroupIndex) &&
+                        (currPos === insertIndex)) {
+                        return;
+                    }
+                    //move from current position to new position
                     this.splice('_taskGroups.'+previousGroupIndex+'.tasks',currPos,1);
-                    this.push('_taskGroups.'+taskGroupIndex+'.tasks', data);
+                    this.splice('_taskGroups.'+taskGroupIndex+'.tasks',insertIndex,0,data);
                 }
-            }
 
-            setTimeout(function() {
-                //keep the task ids up to date for drag/drop functionality
-                _this._updateTaskIds();
-                //play a "grow" animation to draw attention to the new task
-                if (newid) {
-                    _this._doGrowAnimation('#'+_this._taskGroupBaseId+taskGroupIndex + ' [data-id="' + newid + '"]');
-                }
-                //set the task count for the group(s)
-                if (typeof previousGroupIndex === 'number') {
-                    _this.set('_taskGroups.'+previousGroupIndex+'.schema.taskcount', _this._taskGroups[previousGroupIndex].tasks.length);
-                }
-                _this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', _this._taskGroups[taskGroupIndex].tasks.length);
-            },0);
+            }
+            else {
+                appendBottom = true;
+            }
         }
+
+        if (appendBottom) {
+            if (e.dataTransfer.getData('action/task/new')) {
+                newid = this._taskBaseId + tasks.length.toString();
+                this.push('_taskGroups.'+taskGroupIndex+'.tasks', {"id":newid,"schema":data});
+            }
+            else {
+                newid = this._taskBaseId + (this._taskGroups[taskGroupIndex].tasks.length).toString();
+                //remove from current position and push to end of task
+                this.splice('_taskGroups.'+previousGroupIndex+'.tasks',currPos,1);
+                this.push('_taskGroups.'+taskGroupIndex+'.tasks', data);
+            }
+        }
+
+        setTimeout(function() {
+            //keep the task ids up to date for drag/drop functionality
+            _this._updateTaskIds();
+            //play a "grow" animation to draw attention to the new task
+            if (newid) {
+                _this._doGrowAnimation('#'+_this._taskGroupBaseId+taskGroupIndex + ' [data-id="' + newid + '"]');
+            }
+            //set the task count for the group(s)
+            if (typeof previousGroupIndex === 'number') {
+                _this.set('_taskGroups.'+previousGroupIndex+'.schema.taskcount', _this._taskGroups[previousGroupIndex].tasks.length);
+            }
+            _this.set('_taskGroups.'+taskGroupIndex+'.schema.taskcount', _this._taskGroups[taskGroupIndex].tasks.length);
+        },0);
     },
 
     /**
@@ -1333,8 +1344,21 @@ Polymer({
         var currPos = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
         var newPos = currPos-1;
         if (newPos < 0) {
+            //it's possible the that we have a conditional task group and there are no tasks
+            //inside the "if" section, if that's the case then we can "move" this one up
+            if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
+                this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask) {
+                this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',false);
+            }
             return;
         }
+
+        //special handling for conditional task groups so we can move task items between the if / else sections
+        if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
+            !this._taskGroups[groupIndex].tasks[newPos].schema.isElseTask) {
+                this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',false);
+        }
+
         //move the task up
         this.splice('_taskGroups.'+groupIndex+'.tasks',currPos,1);
         this.splice('_taskGroups.'+groupIndex+'.tasks',newPos,0,task);
@@ -1359,8 +1383,22 @@ Polymer({
         var currPos = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
         var newPos = currPos+1;
         if (newPos == this._taskGroups[groupIndex].tasks.length) {
+            //it's possible the that we have a conditional task group and there are no tasks
+            //inside the "else" section, if that's the case then we can "move" this one down
+            if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
+                !this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask) {
+                this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',true);
+            }
             return;
         }
+
+        //special handling for conditional task groups so we can move task items between the if / else sections
+        if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup') {
+            if (this._taskGroups[groupIndex].tasks[newPos].schema.isElseTask) {
+                this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',true);
+            }
+        }
+
         //move the task down
         this.splice('_taskGroups.'+groupIndex+'.tasks',currPos,1);
         this.splice('_taskGroups.'+groupIndex+'.tasks',newPos,0,task);
