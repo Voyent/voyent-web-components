@@ -127,7 +127,7 @@ Displays a transport editor that can build message templates for various technol
             </template>
             
             <tr>
-                <td><paper-input label="Details" value="{{_tool.details.global::input}}"/></td>
+                <td><paper-input required label="Details (required)" value="{{_tool.details.global::input}}"/></td>
                 <td class="miniCheck layout horizontal">
                     <template is="dom-if" if="{{_tool.transport.browser}}">
                     <label><input type="checkbox" checked="{{_tool.details.usebrowser::change}}"/>Browser</label>

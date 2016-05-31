@@ -101,20 +101,21 @@ Polymer({
             validPayload = JSON.parse(this._tool.payload);
         }catch(ignored) {}
 	    
-	    // First add our global JSON
+	    // First add our global JSON (required fields here)
 	    toReturn.global = {
-	        "subject": this._tool.subject.global,
 	        "details": this._tool.details.global,
-	        "url": this._tool.url.global,
-	        "priority": this._tool.priority.global,
-	        "expire_time": this._tool.expire_time.global,
 	        "sent_time": new Date(),
 	        "payload": validPayload
 	    };
 	    
-	    if (this._isDefined(this._tool.icon.global) && this._tool.icon.global !== "") {
-	        toReturn.global.icon = this._tool.icon.global;
-	    }
+	    // Also any any non-required fields
+	    this._getGlobalData(toReturn, "subject");
+	    this._getGlobalData(toReturn, "url");
+	    this._getGlobalData(toReturn, "icon");
+	    this._getGlobalData(toReturn, "priority");
+	    this._getGlobalData(toReturn, "expire_time");
+	    
+	    // Then add any transport specific override data
 	    if (this.allowBrowser && this._tool.transport.browser) {
 	        toReturn.browser = this._getOverrideData("browser");
 	    }
@@ -199,6 +200,17 @@ Polymer({
 	 */
 	_isDefined: function(value) {
 	    return typeof value !== 'undefined' && value !== null;
+	},
+	
+	/**
+	 * Function to safely set a valid field from our tooling to our notification JSON data
+	 * @param data
+	 * @param field
+	 */
+	_getGlobalData: function(data, field) {
+	    if (this._isDefined(this._tool[field].global) && this._tool[field].global !== "") {
+	        data.global[field] = this._tool[field].global;
+	    }
 	},
 	
 	/**
@@ -302,7 +314,7 @@ Polymer({
                 "usecloud": true,
                 "usesms": true,
                 "useemail": true,
-                "global": null,
+                "global": "",
                 "browser": null,
                 "cloud": null,
                 "sms": null,
