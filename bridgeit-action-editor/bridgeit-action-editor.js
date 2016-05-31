@@ -36,7 +36,7 @@ Polymer({
         }
         this._loadedAction = null;
         this._taskGroups = [];
-        this._codeEditorProperties=['function','messagetemplate','query','payload','userrecord','pushmessage'];
+        this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage'];
         this._taskGroupBaseId = 'taskGroup';
         this._taskBaseId = 'task';
         
@@ -1597,7 +1597,7 @@ Polymer({
      * @private
      */
     _isTransportEditor: function(title) {
-        return title.toLowerCase() === 'messagetemplate';
+        return title.toLowerCase() === 'transporttemplate';
     },
     
     /**
