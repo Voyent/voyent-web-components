@@ -205,6 +205,11 @@ Displays a transport editor that can build message templates for various technol
             </template>
             
             <tr>
+                <td><paper-input label="Icon" value="{{_tool.icon.global::input}}"/></td>
+                <td class="miniCheck"><label><input type="checkbox" checked disabled/>All</label></td>
+            </tr>
+            
+            <tr>
                 <td>
                 <paper-dropdown-menu label="Priority">
                     <paper-listbox class="dropdown-content" selected="{{_tool.priority.global}}" attr-for-selected="name">
@@ -308,7 +313,7 @@ Displays a transport editor that can build message templates for various technol
                         </paper-listbox>
                     </paper-dropdown-menu>
                 </td>
-                <td><label class="miniCheck"><input type="checkbox" checked disabled/>All</label></td>
+                <td class="miniCheck"><label><input type="checkbox" checked disabled/>All</label></td>
             </tr>
             
             <tr>
