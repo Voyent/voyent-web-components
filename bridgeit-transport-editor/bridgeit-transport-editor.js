@@ -60,7 +60,7 @@ Polymer({
                       '_tool.details.usebrowser, _tool.details.usecloud, _tool.details.usesms, _tool.details.useemail, _tool.details.global, _tool.details.browser, _tool.details.cloud, _tool.details.sms, _tool.details.email,' +
                       '_tool.url.usebrowser, _tool.url.usecloud, _tool.url.usesms, _tool.url.useemail, _tool.url.global, _tool.url.browser, _tool.url.cloud, _tool.url.sms, _tool.url.email,' +
                       '_tool.priority.usebrowser, _tool.priority.usecloud, _tool.priority.usesms, _tool.priority.useemail, _tool.priority.global, _tool.priority.browser, _tool.priority.cloud, _tool.priority.sms, _tool.priority.email,' +
-                      '_tool.expire_time.global, _tool.payload)'
+                      '_tool.expire_time.global, _tool.icon.global, _tool.payload)'
     ],
     
     /**
@@ -112,6 +112,9 @@ Polymer({
 	        "payload": validPayload
 	    };
 	    
+	    if (this._isDefined(this._tool.icon.global) && this._tool.icon.global !== "") {
+	        toReturn.global.icon = this._tool.icon.global;
+	    }
 	    if (this.allowBrowser && this._tool.transport.browser) {
 	        toReturn.browser = this._getOverrideData("browser");
 	    }
@@ -141,6 +144,7 @@ Polymer({
 	        // Set our generic fields and then our individual fields
 	        this._setTransportFromJSON(json, 'global');
 	        this._setFieldFromJSON(json, 'global', 'expire_time');
+	        this._setFieldFromJSON(json, 'global', 'icon');
 	        
 	        // Also update the payload accordingly
 	        if (this._isDefined(json['global']['payload'])) {
@@ -328,6 +332,9 @@ Polymer({
             },
             "expire_time": {
                 "global": 4320,
+            },
+            "icon": {
+                "global": null,
             },
             "payload": "{}"
         });
