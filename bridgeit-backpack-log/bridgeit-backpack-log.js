@@ -545,7 +545,7 @@ Polymer({
             }
         }
         
-        this._viewGeneric(taskName, 'taskGroup');
+        this._viewGeneric(taskName);
     },
     
     /**
@@ -581,23 +581,32 @@ Polymer({
             this.set('_taskGroups.' + i + '.highlight', false);
         }
         
-        this._viewGeneric(taskName, 'taskItem');
+        this._viewGeneric(parent, taskName);
     },
     
     /**
      * Generic convenience function that handles highlighting matching log messages
-     *  from the passed task name
-     * @param taskName
-     * @param compareTo either 'taskGroup' or 'taskItem'
+     *  from the passed task group/item
+     * @param taskGroup
+     * @param taskItem (optional)
      * @private
      */
-    _viewGeneric: function(taskName, compareTo) {
+    _viewGeneric: function(taskGroup, taskItem) {
         // We want to loop through our backpack messages and highlight any in the passed task item
         this.splice('_matchList', 0, this._matchList.length);
         
         var match = false;
         for (var i = 0; i < this._backpack.length; i++) {
-            match = (taskName === this._backpack[i][compareTo]);
+            // First try to match on the parent task group
+            if (taskGroup) {
+                match = (taskGroup === this._backpack[i].taskGroup);
+                
+                // Then if we have a match AND a child task item, try to match on that
+                if (match && taskItem) {
+                    match = (taskItem === this._backpack[i].taskItem);
+                }
+            }
+            
             this.set('_backpack.' + i + '.highlight', match);
             
             if (match) {
