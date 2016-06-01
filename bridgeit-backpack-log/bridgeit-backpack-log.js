@@ -58,9 +58,6 @@ Polymer({
         if (!this.account) {
             this.account = bridgeit.io.auth.getLastKnownAccount();
         }
-        if (bridgeit.io.auth.isLoggedIn()) {
-            this.getActions();
-        }
         
         // Some static variables
         this.getTimeLimits();
@@ -90,19 +87,6 @@ Polymer({
         }
         this.set('_maxHeight', calcH);
 	},
-	
-    /**
-     * Fetch the list of previously created and saved actions
-     */
-    getActions: function() {
-        var _this = this;
-        bridgeit.io.action.findActions({"realm":this.realm}).then(function(actions) {
-            _this._savedActions = actions.length > 0 ? actions : null;
-        }).catch(function(error) {
-            console.log('Error in getActions:',error);
-            _this.fire('bridgeit-error', {error: error});
-        });
-    },
 	
     /**
      * Generate a list of time limits for use in a dropdown
@@ -235,8 +219,25 @@ Polymer({
         // TODO TEMPORARY Limit to action service
         this.query.service = 'action';
         
-        // Grab our logs
+        // Grab our saved actions, and once that is done make a call to get our debug logs from the service
         this._loading = true;
+        var _this = this;
+        bridgeit.io.action.findActions({"realm":this.realm}).then(function(actions) {
+            _this._savedActions = actions.length > 0 ? actions : null;
+            
+            _this._getDebugLogsCall(_this);
+        }).catch(function(error) {
+            console.log('Error in getActions:',error);
+            _this.fire('bridgeit-error', {error: error});
+            
+            _this._getDebugLogsCall(_this);
+        });
+    },
+    
+    /**
+     * Service call to get our debug logs
+     */
+    _getDebugLogsCall: function() {
         var _this = this;
         bridgeit.io.admin.getDebugLogs({
             account: this.account,
@@ -246,7 +247,7 @@ Polymer({
         }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
             console.log('fetchLogs (audit) caught an error:', error);
             _this.fire('bridgeit-error', {error: error});
-            this._loading = false; // Stop loading on error
+            _this._loading = false; // Stop loading on error
         });
     },
     
