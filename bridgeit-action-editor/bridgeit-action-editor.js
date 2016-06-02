@@ -36,11 +36,7 @@ Polymer({
         }
         this._loadedAction = null;
         this._taskGroups = [];
-<<<<<<< Updated upstream
-        this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage'];
-=======
-        this._codeEditorProperties=['function','messagetemplate','query','payload','userrecord','pushmessage','data'];
->>>>>>> Stashed changes
+        this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage','data'];
         this._taskGroupBaseId = 'taskGroup';
         this._taskBaseId = 'task';
         
