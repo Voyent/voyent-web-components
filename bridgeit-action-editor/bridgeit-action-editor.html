@@ -216,6 +216,7 @@ Example:
            }
            fieldset {
                border: 1px solid #999;
+               min-width: 0;
                @apply(--action-editor-fieldset);
            }
 
@@ -431,7 +432,6 @@ Example:
                                                     </template>
                                                 </label>
                                             </template>
-
                                             <template is="dom-if" if="{{_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
                                                 <fieldset class="conditional-task-group if">
                                                     <legend>If</legend>
