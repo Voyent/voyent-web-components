@@ -162,6 +162,16 @@ Polymer({
     },
     
     /**
+     * Determine if the passed task group is a conditional task group
+     * Only return true if that task group also has some elseTasks
+     * @param grouop
+     * @return {boolean}
+     */
+    isConditionalTaskGroup: function(group) {
+        return (group.type === 'conditional-taskgroup' && group.elseTasks !== null && typeof group.elseTasks !== 'undefined' && group.elseTasks.length > 0);
+    },
+    
+    /**
      * Computed binding function
      * Return a valid string format for our action/taskGroup/taskItem container
      * If we don't have a valid action we will return null, otherwise we'll try to
@@ -409,6 +419,11 @@ Polymer({
                 for (var innerLoop = 0; innerLoop < currentTaskGroup.tasks.length; innerLoop++) {
                     this.set('_taskGroups.' + outerLoop + '.tasks.' + innerLoop + '.highlight', false);
                 }
+                if (this.isConditionalTaskGroup(currentTaskGroup)) {
+                    for (var elseLoop = 0; elseLoop < currentTaskGroup.elseTasks.length; elseLoop++) {
+                        this.set('_taskGroups.' + outerLoop + '.elseTasks.' + elseLoop + '.highlight', false);
+                    }
+                }
             }
         }
         else {
@@ -544,6 +559,11 @@ Polymer({
             for (var j = 0; j < this._taskGroups[i].tasks.length; j++) {
                 this.set('_taskGroups.' + i + '.tasks.' + j + '.highlight', false);
             }
+            if (this.isConditionalTaskGroup(this._taskGroups[i])) {
+                for (var k = 0; k < this._taskGroups[i].elseTasks.length; k++) {
+                    this.set('_taskGroups.' + i + '.elseTasks.' + k + '.highlight', false);
+                }
+            }
         }
         
         this._viewGeneric(taskName);
@@ -570,12 +590,24 @@ Polymer({
             match = (parent === this._taskGroups[i].name);
             innerMatch = false;
             
+            // Check our tasks first
             for (var j = 0; j < this._taskGroups[i].tasks.length; j++) {
                 if (match) {
                     innerMatch = (taskName === this._taskGroups[i].tasks[j].name);
                 }
                 
                 this.set('_taskGroups.' + i + '.tasks.' + j + '.highlight', innerMatch);
+            }
+            
+            // Also need to check elseTasks if we're a conditional group
+            if (this.isConditionalTaskGroup(this._taskGroups[i])) {
+                for (var k = 0; k < this._taskGroups[i].elseTasks.length; k++) {
+                    if (match) {
+                        innerMatch = (taskName === this._taskGroups[i].elseTasks[k].name);
+                    }
+                    
+                    this.set('_taskGroups.' + i + '.elseTasks.' + k + '.highlight', innerMatch);
+                }
             }
             
             // Reset the task group highlight regardless, since we want to highlight a task item

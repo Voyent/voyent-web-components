@@ -213,6 +213,7 @@ Example:
                                     </div>
                                     
                                     <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                        <!-- Duplicated for tasks -->
                                         <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
                                             {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
                                                 <template is="dom-if" if="{{hasMatches()}}">
@@ -223,6 +224,23 @@ Example:
                                                 </template>
                                             </template>
                                         </div>
+                                    </template>
+                                    
+                                    <template is="dom-if" if="{{isConditionalTaskGroup(group)}}">
+                                        ELSE
+                                        <template is="dom-repeat" items="{{group.elseTasks}}" as="task">
+                                            <!-- Duplicated for elseTasks -->
+                                            <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
+                                                {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
+                                                    <template is="dom-if" if="{{hasMatches()}}">
+                                                        <div>
+                                                            <button on-click="_scrollPrevItem" title="Previous Item">&lt;</button>
+                                                            <button on-click="_scrollNextItem" title="Next Item">&gt;</button>
+                                                        </div>
+                                                    </template>
+                                                </template>
+                                            </div>
+                                        </template>
                                     </template>
                                 </div>
                             </template>
