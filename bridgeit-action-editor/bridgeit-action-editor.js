@@ -419,6 +419,10 @@ Polymer({
             delete taskGroups[i].schema;
 
             var tasks = taskGroups[i].tasks;
+            //always define an elseTasks for conditional task groups since it is required
+            if (taskGroups[i].type === 'conditional-taskgroup') {
+                taskGroups[i].elseTasks = [];
+            }
             for (var j=tasks.length-1; j>=0; j--) {
                 tasks[j].params = {}; //create action params object
                 tasks[j].type = tasks[j].schema.title; //move title to type property
@@ -430,12 +434,7 @@ Polymer({
                 }
                 else {
                     //we have a conditional task group and an else task so move the task item to the elseTasks list
-                    if (!taskGroups[i].elseTasks) {
-                        taskGroups[i].elseTasks = [];
-                    }
-                    //add task to elseTasks
                     taskGroups[i].elseTasks.push(tasks[j]);
-                    //remove task from tasks
                     taskGroups[i].tasks.splice(j,1);
                     //cleanup values that aren't used in the action
                     delete taskGroups[i].elseTasks[taskGroups[i].elseTasks.length-1].id;
@@ -445,10 +444,6 @@ Polymer({
             //since we looped backwards (to accommodate the splice) the elseTasks will be in the reverse order
             if (taskGroups[i].elseTasks) {
                 taskGroups[i].elseTasks.reverse();
-                if (taskGroups[i].tasks.length === 0) {
-                    //remove unused tasks array
-                    delete taskGroups[i].tasks;
-                }
             }
         }
         action.taskGroups = taskGroups;
