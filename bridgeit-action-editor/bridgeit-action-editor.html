@@ -216,7 +216,6 @@ Example:
            }
            fieldset {
                border: 1px solid #999;
-               min-width: 0;
                @apply(--action-editor-fieldset);
            }
 
@@ -261,8 +260,12 @@ Example:
            }
            .task-group .if,
            .task-group .else {
-               min-height:50px;
-               padding-bottom:40px !important;
+               min-height: 50px;
+               padding: 10px 10px 40px 10px !important;;
+               border: 1px solid #999;
+           }
+           .task-group .conditional-task-group-lbl {
+               margin-top:5px;
            }
            .pointer {
                cursor:pointer;
@@ -433,8 +436,8 @@ Example:
                                                 </label>
                                             </template>
                                             <template is="dom-if" if="{{_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
-                                                <fieldset class="conditional-task-group if">
-                                                    <legend>If</legend>
+                                                <div class="conditional-task-group-lbl">If</div>
+                                                <div class="conditional-task-group if">
                                                     <template is="dom-repeat" items="{{group.tasks}}" as="task">
                                                         <template is="dom-if" if="{{!task.schema.isElseTask}}">
                                                             <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
@@ -574,9 +577,9 @@ Example:
                                                             </div>
                                                         </template>
                                                     </template>
-                                                </fieldset>
-                                                <fieldset class="conditional-task-group else">
-                                                    <legend>Else</legend>
+                                                </div>
+                                                <div class="conditional-task-group-lbl">Else</div>
+                                                <div class="conditional-task-group else">
                                                     <template is="dom-repeat" items="{{group.tasks}}" as="task">
                                                         <template is="dom-if" if="{{task.schema.isElseTask}}">
                                                             <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
@@ -716,7 +719,7 @@ Example:
                                                             </div>
                                                         </template>
                                                     </template>
-                                                </fieldset>
+                                                </div>
                                             </template>
                                             <template is="dom-if" if="{{!_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
                                                 <template is="dom-repeat" items="{{group.tasks}}" as="task">
