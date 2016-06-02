@@ -104,7 +104,6 @@ Polymer({
 	    // First add our global JSON (required fields here)
 	    toReturn.global = {
 	        "details": this._tool.details.global,
-	        "sent_time": new Date(),
 	        "payload": validPayload
 	    };
 	    
