@@ -216,6 +216,7 @@ Example:
            }
            fieldset {
                border: 1px solid #999;
+               min-width: 0;
                @apply(--action-editor-fieldset);
            }
 
@@ -431,7 +432,6 @@ Example:
                                                     </template>
                                                 </label>
                                             </template>
-
                                             <template is="dom-if" if="{{_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
                                                 <fieldset class="conditional-task-group if">
                                                     <legend>If</legend>
@@ -470,35 +470,35 @@ Example:
                                                                                 <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
                                                                                     <label class$="{{_addBooleanClass(property.type)}}">
                                                                                         <span>{{property.title}}</span>
-                                                                                        <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                            <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                                <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                                    <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                                                </template>
-                                                                                                <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                                    <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                                          disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                                                </template>
-                                                                                            </template>
-                                                                                            <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                                                <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                                    <select class="form-control" value="{{property.value::change}}">
-                                                                                                        <option value="" selected>Select one...</option>
-                                                                                                        <template is="dom-repeat" items="{{property.enum}}">
-                                                                                                            <option value="{{item}}">{{item}}</option>
-                                                                                                        </template>
-                                                                                                    </select>
-                                                                                                </template>
-                                                                                                <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                                           value="{{property.value::input}}">
-                                                                                                </template>
-                                                                                            </template>
-                                                                                        </template>
-                                                                                        <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                                            <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                                        </template>
                                                                                     </label>
+                                                                                    <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                                        <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                                            <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                                                <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                                            </template>
+                                                                                            <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                                                <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                                      disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                            </template>
+                                                                                        </template>
+                                                                                        <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                                            <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                                                <select class="form-control" value="{{property.value::change}}">
+                                                                                                    <option value="" selected>Select one...</option>
+                                                                                                    <template is="dom-repeat" items="{{property.enum}}">
+                                                                                                        <option value="{{item}}">{{item}}</option>
+                                                                                                    </template>
+                                                                                                </select>
+                                                                                            </template>
+                                                                                            <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                                                <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                                       value="{{property.value::input}}">
+                                                                                            </template>
+                                                                                        </template>
+                                                                                    </template>
+                                                                                    <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                                        <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                                    </template>
                                                                                 </template>
                                                                             </fieldset>
                                                                         </template>
@@ -506,69 +506,69 @@ Example:
                                                                     <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                                         <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span class="required">*</span><span>{{property.title}}</span>
-                                                                            <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                    <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                        <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                                    </template>
-                                                                                </template>
-                                                                                <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                                    <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                        <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
-                                                                                                data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
-                                                                                            <option value="" selected>Select one...</option>
-                                                                                            <template is="dom-repeat" items="{{property.enum}}">
-                                                                                                <option value="{{item}}">{{item}}</option>
-                                                                                            </template>
-                                                                                        </select>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
-                                                                                               value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
-                                                                                    </template>
-                                                                                </template>
-                                                                            </template>
-                                                                            <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                                <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                            </template>
                                                                         </label>
+                                                                        <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                            <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                                <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                                    <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                                    <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                          disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                </template>
+                                                                            </template>
+                                                                            <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                                <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                                    <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
+                                                                                            data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
+                                                                                        <option value="" selected>Select one...</option>
+                                                                                        <template is="dom-repeat" items="{{property.enum}}">
+                                                                                            <option value="{{item}}">{{item}}</option>
+                                                                                        </template>
+                                                                                    </select>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
+                                                                                           value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
+                                                                                </template>
+                                                                            </template>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                            <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                        </template>
                                                                     </template>
                                                                     <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                                         <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span>{{property.title}}</span>
-                                                                            <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                    <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                        <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                                    </template>
-                                                                                </template>
-                                                                                <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                                    <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                        <select class="form-control" value="{{property.value::change}}">
-                                                                                            <option value="" selected>Select one...</option>
-                                                                                            <template is="dom-repeat" items="{{property.enum}}">
-                                                                                                <option value="{{item}}">{{item}}</option>
-                                                                                            </template>
-                                                                                        </select>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                               value="{{property.value::input}}">
-                                                                                    </template>
-                                                                                </template>
-                                                                            </template>
-                                                                            <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                                <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                            </template>
                                                                         </label>
+                                                                        <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                            <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                                <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                                    <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                                    <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                          disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                </template>
+                                                                            </template>
+                                                                            <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                                <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                                    <select class="form-control" value="{{property.value::change}}">
+                                                                                        <option value="" selected>Select one...</option>
+                                                                                        <template is="dom-repeat" items="{{property.enum}}">
+                                                                                            <option value="{{item}}">{{item}}</option>
+                                                                                        </template>
+                                                                                    </select>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                           value="{{property.value::input}}">
+                                                                                </template>
+                                                                            </template>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                            <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                        </template>
                                                                     </template>
                                                                 </div>
                                                             </div>
@@ -612,35 +612,35 @@ Example:
                                                                                 <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
                                                                                     <label class$="{{_addBooleanClass(property.type)}}">
                                                                                         <span>{{property.title}}</span>
-                                                                                        <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                            <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                                <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                                    <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                                                </template>
-                                                                                                <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                                    <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                                          disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                                                </template>
-                                                                                            </template>
-                                                                                            <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                                                <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                                    <select class="form-control" value="{{property.value::change}}">
-                                                                                                        <option value="" selected>Select one...</option>
-                                                                                                        <template is="dom-repeat" items="{{property.enum}}">
-                                                                                                            <option value="{{item}}">{{item}}</option>
-                                                                                                        </template>
-                                                                                                    </select>
-                                                                                                </template>
-                                                                                                <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                                           value="{{property.value::input}}">
-                                                                                                </template>
-                                                                                            </template>
-                                                                                        </template>
-                                                                                        <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                                            <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                                        </template>
                                                                                     </label>
+                                                                                    <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                                        <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                                            <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                                                <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                                            </template>
+                                                                                            <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                                                <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                                      disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                            </template>
+                                                                                        </template>
+                                                                                        <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                                            <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                                                <select class="form-control" value="{{property.value::change}}">
+                                                                                                    <option value="" selected>Select one...</option>
+                                                                                                    <template is="dom-repeat" items="{{property.enum}}">
+                                                                                                        <option value="{{item}}">{{item}}</option>
+                                                                                                    </template>
+                                                                                                </select>
+                                                                                            </template>
+                                                                                            <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                                                <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                                       value="{{property.value::input}}">
+                                                                                            </template>
+                                                                                        </template>
+                                                                                    </template>
+                                                                                    <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                                        <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                                    </template>
                                                                                 </template>
                                                                             </fieldset>
                                                                         </template>
@@ -648,69 +648,69 @@ Example:
                                                                     <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                                         <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span class="required">*</span><span>{{property.title}}</span>
-                                                                            <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                    <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                        <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                                    </template>
-                                                                                </template>
-                                                                                <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                                    <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                        <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
-                                                                                                data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
-                                                                                            <option value="" selected>Select one...</option>
-                                                                                            <template is="dom-repeat" items="{{property.enum}}">
-                                                                                                <option value="{{item}}">{{item}}</option>
-                                                                                            </template>
-                                                                                        </select>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
-                                                                                               value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
-                                                                                    </template>
-                                                                                </template>
-                                                                            </template>
-                                                                            <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                                <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                            </template>
                                                                         </label>
+                                                                        <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                            <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                                <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                                    <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                                    <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                          disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                </template>
+                                                                            </template>
+                                                                            <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                                <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                                    <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
+                                                                                            data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
+                                                                                        <option value="" selected>Select one...</option>
+                                                                                        <template is="dom-repeat" items="{{property.enum}}">
+                                                                                            <option value="{{item}}">{{item}}</option>
+                                                                                        </template>
+                                                                                    </select>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
+                                                                                           value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
+                                                                                </template>
+                                                                            </template>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                            <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                        </template>
                                                                     </template>
                                                                     <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                                         <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span>{{property.title}}</span>
-                                                                            <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                    <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                        <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                                    </template>
-                                                                                </template>
-                                                                                <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                                    <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                        <select class="form-control" value="{{property.value::change}}">
-                                                                                            <option value="" selected>Select one...</option>
-                                                                                            <template is="dom-repeat" items="{{property.enum}}">
-                                                                                                <option value="{{item}}">{{item}}</option>
-                                                                                            </template>
-                                                                                        </select>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                               value="{{property.value::input}}">
-                                                                                    </template>
-                                                                                </template>
-                                                                            </template>
-                                                                            <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                                <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                            </template>
                                                                         </label>
+                                                                        <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                            <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                                <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                                    <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                                    <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                          disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                </template>
+                                                                            </template>
+                                                                            <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                                <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                                    <select class="form-control" value="{{property.value::change}}">
+                                                                                        <option value="" selected>Select one...</option>
+                                                                                        <template is="dom-repeat" items="{{property.enum}}">
+                                                                                            <option value="{{item}}">{{item}}</option>
+                                                                                        </template>
+                                                                                    </select>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                                    <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                           value="{{property.value::input}}">
+                                                                                </template>
+                                                                            </template>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                            <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                        </template>
                                                                     </template>
                                                                 </div>
                                                             </div>
@@ -753,35 +753,35 @@ Example:
                                                                         <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
                                                                             <label class$="{{_addBooleanClass(property.type)}}">
                                                                                 <span>{{property.title}}</span>
-                                                                                <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                                    <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                                        <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                            <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                                        </template>
-                                                                                        <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                            <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                                  disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                                        </template>
-                                                                                    </template>
-                                                                                    <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                            <select class="form-control" value="{{property.value::change}}">
-                                                                                                <option value="" selected>Select one...</option>
-                                                                                                <template is="dom-repeat" items="{{property.enum}}">
-                                                                                                    <option value="{{item}}">{{item}}</option>
-                                                                                                </template>
-                                                                                            </select>
-                                                                                        </template>
-                                                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                                   value="{{property.value::input}}">
-                                                                                        </template>
-                                                                                    </template>
-                                                                                </template>
-                                                                                <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                                    <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                                </template>
                                                                             </label>
+                                                                            <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                                <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                                    <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                                        <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                                    </template>
+                                                                                    <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                                        <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                              disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                                    </template>
+                                                                                </template>
+                                                                                <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                                    <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                                        <select class="form-control" value="{{property.value::change}}">
+                                                                                            <option value="" selected>Select one...</option>
+                                                                                            <template is="dom-repeat" items="{{property.enum}}">
+                                                                                                <option value="{{item}}">{{item}}</option>
+                                                                                            </template>
+                                                                                        </select>
+                                                                                    </template>
+                                                                                    <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                                        <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                               value="{{property.value::input}}">
+                                                                                    </template>
+                                                                                </template>
+                                                                            </template>
+                                                                            <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                                <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                            </template>
                                                                         </template>
                                                                     </fieldset>
                                                                 </template>
@@ -789,69 +789,69 @@ Example:
                                                             <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                                 <label class$="{{_addBooleanClass(property.type)}}">
                                                                     <span class="required">*</span><span>{{property.title}}</span>
-                                                                    <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                        <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                            <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                            </template>
-                                                                            <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                      disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                            </template>
-                                                                        </template>
-                                                                        <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                            <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
-                                                                                        data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
-                                                                                    <option value="" selected>Select one...</option>
-                                                                                    <template is="dom-repeat" items="{{property.enum}}">
-                                                                                        <option value="{{item}}">{{item}}</option>
-                                                                                    </template>
-                                                                                </select>
-                                                                            </template>
-                                                                            <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
-                                                                                       value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
-                                                                            </template>
-                                                                        </template>
-                                                                    </template>
-                                                                    <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                        <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                    </template>
                                                                 </label>
+                                                                <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                    <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                        <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                            <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                            <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                  disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                        </template>
+                                                                    </template>
+                                                                    <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                            <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
+                                                                                    data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
+                                                                                <option value="" selected>Select one...</option>
+                                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                                    <option value="{{item}}">{{item}}</option>
+                                                                                </template>
+                                                                            </select>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
+                                                                                   value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
+                                                                        </template>
+                                                                    </template>
+                                                                </template>
+                                                                <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                    <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                </template>
                                                             </template>
                                                             <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                                 <label class$="{{_addBooleanClass(property.type)}}">
                                                                     <span>{{property.title}}</span>
-                                                                    <template is="dom-if" if="{{_isString(property.type)}}">
-                                                                        <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
-                                                                            <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                                                                <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
-                                                                            </template>
-                                                                            <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
-                                                                                <bridgeit-code-editor class="code-editor" value="{{property.value}}"
-                                                                                                      disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
-                                                                            </template>
-                                                                        </template>
-                                                                        <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
-                                                                            <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                                                <select class="form-control" value="{{property.value::change}}">
-                                                                                    <option value="" selected>Select one...</option>
-                                                                                    <template is="dom-repeat" items="{{property.enum}}">
-                                                                                        <option value="{{item}}">{{item}}</option>
-                                                                                    </template>
-                                                                                </select>
-                                                                            </template>
-                                                                            <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                                                <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
-                                                                                       value="{{property.value::input}}">
-                                                                            </template>
-                                                                        </template>
-                                                                    </template>
-                                                                    <template is="dom-if" if="{{_isBoolean(property.type)}}">
-                                                                        <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
-                                                                    </template>
                                                                 </label>
+                                                                <template is="dom-if" if="{{_isString(property.type)}}">
+                                                                    <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                                                        <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                                                            <bridgeit-transport-editor debug="true" value="{{property.value}}"></bridgeit-transport-editor>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                                                            <bridgeit-code-editor class="code-editor" value="{{property.value}}"
+                                                                                                  disablevalidation="{{_disableValidation(property.title)}}"></bridgeit-code-editor>
+                                                                        </template>
+                                                                    </template>
+                                                                    <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                                            <select class="form-control" value="{{property.value::change}}">
+                                                                                <option value="" selected>Select one...</option>
+                                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                                    <option value="{{item}}">{{item}}</option>
+                                                                                </template>
+                                                                            </select>
+                                                                        </template>
+                                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                                                   value="{{property.value::input}}">
+                                                                        </template>
+                                                                    </template>
+                                                                </template>
+                                                                <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                                    <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                                                </template>
                                                             </template>
                                                         </div>
                                                     </div>
