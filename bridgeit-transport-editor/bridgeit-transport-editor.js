@@ -10,7 +10,7 @@ Polymer({
          * The current value of the transport editor. Data binding is enabled for this attribute.
          * This will link to the underlying notification JSON structure
          */
-        value: { type: Object,  observer: '_valueChanged', reflectToAttribute: true, notify: true },
+        value: { type: String,  observer: '_valueChanged', reflectToAttribute: true, notify: true },
         /**
          * Underlying UI tool control state
          */
@@ -126,6 +126,13 @@ Polymer({
 	    }
 	    if (this.allowSMS && this._tool.transport.sms) {
 	        toReturn.sms = this._getOverrideData("sms");
+	    }
+	    
+	    // Finally stringify the result so the service level can use it properly
+	    try{
+	        toReturn = JSON.stringify(toReturn, null, 4);
+	    }catch(error) {
+	        console.log("Failed to parse transport editor UI tooling to JSON string", error);
 	    }
 	    
 	    return toReturn;
@@ -271,11 +278,6 @@ Polymer({
             this.convertJSONToUI(this.value);
         }
         this.triggeredFromTool = false;
-        
-        // Update our debug panel if visible
-        if (this.debug) {
-            this.set('debugJSON', JSON.stringify(this.value, null, 4));
-        }
     },
     
     /**
