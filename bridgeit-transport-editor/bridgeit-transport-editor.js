@@ -275,7 +275,12 @@ Polymer({
         // The only time we want to do anything with our new data is if it's set from a non-tool change
         // Such as an initial load from an attribute specified on the page
         if (!this.triggeredFromTool) {
-            this.convertJSONToUI(this.value);
+            // We also need to try to parse to a JSON object if we can
+            try{
+                this.convertJSONToUI(JSON.parse(this.value));
+            }catch (error) {
+                this.convertJSONToUI(this.value);
+            }
         }
         this.triggeredFromTool = false;
     },
