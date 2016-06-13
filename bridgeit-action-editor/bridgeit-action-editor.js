@@ -155,8 +155,7 @@ Polymer({
                 }
             },10);
         })['catch'](function(error) {
-            console.log('Error in getTaskItems:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in getTaskItems: " + error.toSource());
         });
     },
 
@@ -173,8 +172,7 @@ Polymer({
             _this.fire('actionsRetrieved',{actions:actions});
             _this._getHandlers();
         }).catch(function(error) {
-            console.log('Error in getActions:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in getActions: " + error.toSource());
         });
     },
 
@@ -210,8 +208,7 @@ Polymer({
             _this.getActions(); //refresh actions list
             _this._saveHandler(actionId);
         }).catch(function(error) {
-            console.log('Error in saveAction:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in saveAction: " + error.toSource());
         });
     },
 
@@ -233,8 +230,7 @@ Polymer({
                 _this.getActions(); //refresh actions list
                 _this._updateHandler(_this._actionId);
             }).catch(function(error) {
-                console.log('Error in updateAction:',error);
-                _this.fire('bridgeit-error', {error: error});
+                _this.fire('message-error', "Error in updateAction: " + error.toSource());
             });
         }
     },
@@ -253,8 +249,7 @@ Polymer({
             _this.getActions(); //refresh actions list
             _this._deleteHandler(id);
         }).catch(function(error) {
-            console.log('Error in deleteAction:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in deleteAction: " + error.toSource());
         });
     },
 
@@ -277,14 +272,14 @@ Polymer({
     validateAction: function() {
         //validate handler query
         if (!this._queryEditorRef.validateQuery()) {
-            alert('Please enter a valid query.');
+            this.fire('message-error', 'Please enter a valid query.');
             return false;
         }
         //validate required fields
         /* This approach fails for unknown reasons when loading multiple actions consecutively
            so reverting back to a plain loop that checks the value of each required field
         if (!this.$$('#actionForm').checkValidity()) {
-            alert('Please enter all required fields.');
+            this.fire('message-error', 'Please enter all required fields.');
             return false;
         }*/
         var required = Polymer.dom(this.$$('#actionForm')).querySelectorAll('input:required');
@@ -307,7 +302,7 @@ Polymer({
                 if (groupStr || taskStr) {
                     alertStr += '\n\n [' + (groupStr ? (groupStr) : '') + (taskStr ? (' > '+taskStr) : '') + ' > ' + label+']';
                 }
-                alert(alertStr);
+                this.fire('message-error', alertStr);
                 required[h].focus();
                 return false;
             }
@@ -323,7 +318,7 @@ Polymer({
             hasTasks = true;
             //task group names need to be unique
             if (taskGroupNames.indexOf(this._taskGroups[i].name) > -1) {
-                alert('Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
+                this.fire('message-error', 'Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
                 return false;
             }
             taskGroupNames.push(this._taskGroups[i].name);
@@ -331,7 +326,7 @@ Polymer({
             for (var j=0; j<tasks.length; j++) {
                 //task names need to be unique within the same task group
                 if (taskNames.indexOf(tasks[j].name) > -1) {
-                    alert('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
+                    this.fire('message-error', 'Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
                     return false;
                 }
                 taskNames.push(tasks[j].name);
@@ -361,7 +356,7 @@ Polymer({
                     }
                     if (definedCount > 0) {
                         if (someGroupDefined) {
-                            alert('You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                            this.fire('message-error', 'You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                             return false;
                         }
                         someGroupDefined=true;
@@ -371,17 +366,17 @@ Polymer({
                     }
                 }
                 if (!allGroupDefined && someGroupDefined) {
-                    alert('You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                    this.fire('message-error', 'You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
                 else if (!someGroupDefined) {
-                    alert('You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                    this.fire('message-error', 'You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
             }
         }
         if (!hasTasks) {
-            alert('You must define at least one task.');
+            this.fire('message-error', 'You must define at least one task.');
             return false;
         }
         return true;
@@ -394,7 +389,7 @@ Polymer({
      */
     isUniqueActionId: function(actionId) {
         if (this._actionIds.indexOf(actionId) > -1) {
-            alert('This Action ID is already in use, please try a different one.');
+            this.fire('message-error', 'This Action ID is already in use, please try a different one.');
             return false;
         }
         return true;
@@ -719,8 +714,7 @@ Polymer({
             _this._loadedAction._id = _this._actionId;
             _this.saveAction();
         }).catch(function(error) {
-            console.log('Error in updateAction:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in update action: " + error.toSource());
         });
     },
 
@@ -1674,8 +1668,7 @@ Polymer({
             }
             _this._handlers = handlerMap;
         }).catch(function(error) {
-            console.log('Error in getHandlers:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in getHandlers: " + error.toSource());
         });
     },
 
@@ -1705,8 +1698,7 @@ Polymer({
         }
         bridgeit.io.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
         }).catch(function(error) {
-            console.log('Error in saveHandler:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in saveHandler: " + error.toSource());
         });
     },
 
@@ -1720,8 +1712,7 @@ Polymer({
         }
         bridgeit.io.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
         }).catch(function(error) {
-            console.log('Error in updateHandler:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in updateHandler: " + error.toSource());
         });
     },
 
@@ -1733,8 +1724,7 @@ Polymer({
         }
         bridgeit.io.eventhub.deleteHandler({"realm":this.realm,"id":id}).then(function() {
         }).catch(function(error) {
-            console.log('Error in deleteHandler:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in deleteHandler: " + error.toSource());
         });
     }
 });

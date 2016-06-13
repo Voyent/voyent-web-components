@@ -172,8 +172,7 @@ Polymer({
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
-            console.log('Issue getting location data:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'Issue getting location data: ' + error.toSource());
         });
     },
 
@@ -301,8 +300,7 @@ Polymer({
             _this._activeSim = params.document; //set as active simulation
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
-            console.log('Issue saving simulation document:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'Issue saving simulation document: ' + error.toSource());
         });
     },
 
@@ -327,8 +325,7 @@ Polymer({
             }
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
-            console.log('Issue deleting simulation:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'Issue deleting simulation: ' + error.toSource());
         });
     },
 
@@ -344,7 +341,7 @@ Polymer({
         bridgeit.io.documents.findDocuments({realm:this.realm,collection:collection}).then(function(simulations) {
             _this.fire('simulationsRetrieved',{simulations:simulations});
         }).catch(function(error) {
-            console.log('Issue getting simulations:',error);
+            _this.fire('message-error', 'Issue getting simulations: ' + error.toSource());
         });
     },
 
@@ -456,9 +453,8 @@ Polymer({
                     this._clickListener(poi,data[i],type);
                     this._poiMarkers.push(poi);
                 }
-            } catch (err) {
-                console.log("Issue importing region or poi:", err);
-                _this.fire('bridgeit-error', {error: error});
+            } catch (error) {
+                _this.fire('message-error', "Issue importing region or poi: " + error.toSource());
             }
         }
     },
@@ -695,7 +691,7 @@ Polymer({
             if (error.status == 403) {
                 return; //fail "silently" if insufficient privileges
             }
-            console.log('Error trying to get realm users:',error);
+            _this.fire('message-error', 'Error trying to get realm users: ' + error.toSource());
         });
     },
 
@@ -760,7 +756,7 @@ Polymer({
                 _this._userLocationChangedListener(marker,location);
                 _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
             }).catch(function(error) {
-                console.log('Issue creating new location:',error);
+                _this.fire('message-error', 'Issue creating new location: ' + error.toSource());
             });
         });
     },

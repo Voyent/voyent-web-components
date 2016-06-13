@@ -160,6 +160,7 @@ Polymer({
                 timeblock["$lte"] = poly.endrange;
             makeQuery["time"]=timeblock;
         }
+        var _this = this;
         bridgeit.io.metrics.findEvents({
             account: this.account,
             realm: this.realm,
@@ -170,7 +171,7 @@ Polymer({
         }).then(function (results) {
             //TODO: Change so that you pull fields from data
             if(results.length == 0){
-                console.log("No results found");
+                _this.fire('message-error', "No results found"); 
                 return;
             }
             ChartBehaviors.results = results;
@@ -183,8 +184,7 @@ Polymer({
                 data = ChartBehaviors.parseData(realIndep, realDep);
             gotData(data);
         }).catch(function (error) {
-            console.log('findEvents failed ');
-            console.log(error);
+            _this.fire('findEvents failed: ' + error.toSource());
         });
     }
 });

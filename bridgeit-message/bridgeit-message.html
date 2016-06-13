@@ -1,0 +1,41 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+
+<!--
+Displays error and info messages on the page, fired from events at a demo level
+This is meant as a user friendly alternative to web console logging
+
+@demo demo.html
+-->
+<dom-module id="bridgeit-message">
+    <template>
+        <style type="text/css">
+            .error {
+                color: #CC0000;
+                @apply(--message-error);
+            }
+            
+            .info {
+                color: #0000CC;
+                @apply(--message-info);
+            }
+            
+            .wrapper {
+                @apply(--message-wrapper);
+            }
+        </style>
+        
+        <div class="wrapper">
+            <template is="dom-repeat" items="{{messages}}" as="message">
+                <span class$="{{message.type}}">
+                <template is="dom-if" if="{{usetimestamp}}">
+                    {{message.timestamp}}>
+                </template>
+                {{message.text}}
+                </span><br/>
+            </template>
+        </div>
+    </template>
+</dom-module>
+
+<script src="./bridgeit-message.js"></script>

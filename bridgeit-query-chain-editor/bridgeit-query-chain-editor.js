@@ -125,7 +125,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 callback();
             }
         }).catch(function(error){
-            console.error("Error when trying to find queries: " + error.toSource());
+            _this.fire('message-error', "Error when trying to find queries: " + error.toSource()); 
         });
     },
     
@@ -146,7 +146,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 _this._transformers = results;
             }
         }).catch(function(error){
-            console.error("Error when trying to find transformers: " + error.toSource());
+            _this.fire('message-error', "Error when trying to find transformers: " + error.toSource());
         });
     },
     
@@ -466,7 +466,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 }
             }
             else {
-                console.error('Unrecognized chain item type (looking for query or transform): found '+ currentQuery.type);
+                this.fire('message-error', 'Unrecognized chain item type (looking for query or transform): found '+ currentQuery.type);
                 pulledItem = null;
             }
             
@@ -477,7 +477,7 @@ BridgeIt.QueryChainEditor = Polymer({
             // If we don't have an item it means the workflow chain had an invalid or outdated query/transformer
             // We will note this in the logs
             else {
-                console.error("Failed to add " + currentQuery.id + " to workflow (outdated query/transformer?)"); 
+                this.fire('message-error', "Failed to add " + currentQuery.id + " to workflow (outdated query/transformer?)"); 
             }
         }
         
@@ -525,7 +525,7 @@ BridgeIt.QueryChainEditor = Polymer({
             }).then(function() {
                 _this.splice('_savedWorkflows', deleteIndex, 1);
             }).catch(function(error) {
-                 console.error('Failed to delete workflow chain ' + removeId + ':' + error.toSource());
+                 _this.fire('message-error', 'Failed to delete workflow chain ' + removeId + ':' + error.toSource());
             });
         }
     },
@@ -575,7 +575,7 @@ BridgeIt.QueryChainEditor = Polymer({
             
             if (executeId) {
                 var executeUrl = _this.buildUrl(_this.tempQueryService, executeResource, executeId) + urlParams;
-                console.log("Exec: " + executeId + " to " + executeUrl);
+                this.fire('message-info', "Exec: " + executeId + " to " + executeUrl);
                 
                 bridgeit.$.getJSON(executeUrl)
                           .then(function(results) {
@@ -600,7 +600,7 @@ BridgeIt.QueryChainEditor = Polymer({
                     
                     if (callback) { callback(); }
                 }).catch(function(error){
-                    console.error("Error when trying to execute query: " + error.toSource());
+                    _this.fire('message-error', "Error when trying to execute query: " + error.toSource());
                     
                     if (callback) { callback(); }
                 });
@@ -742,7 +742,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 
                 if (callback) { callback(); }
             }).catch(function(error) {
-                console.error('Failed to save workflow chain: ' + error.toSource());
+                _this.fire('message-error', 'Failed to save workflow chain: ' + error.toSource());
                 
                 if (callback) { callback(); }
             });
@@ -762,7 +762,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 
                 if (callback) { callback(); }
             }).catch(function(error){
-                 console.error('Failed to update workflow chain: ' + error.toSource());
+                 _this.fire('message-error', 'Failed to update workflow chain: ' + error.toSource());
                  
                 if (callback) { callback(); }
             });
@@ -785,7 +785,7 @@ BridgeIt.QueryChainEditor = Polymer({
         bridgeit.$.post(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
         }).catch(function(error) {
-            console.error("Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error.toSource());
+            _this.fire('message-error', "Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error.toSource());
             
             _this._updateWorkflowItem(workflowItem, callback);
         });
@@ -804,7 +804,7 @@ BridgeIt.QueryChainEditor = Polymer({
         bridgeit.$.put(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
         }).catch(function(error) {
-            console.error("Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
+            _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
             
             if (callback) { callback(); }
         });
@@ -843,7 +843,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 }).then(function() {
                     _this.splice(listName, deleteIndex, 1);
                 }).catch(function(error) {
-                     console.error('Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
+                     _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
                 });
             }
             // NTFY-385 MANUAL Need a way to delete transformers from the client library
@@ -851,7 +851,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 bridgeit.$.doDelete(this.buildUrl(this.tempQueryService, this.tempTransformerResource, removeId)).then(function() {
                     _this.splice(listName, deleteIndex, 1);
                 }).catch(function(error){
-                    console.error('Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
+                    _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
                 });
             }
         }

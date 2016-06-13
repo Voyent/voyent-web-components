@@ -1,6 +1,7 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 <link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
+<link rel="import" href="../bridgeit-message/bridgeit-message.html">
 
 <!--
 Displays a recognizer editor for building recognizer scripts.
@@ -84,6 +85,7 @@ Example:
                 <button type="button" on-click="_cloneRecognizer">Clone</button>
                 <button type="button" on-click="_deleteRecognizer">Delete</button>
             </template>
+            <bridgeit-message></bridgeit-message>
         </div>
         <div class="recognizerContainer">
             <form id="form">

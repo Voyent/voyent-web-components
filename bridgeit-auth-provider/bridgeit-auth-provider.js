@@ -153,8 +153,7 @@
 
     /**
      * Attempts to authenticate. If the username, password and admin flag are not passed in, the bound component values will be used. 
-     * After the login is successful, the onAfterLogin event is then fired. If the login attempt is not successful, a bridgeit-error 
-     * event will be fired. A bridgeit-session-expired event will be fired when the session expires.
+     * After the login is successful, the onAfterLogin event is then fired.
      * @return {Promise} A promise with the response from bridgeit.io.auth.connect()
      */
     login: function(username, password, admin){
@@ -218,11 +217,9 @@
         else{
           Promise.reject(error);
         }
-        _
       }).catch(function(error){
         this.error = error.responseText || error.message;
-        console.log('bridgeit-auth-provider#login() error');
-        _this.fire('bridgeit-error', {error: Error('Failed login: ' + this.error)});
+        _this.fire('message-error', "bridgeit-auth-provider#login() error failed login: " + this.error);
       });
     },
 

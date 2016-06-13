@@ -104,8 +104,7 @@ Polymer({
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
-            console.log('<bridgeit-locations> Error: ' + ( error.message || error.responseText));
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "<bridgeit-locations> Error: " + error.toSource());
         });
 	},
 
@@ -185,8 +184,7 @@ Polymer({
                     this._poiMarkers.push(poi);
                 }
             } catch (err) {
-                console.log("Issue importing region or poi: " + JSON.stringify(data[record]), err);
-                _this.fire('bridgeit-error', {error: error});
+                _this.fire('message-error', "Issue importing region or poi: " + JSON.stringify(data[record]));
             }
         }
     },
@@ -197,7 +195,7 @@ Polymer({
     _updateLocations: function(locations) {
         var _this = this;
         if (!this._map) {
-            console.log('ERROR: locations could not update map markers due to missing map');
+            this.fire('message-error', 'Locations could not update map markers due to missing map');
             return;
         }
         locations.forEach(function(locationUpdate) {

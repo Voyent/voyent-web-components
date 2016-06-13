@@ -202,7 +202,7 @@ Polymer({
     _getLogs: function() {
         // Check selectedLimit for validity.
         if (this.selectedLimit === null) {
-            console.error("Select a time limit");
+            this.fire('message-error', "Select a time limit");
             return;
         }
         
@@ -237,8 +237,7 @@ Polymer({
             
             _this._getDebugLogsCall(_this);
         }).catch(function(error) {
-            console.log('Error in getActions:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in get actions: " + error.toSource());
             
             _this._getDebugLogsCall(_this);
         });
@@ -255,8 +254,7 @@ Polymer({
             options: this.options,
             fields: this.fields
         }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
-            console.log('fetchLogs (audit) caught an error:', error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', "Error in get debug logs: " + error.toSource());
             _this._loading = false; // Stop loading on error
         });
     },
@@ -375,7 +373,7 @@ Polymer({
         }
         
         // Notify the user
-        console.log("Log size is " + this._allLogs.length + " from " + logs.length + " entries");
+        this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
         
         // Sort our past actions by time
         this._pastActions.sort(function(a,b) {
