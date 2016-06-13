@@ -80,14 +80,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         text-shadow: 3px 1px 4px #000;
       }
       :host ::content .header.paper-card{
-        max-height: 200px;
+        /*max-height: 200px;*/
         border-bottom: 10px solid #027244;
         @apply(--bridgeit-login-header);
       }
-      @media (max-height: 600px) {
+
+      /**@media (max-height: 600px) {
         :host ::content .header.paper-card{
           max-height: 80px;
         }
+      }*/
+
+      paper-card{
+        --paper-card-header-image:{
+          @apply(--bridgeit-login-image);
+        };
       }
 
     </style>
