@@ -9,9 +9,9 @@ Polymer({
         /**
          * Number of milliseconds before removing the current message from the page
          * If this is less than 0 the messages are never removed, and must be done manually (via removeOldest)
-         * @default 2000
+         * @default 5000
          */
-        hideafter: { type: Number, value: 2000, reflectToAttribute: true, notify: true },
+        hideafter: { type: Number, value: 5000, reflectToAttribute: true, notify: true },
         /**
          * Enable to display a timestamp prefixing each error/info message
          * @default false
