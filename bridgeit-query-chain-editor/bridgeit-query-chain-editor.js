@@ -1,4 +1,3 @@
-var BridgeIt = BridgeIt || {};
 
 BridgeIt.QueryChainEditor = Polymer({
     is: "bridgeit-query-chain-editor",
