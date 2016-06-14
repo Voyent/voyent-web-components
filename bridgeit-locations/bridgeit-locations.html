@@ -1,5 +1,6 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+<link rel="import" href="../bridgeit-message/bridgeit-message.html">
 
 <!--
 Show a map of BridgeIt location data, including user location updates, regions, and points of interest.
@@ -26,6 +27,8 @@ Example:
             }
         </style>
         <div id="container">
+            <bridgeit-message></bridgeit-message>
+        
             <div id="map"></div>
         </div>
     </template>

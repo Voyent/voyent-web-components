@@ -72,7 +72,7 @@ Polymer({
 	    // Log if we don't have any transports available
 	    this.noTransports = false;
 	    if (!this.allowBrowser && !this.allowCloud && !this.allowSMS && !this.allowEmail) {
-	        console.error("No transports were enabled or allowed for this component");
+	        this.fire('message-error', "No transports were enabled or allowed for this component");
 	        this.noTransports = true;
 	    }
 	    
@@ -132,7 +132,7 @@ Polymer({
 	    try{
 	        toReturn = JSON.stringify(toReturn, null, 4);
 	    }catch(error) {
-	        console.log("Failed to parse transport editor UI tooling to JSON string", error);
+	        this.fire('message-error', "Failed to parse transport editor UI tooling to JSON string: " + error.toSource());
 	    }
 	    
 	    return toReturn;

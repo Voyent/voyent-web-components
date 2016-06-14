@@ -44,8 +44,7 @@ Polymer({
             });
             _this.fire('recognizersRetrieved',{recognizers:recognizers});
         }).catch(function(error) {
-            console.log('Error in getRecognizers:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'Error in getRecognizers: ' + error.toSource());
         });
     },
 
@@ -75,8 +74,7 @@ Polymer({
             _this._loadedRecognizer = recognizer;
             _this.getRecognizers();
         }).catch(function(error) {
-            console.log('Error in saveRecognizer:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'Error in saveRecognizer: ' + error.toSource());
         });
     },
 
@@ -97,8 +95,7 @@ Polymer({
             bridgeit.io.eventhub.updateRecognizer({"realm":this.realm,"id":this._id,"recognizer":recognizer}).then(function() {
                 _this.getRecognizers();
             }).catch(function(error) {
-                console.log('Error in updateRecognizer:',error);
-                _this.fire('bridgeit-error', {error: error});
+                _this.fire('message-error', 'Error in updateRecognizer: ' + error.toSource());
             });
         }
     },
@@ -116,8 +113,7 @@ Polymer({
             _this.resetEditor();
             _this.getRecognizers();
         }).catch(function(error) {
-            console.log('Error in deleteRecognizer:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'Error in deleteRecognizer: '  + error.toSource());
         });
     },
 
@@ -222,8 +218,7 @@ Polymer({
             _this._loadedRecognizer._id = _this._id;
             _this.saveRecognizer();
         }).catch(function(error) {
-            console.log('Error in updateRecognizer:',error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'Error in updateRecognizer: ' + error.toSource());
         });
     },
 

@@ -209,7 +209,7 @@ Polymer({
         
         // Bail if we can't find our div container
         if (typeof wrapper === 'undefined' || wrapper === null) {
-            console.log("No SVG container was found that matches ID " + this.id + ", not drawing event monitor.");
+            this.fire('message-error', "No SVG container was found that matches ID " + this.id + ", not drawing event monitor."); 
             return;
         }
         
@@ -233,7 +233,7 @@ Polymer({
         // Before progressing check if we even have data to graph
         // If we don't we'll disable zoom/drag and show an error message
         if (typeof data === "undefined" || data === null || data.length === 0) {
-            console.log("No data was passed to event monitor graph.");
+            this.fire('message-info', "No data was passed to event monitor graph.");
             
             this.customTitle = null;
             this._enablepoll = 'false';

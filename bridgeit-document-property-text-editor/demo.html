@@ -160,13 +160,6 @@
       document.querySelector('#demo').message = 'Sucessfully logged in';
       document.querySelector('#toast').show();
     }, false);
-
-    //error listener
-    window.addEventListener('bridgeit-error', function(e){
-      console.error('caught bridgeit error: ', e.detail);
-      document.querySelector('#demo').message = 'Error: ' + e.detail.error;
-      document.querySelector('#toast').show();
-    }, false);
   },100);
 
   function selectDocument(item){

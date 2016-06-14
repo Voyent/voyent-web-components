@@ -130,7 +130,7 @@ BridgeIt.LocationRoute = Polymer({
                 }, function(response, status) {
                     if (status !== google.maps.DirectionsStatus.OK) {
                         if (failures == 10) {
-                            console.log('Directions request failed 10 times for "',_this.label,'". Not retrying.');
+                            _this.fire('message-error', 'Directions request failed 10 times for "' + _this.label + '". Not retrying.'); 
                             return;
                         }
                         console.log('Error starting route "',_this.label+'"','due to',status+'.','This was failure #',parseInt(failures+1)+'.','Retrying request in 3 seconds...');
@@ -140,7 +140,7 @@ BridgeIt.LocationRoute = Polymer({
                         failures++;
                         return;
                     }
-                    console.log('Successfully started route',_this.label+'.');
+                    _this.fire('message-info', 'Successfully started route' + _this.label + '.');
                     _this._directionsRenderer.setDirections(response);
                     //Use the steps of the legs instead of overview_path/polyline_path because they are the most atomic unit of a directions route
                     var legs = response.routes[0].legs;
@@ -186,8 +186,7 @@ BridgeIt.LocationRoute = Polymer({
                         _this._cancelBtnDisabled=false;
                         _this._updateBtnDisabled=false;
                     }).catch(function(error) {
-                        console.log('Issue updating location:',error);
-                        _this.fire('bridgeit-error', {error: error});
+                        _this.fire('message-error', 'Issue updating location: ' + error.toSource());
                     });
                 });
             } )();
@@ -247,7 +246,7 @@ BridgeIt.LocationRoute = Polymer({
             _this._index = i;
             _this._previousBtnDisabled=false;
         }).catch(function(error) {
-            console.log('Issue stepping to next location of user "' + _this._location.username + '":', error);
+            _this.fire('message-error', 'Issue stepping to next location of user "' + _this._location.username + '": ' + error.toSource());
         });
     },
 
@@ -274,7 +273,7 @@ BridgeIt.LocationRoute = Polymer({
                 _this._previousBtnDisabled=true;
             }
         }).catch(function(error) {
-            console.log('Issue stepping to previous location of user "' + _this._location.username + '":', error);
+            _this.fire('message-error', 'Issue stepping to previous location of user "' + _this._location.username + '": ' + error.toSource());
         });
     },
 
@@ -292,7 +291,7 @@ BridgeIt.LocationRoute = Polymer({
             }
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
         }).catch(function(error) {
-            console.log('Issue updating location:',error);
+            _this.fire('message-error', 'Issue updating location:' + error.toSource());
         });
     },
 
@@ -437,7 +436,7 @@ BridgeIt.LocationRoute = Polymer({
                 }
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             }).catch(function(error) {
-                console.log('Issue updating location:',error);
+                _this.fire('message-error', 'Issue updating location: ' + error.toSource());
             });
         },this.frequency*1000);
     },

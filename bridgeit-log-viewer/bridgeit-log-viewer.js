@@ -205,8 +205,7 @@ Polymer({
             options: this.options,
             fields: this.fields
         }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
-            console.log('fetchLogs (audit) caught an error:', error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'fetchLogs (audit) caught an error: ' + error.toSource());
             _this._noLogs = true;
         });
     },
@@ -223,8 +222,7 @@ Polymer({
             options: this.options,
             fields: this.fields
         }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
-            console.log('fetchLogs (debug) caught an error:', error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'fetchLogs (debug) caught an error: ' + error.toSource());
             _this._noLogs = true;
         });
     },

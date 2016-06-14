@@ -131,7 +131,7 @@ BridgeIt.QueryEditor = Polymer({
                 document.head.appendChild(document.importNode(e.target.import.body,true));
                 onAfterjQueryLoaded();
             }, function(err) {
-                console.error('bridgeit-query-editor: error loading jquery', err);
+                _this.fire('message-error', 'bridgeit-query-editor: error loading jquery ' + err.toSource());
             });
         }
         else { onAfterjQueryLoaded(); }
@@ -143,7 +143,7 @@ BridgeIt.QueryEditor = Polymer({
                     document.head.appendChild(document.importNode(e.target.import.body,true));
                     initialize();
                 }, function(err) {
-                    console.error('bridgeit-query-editor: error loading jquery builder', err);
+                    _this.fire('message-error', 'bridgeit-query-editor: error loading jquery builder ' + err.toSource());
                 });
             }
             else { initialize(); }
@@ -370,8 +370,7 @@ BridgeIt.QueryEditor = Polymer({
             _this.fetchQueryList();
             _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
         }).catch(function(error){
-            console.log('createQuery caught an error:', error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'createQuery caught an error: ' + error.toSource());
         });
     },
     _deleteQuery: function() {
@@ -386,8 +385,7 @@ BridgeIt.QueryEditor = Polymer({
             _this.resetEditor();
             _this.fetchQueryList();
         }).catch(function(error){
-            console.log('deleteQuery caught an error:', error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'deleteQuery caught an error: ' + error.toSource());
         });
     },
     _getAllQueries: function() {
@@ -402,8 +400,7 @@ BridgeIt.QueryEditor = Polymer({
             _this._setQuerylistresults(results);
             _this.fire('queriesRetrieved',{results: results});
         }).catch(function(error){
-            console.log('fetchQueryList caught an error:', error);
-            _this.fire('bridgeit-error', {error: error});
+            _this.fire('message-error', 'fetchQueryList caught an error: ' + error.toSource());
         });
     },
     _buildQuery: function(id,description,services,isClone) {
@@ -670,7 +667,7 @@ BridgeIt.QueryEditor = Polymer({
                 params.collection = this.collection;
                 this.service_url = protocol+bridgeit.io.documentsURL+path+'/'+this.collection;
                 bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
-                    console.log('findDocuments caught an error:', error);
+                    _this.fire('message-error', 'findDocuments caught an error: ' + error.toSource());
                 });
                 break;
             case 'location':
@@ -678,17 +675,17 @@ BridgeIt.QueryEditor = Polymer({
                 switch (this.collection.toLowerCase()) {
                     case 'locations':
                         bridgeit.io.location.findLocations(params).then(successCallback).catch(function(error){
-                            console.log('findLocations caught an error:', error);
+                            _this.fire('message-error', 'findLocations caught an error: ' + error.toSource());
                         });
                         break;
                     case 'regions':
                         bridgeit.io.location.findRegions(params).then(successCallback).catch(function(error){
-                            console.log('findRegions caught an error:', error);
+                            _this.fire('message-error', 'findRegions caught an error: ' + error.toSource());
                         });
                         break;
                     case 'poi':
                         bridgeit.io.location.findPOIs(params).then(successCallback).catch(function(error){
-                            console.log('findPOIs caught an error:', error);
+                            _this.fire('message-error', 'findPOIs caught an error: ' + error.toSource());
                         });
                         break;
                     default:
@@ -699,7 +696,7 @@ BridgeIt.QueryEditor = Polymer({
                 this.collection = 'events';
                 this.service_url = protocol+bridgeit.io.metricsURL+path+'/'+this.collection;
                 bridgeit.io.event.findEvents(params).then(successCallback).catch(function(error){
-                    console.log('findEvents caught an error:', error);
+                    _this.fire('message-error', 'findEvents caught an error: ' + error.toSource());
                 });
                 break;
             case 'authadmin':
@@ -708,7 +705,7 @@ BridgeIt.QueryEditor = Polymer({
                 switch (this.collection.toLowerCase()) {
                     case 'users':
                         bridgeit.io.admin.getRealmUsers(params).then(successCallback).catch(function(error){
-                            console.log('getRealmUsers caught an error:', error);
+                            _this.fire('message-error', 'getRealmUsers caught an error: ' + error.toSource());
                         });
                         break;
                     default:
@@ -719,7 +716,7 @@ BridgeIt.QueryEditor = Polymer({
                 this.collection = 'mailboxes';
                 this.service_url = protocol+bridgeit.io.mailboxURL+path+'/'+this.collection;
                 bridgeit.io.mailbox.findMailboxes(params).then(successCallback).catch(function(error){
-                    console.log('findMailboxes caught an error:', error);
+                    _this.fire('message-error', 'findMailboxes caught an error: ' + error.toSource());
                 });
                 break;
             default:

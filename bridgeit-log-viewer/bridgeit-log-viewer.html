@@ -4,6 +4,7 @@
 <link rel="import" href="../../paper-item/paper-item.html">
 <link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+<link rel="import" href="../bridgeit-message/bridgeit-message.html">
 
 <!--
 Displays a table for viewing, sorting and querying log information stored by the BridgeIt Services. Supports Audit and Debug logs. Requires BridgeIt Account Admin credentials.
@@ -80,6 +81,8 @@ Example:
                 @apply(--log-viewer-p);
             }
         </style>
+        
+        <bridgeit-message></bridgeit-message>
         
         <template is="dom-if" if="{{_hasLogs}}">
             <div class="buttonContainer">
