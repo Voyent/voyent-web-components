@@ -39,7 +39,12 @@ Polymer({
         this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage','data'];
         this._taskGroupBaseId = 'taskGroup';
         this._taskBaseId = 'task';
-        
+	},
+	
+	/**
+	 * Add a scroll listener once our page is initialized fully (which is why we do this in 'attached' instead of 'ready')
+	 */
+	attached: function() {
         // Setup our sidebar to scroll alongside the action editor
         // This is necessary in case the action editor is quite long (such as many tasks)
         // Because we still want to see the draggable containers/tasks list
@@ -50,10 +55,16 @@ Polymer({
             var ourDiv = document.getElementById("fixedDiv");
             
             if (ourDiv) {
-                // Set our component offset if we haven't already
+                // This offset would sometimes enter a race condition with initialization
+                // Where the offset would calculate BEFORE the entire page was loaded, specifically the content above the action editor
+                // This lead the scrolling palette to "sticky" to the top incorrectly
+                // Namely because it thought the top of the action editor was higher on the page (aka lower offsetTop, like 300) instead of the correct value of ~600
+                // Moving the entire scrolling listener initialization from 'ready' to 'attached' seems to have helped
                 if (_this.offset < 0) {
                     _this.offset = ourDiv.offsetTop;
                 }
+                
+                // Next calculate our scrollbar position
                 var compareTop = _this._calculateScrollbarPos(ourDiv.parentNode);
                 
                 // Skip out if our comparison is the same as our last scroll
