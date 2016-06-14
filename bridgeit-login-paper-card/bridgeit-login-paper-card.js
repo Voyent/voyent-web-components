@@ -73,7 +73,6 @@
 
     handleLogin: function(e){
       var _this = this;
-      console.log('login-view.handleLogin() ' + this.username + ', ' + this.password);
       var authProvider = document.querySelector('#' + this.authProvider);
       if( !authProvider ){
         console.error('bridgeit-login-paper-card could not find auth-provider: ' + this.authProvider);

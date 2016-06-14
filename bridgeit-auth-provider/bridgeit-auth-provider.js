@@ -157,26 +157,31 @@
      * @return {Promise} A promise with the response from bridgeit.io.auth.connect()
      */
     login: function(username, password, admin){
-      console.log('bridgeit-auth-provider.login()');
+      this.set('error', '');
       var _this = this;
       if( username ){
         this.username = username;
       }
       if( !this.username ){
-        this.error = 'Missing username';
+        this.set('error', 'Missing username'); 
         return Promise.reject(this.error);
       }
       if( password ){
         this.password = password;
       }
       if( !this.password ){
-        this.error = 'Missing password';
+        this.set('error', 'Missing password');
         return Promise.reject(this.error);
       }
+      
+      if( !this.realm ){
+        this.set('error', 'Missing realm');
+        return Promise.reject(this.error);
+      }
+      
       if( admin ){
         this.admin = admin;
       }
-      this.error = '';
       var params = {
         account: this.account,
         username: this.username,
@@ -206,7 +211,8 @@
       return bridgeit.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
         onAfterConnect(authResponse);
       }).catch(function(error){
-
+        _this.set('error', 'Login failed ' + (error.responseText || error.message));
+          
         //if fallbackToAdmin try to login as admin
         if( !_this.admin && _this.fallbackToAdmin ){
           params.realm = 'admin';
@@ -218,8 +224,7 @@
           Promise.reject(error);
         }
       }).catch(function(error){
-        this.error = error.responseText || error.message;
-        _this.fire('message-error', "bridgeit-auth-provider#login() error failed login: " + this.error);
+        _this.set('error', 'Login failed ' + (error.responseText || error.message));
       });
     },
 
