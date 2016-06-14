@@ -19,7 +19,7 @@ Polymer({
          */
         barpad: { type: Number, value: 0, reflectToAttribute: true, notify: true }
     },
-
+    
     /**
      * Fired after the actions list is retrieved, this occurs on the initial load and whenever a CRUD operation is performed. Contains the list of saved actions.
      * @event actionsRetrieved
@@ -39,12 +39,7 @@ Polymer({
         this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage','data'];
         this._taskGroupBaseId = 'taskGroup';
         this._taskBaseId = 'task';
-	},
-	
-	/**
-	 * Add a scroll listener once our page is initialized fully (which is why we do this in 'attached' instead of 'ready')
-	 */
-	attached: function() {
+        
         // Setup our sidebar to scroll alongside the action editor
         // This is necessary in case the action editor is quite long (such as many tasks)
         // Because we still want to see the draggable containers/tasks list
@@ -59,8 +54,8 @@ Polymer({
                 // Where the offset would calculate BEFORE the entire page was loaded, specifically the content above the action editor
                 // This lead the scrolling palette to "sticky" to the top incorrectly
                 // Namely because it thought the top of the action editor was higher on the page (aka lower offsetTop, like 300) instead of the correct value of ~600
-                // Moving the entire scrolling listener initialization from 'ready' to 'attached' seems to have helped
-                if (_this.offset < 0) {
+                // To solve this we will store the highest offsetTop we can find, which means if we incorrectly get set to 300 we will override with 600
+                if (_this.offset < ourDiv.offsetTop) {
                     _this.offset = ourDiv.offsetTop;
                 }
                 
@@ -128,7 +123,7 @@ Polymer({
             }
         }, true);
 	},
-
+	
     /**
      * If authentication is not provided on component load then this function can be used to initialize the component.
      */
