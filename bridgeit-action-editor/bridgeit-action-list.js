@@ -1,10 +1,16 @@
 Polymer({
     is: "bridgeit-action-list",
+    
+    properties: {
+        /**
+         * Selected index of the saved actions dropdown
+         */
+        selectedIndex: { type: Number, notify: true },
+    },
 
     ready: function() {
         this._setupListener();
     },
-
 
     //******************PRIVATE API******************
 
@@ -15,6 +21,7 @@ Polymer({
         var _this = this;
         Polymer.dom(this).parentNode.addEventListener('actionsRetrieved', function(e) {
             _this._allActions = e.detail.actions.length > 0 ? e.detail.actions : null;
+            _this._allActions.sort(_this._sortList);
         });
     },
 
@@ -24,7 +31,31 @@ Polymer({
      * @private
      */
     _loadAction: function(e) {
-        Polymer.dom(this).parentNode.loadAction(e.model.item);
+        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allActions.length-1)) {
+            Polymer.dom(this).parentNode.loadAction(this._allActions[this.selectedIndex]);
+        }
+        else {
+            this.fire('message-error', 'Select an action to view');
+        }
+    },
+    
+    /**
+     * Deletes the selected action.
+     * @param e
+     * @private
+     */
+    _deleteAction: function(e) {
+        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allActions.length-1)) {
+            var confirm = window.confirm("Are you sure? This cannot be undone!");
+            if (!confirm) {
+                return;
+            }
+            
+            Polymer.dom(this).parentNode.deleteAction(this._allActions[this.selectedIndex]._id);
+        }
+        else {
+            this.fire('message-error', 'Select an action to delete');
+        }
     },
 
     /**

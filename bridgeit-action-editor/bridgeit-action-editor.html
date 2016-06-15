@@ -306,8 +306,8 @@ Example:
         </style>
         
         <template is="dom-if" if="{{_taskGroupSchemas}}">
-            <content select="bridgeit-action-list"></content>
             <div class="buttonContainer">
+                <content select="bridgeit-action-list"></content>
                 <paper-button raised on-click="_resetEditor">New/Reset</paper-button>
                 <template is="dom-if" if="{{!_loadedAction}}">
                     <paper-button raised on-click="_saveAction">Save</paper-button>
@@ -315,7 +315,7 @@ Example:
                 <template is="dom-if" if="{{_loadedAction}}">
                     <paper-button raised on-click="_updateAction">Update</paper-button>
                     <paper-button raised on-click="_cloneAction">Clone<!-- (Save as new)--></paper-button>
-                    <paper-button raised on-click="_deleteAction">Delete</paper-button>
+                    <!--<paper-button raised on-click="_deleteAction">Delete</paper-button>-->
                 </template>
                 
                 <bridgeit-message></bridgeit-message>

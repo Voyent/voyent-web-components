@@ -248,16 +248,13 @@ Polymer({
             });
         }
     },
-
+    
     /**
      * Delete the action from the Action Service.
+     * @param id
      */
-    deleteAction: function() {
+    deleteAction: function(id) {
         var _this = this;
-        if (!this._loadedAction || !this._loadedAction._id) {
-            return;
-        }
-        var id = this._loadedAction._id;
         bridgeit.io.action.deleteAction({"realm":this.realm,id:id}).then(function() {
             _this.resetEditor();
             _this.getActions(); //refresh actions list
@@ -712,10 +709,14 @@ Polymer({
      */
     _deleteAction: function() {
         var confirm = window.confirm("Are you sure? This cannot be undone!");
-         if (!confirm) {
-         return;
-         }
-        this.deleteAction();
+        if (!confirm) {
+            return;
+        }
+        
+        if (!this._loadedAction || !this._loadedAction._id) {
+            return;
+        }
+        this.deleteAction(this._loadedAction._id);
     },
 
     /**
