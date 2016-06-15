@@ -576,6 +576,8 @@ Polymer({
         colors['action'] = "sienna";
         colors['eventhub'] = "darkturquoise";
         colors['push'] = "hotpink";
+        colors['mailbox'] = "blueviolet";
+        colors['event'] = "greenyellow";
         return colors;
     }
 });
