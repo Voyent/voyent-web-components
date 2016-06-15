@@ -187,13 +187,17 @@ Polymer({
      * @param action
      */
     loadAction: function(action) {
-        this._loadHandler(action._id);
-        this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
-        this._taskGroups = this._convertActionToUI(this._loadedAction);
-        
-        //hack way to get any select components in the action to properly select the loaded value
+        // First reset our task groups, mainly to toggle the state of task group collapsed/opened
+        this.set('_taskGroups', []);
+
+        // Then do our load in a set timeout
+        // This is also necessary to update any select components in the action to their properly loaded value
         setTimeout(function() {
+            this._loadHandler(action._id);
+            this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
+            this._taskGroups = this._convertActionToUI(this._loadedAction);
             this.set('_taskGroups',JSON.parse(JSON.stringify(this._taskGroups)));
+            this.fire('message-info', 'Loaded action ' + this._loadedAction._id + ' with ' + this._taskGroups.length + ' task groups');
         }.bind(this),0);
     },
 
@@ -205,6 +209,7 @@ Polymer({
         var _this = this;
         actionId = actionId && actionId.trim().length > 0 ? actionId : this._actionId;
         if (!this.validateAction() || !this.isUniqueActionId(actionId)) {
+            this.fire('message-error', 'Invalid data was found in action, fix and try saving again');
             return;
         }
         var action = this.convertUIToAction();
@@ -213,6 +218,7 @@ Polymer({
             _this._loadedAction = action;
             _this.getActions(); //refresh actions list
             _this._saveHandler(actionId);
+            _this.fire('message-info', 'Successfully saved ' + _this._loadedAction._id + ' action');
         }).catch(function(error) {
             _this.fire('message-error', "Error in saveAction: " + error.toSource());
         });
@@ -224,6 +230,7 @@ Polymer({
     updateAction: function() {
         var _this = this;
         if (!this._loadedAction || !this.validateAction()) {
+            this.fire('message-error', 'Invalid data was found in action, fix and try updating again');
             return;
         }
         //check if the id has changed, if it has we must re-create the action with the new id
@@ -235,6 +242,7 @@ Polymer({
             bridgeit.io.action.updateAction({"realm":this.realm,"id":this._actionId,"action":action}).then(function() {
                 _this.getActions(); //refresh actions list
                 _this._updateHandler(_this._actionId);
+                _this.fire('message-info', 'Successfully updated ' + _this._actionId + ' action');
             }).catch(function(error) {
                 _this.fire('message-error', "Error in updateAction: " + error.toSource());
             });
@@ -254,6 +262,7 @@ Polymer({
             _this.resetEditor();
             _this.getActions(); //refresh actions list
             _this._deleteHandler(id);
+            _this.fire('message-info', 'Successfully deleted action ' + id);
         }).catch(function(error) {
             _this.fire('message-error', "Error in deleteAction: " + error.toSource());
         });
@@ -730,6 +739,7 @@ Polymer({
      */
     _resetEditor: function() {
         this.resetEditor();
+        this.fire('message-info', 'Reset the action editor');
     },
 
     /**
