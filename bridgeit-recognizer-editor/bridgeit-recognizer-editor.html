@@ -1,4 +1,5 @@
 <link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
 <link rel="import" href="../bridgeit-code-editor/bridgeit-code-editor.html">
 <link rel="import" href="../bridgeit-message/bridgeit-message.html">
@@ -74,16 +75,15 @@ Example:
                 margin:5px 0 10px 0;
             }
         </style>
-        <content select="bridgeit-recognizer-list"></content>
         <div class="buttonContainer">
-            <button type="button" on-click="_resetEditor">New/Reset</button>
+            <content select="bridgeit-recognizer-list"></content>
+            <paper-button raised on-click="_resetEditor">New/Reset</paper-button>
             <template is="dom-if" if="{{!_loadedRecognizer}}">
-                <button type="button" on-click="_saveRecognizer">Save</button>
+                <paper-button raised on-click="_saveRecognizer">Save</paper-button>
             </template>
             <template is="dom-if" if="{{_loadedRecognizer}}">
-                <button type="button" on-click="_updateRecognizer">Update</button>
-                <button type="button" on-click="_cloneRecognizer">Clone</button>
-                <button type="button" on-click="_deleteRecognizer">Delete</button>
+                <paper-button raised on-click="_updateRecognizer">Update</paper-button>
+                <paper-button raised on-click="_cloneRecognizer">Clone</paper-button>
             </template>
             <bridgeit-message></bridgeit-message>
         </div>
@@ -99,7 +99,7 @@ Example:
                 </label>
                 <label title="The ReactiveX script" class="codeEditorLbl">
                     <span class="required">*</span><span>Script</span>
-                    <bridgeit-code-editor class="code-editor" value="{{_script}}"></bridgeit-code-editor>
+                    <bridgeit-code-editor id="script-editor" class="code-editor" value="{{_script}}"></bridgeit-code-editor>
                 </label>
             </form>
         </div>

@@ -57,6 +57,7 @@ Polymer({
         this._id = recognizer._id;
         this._active = !!recognizer.active;
         this._script = recognizer.script;
+        this.fire('message-info', 'Loaded recognizer ' + this._id + ' with script ' + this._script.length + ' characters long');
     },
 
     /**
@@ -67,12 +68,14 @@ Polymer({
         var _this = this;
         recognizerId = recognizerId && recognizerId.trim().length > 0 ? recognizerId : this._id;
         if (!this.validateRecognizer() || !this.isUniqueRecognizerId(recognizerId)) {
+            this.fire('message-error', 'Invalid data was found in recognizer, fix and try saving again');
             return;
         }
         var recognizer = {"_id":recognizerId,"active":!!this._active,"script":this._script};
         bridgeit.io.eventhub.createRecognizer({"realm":this.realm,"id":recognizerId,"recognizer":recognizer}).then(function() {
             _this._loadedRecognizer = recognizer;
             _this.getRecognizers();
+            _this.fire('message-info', 'Successfully saved ' + _this._loadedRecognizer._id + ' recognizer');
         }).catch(function(error) {
             _this.fire('message-error', 'Error in saveRecognizer: ' + error.toSource());
         });
@@ -84,6 +87,7 @@ Polymer({
     updateRecognizer: function() {
         var _this = this;
         if (!this._loadedRecognizer || !this.validateRecognizer()) {
+            this.fire('message-error', 'Invalid data was found in recognizer, fix and try updating again');
             return;
         }
         //check if the id has changed, if it has we must re-create the recognizer with the new id
@@ -94,6 +98,7 @@ Polymer({
             var recognizer = {"active":!!this._active,"script":this._script};
             bridgeit.io.eventhub.updateRecognizer({"realm":this.realm,"id":this._id,"recognizer":recognizer}).then(function() {
                 _this.getRecognizers();
+                _this.fire('message-info', 'Successfully update ' + this._id + ' recognizer');
             }).catch(function(error) {
                 _this.fire('message-error', 'Error in updateRecognizer: ' + error.toSource());
             });
@@ -103,15 +108,12 @@ Polymer({
     /**
      * Delete the recognizer from the Recognizer Service.
      */
-    deleteRecognizer: function() {
+    deleteRecognizer: function(id) {
         var _this = this;
-        if (!this._loadedRecognizer || !this._loadedRecognizer._id) {
-            return;
-        }
-        var id = this._loadedRecognizer._id;
         bridgeit.io.eventhub.deleteRecognizer({"realm":this.realm,id:id}).then(function() {
             _this.resetEditor();
             _this.getRecognizers();
+            _this.fire('message-info', 'Successfully deleted recognizer ' + id);
         }).catch(function(error) {
             _this.fire('message-error', 'Error in deleteRecognizer: '  + error.toSource());
         });
@@ -124,19 +126,19 @@ Polymer({
     validateRecognizer: function() {
         //validate required fields
         if (!this._id || this._id.trim().length === 0) {
-            alert('Please enter an ID.');
+            this.fire('message-error', 'Missing a recognizer name/ID');
             return false;
         }
         if (!this._script || this._script.trim().length === 0) {
-            alert('Please enter a script.');
+            this.fire('message-error', 'Missing script contents');
             return false;
         }
         if (this._script.indexOf('realmObservable') === -1) {
-            alert('Script must contain "realmObservable" variable, cancelling create.');
+            this.fire('message-error', 'Script must contain "realmObservable" variable, cancelling create.');
             return false;
         }
         if (this._script.indexOf('recognizerObserver') === -1) {
-            alert('Script must contain "recognizerObserver" variable, cancelling create.');
+            this.fire('message-error', 'Script must contain "recognizerObserver" variable, cancelling create.');
             return false;
         }
         return true;
@@ -149,7 +151,7 @@ Polymer({
      */
     isUniqueRecognizerId: function(recognizerId) {
         if (this._ids.indexOf(recognizerId) > -1) {
-            alert('This Recognizer ID is already in use, please try a different one.');
+            this.fire('message-error', 'The recognizer "' + recognizerId + '" is already in use, please try a different one.');
             return false;
         }
         return true;
@@ -161,10 +163,10 @@ Polymer({
     resetEditor: function() {
         this._id = '';
         this._active = false;
-        this._script = '';
         this._loadedRecognizer = null;
+        this.set('_script', '');
+        this.fire('message-info', 'Reset the recognizer editor');
     },
-
 
     //******************PRIVATE API******************
 
@@ -205,7 +207,11 @@ Polymer({
         if (!confirm) {
             return;
         }
-        this.deleteRecognizer();
+        
+        if (!this._loadedRecognizer || !this._loadedRecognizer._id) {
+            return;
+        }
+        this.deleteRecognizer(this._loadedRecognizer._id);
     },
 
     /**
