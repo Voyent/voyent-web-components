@@ -98,7 +98,7 @@ Polymer({
             var recognizer = {"active":!!this._active,"script":this._script};
             bridgeit.io.eventhub.updateRecognizer({"realm":this.realm,"id":this._id,"recognizer":recognizer}).then(function() {
                 _this.getRecognizers();
-                _this.fire('message-info', 'Successfully update ' + this._id + ' recognizer');
+                _this.fire('message-info', 'Successfully update ' + _this._id + ' recognizer');
             }).catch(function(error) {
                 _this.fire('message-error', 'Error in updateRecognizer: ' + error.toSource());
             });
