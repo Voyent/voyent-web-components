@@ -5,14 +5,17 @@ Polymer({
         /**
          * The id of the `bridgeit-query-editor` component.
          */
-        for: { type: String }
+        for: { type: String },
+        /**
+         * Selected index of the saved queries dropdown
+         */
+        selectedIndex: { type: Number, notify: true },
     },
 
     /**
      * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
      * @event queryMsgUpdated
      */
-
     ready: function() {
         this._allQueries = [];
         this.setupListener();
@@ -76,9 +79,33 @@ Polymer({
      * @private
      */
     _viewQuery: function(e) {
-        var query = e.model.item;
-        var queryEditor = document.getElementById(this.for);
-        queryEditor.setEditorFromMongo(query);
-        queryEditor.runQuery();
+        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allQueries.length-1)) {
+            var queryEditor = document.getElementById(this.for);
+            queryEditor.setEditorFromMongo(this._allQueries[this.selectedIndex]);
+            queryEditor.runQuery();
+        }
+        else {
+            this.fire('message-error', 'Select a query to view');
+        }
+    },
+    
+    /**
+     * Deletes the selected query from the query editor.
+     * @param e
+     * @private
+     */
+    _deleteQuery: function(e) {
+        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allQueries.length-1)) {
+            var confirm = window.confirm("Are you sure? This cannot be undone!");
+            if (!confirm) {
+                return;
+            }
+            
+            var queryEditor = document.getElementById(this.for);
+            queryEditor._deleteQuery(this._allQueries[this.selectedIndex]._id);
+        }
+        else {
+            this.fire('message-error', 'Select a query to delete');
+        }
     }
 });

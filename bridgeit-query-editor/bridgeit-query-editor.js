@@ -255,7 +255,7 @@ BridgeIt.QueryEditor = Polymer({
             this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'No query to delete.','type':'error'});
             return;
         }
-        this._deleteQuery();
+        this._deleteQuery(this.activeQuery._id);
     },
 
     /**
@@ -373,9 +373,8 @@ BridgeIt.QueryEditor = Polymer({
             _this.fire('message-error', 'createQuery caught an error: ' + error.toSource());
         });
     },
-    _deleteQuery: function() {
+    _deleteQuery: function(queryId) {
         var _this = this;
-        var queryId = this.activeQuery._id;
         bridgeit.io.query.deleteQuery({
             id:queryId,
             account: this.account,

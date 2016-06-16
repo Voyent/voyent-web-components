@@ -1,5 +1,9 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../bridgeit-io-import/bridgeit-io-import.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-item/paper-item-body.html">
+<link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
 
 <!--
 Displays a list of queries retrieved by the `bridgeit-query-editor` component by listening for the `queriesRetrieved` event.
@@ -37,14 +41,15 @@ Example:
         <div class="tableWrapper">
             <table>
                 <tbody>
-                    <template is="dom-repeat" items="{{_allQueries}}">
-                        <tr>
-                            <td>{{item._id}}</td>
-                            <td>
-                                <button on-click="_viewQuery">View</button>
-                            </td>
-                        </tr>
-                    </template>
+                    <paper-dropdown-menu label="Saved Queries">
+                        <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
+                            <template is="dom-repeat" items="[[_allQueries]]" as="query">
+                                <paper-item>[[query._id]]</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                    <button title="Load the selected query" on-click="_viewQuery">View</button>
+                    <button title="Delete the selected query" on-click="_deleteQuery">Delete</button>
                 </tbody>
             </table>
         </div>
