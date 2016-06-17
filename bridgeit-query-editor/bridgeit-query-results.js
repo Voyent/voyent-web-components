@@ -173,6 +173,19 @@ Polymer({
             }
             else {
                 this._td = record[key];
+                
+                // If we have an array it could be quite large, and have quite big contents
+                // So we want to JSON stringify the array and put the results into a readonly text area
+                // This is an easy and efficient way to display a ton of JSON
+                // Ideally we might revisit this with a custom link that shows a popup or something
+                try{
+                    if (this._td instanceof Array && this._td.length > 0) {
+                        this._td =
+                            '<textarea readonly rows="5" style="width: 90%; z-index: 1000; position: relative;">' + JSON.stringify(record[key], null, 4) + '</textarea>';
+                    }
+                }catch (error) {
+                    console.error("Failed to parse array row");
+                }
             }
         }
         //we have a nested property reference (eg. data.obj.subprop)
