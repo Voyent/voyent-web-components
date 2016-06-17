@@ -47,15 +47,13 @@ Example:
         </style>
         <div class="tableWrapper">
             <template is="dom-if" if="{{_allRecognizers}}">
-                <paper-dropdown-menu label="Saved Recognizers">
+                <paper-dropdown-menu label="View Saved Recognizers">
                     <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
                         <template is="dom-repeat" items="[[_allRecognizers]]" as="recognizer">
                             <paper-item>[[recognizer._id]]</paper-item>
                         </template>
                     </paper-listbox>
                 </paper-dropdown-menu>
-                <paper-button raised title="Load the selected recognizer" on-click="_loadRecognizer">View</paper-button>
-                <paper-button raised title="Delete the selected recognizer" on-click="_deleteRecognizer">Delete</paper-button>
             </template>
             <template is="dom-if" if="{{!_allRecognizers}}">
                 <div class="noRecognizerTxt">Saved Recognizers: No existing recognizers found.</div>

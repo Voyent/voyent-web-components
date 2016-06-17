@@ -203,14 +203,15 @@ Polymer({
      * @private
      */
     _deleteRecognizer: function() {
-        var confirm = window.confirm("Are you sure? This cannot be undone!");
+        if (!this._loadedRecognizer || !this._loadedRecognizer._id) {
+            return;
+        }
+        
+        var confirm = window.confirm("Are you sure you want to delete '" + this._loadedRecognizer._id + "'? This cannot be undone!");
         if (!confirm) {
             return;
         }
         
-        if (!this._loadedRecognizer || !this._loadedRecognizer._id) {
-            return;
-        }
         this.deleteRecognizer(this._loadedRecognizer._id);
     },
 

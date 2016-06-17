@@ -5,7 +5,7 @@ Polymer({
         /**
          * Selected index of the saved actions dropdown
          */
-        selectedIndex: { type: Number, notify: true },
+        selectedIndex: { type: Number, notify: true, observer: '_selectedIndexChanged' },
     },
 
     ready: function() {
@@ -27,37 +27,22 @@ Polymer({
 
     /**
      * Loads the selected action.
-     * @param e
      * @private
      */
-    _loadAction: function(e) {
+    _loadAction: function() {
         if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allActions.length-1)) {
-            Polymer.dom(this).parentNode.loadAction(this._allActions[this.selectedIndex]);
+            var _this = this;
+            Polymer.dom(this).parentNode.loadAction(this._allActions[this.selectedIndex], function() {
+                setTimeout(function() {
+                    _this.set('selectedIndex', null);
+                },2000);
+            });
         }
         else {
             this.fire('message-error', 'Select an action to view');
         }
     },
     
-    /**
-     * Deletes the selected action.
-     * @param e
-     * @private
-     */
-    _deleteAction: function(e) {
-        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allActions.length-1)) {
-            var confirm = window.confirm("Are you sure? This cannot be undone!");
-            if (!confirm) {
-                return;
-            }
-            
-            Polymer.dom(this).parentNode.deleteAction(this._allActions[this.selectedIndex]._id);
-        }
-        else {
-            this.fire('message-error', 'Select an action to delete');
-        }
-    },
-
     /**
      * Sorts the list of actions alphabetically.
      * @param a
@@ -71,5 +56,15 @@ Polymer({
         if (a < b) { return -1; }
         else if (a > b) { return  1; }
         return 0;
+    },
+    
+    /**
+     * Fired when the selectedIndex changes
+     * If we have a valid new index we try to load it
+     */
+    _selectedIndexChanged: function() {
+        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex !== null) {
+            this._loadAction();
+        }
     }
 });

@@ -47,15 +47,13 @@ Example:
         </style>
         <div class="tableWrapper">
             <template is="dom-if" if="{{_allActions}}">
-                <paper-dropdown-menu label="Saved Actions">
+                <paper-dropdown-menu label="View Saved Actions">
                     <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
                         <template is="dom-repeat" items="[[_allActions]]" as="action">
                             <paper-item>[[action._id]]</paper-item>
                         </template>
                     </paper-listbox>
                 </paper-dropdown-menu>
-                <paper-button raised title="Load the selected action" on-click="_loadAction">View</paper-button>
-                <paper-button raised title="Delete the selected action" on-click="_deleteAction">Delete</paper-button>
             </template>
             <template is="dom-if" if="{{!_allActions}}">
                 <div class="noActionTxt">Saved Actions: No existing actions found.</div>

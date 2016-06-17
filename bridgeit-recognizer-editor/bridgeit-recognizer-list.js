@@ -5,7 +5,7 @@ Polymer({
         /**
          * Selected index of the saved recognizers dropdown
          */
-        selectedIndex: { type: Number, notify: true },
+        selectedIndex: { type: Number, notify: true, observer: '_selectedIndexChanged' },
     },
     
     ready: function() {
@@ -31,34 +31,19 @@ Polymer({
      * @param e
      * @private
      */
-    _loadRecognizer: function(e) {
+    _loadRecognizer: function() {
         if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allRecognizers.length-1)) {
             Polymer.dom(this).parentNode.loadRecognizer(this._allRecognizers[this.selectedIndex]);
+            var _this = this;
+            setTimeout(function() {
+                _this.set('selectedIndex', null);
+            },2000);
         }
         else {
             this.fire('message-error', 'Select a recognizer to view');
         }
     },
     
-    /**
-     * Deletes the selected recognizer.
-     * @param e
-     * @private
-     */
-    _deleteRecognizer: function(e) {
-        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allRecognizers.length-1)) {
-            var confirm = window.confirm("Are you sure? This cannot be undone!");
-            if (!confirm) {
-                return;
-            }
-            
-            Polymer.dom(this).parentNode.deleteRecognizer(this._allRecognizers[this.selectedIndex]._id);
-        }
-        else {
-            this.fire('message-error', 'Select a recognizer to delete');
-        }
-    },
-
     /**
      * Sorts the list of recognizers alphabetically.
      * @param a
@@ -72,5 +57,15 @@ Polymer({
         if (a < b) { return -1; }
         else if (a > b) { return  1; }
         return 0;
-    }
+    },
+    
+    /**
+     * Fired when the selectedIndex changes
+     * If we have a valid new index we try to load it
+     */
+    _selectedIndexChanged: function() {
+        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex !== null) {
+            this._loadRecognizer();
+        }
+    },
 });

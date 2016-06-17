@@ -186,7 +186,7 @@ Polymer({
      * Load an action into the editor from JSON format.
      * @param action
      */
-    loadAction: function(action) {
+    loadAction: function(action, callback) {
         // First reset our task groups, mainly to toggle the state of task group collapsed/opened
         this.set('_taskGroups', []);
 
@@ -198,6 +198,9 @@ Polymer({
             this._taskGroups = this._convertActionToUI(this._loadedAction);
             this.set('_taskGroups',JSON.parse(JSON.stringify(this._taskGroups)));
             this.fire('message-info', 'Loaded action ' + this._loadedAction._id + ' with ' + this._taskGroups.length + ' task groups');
+            if (callback) {
+                callback();
+            }
         }.bind(this),0);
     },
 
@@ -708,12 +711,12 @@ Polymer({
      * @private
      */
     _deleteAction: function() {
-        var confirm = window.confirm("Are you sure? This cannot be undone!");
-        if (!confirm) {
+        if (!this._loadedAction || !this._loadedAction._id) {
             return;
         }
         
-        if (!this._loadedAction || !this._loadedAction._id) {
+        var confirm = window.confirm("Are you sure you want to delete '" + this._loadedAction._id + "'? This cannot be undone!");
+        if (!confirm) {
             return;
         }
         this.deleteAction(this._loadedAction._id);

@@ -9,7 +9,7 @@ Polymer({
         /**
          * Selected index of the saved queries dropdown
          */
-        selectedIndex: { type: Number, notify: true },
+        selectedIndex: { type: Number, notify: true, observer: '_selectedIndexChanged' },
     },
 
     /**
@@ -78,11 +78,16 @@ Polymer({
      * @param e
      * @private
      */
-    _viewQuery: function(e) {
+    _viewQuery: function() {
         if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allQueries.length-1)) {
             var queryEditor = document.getElementById(this.for);
             queryEditor.setEditorFromMongo(this._allQueries[this.selectedIndex]);
             queryEditor.runQuery();
+            
+            var _this = this;
+            setTimeout(function() {
+                _this.set('selectedIndex', null);
+            },2000);
         }
         else {
             this.fire('message-error', 'Select a query to view');
@@ -90,22 +95,12 @@ Polymer({
     },
     
     /**
-     * Deletes the selected query from the query editor.
-     * @param e
-     * @private
+     * Fired when the selectedIndex changes
+     * If we have a valid new index we try to load it
      */
-    _deleteQuery: function(e) {
-        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allQueries.length-1)) {
-            var confirm = window.confirm("Are you sure? This cannot be undone!");
-            if (!confirm) {
-                return;
-            }
-            
-            var queryEditor = document.getElementById(this.for);
-            queryEditor._deleteQuery(this._allQueries[this.selectedIndex]._id);
+    _selectedIndexChanged: function() {
+        if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex !== null) {
+            this._viewQuery();
         }
-        else {
-            this.fire('message-error', 'Select a query to delete');
-        }
-    }
+    },
 });

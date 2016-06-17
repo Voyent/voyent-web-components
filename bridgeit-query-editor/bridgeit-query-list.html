@@ -41,15 +41,13 @@ Example:
         <div class="tableWrapper">
             <table>
                 <tbody>
-                    <paper-dropdown-menu label="Saved Queries">
+                    <paper-dropdown-menu label="View Saved Queries">
                         <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
                             <template is="dom-repeat" items="[[_allQueries]]" as="query">
                                 <paper-item>[[query._id]]</paper-item>
                             </template>
                         </paper-listbox>
                     </paper-dropdown-menu>
-                    <button title="Load the selected query" on-click="_viewQuery">View</button>
-                    <button title="Delete the selected query" on-click="_deleteQuery">Delete</button>
                 </tbody>
             </table>
         </div>
