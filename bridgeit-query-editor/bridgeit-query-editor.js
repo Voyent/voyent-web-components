@@ -36,14 +36,14 @@ BridgeIt.QueryEditor = Polymer({
          */
         account: { type: String },
         /**
-         * The service that you would like to build the query for. Currently `documents`, `location`, `event`, `authadmin` and `mailbox` are supported.
+         * The service that you would like to build the query for. Currently `docs`, `locate`, `event`, `authadmin` and `mailbox` are supported.
          */
-        service: { type: String, value: 'event' },
+        service: { type: String, value: 'event', observer: '_updateQueriesList' },
         /**
          * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
          * Some services may only support one collection (eg. event, authadmin, etc..), in this case the collection will change automatically with the service.
          */
-        collection: { type: String, value: 'events' },
+        collection: { type: String, value: 'events', observer: '_updateQueriesList' },
         /**
          * Specifies the raw mongo query that should be loaded into the editor.
          *
@@ -359,6 +359,15 @@ BridgeIt.QueryEditor = Polymer({
             params.id = query._id;
             delete query._id;
         }
+        //add the properties section if it doesn't exist so
+        //we can specify the service/collection of the query
+        if (!query.properties) {
+            query.properties = {};
+        }
+        query.properties.type = 'find';
+        query.properties.service = this.service;
+        query.properties.collection = this.collection;
+        //create/update the query
         bridgeit.io.query[func](params).then(function(uri) {
             var queryId = _this.activeQuery._id;
             if (uri) {
@@ -393,11 +402,20 @@ BridgeIt.QueryEditor = Polymer({
             account:this.account,
             realm: this.realm
         }).then(function(results) {
+            //store the names of all the queries so we can provide
+            //validation messages indicating if a query name exists
             _this.allQueries = results.map(function(query) {
                 return query._id;
             });
-            _this._setQuerylistresults(results);
-            _this.fire('queriesRetrieved',{results: results});
+            //filter the query results so that we only show queries for the
+            //currently selected service / collection combination, if available
+            var filteredResults = results.filter(function(obj) {
+                return ((!obj.properties || !obj.properties.service || !obj.properties.collection) ||
+                    (obj.properties.service === _this.service &&
+                     obj.properties.collection === _this.collection))
+            });
+            _this._setQuerylistresults(filteredResults);
+            _this.fire('queriesRetrieved',{results: filteredResults});
         }).catch(function(error){
             _this.fire('message-error', 'fetchQueryList caught an error: ' + error.toSource());
         });
@@ -662,14 +680,16 @@ BridgeIt.QueryEditor = Polymer({
         _this._setLastquery(query);
         
         switch(this.service.toLowerCase()) {
-            case 'documents': case 'docs':
+            case 'docs': case 'documents': //'documents' is here for backwards compatibility
+                this.service = 'docs'; //make sure we are using 'docs' as the service name
                 params.collection = this.collection;
                 this.service_url = protocol+bridgeit.io.documentsURL+path+'/'+this.collection;
                 bridgeit.io.documents.findDocuments(params).then(successCallback).catch(function(error){
                     _this.fire('message-error', 'findDocuments caught an error: ' + error.toSource());
                 });
                 break;
-            case 'location':
+            case 'locate': case 'location': //'location' is here for backwards compatibility
+                this.service = 'locate'; //make sure we are using 'locate' as the service name
                 this.service_url = protocol+bridgeit.io.locateURL+path+'/'+this.collection;
                 switch (this.collection.toLowerCase()) {
                     case 'locations':
@@ -692,6 +712,7 @@ BridgeIt.QueryEditor = Polymer({
                 }
                 break;
             case 'event': case 'metrics': //'metrics' is here for backwards compatibility
+                this.service = 'event'; //make sure we are using 'event' as the service name
                 this.collection = 'events';
                 this.service_url = protocol+bridgeit.io.metricsURL+path+'/'+this.collection;
                 bridgeit.io.event.findEvents(params).then(successCallback).catch(function(error){
@@ -891,5 +912,10 @@ BridgeIt.QueryEditor = Polymer({
             parsedQuery = query;
         }
         return {"query":parsedQuery};
+    },
+    _updateQueriesList: function() {
+        //get all the queries when the service or collection is changed so we always have an updated
+        //query list and always show the correct queries for that service/collection combination
+        this.fetchQueryList();
     }
 });
