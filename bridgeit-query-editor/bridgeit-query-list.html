@@ -38,10 +38,10 @@ Example:
                 @apply(--query-list-button);
             }
         </style>
-        <div class="tableWrapper">
-            <table>
-                <tbody>
-                    <template is="dom-if" if="{{_hasQueries}}">
+        <template is="dom-if" if="{{_hasQueries}}">
+            <div class="tableWrapper">
+                <table>
+                    <tbody>
                         <paper-dropdown-menu label="View Saved Queries">
                             <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
                                 <template is="dom-repeat" items="[[_allQueries]]" as="query">
@@ -49,10 +49,10 @@ Example:
                                 </template>
                             </paper-listbox>
                         </paper-dropdown-menu>
-                    </template>
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
+        </template>
     </template>
 </dom-module>
 
