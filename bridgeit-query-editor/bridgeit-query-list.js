@@ -17,6 +17,7 @@ Polymer({
      * @event queryMsgUpdated
      */
     ready: function() {
+        this._hasQueries = false;
         this._allQueries = [];
         this.setupListener();
     },
@@ -30,6 +31,7 @@ Polymer({
         _this._queryEditor.fetchQueryList();
         _this._queryEditor.addEventListener('queriesRetrieved', function(e) {
             _this._allQueries = e.detail.results;
+            _this._hasQueries = _this._allQueries && _this._allQueries.length > 0;
             if (Object.keys(_this._allQueries).length === 0) {
                 _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query list is empty.','type':'error'});
             }

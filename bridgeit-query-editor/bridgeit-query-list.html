@@ -41,13 +41,15 @@ Example:
         <div class="tableWrapper">
             <table>
                 <tbody>
-                    <paper-dropdown-menu label="View Saved Queries">
-                        <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
-                            <template is="dom-repeat" items="[[_allQueries]]" as="query">
-                                <paper-item>[[query._id]]</paper-item>
-                            </template>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
+                    <template is="dom-if" if="{{_hasQueries}}">
+                        <paper-dropdown-menu label="View Saved Queries">
+                            <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
+                                <template is="dom-repeat" items="[[_allQueries]]" as="query">
+                                    <paper-item>[[query._id]]</paper-item>
+                                </template>
+                            </paper-listbox>
+                        </paper-dropdown-menu>
+                    </template>
                 </tbody>
             </table>
         </div>
