@@ -262,13 +262,24 @@ BridgeIt.QueryEditor = Polymer({
      * Clears the query editor and restores the `fields` and `options` attributes to their original values.
      */
     resetEditor: function() {
-        $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('reset');
+        var editor = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId));
+        if (!editor || !editor.queryBuilder) {
+            return;
+        }
+        try {
+            editor.queryBuilder('reset');
+        }
+        catch(e) {
+            //the reset call may throw errors if the query editor has no filter list yet
+            //but if there is no filter list then there is nothing to reset so ignore it
+        }
         this.options = JSON.parse(this.getAttribute('options')) || {};
         this.fields = JSON.parse(this.getAttribute('fields')) || {};
         this.activeQuery = null;
         this._setQueryHeader(null);
         this._updateQueryURL();
         this._queryService({});
+        this._setCurrentquery({});
     },
 
     /**
@@ -917,5 +928,6 @@ BridgeIt.QueryEditor = Polymer({
         //get all the queries when the service or collection is changed so we always have an updated
         //query list and always show the correct queries for that service/collection combination
         this.fetchQueryList();
+        this.resetEditor();
     }
 });
