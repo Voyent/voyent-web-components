@@ -74,6 +74,9 @@ BridgeIt.CodeEditor = Polymer({
 
     //******************PRIVATE API******************
 
+    /**
+     * Set our various properties from this level into the editor component itself
+     */
     _setProperties: function() {
         var session = this.editor.getSession();
 
@@ -105,6 +108,10 @@ BridgeIt.CodeEditor = Polymer({
             this.editor.setValue(this.value,1);
         }
     },
+    
+    /**
+     * Add a change listener to our underlying editor
+     */
     _addListeners: function() {
         var _this = this;
         this.editor.addEventListener('change',function(e) {
@@ -113,11 +120,22 @@ BridgeIt.CodeEditor = Polymer({
             }
         });
     },
+    
+    /**
+     * Setup the resizable element for our underlying editor
+     */
     _setupResizable: function() {
         //Move expandable corner to correct div
         var scroller = Polymer.dom(this.root).querySelector(".ace_scroller");
         Polymer.dom(scroller).appendChild(this.$.resizable)
     },
+    
+    /**
+     * Called when a resize is requested on the code editor
+     * Resizes the container and resets various mouse listeners
+     *
+     * @param event
+     */
     _resizeEditor: function(e) {
         var _this = this;
         var container = this.$.editor;
@@ -136,54 +154,90 @@ BridgeIt.CodeEditor = Polymer({
         document.addEventListener("mousemove",mouseMove,true);
         document.addEventListener("mouseup",mouseUp,true);
     },
+    /**
+     * Change function that updates the underlying editor for font size
+     * @param newVal
+     */
     _fontsizeChanged: function(newVal) {
         if (!this.editor || typeof newVal!=='number' || (newVal%1) !== 0) {
             return;
         }
         this.editor.setFontSize(newVal);
     },
+    /**
+     * Change function that updates the underlying editor for soft/hard tabs
+     * @param newVal
+     */
     _hardtabsChanged: function(newVal) {
         if (!this.editor || (newVal !== true && newVal !== false)) {
             return;
         }
         this.editor.getSession().setUseSoftTabs(!newVal);
     },
+    /**
+     * Change function that updates the underlying editor for mode
+     * @param newVal
+     */
     _modeChanged: function(newVal) {
         if (!this.editor || !newVal || newVal.trim().length === 0) {
             return;
         }
         this.editor.getSession().setMode('ace/mode/'+newVal);
     },
+    /**
+     * Change function that updates the underlying editor for overwrite
+     * @param newVal
+     */
     _overwriteChanged: function(newVal) {
         if (!this.editor || (newVal !== true && newVal !== false)) {
             return;
         }
         this.editor.getSession().setOverwrite(newVal);
     },
+    /**
+     * Change function that updates the underlying editor for read only
+     * @param newVal
+     */
     _readonlyChanged: function(newVal) {
         if (!this.editor || (newVal !== true && newVal !== false)) {
             return;
         }
         this.editor.setReadOnly(newVal);
     },
+    /**
+     * Change function that updates the underlying editor for validation
+     * @param newVal
+     */
     _disablevalidationChanged: function(newVal) {
         if (!this.editor || (newVal !== true && newVal !== false)) {
             return;
         }
         this.editor.getSession().setOption("useWorker",!newVal);
     },
+    /**
+     * Change function that updates the underlying editor for tab size
+     * @param newVal
+     */
     _tabsizeChanged: function(newVal) {
         if (!this.editor || !newVal || newVal.trim().length === 0) {
             return;
         }
         this.editor.getSession().setTabSize(newVal);
     },
+    /**
+     * Change function that updates the underlying editor for theme
+     * @param newVal
+     */
     _themeChanged: function(newVal) {
         if (!this.editor || !newVal || newVal.trim().length === 0) {
             return;
         }
         this.editor.setTheme('ace/theme/'+newVal);
     },
+    /**
+     * Change function that updates the underlying editor for value
+     * @param newVal
+     */
     _valueChanged: function(newVal) {
         if (this.editor && newVal !== this.editor.getValue()) {
             if (newVal === null) {

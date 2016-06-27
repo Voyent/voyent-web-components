@@ -10,38 +10,62 @@
     },
 
     properties: {
-      
+      /**
+       * Collection to interact with
+       * @default documents
+       */
       collection: {
         notify: true,
         type: String,
         value: 'documents',
         reflectToAttribute: true
       },
+      /**
+       * The document ID to interact with
+       */
       documentId: {
         notify: true,
         type: String,
         observer: "_updateNewDocumentId"
       },
+      /**
+       * Document object from the service
+       */
       document: {
         notify: true,
         type: Object,
         observer: "_updateNewDocument"
       },
+      /**
+       * Parsed version of the document
+       */
       serializedDocument: {
         notify: true,
         type: String
       },
+      /**
+       * Attribute used with the document when pulling data
+       */
       attrToEdit: {
         notify: true,
         type: String
       },
+      /**
+       * Store/mirror a copy of the text area contents showing our document
+       */
       _codeMirror: {
         type: Object
       },
+      /**
+       * Determine if we can correctly parse our document to JSON, aka is it valid
+       */
       editedDocumentIsValid: {
         type: Boolean,
         computed: '_computeEditedDocumentIsValid(serializedDocument)'
       },
+      /**
+       * Error or info message specific to this component
+       */
       message: {
         type: String,
         notify: true
@@ -56,8 +80,10 @@
       
     },
 
+    /**
+     * Update the document, including serialization and code mirroring
+     */
     _updateEditor: function(){
-      
       console.log('_updateEditor()');
       var _this = this;
       if( this.document ){
@@ -109,6 +135,9 @@
       
     },
 
+    /**
+     * Retrieve a document from the service using our documentId (if possible)
+     */
     _updateNewDocumentId: function(){
       console.log('_updateNewDocumentId()');
       if( this.documentId ){
@@ -124,6 +153,9 @@
       
     },
 
+    /**
+     * Update our document after determining if we have a new document or documentId
+     */
     _updateNewDocument: function(){
       console.log('_updateNewDocument()');
       var _this = this;
@@ -131,10 +163,18 @@
       this._updateEditor();      
     },
 
+    /**
+     * Observer change fired when various properties are changed
+     * This will update our stored output
+     */
     _attributesChanged: function(attrToEdit){
       this._updateEditor();
     },
 
+    /**
+     * Determine if our serialized document can correctly be parsed to JSON
+     * If it can we consider the document valid and return true
+     */
     _computeEditedDocumentIsValid: function(serializedDocument){
       try{
         JSON.parse(serializedDocument);
@@ -145,6 +185,9 @@
       }
     },
 
+    /**
+     * Update our document in the service
+     */
     saveDocument: function(){
       var _this = this;
       try{

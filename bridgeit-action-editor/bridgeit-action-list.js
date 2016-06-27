@@ -8,6 +8,9 @@ Polymer({
         selectedIndex: { type: Number, notify: true, observer: '_selectedIndexChanged' },
     },
 
+    /**
+     * Ready call to initialize this component, namely setting up our listener
+     */
     ready: function() {
         this._setupListener();
     },

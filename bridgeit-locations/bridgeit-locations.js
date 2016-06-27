@@ -26,6 +26,9 @@ Polymer({
         showpois: { type: Boolean, value: false, observer: '_showPOIsChanged' }
     },
 
+    /**
+     * Reset our various properties upon creation
+     */
 	created: function() {
         this._map = null;
 		this._locationMarkers = [];
@@ -34,6 +37,9 @@ Polymer({
 		this._bounds = null;
 	},
 
+	/**
+	 * Initialize our map once the page is ready
+	 */
 	ready: function() {
         if (!this.realm) {
             this.realm = bridgeit.io.auth.getLastKnownRealm();

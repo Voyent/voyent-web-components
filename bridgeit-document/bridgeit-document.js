@@ -6,34 +6,52 @@
     behaviors: [BridgeItCommonPropertiesBehavior],
 
     ready: function(){
-      
     },
 
     properties: {
+       /**
+        * Collection to interact with
+        * @default documents
+        */
        collection: {
         notify: true,
         type: String,
         value: 'documents',
         reflectToAttribute: true
       },
+      /**
+       * The document ID to interact with
+       */
       documentId: {
         notify: true,
         type: String,
         observer: "_updateOutputWithNewDocumentId"
       },
+      /**
+       * Document object from the service
+       */
       document: {
         notify: true,
         type: Object,
         observer: "_updateOutputWithNewDocument"
       },
+      /**
+       * Whether we use syntax highlighting or not
+       */
       highlight: {
         notify: true,
         type: Boolean
       },
+      /**
+       * Store the stringified output
+       */
       output: {
         notify: true,
         type: String
       },
+      /**
+       * Attribute used with the document when pulling data
+       */
       attrToDisplay: {
         notify: true,
         type: String
@@ -46,9 +64,11 @@
     ],
 
     listeners: {
-      
     },
 
+    /**
+     * Using our existing document update our output, which may be formatted and highlighted
+     */
     _updateOutput: function(){
       console.log('_updateOutput()');
       if( this.document ){
@@ -76,9 +96,11 @@
         this.output = '';
       }
       Polymer.dom(this.root).innerHTML = this.output;
-      
     },
 
+    /**
+     * Pull a document from the service using our documentId
+     */
     _updateOutputWithNewDocumentId: function(){
       console.log('_updateOutputWithNewDocumentId()');
       if( this.documentId ){
@@ -94,6 +116,9 @@
       
     },
 
+    /**
+     * Update our output after determining if we have a new document or documentId
+     */
     _updateOutputWithNewDocument: function(){
       console.log('_updateOutputWithNewDocument()');
       var _this = this;
@@ -101,10 +126,17 @@
       this._updateOutput();      
     },
 
+    /**
+     * Observer change fired when various properties are changed
+     * This will update our stored output
+     */
     _attributesChanged: function(highlight, attrToDisplay){
       this._updateOutput();
     },
 
+    /**
+     * Function to stringify our document JSON and use syntax highlighting
+     */
     _syntaxHighlight: function(json) {
       if( json ){
         if (typeof json !== 'string') {
@@ -131,11 +163,5 @@
         return '<span>Empty</span>';
       }
     }
-
-
-
-
-
-    
   });
 })();

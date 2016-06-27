@@ -164,7 +164,7 @@ Polymer({
     /**
      * Determine if the passed task group is a conditional task group
      * Only return true if that task group also has some elseTasks
-     * @param grouop
+     * @param group
      * @return {boolean}
      */
     isConditionalTaskGroup: function(group) {
@@ -651,14 +651,26 @@ Polymer({
         }
     },
     
+    /**
+     * Scroll down to the next item for the selected task
+     */
     _scrollNextItem: function() {
         this._scrollGenericItem(this._currentMatchIndex+1);
     },
     
+    /**
+     * Scroll up to the previous item for the selected task
+     */
     _scrollPrevItem: function() {
         this._scrollGenericItem(this._currentMatchIndex-1);
     },
     
+    /**
+     * Combined function to scroll to a certain index in the list
+     * This will also validate if the passed index is correct for the log list
+     *
+     * @param scrollIndex
+     */
     _scrollGenericItem: function(scrollIndex) {
         this._currentMatchIndex = scrollIndex;
         

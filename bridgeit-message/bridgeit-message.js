@@ -41,20 +41,40 @@ Polymer({
         });
     },
     
+    /**
+     * Trigger an error message
+     *
+     * @param messageText
+     */
     error: function(messageText) {
         this.fire('message-error', messageText);
     },
     
+    /**
+     * Trigger an info message
+     *
+     * @param messageText
+     */
     info: function(messageText) {
         this.fire('message-info', messageText);
     },
     
+    /**
+     * Remove the oldest message from the list, which would be the first (index 0) item
+     */
     removeOldest: function() {
         if (this.messages !== null && this.messages.length > 0) { 
             this.shift('messages');
         }
     },
     
+    /**
+     * Generic function to handle a message received event
+     * This will format the message with a timestamp as needed and log the message to the console/alert/page
+     *
+     * @param e event we pull the message from
+     * @param type
+     */
     _handleMessage: function(e, type) {
         // Determine the various message attributes
         var text = e;

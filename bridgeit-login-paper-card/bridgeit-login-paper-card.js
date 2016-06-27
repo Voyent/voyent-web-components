@@ -10,60 +10,102 @@
     ],
 
     properties: {
+      /**
+       * Header text to title our login card
+       */
       heading: {
         notify: true,
         type: String,
       },
+      /**
+       * Username input
+       */
       username: {
         notify: true,
         type: String,
         value: function(){ return bridgeit.io.auth.getLastKnownUsername();}
       },
+      /**
+       * Password input
+       */
       password: {
         notify: true,
         type: String
       },
+      /**
+       * Toggle whether this component is visible
+       */
       visible: {
         notify: true,
         type: Boolean
       },
+      /**
+       * Error string custom to this component that displays below our login card
+       */
       error: {
         notify: true,
         type: String
       },
+      /**
+       * Authentication provider to use in conjunction with our login details
+       */
       authProvider: {
         notify: true,
         type: String
       },
+      /**
+       * Text label for the submit button
+       */
       submitLabel: {
         notify: true,
         type: String
       },
+      /**
+       * Text label for the cancel button
+       */
       cancelLabel: {
         notify: true,
         type: String
       },
+      /**
+       * Determine if we should attempt to login as an admin
+       */
       loginAsAdmin: {
         notify: true,
         type: Boolean
       },
+      /**
+       * Image to use in the header of our login card
+       */
       headerImage: {
         notify: true,
         type: String
       },
+      /**
+       * Determine if we should show a realm input field
+       */
       showrealminput: {
         notify: true,
         type: Boolean
       },
+      /**
+       * Determine if we should show an account input field
+       */
       showaccountinput: {
         notify: true,
         type: Boolean
       },
+      /**
+       * Realm used for services
+       */
       realm: {
         notify: true,
         type: String,
         value: function(){ return bridgeit.io.auth.getLastKnownRealm(); }
       },
+      /**
+       * Account used for services
+       */
       account: {
         notify: true,
         type: String,
@@ -71,6 +113,12 @@
       }
     },
 
+    /**
+     * Fired when the login card is submitted
+     * Interact with the authentication provider using our various field data to determine if the login was valid
+     *
+     * @param e
+     */
     handleLogin: function(e){
       var _this = this;
       var authProvider = document.querySelector('#' + this.authProvider);
@@ -95,32 +143,48 @@
       e.preventDefault();
     },
 
+    /**
+     * Reset the password
+     */
     _clearPassword: function(){
       this.password = '';
     },
 
+    /**
+     * Reset the username
+     */
     _clearUsername: function(){
       this.username = '';
     },
 
+    /**
+     * Reset the realm
+     */
     _clearRealm: function(){
       this.realm = '';
     },
 
+    /**
+     * Reset the account
+     */
     _clearAccount: function(){
       this.account = '';
     },
 
-    // Overidden from Polymer.IronValidatableBehavior. Will set the `invalid`
-    // attribute automatically, which should be used for styling.
+    /**
+     * Overidden from Polymer.IronValidatableBehavior
+     * Will set the `invalid` attribute automatically, which should be used for styling.
+     */
     _getValidity: function() {
       return !!this.password && !!this.username;
     },
 
+    /**
+     * Fired when cancel is clicked, which will reset the username & password inputs
+     */
     cancel: function(){
-      this.username = '';
-      this.password = '';
+      this._clearUsername();
+      this._clearPassword();
     }
-
   });
 })();

@@ -5,7 +5,6 @@ Polymer({
     behaviors: [ChartBehaviors],
 
     properties: {
-
         /**
          * Required to authenticate with BridgeIt.
          * @default bridgeit.io.auth.getLastAccessToken()

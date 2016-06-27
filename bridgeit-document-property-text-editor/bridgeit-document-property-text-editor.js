@@ -10,43 +10,66 @@
     },
 
     properties: {
-      
+      /**
+       * Collection to interact with
+       * @default documents
+       */
       collection: {
         notify: true,
         type: String,
         value: 'documents',
         reflectToAttribute: true
       },
+      /**
+       * The document ID to interact with
+       */
       documentId: {
         notify: true,
         type: String,
         observer: "_updateNewDocumentId"
       },
+      /**
+       * Document object from the service
+       */
       document: {
         notify: true,
         type: Object,
         observer: "_updateNewDocument"
       },
+      /**
+       * Attribute used with the document when pulling data
+       */
       documentProperty: {
         notify: true,
         type: String,
         observer: "_updateNewDocument"
       },
+      /**
+       * Parsed version of the document
+       */
       serializedDocumentProperty: {
         notify: true,
         type: String
       },
+      /**
+       * Underlying TinyMCE editor object
+       */
       _editor: {
         type: Object
       },
+      /**
+       * Determine if we should use and display a TinyMCE editor
+       */
       displayEditor: {
         type: Boolean,
         computed: 'computeDisplayEditor(document, documentProperty)'
       }
     },
 
+    /**
+     * Update the document, including serialization and the underlying editor
+     */
     _updateEditor: function(){
-      
       console.log('_updateEditor()');
       var _this = this;
       if( _this.displayEditor ){
@@ -86,6 +109,9 @@
       }
     },
 
+    /**
+     * Retrieve a document from the service using our documentId (if possible)
+     */
     _updateNewDocumentId: function(){
       console.log('_updateNewDocumentId()');
       if( this.documentId ){
@@ -101,6 +127,9 @@
       
     },
 
+    /**
+     * Update our document and editor after determining if we have a new document or documentId
+     */
     _updateNewDocument: function(){
       console.log('_updateNewDocument()');
       var _this = this;
@@ -108,6 +137,9 @@
       this._updateEditor();      
     },
 
+    /**
+     * Use our document (and the serialized version) from our underlying editor
+     */
     _updateDocumentFromEditor: function(_this){
       if( _this.document ){
         _this.serializedDocumentProperty = _this._editor.getContent();
@@ -115,6 +147,9 @@
       }
     },
 
+    /**
+     * Update our document in the service
+     */
     saveDocument: function(){
       var _this = this;
       this._updateDocumentFromEditor(_this);
@@ -125,6 +160,9 @@
       });
     },
 
+    /**
+     * Computed binding to determine if we have a document and proper data attribute
+     */
     computeDisplayEditor: function(document, documentProperty){
       return !!document && !!documentProperty && documentProperty in document;
     }

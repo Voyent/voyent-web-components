@@ -13,22 +13,37 @@ Polymer({
          * @default bridgeit.io.auth.getLastKnownRealm()
          */
         realm: { type: String},
+        /**
+         * Data to be inserted into the page, passed from the request
+         */
         data:{
             type:Object,
             notify: true,
             reflectToAttribute:true
         },
+        /**
+         * Show or hide the choice buttons
+         */
         showChoices:{
             type:Boolean,
             notify: true
         },
+        /**
+         * Access token for service permissions
+         */
         accessToken:{
             type:String
         },
+        /**
+         * Username for service usage
+         */
         username:{
             type:String,
             notify: true
         },
+        /**
+         * Host used for services
+         */
         host:{
             type:String
         }
@@ -67,6 +82,9 @@ Polymer({
 // Trial data: {"message":"Would you like a message?", "options":[{"label":"Yes Please", "value":"y"},{"label":"No Thanks", "value": "n"}],"event":{"service":"freight","event":"offer","type":"candy"}}
     //******************PRIVATE API******************
 
+    /**
+     * Trigger an event when an answer is given, as well as updating our view to reflect the app state
+     */
     answerGiven: function(e){
         var element;
         if(e.srcElement){
@@ -100,10 +118,16 @@ Polymer({
         }
     },
 
+    /**
+     * Retrieve and decode URL parameters
+     */
     getURLParameter: function(name) {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     },
 
+    /**
+     * Toggle the view when our data is changed
+     */
     dataChanged: function(){
         if(poly.data !== {}) {
             poly.$$('.solicitMain').classList.remove('removed');
@@ -112,17 +136,23 @@ Polymer({
         }
     },
 
+    /**
+     * Hide this component by toggling some CSS classes
+     */
     hideSolicit: function () {
       poly.$$('.solicitMain').classList.add('hidden');
       poly.$$('.solicitMain').classList.remove('visible');
       poly.$$('.solicitMain').classList.add('removed');
     },
 
-  showSolicit: function(){
+    /**
+     * Show this component by toggling some CSS classes
+     */
+    showSolicit: function(){
       poly.$$('.solicitMain').classList.remove('removed');
       poly.$$('.solicitMain').classList.remove('hidden');
       poly.$$('.solicitMain').classList.add('visible');
-  }
+    }
 });
 
 

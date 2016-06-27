@@ -185,10 +185,16 @@ Polymer({
     
     //******************PRIVATE API******************
     
+    /**
+     * Reset the filter by service property
+     */
     _resetFilters: function(e) {
         this.filterService = null;
     },
     
+    /**
+     * Change function called when the service filter changes, which will prompt a re-fetch of the logs
+     */
     _filterChanged: function() {
         this.fetchLogs();
     },
