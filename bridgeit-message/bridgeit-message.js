@@ -117,6 +117,7 @@ Polymer({
         var now = new Date();
         var time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];
         
+        var marker = (time[0] < 12) ? "AM" : "PM";
         time[0] = ( time[0] < 12 ) ? time[0] : time[0] - 12;
         time[0] = time[0] || 12;
         
@@ -126,6 +127,6 @@ Polymer({
             }
         }
         
-        return time.join(":") + " " + ((time[0] < 12) ? "AM" : "PM");
+        return time.join(":") + " " + marker;
     },
 });
