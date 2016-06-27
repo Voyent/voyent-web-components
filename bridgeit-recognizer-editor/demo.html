@@ -19,6 +19,7 @@
     <!-- Load the auth/login components for the demo -->
     <link rel="import" href="../bridgeit-auth-provider/bridgeit-auth-provider.html">
     <link rel="import" href="../bridgeit-login-paper-card/bridgeit-login-paper-card.html">
+    <link rel="import" href="../bridgeit-message/bridgeit-message.html">
 
 	<!-- Load bridgeit recognizer editor component -->
 	<link rel="import" href="bridgeit-recognizer-editor.html">
@@ -121,6 +122,7 @@
             <template is="dom-if" if="{{isLoggedIn}}">
                 <button onclick="handleLogout()" class="button logout-button">Logout</button><div style="clear:both;"></div>
                 <!-- Declare the elements by their tags -->
+                <bridgeit-message></bridgeit-message>
                 <bridgeit-recognizer-editor id="recognizerEditor">
                     <bridgeit-recognizer-list></bridgeit-recognizer-list>
                 </bridgeit-recognizer-editor>
