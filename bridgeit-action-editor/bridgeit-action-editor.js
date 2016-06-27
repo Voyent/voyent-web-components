@@ -699,7 +699,7 @@ Polymer({
      * @private
      */
     _cloneAction: function() {
-        var actionId = window.prompt("Please enter the new action name");
+        var actionId = window.prompt("Please enter the new action name","");
         if (actionId === null) {
             return;
         }

@@ -191,7 +191,7 @@ Polymer({
      * @private
      */
     _cloneRecognizer: function() {
-        var recognizerId = window.prompt("Please enter the new recognizer name");
+        var recognizerId = window.prompt("Please enter the new recognizer name","");
         if (recognizerId === null) {
             return;
         }
