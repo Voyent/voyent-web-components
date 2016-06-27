@@ -262,11 +262,11 @@ BridgeIt.QueryEditor = Polymer({
      * Clears the query editor and restores the `fields` and `options` attributes to their original values.
      */
     resetEditor: function() {
-        var editor = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId));
-        if (!editor || !editor.queryBuilder) {
-            return;
-        }
         try {
+            var editor = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId));
+            if (!editor || !editor.queryBuilder) {
+                return;
+            }
             editor.queryBuilder('reset');
         }
         catch(e) {
