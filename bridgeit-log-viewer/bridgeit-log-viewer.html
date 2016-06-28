@@ -68,6 +68,7 @@ Example:
             }
             .buttonContainer {
                 text-align:center;
+                padding-bottom:15px;
                 @apply(--log-viewer-button-container);
             }
             .buttonContainer button {
@@ -78,9 +79,8 @@ Example:
                 @apply(--log-viewer-p);
             }
         </style>
-        
-        <template is="dom-if" if="{{_hasLogs}}">
-            <div class="buttonContainer">
+
+        <div class="buttonContainer">
             <paper-dropdown-menu label="Filter by Service">
                 <paper-listbox class="dropdown-content" attr-for-selected="service" selected="{{filterService}}">
                     <template is="dom-repeat" items="[[_serviceList]]" as="currentLoop">
@@ -88,12 +88,9 @@ Example:
                     </template>
                 </paper-listbox>
             </paper-dropdown-menu>
-            
-                <div>
-                    <paper-button on-click="_resetFilters">Reset Filters</paper-button>
-                </div>
-            </div>
-            
+            <paper-button raised colored on-click="_resetFilters" style="padding:5px;">Reset Filters</paper-button>
+        </div>
+        <template is="dom-if" if="{{_hasLogs}}">
             <template is="dom-if" if="{{paginator}}">
                 <div class="buttonContainer">
                     <button on-click="lastPage" disabled="{{!_hasPreviousPage}}">{{lastPageLabel}}</button>
