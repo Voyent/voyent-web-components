@@ -824,12 +824,12 @@ Polymer({
      */
     _startDragGroup: function(e) {
         if (e.model.item) {
-            e.dataTransfer.setData('action/group/new', e.model.item); //indicate that this item is a new task group
             this._lastDragged = e.model.item; //reference task group schema so we can populate the UI on drop
+            this._lastDraggedType = 'action/group/new'; //indicate that this item is a new task group
         }
         else {
-            e.dataTransfer.setData('action/group/existing', e.model.group); //indicate that this item is an existing task group (already in the action)
             this._lastDragged = e.model.group; //reference task group so we can populate the UI on drop
+            this._lastDraggedType = 'action/group/existing'; //indicate that this item is an existing task group (already in the action)
         }
 
         // Add a highlight effect showing all droppable areas for groups
@@ -849,12 +849,12 @@ Polymer({
         e.stopPropagation();
 
         if (e.model.item) {
-            e.dataTransfer.setData('action/task/new', e.model.item); //indicate that this item is a new task
             this._lastDragged = e.model.item; //reference task schema so we can populate the UI on drop
+            this._lastDraggedType = 'action/task/new'; //indicate that this item is a new task
         }
         else {
-            e.dataTransfer.setData('action/task/existing', e.model.task); //indicate that this item is an existing task (already in a group)
             this._lastDragged = {'task':e.model.task,'groupIndex':this._stripIndex(e.target.getAttribute('data-group-id'))}; //reference task and the group it is from
+            this._lastDraggedType = 'action/task/existing'; //indicate that this item is an existing task (already in a group)
         }
 
         // Add a highlight effect showing all droppable areas for tasks
@@ -901,10 +901,8 @@ Polymer({
      * @private
      */
     _dragOverAction: function(e) {
-        if ((e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/group/new')) ||
-            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/group/new') > -1) ||
-            (e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/group/existing')) ||
-            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/group/existing') > -1)) {
+        if (this._lastDraggedType === 'action/group/new' ||
+            this._lastDraggedType === 'action/group/existing') {
             e.preventDefault(); //only allow task groups to be dragged into the container
         }
     },
@@ -915,10 +913,8 @@ Polymer({
      * @private
      */
     _dragOverGroup: function(e) {
-        if ((e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/task/new')) ||
-            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/task/new') > -1) ||
-            (e.dataTransfer.types.contains && e.dataTransfer.types.contains('action/task/existing')) ||
-            (e.dataTransfer.types.indexOf && e.dataTransfer.types.indexOf('action/task/existing') > -1)) {
+        if (this._lastDraggedType === 'action/task/new' ||
+            this._lastDraggedType === 'action/task/existing') {
             e.preventDefault(); //only allow tasks to be dragged into the task groups
         }
     },
@@ -936,11 +932,11 @@ Polymer({
         var data;
         var currPos;
         // Only allow task groups to be dropped inside actions
-        if (e.dataTransfer.getData('action/group/new')) {
+        if (this._lastDraggedType === 'action/group/new') {
             data = JSON.parse(JSON.stringify(this._lastDragged)); //clone schema obj
             data.taskcount = 0; //set default taskcount
         }
-        else if (e.dataTransfer.getData('action/group/existing')) {
+        else if (this._lastDraggedType === 'action/group/existing') {
             data = this._lastDragged; //reference existing group
             currPos = this._taskGroups.indexOf(this._lastDragged);
         }
@@ -1001,7 +997,7 @@ Polymer({
             if (typeof insertIndex !== 'undefined' && insertIndex < this._taskGroups.length) {
                 appendBottom = false;
                 newid = this._taskGroupBaseId + insertIndex.toString();
-                if (e.dataTransfer.getData('action/group/new')) {
+                if (this._lastDraggedType === 'action/group/new') {
                     this.splice('_taskGroups', insertIndex, 0, {"id":newid,"name":'',"schema":data,"tasks":[]});
                 }
                 else {
@@ -1023,7 +1019,7 @@ Polymer({
         //  of the task group array via push
         if (appendBottom) {
             newid = this._taskGroupBaseId + (this._taskGroups.length).toString();
-            if (e.dataTransfer.getData('action/group/new')) {
+            if (this._lastDraggedType === 'action/group/new') {
                 this.push('_taskGroups', {"id": newid, "name": '', "schema": data, "tasks": []});
             }
             else {
@@ -1059,12 +1055,12 @@ Polymer({
         var data;
         var currPos;
         var previousGroupIndex;
-        if (e.dataTransfer.getData('action/task/new')) {
+        if (this._lastDraggedType === 'action/task/new') {
             data = JSON.parse(JSON.stringify(this._lastDragged)); //clone schema obj
             //determine if the task was dropped in the conditional task group else area
             data.isElseTask = !!(e.target.className.indexOf('conditional-task-group') > -1 && e.target.className.indexOf('else') > -1);
         }
-        else if (e.dataTransfer.getData('action/task/existing')) {
+        else if (this._lastDraggedType === 'action/task/existing') {
             data = this._lastDragged.task; //reference existing task
             //determine if the task was dropped in the conditional task group else area
             data.schema.isElseTask = !!(e.target.className.indexOf('conditional-task-group') > -1 && e.target.className.indexOf('else') > -1);
@@ -1134,7 +1130,7 @@ Polymer({
             if (typeof insertIndex !== 'undefined' && insertIndex < tasks.length) {
                 appendBottom = false;
                 newid = this._taskBaseId + insertIndex.toString();
-                if (e.dataTransfer.getData('action/task/new')) {
+                if (this._lastDraggedType === 'action/task/new') {
                     this.splice('_taskGroups.' + taskGroupIndex + '.tasks', insertIndex, 0,  {"id": newid,"schema": data});
                 }
                 else {
@@ -1156,7 +1152,7 @@ Polymer({
         }
 
         if (appendBottom) {
-            if (e.dataTransfer.getData('action/task/new')) {
+            if (this._lastDraggedType === 'action/task/new') {
                 newid = this._taskBaseId + tasks.length.toString();
                 this.push('_taskGroups.'+taskGroupIndex+'.tasks', {"id":newid,"schema":data});
             }
