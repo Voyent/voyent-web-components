@@ -22,10 +22,11 @@ Example:
                 @apply(--query-results-table);
             }
             .th {
-                display: table-row;
+                display: table-cell;
                 text-align:center;
-                border: 1px solid #ddd;
+                vertical-align: middle;
                 font-weight: bold;
+                border: 1px solid #ddd;
                 @apply(--query-results-th);
             }
             .tr {
@@ -44,9 +45,9 @@ Example:
         </style>
         <!-- We use a pseudo table because https://github.com/Polymer/polymer/issues/1567 -->
         <div class="table">
-            <div class="th">
+            <div class="tr">
                 <template is="dom-repeat" items="{{_tableHeaders}}">
-                    <div class="td">
+                    <div class="th">
                         {{item}}
                     </div>
                 </template>

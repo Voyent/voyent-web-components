@@ -348,5 +348,15 @@ Polymer({
                 this['_'+key] = false;
             }
         }
+    },
+
+    /**
+     * Template helper function to generate the class for tr elements. 
+     * @param level
+     * @returns {string}
+     * @private
+     */
+    _computeTrClass: function(level) {
+      return 'tr '+level;  
     }
 });

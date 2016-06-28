@@ -34,14 +34,6 @@
                  line-height: 1.42857143;
                  vertical-align: top;
             };
-            --log-viewer-tfoot: { /* [Custom tfoot styling] */
-                 border-top-width: 2px;
-                 background-color: #EFEFEF;
-            };
-            --log-viewer-thead: { /* [Custom thead styling] */
-                 border-bottom-width: 2px;
-                 background-color: #EFEFEF;
-            };
             --log-viewer-button-container: { /* [Custom button container styling] */
                  background-color: #EFEFEF;
             };
@@ -54,7 +46,6 @@
             };
             /*
             Other available styling options:
-            --log-viewer-tbody { key:value; }; [Custom tbody styling]
             --log-viewer-tr { key:value; }; [Custom tr styling]
             --log-viewer-th: { key:value; }; [Custom th styling]
             --log-viewer-info-td: { key:value; }; [Info level messages td styling]
@@ -105,7 +96,8 @@
 <bridgeit-log-viewer id="logViewer"
                      paginator
                      header
-                     footer>
+                     footer
+                     local>
 </bridgeit-log-viewer>
 
 <script type="text/javascript">

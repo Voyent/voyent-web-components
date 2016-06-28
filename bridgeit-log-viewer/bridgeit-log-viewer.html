@@ -23,48 +23,46 @@ Example:
         <link type="text/css" rel="stylesheet" href="./bridgeit-log-viewer.css">
     
         <style type="text/css">
-            table {
+            .table {
+                display: table;
                 margin:0 auto;
                 border: 1px solid #ddd;
                 border-spacing: 0;
                 border-collapse: collapse;
                 @apply(--log-viewer-table);
             }
-            tr {
+            .tr {
+                display: table-row;
                 @apply(--log-viewer-tr);
             }
-            td {
+            .td {
+                display: table-cell;
+                text-align:center;
+                vertical-align: middle;
                 border: 1px solid #ddd;
                 @apply(--log-viewer-td);
             }
-            thead {
-                border: 1px solid #ddd;
-                @apply(--log-viewer-thead);
-            }
-            tbody {
-                @apply(--log-viewer-tbody);
-            }
-            tfoot {
-                border: 1px solid #ddd;
-                @apply(--log-viewer-tfoot);
-            }
-            th {
+            .th {
+                display: table-cell;
+                text-align:center;
+                vertical-align: middle;
+                font-weight: bold;
                 border: 1px solid #ddd;
                 @apply(--log-viewer-th);
             }
-            table > tbody > tr.info > td {
+            .table > .tr.info > .td {
                 background-color:#FFF;
                 @apply(--log-viewer-info-td);
             }
-            table > tbody > tr.debug > td {
+            .table > .tr.debug > .td {
                 background-color:#d9edf7;
                 @apply(--log-viewer-debug-td);
             }
-            table > tbody > tr.warn > td {
+            .table > .tr.warn > .td {
                 background-color:#fcf8e3;
                 @apply(--log-viewer-warn-td);
             }
-            table > tbody > tr.error > td {
+            .table > .tr.error > .td {
                 background-color:#f2dede;
                 @apply(--log-viewer-error-td);
             }
@@ -92,7 +90,7 @@ Example:
             </paper-dropdown-menu>
             
                 <div>
-                    <button on-click="_resetFilters">Reset Filters</paper-button>
+                    <paper-button on-click="_resetFilters">Reset Filters</paper-button>
                 </div>
             </div>
             
@@ -104,76 +102,75 @@ Example:
                     <button on-click="firstPage" disabled="{{!_hasNextPage}}">{{firstPageLabel}}</button>
                 </div>
             </template>
-            <table>
+            <!-- We use a pseudo table because https://github.com/Polymer/polymer/issues/1567 -->
+            <div class="table">
                 <template is="dom-if" if="{{header}}">
-                    <thead>
+                    <div class="tr">
                         <template is="dom-if" if="{{_time}}">
-                            <th>Time</th>
+                            <div class="th">Time</div>
                         </template>
                         <template is="dom-if" if="{{_tx}}">
-                            <th>Transaction Code</th>
+                            <div class="th">Transaction Code</div>
                         </template>
                         <template is="dom-if" if="{{_service}}">
-                            <th>Service</th>
+                            <div class="th">Service</div>
                         </template>
                         <template is="dom-if" if="{{_realmName}}">
-                            <th>Realm</th>
+                            <div class="th">Realm</div>
                         </template>
                         <template is="dom-if" if="{{_username}}">
-                            <th>Username</th>
+                            <div class="th">Username</div>
                         </template>
                         <template is="dom-if" if="{{_message}}">
-                            <th>Message</th>
+                            <div class="th">Message</div>
                         </template>
-                    </thead>
+                    </div>
                 </template>
-                <tbody>
-                    <template is="dom-repeat" items="{{_currentPage}}">
-                        <tr class$="{{item.level}}">
-                            <template is="dom-if" if="{{_time}}">
-                                <td>{{_formatDate(item.time)}}</td>
-                            </template>
-                            <template is="dom-if" if="{{_tx}}">
-                                <td>{{item.tx}}</td>
-                            </template>
-                            <template is="dom-if" if="{{_service}}">
-                                <td>{{item.service}}</td>
-                            </template>
-                            <template is="dom-if" if="{{_realmName}}">
-                                <td>{{item.realmName}}</td>
-                            </template>
-                            <template is="dom-if" if="{{_username}}">
-                                <td>{{item.username}}</td>
-                            </template>
-                            <template is="dom-if" if="{{_message}}">
-                                <td>{{item.message}}</td>
-                            </template>
-                        </tr>
-                    </template>
-                </tbody>
+                <template is="dom-repeat" items="{{_currentPage}}">
+                    <div class$="{{_computeTrClass(item.level)}}">
+                        <template is="dom-if" if="{{_time}}">
+                            <div class="td">{{_formatDate(item.time)}}</div>
+                        </template>
+                        <template is="dom-if" if="{{_tx}}">
+                            <div class="td">{{item.tx}}</div>
+                        </template>
+                        <template is="dom-if" if="{{_service}}">
+                            <div class="td">{{item.service}}</div>
+                        </template>
+                        <template is="dom-if" if="{{_realmName}}">
+                            <div class="td">{{item.realmName}}</div>
+                        </template>
+                        <template is="dom-if" if="{{_username}}">
+                            <div class="td">{{item.username}}</div>
+                        </template>
+                        <template is="dom-if" if="{{_message}}">
+                            <div class="td">{{item.message}}</div>
+                        </template>
+                    </div>
+                </template>
                 <template is="dom-if" if="{{footer}}">
-                    <tfoot>
+                    <div class="tr">
                         <template is="dom-if" if="{{_time}}">
-                            <th>Time</th>
+                            <div class="th">Time</div>
                         </template>
                         <template is="dom-if" if="{{_tx}}">
-                            <th>Transaction Code</th>
+                            <div class="th">Transaction Code</div>
                         </template>
                         <template is="dom-if" if="{{_service}}">
-                            <th>Service</th>
+                            <div class="th">Service</div>
                         </template>
                         <template is="dom-if" if="{{_realmName}}">
-                            <th>Realm</th>
+                            <div class="th">Realm</div>
                         </template>
                         <template is="dom-if" if="{{_username}}">
-                            <th>Username</th>
+                            <div class="th">Username</div>
                         </template>
                         <template is="dom-if" if="{{_message}}">
-                            <th>Message</th>
+                            <div class="th">Message</div>
                         </template>
-                    </tfoot>
+                    </div>
                 </template>
-            </table>
+            </div>
             <template is="dom-if" if="{{paginator}}">
                 <div class="buttonContainer">
                     <button on-click="lastPage" disabled="{{!_hasPreviousPage}}">{{lastPageLabel}}</button>
