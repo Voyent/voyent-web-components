@@ -138,12 +138,8 @@ Example:
                 border-right: 1px solid #ddd;
             }
             
-            .topB td {
-                border-top: 1px solid #ddd;
-            }
-            
-            .bottomB td {
-                border-bottom: 1px solid #ddd;
+            .centerT {
+                text-align: center;
             }
             
             .highlight {
@@ -171,7 +167,7 @@ Example:
                     <div class="dropWrap">
                         <paper-dropdown-menu label="Time Limit" required="true">
                             <paper-listbox class="dropdown-content" selected="{{selectedLimit}}">
-                                <template is="dom-repeat" items="[[_timeLimits]]" as="tlimit">
+                                <template is="dom-repeat" items="[[_timeLimits]]" as="tlimit" strip-whitespace>
                                     <paper-item>[[tlimit.name]]</paper-item>
                                 </template>
                             </paper-listbox>
@@ -195,9 +191,11 @@ Example:
                                 <div class="th">Name</div>
                                 <div class="th">Time</div>
                             </div>
-                            <template is="dom-repeat" items="{{_pastActions}}" as="paction">
+                            <template is="dom-repeat" items="{{_pastActions}}" as="paction" strip-whitespace>
                                 <div class="tr">
-                                    <div class="td" style="text-align: center;"><paper-button raised on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</paper-button></div>
+                                    <div class="td centerT">
+                                        <button on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</button>
+                                    </div>
                                     <div class="td"><span title="Transaction Code: [[paction.tx]]">[[paction.name]]</span></div>
                                     <div class="td">[[paction.startDate]] <template is="dom-if" if="{{hasDate(paction.endDate)}}">to [[paction.endDate]]</template></div>
                                 </div>
@@ -241,7 +239,7 @@ Example:
                 <div class="container flex layout horizontal" style="margin-bottom: 20px;">
                     <div class="flex-1 taskPanel">
                         <div class="twrapLeft" style$="max-height: {{_maxHeight}}px">
-                            <template is="dom-repeat" items="{{_taskGroups}}" as="group">
+                            <template is="dom-repeat" items="{{_taskGroups}}" as="group" strip-whitespace>
                                 <div class$="taskGroup {{highlightStyle(group.highlight)}}">
                                     <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" class="taskHeader" title="{{group.type}}">
                                         {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{matchCount()}})
@@ -254,7 +252,7 @@ Example:
                                         </template>
                                     </div>
                                     
-                                    <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                    <template is="dom-repeat" items="{{group.tasks}}" as="task" strip-whitespace>
                                         <!-- Duplicated for tasks -->
                                         <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
                                             {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
@@ -270,7 +268,7 @@ Example:
                                     
                                     <template is="dom-if" if="{{isConditionalTaskGroup(group)}}">
                                         ELSE
-                                        <template is="dom-repeat" items="{{group.elseTasks}}" as="task">
+                                        <template is="dom-repeat" items="{{group.elseTasks}}" as="task" strip-whitespace>
                                             <!-- Duplicated for elseTasks -->
                                             <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
                                                 {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
@@ -294,7 +292,7 @@ Example:
                                 <div class="tr">
                                     <div class="th">{{_backpack.length}} Items</div>
                                 </div>
-                                <template is="dom-repeat" items="{{_backpack}}" as="backpack">
+                                <template is="dom-repeat" items="{{_backpack}}" as="backpack" strip-whitespace>
                                     <div id$="item{{index}}" class$="tr {{highlightStyle(backpack.highlight)}} bottomB">
                                         <div class$="td {{highlightStyle(backpack.highlight)}}Td">{{formatContainer(backpack)}}<pre>{{backpack.message}}</pre></div>
                                     </div>
