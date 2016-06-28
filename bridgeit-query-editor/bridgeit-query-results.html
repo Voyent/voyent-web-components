@@ -13,52 +13,54 @@ Example:
 <dom-module id="bridgeit-query-results">
     <template>
         <style type="text/css">
-            table {
+            .table {
+                display: table;
                 margin:0 auto;
                 border: 1px solid #ddd;
                 border-spacing: 0;
                 border-collapse: collapse;
                 @apply(--query-results-table);
             }
-            thead {
+            .th {
+                display: table-row;
+                text-align:center;
                 border: 1px solid #ddd;
-                @apply(--query-results-thead);
-            }
-            tbody {
-                @apply(--query-results-tbody);
-            }
-            th {
-                border: 1px solid #ddd;
+                font-weight: bold;
                 @apply(--query-results-th);
             }
-            tr {
+            .tr {
+                display: table-row;
                 @apply(--query-results-tr);
             }
-            td {
+            .td {
+                display: table-cell;
+                text-align:center;
+                vertical-align: middle;
                 border: 1px solid #ddd;
                 max-width: 100px;
                 word-wrap: break-word;
                 @apply(--query-results-td);
             }
         </style>
-        <table>
-            <thead>
-                <tr>
-                    <template is="dom-repeat" items="{{_tableHeaders}}">
-                        <th class="text-center">{{item}}</th>
-                    </template>
-                </tr>
-            </thead>
-            <tbody>
-                <template is="dom-repeat" as="row" items="{{_tableRows}}">
-                    <tr>
-                        <template is="dom-repeat" as="column" items="{{row}}">
-                            <td class="text-center"><html-binder html="{{column}}"></html-binder></td>
-                        </template>
-                    </tr>
+        <!-- We use a pseudo table because https://github.com/Polymer/polymer/issues/1567 -->
+        <div class="table">
+            <div class="th">
+                <template is="dom-repeat" items="{{_tableHeaders}}">
+                    <div class="td">
+                        {{item}}
+                    </div>
                 </template>
-            </tbody>
-        </table>
+            </div>
+            <template is="dom-repeat" as="row" items="{{_tableRows}}">
+                <div class="tr">
+                    <template is="dom-repeat" as="column" items="{{row}}">
+                        <div class="td">
+                            <html-binder html="{{column}}"></html-binder>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
     </template>
 </dom-module>
 
