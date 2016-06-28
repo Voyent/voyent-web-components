@@ -687,7 +687,8 @@ Polymer({
             if (document.getElementById(_this.tableWrapId)) {
                 var childItem = document.getElementById('item' + _this._matchList[_this._currentMatchIndex].index);
                 if (childItem) {
-                    document.getElementById(_this.tableWrapId).scrollTop = childItem.offsetTop;
+                    document.getElementById(_this.tableWrapId).scrollTop =
+                        childItem.offsetTop - document.getElementById(_this.tableWrapId).offsetTop;
                 }
             }
         },0);

@@ -82,6 +82,38 @@ Example:
                 max-height: 800px;
             }
             
+            .table, .tableNoBorder {
+                display: table;
+                width: 100%;
+            }
+            .table {
+                border: 1px solid #ddd;
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+            .th {
+                display: table-cell;
+                text-align:center;
+                vertical-align: middle;
+                padding: 5px;
+                font-weight: bold;
+                border: 1px solid #ddd;
+                background-color: #444444;
+                color: white;
+            }
+            .tr {
+                display: table-row;
+            }
+            .td {
+                padding: 5px;
+                display: table-cell;
+                vertical-align: middle;
+                border: 1px solid #ddd;
+                word-wrap: break-word;
+                max-width: 400px;
+            }
+            .Td { }
+            
             table {
                 table-layout: fixed;
                 width: 100%;
@@ -117,11 +149,11 @@ Example:
             .highlight {
                 background-color: #FFFFCC;
             }
-            .highlight td {
-                border-top: 2px solid black;
-                border-bottom: 2px solid black;
-                border-left: 2px solid black;
-                border-right: 2px solid black;
+            .highlightTd {
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+                border-left: 1px solid black;
+                border-right: 1px solid black;
             }
             
             pre {
@@ -156,27 +188,21 @@ Example:
             <div class="container flex layout horizontal">
                 <template is="dom-if" if="{{!_tableView}}">
                     <template is="dom-if" if="{{hasActions()}}">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th colspan="3">Recent {{_pastActions.length}} Actions</th>
-                                </tr>
-                                <tr>
-                                    <th></th>
-                                    <th>Name</th>
-                                    <th>Time</th>
-                                </tr>
-                            </head>
-                            <tbody>
-                                <template is="dom-repeat" items="{{_pastActions}}" as="paction">
-                                    <tr>
-                                        <td><paper-button raised on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</paper-button></td>
-                                        <td><span title="Transaction Code: [[paction.tx]]">[[paction.name]]</span></td>
-                                        <td>[[paction.startDate]] <template is="dom-if" if="{{hasDate(paction.endDate)}}">to [[paction.endDate]]</template></td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                        <!-- We use a pseudo table throughout this page because https://github.com/Polymer/polymer/issues/1567 -->
+                        <div class="table">
+                            <div class="tr">
+                                <div class="th">Recent {{_pastActions.length}} Actions</div>
+                                <div class="th">Name</div>
+                                <div class="th">Time</div>
+                            </div>
+                            <template is="dom-repeat" items="{{_pastActions}}" as="paction">
+                                <div class="tr">
+                                    <div class="td" style="text-align: center;"><paper-button raised on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</paper-button></div>
+                                    <div class="td"><span title="Transaction Code: [[paction.tx]]">[[paction.name]]</span></div>
+                                    <div class="td">[[paction.startDate]] <template is="dom-if" if="{{hasDate(paction.endDate)}}">to [[paction.endDate]]</template></div>
+                                </div>
+                            </template>
+                        </div>
                     </template>
                 </template>
                 <template is="dom-if" if="{{!hasActions()}}">
@@ -186,17 +212,33 @@ Example:
         
             <template is="dom-if" if="{{_tableView}}">
                 <div class="container flex layout horizontal">
-                    <table>
-                        <thead><tr><th><button on-click="_chooseAnother">Choose Different Action</button></th><th>Current Action</th></tr></thead>
-                        <tbody>
-                            <tr><td>Name</td><td><span title="Transaction Code: {{_currentAction.tx}}">{{_currentAction.name}}</span></td></tr>
-                            <template is="dom-if" if="{{hasDate(_currentAction.startDate)}}"><tr><td>Start</td><td>{{_currentAction.startDate}}</td></tr></template>
-                            <template is="dom-if" if="{{hasDate(_currentAction.endDate)}}"><tr><td>End</td><td>[[_currentAction.endDate]]</td></tr></template>
-                        </tbody>
-                    </table>
+                    <div class="table">
+                        <div class="tr">
+                            <div class="th">
+                                <button on-click="_chooseAnother">Choose Different Action</button>
+                            </div>
+                            <div class="th">Current Action</div>
+                        </div>
+                        <div class="tr">
+                            <div class="td">Name</div>
+                            <div class="td"><span title="Transaction Code: {{_currentAction.tx}}">{{_currentAction.name}}</span></div>
+                        </div>
+                        <template is="dom-if" if="{{hasDate(_currentAction.startDate)}}">
+                            <div class="tr">
+                                <div class="td">Start</div>
+                                <div class="td">{{_currentAction.startDate}}</div>
+                            </div>
+                        </template>
+                        <template is="dom-if" if="{{hasDate(_currentAction.endDate)}}">
+                            <div class="tr">
+                                <div class="td">End</div>
+                                <div class="td">[[_currentAction.endDate]]</div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
                 
-                <div class="container flex layout horizontal">
+                <div class="container flex layout horizontal" style="margin-bottom: 20px;">
                     <div class="flex-1 taskPanel">
                         <div class="twrapLeft" style$="max-height: {{_maxHeight}}px">
                             <template is="dom-repeat" items="{{_taskGroups}}" as="group">
@@ -248,20 +290,16 @@ Example:
                     </div>
                     <template is="dom-if" if="{{hasLogs()}}">
                         <div id="[[tableWrapId]]" class="flex-3 twrapMain" style$="max-height: {{_maxHeight}}px">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>{{_backpack.length}} Items</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <div class="tableNoBorder">
+                                <div class="tr">
+                                    <div class="th">{{_backpack.length}} Items</div>
+                                </div>
                                 <template is="dom-repeat" items="{{_backpack}}" as="backpack">
-                                    <tr id$="item{{index}}" class$="bottomB {{highlightStyle(backpack.highlight)}}">
-                                        <td>{{formatContainer(backpack)}}<pre>{{backpack.message}}</pre></td>
-                                    </tr>
+                                    <div id$="item{{index}}" class$="tr {{highlightStyle(backpack.highlight)}} bottomB">
+                                        <div class$="td {{highlightStyle(backpack.highlight)}}Td">{{formatContainer(backpack)}}<pre>{{backpack.message}}</pre></div>
+                                    </div>
                                 </template>
-                                </tbody>
-                            </table>
+                            </div>
                         </div>
                     </template>
                     <template is="dom-if" if="{{!hasLogs()}}">
