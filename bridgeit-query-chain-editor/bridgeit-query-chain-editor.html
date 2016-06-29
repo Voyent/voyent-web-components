@@ -287,83 +287,80 @@ Example:
                     Palette
                 </h2>
                 <div class="container flex layout vertical no-padding">
-                    <div class="flex">
-                        <div class="header-panel">
-                            <paper-header-panel>
-                                <paper-toolbar>
-                                    <div style="white-space: nowrap;">
-                                        <paper-button on-click="createNewQuery" title="Create a new query">
-                                            <iron-icon icon="add-circle" on-click="createNewQuery"></iron-icon>
-                                        </paper-button>
-                                        Queries
-                                    </div>
-                                </paper-toolbar>
-                                
-                                <template is="dom-if" if="{{hasArray(_queryServices)}}">
-                                    <div class="layout horizontal flex">
-                                        <paper-dropdown-menu label="Service">
-                                            <paper-listbox class="dropdown-content" selected="{{selectedQuery}}">
-                                                <template is="dom-repeat" strip-whitespace items="[[_queryServices]]" as="qservice">
-                                                    <paper-item>[[qservice.name]]</paper-item>
-                                                </template>
-                                            </paper-listbox>
-                                        </paper-dropdown-menu>
-                                    </div>
-                                </template>
-                                
-                                <template is="dom-if" if="{{hasArray(_queries)}}">
-                                    <div class="flex">
-                                        <template is="dom-repeat" strip-whitespace items="[[_queries]]" as="query">
-                                            <paper-item class="palette-item" draggable="true"
-                                                        on-dragstart="_startDragQuery" on-dragend="_commonDragEnd">
-                                                <paper-button on-click="addQueryToWorkflow" title="Add this query to the workflow">                                                    
-                                                    <iron-icon icon="search" on-click="addQuery"></iron-icon>
-                                                </paper-button>
-                                                <paper-item-body>
-                                                    <div>{{query._id}}</div>
-                                                </paper-item-body>
-                                                <paper-button on-click="removePaletteQuery" data-workflow-item$="{{query._id}}" title="Delete this query">
-                                                    <iron-icon icon="cancel" on-click="removePaletteQuery" data-workflow-item$="{{query._id}}"></iron-icon>
-                                                </paper-button>
-                                            </paper-item>
-                                        </template>
-                                    </div>
-                                </template>
-                            </paper-header-panel>
-                        </div>
+                    <div class="header-panel">
+                        <paper-header-panel>
+                            <paper-toolbar>
+                                <div style="white-space: nowrap;">
+                                    <paper-button on-click="createNewQuery" title="Create a new query">
+                                        <iron-icon icon="add-circle" on-click="createNewQuery"></iron-icon>
+                                    </paper-button>
+                                    Queries
+                                </div>
+                            </paper-toolbar>
+                            
+                            <template is="dom-if" if="{{hasArray(_queryServices)}}">
+                                <div class="layout horizontal flex">
+                                    <paper-dropdown-menu label="Service">
+                                        <paper-listbox class="dropdown-content" selected="{{selectedQuery}}">
+                                            <template is="dom-repeat" strip-whitespace items="[[_queryServices]]" as="qservice">
+                                                <paper-item>[[qservice.name]]</paper-item>
+                                            </template>
+                                        </paper-listbox>
+                                    </paper-dropdown-menu>
+                                </div>
+                            </template>
+                            
+                            <template is="dom-if" if="{{hasArray(_queries)}}">
+                                <div class="flex">
+                                    <template is="dom-repeat" strip-whitespace items="[[_queries]]" as="query">
+                                        <paper-item class="palette-item" draggable="true"
+                                                    on-dragstart="_startDragQuery" on-dragend="_commonDragEnd">
+                                            <paper-button on-click="addQueryToWorkflow" title="Add this query to the workflow">                                                    
+                                                <iron-icon icon="search" on-click="addQuery"></iron-icon>
+                                            </paper-button>
+                                            <paper-item-body>
+                                                <div>{{query._id}}</div>
+                                            </paper-item-body>
+                                            <paper-button on-click="removePaletteQuery" data-workflow-item$="{{query._id}}" title="Delete this query">
+                                                <iron-icon icon="cancel" on-click="removePaletteQuery" data-workflow-item$="{{query._id}}"></iron-icon>
+                                            </paper-button>
+                                        </paper-item>
+                                    </template>
+                                </div>
+                            </template>
+                        </paper-header-panel>
                     </div>
-                    <div class="flex">
-                        <div class="header-panel">
-                            <paper-header-panel>
-                                <paper-toolbar>
-                                    <div style="white-space: nowrap;">
-                                        <paper-button on-click="createNewTransformer" title="Create a new transformer">
-                                            <iron-icon icon="add-circle" on-click="createNewTransformer"></iron-icon>
-                                        </paper-button>
-                                        Transformers
-                                    </div>
-                                </paper-toolbar>
-                                
-                                <template is="dom-if" if="{{hasArray(_transformers)}}">
-                                    <div class="flex">
-                                        <template is="dom-repeat" strip-whitespace items="[[_transformers]]" as="transformer">
-                                            <paper-item class="palette-item" draggable="true"
-                                                        on-dragstart="_startDragTransformer" on-dragend="_commonDragEnd">
-                                                <paper-button on-click="addTransformerToWorkflow" title="Add this transformer to the workflow">                                                    
-                                                    <iron-icon icon="compare-arrows" on-click="addTransformer"></iron-icon>
-                                                </paper-button>
-                                                <paper-item-body>
-                                                    <div>{{transformer._id}}</div>
-                                                </paper-item-body>
-                                                <paper-button on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}" title="Delete this transformer">
-                                                    <iron-icon icon="cancel" on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}"></iron-icon>
-                                                </paper-button>
-                                            </paper-item>
-                                        </template>
-                                    </div>
-                                </template>
-                            </paper-header-panel>
-                        </div>
+                    <br/>
+                    <div class="header-panel">
+                        <paper-header-panel>
+                            <paper-toolbar>
+                                <div style="white-space: nowrap;">
+                                    <paper-button on-click="createNewTransformer" title="Create a new transformer">
+                                        <iron-icon icon="add-circle" on-click="createNewTransformer"></iron-icon>
+                                    </paper-button>
+                                    Transformers
+                                </div>
+                            </paper-toolbar>
+                            
+                            <template is="dom-if" if="{{hasArray(_transformers)}}">
+                                <div class="flex">
+                                    <template is="dom-repeat" strip-whitespace items="[[_transformers]]" as="transformer">
+                                        <paper-item class="palette-item" draggable="true"
+                                                    on-dragstart="_startDragTransformer" on-dragend="_commonDragEnd">
+                                            <paper-button on-click="addTransformerToWorkflow" title="Add this transformer to the workflow">                                                    
+                                                <iron-icon icon="compare-arrows" on-click="addTransformer"></iron-icon>
+                                            </paper-button>
+                                            <paper-item-body>
+                                                <div>{{transformer._id}}</div>
+                                            </paper-item-body>
+                                            <paper-button on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}" title="Delete this transformer">
+                                                <iron-icon icon="cancel" on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}"></iron-icon>
+                                            </paper-button>
+                                        </paper-item>
+                                    </template>
+                                </div>
+                            </template>
+                        </paper-header-panel>
                     </div>
                 </div>
             </div>
@@ -410,25 +407,17 @@ Example:
                                     <iron-pages selected="{{workflowItem.selected}}">
                                         <div class="tab-content"> <!-- Properties Page -->
                                             <div class="container flex layout vertical">
-                                                <div class="flex">
-                                                    <paper-input label="Query ID:" value="{{workflowItem.item._id}}"></paper-input>
-                                                </div>
+                                                <paper-input label="Query ID:" value="{{workflowItem.item._id}}"></paper-input>
                                                 <!-- TODO NTFY-378 The service input should be a dropdown with all services pull from our meta list -->
-                                                <div class="flex">
-                                                    <paper-input label="Service:" value="{{workflowItem.item.properties.service}}"></paper-input>
-                                                </div>
-                                                <div class="flex">
-                                                    <paper-input label="Collection:" value="{{workflowItem.item.properties.collection}}"></paper-input>
-                                                </div>
-                                                <div class="flex">
-                                                    <iron-label>
-                                                        Type:
-                                                        <paper-radio-group selected="{{workflowItem.item.properties.type}}">
-                                                            <paper-radio-button name="find">Find</paper-radio-button>
-                                                            <paper-radio-button name="aggregate">Aggregate</paper-radio-button>
-                                                        </paper-radio-group>
-                                                    </iron-label>
-                                                </div>
+                                                <paper-input label="Service:" value="{{workflowItem.item.properties.service}}"></paper-input>
+                                                <paper-input label="Collection:" value="{{workflowItem.item.properties.collection}}"></paper-input>
+                                                <iron-label>
+                                                    Type:
+                                                    <paper-radio-group selected="{{workflowItem.item.properties.type}}">
+                                                        <paper-radio-button name="find">Find</paper-radio-button>
+                                                        <paper-radio-button name="aggregate">Aggregate</paper-radio-button>
+                                                    </paper-radio-group>
+                                                </iron-label>
                                             </div>
                                         </div>
                                         <div class="tab-content"> <!-- Params Page -->
@@ -523,24 +512,16 @@ Example:
                                     <iron-pages selected="{{workflowItem.selected}}">
                                         <div class="tab-content"> <!-- Properties Page -->
                                             <div class="container flex layout vertical">
-                                                <div class="flex">
-                                                    <paper-input label="Transformer ID:" value="{{workflowItem.item._id}}"></paper-input>
-                                                </div>
-                                                <div class="flex">
-                                                    <paper-input label="Title:" value="{{workflowItem.item.properties.title}}"></paper-input>
-                                                </div>
-                                                <div class="flex">
-                                                    <paper-input label="Description:" value="{{workflowItem.item.properties.desc}}"></paper-input>
-                                                </div>
-                                                <div class="flex">
-                                                    <iron-label>
-                                                        Type:
-                                                        <paper-radio-group selected="{{workflowItem.item.properties.type}}">
-                                                            <paper-radio-button name="mapper">Mapper</paper-radio-button>
-                                                            <paper-radio-button name="function">Function</paper-radio-button>
-                                                        </paper-radio-group>
-                                                    </iron-label>
-                                                </div>
+                                                <paper-input label="Transformer ID:" value="{{workflowItem.item._id}}"></paper-input>
+                                                <paper-input label="Title:" value="{{workflowItem.item.properties.title}}"></paper-input>
+                                                <paper-input label="Description:" value="{{workflowItem.item.properties.desc}}"></paper-input>
+                                                <iron-label>
+                                                    Type:
+                                                    <paper-radio-group selected="{{workflowItem.item.properties.type}}">
+                                                        <paper-radio-button name="mapper">Mapper</paper-radio-button>
+                                                        <paper-radio-button name="function">Function</paper-radio-button>
+                                                    </paper-radio-group>
+                                                </iron-label>
                                             </div>
                                         </div>
                                         <div class="tab-content"> <!-- Raw Page -->
