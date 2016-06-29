@@ -96,7 +96,7 @@
         <paper-input label="Collection:" value="{{collection}}"></paper-input>
         <label id="documentsListLabel">Documents:</label>
         <paper-menu id="documentList" selected="{{documentId}}" attr-for-selected="data-id">
-          <template is="dom-repeat" items="{{documents}}">
+          <template is="dom-repeat" strip-whitespace items="{{documents}}">
             <paper-icon-item class="document-item" data-id$="{{item._id}}">
               <iron-icon icon="turned-in" item-icon></iron-icon>
               <div class="item-body"><span>{{item._id}}</span></div>

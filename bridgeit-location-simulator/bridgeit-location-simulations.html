@@ -60,7 +60,7 @@ Example:
             <template is="dom-if" if="{{_allSimulations}}">
                 <table>
                     <tbody>
-                        <template is="dom-repeat" items="{{_allSimulations}}">
+                        <template is="dom-repeat" strip-whitespace items="{{_allSimulations}}">
                             <tr>
                                 <td>{{item._id}}</td>
                                 <td>

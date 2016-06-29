@@ -83,7 +83,7 @@ Example:
         <div class="buttonContainer">
             <paper-dropdown-menu label="Filter by Service">
                 <paper-listbox class="dropdown-content" attr-for-selected="service" selected="{{filterService}}">
-                    <template is="dom-repeat" items="[[_serviceList]]" as="currentLoop">
+                    <template is="dom-repeat" strip-whitespace items="[[_serviceList]]" as="currentLoop">
                         <paper-item service="[[currentLoop]]">[[currentLoop]]</paper-item>
                     </template>
                 </paper-listbox>
@@ -123,7 +123,7 @@ Example:
                         </template>
                     </div>
                 </template>
-                <template is="dom-repeat" items="{{_currentPage}}">
+                <template is="dom-repeat" strip-whitespace items="{{_currentPage}}">
                     <div class$="{{_computeTrClass(item.level)}}">
                         <template is="dom-if" if="{{_time}}">
                             <div class="td">{{_formatDate(item.time)}}</div>

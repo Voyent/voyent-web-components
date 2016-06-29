@@ -18,7 +18,7 @@ Displays a series of event monitor components in a manageable list (move, delete
             Currently Polling? <b>{{polling}}</b>
         </div>
         
-        <template is="dom-repeat" as="item" items="{{items}}">
+        <template is="dom-repeat" strip-whitespace as="item" items="{{items}}">
             <div id="{{item.eventmonitor.id}}wrap" class="wrapBox">
                 <div style="float: left;">
                     <input type="checkbox" checked="{{item.selected::change}}"></input>

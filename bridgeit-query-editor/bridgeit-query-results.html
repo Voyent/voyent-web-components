@@ -46,15 +46,15 @@ Example:
         <!-- We use a pseudo table because https://github.com/Polymer/polymer/issues/1567 -->
         <div class="table">
             <div class="tr">
-                <template is="dom-repeat" items="{{_tableHeaders}}">
+                <template is="dom-repeat" strip-whitespace items="{{_tableHeaders}}">
                     <div class="th">
                         {{item}}
                     </div>
                 </template>
             </div>
-            <template is="dom-repeat" as="row" items="{{_tableRows}}">
+            <template is="dom-repeat" strip-whitespace as="row" items="{{_tableRows}}">
                 <div class="tr">
-                    <template is="dom-repeat" as="column" items="{{row}}">
+                    <template is="dom-repeat" strip-whitespace as="column" items="{{row}}">
                         <div class="td">
                             <html-binder html="{{column}}"></html-binder>
                         </div>

@@ -48,7 +48,7 @@ document.getElementById('bridgeit-message').info("Some info text");
         </style>
         
         <div class="wrapper">
-            <template is="dom-repeat" items="{{messages}}" as="message">
+            <template is="dom-repeat" strip-whitespace items="{{messages}}" as="message">
                 <span class$="{{message.type}}">
                 <template is="dom-if" if="{{usetimestamp}}">
                     {{message.timestamp}}>

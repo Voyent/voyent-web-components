@@ -49,7 +49,7 @@ Example:
             <template is="dom-if" if="{{_allRecognizers}}">
                 <paper-dropdown-menu label="View Saved Recognizers">
                     <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
-                        <template is="dom-repeat" items="[[_allRecognizers]]" as="recognizer">
+                        <template is="dom-repeat" strip-whitespace items="[[_allRecognizers]]" as="recognizer">
                             <paper-item>[[recognizer._id]]</paper-item>
                         </template>
                     </paper-listbox>

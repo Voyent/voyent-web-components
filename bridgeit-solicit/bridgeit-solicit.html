@@ -63,7 +63,7 @@ Example:
         <paper-header-panel class="solicitMain removed">
             <div class="paper-header">{{data.message}}</div>
             <div style="padding-top:10px;" class="content flex-wrap flex-equal-around-justified">
-                <template is="dom-repeat" items="{{data.options}}">
+                <template is="dom-repeat" strip-whitespace items="{{data.options}}">
                     <paper-button raised class="selectionButton" on-click="answerGiven" value$="[[item.value]]">[[item.label]]</paper-button>
                 </template>
             </div>

@@ -199,7 +199,7 @@ Example:
                                     <th>Description</th>
                                     <th>Default</th>
                                 </thead>
-                                <template is="dom-repeat" items="[[_workflow.properties.parameters]]" as="param">
+                                <template is="dom-repeat" strip-whitespace items="[[_workflow.properties.parameters]]" as="param">
                                     <tr>
                                         <td>
                                             <paper-input value="{{param.name}}"></paper-input>
@@ -240,7 +240,7 @@ Example:
                 <div class="flex">
                     <table>
                         <tbody>
-                            <template is="dom-repeat" items="[[_savedWorkflows]]" as="savedItem">
+                            <template is="dom-repeat" strip-whitespace items="[[_savedWorkflows]]" as="savedItem">
                                 <tr>
                                     <td>[[savedItem.properties.title]] ([[savedItem._id]])</td>
                                     <td><paper-button raised on-click="loadWorkflow" data-workflow-item$="{{savedItem._id}}">Load</paper-button></td>
@@ -284,7 +284,7 @@ Example:
                                 <div class="layout horizontal flex">
                                     <paper-dropdown-menu label="Service">
                                         <paper-listbox class="dropdown-content" selected="{{selectedQuery}}">
-                                            <template is="dom-repeat" items="[[_queryServices]]" as="qservice">
+                                            <template is="dom-repeat" strip-whitespace items="[[_queryServices]]" as="qservice">
                                                 <paper-item>[[qservice.name]]</paper-item>
                                             </template>
                                         </paper-listbox>
@@ -292,7 +292,7 @@ Example:
                                 </div>
                                 
                                 <div class="flex">
-                                    <template is="dom-repeat" items="[[_queries]]" as="query">
+                                    <template is="dom-repeat" strip-whitespace items="[[_queries]]" as="query">
                                         <paper-item class="palette-item" draggable="true"
                                                     on-dragstart="_startDragQuery" on-dragend="_commonDragEnd">
                                             <paper-button on-click="addQueryToWorkflow" title="Add this query to the workflow">                                                    
@@ -323,7 +323,7 @@ Example:
                                 </paper-toolbar>
                                 
                                 <div class="flex">
-                                    <template is="dom-repeat" items="[[_transformers]]" as="transformer">
+                                    <template is="dom-repeat" strip-whitespace items="[[_transformers]]" as="transformer">
                                         <paper-item class="palette-item" draggable="true"
                                                     on-dragstart="_startDragTransformer" on-dragend="_commonDragEnd">
                                             <paper-button on-click="addTransformerToWorkflow" title="Add this transformer to the workflow">                                                    
@@ -357,7 +357,7 @@ Example:
                 </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
-                        <template is="dom-repeat" items="[[_workflow.query]]" as="workflowItem">
+                        <template is="dom-repeat" strip-whitespace items="[[_workflow.query]]" as="workflowItem">
                             <template is="dom-if" if="[[_isQuery(workflowItem.type)]]">
                                 <paper-tabs selected="{{workflowItem.selected}}" no-bar>
                                     <paper-tab>Properties</paper-tab>
@@ -412,7 +412,7 @@ Example:
                                                 <th>Description</th>
                                                 <th>Default</th>
                                             </thead>
-                                            <template is="dom-repeat" items="[[workflowItem.item.properties.parameters]]" as="param">
+                                            <template is="dom-repeat" strip-whitespace items="[[workflowItem.item.properties.parameters]]" as="param">
                                                 <tr>
                                                     <td>
                                                         <paper-input value="{{param.name}}"></paper-input>
@@ -524,7 +524,7 @@ Example:
                                                     <th>Default</th>
                                                     <th>Options</th>
                                                 </thead>
-                                                <template is="dom-repeat" items="[[workflowItem.controls]]" as="mapper">
+                                                <template is="dom-repeat" strip-whitespace items="[[workflowItem.controls]]" as="mapper">
                                                     <tr>
                                                         <td>
                                                             <paper-input value="{{mapper.from}}"></paper-input>
@@ -582,7 +582,7 @@ Example:
                 </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
-                        <template is="dom-repeat" items="[[_workflow.query]]" as="workflowItem">
+                        <template is="dom-repeat" strip-whitespace items="[[_workflow.query]]" as="workflowItem">
                             <div class="header-panel">
                                 <paper-header-panel>
                                     <paper-toolbar>

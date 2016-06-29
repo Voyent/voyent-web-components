@@ -161,12 +161,12 @@ Example:
         <div class="title">{{_activeSim._id}}</div>
         <div id="tabs-container">
             <ul class="tabs-menu">
-                <template is="dom-repeat" items="{{_children}}">
+                <template is="dom-repeat" strip-whitespace items="{{_children}}">
                     <li class$="{{item.tabClass}}"><a on-click="_tabChangeListener"><span>{{item.tabLabel}}</span></a><span class="close" on-click="_tabCloseListener"></span></li>
                 </template>
             </ul>
             <div class="tabs-content">
-                <template is="dom-repeat" items="{{_children}}">
+                <template is="dom-repeat" strip-whitespace items="{{_children}}">
                     <div hidden$="{{item.contentHidden}}" data-index$="{{index}}" class="tab-content"></div>
                 </template>
             </div>
@@ -175,7 +175,7 @@ Example:
             <div class="simControl">
                 <select id="followableUsers">
                     <option value="-1" selected>Follow User:</option>
-                    <template is="dom-repeat" items="{{_followableUsers}}">
+                    <template is="dom-repeat" strip-whitespace items="{{_followableUsers}}">
                         <option value="{{index}}">{{item.label}}</option>
                     </template>
                 </select>

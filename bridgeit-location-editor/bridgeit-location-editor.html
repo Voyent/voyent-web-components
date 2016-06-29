@@ -1338,14 +1338,14 @@ span.noBold strong {
                 </div>
             </div>
             <div id="massDeleteContainer" class="col-sm-11 overAutoNoWrap">
-                <template is="dom-repeat" items="{{matchingLocations}}">
+                <template is="dom-repeat" strip-whitespace items="{{matchingLocations}}">
                     <div class="locationName smlHeight" title="{{item.id}}">
                         {{item.name}}
                     </div>
                 </template>
             </div>
             <div class="col-sm-1 noPadding">
-                <template is="dom-repeat" items="{{matchingLocations}}">
+                <template is="dom-repeat" strip-whitespace items="{{matchingLocations}}">
                     <div class="smlHeight">
                         <input type="checkbox" name="massDeleteLocation" value="{{item.id::change}}">
                     </div>
@@ -1482,7 +1482,7 @@ span.noBold strong {
                         </td>
                     </tr>
                 </template>
-                <template id="propertyAddTemplate" is="dom-repeat" items="{{regionProperties}}">
+                <template id="propertyAddTemplate" is="dom-repeat" strip-whitespace items="{{regionProperties}}">
                     <tr>
                         <td>{{item.key}}</td>
                         <td>{{item.val}}</td>
@@ -1512,7 +1512,7 @@ span.noBold strong {
                         <button class="btn btn-xs btn-success" on-click="addTag">Add</button>
                     </td>
                 </tr>
-                <template is="dom-repeat" items="{{tags}}">
+                <template is="dom-repeat" strip-whitespace items="{{tags}}">
                     <tr>
                         <td>{{item.name}}</td>
                         <td>
@@ -1560,7 +1560,7 @@ span.noBold strong {
             </tr>
             </thead>
             <tbody id="placesBody">
-            <template is="dom-repeat" items="{{placesSearchResults}}">
+            <template is="dom-repeat" strip-whitespace items="{{placesSearchResults}}">
                 <tr>
                     <td><img style="max-width:35px;" src="[[item.icon]]"></td>
                     <td>{{item.name}}</td>
@@ -1651,7 +1651,7 @@ span.noBold strong {
                         </td>
                         <td></td>
                     </tr>
-                    <template is="dom-repeat" items="{{regionProperties::change}}">
+                    <template is="dom-repeat" strip-whitespace items="{{regionProperties::change}}">
                         <tr>
                             <td>{{item.key}}</td>
                             <td>{{item.val}}</td>
@@ -1679,7 +1679,7 @@ span.noBold strong {
                             <button class="btn btn-xs btn-success" on-click="addTag" on="click">Add</button>
                         </td>
                     </tr>
-                    <template is="dom-repeat" items="{{tags}}">
+                    <template is="dom-repeat" strip-whitespace items="{{tags}}">
                         <tr>
                             <td>{{item.name}}</td>
                             <td>

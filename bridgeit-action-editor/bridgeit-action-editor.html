@@ -324,7 +324,8 @@ Example:
                             <div class="taskPanel">
                                 <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane">
-                                    <template is="dom-repeat" items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
+                                    <!-- This 'strip-whitespace' attribute is added here (and in other components) due to Polymer issue 2292, where IE11 was crashing when a splice was used on an array backing a dynamic loop -->
+                                    <template is="dom-repeat" strip-whitespace strip-whitespace items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
                                         <div class="taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                             <div class="title">{{item.label}}</div>
                                         </div>
@@ -334,9 +335,9 @@ Example:
                             <div class="taskPanel">
                                 <div class="header" on-click="_toggleTask">Tasks<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane taskPane">
-                                    <template is="dom-repeat" items="{{_taskSchemasUI}}">
+                                    <template is="dom-repeat" strip-whitespace items="{{_taskSchemasUI}}">
                                         <div class="taskClump">{{item.label}}</div>
-                                        <template is="dom-repeat" items="{{item.schemas}}">
+                                        <template is="dom-repeat" strip-whitespace items="{{item.schemas}}">
                                             <div class="taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                                 <div class="title">{{item.labelUI}}</div>
                                             </div>
@@ -375,7 +376,7 @@ Example:
                                      the various task group and task sections. One improvement that could be made is to find a way to template out
                                      the duplicate code and then insert this template into each section instead of manually duplicating it.
                                  -->
-                                <template is="dom-repeat" items="{{_taskGroups}}" as="group">
+                                <template is="dom-repeat" strip-whitespace items="{{_taskGroups}}" as="group">
                                     <div id$="{{group.id}}" class="task-group" data-title$="{{group.schema.title}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
                                         <div class="buttons">
                                             <button type="button" on-click="_moveTaskGroupUp">Up</span></button>
@@ -394,7 +395,7 @@ Example:
                                                 <input class="form-control" type="text" placeholder="Task Group Name" title="The task group name"
                                                        required value="{{group.name::input}}" data-label="Task Group Name" data-group-id$="{{group.id}}">
                                             </label>
-                                            <template is="dom-repeat" items="{{_toArray(group.schema.properties.required)}}" as="property" sort="_sortProperties">
+                                            <template is="dom-repeat" strip-whitespace items="{{_toArray(group.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                 <label>
                                                     <span class="required">*</span><span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
@@ -402,7 +403,7 @@ Example:
                                                             <select class="form-control" required value="{{property.value::change}}"
                                                                     data-label$="{{property.title}}" data-group-id$="{{group.id}}">
                                                                 <option value="" selected>Select one...</option>
-                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                     <option value="{{item}}">{{item}}</option>
                                                                 </template>
                                                             </select>
@@ -414,14 +415,14 @@ Example:
                                                     </template>
                                                 </label>
                                             </template>
-                                            <template is="dom-repeat" items="{{_toArray(group.schema.properties.optional)}}" as="property" sort="_sortProperties">
+                                            <template is="dom-repeat" strip-whitespace items="{{_toArray(group.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                 <label class$="{{_addBooleanClass(property.type)}}">
                                                     <span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
                                                             <select class="form-control" value="{{property.value::change}}">
                                                                 <option value="" selected>Select one...</option>
-                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                     <option value="{{item}}">{{item}}</option>
                                                                 </template>
                                                             </select>
@@ -439,7 +440,7 @@ Example:
                                             <template is="dom-if" if="{{_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
                                                 <div class="conditional-task-group-lbl">If</div>
                                                 <div class="conditional-task-group if">
-                                                    <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                                    <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
                                                         <template is="dom-if" if="{{!task.schema.isElseTask}}">
                                                             <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
                                                                 <div class="buttons">
@@ -468,10 +469,10 @@ Example:
                                                                         <label>
                                                                             <span><span class="required">*</span>One of these property groups are required</span>
                                                                         </label>
-                                                                        <template is="dom-repeat" items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
+                                                                        <template is="dom-repeat" strip-whitespace items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
                                                                             <fieldset>
                                                                                 <legend>Group <span>{{_toOneBasedIndex(index)}}</span></legend>
-                                                                                <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
+                                                                                <template is="dom-repeat" strip-whitespace items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
                                                                                     <label class$="{{_addBooleanClass(property.type)}}">
                                                                                         <span>{{property.title}}</span>
                                                                                     </label>
@@ -489,7 +490,7 @@ Example:
                                                                                             <template is="dom-if" if="{{_hasEnum(property.enum)}}">
                                                                                                 <select class="form-control" value="{{property.value::change}}">
                                                                                                     <option value="" selected>Select one...</option>
-                                                                                                    <template is="dom-repeat" items="{{property.enum}}">
+                                                                                                    <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                                         <option value="{{item}}">{{item}}</option>
                                                                                                     </template>
                                                                                                 </select>
@@ -507,7 +508,7 @@ Example:
                                                                             </fieldset>
                                                                         </template>
                                                                     </template>
-                                                                    <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
+                                                                    <template is="dom-repeat" strip-whitespace items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                                         <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span class="required">*</span><span>{{property.title}}</span>
                                                                         </label>
@@ -526,7 +527,7 @@ Example:
                                                                                     <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
                                                                                             data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
                                                                                         <option value="" selected>Select one...</option>
-                                                                                        <template is="dom-repeat" items="{{property.enum}}">
+                                                                                        <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                             <option value="{{item}}">{{item}}</option>
                                                                                         </template>
                                                                                     </select>
@@ -541,7 +542,7 @@ Example:
                                                                             <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
                                                                         </template>
                                                                     </template>
-                                                                    <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
+                                                                    <template is="dom-repeat" strip-whitespace items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                                         <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span>{{property.title}}</span>
                                                                         </label>
@@ -559,7 +560,7 @@ Example:
                                                                                 <template is="dom-if" if="{{_hasEnum(property.enum)}}">
                                                                                     <select class="form-control" value="{{property.value::change}}">
                                                                                         <option value="" selected>Select one...</option>
-                                                                                        <template is="dom-repeat" items="{{property.enum}}">
+                                                                                        <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                             <option value="{{item}}">{{item}}</option>
                                                                                         </template>
                                                                                     </select>
@@ -581,7 +582,7 @@ Example:
                                                 </div>
                                                 <div class="conditional-task-group-lbl">Else</div>
                                                 <div class="conditional-task-group else">
-                                                    <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                                    <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
                                                         <template is="dom-if" if="{{task.schema.isElseTask}}">
                                                             <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
                                                                 <div class="buttons">
@@ -610,10 +611,10 @@ Example:
                                                                         <label>
                                                                             <span><span class="required">*</span>One of these property groups are required</span>
                                                                         </label>
-                                                                        <template is="dom-repeat" items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
+                                                                        <template is="dom-repeat" strip-whitespace items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
                                                                             <fieldset>
                                                                                 <legend>Group <span>{{_toOneBasedIndex(index)}}</span></legend>
-                                                                                <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
+                                                                                <template is="dom-repeat" strip-whitespace items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
                                                                                     <label class$="{{_addBooleanClass(property.type)}}">
                                                                                         <span>{{property.title}}</span>
                                                                                     </label>
@@ -631,7 +632,7 @@ Example:
                                                                                             <template is="dom-if" if="{{_hasEnum(property.enum)}}">
                                                                                                 <select class="form-control" value="{{property.value::change}}">
                                                                                                     <option value="" selected>Select one...</option>
-                                                                                                    <template is="dom-repeat" items="{{property.enum}}">
+                                                                                                    <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                                         <option value="{{item}}">{{item}}</option>
                                                                                                     </template>
                                                                                                 </select>
@@ -649,7 +650,7 @@ Example:
                                                                             </fieldset>
                                                                         </template>
                                                                     </template>
-                                                                    <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
+                                                                    <template is="dom-repeat" strip-whitespace items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                                         <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span class="required">*</span><span>{{property.title}}</span>
                                                                         </label>
@@ -668,7 +669,7 @@ Example:
                                                                                     <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
                                                                                             data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
                                                                                         <option value="" selected>Select one...</option>
-                                                                                        <template is="dom-repeat" items="{{property.enum}}">
+                                                                                        <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                             <option value="{{item}}">{{item}}</option>
                                                                                         </template>
                                                                                     </select>
@@ -683,7 +684,7 @@ Example:
                                                                             <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
                                                                         </template>
                                                                     </template>
-                                                                    <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
+                                                                    <template is="dom-repeat" strip-whitespace items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                                         <label class$="{{_addBooleanClass(property.type)}}">
                                                                             <span>{{property.title}}</span>
                                                                         </label>
@@ -701,7 +702,7 @@ Example:
                                                                                 <template is="dom-if" if="{{_hasEnum(property.enum)}}">
                                                                                     <select class="form-control" value="{{property.value::change}}">
                                                                                         <option value="" selected>Select one...</option>
-                                                                                        <template is="dom-repeat" items="{{property.enum}}">
+                                                                                        <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                             <option value="{{item}}">{{item}}</option>
                                                                                         </template>
                                                                                     </select>
@@ -723,7 +724,7 @@ Example:
                                                 </div>
                                             </template>
                                             <template is="dom-if" if="{{!_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
-                                                <template is="dom-repeat" items="{{group.tasks}}" as="task">
+                                                <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
                                                     <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
                                                         <div class="buttons">
                                                             <button type="button" on-click="_moveTaskUp">Up</span></button>
@@ -751,10 +752,10 @@ Example:
                                                                 <label>
                                                                     <span><span class="required">*</span>One of these property groups are required</span>
                                                                 </label>
-                                                                <template is="dom-repeat" items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
+                                                                <template is="dom-repeat" strip-whitespace items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
                                                                     <fieldset>
                                                                         <legend>Group <span>{{_toOneBasedIndex(index)}}</span></legend>
-                                                                        <template is="dom-repeat" items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
+                                                                        <template is="dom-repeat" strip-whitespace items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
                                                                             <label class$="{{_addBooleanClass(property.type)}}">
                                                                                 <span>{{property.title}}</span>
                                                                             </label>
@@ -772,7 +773,7 @@ Example:
                                                                                     <template is="dom-if" if="{{_hasEnum(property.enum)}}">
                                                                                         <select class="form-control" value="{{property.value::change}}">
                                                                                             <option value="" selected>Select one...</option>
-                                                                                            <template is="dom-repeat" items="{{property.enum}}">
+                                                                                            <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                                 <option value="{{item}}">{{item}}</option>
                                                                                             </template>
                                                                                         </select>
@@ -790,7 +791,7 @@ Example:
                                                                     </fieldset>
                                                                 </template>
                                                             </template>
-                                                            <template is="dom-repeat" items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
+                                                            <template is="dom-repeat" strip-whitespace items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                                 <label class$="{{_addBooleanClass(property.type)}}">
                                                                     <span class="required">*</span><span>{{property.title}}</span>
                                                                 </label>
@@ -809,7 +810,7 @@ Example:
                                                                             <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
                                                                                     data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
                                                                                 <option value="" selected>Select one...</option>
-                                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                                <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                     <option value="{{item}}">{{item}}</option>
                                                                                 </template>
                                                                             </select>
@@ -824,7 +825,7 @@ Example:
                                                                     <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
                                                                 </template>
                                                             </template>
-                                                            <template is="dom-repeat" items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
+                                                            <template is="dom-repeat" strip-whitespace items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                                 <label class$="{{_addBooleanClass(property.type)}}">
                                                                     <span>{{property.title}}</span>
                                                                 </label>
@@ -842,7 +843,7 @@ Example:
                                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
                                                                             <select class="form-control" value="{{property.value::change}}">
                                                                                 <option value="" selected>Select one...</option>
-                                                                                <template is="dom-repeat" items="{{property.enum}}">
+                                                                                <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
                                                                                     <option value="{{item}}">{{item}}</option>
                                                                                 </template>
                                                                             </select>

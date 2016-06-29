@@ -44,7 +44,7 @@ Example:
                     <tbody>
                         <paper-dropdown-menu label="View Saved Queries">
                             <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
-                                <template is="dom-repeat" items="[[_allQueries]]" as="query">
+                                <template is="dom-repeat" strip-whitespace items="[[_allQueries]]" as="query">
                                     <paper-item>[[query._id]]</paper-item>
                                 </template>
                             </paper-listbox>

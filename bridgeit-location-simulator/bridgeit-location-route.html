@@ -94,7 +94,7 @@ Example:
                     <label id="usersLbl" for="users" class$="{{userLblClass}}">User:</label>
                     <select id="users" class$="{{userInputClass}}" value="{{user::change}}" disabled$="{{_inputsDisabled}}">
                         <option value="" selected>Select a User</option>
-                        <template is="dom-repeat" items="{{_users}}" as="user">
+                        <template is="dom-repeat" strip-whitespace items="{{_users}}" as="user">
                             <option value="{{user}}">{{user}}</option>
                         </template>
                     </select>

@@ -49,7 +49,7 @@ Example:
             <template is="dom-if" if="{{_allActions}}">
                 <paper-dropdown-menu label="View Saved Actions">
                     <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
-                        <template is="dom-repeat" items="[[_allActions]]" as="action">
+                        <template is="dom-repeat" strip-whitespace items="[[_allActions]]" as="action">
                             <paper-item>[[action._id]]</paper-item>
                         </template>
                     </paper-listbox>
