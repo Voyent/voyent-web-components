@@ -349,7 +349,7 @@ Example:
                         </div>
                     </div>
                 </div>
-                <div id="aeMain" class="actionContainer flex" on-dragover="_dragOverAction" on-drop="_dropInAction">
+                <div id="aeMain" class="actionContainer flex" on-dragover="_dragInAndOverAction" on-dragenter="_dragInAndOverAction" on-drop="_dropInAction">
                     <div class="layout vertical">
                         <form id="actionForm">
                             <div class="flex">
@@ -377,7 +377,7 @@ Example:
                                      the duplicate code and then insert this template into each section instead of manually duplicating it.
                                  -->
                                 <template is="dom-repeat" strip-whitespace items="{{_taskGroups}}" as="group">
-                                    <div id$="{{group.id}}" class="task-group" data-title$="{{group.schema.title}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
+                                    <div id$="{{group.id}}" class="task-group" data-title$="{{group.schema.title}}" on-dragover="_dragInAndOverGroup" on-dragenter="_dragInAndOverGroup" on-drop="_dropInGroup">
                                         <div class="buttons">
                                             <button type="button" on-click="_moveTaskGroupUp">Up</span></button>
                                             <button type="button" on-click="_moveTaskGroupDown">Down</button>
@@ -437,7 +437,7 @@ Example:
                                                     </template>
                                                 </label>
                                             </template>
-                                            <template is="dom-if" if="{{_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
+                                            <template is="dom-if" if="{{_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragInAndOverGroup" on-dragenter="_dragInAndOverGroup" on-drop="_dropInGroup">
                                                 <div class="conditional-task-group-lbl">If</div>
                                                 <div class="conditional-task-group if">
                                                     <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
@@ -723,7 +723,7 @@ Example:
                                                     </template>
                                                 </div>
                                             </template>
-                                            <template is="dom-if" if="{{!_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragOverGroup" on-drop="_dropInGroup">
+                                            <template is="dom-if" if="{{!_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragInAndOverGroup" on-dragenter="_dragInAndOverGroup" on-drop="_dropInGroup">
                                                 <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
                                                     <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
                                                         <div class="buttons">

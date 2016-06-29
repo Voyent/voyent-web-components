@@ -900,7 +900,7 @@ Polymer({
      * @param e
      * @private
      */
-    _dragOverAction: function(e) {
+    _dragInAndOverAction: function(e) {
         if (this._lastDraggedType === 'action/group/new' ||
             this._lastDraggedType === 'action/group/existing') {
             e.preventDefault(); //only allow task groups to be dragged into the container
@@ -912,7 +912,7 @@ Polymer({
      * @param e
      * @private
      */
-    _dragOverGroup: function(e) {
+    _dragInAndOverGroup: function(e) {
         if (this._lastDraggedType === 'action/task/new' ||
             this._lastDraggedType === 'action/task/existing') {
             e.preventDefault(); //only allow tasks to be dragged into the task groups
