@@ -125,6 +125,26 @@ Example:
             .hidden-header {
                 color:transparent;
             }
+            .table {
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+            .th {
+                display: table-cell;
+                text-align:center;
+                vertical-align: middle;
+                padding: 5px;
+                font-weight: bold;
+            }
+            .tr {
+                display: table-row;
+            }
+            .td {
+                padding: 5px;
+                display: table-cell;
+                vertical-align: middle;
+                word-wrap: break-word;
+            }
             /* Custom Styles */
             paper-button {
                 min-width: 16px;
@@ -192,40 +212,38 @@ Example:
                     
                     <iron-pages selected="{{_workflow.selected}}">
                         <div class="tab-content"> <!-- Definition Page -->
-                            <table>
-                                <thead>
-                                    <th>Name</th>
-                                    <th>Type</th>
-                                    <th>Description</th>
-                                    <th>Default</th>
-                                </thead>
-                                <template is="dom-repeat" strip-whitespace items="[[_workflow.properties.parameters]]" as="param">
-                                    <tr>
-                                        <td>
-                                            <paper-input value="{{param.name}}"></paper-input>
-                                        </td>
-                                        <td>
-                                            <paper-input value="{{param.type}}"></paper-input>
-                                        </td>
-                                        <td>
-                                            <paper-input value="{{param.desc}}"></paper-input>
-                                        </td>
-                                        <td>
-                                            <paper-input value="{{param.default}}"></paper-input>
-                                        </td>
-                                    </tr>
+                            <div class="table">
+                                <div class="tr">
+                                    <div class="th">Name</div>
+                                    <div class="th">Type</div>
+                                    <div class="th">Description</div>
+                                    <div class="th">Default</div>
+                                </div>
+                                <template is="dom-if" if="{{hasArray(_workflow.properties.parameters)}}">
+                                    <template is="dom-repeat" strip-whitespace items="[[_workflow.properties.parameters]]" as="param">
+                                        <div class="tr">
+                                            <div class="td">
+                                                <paper-input value="{{param.name}}"></paper-input>
+                                            </div>
+                                            <div class="td">
+                                                <paper-input value="{{param.type}}"></paper-input>
+                                            </div>
+                                            <div class="td">
+                                                <paper-input value="{{param.desc}}"></paper-input>
+                                            </div>
+                                            <div class="td">
+                                                <paper-input value="{{param.default}}"></paper-input>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </template>
-                                <tr>
-                                    <td colspan="4" class="right">
-                                        <paper-button on-click="addMainParam">
-                                            <iron-icon icon="add-circle" on-click="addMainParam"></iron-icon>
-                                        </paper-button>
-                                        <paper-button on-click="removeMainParam">
-                                            <iron-icon icon="remove-circle" on-click="removeMainParam"></iron-icon>
-                                        </paper-button>
-                                    </td>
-                                </tr>
-                            </table>
+                            </div>
+                            <paper-button on-click="addMainParam">
+                                <iron-icon icon="add-circle" on-click="addMainParam"></iron-icon>
+                            </paper-button>
+                            <paper-button on-click="removeMainParam">
+                                <iron-icon icon="remove-circle" on-click="removeMainParam"></iron-icon>
+                            </paper-button>
                         </div>
                         <div class="tab-content"> <!-- Test Data Page -->
                             <bridgeit-code-editor value="{{_workflow.properties.execParams}}"></bridgeit-code-editor>
@@ -238,17 +256,17 @@ Example:
                 <h3>Saved Workflows</h3>
                 
                 <div class="flex">
-                    <table>
-                        <tbody>
+                    <template is="dom-if" if="{{hasArray(_savedWorkflows)}}">
+                        <div class="table">
                             <template is="dom-repeat" strip-whitespace items="[[_savedWorkflows]]" as="savedItem">
-                                <tr>
-                                    <td>[[savedItem.properties.title]] ([[savedItem._id]])</td>
-                                    <td><paper-button raised on-click="loadWorkflow" data-workflow-item$="{{savedItem._id}}">Load</paper-button></td>
-                                    <td><paper-button raised on-click="removeWorkflow" data-workflow-item$="{{savedItem._id}}">Delete</paper-button></td>
-                                </tr>
+                                <div class="tr">
+                                    <div class="td">[[savedItem.properties.title]] ([[savedItem._id]])</div>
+                                    <div class="td"><paper-button raised on-click="loadWorkflow" data-workflow-item$="{{savedItem._id}}">Load</paper-button></div>
+                                    <div class="td"><paper-button raised on-click="removeWorkflow" data-workflow-item$="{{savedItem._id}}">Delete</paper-button></div>
+                                </div>
                             </template>
-                        </tbody>
-                    </table>
+                        </div>
+                    </template>
                     
                     <template is="dom-if" if="[[loading]]">
                         <center>
@@ -281,32 +299,36 @@ Example:
                                     </div>
                                 </paper-toolbar>
                                 
-                                <div class="layout horizontal flex">
-                                    <paper-dropdown-menu label="Service">
-                                        <paper-listbox class="dropdown-content" selected="{{selectedQuery}}">
-                                            <template is="dom-repeat" strip-whitespace items="[[_queryServices]]" as="qservice">
-                                                <paper-item>[[qservice.name]]</paper-item>
-                                            </template>
-                                        </paper-listbox>
-                                    </paper-dropdown-menu>
-                                </div>
+                                <template is="dom-if" if="{{hasArray(_queryServices)}}">
+                                    <div class="layout horizontal flex">
+                                        <paper-dropdown-menu label="Service">
+                                            <paper-listbox class="dropdown-content" selected="{{selectedQuery}}">
+                                                <template is="dom-repeat" strip-whitespace items="[[_queryServices]]" as="qservice">
+                                                    <paper-item>[[qservice.name]]</paper-item>
+                                                </template>
+                                            </paper-listbox>
+                                        </paper-dropdown-menu>
+                                    </div>
+                                </template>
                                 
-                                <div class="flex">
-                                    <template is="dom-repeat" strip-whitespace items="[[_queries]]" as="query">
-                                        <paper-item class="palette-item" draggable="true"
-                                                    on-dragstart="_startDragQuery" on-dragend="_commonDragEnd">
-                                            <paper-button on-click="addQueryToWorkflow" title="Add this query to the workflow">                                                    
-                                                <iron-icon icon="search" on-click="addQuery"></iron-icon>
-                                            </paper-button>
-                                            <paper-item-body>
-                                                <div>{{query._id}}</div>
-                                            </paper-item-body>
-                                            <paper-button on-click="removePaletteQuery" data-workflow-item$="{{query._id}}" title="Delete this query">
-                                                <iron-icon icon="cancel" on-click="removePaletteQuery" data-workflow-item$="{{query._id}}"></iron-icon>
-                                            </paper-button>
-                                        </paper-item>
-                                    </template>
-                                </div>
+                                <template is="dom-if" if="{{hasArray(_queries)}}">
+                                    <div class="flex">
+                                        <template is="dom-repeat" strip-whitespace items="[[_queries]]" as="query">
+                                            <paper-item class="palette-item" draggable="true"
+                                                        on-dragstart="_startDragQuery" on-dragend="_commonDragEnd">
+                                                <paper-button on-click="addQueryToWorkflow" title="Add this query to the workflow">                                                    
+                                                    <iron-icon icon="search" on-click="addQuery"></iron-icon>
+                                                </paper-button>
+                                                <paper-item-body>
+                                                    <div>{{query._id}}</div>
+                                                </paper-item-body>
+                                                <paper-button on-click="removePaletteQuery" data-workflow-item$="{{query._id}}" title="Delete this query">
+                                                    <iron-icon icon="cancel" on-click="removePaletteQuery" data-workflow-item$="{{query._id}}"></iron-icon>
+                                                </paper-button>
+                                            </paper-item>
+                                        </template>
+                                    </div>
+                                </template>
                             </paper-header-panel>
                         </div>
                     </div>
@@ -322,22 +344,24 @@ Example:
                                     </div>
                                 </paper-toolbar>
                                 
-                                <div class="flex">
-                                    <template is="dom-repeat" strip-whitespace items="[[_transformers]]" as="transformer">
-                                        <paper-item class="palette-item" draggable="true"
-                                                    on-dragstart="_startDragTransformer" on-dragend="_commonDragEnd">
-                                            <paper-button on-click="addTransformerToWorkflow" title="Add this transformer to the workflow">                                                    
-                                                <iron-icon icon="compare-arrows" on-click="addTransformer"></iron-icon>
-                                            </paper-button>
-                                            <paper-item-body>
-                                                <div>{{transformer._id}}</div>
-                                            </paper-item-body>
-                                            <paper-button on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}" title="Delete this transformer">
-                                                <iron-icon icon="cancel" on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}"></iron-icon>
-                                            </paper-button>
-                                        </paper-item>
-                                    </template>
-                                </div>
+                                <template is="dom-if" if="{{hasArray(_transformers)}}">
+                                    <div class="flex">
+                                        <template is="dom-repeat" strip-whitespace items="[[_transformers]]" as="transformer">
+                                            <paper-item class="palette-item" draggable="true"
+                                                        on-dragstart="_startDragTransformer" on-dragend="_commonDragEnd">
+                                                <paper-button on-click="addTransformerToWorkflow" title="Add this transformer to the workflow">                                                    
+                                                    <iron-icon icon="compare-arrows" on-click="addTransformer"></iron-icon>
+                                                </paper-button>
+                                                <paper-item-body>
+                                                    <div>{{transformer._id}}</div>
+                                                </paper-item-body>
+                                                <paper-button on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}" title="Delete this transformer">
+                                                    <iron-icon icon="cancel" on-click="removePaletteTransformer" data-workflow-item$="{{transformer._id}}"></iron-icon>
+                                                </paper-button>
+                                            </paper-item>
+                                        </template>
+                                    </div>
+                                </template>
                             </paper-header-panel>
                         </div>
                     </div>
@@ -357,219 +381,223 @@ Example:
                 </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
-                        <template is="dom-repeat" strip-whitespace items="[[_workflow.query]]" as="workflowItem">
-                            <template is="dom-if" if="[[_isQuery(workflowItem.type)]]">
-                                <paper-tabs selected="{{workflowItem.selected}}" no-bar>
-                                    <paper-tab>Properties</paper-tab>
-                                    <paper-tab>Params</paper-tab>
-                                    <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">
-                                        <paper-tab>Find</paper-tab>
-                                    </template>
-                                    <paper-tab>
-                                        <template is="dom-if" if="[[_isAggregate(workflowItem.item.properties.type)]]">Aggregate</template>
-                                        <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">Raw</template>
-                                    </paper-tab>
-                                    <paper-button on-click="moveUpWorkflowItem" title="Move item up">
-                                        <iron-icon icon="arrow-upward" on-click="moveUpWorkflowItem"></iron-icon>
-                                    </paper-button>
-                                    <paper-button on-click="moveDownWorkflowItem" title="Move item down">
-                                        <iron-icon icon="arrow-downward" on-click="moveDownWorkflowItem"></iron-icon>
-                                    </paper-button>
-                                    <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Remove item">
-                                        <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
-                                    </paper-button>
-                                </paper-tabs>
-
-                                <iron-pages selected="{{workflowItem.selected}}">
-                                    <div class="tab-content"> <!-- Properties Page -->
-                                        <div class="container flex layout vertical">
-                                            <div class="flex">
-                                                <paper-input label="Query ID:" value="{{workflowItem.item._id}}"></paper-input>
-                                            </div>
-                                            <!-- TODO NTFY-378 The service input should be a dropdown with all services pull from our meta list -->
-                                            <div class="flex">
-                                                <paper-input label="Service:" value="{{workflowItem.item.properties.service}}"></paper-input>
-                                            </div>
-                                            <div class="flex">
-                                                <paper-input label="Collection:" value="{{workflowItem.item.properties.collection}}"></paper-input>
-                                            </div>
-                                            <div class="flex">
-                                                <iron-label>
-                                                    Type:
-                                                    <paper-radio-group selected="{{workflowItem.item.properties.type}}">
-                                                        <paper-radio-button name="find">Find</paper-radio-button>
-                                                        <paper-radio-button name="aggregate">Aggregate</paper-radio-button>
-                                                    </paper-radio-group>
-                                                </iron-label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="tab-content"> <!-- Params Page -->
-                                        <table>
-                                            <thead>
-                                                <th>Name</th>
-                                                <th>Type</th>
-                                                <th>Description</th>
-                                                <th>Default</th>
-                                            </thead>
-                                            <template is="dom-repeat" strip-whitespace items="[[workflowItem.item.properties.parameters]]" as="param">
-                                                <tr>
-                                                    <td>
-                                                        <paper-input value="{{param.name}}"></paper-input>
-                                                    </td>
-                                                    <td>
-                                                        <paper-input value="{{param.type}}"></paper-input>
-                                                    </td>
-                                                    <td>
-                                                        <paper-input value="{{param.desc}}"></paper-input>
-                                                    </td>
-                                                    <td>
-                                                        <paper-input value="{{param.default}}"></paper-input>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                            <tr>
-                                                <td colspan="4" class="right">
-                                                    <paper-button on-click="addItemParam" data-workflow-item$="{{workflowItem.id}}">
-                                                        <iron-icon icon="add-circle" on-click="addItemParam" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
-                                                    </paper-button>
-                                                    <paper-button on-click="removeItemParam" data-workflow-item$="{{workflowItem.id}}">
-                                                        <iron-icon icon="remove-circle" on-click="removeItemParam" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
-                                                    </paper-button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    <!-- TODO NTFY-386 Create tooling for managing Aggregate type JSON, instead of direct raw edits -->
-                                    <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">
-                                        <div class="tab-content"> <!-- Query Page -->
-                                            <bridgeit-query-editor service="[[workflowItem.item.properties.service]]"
-                                                                   collection="[[workflowItem.collectionFormatted]]"
-                                                                   options="[[workflowItem.item.query.options]]"
-                                                                   fields="[[workflowItem.item.query.fields]]"
-                                                                   query="[[workflowItem.item.query.find]]">
-                                            </bridgeit-query-editor>
-                                        </div>
-                                    </template>
-                                    <div class="tab-content"> <!-- Raw Page -->
-                                        <!-- Make the aggregate raw JSON editable as it's the primary way of interacting with the data -->
-                                        <template is="dom-if" if="[[_isAggregate(workflowItem.item.properties.type)]]">
-                                            <bridgeit-code-editor value="{{workflowItem.queryFormatted}}"></bridgeit-code-editor>
-                                        </template>
-                                        <!-- The find type queries have readonly raw JSON because we use the provided query editor tooling -->
-                                        <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">
-                                            <bridgeit-code-editor value="{{workflowItem.queryFormatted}}" readonly></bridgeit-code-editor>
-                                        </template>
-                                    </div>
-                                </iron-pages>
-                            </template>
-                            <template is="dom-if" if="[[_isTransformer(workflowItem.type)]]">
-                                <template is="dom-if" if="[[_isTransformerMapper(workflowItem.item.properties.type)]]">
-                                    <paper-tabs selected="{{workflowItem.selected}}" on-iron-select="transformerTabChange" data-workflow-item$="{{workflowItem.id}}" no-bar>
-                                        <paper-tab>Properties</paper-tab>
-                                        <paper-tab>Transformer</paper-tab>
-                                        <paper-tab>Raw</paper-tab>
-                                        <paper-button on-click="moveUpWorkflowItem" title="Move item up">
-                                            <iron-icon icon="arrow-upward" on-click="moveUpWorkflowItem"></iron-icon>
-                                        </paper-button>
-                                        <paper-button on-click="moveDownWorkflowItem" title="Move item down">
-                                            <iron-icon icon="arrow-downward" on-click="moveDownWorkflowItem"></iron-icon>
-                                        </paper-button>
-                                        <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Remove item">
-                                            <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
-                                        </paper-button>
-                                    </paper-tabs>
-                                </template>
-                                
-                                <template is="dom-if" if="[[!_isTransformerMapper(workflowItem.item.properties.type)]]">
+                        <template is="dom-if" if="{{hasArray(_workflow.query)}}">
+                            <template is="dom-repeat" strip-whitespace items="[[_workflow.query]]" as="workflowItem">
+                                <template is="dom-if" if="[[_isQuery(workflowItem.type)]]">
                                     <paper-tabs selected="{{workflowItem.selected}}" no-bar>
                                         <paper-tab>Properties</paper-tab>
-                                        <paper-tab>Transformer Function</paper-tab>
-                                        <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
-                                            <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
-                                        </paper-button>
+                                        <paper-tab>Params</paper-tab>
+                                        <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">
+                                            <paper-tab>Find</paper-tab>
+                                        </template>
+                                        <paper-tab>
+                                            <template is="dom-if" if="[[_isAggregate(workflowItem.item.properties.type)]]">Aggregate</template>
+                                            <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">Raw</template>
+                                        </paper-tab>
+                                        <div style="color: black;">
+                                            <paper-button on-click="moveUpWorkflowItem" title="Move item up">
+                                                <iron-icon icon="arrow-upward" on-click="moveUpWorkflowItem"></iron-icon>
+                                            </paper-button>
+                                            <paper-button on-click="moveDownWorkflowItem" title="Move item down">
+                                                <iron-icon icon="arrow-downward" on-click="moveDownWorkflowItem"></iron-icon>
+                                            </paper-button>
+                                            <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Remove item">
+                                                <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                            </paper-button>
+                                        </div>
                                     </paper-tabs>
-                                </template>
-
-                                <iron-pages selected="{{workflowItem.selected}}">
-                                    <div class="tab-content"> <!-- Properties Page -->
-                                        <div class="container flex layout vertical">
-                                            <div class="flex">
-                                                <paper-input label="Transformer ID:" value="{{workflowItem.item._id}}"></paper-input>
-                                            </div>
-                                            <div class="flex">
-                                                <paper-input label="Title:" value="{{workflowItem.item.properties.title}}"></paper-input>
-                                            </div>
-                                            <div class="flex">
-                                                <paper-input label="Description:" value="{{workflowItem.item.properties.desc}}"></paper-input>
-                                            </div>
-                                            <div class="flex">
-                                                <iron-label>
-                                                    Type:
-                                                    <paper-radio-group selected="{{workflowItem.item.properties.type}}">
-                                                        <paper-radio-button name="mapper">Mapper</paper-radio-button>
-                                                        <paper-radio-button name="function">Function</paper-radio-button>
-                                                    </paper-radio-group>
-                                                </iron-label>
+    
+                                    <iron-pages selected="{{workflowItem.selected}}">
+                                        <div class="tab-content"> <!-- Properties Page -->
+                                            <div class="container flex layout vertical">
+                                                <div class="flex">
+                                                    <paper-input label="Query ID:" value="{{workflowItem.item._id}}"></paper-input>
+                                                </div>
+                                                <!-- TODO NTFY-378 The service input should be a dropdown with all services pull from our meta list -->
+                                                <div class="flex">
+                                                    <paper-input label="Service:" value="{{workflowItem.item.properties.service}}"></paper-input>
+                                                </div>
+                                                <div class="flex">
+                                                    <paper-input label="Collection:" value="{{workflowItem.item.properties.collection}}"></paper-input>
+                                                </div>
+                                                <div class="flex">
+                                                    <iron-label>
+                                                        Type:
+                                                        <paper-radio-group selected="{{workflowItem.item.properties.type}}">
+                                                            <paper-radio-button name="find">Find</paper-radio-button>
+                                                            <paper-radio-button name="aggregate">Aggregate</paper-radio-button>
+                                                        </paper-radio-group>
+                                                    </iron-label>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <template is="dom-if" if="[[_isTransformerMapper(workflowItem.item.properties.type)]]">
-                                        <!-- TODO LATER the tooling should support pre-populating our "from" and "to" based on the previous/next workflow item (especially if it's a query) -->
-                                        <div class="tab-content"> <!-- Transformer Page -->
-                                            <table>
-                                                <thead>
-                                                    <th>From</th>
-                                                    <th>To</th>
-                                                    <th>Default</th>
-                                                    <th>Options</th>
-                                                </thead>
-                                                <template is="dom-repeat" strip-whitespace items="[[workflowItem.controls]]" as="mapper">
-                                                    <tr>
-                                                        <td>
-                                                            <paper-input value="{{mapper.from}}"></paper-input>
-                                                        </td>
-                                                        <td>
-                                                            <paper-input value="{{mapper.to}}"></paper-input>
-                                                        </td>
-                                                        <td>
-                                                            <paper-input value="{{mapper.default}}"></paper-input>
-                                                        </td>
-                                                        <td>
-                                                            <label>
-                                                                <input type="checkbox" checked="{{mapper.options.wrap::change}}"/>
-                                                                Wrap
-                                                            </label>
-                                                            <br/>
-                                                            <label>
-                                                                <input type="checkbox" checked="{{mapper.options.flatten::change}}"/>
-                                                                Flatten
-                                                            </label>
-                                                        </td>
-                                                    </tr>
+                                        <div class="tab-content"> <!-- Params Page -->
+                                            <div class="table">
+                                                <div class="tr">
+                                                    <div class="th">Name</div>
+                                                    <div class="th">Type</div>
+                                                    <div class="th">Description</div>
+                                                    <div class="th">Default</div>
+                                                </div>
+                                                <template is="dom-if" if="{{hasArray(workflowItem.item.properties.parameters)}}">
+                                                    <template is="dom-repeat" strip-whitespace items="[[workflowItem.item.properties.parameters]]" as="param">
+                                                        <div class="tr">
+                                                            <div class="td">
+                                                                <paper-input value="{{param.name}}"></paper-input>
+                                                            </div>
+                                                            <div class="td">
+                                                                <paper-input value="{{param.type}}"></paper-input>
+                                                            </div>
+                                                            <div class="td">
+                                                                <paper-input value="{{param.desc}}"></paper-input>
+                                                            </div>
+                                                            <div class="td">
+                                                                <paper-input value="{{param.default}}"></paper-input>
+                                                            </div>
+                                                        </div>
+                                                    </template>
                                                 </template>
-                                                <tr>
-                                                    <td colspan="4" class="right">
-                                                        <paper-button on-click="addTransformerControl" data-workflow-item$="{{workflowItem.id}}">
-                                                            <iron-icon icon="add-circle" on-click="addTransformerControl" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
-                                                        </paper-button>
-                                                        <paper-button on-click="removeTransformerControl" data-workflow-item$="{{workflowItem.id}}">
-                                                            <iron-icon icon="remove-circle" on-click="removeTransformerControl" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
-                                                        </paper-button>
-                                                    </td>
-                                                </tr>
-                                            </table>
+                                            </div>
+                                            <paper-button on-click="addItemParam" data-workflow-item$="{{workflowItem.id}}">
+                                                <iron-icon icon="add-circle" on-click="addItemParam" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                            </paper-button>
+                                            <paper-button on-click="removeItemParam" data-workflow-item$="{{workflowItem.id}}">
+                                                <iron-icon icon="remove-circle" on-click="removeItemParam" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                            </paper-button>
                                         </div>
+                                        <!-- TODO NTFY-386 Create tooling for managing Aggregate type JSON, instead of direct raw edits -->
+                                        <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">
+                                            <div class="tab-content"> <!-- Query Page -->
+                                                <bridgeit-query-editor service="[[workflowItem.item.properties.service]]"
+                                                                       collection="[[workflowItem.collectionFormatted]]"
+                                                                       options="[[workflowItem.item.query.options]]"
+                                                                       fields="[[workflowItem.item.query.fields]]"
+                                                                       query="[[workflowItem.item.query.find]]">
+                                                </bridgeit-query-editor>
+                                            </div>
+                                        </template>
+                                        <div class="tab-content"> <!-- Raw Page -->
+                                            <!-- Make the aggregate raw JSON editable as it's the primary way of interacting with the data -->
+                                            <template is="dom-if" if="[[_isAggregate(workflowItem.item.properties.type)]]">
+                                                <bridgeit-code-editor value="{{workflowItem.queryFormatted}}"></bridgeit-code-editor>
+                                            </template>
+                                            <!-- The find type queries have readonly raw JSON because we use the provided query editor tooling -->
+                                            <template is="dom-if" if="[[_isFind(workflowItem.item.properties.type)]]">
+                                                <bridgeit-code-editor value="{{workflowItem.queryFormatted}}" readonly></bridgeit-code-editor>
+                                            </template>
+                                        </div>
+                                    </iron-pages>
+                                </template>
+                                <template is="dom-if" if="[[_isTransformer(workflowItem.type)]]">
+                                    <template is="dom-if" if="[[_isTransformerMapper(workflowItem.item.properties.type)]]">
+                                        <paper-tabs selected="{{workflowItem.selected}}" on-iron-select="transformerTabChange" data-workflow-item$="{{workflowItem.id}}" no-bar>
+                                            <paper-tab>Properties</paper-tab>
+                                            <paper-tab>Raw</paper-tab>
+                                            <paper-tab>Transformer</paper-tab>
+                                            <div style="color: black;">
+                                                <paper-button on-click="moveUpWorkflowItem" title="Move item up">
+                                                    <iron-icon icon="arrow-upward" on-click="moveUpWorkflowItem"></iron-icon>
+                                                </paper-button>
+                                                <paper-button on-click="moveDownWorkflowItem" title="Move item down">
+                                                    <iron-icon icon="arrow-downward" on-click="moveDownWorkflowItem"></iron-icon>
+                                                </paper-button>
+                                                <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Remove item">
+                                                    <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                </paper-button>
+                                            </div>
+                                        </paper-tabs>
                                     </template>
-                                    <div class="tab-content"> <!-- Raw Page -->
+                                    
+                                    <template is="dom-if" if="[[!_isTransformerMapper(workflowItem.item.properties.type)]]">
+                                        <paper-tabs selected="{{workflowItem.selected}}" no-bar>
+                                            <paper-tab>Properties</paper-tab>
+                                            <paper-tab>Transformer Function</paper-tab>
+                                            <div style="color: black;">
+                                                <paper-button on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}">
+                                                    <iron-icon icon="cancel" on-click="removeWorkflowItem" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                </paper-button>
+                                            </div>
+                                        </paper-tabs>
+                                    </template>
+    
+                                    <iron-pages selected="{{workflowItem.selected}}">
+                                        <div class="tab-content"> <!-- Properties Page -->
+                                            <div class="container flex layout vertical">
+                                                <div class="flex">
+                                                    <paper-input label="Transformer ID:" value="{{workflowItem.item._id}}"></paper-input>
+                                                </div>
+                                                <div class="flex">
+                                                    <paper-input label="Title:" value="{{workflowItem.item.properties.title}}"></paper-input>
+                                                </div>
+                                                <div class="flex">
+                                                    <paper-input label="Description:" value="{{workflowItem.item.properties.desc}}"></paper-input>
+                                                </div>
+                                                <div class="flex">
+                                                    <iron-label>
+                                                        Type:
+                                                        <paper-radio-group selected="{{workflowItem.item.properties.type}}">
+                                                            <paper-radio-button name="mapper">Mapper</paper-radio-button>
+                                                            <paper-radio-button name="function">Function</paper-radio-button>
+                                                        </paper-radio-group>
+                                                    </iron-label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-content"> <!-- Raw Page -->
+                                            <template is="dom-if" if="[[_isTransformerMapper(workflowItem.item.properties.type)]]">
+                                                <bridgeit-code-editor value="{{_formatJSON(workflowItem.item.transform)}}" readonly></bridgeit-code-editor>
+                                            </template>
+                                            <template is="dom-if" if="[[!_isTransformerMapper(workflowItem.item.properties.type)]]">
+                                                <bridgeit-code-editor value="{{_formatJSON(workflowItem.item.transform)}}"></bridgeit-code-editor>
+                                            </template>
+                                        </div>
                                         <template is="dom-if" if="[[_isTransformerMapper(workflowItem.item.properties.type)]]">
-                                            <bridgeit-code-editor value="{{_formatJSON(workflowItem.item.transform)}}" readonly></bridgeit-code-editor>
+                                            <!-- TODO LATER the tooling should support pre-populating our "from" and "to" based on the previous/next workflow item (especially if it's a query) -->
+                                            <div class="tab-content"> <!-- Transformer Page -->
+                                                <div class="table">
+                                                    <div class="tr">
+                                                        <div class="td">From</div>
+                                                        <div class="td">To</div>
+                                                        <div class="td">Default</div>
+                                                        <div class="td">Options</div>
+                                                    </div>
+                                                    <template is="dom-if" if="{{hasArray(workflowItem.controls)}}">
+                                                        <template is="dom-repeat" strip-whitespace items="[[workflowItem.controls]]" as="mapper">
+                                                            <div class="tr">
+                                                                <div class="td">
+                                                                    <paper-input value="{{mapper.from}}"></paper-input>
+                                                                </div>
+                                                                <div class="td">
+                                                                    <paper-input value="{{mapper.to}}"></paper-input>
+                                                                </div>
+                                                                <div class="td">
+                                                                    <paper-input value="{{mapper.default}}"></paper-input>
+                                                                </div>
+                                                                <div class="td">
+                                                                    <label>
+                                                                        <input type="checkbox" checked="{{mapper.options.wrap::change}}"/>
+                                                                        Wrap
+                                                                    </label>
+                                                                    <br/>
+                                                                    <label>
+                                                                        <input type="checkbox" checked="{{mapper.options.flatten::change}}"/>
+                                                                        Flatten
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    </template>
+                                                </div>
+                                                <paper-button on-click="addTransformerControl" data-workflow-item$="{{workflowItem.id}}">
+                                                    <iron-icon icon="add-circle" on-click="addTransformerControl" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                </paper-button>
+                                                <paper-button on-click="removeTransformerControl" data-workflow-item$="{{workflowItem.id}}">
+                                                    <iron-icon icon="remove-circle" on-click="removeTransformerControl" data-workflow-item$="{{workflowItem.id}}"></iron-icon>
+                                                </paper-button>
+                                            </div>
                                         </template>
-                                        <template is="dom-if" if="[[!_isTransformerMapper(workflowItem.item.properties.type)]]">
-                                            <bridgeit-code-editor value="{{workflowItem.item.transform}}"></bridgeit-code-editor>
-                                        </template>
-                                    </div>
-                                </iron-pages>
+                                    </iron-pages>
+                                </template>
                             </template>
                         </template>
                     </div>
@@ -582,20 +610,22 @@ Example:
                 </h2>
                 <div class="container flex layout vertical no-padding">
                     <div class="flex">
-                        <template is="dom-repeat" strip-whitespace items="[[_workflow.query]]" as="workflowItem">
-                            <div class="header-panel">
-                                <paper-header-panel>
-                                    <paper-toolbar>
-                                        <div>
-                                            <paper-button raised on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Execute workflow to here">
-                                                <iron-icon on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" icon="arrow-forward"></iron-icon>
-                                            </paper-button>
-                                            Result ([[workflowItem.item._id]])
-                                        </div>
-                                    </paper-toolbar>
-                                    <bridgeit-code-editor readonly value="{{workflowItem.result}}"></bridgeit-code-editor>
-                                </paper-header-panel>
-                            </div>
+                        <template is="dom-if" if="{{hasArray(_workflow.query)}}">
+                            <template is="dom-repeat" strip-whitespace items="[[_workflow.query]]" as="workflowItem">
+                                <div class="header-panel">
+                                    <paper-header-panel>
+                                        <paper-toolbar>
+                                            <div>
+                                                <paper-button raised on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" title="Execute workflow to here">
+                                                    <iron-icon on-click="executeWorkflowItem" data-workflow-item$="{{workflowItem.id}}" icon="arrow-forward"></iron-icon>
+                                                </paper-button>
+                                                Result ([[workflowItem.item._id]])
+                                            </div>
+                                        </paper-toolbar>
+                                        <bridgeit-code-editor readonly value="{{workflowItem.result}}"></bridgeit-code-editor>
+                                    </paper-header-panel>
+                                </div>
+                            </template>
                         </template>
                     </div>
                 </div>

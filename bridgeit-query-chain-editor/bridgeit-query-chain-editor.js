@@ -43,7 +43,14 @@ BridgeIt.QueryChainEditor = Polymer({
     initializeData: function() {
         this._internalId = 0;
         this.loading = false;
+        this._savedWorkflows = [];
         
+        if (!this.account) {
+            this.account = bridgeit.io.auth.getLastKnownAccount();
+        }
+        if (!this.realm) {
+            this.realm = bridgeit.io.auth.getLastKnownRealm();
+        }
         if (!this.account || !this.realm) {
             return;
         }
@@ -73,7 +80,6 @@ BridgeIt.QueryChainEditor = Polymer({
         }
         
         this.set('_queryServices', []);
-        this._savedWorkflows = [];
         
         var _this = this;
         bridgeit.io.query.findQueries({
@@ -94,9 +100,15 @@ BridgeIt.QueryChainEditor = Polymer({
                         
                         // Look through our current service for a match
                         // If we find that add our query as a new child
+                        /* IE11: Note we use a lot of notifyPath calls in this component. This is necessary because IE11
+                                  incorrectly loops once with a dom-repeat bound to an empty array []. To workaround
+                                  a bunch of dom-if wrappers to hasArray are used. But we need to ensure these computed
+                                  bindings are re-evaluated, so we have to manually notifyPath after each push/change
+                        */
                         for (qc in _this._queryServices) {
                             if (_this._queryServices[qc].name === currentResult.properties.service) {
                                 _this.push('_queryServices.' + qc + '.queries', currentResult);
+                                _this.notifyPath('_queryServices.' + qc + '.queries');
                                 
                                 added = true;
                                 break;
@@ -105,11 +117,13 @@ BridgeIt.QueryChainEditor = Polymer({
                         
                         // Otherwise we add the new service as well as the query
                         if (!added) {
-                            _this.push('_queryServices', {"name": currentResult.properties.service, "queries": [ currentResult ]}); 
+                            _this.push('_queryServices', {"name": currentResult.properties.service, "queries": [ currentResult ]});
+                            _this.notifyPath('_queryServices');
                         }
                     }
                     else {
-                        _this.push('_savedWorkflows', currentResult); 
+                        _this.push('_savedWorkflows', currentResult);
+                        _this.notifyPath('_savedWorkflows');
                     }
                 }
                 
@@ -245,6 +259,7 @@ BridgeIt.QueryChainEditor = Polymer({
         e.stopPropagation(); // Prevent double submit if icon is clicked instead of button
         
         this.push('_workflow.properties.parameters', {"name":"","type":"","desc":"","default":""});
+        this.notifyPath('_workflow.properties.parameters');
     },
     
     /**
@@ -269,6 +284,7 @@ BridgeIt.QueryChainEditor = Polymer({
         var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
         if (item) {
             this.push('_workflow.query.'+ this._workflow.query.indexOf(item) +'.item.properties.parameters',{"name":"","type":"","desc":"","default":""});
+            this.notifyPath('_workflow.query.'+ this._workflow.query.indexOf(item) +'.item.properties.parameters');
         }
     },
     
@@ -298,6 +314,7 @@ BridgeIt.QueryChainEditor = Polymer({
         var item = this._getWorkflowItemById(e.target.getAttribute('data-workflow-item'));
         if (item) {
             this.push('_workflow.query.' + this._workflow.query.indexOf(item) + '.controls', this._makeTransformerControl());
+            this.notifyPath('_workflow.query.' + this._workflow.query.indexOf(item) + '.controls');
         }
     },
     
@@ -492,6 +509,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 _this.push('_workflow.query', loadedItems[insert]);
             }
             
+            _this.notifyPath('_workflow.query');
             _this.set('loading', false);
         },0);
     },
@@ -523,6 +541,7 @@ BridgeIt.QueryChainEditor = Polymer({
                 id: removeId
             }).then(function() {
                 _this.splice('_savedWorkflows', deleteIndex, 1);
+                _this.notifyPath('_savedWorkflows');
             }).catch(function(error) {
                  _this.fire('message-error', 'Failed to delete workflow chain ' + removeId + ':' + error.toSource());
             });
@@ -535,6 +554,16 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     resetWorkflow: function(e) {
         this.set('_workflow', { "_id":"newWorkflow", "selected": 0, "isChain": true, "properties": { "title":"New Workflow", "parameters":[], "execParams": "" }, "query":[] });
+    },
+    
+    /**
+     * Check if the passed array is valid
+     *
+     * @param toCheck array
+     * @param true if array is defined, not null, and not empty
+     */
+    hasArray: function(toCheck) {
+        return toCheck !== null && typeof toCheck !== 'undefined' && toCheck.length > 0;
     },
     
     //******************PRIVATE API******************
@@ -738,6 +767,7 @@ BridgeIt.QueryChainEditor = Polymer({
             }).then(function(uri) {
                 // Update our UI level list on success
                 _this.push('_savedWorkflows', toPersist);
+                _this.notifyPath('_savedWorkflows');
                 
                 if (callback) { callback(); }
             }).catch(function(error) {
@@ -799,6 +829,7 @@ BridgeIt.QueryChainEditor = Polymer({
      */
     _updateWorkflowItem: function(workflowItem, callback) {
         // NTFY-385 MANUAL Need to determine if we use the query or transformer service for our update
+        var _this = this;
         var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
         bridgeit.$.put(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
             if (callback) { callback(); }
@@ -956,6 +987,7 @@ BridgeIt.QueryChainEditor = Polymer({
         
         // Then add our item
         this.push('_workflow.query', this._makeWorkflowItem(type, item));
+        this.notifyPath('_workflow.query');
     },
     
     /**
