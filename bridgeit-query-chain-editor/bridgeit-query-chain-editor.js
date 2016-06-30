@@ -43,7 +43,6 @@ BridgeIt.QueryChainEditor = Polymer({
     initializeData: function() {
         this._internalId = 0;
         this.loading = false;
-        this._savedWorkflows = [];
         
         if (!this.account) {
             this.account = bridgeit.io.auth.getLastKnownAccount();
@@ -80,12 +79,15 @@ BridgeIt.QueryChainEditor = Polymer({
         }
         
         this.set('_queryServices', []);
+        this.notifyPath('_queryServices');
         
         var _this = this;
         bridgeit.io.query.findQueries({
             account: this.account,
             realm: this.realm
         }).then(function(results) {
+            _this.set('_savedWorkflows', []);
+            
             if (results) {
                 var services = [];
                 var currentResult;
@@ -123,7 +125,6 @@ BridgeIt.QueryChainEditor = Polymer({
                     }
                     else {
                         _this.push('_savedWorkflows', currentResult);
-                        _this.notifyPath('_savedWorkflows');
                     }
                 }
                 
@@ -132,6 +133,12 @@ BridgeIt.QueryChainEditor = Polymer({
                     _this.set('selectedQuery', 0);
                     _this.set('_queries', _this._queryServices[_this.selectedQuery].queries);
                 }
+            }
+            
+            // If we have an empty array for savedWorkflows nullify it instead
+            // This is due to IE11 rendering a single item in dom-repeat backed by an empty array []
+            if (!_this.hasArray(_this._savedWorkflows)) {
+                _this.set('_savedWorkflows', null);
             }
             
             if (callback) {
@@ -153,13 +160,15 @@ BridgeIt.QueryChainEditor = Polymer({
         this._transformers = [];
         
         var _this = this;
-        // NTFY-385 MANUAL Should have a client library function to GET all transformers from the service
-        bridgeit.$.getJSON(this.buildUrl(this.tempQueryService, this.tempTransformerResource)).then(function(results) {
+        bridgeit.io.query.findTransformers({
+            account: this.account,
+            realm: this.realm
+        }).then(function(results) {
             if (results && results.length > 0) {
                 _this._transformers = results;
             }
         }).catch(function(error){
-            _this.fire('message-error', "Error when trying to find transformers: " + error.toSource());
+            _this.fire('message-error', "Error when trying to find transformers: " + error.toSource()); 
         });
     },
     
@@ -736,11 +745,16 @@ BridgeIt.QueryChainEditor = Polymer({
         // Check for an existing saved workflow with the same ID
         // If we find it override it, otherwise save the workflow as new
         var updateIndex = -1;
-        for (var i = 0; i < this._savedWorkflows.length; i++) {
-            if (this._workflow._id === this._savedWorkflows[i]._id) {
-                updateIndex = i;
-                break;
+        if (this.hasArray(this._savedWorkflows)) {
+            for (var i = 0; i < this._savedWorkflows.length; i++) {
+                if (this._workflow._id === this._savedWorkflows[i]._id) {
+                    updateIndex = i;
+                    break;
+                }
             }
+        }
+        else {
+            this.set('_savedWorkflows', []);
         }
         
         // We need to convert our workflow object to a valid service-level chain
@@ -808,16 +822,35 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _saveWorkflowItem: function(workflowItem, callback) {
-        // NTFY-385 MANUAL Need to determine if we use the query or transformer service for our save
         var _this = this;
-        var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
-        bridgeit.$.post(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
-            if (callback) { callback(); }
-        }).catch(function(error) {
-            _this.fire('message-error', "Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error.toSource());
-            
-            _this._updateWorkflowItem(workflowItem, callback);
-        });
+        if (this._isQuery(workflowItem.type)) {
+            bridgeit.io.query.createQuery({
+                account: this.account,
+                realm: this.realm,
+                id: workflowItem.item._id,
+                query: workflowItem.item
+            }).then(function() {
+                if (callback) { callback(); }
+            }).catch(function(error){
+                _this.fire('message-error', "Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error.toSource());
+                
+                _this._updateWorkflowItem(workflowItem, callback);
+            });
+        }
+        else if (this._isTransformer(workflowItem.type)) {
+            bridgeit.io.query.createTransformer({
+                account: this.account,
+                realm: this.realm,
+                id: workflowItem.item._id,
+                transformer: workflowItem.item
+            }).then(function() {
+                if (callback) { callback(); }
+            }).catch(function(error){
+                _this.fire('message-error', "Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error.toSource());
+                
+                _this._updateWorkflowItem(workflowItem, callback);
+            });
+        }
     },
 
     /**
@@ -828,16 +861,35 @@ BridgeIt.QueryChainEditor = Polymer({
      * @private
      */
     _updateWorkflowItem: function(workflowItem, callback) {
-        // NTFY-385 MANUAL Need to determine if we use the query or transformer service for our update
         var _this = this;
-        var desiredResource = this._isQuery(workflowItem.type) ? this.tempQueryResource : this.tempTransformerResource;
-        bridgeit.$.put(this.buildUrl(this.tempQueryService, desiredResource, workflowItem.item._id), workflowItem.item).then(function() {
-            if (callback) { callback(); }
-        }).catch(function(error) {
-            _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
-            
-            if (callback) { callback(); }
-        });
+        if (this._isQuery(workflowItem.type)) {
+            bridgeit.io.query.updateQuery({
+                account: this.account,
+                realm: this.realm,
+                id: workflowItem.item._id,
+                query: workflowItem.item
+            }).then(function() {
+                if (callback) { callback(); }
+            }).catch(function(error){
+                _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
+                
+                _this._updateWorkflowItem(workflowItem, callback);
+            });
+        }
+        else if (this._isTransformer(workflowItem.type)) {
+            bridgeit.io.query.updateTransformer({
+                account: this.account,
+                realm: this.realm,
+                id: workflowItem.item._id,
+                transformer: workflowItem.item
+            }).then(function() {
+                if (callback) { callback(); }
+            }).catch(function(error){
+                _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
+                
+                _this._updateWorkflowItem(workflowItem, callback);
+            });
+        }
     },
     
     /**
@@ -876,12 +928,15 @@ BridgeIt.QueryChainEditor = Polymer({
                      _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
                 });
             }
-            // NTFY-385 MANUAL Need a way to delete transformers from the client library
             else if (this._isTransformer(type)) {
-                bridgeit.$.doDelete(this.buildUrl(this.tempQueryService, this.tempTransformerResource, removeId)).then(function() {
+                bridgeit.io.query.deleteTransformer({
+                    account: this.account,
+                    realm: this.realm,
+                    id: removeId
+                }).then(function() {
                     _this.splice(listName, deleteIndex, 1);
-                }).catch(function(error){
-                    _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
+                }).catch(function(error) {
+                     _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
                 });
             }
         }

@@ -256,9 +256,8 @@ Example:
                 <h3>Saved Workflows</h3>
                 
                 <div class="flex">
-                    <template is="dom-if" if="{{hasArray(_savedWorkflows)}}">
                         <div class="table">
-                            <template is="dom-repeat" strip-whitespace items="[[_savedWorkflows]]" as="savedItem">
+                            <template is="dom-repeat" strip-whitespace items="{{_savedWorkflows}}" as="savedItem">
                                 <div class="tr">
                                     <div class="td">[[savedItem.properties.title]] ([[savedItem._id]])</div>
                                     <div class="td"><paper-button raised on-click="loadWorkflow" data-workflow-item$="{{savedItem._id}}">Load</paper-button></div>
@@ -266,7 +265,6 @@ Example:
                                 </div>
                             </template>
                         </div>
-                    </template>
                     
                     <template is="dom-if" if="[[loading]]">
                         <center>
