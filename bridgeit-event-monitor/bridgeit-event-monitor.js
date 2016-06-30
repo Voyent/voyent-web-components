@@ -493,7 +493,7 @@ Polymer({
                     }
                     // Always change stroke width and bring to the front though
                     sel.transition().attr("stroke-width", 2);
-                    this.parentElement.appendChild(this);
+                    this.parentNode.appendChild(this);
                 }
             })
             .on(this._padID("mouseout"), function(d, i) {

@@ -22,6 +22,7 @@
 }
 
 .emBox {
+    width: 100%;
     padding: 10px;
     border: 2px solid #555555;
     background: -webkit-linear-gradient(#DDDDDD, transparent);
