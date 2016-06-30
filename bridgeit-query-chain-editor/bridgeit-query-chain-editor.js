@@ -28,12 +28,6 @@ BridgeIt.QueryChainEditor = Polymer({
         // The current data we are working on in our view
         // For terminology we use "chain" at the service level and "workflow" for the UI
         this.resetWorkflow();
-        
-        // NTFY-385 MANUAL For now we do some low level GET/POST/etc. until support is added to the bridgeit client library
-        this.tempUrl = 'http://dev.bridgeit.io/';
-        this.tempQueryService = 'query/';
-        this.tempTransformerResource = 'transformers/';
-        this.tempQueryResource = 'queries/';
     },
     
     /**
@@ -56,16 +50,6 @@ BridgeIt.QueryChainEditor = Polymer({
         
         this.getQueryServices();
         this.getTransformers();
-    },
-    
-    /** NTFY-385 MANUAL */
-    buildUrl: function(service, resource, custom) {
-        var toReturn = this.tempUrl + service + this.account + '/realms/' + this.realm + '/' + resource;
-        if (custom) {
-            toReturn += custom;
-        }
-        toReturn += "?access_token=" + bridgeit.io.auth.getLastAccessToken();
-        return toReturn;
     },
     
     /**
@@ -585,37 +569,23 @@ BridgeIt.QueryChainEditor = Polymer({
     _executeWorkflow: function(callback) {
         var _this = this;
         var executeCallback = function() {
-            // NTFY-385 MANUAL We should have a way to execute a query from our client library
-            var urlParams = "&exec=true";
-            
-            // If we're a chain we want to execute in debug mode
-            // TODO NTFY-384 This should work for non-chains as well. May require some result parsing changes below
-            if (_this._workflow.isChain) {
-                urlParams += "&mode=debug";
-            }
-            
-            // If this workflow has exec params, which are basically user specified JSON parameters, we need to encode that and pass it as execParams
-            if (_this._workflow.properties.execParams) {
-                urlParams += ("&execParams=" + encodeURIComponent(_this._workflow.properties.execParams));
-            }
-            
             // If we are a chain we use the workflow query chain ID as the execution target
             // Otherwise we use the single item to process
             var executeId = _this._workflow._id;
-            var executeResource = _this.tempQueryResource;
             if (!_this._workflow.isChain) {
                 executeId = _this._workflow.query[0].item._id;
-                if (_this._isTransformer(_this._workflow.query[0].type)) {
-                    executeResource = _this.tempTransformerResource;
-                }
             }
             
             if (executeId) {
-                var executeUrl = _this.buildUrl(_this.tempQueryService, executeResource, executeId) + urlParams;
-                this.fire('message-info', "Exec: " + executeId + " to " + executeUrl);
+                _this.fire('message-info', "Exec: " + executeId);
                 
-                bridgeit.$.getJSON(executeUrl)
-                          .then(function(results) {
+                bridgeit.io.query.executeQuery({
+                    account: _this.account,
+                    realm: _this.realm,
+                    mode: _this._workflow.isChain ? "debug": null,
+                    execParams: _this._workflow.properties.execParams ? _this._workflow.properties.execParams : null,
+                    id: executeId
+                }).then(function() {
                     if (_this._workflow.isChain) {              
                         // Loop through results and set them into each workflowItem
                         var currentWorkflow = null;
@@ -872,8 +842,6 @@ BridgeIt.QueryChainEditor = Polymer({
                 if (callback) { callback(); }
             }).catch(function(error){
                 _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
-                
-                _this._updateWorkflowItem(workflowItem, callback);
             });
         }
         else if (this._isTransformer(workflowItem.type)) {
@@ -886,8 +854,6 @@ BridgeIt.QueryChainEditor = Polymer({
                 if (callback) { callback(); }
             }).catch(function(error){
                 _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
-                
-                _this._updateWorkflowItem(workflowItem, callback);
             });
         }
     },
