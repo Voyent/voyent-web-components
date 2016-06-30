@@ -46,10 +46,9 @@ Polymer({
             //If the UTC property is false we must change the datetime field (data.time) into local time
             if ((_this.utc != 'true') && (records[0].hasOwnProperty(_this.timeVar))) {
                 for (var i = 0; i < records.length; i++) {
-                    records[i].time = new Date(records[i].time);
                     //don't modify the original time record, store the formatted time in a separate
                     //property that we will display if the user wants to be shown local time.
-                    records[i][_this.timeDisplayVar] = _this._formatDate(records[i].time);
+                    records[i][_this.timeDisplayVar] = _this._formatDate(new Date(records[i].time));
                 }
             }
 
@@ -169,7 +168,7 @@ Polymer({
         if (typeof record[key] !== 'undefined') {
             if (key === this.timeVar) {
                 //display the local time if available
-                this._td = document[this.timeDisplayVar] ? document[this.timeDisplayVar] : document[this.timeVar];
+                this._td = record[this.timeDisplayVar] ? record[this.timeDisplayVar] : record[this.timeVar];
             }
             else {
                 this._td = record[key];
