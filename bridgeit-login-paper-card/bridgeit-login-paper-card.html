@@ -118,6 +118,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
             </paper-input>
           </template>
+          <template is="dom-if" if="[[showhostinput]]">
+            <paper-input required label="Host" placeholder="Enter the host" value="{{host}}">
+                <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1"></paper-icon-button>
+            </paper-input>
+          </template>
           <content>
           </content>
         </div>
