@@ -185,6 +185,7 @@ Polymer({
     /**
      * Load an action into the editor from JSON format.
      * @param action
+     * @param callback
      */
     loadAction: function(action, callback) {
         // First reset our task groups, mainly to toggle the state of task group collapsed/opened
