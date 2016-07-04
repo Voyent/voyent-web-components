@@ -19,7 +19,7 @@ Polymer({
          */
         barpad: { type: Number, value: 0, reflectToAttribute: true, notify: true }
     },
-    
+
     /**
      * Fired after the actions list is retrieved, this occurs on the initial load and whenever a CRUD operation is performed. Contains the list of saved actions.
      * @event actionsRetrieved
@@ -39,7 +39,7 @@ Polymer({
         this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage','data'];
         this._taskGroupBaseId = 'taskGroup';
         this._taskBaseId = 'task';
-        
+
         // Setup our sidebar to scroll alongside the action editor
         // This is necessary in case the action editor is quite long (such as many tasks)
         // Because we still want to see the draggable containers/tasks list
@@ -48,7 +48,7 @@ Polymer({
         var _this = this;
         window.addEventListener("scroll", function() {
             var ourDiv = document.getElementById("fixedDiv");
-            
+
             if (ourDiv) {
                 // This offset would sometimes enter a race condition with initialization
                 // Where the offset would calculate BEFORE the entire page was loaded, specifically the content above the action editor
@@ -58,17 +58,17 @@ Polymer({
                 if (_this.offset < ourDiv.offsetTop) {
                     _this.offset = ourDiv.offsetTop;
                 }
-                
+
                 // Next calculate our scrollbar position
                 var compareTop = _this._calculateScrollbarPos(ourDiv.parentNode);
-                
+
                 // Skip out if our comparison is the same as our last scroll
                 // This most likely happens when an unrelated scrollbar (rather than the main container) is used
                 if (compareTop === _this.lastScroll) {
                     return;
                 }
                 _this.lastScroll = compareTop;
-                
+
                 // There is a chance we need to resize our left pane contents a bit
                 // This would be necessary when the viewport is smaller than our left pane
                 // If we don't do this the left pane will sticky to the top and make it so the user can never reach the bottom
@@ -76,7 +76,7 @@ Polymer({
                 if (h) {
                     // Get all left pane contents
                     var panes = document.querySelectorAll(".leftPane");
-                    
+
                     // Note we only want to bother looping our panes if we have the exact right amount
                     // This is a bit of a magic number, but refers to the container and item panes on the left
                     // So we know there are exactly 2 of them
@@ -86,24 +86,24 @@ Polymer({
                             // Between the two panels this leaves a padding buffer of 20%
                             var calcH = Math.round(h*0.4);
                             panes[i].style.height = null;
-                            
+
                             // If we are below a bare minimum of 100px reset to 100 and force the height
                             if (calcH < 100) {
                                 calcH = 100;
-                                
+
                                 panes[i].style.height = calcH + 'px';
                             }
-                            
+
                             // Set the max height to our calculated value
                             panes[i].style.maxHeight = calcH + 'px';
                         }
                     }
                 }
-                
+
                 // Use the unstickied version by default
                 ourDiv.style.position = 'relative';
                 ourDiv.style.top = null;
-                
+
                 // Only bother to sticky the container if our main content is big enough to need it
                 // Similarly only sticky if our viewport is big enough that the user won't get stuck scrolling
                 if ((document.getElementById("aeMain").clientHeight > ourDiv.clientHeight) &&
@@ -123,7 +123,7 @@ Polymer({
             }
         }, true);
 	},
-	
+
     /**
      * If authentication is not provided on component load then this function can be used to initialize the component.
      */
@@ -145,7 +145,7 @@ Polymer({
         promises.push(bridgeit.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
             var key = '_taskSchemas';
             _this._processSchemas(schemas,key);
-            
+
             // We also want to group/organize the tasks
             // Unfortunately we have to hardcode some of the services here until the meta is updated
             // We use a separate map for this so we don't interfere with existing functionality, just the display on the page
@@ -252,7 +252,7 @@ Polymer({
             });
         }
     },
-    
+
     /**
      * Delete the action from the Action Service.
      * @param id
@@ -569,7 +569,7 @@ Polymer({
         //save schema mapping to _taskSchemasMap or _taskGroupSchemasMap
         this[key+'Map'] = schemaMap;
     },
-    
+
     /**
      * An additional step of processing for task schemas specific to the UI
      * For readability we want to group the tasks into a few service groups
@@ -587,18 +587,18 @@ Polymer({
                              { label: 'mailbox', schemas: [] },
                              { label: 'user', schemas: [] },
                              { label: defaultService, schemas: [] } ];
-        
+
         // Loop through the passed list of schemas, which would be the tasks
         for (var i=0; i<schemas.length; i++) {
             var currentSchema = schemas[i];
             var hasMatch = false;
-            
+
             // For each schema we want to find if it matches a service
             // If not we'll default to using the "misc" group
             for (var s=0; s<serviceArray.length; s++) {
                 if (currentSchema.label.indexOf(serviceArray[s].label) === 0) {
                     hasMatch = true;
-                    
+
                     // Add a UI label that removes the group name from the label
                     // For example locate-dir just becomes dir
                     // We can fairly safely assume there will be a dash in the service name, but we double check just in case
@@ -612,28 +612,28 @@ Polymer({
                             currentSchema.label.substring(
                                 currentSchema.label.indexOf(serviceArray[s].label)+serviceArray[s].label.length);
                     }
-                    
+
                     // Add the modified schema to our service array for use in the UI
                     serviceArray[s].schemas.push(currentSchema);
-                    
+
                     break;
                 }
             }
-            
+
             // If we don't have a match just add to our "misc" service group
             if (!hasMatch) {
                 for (var j=0; j<serviceArray.length; j++) {
                     if (serviceArray[j].label === defaultService) {
                         // Duplicate our unformatted label into labelUI
                         currentSchema.labelUI = currentSchema.label;
-                        
+
                         serviceArray[j].schemas.push(currentSchema);
                         break;
                     }
                 }
             }
         }
-        
+
         // We store this UI specific list of schemas in an appropriately named map
         // This map will then be used in a template
         this[key+'UI'] = serviceArray;
@@ -715,7 +715,7 @@ Polymer({
         if (!this._loadedAction || !this._loadedAction._id) {
             return;
         }
-        
+
         var confirm = window.confirm("Are you sure you want to delete '" + this._loadedAction._id + "'? This cannot be undone!");
         if (!confirm) {
             return;
@@ -824,6 +824,9 @@ Polymer({
      * @private
      */
     _startDragGroup: function(e) {
+        //Firefox requires using setData in the on-drag handler in order
+        //for drag/drop to work so we'll just set some random text
+        e.dataTransfer.setData('text', 'foo');
         if (e.model.item) {
             this._lastDragged = e.model.item; //reference task group schema so we can populate the UI on drop
             this._lastDraggedType = 'action/group/new'; //indicate that this item is a new task group
@@ -846,7 +849,9 @@ Polymer({
      * @private
      */
     _startDragTask: function(e) {
-        //prevent bubbling, without this the _startDragGroup listener will be called as well
+        //Firefox requires using setData in the on-drag handler in order
+        //for drag/drop to work so we'll just set some random text
+        e.dataTransfer.setData('text', 'bar');
         e.stopPropagation();
 
         if (e.model.item) {
@@ -945,7 +950,7 @@ Polymer({
             e.stopPropagation();
             return;
         }
-        
+
         // If we have existing action containers (aka task groups) we need to check if the
         //  user tried to drop between them
         // In that case we'll want to insert the dropped task group instead of appending it to the bottom
@@ -1090,7 +1095,7 @@ Polymer({
                 currentParent = currentParent.parentNode;
             } while(currentParent);
         }
-        
+
         //Only add if we actually have a proper index figured out +
         if (typeof taskGroupIndex !== 'number' ) {
             return;
@@ -1241,7 +1246,7 @@ Polymer({
             }
         },550);
     },
-    
+
     /**
      * Delete a task group.
      * @param e
@@ -1462,7 +1467,7 @@ Polymer({
            (e.target.tagName === 'SPAN')) {
             parent = Polymer.dom(parent).parentNode;
         }
-        
+
         parent.classList.toggle('toggled');
         parent.querySelector('.content').classList.toggle('toggled');
         parent.querySelector('.arrow').classList.toggle('toggled');
@@ -1595,7 +1600,7 @@ Polymer({
     _isCodeEditor: function(title) {
         return this._codeEditorProperties.indexOf(title.toLowerCase()) > -1;
     },
-    
+
     /**
      * Template helper function.
      * @param title
@@ -1605,7 +1610,7 @@ Polymer({
     _isTransportEditor: function(title) {
         return title.toLowerCase() === 'transporttemplate';
     },
-    
+
     /**
      * Template helper function
      * Format the passed name with brackets and spacing as necessary
@@ -1619,7 +1624,7 @@ Polymer({
             return ' (' + name + ')';
         }
     },
-    
+
     /**
      * Template helper function
      * Format the passed name and task count with brackets and spacing as necessary
@@ -1632,21 +1637,21 @@ Polymer({
      */
     _formatContainerName: function(name, taskcount) {
         var toReturn = ' (';
-        
+
         if (typeof taskcount === 'undefined' || !taskcount) {
             taskcount = 0;
         }
-        
+
         if (typeof name !== 'undefined' && name) {
             toReturn += name + ', ';
         }
-        
+
         toReturn += taskcount + ' task';
         // Pluralize if necessary
         if (taskcount !== 1) {
             toReturn += 's';
         }
-        
+
         toReturn += ')';
         return toReturn;
     },
