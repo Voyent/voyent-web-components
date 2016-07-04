@@ -398,7 +398,7 @@ BridgeIt.QueryEditor = Polymer({
             _this.fire('message-error', 'createQuery caught an error: ' + error.toSource());
         });
     },
-    
+
     /**
      * Delete a query based on the passed queryId
      * This will update the state of the query editor to reflect the removal
@@ -419,7 +419,7 @@ BridgeIt.QueryEditor = Polymer({
             _this.fire('message-error', 'deleteQuery caught an error: ' + error.toSource());
         });
     },
-    
+
     /**
      * Retrieve all queries from the service and filter accordingly for service/collection
      */
@@ -438,8 +438,8 @@ BridgeIt.QueryEditor = Polymer({
             //currently selected service / collection combination, if available
             var filteredResults = results.filter(function(obj) {
                 return ((!obj.properties || !obj.properties.service || !obj.properties.collection) ||
-                    (obj.properties.service === _this.service &&
-                     obj.properties.collection === _this.collection))
+                (obj.properties.service === _this.service &&
+                obj.properties.collection === _this.collection))
             });
             _this._setQuerylistresults(filteredResults);
             _this.fire('queriesRetrieved',{results: filteredResults});
@@ -447,7 +447,7 @@ BridgeIt.QueryEditor = Polymer({
             _this.fire('message-error', 'fetchQueryList caught an error: ' + error.toSource());
         });
     },
-    
+
     /**
      * Build a query object based on the passed parameters
      * This will ensure the proper format of our resulting query
@@ -538,7 +538,7 @@ BridgeIt.QueryEditor = Polymer({
             }
         }
     },
-    
+
     /**
      * Refresh our query object, time fields, and URL based on the underlying query editor
      */
@@ -550,7 +550,7 @@ BridgeIt.QueryEditor = Polymer({
             this._updateQueryURL(query);
         }
     },
-    
+
     /**
      * Process any time fields in the passed query
      * This means converting to or from UTC to local time
@@ -612,7 +612,7 @@ BridgeIt.QueryEditor = Polymer({
         };
         doProcess(query);
     },
-    
+
     /**
      * Format the passed value into a UTC ISO string
      * There is a chance the passed value is valid except for milliseconds, which we want to parse out and format as normal
@@ -646,7 +646,7 @@ BridgeIt.QueryEditor = Polymer({
         }
         return newVal ? newVal : val;
     },
-    
+
     /**
      * Convert the passed value to local time, which generally means wrapping in a new Date object
      * This function also handles slightly incorrect values which include milliseconds. Those will be removed and the result parsed as normal
@@ -686,7 +686,7 @@ BridgeIt.QueryEditor = Polymer({
         catch(e) { newVal = null; }
         return newVal ? newVal : val;
     },
-    
+
     /**
      * Set a header title for our query
      *
@@ -716,7 +716,7 @@ BridgeIt.QueryEditor = Polymer({
             div.innerHTML = div.innerHTML+'<br><span>'+query.properties.description+'</span>';
         }
     },
-    
+
     /**
      * Update the query URL based on the passed query
      * This URL simulates what service interaction endpoint is used
@@ -740,7 +740,6 @@ BridgeIt.QueryEditor = Polymer({
             }
         }
     },
-    
     /**
      * Use our query service to execute/run the passed query
      * This function will determine which service to interact with
@@ -749,6 +748,9 @@ BridgeIt.QueryEditor = Polymer({
      * @param destroy
      */
     _queryService: function(query,destroy) {
+        if (!bridgeit.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
+            return;
+        }
         var _this = this;
         var params = {
             accessToken: bridgeit.io.auth.getLastAccessToken(),
@@ -939,7 +941,7 @@ BridgeIt.QueryEditor = Polymer({
             }
         }
     },
-    
+
     /**
      * Setup listeners for the underlying query editor, specifically to refresh our query object
      *  after a change happens in the query editor component
@@ -975,7 +977,7 @@ BridgeIt.QueryEditor = Polymer({
             },10);
         }
     },
-    
+
     /**
      * Sort the passed a & b ids alphabetically
      * @param a
@@ -988,7 +990,7 @@ BridgeIt.QueryEditor = Polymer({
         else if (a > b) { return  1; }
         return 0;
     },
-    
+
     /**
      * Called when our query has been changed
      * If the underlying query editor has been initialized this will update it from the passed query
@@ -1003,7 +1005,7 @@ BridgeIt.QueryEditor = Polymer({
         }
         this.setEditorFromMongo(this._parseQueryProperty(query));
     },
-    
+
     /**
      * Attempt to parse the passed query object to determine JSON validitity
      *
@@ -1022,7 +1024,7 @@ BridgeIt.QueryEditor = Polymer({
         }
         return {"query":parsedQuery};
     },
-    
+
     /**
      * Get all the queries when the service or collection is changed so we always have an updated
      *  query list and always show the correct queries for that service/collection combination
