@@ -17,28 +17,38 @@ Displays a transport editor that can build message templates for various technol
 <dom-module id="bridgeit-transport-editor">
     <template>
         <style type="text/css">
-           .miniCheck {
-               font-size: 10px;
-               font-weight: normal;
-               margin-top: 20px;
-           }
            .checkboxRow label {
                display: inline-block;
-           }
-           .indentTd {
-               padding-left: 15px;
            }
            .code-editor {
                width: 100%;
                min-height: 200px;
            }
-           paper-dropdown-menu {
-               width: 100%;
+           .inputWrap {
+               margin-bottom: 10px;
+               width: 95%;
            }
-           paper-input, paper-dropdown-menu {
-               --paper-input-container: {
-                   padding: 0;
-               }
+           .inputWrap input[type=text], .inputWrap textarea {
+               width: 95%;
+           }
+           .inputWrap select {
+               width: 30%;
+           }
+           .inputWrap b {
+               display: block;
+               font-size: 14px;
+           }
+           .overrideWrap, .overrideWrapGlobal {
+               margin-left: 20px;
+               width: 90%;
+               font-size: 12px;
+           }
+           .overrideWrapGlobal label {
+               font-size: 10px;
+               font-weight: normal;
+           }
+           .overrideWrapGlobal {
+               width: auto;
            }
            pre {
                overflow: scroll;
@@ -46,288 +56,299 @@ Displays a transport editor that can build message templates for various technol
         </style>
         
         <div>
+            <!-- Commented out as we want all transports to be enabled for now, and just let the service decide how to cascade between them
             <table cellpadding="5" cellspacing="0" width="90%">
-            <tr>
-                <td colspan="2" class="checkboxRow">
-                    Enable Transport:
-                    
-                    <template is="dom-if" if="[[allowBrowser]]">
-                        <label>
-                            <input type="checkbox" checked="{{_tool.transport.browser::change}}"/>
-                            Browser
-                        </label>
-                    </template>
-                    <template is="dom-if" if="[[allowCloud]]">
-                        <label>
-                            <input type="checkbox" checked="{{_tool.transport.cloud::change}}"/>
-                            Cloud
-                        </label>
-                    </template>
-                    <template is="dom-if" if="[[allowSMS]]">
-                        <label>
-                            <input type="checkbox" checked="{{_tool.transport.sms::change}}"/>
-                            SMS
-                        </label>
-                    </template>
-                    <template is="dom-if" if="[[allowEmail]]">
-                        <label>
-                            <input type="checkbox" checked="{{_tool.transport.email::change}}"/>
-                            Email
-                        </label>
-                    </template>
-                    <template is="dom-if" if="{{noTransports}}">
-                        No transports were enabled for this component
-                    </template>
-                </td>
-            </tr>
+                <tr>
+                    <td colspan="2" class="checkboxRow">
+                        Enable Transport:
+                        
+                        <template is="dom-if" if="[[allowBrowser]]">
+                            <label>
+                                <input type="checkbox" checked="{{_tool.transport.browser::change}}"/>
+                                Browser
+                            </label>
+                        </template>
+                        <template is="dom-if" if="[[allowCloud]]">
+                            <label>
+                                <input type="checkbox" checked="{{_tool.transport.cloud::change}}"/>
+                                Cloud
+                            </label>
+                        </template>
+                        <template is="dom-if" if="[[allowSMS]]">
+                            <label>
+                                <input type="checkbox" checked="{{_tool.transport.sms::change}}"/>
+                                SMS
+                            </label>
+                        </template>
+                        <template is="dom-if" if="[[allowEmail]]">
+                            <label>
+                                <input type="checkbox" checked="{{_tool.transport.email::change}}"/>
+                                Email
+                            </label>
+                        </template>
+                        <template is="dom-if" if="{{noTransports}}">
+                            No transports were enabled for this component
+                        </template>
+                    </td>
+                </tr>
+            </table>
+            -->
             
             <template is="dom-if" if="{{!noTransports}}">
-            <tr>
-                <td colspan="2">&nbsp;</td>
-            </tr>
-            
-            <tr>
-                <th style="width: 70%;">Field</th>
-                <th style="width: 30%;">Use For</th>
-            </tr>
-            <tr>
-                <td><paper-input label="Subject" value="{{_tool.subject.global::input}}"/></td>
-                <td class="miniCheck layout horizontal">
-                    <template is="dom-if" if="{{_tool.transport.browser}}">
-                    <label><input type="checkbox" checked="{{_tool.subject.usebrowser::change}}"/>Browser</label>
-                    </template><template is="dom-if" if="{{_tool.transport.cloud}}">
-                    <label><input type="checkbox" checked="{{_tool.subject.usecloud::change}}"/>Cloud</label>
-                    </template><template is="dom-if" if="{{_tool.transport.sms}}">
-                    <label><input type="checkbox" checked="{{_tool.subject.usesms::change}}"/>SMS</label>
-                    </template><template is="dom-if" if="{{_tool.transport.email}}">
-                    <label><input type="checkbox" checked="{{_tool.subject.useemail::change}}"/>Email</label>
+                <div class="inputWrap">
+                    <b>Expiry Time</b>
+                    <select value="{{_tool.expire_time.global::change}}">
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="120">2 hours</option>
+                        <option value="480">8 hours</option>
+                        <option value="1440">1 day</option>
+                        <option value="4320">3 days</option>
+                        <option value="10080">1 week</option>
+                        <option value="43200">1 month</option>
+                    </select>
+                    <table class="overrideWrapGlobal">
+                        <tr>
+                            <td>Override:</td>
+                            <td><i>N/A (Global)</i></td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="inputWrap">
+                    <b>Icon</b>
+                    <textarea rows="2" value="{{_tool.icon.global::input}}"></textarea>
+                    <table class="overrideWrapGlobal">
+                        <tr>
+                            <td>Override:</td>
+                            <td><i>N/A (Global)</i></td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="inputWrap">
+                    <b>Subject</b>
+                    <textarea rows="2" value="{{_tool.subject.global::input}}"></textarea>
+                    <table class="overrideWrap">
+                        <tr>
+                            <td>Override:</td>
+                            <td>
+                                <template is="dom-if" if="{{_tool.transport.browser}}">
+                                <label><input type="checkbox" checked="{{_tool.subject.specbrowser::change}}"/>Browser</label>
+                                </template><template is="dom-if" if="{{_tool.transport.cloud}}">
+                                <label><input type="checkbox" checked="{{_tool.subject.speccloud::change}}"/>Cloud</label>
+                                </template><template is="dom-if" if="{{_tool.transport.sms}}">
+                                <label><input type="checkbox" checked="{{_tool.subject.specsms::change}}"/>SMS</label>
+                                </template><template is="dom-if" if="{{_tool.transport.email}}">
+                                <label><input type="checkbox" checked="{{_tool.subject.specemail::change}}"/>Email</label>
+                                </template>
+                            </td>
+                        </tr>
+                    <template is="dom-if" if="{{_tool.subject.specbrowser}}">
+                        <tr>
+                            <td>Browser:</td>
+                            <td><input type="text" placeholder="Browser Subject" value="{{_tool.subject.browser::input}}"/></td>
+                        </tr>
                     </template>
-                </td>
-            </tr>
-            <template is="dom-if" if="{{!_tool.subject.usebrowser}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Browser Subject" value="{{_tool.subject.browser::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Browser</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.subject.usecloud}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Cloud Subject" value="{{_tool.subject.cloud::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Cloud</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.subject.usesms}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="SMS Subject" value="{{_tool.subject.sms::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>SMS</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.subject.useemail}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Email Subject" value="{{_tool.subject.email::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Email</label></td>
-                </tr>
-            </template>
-            
-            <tr>
-                <td><paper-input required label="Details (required)" value="{{_tool.details.global::input}}"/></td>
-                <td class="miniCheck layout horizontal">
-                    <template is="dom-if" if="{{_tool.transport.browser}}">
-                    <label><input type="checkbox" checked="{{_tool.details.usebrowser::change}}"/>Browser</label>
-                    </template><template is="dom-if" if="{{_tool.transport.cloud}}">
-                    <label><input type="checkbox" checked="{{_tool.details.usecloud::change}}"/>Cloud</label>
-                    </template><template is="dom-if" if="{{_tool.transport.sms}}">
-                    <label><input type="checkbox" checked="{{_tool.details.usesms::change}}"/>SMS</label>
-                    </template><template is="dom-if" if="{{_tool.transport.email}}">
-                    <label><input type="checkbox" checked="{{_tool.details.useemail::change}}"/>Email</label>
+                    <template is="dom-if" if="{{_tool.subject.speccloud}}">
+                        <tr>
+                            <td>Cloud:</td>
+                            <td><input type="text" placeholder="Cloud Subject" value="{{_tool.subject.cloud::input}}"/></td>
+                        </tr>
                     </template>
-                </td>
-            </tr>
-            <template is="dom-if" if="{{!_tool.details.usebrowser}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Browser Details" value="{{_tool.details.browser::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Browser</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.details.usecloud}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Cloud Details" value="{{_tool.details.cloud::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Cloud</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.details.usesms}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="SMS Details" value="{{_tool.details.sms::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>SMS</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.details.useemail}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Email Details" value="{{_tool.details.email::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Email</label></td>
-                </tr>
-            </template>
-            
-            <tr>
-                <td><paper-input label="URL" value="{{_tool.url.global::input}}"/></td>
-                <td class="miniCheck layout horizontal">
-                    <template is="dom-if" if="{{_tool.transport.browser}}">
-                    <label><input type="checkbox" checked="{{_tool.url.usebrowser::change}}"/>Browser</label>
-                    </template><template is="dom-if" if="{{_tool.transport.cloud}}">
-                    <label><input type="checkbox" checked="{{_tool.url.usecloud::change}}"/>Cloud</label>
-                    </template><template is="dom-if" if="{{_tool.transport.sms}}">
-                    <label><input type="checkbox" checked="{{_tool.url.usesms::change}}"/>SMS</label>
-                    </template><template is="dom-if" if="{{_tool.transport.email}}">
-                    <label><input type="checkbox" checked="{{_tool.url.useemail::change}}"/>Email</label>
+                    <template is="dom-if" if="{{_tool.subject.specsms}}">
+                        <tr>
+                            <td>SMS:</td>
+                            <td><input type="text" placeholder="SMS Subject" value="{{_tool.subject.sms::input}}"/></td>
+                        </tr>
                     </template>
-                </td>
-            </tr>
-            <template is="dom-if" if="{{!_tool.url.usebrowser}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Browser URL" value="{{_tool.url.browser::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Browser</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.url.usecloud}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Cloud URL" value="{{_tool.url.cloud::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Cloud</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.url.usesms}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="SMS URL" value="{{_tool.url.sms::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>SMS</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.url.useemail}}">
-                <tr>
-                    <td class="indentTd"><paper-input label="Email URL" value="{{_tool.url.email::input}}"/></td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Email</label></td>
-                </tr>
-            </template>
-            
-            <tr>
-                <td><paper-input label="Icon" value="{{_tool.icon.global::input}}"/></td>
-                <td class="miniCheck"><label><input type="checkbox" checked disabled/>All</label></td>
-            </tr>
-            
-            <tr>
-                <td>
-                <paper-dropdown-menu label="Priority">
-                    <paper-listbox class="dropdown-content" selected="{{_tool.priority.global}}" attr-for-selected="name">
-                        <paper-item name="default">default</paper-item>
-                        <paper-item name="info">info</paper-item>
-                        <paper-item name="warn">warn</paper-item>
-                        <paper-item name="alert">alert</paper-item>
-                        <paper-item name="critical">critical</paper-item>
-                    </paper-listbox>
-                </paper-dropdown-menu>
-                </td>
-                <td class="miniCheck layout horizontal">
-                    <template is="dom-if" if="{{_tool.transport.browser}}">
-                    <label><input type="checkbox" checked="{{_tool.priority.usebrowser::change}}"/>Browser</label>
-                    </template><template is="dom-if" if="{{_tool.transport.cloud}}">
-                    <label><input type="checkbox" checked="{{_tool.priority.usecloud::change}}"/>Cloud</label>
-                    </template><template is="dom-if" if="{{_tool.transport.sms}}">
-                    <label><input type="checkbox" checked="{{_tool.priority.usesms::change}}"/>SMS</label>
-                    </template><template is="dom-if" if="{{_tool.transport.email}}">
-                    <label><input type="checkbox" checked="{{_tool.priority.useemail::change}}"/>Email</label>
+                    <template is="dom-if" if="{{_tool.subject.specemail}}">
+                        <tr>
+                            <td>Email:</td>
+                            <td><input type="text" placeholder="Email Subject" value="{{_tool.subject.email::input}}"/></td>
+                        </tr>
                     </template>
-                </td>
-            </tr>
-            <template is="dom-if" if="{{!_tool.priority.usebrowser}}">
-                <tr>
-                    <td class="indentTd">
-                        <paper-dropdown-menu label="Browser Priority">
-                            <paper-listbox class="dropdown-content" selected="{{_tool.priority.browser}}" attr-for-selected="name">
-                                <paper-item name="default">default</paper-item>
-                                <paper-item name="info">info</paper-item>
-                                <paper-item name="warn">warn</paper-item>
-                                <paper-item name="alert">alert</paper-item>
-                                <paper-item name="critical">critical</paper-item>
-                            </paper-listbox>
-                        </paper-dropdown-menu>
-                    </td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Browser</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.priority.usecloud}}">
-                <tr>
-                    <td class="indentTd">
-                        <paper-dropdown-menu label="Cloud Priority">
-                            <paper-listbox class="dropdown-content" selected="{{_tool.priority.cloud}}" attr-for-selected="name">
-                                <paper-item name="default">default</paper-item>
-                                <paper-item name="info">info</paper-item>
-                                <paper-item name="warn">warn</paper-item>
-                                <paper-item name="alert">alert</paper-item>
-                                <paper-item name="critical">critical</paper-item>
-                            </paper-listbox>
-                        </paper-dropdown-menu>
-                    </td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Cloud</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.priority.usesms}}">
-                <tr>
-                    <td class="indentTd">
-                        <paper-dropdown-menu label="SMS Priority">
-                            <paper-listbox class="dropdown-content" selected="{{_tool.priority.sms}}" attr-for-selected="name">
-                                <paper-item name="default">default</paper-item>
-                                <paper-item name="info">info</paper-item>
-                                <paper-item name="warn">warn</paper-item>
-                                <paper-item name="alert">alert</paper-item>
-                                <paper-item name="critical">critical</paper-item>
-                            </paper-listbox>
-                        </paper-dropdown-menu>
-                    </td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>SMS</label></td>
-                </tr>
-            </template>
-            <template is="dom-if" if="{{!_tool.priority.useemail}}">
-                <tr>
-                    <td class="indentTd">
-                        <paper-dropdown-menu label="Email Priority">
-                            <paper-listbox class="dropdown-content" selected="{{_tool.priority.email}}" attr-for-selected="name">
-                                <paper-item name="default">default</paper-item>
-                                <paper-item name="info">info</paper-item>
-                                <paper-item name="warn">warn</paper-item>
-                                <paper-item name="alert">alert</paper-item>
-                                <paper-item name="critical">critical</paper-item>
-                            </paper-listbox>
-                        </paper-dropdown-menu>
-                    </td>
-                    <td><label class="miniCheck"><input type="checkbox" checked disabled/>Email</label></td>
-                </tr>
-            </template>
-            
-            <tr>
-                <td>
-                    <paper-dropdown-menu label="Expiry Time">
-                        <paper-listbox class="dropdown-content" selected="{{_tool.expire_time.global}}" attr-for-selected="time">
-                            <paper-item time="30">30 minutes</paper-item>
-                            <paper-item time="60">1 hour</paper-item>
-                            <paper-item time="120">2 hours</paper-item>
-                            <paper-item time="480">8 hours</paper-item>
-                            <paper-item time="1440">1 day</paper-item>
-                            <paper-item time="4320">3 days</paper-item>
-                            <paper-item time="10080">1 week</paper-item>
-                            <paper-item time="43200">1 month</paper-item>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
-                </td>
-                <td class="miniCheck"><label><input type="checkbox" checked disabled/>All</label></td>
-            </tr>
-            
-            <tr>
-                <td colspan="2">
-                    Payload:
+                    </table>
+                </div>
+                
+                <div class="inputWrap">
+                    <b>Details</b>
+                    <textarea value="{{_tool.details.global::input}}"></textarea>
+                    <table class="overrideWrap">
+                        <tr>
+                            <td>Override:</td>
+                            <td>
+                                <template is="dom-if" if="{{_tool.transport.browser}}">
+                                <label><input type="checkbox" checked="{{_tool.details.specbrowser::change}}"/>Browser</label>
+                                </template><template is="dom-if" if="{{_tool.transport.cloud}}">
+                                <label><input type="checkbox" checked="{{_tool.details.speccloud::change}}"/>Cloud</label>
+                                </template><template is="dom-if" if="{{_tool.transport.sms}}">
+                                <label><input type="checkbox" checked="{{_tool.details.specsms::change}}"/>SMS</label>
+                                </template><template is="dom-if" if="{{_tool.transport.email}}">
+                                <label><input type="checkbox" checked="{{_tool.details.specemail::change}}"/>Email</label>
+                                </template>
+                            </td>
+                        </tr>
+                    <template is="dom-if" if="{{_tool.details.specbrowser}}">
+                        <tr>
+                            <td>Browser:</td>
+                            <td><input type="text" placeholder="Browser Details" value="{{_tool.details.browser::input}}"/></td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.details.speccloud}}">
+                        <tr>
+                            <td>Cloud:</td>
+                            <td><input type="text" placeholder="Cloud Details" value="{{_tool.details.cloud::input}}"/></td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.details.specsms}}">
+                        <tr>
+                            <td>SMS:</td>
+                            <td><input type="text" placeholder="SMS Details" value="{{_tool.details.sms::input}}"/></td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.details.specemail}}">
+                        <tr>
+                            <td>Email:</td>
+                            <td><input type="text" placeholder="Email Details" value="{{_tool.details.email::input}}"/></td>
+                        </tr>
+                    </template>
+                    </table>
+                </div>
+                
+                <div class="inputWrap">
+                    <b>URL</b>
+                    <textarea value="{{_tool.url.global::input}}"></textarea>
+                    <table class="overrideWrap">
+                        <tr>
+                            <td>Override:</td>
+                            <td>
+                                <template is="dom-if" if="{{_tool.transport.browser}}">
+                                <label><input type="checkbox" checked="{{_tool.url.specbrowser::change}}"/>Browser</label>
+                                </template><template is="dom-if" if="{{_tool.transport.cloud}}">
+                                <label><input type="checkbox" checked="{{_tool.url.speccloud::change}}"/>Cloud</label>
+                                </template><template is="dom-if" if="{{_tool.transport.sms}}">
+                                <label><input type="checkbox" checked="{{_tool.url.specsms::change}}"/>SMS</label>
+                                </template><template is="dom-if" if="{{_tool.transport.email}}">
+                                <label><input type="checkbox" checked="{{_tool.url.specemail::change}}"/>Email</label>
+                                </template>
+                            </td>
+                        </tr>
+                    <template is="dom-if" if="{{_tool.url.specbrowser}}">
+                        <tr>
+                            <td>Browser:</td>
+                            <td><input type="text" placeholder="Browser URL" value="{{_tool.url.browser::input}}"/></td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.url.speccloud}}">
+                        <tr>
+                            <td>Cloud:</td>
+                            <td><input type="text" placeholder="Cloud URL" value="{{_tool.url.cloud::input}}"/></td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.url.specsms}}">
+                        <tr>
+                            <td>SMS:</td>
+                            <td><input type="text" placeholder="SMS URL" value="{{_tool.url.sms::input}}"/></td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.url.specemail}}">
+                        <tr>
+                            <td>Email:</td>
+                            <td><input type="text" placeholder="Email URL" value="{{_tool.url.email::input}}"/></td>
+                        </tr>
+                    </template>
+                    </table>
+                </div>
+                
+                <div class="inputWrap">
+                    <b>Priority</b>
+                    <select value="{{_tool.priority.global::change}}">
+                        <option value="default">default</option>
+                        <option value="info">info</option>
+                        <option value="warn">warn</option>
+                        <option value="alert">alert</option>
+                        <option value="critical">critical</option>
+                    </select>
+                    <table class="overrideWrap">
+                        <tr>
+                            <td>Override:</td>
+                            <td>
+                                <template is="dom-if" if="{{_tool.transport.browser}}">
+                                <label><input type="checkbox" checked="{{_tool.priority.specbrowser::change}}"/>Browser</label>
+                                </template><template is="dom-if" if="{{_tool.transport.cloud}}">
+                                <label><input type="checkbox" checked="{{_tool.priority.speccloud::change}}"/>Cloud</label>
+                                </template><template is="dom-if" if="{{_tool.transport.sms}}">
+                                <label><input type="checkbox" checked="{{_tool.priority.specsms::change}}"/>SMS</label>
+                                </template><template is="dom-if" if="{{_tool.transport.email}}">
+                                <label><input type="checkbox" checked="{{_tool.priority.specemail::change}}"/>Email</label>
+                                </template>
+                            </td>
+                        </tr>
+                    <template is="dom-if" if="{{_tool.priority.specbrowser}}">
+                        <tr>
+                            <td>Browser:</td>
+                            <td>
+                                <select value="{{_tool.priority.browser::change}}">
+                                    <option value="default">default</option>
+                                    <option value="info">info</option>
+                                    <option value="warn">warn</option>
+                                    <option value="alert">alert</option>
+                                    <option value="critical">critical</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.priority.speccloud}}">
+                        <tr>
+                            <td>Cloud:</td>
+                            <td>
+                                <select value="{{_tool.priority.cloud::change}}">
+                                    <option value="default">default</option>
+                                    <option value="info">info</option>
+                                    <option value="warn">warn</option>
+                                    <option value="alert">alert</option>
+                                    <option value="critical">critical</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.priority.specsms}}">
+                        <tr>
+                            <td>SMS:</td>
+                            <td>
+                                <select value="{{_tool.priority.sms::change}}">
+                                    <option value="default">default</option>
+                                    <option value="info">info</option>
+                                    <option value="warn">warn</option>
+                                    <option value="alert">alert</option>
+                                    <option value="critical">critical</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{_tool.priority.specemail}}">
+                        <tr>
+                            <td>Email:</td>
+                            <td>
+                                <select value="{{_tool.priority.email::change}}">
+                                    <option value="default">default</option>
+                                    <option value="info">info</option>
+                                    <option value="warn">warn</option>
+                                    <option value="alert">alert</option>
+                                    <option value="critical">critical</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </template>
+                    </table>
+                </div>
+                
+                <div class="inputWrap">
+                    <b>Payload</b>
                     <bridgeit-code-editor class="code-editor" value="{{_tool.payload}}"></bridgeit-code-editor>
-                </td>
-            </tr>
-            
+                </div>
             </template>
-            </table>
             
             <template is="dom-if" if="[[debug]]">
                 <hr/>

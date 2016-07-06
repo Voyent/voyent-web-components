@@ -47,19 +47,19 @@ Polymer({
          * The value of the SMS transport checkbox
          * This will be overridden if allowSMS=false
          */        
-        defaultSMS: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        defaultSMS: { type: Boolean, value: true, reflectToAttribute: true, notify: true },
         /**
          * The value of the Email transport checkbox
          * This will be overridden if allowEmail=false
          */        
-        defaultEmail: { type: Boolean, value: false, reflectToAttribute: true, notify: true }
+        defaultEmail: { type: Boolean, value: true, reflectToAttribute: true, notify: true }
     },
     observers: [
         '_toolChanged(_tool.transport.browser, _tool.transport.cloud, _tool.transport.sms, _tool.transport.email,' +
-                      '_tool.subject.usebrowser, _tool.subject.usecloud, _tool.subject.usesms, _tool.subject.useemail, _tool.subject.global, _tool.subject.browser, _tool.subject.cloud, _tool.subject.sms, _tool.subject.email,' +
-                      '_tool.details.usebrowser, _tool.details.usecloud, _tool.details.usesms, _tool.details.useemail, _tool.details.global, _tool.details.browser, _tool.details.cloud, _tool.details.sms, _tool.details.email,' +
-                      '_tool.url.usebrowser, _tool.url.usecloud, _tool.url.usesms, _tool.url.useemail, _tool.url.global, _tool.url.browser, _tool.url.cloud, _tool.url.sms, _tool.url.email,' +
-                      '_tool.priority.usebrowser, _tool.priority.usecloud, _tool.priority.usesms, _tool.priority.useemail, _tool.priority.global, _tool.priority.browser, _tool.priority.cloud, _tool.priority.sms, _tool.priority.email,' +
+                      '_tool.subject.specbrowser, _tool.subject.speccloud, _tool.subject.specsms, _tool.subject.specemail, _tool.subject.global, _tool.subject.browser, _tool.subject.cloud, _tool.subject.sms, _tool.subject.email,' +
+                      '_tool.details.specbrowser, _tool.details.speccloud, _tool.details.specsms, _tool.details.specemail, _tool.details.global, _tool.details.browser, _tool.details.cloud, _tool.details.sms, _tool.details.email,' +
+                      '_tool.url.specbrowser, _tool.url.speccloud, _tool.url.specsms, _tool.url.specemail, _tool.url.global, _tool.url.browser, _tool.url.cloud, _tool.url.sms, _tool.url.email,' +
+                      '_tool.priority.specbrowser, _tool.priority.speccloud, _tool.priority.specsms, _tool.priority.specemail, _tool.priority.global, _tool.priority.browser, _tool.priority.cloud, _tool.priority.sms, _tool.priority.email,' +
                       '_tool.expire_time.global, _tool.icon.global, _tool.payload)'
     ],
     
@@ -195,7 +195,7 @@ Polymer({
 	_setFieldFromJSON: function(json, transport, path) {
 	    if (this._isDefined(json[transport][path])) {
 	        this.set('_tool.' + path + '.' + transport, json[transport][path]);
-	        this.set('_tool.' + path + '.use' + transport, false);
+	        this.set('_tool.' + path + '.spec' + transport, true);
 	    }
 	},
 	
@@ -247,12 +247,12 @@ Polymer({
 	/**
 	 * Function to return the value of a single field from our UI controls
 	 * This will determine if the user requested we use the generic global value or a specific override value
-	 * Basically look at the "useTransport" flag and return data for either "global" or "transport"
+	 * Basically look at the "specTransport" flag and return data for either "global" or "transport"
 	 * @param field such as "details" or "url"
 	 * @param transport such as "browser" or "cloud"
 	 */
 	_getField: function(field, transport) {
-	    return this._tool[field]['use' + transport] ? null : this._tool[field][transport];
+	    return this._tool[field]['spec' + transport] ? this._tool[field][transport] : null;
 	},
 	
 	/**
@@ -305,10 +305,10 @@ Polymer({
                 "email": this.allowEmail ? this.defaultEmail : false
             },
             "subject": {
-                "usebrowser": true,
-                "usecloud": true,
-                "usesms": true,
-                "useemail": true,
+                "specbrowser": false,
+                "speccloud": false,
+                "specsms": false,
+                "specemail": false,
                 "global": null,
                 "browser": null,
                 "cloud": null,
@@ -316,10 +316,10 @@ Polymer({
                 "email": null
             },
             "details": {
-                "usebrowser": true,
-                "usecloud": true,
-                "usesms": true,
-                "useemail": true,
+                "specbrowser": false,
+                "speccloud": false,
+                "specsms": false,
+                "specemail": false,
                 "global": "",
                 "browser": null,
                 "cloud": null,
@@ -327,10 +327,10 @@ Polymer({
                 "email": null
             },
             "url": {
-                "usebrowser": true,
-                "usecloud": true,
-                "usesms": true,
-                "useemail": true,
+                "specbrowser": false,
+                "speccloud": false,
+                "specsms": false,
+                "specemail": false,
                 "global": null,
                 "browser": null,
                 "cloud": null,
@@ -338,10 +338,10 @@ Polymer({
                 "email": null
             },
             "priority": {
-                "usebrowser": true,
-                "usecloud": true,
-                "usesms": true,
-                "useemail": true,
+                "specbrowser": false,
+                "speccloud": false,
+                "specsms": false,
+                "specemail": false,
                 "global": "info",
                 "browser": null,
                 "cloud": null,
