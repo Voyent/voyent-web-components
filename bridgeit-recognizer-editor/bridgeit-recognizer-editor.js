@@ -133,12 +133,8 @@ Polymer({
             this.fire('message-error', 'Missing script contents');
             return false;
         }
-        if (this._script.indexOf('realmObservable') === -1) {
-            this.fire('message-error', 'Script must contain "realmObservable" variable, cancelling create.');
-            return false;
-        }
-        if (this._script.indexOf('recognizerObserver') === -1) {
-            this.fire('message-error', 'Script must contain "recognizerObserver" variable, cancelling create.');
+        if (this._script.indexOf('source') === -1 && this._script.indexOf('realmObservable') === -1) {
+            this.fire('message-error', 'Script must contain "source" variable, cancelling create.');
             return false;
         }
         return true;
