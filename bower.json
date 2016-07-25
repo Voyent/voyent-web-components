@@ -1,25 +1,25 @@
 {
-  "name": "bridgeit-web-components",
+  "name": "voyent-web-components",
   "authors": [
-    "ICEsoft Technologies <bridgeit@icesoft.com>"
+    "ICEsoft Technologies <voyent@icesoft.com>"
   ],
-  "description": "A library of Polymer-based Web Components for BridgeIt Services",
+  "description": "A library of Polymer-based Web Components for Voyent Services",
   "keywords": [
     "web-component",
     "web-components",
     "polymer",
-    "bridgeit"
+    "voyent"
   ],
   "license": "Apache 2",
-  "homepage": "https://github.com/bridgeit/bridgeit-components/",
+  "homepage": "https://github.com/voyent/voyent-components/",
   "ignore": [
     "/.*",
     "/tests/"
   ],
   "version": "0.0.5",
   "dependencies": {
-    "bridgeit.io.js": "#dev",
-    "bridgeit.xio.js": "bridgeit/bridgeit.xio.js#gh-pages",
+    "voyent.io.js": "#dev",
+    "voyent.xio.js": "voyent/voyent.xio.js#gh-pages",
     "polymer": "Polymer/polymer#~1.2.0",
     "jquery": "#~2.1.3",
     "es6-promise": "jakearchibald/es6-promise#~3.0.2",
@@ -41,6 +41,6 @@
     "web-component-tester": "*"
   },
   "resolutions": {
-    "bridgeit.io.js": "dev"
+    "voyent.io.js": "dev"
   }
 }

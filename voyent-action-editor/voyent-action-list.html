@@ -1,0 +1,65 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-item/paper-item-body.html">
+<link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+
+<!--
+Display a list of previously created actions.
+
+Example:
+
+    <voyent-action-editor account="myAccount"
+                            realm="myRealm">
+        <voyent-action-list></voyent-action-list>
+    </voyent-action-editor>
+
+@demo demo.html
+-->
+<dom-module id="voyent-action-list">
+    <template>
+        <style type="text/css">
+            .tableWrapper {
+                @apply(--action-list-wrapper);
+            }
+            table {
+                margin:0 auto;
+                @apply(--action-list-table);
+            }
+            tbody {
+                @apply(--action-list-tbody);
+            }
+            tr {
+                @apply(--action-list-tr);
+            }
+            td {
+                @apply(--action-list-td);
+            }
+            button {
+                cursor:pointer;
+                @apply(--action-list-button);
+            }
+            .noActionTxt {
+                text-align: center;
+            }
+        </style>
+        <div class="tableWrapper">
+            <template is="dom-if" if="{{_allActions}}">
+                <paper-dropdown-menu label="View Saved Actions">
+                    <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
+                        <template is="dom-repeat" strip-whitespace items="[[_allActions]]" as="action">
+                            <paper-item>[[action._id]]</paper-item>
+                        </template>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+            </template>
+            <template is="dom-if" if="{{!_allActions}}">
+                <div class="noActionTxt">Saved Actions: No existing actions found.</div>
+            </template>
+        </div>
+    </template>
+</dom-module>
+
+<script src="voyent-action-list.js"></script>

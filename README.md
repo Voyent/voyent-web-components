@@ -1,7 +1,7 @@
-bridgeit-web-components
+voyent-web-components
 ============
 
-BridgeIt Web Components are a work in progress to leverage the power of Web Components, Polymer, bridgeit.io.js and the BridgeIt Services platform. To use these components you will need a BridgeIt Account and Realm. You can create a free account in the [BridgeIt Console](http://dev.bridgeit.io/console).
+Voyent Web Components are a work in progress to leverage the power of Web Components, Polymer, voyent.io.js and the Voyent Services platform. To use these components you will need a Voyent Account and Realm. You can create a free account in the [Voyent Console](http://dev.voyent.io/console).
 
 ### Usage
 
@@ -22,37 +22,37 @@ Declare the Web Components script:
 Import the component you would like to use:
 
 ```
-<link rel="import" href="bridgeit-locations.html">
+<link rel="import" href="voyent-locations.html">
 ```
 
 Profit:
 
 ```
-<bridgeit-locations id="userLocations" realm="myRealm" account="myAccount" showUserLocations>
-</bridgeit-locations>
+<voyent-locations id="userLocations" realm="myRealm" account="myAccount" showUserLocations>
+</voyent-locations>
 ```
 
 ### Demos
 
-[&lt;bridgeit-auth-provider&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-auth-provider/bridgeit-auth-provider/)	
-[&lt;bridgeit-action-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-action-editor/)	
-[&lt;bridgeit-backpack-log&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-backpack-log/)	
-[&lt;bridgeit-bar-chart&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-bar-chart/)	
-[&lt;bridgeit-code-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-code-editor/)	
-[&lt;bridgeit-document&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-document/)	
-[&lt;bridgeit-document-json-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-document-json-editor/)	
-[&lt;bridgeit-document-property-text-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-document-property-text-editor/)	
-[&lt;bridgeit-event-monitor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-event-monitor/)	
-[&lt;bridgeit-line-chart&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-line-chart/)	
-[&lt;bridgeit-location-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-location-editor/)	
-[&lt;bridgeit-location-simulator&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-location-simulator/)	
-[&lt;bridgeit-locations&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-locations/)	
-[&lt;bridgeit-login-paper-card&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-login-paper-card/)	
-[&lt;bridgeit-log-viewer&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-log-viewer/)	
-[&lt;bridgeit-message&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-message/)	
-[&lt;bridgeit-pie-chart&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-pie-chart/)	
-[&lt;bridgeit-query-chain-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-query-chain-editor/)	
-[&lt;bridgeit-query-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-query-editor/)	
-[&lt;bridgeit-recognizer-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-recognizer-editor/)	
-[&lt;bridgeit-transport-editor&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-transport-editor/)	
-[&lt;bridgeit-styles&gt;](http://bridgeit.github.io/bridgeit-web-components/components/bridgeit-web-components/bridgeit-styles/)	
+[&lt;voyent-auth-provider&gt;](http://voyent.github.io/voyent-web-components/components/voyent-auth-provider/voyent-auth-provider/)
+[&lt;voyent-action-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-action-editor/)
+[&lt;voyent-backpack-log&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-backpack-log/)
+[&lt;voyent-bar-chart&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-bar-chart/)
+[&lt;voyent-code-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-code-editor/)
+[&lt;voyent-document&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-document/)
+[&lt;voyent-document-json-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-document-json-editor/)
+[&lt;voyent-document-property-text-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-document-property-text-editor/)
+[&lt;voyent-event-monitor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-event-monitor/)
+[&lt;voyent-line-chart&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-line-chart/)
+[&lt;voyent-location-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-location-editor/)
+[&lt;voyent-location-simulator&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-location-simulator/)
+[&lt;voyent-locations&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-locations/)
+[&lt;voyent-login-paper-card&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-login-paper-card/)
+[&lt;voyent-log-viewer&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-log-viewer/)
+[&lt;voyent-message&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-message/)
+[&lt;voyent-pie-chart&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-pie-chart/)
+[&lt;voyent-query-chain-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-query-chain-editor/)
+[&lt;voyent-query-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-query-editor/)
+[&lt;voyent-recognizer-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-recognizer-editor/)
+[&lt;voyent-transport-editor&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-transport-editor/)
+[&lt;voyent-styles&gt;](http://voyent.github.io/voyent-web-components/components/voyent-web-components/voyent-styles/)
