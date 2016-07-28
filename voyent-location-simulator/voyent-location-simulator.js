@@ -184,7 +184,7 @@ Polymer({
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
-            return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+            return node.nodeName === 'VOYENT-LOCATION-ROUTE';
         });
         if (children.length > 0) { //reset the bounds so we only bound around the simulation
             this._bounds = new google.maps.LatLngBounds();
@@ -202,7 +202,7 @@ Polymer({
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
-            return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+            return node.nodeName === 'VOYENT-LOCATION-ROUTE';
         });
         for (var i=0; i<children.length; i++) {
             children[i].pauseSimulation();
@@ -217,7 +217,7 @@ Polymer({
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
-            return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+            return node.nodeName === 'VOYENT-LOCATION-ROUTE';
         });
         for (var i=0; i<children.length; i++) {
             children[i].cancelSimulation();
@@ -284,7 +284,7 @@ Polymer({
         var docCall = 'createDocument';
         var routes = [];
         var children = Polymer.dom(this).childNodes.filter(function(node) {
-            return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+            return node.nodeName === 'VOYENT-LOCATION-ROUTE';
         });
         for (var i=0; i<children.length; i++) {
             routes.push(children[i].getRouteJSON());
@@ -591,7 +591,7 @@ Polymer({
         if (isInitialLoad) {
             //since it's the first time, make sure we include any routes defined as child components
             children = Polymer.dom(this).childNodes.filter(function(node) {
-                return node.nodeName === 'BRIDGEIT-LOCATION-ROUTE';
+                return node.nodeName === 'VOYENT-LOCATION-ROUTE';
             });
         }
         setTimeout(function () {

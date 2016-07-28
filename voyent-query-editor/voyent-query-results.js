@@ -117,12 +117,12 @@ Polymer({
                 }
                 parent = Polymer.dom(parent).parentNode;
             }
-            if (node && node.tagName === 'BRIDGEIT-QUERY-EDITOR') {
+            if (node && node.tagName === 'VOYENT-QUERY-EDITOR') {
                 this._queryEditor = node;
                 return true;
             }
         }
-        else if (document.getElementById(this.for).tagName === 'BRIDGEIT-QUERY-EDITOR') {
+        else if (document.getElementById(this.for).tagName === 'VOYENT-QUERY-EDITOR') {
             this._queryEditor = document.getElementById(this.for);
             return true;
         }
