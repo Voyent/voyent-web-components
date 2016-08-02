@@ -125,9 +125,10 @@ Voyent.QueryEditor = Polymer({
         this._uniqueId = 'a'+(Date.now()+Math.floor(Math.random() * Date.now()));
 
         var jqueryBuilderURL = this.resolveUrl('./jquery-builder-import.html');
+        var jqueryURL = this.resolveUrl('../jquery-import/jquery-import.html');
         if (!('jQuery' in window)) {
             //load missing jQuery dependency
-            this.importHref('../jquery-import/jquery-import.html', function(e) {
+            this.importHref(jqueryURL, function(e) {
                 document.head.appendChild(document.importNode(e.target.import.body,true));
                 onAfterjQueryLoaded();
             }, function(err) {
