@@ -1,0 +1,154 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../voyent-transport-editor/voyent-transport-editor.html">
+<link rel="import" href="../../voyent-code-editor/voyent-code-editor.html">
+<link rel="import" href="./action-behavior.html">
+<link rel="import" href="./action-styles.html">
+
+<!--
+Internal component used to display tasks inside the action editor.
+
+@demo demo.html
+-->
+<dom-module id="action-task">
+    <template>
+        <style include="action-styles"></style>
+
+        <div data-id$="{{task.id}}" data-group-id$="{{group.id}}" class="task toggled">
+            <div class="buttons">
+                <button type="button" on-click="_moveTaskUp">Up</span></button>
+                <button type="button" on-click="_moveTaskDown">Down</button>
+                <button type="button" on-click="_cloneTask">Clone</button>
+                <button type="button" on-click="_deleteTask">Remove</button>
+            </div>
+            <div class="title" data-group-id$="{{group.id}}" on-click="_toggleTask" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon">
+                {{task.schema.title}}
+                <span class="details">{{_formatTaskName(task.name)}}</span>
+                <div class="arrow toggled"></div>
+            </div>
+            <div class="content toggled">
+                <label title="The task name">
+                    <span class="required">*</span><span>Task Name</span>
+                    <input class="form-control" type="text" placeholder="Task Name" title="The task name" required value="{{task.name::input}}"
+                           data-label="Task Name" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
+                </label>
+                <label title="The task description">
+                    <span>Description</span>
+                    <input class="form-control" type="text" placeholder="Task Description" title="The task description" value="{{task.desc::input}}">
+                </label>
+                <hr/>
+                <template is="dom-if" if="{{task.schema.properties.oneOf}}">
+                    <label>
+                        <span><span class="required">*</span>One of these property groups are required</span>
+                    </label>
+                    <template is="dom-repeat" strip-whitespace items="{{task.schema.properties.oneOf}}" as="oneOfGroup">
+                        <fieldset>
+                            <legend>Group <span>{{_toOneBasedIndex(index)}}</span></legend>
+                            <template is="dom-repeat" strip-whitespace items="{{_toArray(oneOfGroup)}}" as="property" sort="_sortProperties">
+                                <label class$="{{_addBooleanClass(property.type)}}">
+                                    <span>{{property.title}}</span>
+                                </label>
+                                <template is="dom-if" if="{{_isString(property.type)}}">
+                                    <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                                        <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                            <voyent-transport-editor value="{{property.value}}"></voyent-transport-editor>
+                                        </template>
+                                        <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                            <voyent-code-editor class="code-editor" value="{{property.value}}"
+                                                                disablevalidation="{{_disableValidation(property.title)}}"></voyent-code-editor>
+                                        </template>
+                                    </template>
+                                    <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                            <select class="form-control" value="{{property.value::change}}">
+                                                <option value="" selected>Select one...</option>
+                                                <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
+                                                    <option value="{{item}}">{{item}}</option>
+                                                </template>
+                                            </select>
+                                        </template>
+                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                   value="{{property.value::input}}">
+                                        </template>
+                                    </template>
+                                </template>
+                                <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                    <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                                </template>
+                            </template>
+                        </fieldset>
+                    </template>
+                </template>
+                <template is="dom-repeat" strip-whitespace items="{{_toArray(task.schema.properties.required)}}" as="property" sort="_sortProperties">
+                    <label class$="{{_addBooleanClass(property.type)}}">
+                        <span class="required">*</span><span>{{property.title}}</span>
+                    </label>
+                    <template is="dom-if" if="{{_isString(property.type)}}">
+                        <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                            <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                <voyent-transport-editor value="{{property.value}}"></voyent-transport-editor>
+                            </template>
+                            <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                <voyent-code-editor class="code-editor" value="{{property.value}}"
+                                                    disablevalidation="{{_disableValidation(property.title)}}"></voyent-code-editor>
+                            </template>
+                        </template>
+                        <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                            <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
+                                        data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
+                                    <option value="" selected>Select one...</option>
+                                    <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
+                                        <option value="{{item}}">{{item}}</option>
+                                    </template>
+                                </select>
+                            </template>
+                            <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}" required
+                                       value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}" data-task-id$="{{task.id}}" >
+                            </template>
+                        </template>
+                    </template>
+                    <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                        <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                    </template>
+                </template>
+                <template is="dom-repeat" strip-whitespace items="{{_toArray(task.schema.properties.optional)}}" as="property" sort="_sortProperties">
+                    <label class$="{{_addBooleanClass(property.type)}}">
+                        <span>{{property.title}}</span>
+                    </label>
+                    <template is="dom-if" if="{{_isString(property.type)}}">
+                        <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
+                            <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
+                                <voyent-transport-editor value="{{property.value}}"></voyent-transport-editor>
+                            </template>
+                            <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
+                                <voyent-code-editor class="code-editor" value="{{property.value}}"
+                                                    disablevalidation="{{_disableValidation(property.title)}}"></voyent-code-editor>
+                            </template>
+                        </template>
+                        <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
+                            <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                <select class="form-control" value="{{property.value::change}}">
+                                    <option value="" selected>Select one...</option>
+                                    <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
+                                        <option value="{{item}}">{{item}}</option>
+                                    </template>
+                                </select>
+                            </template>
+                            <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                       value="{{property.value::input}}">
+                            </template>
+                        </template>
+                    </template>
+                    <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                        <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
+                    </template>
+                </template>
+            </div>
+        </div>
+    </template>
+</dom-module>
+
+<script src="action-task.js"></script>
