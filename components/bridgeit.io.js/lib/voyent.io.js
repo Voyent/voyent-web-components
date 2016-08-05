@@ -1,15 +1,15 @@
-if( ! ('bridgeit' in window)){
-	throw new Error('bridgeit-services.js requires bridgeit.js, please include bridgeit.js before bridgeit-services.js');
+if( ! ('voyent' in window)){
+	throw new Error('voyent.io.js requires voyent.js, please include voyent.js before voyent.io.js');
 }
 
-(function(b) {
+(function(v) {
 
 	"use strict";
 
 	/************************* Private ********************/
 
 	function fireEvent(el, eventName, detail){
-		console.log('bridgeit.io firing event ' + eventName + ' on element ' + el, detail);
+		console.log('voyent.io firing event ' + eventName + ' on element ' + el, detail);
 		var event;
 		if( 'CustomEvent' in window ){
 			event = new CustomEvent(eventName, { 'detail': detail });
@@ -63,21 +63,17 @@ if( ! ('bridgeit' in window)){
 	}
 
 	/* Auth */
-	function validateRequiredRealm(params, reject){
-		validateParameter('realm', 'The BridgeIt realm is required', params, reject);
-	}
-
 	function validateRequiredPassword(params, reject){
 		validateParameter('password', 'The password parameter is required', params, reject);
 	}
 
 	function validateAndReturnRequiredAccessToken(params, reject){
-		var token = params.accessToken || services.auth.getLastAccessToken();
+		var token = params.accessToken || v.io.auth.getLastAccessToken();
 		if( token ){
 			return token;
 		}
 		else{
-			return reject(Error('A BridgeIt access token is required'));
+			return reject(Error('A Voyent access token is required'));
 		}
 	}
 
@@ -87,14 +83,41 @@ if( ! ('bridgeit' in window)){
 			realm = encodeURI(realm);
 		}
 		else{
-			realm = services.auth.getLastKnownRealm();
+			realm = v.io.auth.getLastKnownRealm();
 		}
 		if( realm ){
-			services.setCurrentRealm(realm);
+			v.io.setCurrentRealm(realm);
 			return realm;
 		}
 		else{
-			return reject(Error('The BridgeIt realm is required'));
+			return reject(Error('The Voyent realm is required'));
+		}
+	}
+
+	function validateAndReturnRequiredOriginRealmName(params, reject){
+		var realm = params.originRealmName;
+		if( realm ){
+			realm = encodeURI(realm);
+		}
+		else{
+			realm = v.io.auth.getLastKnownRealm();
+		}
+		if( realm ){
+			return realm;
+		}
+		else{
+			return reject(Error('The Voyent originRealmName is required'));
+		}
+	}
+
+	function validateAndReturnRequiredDestRealmName(params, reject){
+		var realm = params.destRealmName;
+		if( realm ){
+			realm = encodeURI(realm);
+			return realm;
+		}
+		else{
+			return reject(Error('The Voyent destRealmName is required'));
 		}
 	}
 
@@ -104,14 +127,14 @@ if( ! ('bridgeit' in window)){
 			realm = encodeURI(realm);
 		}
 		else{
-			realm = services.auth.getLastKnownRealm();
+			realm = v.io.auth.getLastKnownRealm();
 		}
 		if( realm ){
-			b.setSessionStorageItem(btoa(REALM_KEY), btoa(realm));
+			v.setSessionStorageItem(btoa(REALM_KEY), btoa(realm));
 			return realm;
 		}
 		else{
-			return reject(Error('The BridgeIt realm is required'));
+			return reject(Error('The Voyent realm is required'));
 		}
 	}
 
@@ -121,28 +144,28 @@ if( ! ('bridgeit' in window)){
 			account = encodeURI(account);
 		}
 		else{
-			account = services.auth.getLastKnownAccount();
+			account = v.io.auth.getLastKnownAccount();
 		}
 		if( account ){
-			b.setSessionStorageItem(btoa(ACCOUNT_KEY), btoa(account));
+			v.setSessionStorageItem(btoa(ACCOUNT_KEY), btoa(account));
 			return account;
 		}
 		else{
-			return reject(Error('The BridgeIt account is required'));
+			return reject(Error('The Voyent account is required'));
 		}
 	}
 
 	function validateAndReturnRequiredUsername(params, reject){
 		var username = params.username;
 		if( !username ){
-			username = services.auth.getLastKnownUsername();
+			username = v.io.auth.getLastKnownUsername();
 		}
 		if( username ){
-			b.setSessionStorageItem(btoa(USERNAME_KEY), btoa(username));
+			v.setSessionStorageItem(btoa(USERNAME_KEY), btoa(username));
 			return username;
 		}
 		else{
-			return reject(Error('The BridgeIt username is required'));
+			return reject(Error('The Voyent username is required'));
 		}
 	}
 
@@ -152,7 +175,7 @@ if( ! ('bridgeit' in window)){
 			return role;
 		}
 		else{
-			return reject(Error('The BridgeIt role parameter is required'));
+			return reject(Error('The Voyent role parameter is required'));
 		}
 	}
 
@@ -162,7 +185,7 @@ if( ! ('bridgeit' in window)){
 			return roles;
 		}
 		else{
-			return reject(Error('The BridgeIt roles parameter is required'));
+			return reject(Error('The Voyent roles parameter is required'));
 		}
 	}
 
@@ -172,7 +195,7 @@ if( ! ('bridgeit' in window)){
 			return email;
 		}
 		else{
-			return reject(Error('The BridgeIt email parameter is required'));
+			return reject(Error('The Voyent email parameter is required'));
 		}
 	}
 
@@ -182,7 +205,7 @@ if( ! ('bridgeit' in window)){
 			return firstname;
 		}
 		else{
-			return reject(Error('The BridgeIt firstname parameter is required'));
+			return reject(Error('The Voyent firstname parameter is required'));
 		}
 	}
 
@@ -192,7 +215,7 @@ if( ! ('bridgeit' in window)){
 			return lastname;
 		}
 		else{
-			return reject(Error('The BridgeIt lastname parameter is required'));
+			return reject(Error('The Voyent lastname parameter is required'));
 		}
 	}
 
@@ -263,8 +286,17 @@ if( ! ('bridgeit' in window)){
 	}
 
 	/* Document */
-	function validateCollection(params, reject){
+	function validateCollection(params){
 		return params.collection ? params.collection : 'documents';
+	}
+
+	/* Query */
+	function validateRequiredQuery(params, reject){
+		validateParameter('query', 'The query parameter is required', params, reject);
+	}
+
+	function validateRequiredTransformer(params, reject){
+		validateParameter('transformer', 'The transformer parameter is required', params, reject);
 	}
 
 	/* Push */
@@ -293,7 +325,7 @@ if( ! ('bridgeit' in window)){
 	}
 
 	function getTransactionURLParam(){
-		var txId = services.getLastTransactionId();
+		var txId = v.io.getLastTransactionId();
 		if( txId ){
 			return 'tx=' + txId;
 		}
@@ -369,35 +401,32 @@ if( ! ('bridgeit' in window)){
 		}
 	}
 
-	if (!b['io']) {
-		b.io = {};
-
+	if (!v['io']) {
+		v.io = {};
 	}
 
-	var services = b.io;
-
 	//internal keys
-	var TOKEN_KEY = 'bridgeitToken';
-	var TOKEN_EXPIRES_KEY = 'bridgeitTokenExpires';
-	var TOKEN_SET_KEY = 'bridgeitTokenSet';
-	var CONNECT_SETTINGS_KEY = 'bridgeitConnectSettings';
-	var LAST_ACTIVE_TS_KEY = 'bridgeitLastActiveTimestamp';
-	var ACCOUNT_KEY = 'bridgeitAccount';
-	var REALM_KEY = 'bridgeitRealm';
-	var ADMIN_KEY = 'bridgeitAdmin';
-	var USERNAME_KEY = 'bridgeitUsername';
-	var PASSWORD_KEY = 'bridgeitPassword';
-	var RELOGIN_CB_KEY = 'bridgeitReloginCallback';
-	var TRANSACTION_KEY = 'bridgeitTransaction';
-	var CLOUD_CALLBACKS_KEY = "bridgeit.cloudcallbacks";
+	var TOKEN_KEY = 'voyentToken';
+	var TOKEN_EXPIRES_KEY = 'voyentTokenExpires';
+	var TOKEN_SET_KEY = 'voyentTokenSet';
+	var CONNECT_SETTINGS_KEY = 'voyentConnectSettings';
+	var LAST_ACTIVE_TS_KEY = 'voyentLastActiveTimestamp';
+	var ACCOUNT_KEY = 'voyentAccount';
+	var REALM_KEY = 'voyentRealm';
+	var ADMIN_KEY = 'voyentAdmin';
+	var USERNAME_KEY = 'voyentUsername';
+	var PASSWORD_KEY = 'voyentPassword';
+	var RELOGIN_CB_KEY = 'voyentReloginCallback';
+	var TRANSACTION_KEY = 'voyentTransaction';
+	var CLOUD_CALLBACKS_KEY = "voyent.cloudcallbacks";
 	var CLOUD_PUSH_KEY = "ice.notifyBack";
-	var USER_STORE_KEY = "bridgeitUserStore";
-	var USER_STORE_SETTING_KEY = "bridgeitUserStoreSetting";
+	var USER_STORE_KEY = "voyentUserStore";
+	var USER_STORE_SETTING_KEY = "voyentUserStoreSetting";
 	var LAST_UPDATED = "last_updated";
 	var PUSH_CALLBACKS = 'pushCallbacks';
-	var SCOPE_TO_PATH_KEY = "bridgeitScopeToPath";
+	var SCOPE_TO_PATH_KEY = "voyentScopeToPath";
 
-	b.$ = {
+	v.$ = {
 
 		serializePostData: function(data){
 			//TODO
@@ -509,7 +538,7 @@ if( ! ('bridgeit' in window)){
 				}
 				if( progressCallback ){
 					request.upload.addEventListener("progress", function(evt){
-						services.auth.updateLastActiveTimestamp();
+						v.io.auth.updateLastActiveTimestamp();
 						if (evt.lengthComputable){
 							var percentComplete = evt.loaded / evt.total;
 							progressCallback(percentComplete, request);
@@ -626,7 +655,7 @@ if( ! ('bridgeit' in window)){
 				request.onreadystatechange = function() {
 					if (this.readyState === 4) {
 						if (this.status >= 200 && this.status < 400) {
-							services.auth.updateLastActiveTimestamp();
+							v.io.auth.updateLastActiveTimestamp();
 							resolve();
 						} else {
 							reject(extractResponseValues(this));
@@ -654,69 +683,143 @@ if( ! ('bridgeit' in window)){
 
 	};
 
-	services.configureHosts = function(url){
+	v.io.configureHosts = function(url){
 		var isLocal = ['localhost','127.0.0.1'].indexOf(url) > -1;
 		if( !url ){
-			services.baseURL = 'dev.bridgeit.io';
+			v.io.baseURL = 'dev.voyent.cloud';
 		}
 		else{
-			services.baseURL = url;
+			v.io.baseURL = url;
 		}
-		var baseURL = services.baseURL;
-		services.authURL = baseURL + (isLocal ? ':55010' : '') + '/auth';
-		services.authAdminURL = baseURL + (isLocal ? ':55010' : '') + '/authadmin';
-		services.locateURL = baseURL + (isLocal ? ':55020' : '') + '/locate';
-		services.documentsURL = baseURL + (isLocal ? ':55080' : '') + '/docs';
-		services.storageURL = baseURL + (isLocal ? ':55030' : '') + '/storage';
-		services.metricsURL = baseURL + (isLocal ? ':55040' : '') + '/metrics';
-		services.eventURL = baseURL + (isLocal ? ':55050' : '') + '/event';
-		services.contextURL = baseURL + (isLocal ? ':55060' : '') + '/context';
-		services.codeURL = baseURL + (isLocal ? ':55090' : '') + '/code';
-		services.pushURL = baseURL + (isLocal ? ':8080' : '') + '/push';
-		services.pushRESTURL = services.pushURL + '/rest';
-		services.queryURL = baseURL + (isLocal ? ':55110' : '') + '/query';
-		services.actionURL = baseURL + (isLocal ? ':55130' : '') + '/action';
-		services.eventhubURL = baseURL + (isLocal ? ':55200' : '') + '/eventhub';
-		services.mailboxURL = baseURL + (isLocal ? ':55120' : '') + '/mailbox';
-		services.deviceURL = baseURL + (isLocal ? ':55160' : '') + '/device';
+		var baseURL = v.io.baseURL;
+		v.io.authURL = baseURL + (isLocal ? ':55010' : '') + '/auth';
+		v.io.authAdminURL = baseURL + (isLocal ? ':55010' : '') + '/authadmin';
+		v.io.locateURL = baseURL + (isLocal ? ':55020' : '') + '/locate';
+		v.io.documentsURL = baseURL + (isLocal ? ':55080' : '') + '/docs';
+		v.io.storageURL = baseURL + (isLocal ? ':55030' : '') + '/storage';
+		v.io.eventURL = baseURL + (isLocal ? ':55050' : '') + '/event';
+		v.io.pushURL = baseURL + (isLocal ? ':8080' : '') + '/push';
+		v.io.pushRESTURL = v.io.pushURL + '/rest';
+		v.io.queryURL = baseURL + (isLocal ? ':55110' : '') + '/query';
+		v.io.actionURL = baseURL + (isLocal ? ':55130' : '') + '/action';
+		v.io.eventhubURL = baseURL + (isLocal ? ':55200' : '') + '/eventhub';
+		v.io.mailboxURL = baseURL + (isLocal ? ':55120' : '') + '/mailbox';
+		v.io.deviceURL = baseURL + (isLocal ? ':55160' : '') + '/device';
 	};
 
-	services.checkHost = function(params){
+	v.io.checkHost = function(params){
 		//TODO use last configured host if available
 		if( params.host ){
-			services.configureHosts(params.host);
+			v.io.configureHosts(params.host);
 		}
 	};
 
-	services.startTransaction = function(){
-		b.setSessionStorageItem(btoa(TRANSACTION_KEY), b.$.newUUID());
-		console.log('bridgeit: started transaction ' + bridgeit.io.getLastTransactionId());
+	v.io.startTransaction = function(){
+		v.setSessionStorageItem(btoa(TRANSACTION_KEY), v.$.newUUID());
+		console.log('voyent: started transaction ' + v.io.getLastTransactionId());
 	};
 
-	services.endTransaction = function(){
-		b.removeSessionStorageItem(btoa(TRANSACTION_KEY));
-		console.log('bridgeit: ended transaction ' + bridgeit.io.getLastTransactionId());
+	v.io.endTransaction = function(){
+		v.removeSessionStorageItem(btoa(TRANSACTION_KEY));
+		console.log('voyent: ended transaction ' + v.io.getLastTransactionId());
 	};
 
-	services.getLastTransactionId = function(){
-		return b.getSessionStorageItem(btoa(TRANSACTION_KEY));
+	v.io.getLastTransactionId = function(){
+		return v.getSessionStorageItem(btoa(TRANSACTION_KEY));
 	};
 
-	services.setCurrentRealm = function(realm){
-		b.setSessionStorageItem(btoa(REALM_KEY), btoa(realm));
+	v.io.setCurrentRealm = function(realm){
+		v.setSessionStorageItem(btoa(REALM_KEY), btoa(realm));
 	};
 
-	services.action = {
+	v.io.getResourcePermissions = function(params){
+		return new Promise(
+			function(resolve, reject) {
+				params = params ? params : {};
+				v.io.checkHost(params);
+
+				//validate
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealm(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				validateRequiredId(params, reject);
+				validateParameter('service', 'The service parameter is required', params, reject);
+				validateParameter('path', 'The path parameter is required', params, reject);
+
+				var serviceURL;
+				switch(params.service){
+					case 'documents': serviceURL = v.io.documentsURL; break;
+					case 'action': serviceURL = v.io.actionURL; break;
+					case 'eventhub': serviceURL = v.io.eventhubURL; break;
+					case 'query': serviceURL = v.io.queryURL; break;
+					case 'storage': serviceURL = v.io.storageURL; break;
+					case 'mailbox': serviceURL = v.io.mailboxURL; break;
+					case 'location': serviceURL = v.io.locateURL; break;
+				}
+
+				var url = getRealmResourceURL(serviceURL, account, realm, params.path + '/' + params.id + '/permissions', token, params.ssl);
+
+				v.$.getJSON(url).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
+					var permissionsBlock;
+					if( json.directory && json.directory.length > 0 ){
+						permissionsBlock = json.directory[0];
+					}
+					else{
+						permissionsBlock = json;
+					}
+					resolve(permissionsBlock);
+				})['catch'](function(error){
+					reject(error);
+				});
+			}
+		);
+	};
+
+	v.io.updateResourcePermissions = function(params){
+		return new Promise(
+			function(resolve, reject) {
+				params = params ? params : {};
+				v.io.checkHost(params);
+
+				//validate
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var realm = validateAndReturnRequiredRealm(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				validateRequiredId(params, reject);
+				validateParameter('permissions', 'The permissions parameter is required', params, reject);
+				validateParameter('service', 'The service parameter is required', params, reject);
+				validateParameter('path', 'The path parameter is required', params, reject);
+
+				var serviceURL;
+				switch(params.service){
+					case 'documents': serviceURL = v.io.documentsURL; break;
+					case 'action': serviceURL = v.io.actionURL; break;
+				}
+
+				var url = getRealmResourceURL(serviceURL, account, realm, params.path + '/' + params.id + '/permissions', token, params.ssl);
+
+				v.$.put(url, params.permissions).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
+					resolve(json);
+				})['catch'](function(error){
+					reject(error);
+				});
+			}
+		);
+	},
+
+	v.io.action = {
 		/**
 		 * Execute an action
 		 *
 		 * @alias executeAction
 		 * @param {Object} params params
 		 * @param {String} params.id The action id, the action to be executed
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -724,7 +827,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -732,11 +835,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.actionURL, account, realm,
+					var url = getRealmResourceURL(v.io.actionURL, account, realm,
 						'actions/' + params.id, token, params.ssl, {'op': 'exec'});
 
-					b.$.post(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						reject(error);
@@ -753,10 +856,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The action id
 		 * @param {Object} params.action The action to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -764,7 +867,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -773,11 +876,11 @@ if( ! ('bridgeit' in window)){
 					validateRequiredId(params, reject);
 					validateRequiredAction(params, reject);
 
-					var url = getRealmResourceURL(services.actionURL, account, realm,
+					var url = getRealmResourceURL(v.io.actionURL, account, realm,
 						'actions/' + params.id, token, params.ssl);
 
-					b.$.post(url, params.action).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.action).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function(error){
 						reject(error);
@@ -794,17 +897,17 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The action id, the action to be updated
 		 * @param {Object} params.action The new action
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		updateAction: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -813,11 +916,11 @@ if( ! ('bridgeit' in window)){
 					validateRequiredId(params, reject);
 					validateRequiredAction(params, reject);
 
-					var url = getRealmResourceURL(services.actionURL, account, realm,
+					var url = getRealmResourceURL(v.io.actionURL, account, realm,
 						'actions/' + params.id, token, params.ssl);
 
-					b.$.put(url, params.action).then(function(){
-						services.auth.updateLastActiveTimestamp();
+					v.$.put(url, params.action).then(function(){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -832,10 +935,10 @@ if( ! ('bridgeit' in window)){
 		 * @alias getAction
 		 * @param {Object} params params
 		 * @param {String} params.id The action id, the action to fetch
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The action
 		 */
@@ -843,7 +946,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -851,11 +954,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.actionURL, account, realm,
+					var url = getRealmResourceURL(v.io.actionURL, account, realm,
 						'actions/' + params.id, token, params.ssl);
 
-					b.$.getJSON(url).then(function(action){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(action){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(action);
 					})['catch'](function(error){
 						reject(error);
@@ -869,10 +972,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findActions
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the actions
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -884,22 +987,22 @@ if( ! ('bridgeit' in window)){
 				function(resolve, reject) {
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.actionURL, account, realm,
+					var url = getRealmResourceURL(v.io.actionURL, account, realm,
 						'actions/', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(actions){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(actions){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(actions);
 					})['catch'](function(response){
 						reject(response);
@@ -915,17 +1018,17 @@ if( ! ('bridgeit' in window)){
 		 * @alias deleteAction
 		 * @param {Object} params params
 		 * @param {String} params.id The action id, the action to be deleted
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		deleteAction: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -933,11 +1036,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.actionURL, account, realm,
+					var url = getRealmResourceURL(v.io.actionURL, account, realm,
 						'actions/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function(){
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function(){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -951,10 +1054,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getTaskGroups
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The task group schemas
 		 */
@@ -962,18 +1065,18 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 					function(resolve, reject) {
 						params = params ? params : {};
-						services.checkHost(params);
+						v.io.checkHost(params);
 
 						//validate
 						var account = validateAndReturnRequiredAccount(params, reject);
 						var realm = validateAndReturnRequiredRealm(params, reject);
 						var token = validateAndReturnRequiredAccessToken(params, reject);
 
-						var url = getRealmResourceURL(services.actionURL, account, realm,
+						var url = getRealmResourceURL(v.io.actionURL, account, realm,
 								'taskGroups/', token, params.ssl);
 
-						b.$.getJSON(url).then(function(tasksGroups){
-							services.auth.updateLastActiveTimestamp();
+						v.$.getJSON(url).then(function(tasksGroups){
+							v.io.auth.updateLastActiveTimestamp();
 							resolve(tasksGroups);
 						})['catch'](function(error){
 							reject(error);
@@ -987,10 +1090,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getTasks
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The task schemas
 		 */
@@ -998,35 +1101,47 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.actionURL, account, realm,
+					var url = getRealmResourceURL(v.io.actionURL, account, realm,
 						'tasks/', token, params.ssl);
 
-					b.$.getJSON(url).then(function(tasks){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(tasks){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(tasks);
 					})['catch'](function(error){
 						reject(error);
 					});
 				}
 			);
+		},
+
+		getResourcePermissions: function(params){
+			params.service = 'action';
+			params.path = 'actions';
+			return v.io.getResourcePermissions(params);
+		},
+
+		updateResourcePermissions: function(params){
+			params.service = 'action';
+			params.path = 'actions';
+			return v.io.updateResourcePermissions(params);
 		}
 	};
 
-	services.admin = {
+	v.io.admin = {
 
 		/**
-		 * Get the BridgeIt Service definitions.
+		 * Get the Voyent Service definitions.
 		 *
 		 * @alias getServiceDefinitions
 		 * @param {Object} params params
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns Promise with a json object of the service definitions
 		 *
@@ -1036,17 +1151,17 @@ if( ! ('bridgeit' in window)){
 				function(resolve, reject) {
 					params = params ? params : {};
 
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					var protocol = params.ssl ? 'https://' : 'http://';
 					var txParam = getTransactionURLParam();
-					var url = protocol + services.authAdminURL + '/system/services/?access_token=' + token +
+					var url = protocol + v.io.authAdminURL + '/system/services/?access_token=' + token +
 						(txParam ? '&' + txParam : '');
 
-					b.$.getJSON(url).then(function(json){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(json){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(json);
 					})['catch'](function(error){
 						reject(error);
@@ -1059,7 +1174,7 @@ if( ! ('bridgeit' in window)){
 		getAccount: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -1067,11 +1182,11 @@ if( ! ('bridgeit' in window)){
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txParam = getTransactionURLParam();
-				var url = protocol + services.authAdminURL + '/' + account + '?access_token=' + token +
+				var url = protocol + v.io.authAdminURL + '/' + account + '?access_token=' + token +
 					(txParam ? '&' + txParam : '');
 
-				b.$.getJSON(url).then(function(json){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(json.account);
 				})['catch'](function(error){
 					reject(error);
@@ -1081,12 +1196,12 @@ if( ! ('bridgeit' in window)){
 		},
 
 		/**
-		 * Create a new BridgeIt Account. After successfully creating the account, the new administrator will
+		 * Create a new Voyent Account. After successfully creating the account, the new administrator will
 		 * be automatically logged in.
 		 *
 		 * @alias createAccount
 		 * @param {Object} params params
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {String} params.account The name of the new account (required)
 		 * @param {String} params.username The username for the new administrator (required)
@@ -1101,7 +1216,7 @@ if( ! ('bridgeit' in window)){
 
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = {admins: []};
@@ -1141,17 +1256,17 @@ if( ! ('bridgeit' in window)){
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txParam = getTransactionURLParam();
-				var url = protocol + services.authAdminURL + '/' + (txParam ? '&' + txParam : '');
+				var url = protocol + v.io.authAdminURL + '/' + (txParam ? '&' + txParam : '');
 				var loggedInAt = new Date().getTime();
-				b.$.post(url, {account: account}).then(function(json){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url, {account: account}).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
 
-					b.setSessionStorageItem(btoa(TOKEN_KEY), json.token.access_token);
-					b.setSessionStorageItem(btoa(TOKEN_EXPIRES_KEY), json.token.expires_in);
-					b.setSessionStorageItem(btoa(TOKEN_SET_KEY), loggedInAt);
-					b.setSessionStorageItem(btoa(ACCOUNT_KEY), btoa(accountname));
-					b.setSessionStorageItem(btoa(USERNAME_KEY), btoa(username));
-					b.setSessionStorageItem(btoa(ADMIN_KEY), btoa('true'));
+					v.setSessionStorageItem(btoa(TOKEN_KEY), json.token.access_token);
+					v.setSessionStorageItem(btoa(TOKEN_EXPIRES_KEY), json.token.expires_in);
+					v.setSessionStorageItem(btoa(TOKEN_SET_KEY), loggedInAt);
+					v.setSessionStorageItem(btoa(ACCOUNT_KEY), btoa(accountname));
+					v.setSessionStorageItem(btoa(USERNAME_KEY), btoa(username));
+					v.setSessionStorageItem(btoa(ADMIN_KEY), btoa('true'));
 					resolve(json.token.access_token);
 				})['catch'](function(error){
 					reject(error);
@@ -1165,7 +1280,7 @@ if( ! ('bridgeit' in window)){
 		getRealms: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -1173,11 +1288,11 @@ if( ! ('bridgeit' in window)){
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txparam = getTransactionURLParam();
-				var url = protocol + services.authAdminURL + '/' + account + '/realms/'
+				var url = protocol + v.io.authAdminURL + '/' + account + '/realms/'
 						+ '?access_token=' + token + '&' + getTransactionURLParam();
 
-				b.$.getJSON(url).then(function(json){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(json.realms);
 				})['catch'](function(error){
 					reject(error);
@@ -1189,17 +1304,17 @@ if( ! ('bridgeit' in window)){
 		getRealm: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				var realm = validateAndReturnRequiredRealmName(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'', token, params.ssl);
 
-				b.$.getJSON(url).then(function(json){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(json.realm);
 				})['catch'](function(error){
 					reject(error);
@@ -1211,17 +1326,17 @@ if( ! ('bridgeit' in window)){
 		updateRealm: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				validateRequiredRealm(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, params.realm.name,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, params.realm.name,
 					'', token, params.ssl);
 
-				b.$.put(url, {realm: params.realm}).then(function(){
-					services.auth.updateLastActiveTimestamp();
+				v.$.put(url, {realm: params.realm}).then(function(){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1233,7 +1348,7 @@ if( ! ('bridgeit' in window)){
 		createRealm: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
@@ -1242,11 +1357,36 @@ if( ! ('bridgeit' in window)){
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txParam = getTransactionURLParam();
-				var url = protocol + services.authAdminURL + '/' + account + '/realms?access_token=' + token +
+				var url = protocol + v.io.authAdminURL + '/' + account + '/realms?access_token=' + token +
 					(txParam ? '&' + txParam : '');
 
-				b.$.post(url, {realm: params.realm}).then(function(json){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url, {realm: params.realm}).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
+					resolve(json.resourceLocation);
+				})['catch'](function(error){
+					reject(error);
+				});
+
+			});
+		},
+
+		cloneRealm: function(params){
+			return new Promise(function(resolve, reject) {
+				params = params ? params : {};
+				v.io.checkHost(params);
+
+				var account = validateAndReturnRequiredAccount(params, reject);
+				var token = validateAndReturnRequiredAccessToken(params, reject);
+				var originRealmName = validateAndReturnRequiredOriginRealmName(params, reject);
+				var destRealmName = validateAndReturnRequiredDestRealmName(params, reject);
+
+				var protocol = params.ssl ? 'https://' : 'http://';
+				var txParam = getTransactionURLParam();
+				var url = protocol + v.io.authAdminURL + '/' + account + '/realms/' + originRealmName + '/clone/' +
+					destRealmName + '?access_token=' + token + (txParam ? '&' + txParam : '');
+
+				v.$.post(url, {realm: params.realm}).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(json.resourceLocation);
 				})['catch'](function(error){
 					reject(error);
@@ -1258,19 +1398,19 @@ if( ! ('bridgeit' in window)){
 		deleteRealm: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				var realmName = validateAndReturnRequiredRealmName(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realmName,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realmName,
 					'', token, params.ssl);
 
-				console.log('bridgeit.io.admin.deleteRealm() ' + url);
+				console.log('voyent.io.admin.deleteRealm() ' + url);
 
-				b.$.doDelete(url).then(function(){
-					services.auth.updateLastActiveTimestamp();
+				v.$.doDelete(url).then(function(){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1284,14 +1424,14 @@ if( ! ('bridgeit' in window)){
 		getRealmUsers: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealmName(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'users/', token, params.ssl, {
 						'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 						'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
@@ -1299,8 +1439,8 @@ if( ! ('bridgeit' in window)){
 					}
 				);
 
-				b.$.getJSON(url).then(function(json){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(json.users);
 				})['catch'](function(error){
 					reject(error);
@@ -1311,7 +1451,7 @@ if( ! ('bridgeit' in window)){
 		createRealmUser: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealmName(params, reject);
@@ -1319,11 +1459,11 @@ if( ! ('bridgeit' in window)){
 
 				validateRequiredUser(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'users', token, params.ssl);
 
-				b.$.post(url, {user: params.user}).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url, {user: params.user}).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(response.resourceLocation);
 				})['catch'](function(error){
 					reject(error);
@@ -1334,7 +1474,7 @@ if( ! ('bridgeit' in window)){
 		getRealmUser: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -1342,11 +1482,11 @@ if( ! ('bridgeit' in window)){
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				var username = validateAndReturnRequiredUsername(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'users/' + username, token, params.ssl);
 
-				b.$.getJSON(url).then(function(json){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(json.user);
 				})['catch'](function(error){
 					reject(error);
@@ -1358,7 +1498,7 @@ if( ! ('bridgeit' in window)){
 		updateRealmUser: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealmName(params, reject);
@@ -1366,11 +1506,11 @@ if( ! ('bridgeit' in window)){
 
 				validateRequiredUser(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'users/' + params.user.username, token, params.ssl);
 
-				b.$.put(url, {user: params.user}).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.put(url, {user: params.user}).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1381,18 +1521,18 @@ if( ! ('bridgeit' in window)){
 		deleteRealmUser: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealmName(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				var username = validateAndReturnRequiredUsername(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'users/' + params.username, token, params.ssl);
 
-				b.$.doDelete(url).then(function(){
-					services.auth.updateLastActiveTimestamp();
+				v.$.doDelete(url).then(function(){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1405,18 +1545,18 @@ if( ! ('bridgeit' in window)){
 		getRealmRoles: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealmName(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'roles', token, params.ssl);
 
-				b.$.getJSON(url).then(function(json){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(json){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(json.roles);
 				})['catch'](function(error){
 					reject(error);
@@ -1427,7 +1567,7 @@ if( ! ('bridgeit' in window)){
 		createRealmRole: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				validateRequiredRole(params, reject);
 
@@ -1436,11 +1576,11 @@ if( ! ('bridgeit' in window)){
 				var realm = validateAndReturnRequiredRealmName(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'roles', token, params.ssl);
 
-				b.$.post(url, {role: params.role}).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url, {role: params.role}).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(response.resourceLocation);
 				})['catch'](function(error){
 					reject(error);
@@ -1451,7 +1591,7 @@ if( ! ('bridgeit' in window)){
 		updateRealmRole: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				validateRequiredRole(params, reject);
 
@@ -1460,11 +1600,11 @@ if( ! ('bridgeit' in window)){
 				var realm = validateAndReturnRequiredRealmName(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'roles/' + params.role.name, token, params.ssl);
 
-				b.$.put(url, {role: params.role}).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.put(url, {role: params.role}).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1475,7 +1615,7 @@ if( ! ('bridgeit' in window)){
 		deleteRealmRole: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				validateRequiredId(params, reject);
 
@@ -1483,11 +1623,11 @@ if( ! ('bridgeit' in window)){
 				var realm = validateAndReturnRequiredRealmName(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'roles/' + params.id, token, params.ssl);
 
-				b.$.doDelete(url).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.doDelete(url).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1498,7 +1638,7 @@ if( ! ('bridgeit' in window)){
 		getLogs: function(params) {
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -1508,11 +1648,11 @@ if( ! ('bridgeit' in window)){
 				var fields = params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : '{}';
 				var options = params.options ? encodeURIComponent(JSON.stringify(params.options)) : '{}';
 
-				var url = protocol + services.authAdminURL + '/' + account + '/logging/?access_token=' +
+				var url = protocol + v.io.authAdminURL + '/' + account + '/logging/?access_token=' +
 						token + '&query=' + query + '&fields=' + fields + '&options=' + options;
 
-				b.$.getJSON(url).then(function(logs){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(logs){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(logs);
 				})['catch'](function(error){
 					reject(error);
@@ -1524,7 +1664,7 @@ if( ! ('bridgeit' in window)){
 		getDebugLogs: function(params) {
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -1535,11 +1675,11 @@ if( ! ('bridgeit' in window)){
 				var fields = params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : '{}';
 				var options = params.options ? encodeURIComponent(JSON.stringify(params.options)) : '{}';
 
-				var url = protocol + services.authAdminURL + '/' + account + '/realms/' + realm +
+				var url = protocol + v.io.authAdminURL + '/' + account + '/realms/' + realm +
 					'/debugLogging/?access_token=' + token + '&query=' + query + '&fields=' + fields + '&options=' + options;
 
-				b.$.getJSON(url).then(function(logs){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(logs){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(logs);
 				})['catch'](function(error){
 					reject(error);
@@ -1551,7 +1691,7 @@ if( ! ('bridgeit' in window)){
 		createAdministrator: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
@@ -1559,11 +1699,11 @@ if( ! ('bridgeit' in window)){
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txParam = getTransactionURLParam();
-				var url = protocol + services.authAdminURL + '/' + account + '/admins/?access_token=' + token +
+				var url = protocol + v.io.authAdminURL + '/' + account + '/admins/?access_token=' + token +
 					(txParam ? '&' + txParam : '');
 
-				b.$.post(url, {admin: admin}).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url, {admin: admin}).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1574,7 +1714,7 @@ if( ! ('bridgeit' in window)){
 		updateAdministrator: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
@@ -1582,11 +1722,11 @@ if( ! ('bridgeit' in window)){
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txParam = getTransactionURLParam();
-				var url = protocol + services.authAdminURL + '/' + account + '/admins/' + admin.username +
+				var url = protocol + v.io.authAdminURL + '/' + account + '/admins/' + admin.username +
 					'/?access_token=' + token + (txParam ? '&' + txParam : '');
 
-				b.$.put(url, {admin: admin}).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.put(url, {admin: admin}).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1597,7 +1737,7 @@ if( ! ('bridgeit' in window)){
 		deleteAdministrator: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				validateRequiredUsername(params, reject);
 
@@ -1607,11 +1747,11 @@ if( ! ('bridgeit' in window)){
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txParam = getTransactionURLParam();
-				var url = protocol + services.authAdminURL + '/' + account + '/admins/' + username + '/?access_token=' + token +
+				var url = protocol + v.io.authAdminURL + '/' + account + '/admins/' + username + '/?access_token=' + token +
 					(txParam ? '&' + txParam : '');
 
-				b.$.doDelete(url).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.doDelete(url).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
@@ -1624,10 +1764,10 @@ if( ! ('bridgeit' in window)){
 	};
 
 	/* AUTH SERVICE */
-	services.auth = {
+	v.io.auth = {
 
 		/**
-		 * Retrieve a new access token from the BridgeIt auth service.
+		 * Retrieve a new access token from the Voyent auth service.
 		 *
 		 * The function returns a Promise that, when successful, returns an object with the following structure:
 		 *    {
@@ -1642,11 +1782,11 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getNewAccessToken
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name (required)
-		 * @param {String} params.realm BridgeIt Services realm (required only for non-admin logins)
+		 * @param {String} params.account Voyent Services account name (required)
+		 * @param {String} params.realm Voyent Services realm (required only for non-admin logins)
 		 * @param {String} params.username User name (required)
 		 * @param {String} params.password User password (required)
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns Promise with the following argument:
 		 *      {
@@ -1659,7 +1799,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					if( !params.realm ){
 						params.realm = 'admin';
@@ -1667,7 +1807,7 @@ if( ! ('bridgeit' in window)){
 
 					//validation
 					if( !params.account ){
-						reject(Error('BridgeIt account required for new access token'));
+						reject(Error('Voyent account required for new access token'));
 						return;
 					}
 					if( !params.password ){
@@ -1679,10 +1819,10 @@ if( ! ('bridgeit' in window)){
 						return;
 					}
 					var protocol = params.ssl ? 'https://' : 'http://';
-					var url = protocol + services.authURL + '/' + encodeURI(params.account) +
+					var url = protocol + v.io.authURL + '/' + encodeURI(params.account) +
 						'/realms/' + encodeURI(params.realm) + '/token/?' + getTransactionURLParam();
 
-					b.$.post(url, {
+					v.$.post(url, {
 						strategy: 'query',
 						username: params.username,
 						password: params.password
@@ -1696,10 +1836,10 @@ if( ! ('bridgeit' in window)){
 		},
 
 		/**
-		 * Login into bridgeit services.
+		 * Login into voyent.
 		 *
-		 * This function will login into the BridgeIt auth service and return a user token and expiry timestamp upon
-		 * successful authentication. This function does not need to be called if bridgeit.connect has already been
+		 * This function will login into the Voyent auth service and return a user token and expiry timestamp upon
+		 * successful authentication. This function does not need to be called if v.io.connect has already been
 		 * called, as that function will automatically extend the user session, unless the timeout has passed.
 		 *
 		 * The function returns a Promise that, when successful, returns an object with the following structure:
@@ -1712,12 +1852,12 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias login
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name (required)
-		 * @param {String} params.realm BridgeIt Services realm (required only for non-admin logins)
+		 * @param {String} params.account Voyent Services account name (required)
+		 * @param {String} params.realm Voyent Services realm (required only for non-admin logins)
 		 * @param {Boolean} params.admin The client should or should not log in as an account administrator
 		 * @param {String} params.username User name (required)
 		 * @param {String} params.password User password (required)
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {String} params.scopeToPath (default '/') If set, the authentication token will be restricted to the given path, unless on localhost.
 		 * @returns Promise with the following argument:
@@ -1730,7 +1870,7 @@ if( ! ('bridgeit' in window)){
 		login: function(params) {
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				if( !params.realm ){
 					params.realm = 'admin';
@@ -1738,7 +1878,7 @@ if( ! ('bridgeit' in window)){
 
 				//validation
 				if( !params.account ){
-					reject(Error('BridgeIt account required for login'));
+					reject(Error('Voyent account required for login'));
 					return;
 				}
 				if( !params.password ){
@@ -1752,33 +1892,33 @@ if( ! ('bridgeit' in window)){
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txParam = getTransactionURLParam();
         //here
-				var url = protocol + services.authURL + '/' + encodeURI(params.account) +
+				var url = protocol + v.io.authURL + '/' + encodeURI(params.account) +
 					'/realms/' + (params.admin === 'true' ? 'admin' : encodeURI(params.realm)) + '/token/' + ( txParam ? ('?' + txParam) : '');
 
-        //var url = protocol + services.authURL + '/' + encodeURI(params.account) +
+        //var url = protocol + v.io.authURL + '/' + encodeURI(params.account) +
         //  '/realms/' + encodeURI(params.realm) + '/token/' + ( txParam ? ('?' + txParam) : '');
 
 
 				var loggedInAt = new Date().getTime();
-				b.$.post(url, {
+				v.$.post(url, {
 					strategy: 'query',
 					username: params.username,
 					password: params.password
 				}).then(function(authResponse){
 					if( !params.suppressUpdateTimestamp ){
-						services.auth.updateLastActiveTimestamp();
+						v.io.auth.updateLastActiveTimestamp();
 					}
-					b.setSessionStorageItem(btoa(TOKEN_KEY), authResponse.access_token);
-						b.setSessionStorageItem(btoa(TOKEN_EXPIRES_KEY), authResponse.expires_in);
-						b.setSessionStorageItem(btoa(TOKEN_SET_KEY), loggedInAt);
-						b.setSessionStorageItem(btoa(ACCOUNT_KEY), btoa(params.account));
-						b.setSessionStorageItem(btoa(REALM_KEY), btoa(params.realm));
-						b.setSessionStorageItem(btoa(USERNAME_KEY), btoa(params.username));
-						b.setSessionStorageItem(btoa(ADMIN_KEY), btoa(params.admin));
+					v.setSessionStorageItem(btoa(TOKEN_KEY), authResponse.access_token);
+						v.setSessionStorageItem(btoa(TOKEN_EXPIRES_KEY), authResponse.expires_in);
+						v.setSessionStorageItem(btoa(TOKEN_SET_KEY), loggedInAt);
+						v.setSessionStorageItem(btoa(ACCOUNT_KEY), btoa(params.account));
+						v.setSessionStorageItem(btoa(REALM_KEY), btoa(params.realm));
+						v.setSessionStorageItem(btoa(USERNAME_KEY), btoa(params.username));
+						v.setSessionStorageItem(btoa(ADMIN_KEY), btoa(params.admin));
 					if( params.scopeToPath ){
-						b.setSessionStorageItem(btoa(SCOPE_TO_PATH_KEY), btoa(params.scopeToPath));
+						v.setSessionStorageItem(btoa(SCOPE_TO_PATH_KEY), btoa(params.scopeToPath));
 					}
-					fireEvent(window, 'bridgeit-login-succeeded', {});
+					fireEvent(window, 'voyent-login-succeeded', {});
 					resolve(authResponse);
 				})['catch'](function(error){
 					reject(error);
@@ -1787,48 +1927,48 @@ if( ! ('bridgeit' in window)){
 		},
 
 		/**
-		 * Connect to bridgeit services.
+		 * Connect to voyent.
 		 *
-		 * This function will connect to the BridgeIt services, and maintain the connection for the specified
-		 * timeout period (default 20 minutes). By default, the BridgeIt push service is also activated, so the client
+		 * This function will connect to the Voyent voyent, and maintain the connection for the specified
+		 * timeout period (default 20 minutes). By default, the Voyent push service is also activated, so the client
 		 * may send and receive push notifications after connecting.
 		 *
-		 * After connecting to BridgeIt Services, any BridgeIt service API may be used without needing to re-authenticate.
+		 * After connecting to Voyent Services, any Voyent service API may be used without needing to re-authenticate.
 		 * After successfully connecting an authentication will be stored in session storage and available through
-		 * sessionStorage.bridgeitToken. This authentication information will automatically be used by other BridgeIt API
+		 * sessionStorage.voyentToken. This authentication information will automatically be used by other Voyent API
 		 * calls, so the token does not be included in subsequent calls, but is available if desired.
 		 *
-		 * A simple example of connecting to the BridgeIt Services and then making a service call is the following:
+		 * A simple example of connecting to the Voyent Services and then making a service call is the following:
 		 *
-		 * bridgeit.connect({
+		 * v.io.connect({
 		 *           account: 'my_account',
 		 *           realm: 'realmA',
 		 *           user: 'user',
 		 *           password: 'secret'})
 		 *   .then( function(){
-		 *      console.log("successfully connnected to BridgeIt Services");
+		 *      console.log("successfully connnected to Voyent Services");
 		 *      //now we can fetch some docs
-		 *      return bridgeit.docService.get('documents');
+		 *      return v.io.docService.get('documents');
 		 *   })
 		 *   .then( function(docs){
 		 *      for( var d in docs ){ ... };
 		 *   })
 		 *   .catch( function(error){
-		 *      console.log("error connecting to BridgeIt Services: " + error);
+		 *      console.log("error connecting to Voyent Services: " + error);
 		 *   });
 		 *
 		 * @alias connect
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name
+		 * @param {String} params.account Voyent Services account name
 		 * @param {Boolean} params.admin The client should or should not log in as an account administrator
-		 * @param {String} params.realm BridgeIt Services realm
+		 * @param {String} params.realm Voyent Services realm
 		 * @param {String} params.username User name
 		 * @param {String} params.password User password
-		 * @param {String} params.host The BridgeIt Services host url, defaults to api.bridgeit.io
-		 * @param {Boolean} params.usePushService Open and connect to the BridgeIt push service, default true
-		 * @param {Boolean} params.connectionTimeout The timeout duration, in minutes, that the BridgeIt login will last during inactivity. Default 20 minutes.
+		 * @param {String} params.host The Voyent Services host url, defaults to api.voyent.cloud
+		 * @param {Boolean} params.usePushService Open and connect to the Voyent push service, default true
+		 * @param {Boolean} params.connectionTimeout The timeout duration, in minutes, that the Voyent login will last during inactivity. Default 20 minutes.
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
-		 * @param {Boolean} params.storeCredentials (default true) Whether to store encrypted credentials in session storage. If set to false, bridgeit will not attempt to relogin before the session expires.
+		 * @param {Boolean} params.storeCredentials (default true) Whether to store encrypted credentials in session storage. If set to false, voyent will not attempt to relogin before the session expires.
 		 * @param {Function} params.onSessionExpiry Function callback to be called on session expiry. If you wish to ensure that disconnect is not called until after your onSessionExpiry callback has completed, please return a Promise from your function.
 		 * @param {String} params.scopeToPath (default '/') If set, the authentication token will be restricted to the given path, unless on localhost.
 		 * @returns Promise with service definitions
@@ -1840,10 +1980,10 @@ if( ! ('bridgeit' in window)){
 				/* The function callback set to run before the next timeout,
 				   will automatically reset the next setTimeout call if necessary */
 				function connectCallback(){
-					console.log(new Date().toISOString() + ' bridgeit.io.auth.connect: callback running');
-					var connectSettings = services.auth.getConnectSettings();
+					console.log(new Date().toISOString() + ' voyent.io.auth.connect: callback running');
+					var connectSettings = v.io.auth.getConnectSettings();
 					if( !connectSettings ){
-						console.log(new Date().toISOString() + ' bridgeit.io.auth.connect: error, could not retrieve settings');
+						console.log(new Date().toISOString() + ' voyent.io.auth.connect: error, could not retrieve settings');
 						return;
 					}
 
@@ -1851,35 +1991,35 @@ if( ! ('bridgeit' in window)){
 
 					//first check if connectionTimeout has expired
 					var now = new Date().getTime();
-					var inactiveMillis = now - services.auth.getLastActiveTimestamp();
+					var inactiveMillis = now - v.io.auth.getLastActiveTimestamp();
 					var millisUntilTimeoutExpires = timeoutMillis - inactiveMillis;
-					console.log('bridgeit.io.auth.connect: getLastActiveTimestamp: ' + services.auth.getLastActiveTimestamp());
-					console.log('bridgeit.io.auth.connect: connection timeout ms: ' + timeoutMillis);
-					console.log('bridgeit.io.auth.connect: current timestamp: ' + now);
-					console.log('bridgeit.io.auth.connect: inactive ms: ' + inactiveMillis + '(' + (inactiveMillis/1000/60) + ' mins)');
-					console.log('bridgeit.io.auth.connect: ms until timeout: ' + millisUntilTimeoutExpires + '(' + (millisUntilTimeoutExpires/1000/60) + ' mins)');
-					
+					console.log('voyent.io.auth.connect: getLastActiveTimestamp: ' + v.io.auth.getLastActiveTimestamp());
+					console.log('voyent.io.auth.connect: connection timeout ms: ' + timeoutMillis);
+					console.log('voyent.io.auth.connect: current timestamp: ' + now);
+					console.log('voyent.io.auth.connect: inactive ms: ' + inactiveMillis + '(' + (inactiveMillis/1000/60) + ' mins)');
+					console.log('voyent.io.auth.connect: ms until timeout: ' + millisUntilTimeoutExpires + '(' + (millisUntilTimeoutExpires/1000/60) + ' mins)');
+
 					//if we haven't exceeded the connection timeout, reconnect
 					if( millisUntilTimeoutExpires > 0 ){
-						console.log(new Date().toISOString() + ' bridgeit.io.auth.connect: timeout has not been exceeded, ' + 
-							services.auth.getTimeRemainingBeforeExpiry()/1000/60 + ' mins remaining before token expires, ' + 
+						console.log(new Date().toISOString() + ' voyent.io.auth.connect: timeout has not been exceeded, ' +
+							v.io.auth.getTimeRemainingBeforeExpiry()/1000/60 + ' mins remaining before token expires, ' +
 							millisUntilTimeoutExpires/1000/60 + ' mins remaining before timeout expires');
-						
+
 						//if we the time remaining before expiry is less than the session timeout
-						//refresh the access token and set the timeout 
+						//refresh the access token and set the timeout
 						if( timeoutMillis > millisUntilTimeoutExpires ){
-							services.auth.refreshAccessToken().then(function(){
-								var cbId = setTimeout(connectCallback, services.auth.getExpiresIn() - timeoutPadding);
-								b.setSessionStorageItem(btoa(RELOGIN_CB_KEY), cbId);
-								console.log( new Date().toISOString() + ' bridgeit.io.auth.connect: setting next connection check to ' + services.auth.getExpiresIn() / 1000 / 60 + ' mins, expiresIn: ' +
-									(services.auth.getExpiresIn()/1000/60) + ' mins, remaining: '  +
-									(services.auth.getTimeRemainingBeforeExpiry()/1000/60) + ' mins');
-								
+							v.io.auth.refreshAccessToken().then(function(){
+								var cbId = setTimeout(connectCallback, v.io.auth.getExpiresIn() - timeoutPadding);
+								v.setSessionStorageItem(btoa(RELOGIN_CB_KEY), cbId);
+								console.log( new Date().toISOString() + ' voyent.io.auth.connect: setting next connection check to ' + v.io.auth.getExpiresIn() / 1000 / 60 + ' mins, expiresIn: ' +
+									(v.io.auth.getExpiresIn()/1000/60) + ' mins, remaining: '  +
+									(v.io.auth.getTimeRemainingBeforeExpiry()/1000/60) + ' mins');
+
 							});
 						}
 					}
 					else{
-						console.log( new Date().toISOString() + ' bridgeit.io.auth.connect: timeout has expired, disconnecting..');
+						console.log( new Date().toISOString() + ' voyent.io.auth.connect: timeout has expired, disconnecting..');
 
 						//look for the onSessionExpiry callback on the params first,
 						//as functions could be passed by reference
@@ -1905,22 +2045,22 @@ if( ! ('bridgeit' in window)){
 							if( expiredCallbackFunction ){
 								var expiredCallbackPromise = expiredCallbackFunction();
 								if( expiredCallbackPromise && expiredCallbackPromise.then ){
-									expiredCallbackPromise.then(services.auth.disconnect)
-									['catch'](services.auth.disconnect);
+									expiredCallbackPromise.then(v.io.auth.disconnect)
+									['catch'](v.io.auth.disconnect);
 								}
 								else{
-									setTimeout(services.auth.disconnect, 500);
+									setTimeout(v.io.auth.disconnect, 500);
 								}
 							}
 							else{
-								console.log( new Date().toISOString() + ' bridgeit.io.auth.connect: error calling onSessionExpiry callback, ' +
+								console.log( new Date().toISOString() + ' voyent.io.auth.connect: error calling onSessionExpiry callback, ' +
 									'could not find function: ' + expiredCallback);
-								services.auth.disconnect();
+								v.io.auth.disconnect();
 							}
 
 						}
 						else{
-							services.auth.disconnect();
+							v.io.auth.disconnect();
 						}
 
 					}
@@ -1932,8 +2072,8 @@ if( ! ('bridgeit' in window)){
 					//if the desired connection timeout is greater the token expiry
 					//set the callback check for just before the token expires
 					var callbackTimeout;
-					if( connectionTimeoutMillis > services.auth.getTimeRemainingBeforeExpiry()){
-						callbackTimeout = services.auth.getTimeRemainingBeforeExpiry() - timeoutPadding;
+					if( connectionTimeoutMillis > v.io.auth.getTimeRemainingBeforeExpiry()){
+						callbackTimeout = v.io.auth.getTimeRemainingBeforeExpiry() - timeoutPadding;
 					}
 					//otherwise the disired timeout is less then the token expiry
 					//so set the callback to happen just at specified timeout
@@ -1942,15 +2082,15 @@ if( ! ('bridgeit' in window)){
 					}
 
 					var tokenSetAt = new Date();
-					tokenSetAt.setTime(services.auth.getTokenSetAtTime());
-					console.log( new Date().toISOString() + ' bridgeit.io.auth.connect: setting next connection check to ' + callbackTimeout / 1000 / 60 + ' mins, expiresIn: ' +
-						(services.auth.getExpiresIn()/1000/60) + ' mins, remaining: '  +
-						(services.auth.getTimeRemainingBeforeExpiry()/1000/60) + ' mins, token set at ' + tokenSetAt);
+					tokenSetAt.setTime(v.io.auth.getTokenSetAtTime());
+					console.log( new Date().toISOString() + ' voyent.io.auth.connect: setting next connection check to ' + callbackTimeout / 1000 / 60 + ' mins, expiresIn: ' +
+						(v.io.auth.getExpiresIn()/1000/60) + ' mins, remaining: '  +
+						(v.io.auth.getTimeRemainingBeforeExpiry()/1000/60) + ' mins, token set at ' + tokenSetAt);
 					var cbId = setTimeout(connectCallback, callbackTimeout);
-					b.setSessionStorageItem(btoa(RELOGIN_CB_KEY), cbId);
+					v.setSessionStorageItem(btoa(RELOGIN_CB_KEY), cbId);
 
 					if( settings.usePushService ){
-						services.push.startPushService(settings);
+						v.io.push.startPushService(settings);
 					}
 				}
 
@@ -1958,14 +2098,14 @@ if( ! ('bridgeit' in window)){
 				function initSettings(){
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 					if( !params.storeCredentials){
 						params.storeCredentials = true;
 					}
 
 					//store connect settings
 					settings = {
-						host: services.baseURL,
+						host: v.io.baseURL,
 						usePushService: params.usePushService,
 						connectionTimeout: params.connectionTimeout || 20,
 						ssl: params.ssl,
@@ -1979,7 +2119,7 @@ if( ! ('bridgeit' in window)){
 
 					//settings.connectionTimeout = 5;
 
-					b.setSessionStorageItem(btoa(CONNECT_SETTINGS_KEY), btoa(JSON.stringify(settings)));
+					v.setSessionStorageItem(btoa(CONNECT_SETTINGS_KEY), btoa(JSON.stringify(settings)));
 
 					if( params.onSessionExpiry ){
 						if( typeof params.onSessionExpiry === 'function'){
@@ -1997,10 +2137,10 @@ if( ! ('bridgeit' in window)){
 
 				/* store the provided credentials */
 				function saveCredentials(){
-					b.setSessionStorageItem(btoa(ACCOUNT_KEY), btoa(bridgeit.io.auth.getLastKnownAccount()));
-					b.setSessionStorageItem(btoa(REALM_KEY), btoa(bridgeit.io.auth.getLastKnownRealm()));
-					b.setSessionStorageItem(btoa(USERNAME_KEY), btoa(params.username));
-					b.setSessionStorageItem(btoa(PASSWORD_KEY), btoa(params.password));
+					v.setSessionStorageItem(btoa(ACCOUNT_KEY), btoa(v.io.auth.getLastKnownAccount()));
+					v.setSessionStorageItem(btoa(REALM_KEY), btoa(v.io.auth.getLastKnownRealm()));
+					v.setSessionStorageItem(btoa(USERNAME_KEY), btoa(params.username));
+					v.setSessionStorageItem(btoa(PASSWORD_KEY), btoa(params.password));
 				}
 
 				var timeoutPadding = 60000;
@@ -2008,13 +2148,13 @@ if( ! ('bridgeit' in window)){
 				var connectionTimeoutMillis;
 				initSettings();
 
-				if( services.auth.isLoggedIn()){
+				if( v.io.auth.isLoggedIn()){
 					initConnectCallback();
 					resolve();
 				}
 				else{
-					services.auth.login(params).then(function(authResponse){
-						console.log(new Date().toISOString() + ' bridgeit.io.auth.connect: received auth response');
+					v.io.auth.login(params).then(function(authResponse){
+						console.log(new Date().toISOString() + ' voyent.io.auth.connect: received auth response');
 						saveCredentials();
 						initConnectCallback();
 						resolve();
@@ -2027,26 +2167,26 @@ if( ! ('bridgeit' in window)){
 
 		refreshAccessToken: function(){
 			return new Promise(function(resolve, reject) {
-				if( !services.auth.isLoggedIn()){
-					reject('bridgeit.io.auth.refreshAccessToken() not logged in, cant refresh token');
+				if( !v.io.auth.isLoggedIn()){
+					reject('voyent.io.auth.refreshAccessToken() not logged in, cant refresh token');
 				}
 				else{
-					var loginParams = services.auth.getConnectSettings();
+					var loginParams = v.io.auth.getConnectSettings();
 					if( !loginParams ){
-						reject('bridgeit.io.auth.refreshAccessToken() no connect settings, cant refresh token');
+						reject('voyent.io.auth.refreshAccessToken() no connect settings, cant refresh token');
 					}
 					else{
-						loginParams.account = atob(b.getSessionStorageItem(btoa(ACCOUNT_KEY)));
-						loginParams.realm = atob(b.getSessionStorageItem(btoa(REALM_KEY)));
-						loginParams.username = atob(b.getSessionStorageItem(btoa(USERNAME_KEY)));
-						loginParams.password = atob(b.getSessionStorageItem(btoa(PASSWORD_KEY)));
+						loginParams.account = atob(v.getSessionStorageItem(btoa(ACCOUNT_KEY)));
+						loginParams.realm = atob(v.getSessionStorageItem(btoa(REALM_KEY)));
+						loginParams.username = atob(v.getSessionStorageItem(btoa(USERNAME_KEY)));
+						loginParams.password = atob(v.getSessionStorageItem(btoa(PASSWORD_KEY)));
 						loginParams.suppressUpdateTimestamp = true;
-						loginParams.admin = atob(b.getSessionStorageItem(btoa(ADMIN_KEY)));
-						console.log('bridgeit.io.auth.refreshAccessToken()');
-						services.auth.login(loginParams).then(function(authResponse){
-							fireEvent(window, 'bridgeit-access-token-refreshed', services.auth.getLastAccessToken());
+						loginParams.admin = atob(v.getSessionStorageItem(btoa(ADMIN_KEY)));
+						console.log('voyent.io.auth.refreshAccessToken()');
+						v.io.auth.login(loginParams).then(function(authResponse){
+							fireEvent(window, 'voyent-access-token-refreshed', v.io.auth.getLastAccessToken());
 							if( loginParams.usePushService ){
-								services.push.startPushService(loginParams);
+								v.io.push.startPushService(loginParams);
 							}
 							resolve(authResponse);
 						})['catch'](function(response){
@@ -2059,19 +2199,19 @@ if( ! ('bridgeit' in window)){
 		},
 
 		/**
-		 * Disconnect from BridgeIt Services.
+		 * Disconnect from Voyent Services.
 		 *
-		 * This function will logout from BridgeIt Services and remove all session information from the client.
+		 * This function will logout from Voyent Services and remove all session information from the client.
 		 *
 		 * TODO
 		 *
 		 * @alias disconnect
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.username User name (required)
 		 * @param {String} params.password User password (required)
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns Promise with the following argument:
 		 *      {
@@ -2081,88 +2221,88 @@ if( ! ('bridgeit' in window)){
 		 *
 		 */
 		disconnect: function(){
-			b.removeSessionStorageItem(btoa(TOKEN_KEY));
-			b.removeSessionStorageItem(btoa(TOKEN_EXPIRES_KEY));
-			b.removeSessionStorageItem(btoa(CONNECT_SETTINGS_KEY));
-			b.removeSessionStorageItem(btoa(TOKEN_SET_KEY));
-			b.removeSessionStorageItem(btoa(ACCOUNT_KEY));
-			b.removeSessionStorageItem(btoa(REALM_KEY));
-			b.removeSessionStorageItem(btoa(USERNAME_KEY));
-			b.removeSessionStorageItem(btoa(PASSWORD_KEY));
-			b.removeSessionStorageItem(btoa(LAST_ACTIVE_TS_KEY));
-			var cbId = b.getSessionStorageItem(btoa(RELOGIN_CB_KEY));
+			v.removeSessionStorageItem(btoa(TOKEN_KEY));
+			v.removeSessionStorageItem(btoa(TOKEN_EXPIRES_KEY));
+			v.removeSessionStorageItem(btoa(CONNECT_SETTINGS_KEY));
+			v.removeSessionStorageItem(btoa(TOKEN_SET_KEY));
+			v.removeSessionStorageItem(btoa(ACCOUNT_KEY));
+			v.removeSessionStorageItem(btoa(REALM_KEY));
+			v.removeSessionStorageItem(btoa(USERNAME_KEY));
+			v.removeSessionStorageItem(btoa(PASSWORD_KEY));
+			v.removeSessionStorageItem(btoa(LAST_ACTIVE_TS_KEY));
+			var cbId = v.getSessionStorageItem(btoa(RELOGIN_CB_KEY));
 			if( cbId ){
 				clearTimeout(cbId);
 			}
-			b.removeSessionStorageItem(btoa(RELOGIN_CB_KEY));
-			console.log(new Date().toISOString() + ' bridgeit has disconnected')
+			v.removeSessionStorageItem(btoa(RELOGIN_CB_KEY));
+			console.log(new Date().toISOString() + ' voyent has disconnected')
 		},
 
 		getLastAccessToken: function(){
-			return b.getSessionStorageItem(btoa(TOKEN_KEY));
+			return v.getSessionStorageItem(btoa(TOKEN_KEY));
 		},
 
 		getExpiresIn: function(){
-			var expiresInStr = b.getSessionStorageItem(btoa(TOKEN_EXPIRES_KEY));
+			var expiresInStr = v.getSessionStorageItem(btoa(TOKEN_EXPIRES_KEY));
 			if( expiresInStr ){
 				return parseInt(expiresInStr,10);
 			}
 		},
 
 		getTokenSetAtTime: function(){
-			var tokenSetAtStr = b.getSessionStorageItem(btoa(TOKEN_SET_KEY));
+			var tokenSetAtStr = v.getSessionStorageItem(btoa(TOKEN_SET_KEY));
 			if( tokenSetAtStr ){
 				return parseInt(tokenSetAtStr,10);
 			}
 		},
 
 		getTimeRemainingBeforeExpiry: function(){
-			var expiresIn = services.auth.getExpiresIn();
-			var token = services.auth.getExpiresIn();
+			var expiresIn = v.io.auth.getExpiresIn();
+			var token = v.io.auth.getExpiresIn();
 			if( expiresIn && token ){
 				var now = new Date().getTime();
-				return (services.auth.getTokenSetAtTime() + expiresIn) - now;
+				return (v.io.auth.getTokenSetAtTime() + expiresIn) - now;
 			}
 		},
 
 		getConnectSettings: function(){
-			var settingsStr = b.getSessionStorageItem(btoa(CONNECT_SETTINGS_KEY));
+			var settingsStr = v.getSessionStorageItem(btoa(CONNECT_SETTINGS_KEY));
 			if( settingsStr ){
 				return JSON.parse(atob(settingsStr));
 			}
 		},
 
 		isLoggedIn: function(){
-			var token = b.getSessionStorageItem(btoa(TOKEN_KEY)),
-				tokenExpiresInStr = b.getSessionStorageItem(btoa(TOKEN_EXPIRES_KEY)),
+			var token = v.getSessionStorageItem(btoa(TOKEN_KEY)),
+				tokenExpiresInStr = v.getSessionStorageItem(btoa(TOKEN_EXPIRES_KEY)),
 				tokenExpiresIn = tokenExpiresInStr ? parseInt(tokenExpiresInStr,10) : null,
-				tokenSetAtStr = b.getSessionStorageItem(btoa(TOKEN_SET_KEY)),
+				tokenSetAtStr = v.getSessionStorageItem(btoa(TOKEN_SET_KEY)),
 				tokenSetAt = tokenSetAtStr ? parseInt(tokenSetAtStr,10) : null,
-				scopeToPathCipher = b.getSessionStorageItem(btoa(SCOPE_TO_PATH_KEY)),
+				scopeToPathCipher = v.getSessionStorageItem(btoa(SCOPE_TO_PATH_KEY)),
 				scopeToPath = scopeToPathCipher ? atob(scopeToPathCipher) : '/',
 				isDev = window.location.port !== '',
 				currentPath = window.location.pathname;
-			//console.log('bridgeit.io.auth.isLoggedIn: token=' + token + ' tokenExpiresIn=' + tokenExpiresIn + 'tokenSetAt=' + tokenSetAt + ' (new Date().getTime() < (tokenExpiresIn + tokenSetAt))=' + (new Date().getTime() < (tokenExpiresIn + tokenSetAt)) + ' (currentPath.indexOf(scopeToPath) === 0)=' + (currentPath.indexOf(scopeToPath) === 0));
+			//console.log('v.io.auth.isLoggedIn: token=' + token + ' tokenExpiresIn=' + tokenExpiresIn + 'tokenSetAt=' + tokenSetAt + ' (new Date().getTime() < (tokenExpiresIn + tokenSetAt))=' + (new Date().getTime() < (tokenExpiresIn + tokenSetAt)) + ' (currentPath.indexOf(scopeToPath) === 0)=' + (currentPath.indexOf(scopeToPath) === 0));
 			var result = token && tokenExpiresIn && tokenSetAt && (new Date().getTime() < (tokenExpiresIn + tokenSetAt) ) && (isDev || currentPath.indexOf(scopeToPath) === 0);
 			return !!result;
 		},
 
 		getLastKnownAccount: function(){
-			var accountCipher = b.getSessionStorageItem(btoa(ACCOUNT_KEY));
+			var accountCipher = v.getSessionStorageItem(btoa(ACCOUNT_KEY));
 			if( accountCipher ){
 				return atob(accountCipher);
 			}
 		},
 
 		getLastKnownRealm: function(){
-			var realmCipher = b.getSessionStorageItem(btoa(REALM_KEY));
+			var realmCipher = v.getSessionStorageItem(btoa(REALM_KEY));
 			if( realmCipher ){
 				return atob(realmCipher);
 			}
 		},
 
 		getLastKnownUsername: function () {
-			var usernameCipher = b.getSessionStorageItem(btoa(USERNAME_KEY));
+			var usernameCipher = v.getSessionStorageItem(btoa(USERNAME_KEY));
 			if (usernameCipher) {
 				return atob(usernameCipher);
 			}
@@ -2174,11 +2314,11 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias registerAsNewUser
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.username User name (required)
 		 * @param {String} params.password User password (required)
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {String} params.firstname The user's first name (optional)
 		 * @param {String} params.lastname The user's last name (optional)
@@ -2190,7 +2330,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
@@ -2217,11 +2357,11 @@ if( ! ('bridgeit' in window)){
 						user.custom = params.custom;
 					}
 
-					var url = getRealmResourceURL(services.authAdminURL, account, realm,
+					var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 						'quickuser', token, params.ssl);
 
-					b.$.post(url, {user: user}).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, {user: user}).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						reject(error);
@@ -2235,9 +2375,9 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias checkUserRole
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {String} params.role The single role to check for
 		 * @returns Promise
@@ -2245,19 +2385,19 @@ if( ! ('bridgeit' in window)){
 		 checkUserRole: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealm(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				var role = validateAndReturnRequiredRole(params, reject);
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'rolecheck/', token, params.ssl, {roleName: role});
 
-				b.$.getJSON(url).then(function(response){
+				v.$.getJSON(url).then(function(response){
 					if( response.results ){
-						services.auth.updateLastActiveTimestamp();
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(true);
 					}
 					else{
@@ -2265,7 +2405,7 @@ if( ! ('bridgeit' in window)){
 					}
 				})['catch'](function(response){
 					if( response.status == 403){
-						services.auth.updateLastActiveTimestamp();
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(false);
 					}
 					else{
@@ -2280,9 +2420,9 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias checkUserRole
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Array} params.roles The array of roles to check for
 		 * @param {Array} params.roles The array of roles to check for
@@ -2293,7 +2433,7 @@ if( ! ('bridgeit' in window)){
 		 checkUserRoles: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealm(params, reject);
@@ -2309,15 +2449,15 @@ if( ! ('bridgeit' in window)){
 					}]
 				};
 
-				var url = getRealmResourceURL(services.authAdminURL, account, realm,
+				var url = getRealmResourceURL(v.io.authAdminURL, account, realm,
 					'users/' + username + '/rolecheck', token, params.ssl);
 
-				b.$.post(url, payload).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url, payload).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(true);
 				})['catch'](function(response){
 					if( response.status == 403){
-						services.auth.updateLastActiveTimestamp();
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(false);
 					}
 					else{
@@ -2329,34 +2469,34 @@ if( ! ('bridgeit' in window)){
 
 
 		/**
-		 * Update the last active timestamp for BridgeIt auth. This value is used
+		 * Update the last active timestamp for Voyent auth. This value is used
 		 * when checking for clients-side session timeouts.
 		 * @alias updateLastActiveTimestamp
 		 */
 		updateLastActiveTimestamp: function(){
-			b.setSessionStorageItem(btoa(LAST_ACTIVE_TS_KEY), new Date().getTime());
+			v.setSessionStorageItem(btoa(LAST_ACTIVE_TS_KEY), new Date().getTime());
 		},
 
 		/**
-		 * Return the timestamp of the last bridgeit op or when bridgeit.io.auth.updateLastActiveTimestamp()
+		 * Return the timestamp of the last voyent op or when voyent.io.auth.updateLastActiveTimestamp()
 		 * was called.
 		 * @alias getLastActiveTimestamp
 		 */
 		getLastActiveTimestamp: function(){
-			return b.getSessionStorageItem(btoa(LAST_ACTIVE_TS_KEY));
+			return v.getSessionStorageItem(btoa(LAST_ACTIVE_TS_KEY));
 		},
 
 		forgotPassword: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var username = validateAndReturnRequiredUsername(params, reject);
 
 				var protocol = params.ssl ? 'https://' : 'http://';
 				var txParam = getTransactionURLParam();
-				var url = protocol + services.authAdminURL + '/' + account + '/';
+				var url = protocol + v.io.authAdminURL + '/' + account + '/';
 
 				if( params.realm ){
 					url += 'realms/' + params.realm + '/users/' + username + '/emailpassword';
@@ -2366,8 +2506,8 @@ if( ! ('bridgeit' in window)){
 				}
 				url += (txParam ? '?' + txParam : '');
 
-				b.$.post(url).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(true);
 				})['catch'](function(response){
 					reject(response);
@@ -2377,7 +2517,7 @@ if( ! ('bridgeit' in window)){
 	};
 
 	/* DOC SERVICE */
-	services.documents = {
+	v.io.documents = {
 
 		/**
 		 * Create a new document
@@ -2387,10 +2527,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
 		 * @param {String} params.id The document id. If not provided, the service will return a new id
 		 * @param {Object} params.document The document to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -2398,19 +2538,19 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-					var collection = validateCollection(params, reject);
+					var collection = validateCollection(params);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.documentsURL, account, realm,
+					var url = getRealmResourceURL(v.io.documentsURL, account, realm,
 						collection + '/' + (params.id ? params.id : ''), token, params.ssl);
 
-					b.$.post(url, params.document).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.document).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function(error){
 						reject(error);
@@ -2428,10 +2568,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
 		 * @param {String} params.id The document id.
 		 * @param {Object} params.document The document to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -2439,20 +2579,20 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-					var collection = validateCollection(params, reject);
+					var collection = validateCollection(params);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.documentsURL, account, realm,
+					var url = getRealmResourceURL(v.io.documentsURL, account, realm,
 						collection + '/' + params.id, token, params.ssl);
 
-					b.$.put(url, params.document).then(function(){
-						services.auth.updateLastActiveTimestamp();
+					v.$.put(url, params.document).then(function(){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -2468,10 +2608,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
 		 * @param {String} params.id The document id. If not provided, the service will return a new id
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The document
 		 */
@@ -2479,20 +2619,20 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-					var collection = validateCollection(params, reject);
+					var collection = validateCollection(params);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.documentsURL, account, realm,
+					var url = getRealmResourceURL(v.io.documentsURL, account, realm,
 						collection + '/' + params.id, token, params.ssl);
 
-					b.$.getJSON(url).then(function(doc){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(doc){
+						v.io.auth.updateLastActiveTimestamp();
 						//the document service always returns a list, so
 						//check if we have a list of one, and if so, return the single item
 						if( doc.length && doc.length === 1 ){
@@ -2514,10 +2654,10 @@ if( ! ('bridgeit' in window)){
 		 * @alias findDocuments
 		 * @param {Object} params params
 		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the documents
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -2529,23 +2669,23 @@ if( ! ('bridgeit' in window)){
 				function(resolve, reject) {
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-					var collection = validateCollection(params, reject);
+					var collection = validateCollection(params);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.documentsURL, account, realm,
+					var url = getRealmResourceURL(v.io.documentsURL, account, realm,
 						collection, token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 					});
 
-					b.$.getJSON(url).then(function(doc){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(doc){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(doc);
 					})['catch'](function(response){
 						//service currently returns a 404 when no documents are found
@@ -2561,6 +2701,51 @@ if( ! ('bridgeit' in window)){
 			);
 		},
 
+/**
+     * Get all document collections
+     *
+     * @alias deleteDocument
+     * @param {Object} params params
+     * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+     * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+     * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+     * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+     * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+     */
+
+    getCollections:function(params){
+      return new Promise(
+        function(resolve, reject) {
+          params = params ? params : {};
+          v.io.checkHost(params);
+
+          //validate
+          var account = validateAndReturnRequiredAccount(params, reject);
+          var realm = validateAndReturnRequiredRealm(params, reject);
+          var token = validateAndReturnRequiredAccessToken(params, reject);
+          validateRequiredId(params, reject);
+
+          var url = getRealmResourceURL(v.io.documentsURL, account, realm,
+            "collections", token, params.ssl, {
+
+            });
+
+          v.$.getJSON(url).then(function(collections){
+            v.io.auth.updateLastActiveTimestamp();
+            resolve(collections);
+          })['catch'](function(response){
+            //service currently returns a 404 when no collections are found
+            if( response.status == 404 ){
+              resolve(null);
+            }
+            else{
+              reject(response);
+            }
+          });
+        }
+      );
+    },
+
 		/**
 		 * Delete a new document
 		 *
@@ -2568,41 +2753,53 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.collection The name of the document collection.  Defaults to 'documents'.
 		 * @param {String} params.id The document id. If not provided, the service will return a new id
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		deleteDocument: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
-					var collection = validateCollection(params, reject);
+					var collection = validateCollection(params);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.documentsURL, account, realm,
+					var url = getRealmResourceURL(v.io.documentsURL, account, realm,
 						collection + '/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
 					});
 				}
 			);
-		}
+		},
+
+		getResourcePermissions: function(params){
+			params.service = 'documents';
+			params.path = 'documents';
+			return v.io.getResourcePermissions(params);
+		},
+
+		updateResourcePermissions: function(params){
+			params.service = 'documents';
+			params.path = 'documents';
+			return v.io.updateResourcePermissions(params);
+		},
 
 	};
 
-	services.eventhub = {
+	v.io.eventhub = {
 		/**
 		 * Create a new event handler
 		 *
@@ -2610,10 +2807,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The handler id
 		 * @param {Object} params.handler The event handler to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -2621,7 +2818,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -2629,11 +2826,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredHandler(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'handlers/' + (params.id ? params.id : ''), token, params.ssl);
 
-					b.$.post(url, params.handler).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.handler).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function(error){
 						reject(error);
@@ -2650,17 +2847,17 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The handler id, the event handler to be updated
 		 * @param {Object} params.handler The new event handler
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		updateHandler: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -2669,11 +2866,11 @@ if( ! ('bridgeit' in window)){
 					validateRequiredId(params, reject);
 					validateRequiredHandler(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'handlers/' + params.id, token, params.ssl);
 
-					b.$.put(url, params.handler).then(function(){
-						services.auth.updateLastActiveTimestamp();
+					v.$.put(url, params.handler).then(function(){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -2688,10 +2885,10 @@ if( ! ('bridgeit' in window)){
 		 * @alias getHandler
 		 * @param {Object} params params
 		 * @param {String} params.id The handler id, the event handler to fetch
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The event handler
 		 */
@@ -2699,7 +2896,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -2707,11 +2904,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'handlers/' + params.id, token, params.ssl);
 
-					b.$.getJSON(url).then(function(handler){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(handler){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(handler);
 					})['catch'](function(error){
 						reject(error);
@@ -2725,10 +2922,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findHandlers
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the event handlers
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -2740,22 +2937,22 @@ if( ! ('bridgeit' in window)){
 				function(resolve, reject) {
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'handlers/', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(handlers){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(handlers){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(handlers);
 					})['catch'](function(response){
 						reject(response);
@@ -2771,17 +2968,17 @@ if( ! ('bridgeit' in window)){
 		 * @alias deleteHandler
 		 * @param {Object} params params
 		 * @param {String} params.id The handler id, the event handler to be deleted
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		deleteHandler: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -2789,11 +2986,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'handlers/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function(){
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function(){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -2807,10 +3004,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias deleteHandlers
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the event handlers
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -2820,22 +3017,22 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'handlers/', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.doDelete(url).then(function(){
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function(){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -2851,10 +3048,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The recognizer id
 		 * @param {Object} params.recognizer The event recognizer to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -2862,7 +3059,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -2870,11 +3067,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredRecognizer(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'recognizers/' + (params.id ? params.id : ''), token, params.ssl);
 
-					b.$.post(url, params.recognizer).then(function(response) {
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.recognizer).then(function(response) {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function(error) {
 						reject(error);
@@ -2891,17 +3088,17 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The recognizer id, the event recognizer to be updated
 		 * @param {Object} params.recognizer The new event recognizer
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		updateRecognizer: function(params) {
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -2910,11 +3107,11 @@ if( ! ('bridgeit' in window)){
 					validateRequiredId(params, reject);
 					validateRequiredRecognizer(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'recognizers/' + params.id, token, params.ssl);
 
-					b.$.put(url, params.recognizer).then(function() {
-						services.auth.updateLastActiveTimestamp();
+					v.$.put(url, params.recognizer).then(function() {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error) {
 						reject(error);
@@ -2929,10 +3126,10 @@ if( ! ('bridgeit' in window)){
 		 * @alias getRecognizer
 		 * @param {Object} params params
 		 * @param {String} params.id The recognizer id, the event recognizer to fetch
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The event recognizer
 		 */
@@ -2940,7 +3137,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -2948,11 +3145,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'recognizers/' + params.id, token, params.ssl);
 
-					b.$.getJSON(url).then(function(recognizer) {
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(recognizer) {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(recognizer);
 					})['catch'](function(error) {
 						reject(error);
@@ -2966,10 +3163,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findRecognizers
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the event recognizers
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -2981,22 +3178,22 @@ if( ! ('bridgeit' in window)){
 				function(resolve, reject) {
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'recognizers/', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(recognizers) {
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(recognizers) {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(recognizers);
 					})['catch'](function(response) {
 						reject(response);
@@ -3012,17 +3209,17 @@ if( ! ('bridgeit' in window)){
 		 * @alias deleteRecognizer
 		 * @param {Object} params params
 		 * @param {String} params.id The recognizer id, the event recognizer to be deleted
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		deleteRecognizer: function(params) {
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3030,11 +3227,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'recognizers/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function() {
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function() {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error) {
 						reject(error);
@@ -3048,10 +3245,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias deleteRecognizers
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the event recognizers
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -3061,33 +3258,63 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.eventhubURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventhubURL, account, realm,
 						'recognizers/', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.doDelete(url).then(function() {
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function() {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error) {
 						reject(error);
 					});
 				}
 			);
-		}
+		},
+
+		getRecognizerResourcePermissions: function(params){
+			params.path = 'recognizers';
+			return v.io.eventhub.getResourcePermissions(params);
+		},
+
+		updateRecognizerResourcePermissions: function(params){
+			params.path = 'recognizers';
+			return v.io.eventhub.getResourcePermissions(params);
+		},
+
+		getHandlerResourcePermissions: function(params){
+			params.path = 'handlers';
+			return v.io.eventhub.getResourcePermissions(params);
+		},
+
+		updateHandlerResourcePermissions: function(params){
+			params.path = 'handlers';
+			return v.io.eventhub.updateResourcePermissions(params);
+		},
+
+		getResourcePermissions: function(params){
+			params.service = 'eventhub';
+			return v.io.getResourcePermissions(params);
+		},
+
+		updateResourcePermissions: function(params){
+			params.service = 'eventhub';
+			return v.io.updateResourcePermissions(params);
+		},
 	};
 
 	/* LOCATE SERVICE */
-	services.location = {
+	v.io.location = {
 
 		/**
 		 * Create a new region
@@ -3096,10 +3323,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The region id. If not provided, the service will return a new id
 		 * @param {Object} params.region The region geoJSON document that describes the region to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -3107,7 +3334,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3115,11 +3342,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredRegion(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'regions/' + (params.id ? params.id : ''), token, params.ssl);
 
-					b.$.post(url, params.region).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.region).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function(error){
 						reject(error);
@@ -3135,17 +3362,17 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The region id, the region to be updated
 		 * @param {Object} params.region The new region
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		updateRegion: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3154,11 +3381,11 @@ if( ! ('bridgeit' in window)){
 					validateRequiredId(params, reject);
 					validateRequiredRegion(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 							'regions/' + params.id, token, params.ssl);
 
-					b.$.put(url, params.region).then(function(){
-						services.auth.updateLastActiveTimestamp();
+					v.$.put(url, params.region).then(function(){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -3173,17 +3400,17 @@ if( ! ('bridgeit' in window)){
 		 * @alias deleteRegion
 		 * @param {Object} params params
 		 * @param {String} params.id The region id.
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		 deleteRegion: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3191,11 +3418,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'regions/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -3209,10 +3436,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getAllRegions
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The results
 		 */
@@ -3221,18 +3448,18 @@ if( ! ('bridgeit' in window)){
 				function(resolve, reject) {
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'regions', token, params.ssl);
 
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						reject(error);
@@ -3246,10 +3473,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findRegions
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the regions
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -3260,22 +3487,22 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'regions', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						if( error.status === 404 ){
@@ -3294,10 +3521,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findMonitors
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the monitors
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -3308,22 +3535,22 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'monitors', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						if( error.status === 404 ){
@@ -3344,10 +3571,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The monitor id. If not provided, the service will return a new id
 		 * @param {Object} params.monitor The monitor document that describes the monitor to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -3355,7 +3582,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3363,11 +3590,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredMonitor(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'monitors' + (params.id ? '/' + params.id : ''), token, params.ssl);
 
-					b.$.post(url, params.monitor).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.monitor).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function(error){
 						reject(error);
@@ -3382,17 +3609,17 @@ if( ! ('bridgeit' in window)){
 		 * @alias deleteMonitor
 		 * @param {Object} params params
 		 * @param {String} params.id The region id.
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		 deleteMonitor: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3400,11 +3627,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'monitors/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -3418,10 +3645,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getAllMonitors
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The results
 		 */
@@ -3429,18 +3656,18 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'monitors', token, params.ssl);
 
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						reject(error);
@@ -3456,10 +3683,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The POI id. If not provided, the service will return a new id
 		 * @param {Object} params.poi The POI document that describes the POI to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -3467,7 +3694,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3475,11 +3702,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredPOI(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'poi' + (params.id ? '/' + params.id : ''), token, params.ssl);
 
-					b.$.post(url, params.poi).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.poi).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function(error){
 						reject(error);
@@ -3495,17 +3722,17 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The poi id, the poi to be updated
 		 * @param {Object} params.poi The new poi
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		updatePOI: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3514,11 +3741,11 @@ if( ! ('bridgeit' in window)){
 					validateRequiredId(params, reject);
 					validateRequiredPOI(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 							'poi/' + params.id, token, params.ssl);
 
-					b.$.put(url, params.poi).then(function(){
-						services.auth.updateLastActiveTimestamp();
+					v.$.put(url, params.poi).then(function(){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -3532,10 +3759,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findPOIs
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the points of interest
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -3546,22 +3773,22 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'poi', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						if( error.status === 404 ){
@@ -3581,17 +3808,17 @@ if( ! ('bridgeit' in window)){
 		 * @alias deletePOI
 		 * @param {Object} params params
 		 * @param {String} params.id The POI id.
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		 deletePOI: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3599,11 +3826,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'poi/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -3617,10 +3844,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getAllPOIs
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The results
 		 */
@@ -3628,18 +3855,18 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'poi', token, params.ssl);
 
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						reject(error);
@@ -3653,10 +3880,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findLocations
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the locations
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -3667,22 +3894,22 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'locations', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						if( error.status === 404 ){
@@ -3701,10 +3928,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias updateLocation
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.location The location
 		 */
@@ -3712,7 +3939,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3720,11 +3947,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredLocation(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'locations', token, params.ssl);
 
-					b.$.post(url, params.location).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.location).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						reject(error);
@@ -3738,10 +3965,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias updateLocationCoordinates
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Number} params.latitude The location latitude
 		 * @param {Number} params.longitude The location longitude
@@ -3751,7 +3978,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3776,11 +4003,11 @@ if( ! ('bridgeit' in window)){
 						location.label = params.label;
 					}
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'locations', token, params.ssl);
 
-					b.$.post(url, location).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, location).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(error){
 						reject(error);
@@ -3795,16 +4022,16 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getLastUserLocation
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {String} params.username
 		 * @returns {Object} The single result, if any, of the user location.
 
 
-		 http://dev.bridgeit.io/locate/bsrtests/realms/test/locations
+		 http://dev.voyent.cloud/locate/bsrtests/realms/test/locations
 			?access_token=4be2fc2f-a53b-4987-9446-88d519faaa77
 			&query={%22username%22:%22user%22}
 			&options={%22sort%22:[[%22lastUpdated%22,%22desc%22]]}
@@ -3821,7 +4048,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3829,13 +4056,13 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					var username = validateAndReturnRequiredUsername(params, reject);
 
-					var url = getRealmResourceURL(services.locateURL, account, realm,
+					var url = getRealmResourceURL(v.io.locateURL, account, realm,
 						'locations/' + username, token, params.ssl, {
 							'results': 'last'
 						});
 
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response);
 					})['catch'](function(response){
 						if( response.status === 403 ){
@@ -3848,9 +4075,39 @@ if( ! ('bridgeit' in window)){
 				}
 			);
 		},
+
+		getRegionResourcePermissions: function(params){
+			params.path = 'regions';
+			return v.io.location.getResourcePermissions(params);
+		},
+
+		updateRegionResourcePermissions: function(params){
+			params.path = 'regions';
+			return v.io.location.getResourcePermissions(params);
+		},
+
+		getPOIResourcePermissions: function(params){
+			params.path = 'poi';
+			return v.io.location.getResourcePermissions(params);
+		},
+
+		updatePOIResourcePermissions: function(params){
+			params.path = 'poi';
+			return v.io.location.updateResourcePermissions(params);
+		},
+
+		getResourcePermissions: function(params){
+			params.service = 'location';
+			return v.io.getResourcePermissions(params);
+		},
+
+		updateResourcePermissions: function(params){
+			params.service = 'location';
+			return v.io.updateResourcePermissions(params);
+		},
 	};
 
-	services.mailbox = {
+	v.io.mailbox = {
 		/**
 		 * Create a new mailbox
 		 *
@@ -3858,10 +4115,10 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The user id
 		 * @param {Object} params.mailbox The mailbox to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -3869,7 +4126,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function (resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3877,11 +4134,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredMailbox(params, reject);
 
-					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+					var url = getRealmResourceURL(v.io.mailboxURL, account, realm,
 						'mailboxes/' + (params.id ? params.id : ''), token, params.ssl);
 
-					b.$.post(url, params.mailbox).then(function (response) {
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.mailbox).then(function (response) {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function (error) {
 						reject(error);
@@ -3898,17 +4155,17 @@ if( ! ('bridgeit' in window)){
 		 * @param {Object} params params
 		 * @param {String} params.id The user id, the user's mailbox to be updated
 		 * @param {Object} params.mailbox The new mailbox
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		updateMailbox: function (params) {
 			return new Promise(
 				function (resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3917,11 +4174,11 @@ if( ! ('bridgeit' in window)){
 					validateRequiredId(params, reject);
 					validateRequiredMailbox(params, reject);
 
-					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+					var url = getRealmResourceURL(v.io.mailboxURL, account, realm,
 						'mailboxes/' + params.id, token, params.ssl);
 
-					b.$.put(url, params.mailbox).then(function () {
-						services.auth.updateLastActiveTimestamp();
+					v.$.put(url, params.mailbox).then(function () {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function (error) {
 						reject(error);
@@ -3936,10 +4193,10 @@ if( ! ('bridgeit' in window)){
 		 * @alias getMailbox
 		 * @param {Object} params params
 		 * @param {String} params.id The user id, the user's mailbox to fetch
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The mailbox
 		 */
@@ -3947,7 +4204,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function (resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -3955,11 +4212,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+					var url = getRealmResourceURL(v.io.mailboxURL, account, realm,
 						'mailboxes/' + params.id, token, params.ssl);
 
-					b.$.getJSON(url).then(function (mailbox) {
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function (mailbox) {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(mailbox);
 					})['catch'](function (error) {
 						reject(error);
@@ -3973,10 +4230,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias findMailboxes
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the mailboxes
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -3988,22 +4245,22 @@ if( ! ('bridgeit' in window)){
 				function (resolve, reject) {
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+					var url = getRealmResourceURL(v.io.mailboxURL, account, realm,
 						'mailboxes/', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function (mailboxes) {
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function (mailboxes) {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(mailboxes);
 					})['catch'](function (response) {
 						reject(response);
@@ -4019,17 +4276,17 @@ if( ! ('bridgeit' in window)){
 		 * @alias deleteMailbox
 		 * @param {Object} params params
 		 * @param {String} params.id The user id, the user's mailbox to be deleted
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		deleteMailbox: function (params) {
 			return new Promise(
 				function (resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -4037,11 +4294,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+					var url = getRealmResourceURL(v.io.mailboxURL, account, realm,
 						'mailboxes/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function () {
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function () {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function (error) {
 						reject(error);
@@ -4055,10 +4312,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias deleteMailboxes
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the mailboxes
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -4068,22 +4325,22 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function (resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+					var url = getRealmResourceURL(v.io.mailboxURL, account, realm,
 						'mailboxes/', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.doDelete(url).then(function () {
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function () {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function (error) {
 						reject(error);
@@ -4098,10 +4355,10 @@ if( ! ('bridgeit' in window)){
 		 * @alias findMail
 		 * @param {Object} params params
 		 * @param {String} params.id The user id, the user's mail to search
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the mail
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -4113,7 +4370,7 @@ if( ! ('bridgeit' in window)){
 				function (resolve, reject) {
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -4121,15 +4378,15 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.mailboxURL, account, realm,
+					var url = getRealmResourceURL(v.io.mailboxURL, account, realm,
 						'mailboxes/' + params.id + '/mail', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function (mail) {
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function (mail) {
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(mail);
 					})['catch'](function (response) {
 						reject(response);
@@ -4137,21 +4394,41 @@ if( ! ('bridgeit' in window)){
 
 				}
 			);
-		}
+		},
+
+		getMailboxResourcePermissions: function(params){
+			params.path = 'mailboxes';
+			return v.io.mailbox.getResourcePermissions(params);
+		},
+
+		updateMailboxResourcePermissions: function(params){
+			params.path = 'mailboxes';
+			return v.io.mailbox.getResourcePermissions(params);
+		},
+
+		getResourcePermissions: function(params){
+			params.service = 'mailbox';
+			return v.io.getResourcePermissions(params);
+		},
+
+		updateResourcePermissions: function(params){
+			params.service = 'mailbox';
+			return v.io.updateResourcePermissions(params);
+		},
 	};
 
 	/* METRICS SERVICE. Left in for backwards-compatibility. */
-	services.metrics = {
+	v.io.metrics = {
 
 		/**
 		 * Searches for events in a realm based on a query
 		 *
 		 * @alias findEvents
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the events
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -4162,22 +4439,22 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.eventURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventURL, account, realm,
 						'events', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(events){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(events){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(events);
 					})['catch'](function(error){
 						reject(error);
@@ -4191,10 +4468,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias createCustomEvent
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.event The custom event that you would like to store, in JSON format.
 		 * @returns {String} The resource URI
@@ -4203,7 +4480,7 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -4211,11 +4488,11 @@ if( ! ('bridgeit' in window)){
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredEvent(params, reject);
 
-					var url = getRealmResourceURL(services.eventURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventURL, account, realm,
 						'events', token, params.ssl);
 
-					b.$.post(url, params.event).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.event).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -4231,10 +4508,10 @@ if( ! ('bridgeit' in window)){
 		 *
 		 * @alias getClientServerTimeGap
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Number} The time difference in milliseconds
 		 */
@@ -4242,21 +4519,21 @@ if( ! ('bridgeit' in window)){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.eventURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventURL, account, realm,
 						'time', token, params.ssl, {
 							clientTime: encodeURIComponent(new Date().toISOString())
 						});
 
-					b.$.getJSON(url).then(function(response){
+					v.$.getJSON(url).then(function(response){
 						if( response.timeOffset){
-							services.auth.updateLastActiveTimestamp();
+							v.io.auth.updateLastActiveTimestamp();
 							resolve(response.timeOffset);
 						}
 						else{
@@ -4272,21 +4549,23 @@ if( ! ('bridgeit' in window)){
 
 
 	};
-var eventArray = [];
+
+  var eventArray = [];
   var eventsRunning;
+  var runningIndex = 0;
   var eventIndex = 0;
 	/* EVENTS SERVICE. */
-	services.event = {
+	v.io.event = {
 
 		/**
 		 * Searches for events in a realm based on a query
 		 *
 		 * @alias findEvents
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the events
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -4297,22 +4576,22 @@ var eventArray = [];
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.eventURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventURL, account, realm,
 						'events', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(events){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(events){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(events);
 					})['catch'](function(error){
 						reject(error);
@@ -4326,10 +4605,10 @@ var eventArray = [];
 		 *
 		 * @alias createCustomEvent
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.event The custom event that you would like to store, in JSON format.
 		 * @returns {String} The resource URI
@@ -4338,7 +4617,7 @@ var eventArray = [];
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -4346,11 +4625,11 @@ var eventArray = [];
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredEvent(params, reject);
 
-					var url = getRealmResourceURL(services.eventURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventURL, account, realm,
 						'events', token, params.ssl);
 
-					b.$.post(url, params.event).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.event).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -4364,18 +4643,19 @@ var eventArray = [];
      *
      * @alias createCustomEvents.
      * @param {Object} params params
-     * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-     * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-     * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-     * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+     * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+     * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+     * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+     * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
      * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
      * @param {Object} params.eventArray An array of events that you want to fire. Events should include a 'delay' property, with the number of milliseconds to wait since the last event before firing.
      */
+
     createCustomEvents: function(params){
       return new Promise(
         function(resolve, reject) {
           params = params ? params : {};
-          services.checkHost(params);
+          v.io.checkHost(params);
 
           //validate
           var account = validateAndReturnRequiredAccount(params, reject);
@@ -4383,36 +4663,43 @@ var eventArray = [];
           var token = validateAndReturnRequiredAccessToken(params, reject);
           //validateRequiredEvent(params, reject);
           //validateEventArray(params, reject);
-          var url = getRealmResourceURL(services.eventURL, account, realm,
+          var url = getRealmResourceURL(v.io.eventURL, account, realm,
             'events', token, params.ssl);
 
           eventArray = params.eventArray;
           eventsRunning = true;
+          runningIndex += 1;
           eventIndex=0;
-          console.log(this);
-          services.event._eventRecursion(resolve,reject,url);
+          v.io.event._eventRecursion(resolve,reject,url,params.ssl,runningIndex);
         }
       );
     },
     /**
      * Convenience method to reduce code-reuse.
      */
-    _eventRecursion: function(resolve,reject,url){
-        if(eventsRunning) {
+    _eventRecursion: function(resolve,reject,url,ssl,index){
+		//if no url is provided then generate the URL using the latest account/realm/token
+		if (!url) {
+			url = getRealmResourceURL(v.io.eventURL, v.io.auth.getLastKnownAccount(), v.io.auth.getLastKnownRealm(),
+				'events', v.io.auth.getLastAccessToken(), !!ssl);
+		}
+       if(index === runningIndex) {
           setTimeout(function () {
-            var date = new Date();
-            b.$.post(url, eventArray[eventIndex]).then(function (response) {
-              services.auth.updateLastActiveTimestamp();
-              if (eventIndex === eventArray.length - 1) {
-                resolve();
-              }
-              else {
-                eventIndex += 1;
-                services.event._eventRecursion(resolve,reject,url);
-              }
-            })['catch'](function (error) {
-              reject(error);
-            });
+            if(index === runningIndex) {
+              var date = new Date();
+              v.$.post(url, eventArray[eventIndex]).then(function (response) {
+                v.io.auth.updateLastActiveTimestamp();
+                if (eventIndex === eventArray.length - 1) {
+                  resolve();
+                }
+                else {
+                  eventIndex += 1;
+                  v.io.event._eventRecursion(resolve, reject, null, ssl, index);
+                }
+              })['catch'](function (error) {
+                reject(error);
+              });
+            }
           }, eventArray[eventIndex].delay)
         }
     },
@@ -4424,6 +4711,7 @@ var eventArray = [];
      */
     stopEvents: function(){
       eventsRunning = false;
+      runningIndex += 1;
     },
 
 
@@ -4432,10 +4720,10 @@ var eventArray = [];
      *
      * @alias restartEvents.
      * @param {Object} params params
-     * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-     * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-     * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-     * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+     * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+     * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+     * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+     * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
      * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
      */
     restartEvents:function(params){
@@ -4443,7 +4731,7 @@ var eventArray = [];
       return new Promise(
         function(resolve, reject) {
           params = params ? params : {};
-          services.checkHost(params);
+          v.io.checkHost(params);
 
           //validate
           var account = validateAndReturnRequiredAccount(params, reject);
@@ -4451,9 +4739,9 @@ var eventArray = [];
           var token = validateAndReturnRequiredAccessToken(params, reject);
           //validateRequiredEvent(params, reject);
           //validateEventArray(params, reject);
-          var url = getRealmResourceURL(services.eventURL, account, realm,
+          var url = getRealmResourceURL(v.io.eventURL, account, realm,
             'events', token, params.ssl);
-          services.event._eventRecursion(resolve,reject,url);
+          v.io.event._eventRecursion(resolve,reject,url,params.ssl,runningIndex);
         }
       );
     },
@@ -4473,7 +4761,7 @@ var eventArray = [];
      * @alias getCurrentEvent.
      */
     getCurrentEvent: function(){
-      return eventIndex;
+      return eventIndex + 1;
     },
 		/**
 		 * Retrieve the time difference in milliseconds between the provided time and the event server time.
@@ -4482,10 +4770,10 @@ var eventArray = [];
 		 *
 		 * @alias getClientServerTimeGap
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Number} The time difference in milliseconds
 		 */
@@ -4493,21 +4781,21 @@ var eventArray = [];
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.eventURL, account, realm,
+					var url = getRealmResourceURL(v.io.eventURL, account, realm,
 						'time', token, params.ssl, {
 							clientTime: encodeURIComponent(new Date().toISOString())
 						});
 
-					b.$.getJSON(url).then(function(response){
+					v.$.getJSON(url).then(function(response){
 						if( response.timeOffset){
-							services.auth.updateLastActiveTimestamp();
+							v.io.auth.updateLastActiveTimestamp();
 							resolve(response.timeOffset);
 						}
 						else{
@@ -4525,15 +4813,15 @@ var eventArray = [];
 	};
 
 	/* PUSH SERVICE */
-	services.push = {
+	v.io.push = {
 
 		/**
-		 * Connect to the BridgeIt Push Service
+		 * Connect to the Voyent Push Service
 		 *
 		 * @alias startPushService
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 */
 		startPushService: function(params){
 			return new Promise(
@@ -4551,10 +4839,10 @@ var eventArray = [];
 					}
 
 					function getCloudPushId()  {
-						return b.getLocalStorageItem(CLOUD_PUSH_KEY);
+						return v.getLocalStorageItem(CLOUD_PUSH_KEY);
 					}*/
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 
 					//validate
@@ -4562,33 +4850,33 @@ var eventArray = [];
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var pushURL = (params.ssl ? 'https://' : 'http://') + services.pushURL + '/';
+					var pushURL = (params.ssl ? 'https://' : 'http://') + v.io.pushURL + '/';
 
-					b.usePushService(pushURL, null, {
+					v.usePushService(pushURL, null, {
 						auth:{
 							access_token: token
 						},
 						account: account,
 						realm: realm
 					});
-					console.log('bridgeit.io.push.connect() connected');
+					console.log('voyent.io.push.connect() connected');
 					resolve();
 
 					/*
-					b.$.get(pushURL + 'code.icepush').then(function(response){
+					v.$.get(pushURL + 'code.icepush').then(function(response){
 						try{
 							eval(response);
 							ice.push.configuration.contextPath = pushURL;
-							ice.push.configuration.account = bridgeit.io.auth.getLastKnownAccount();
-							ice.push.configuration.realm = bridgeit.io.auth.getLastKnownRealm();
-							ice.push.configuration.access_token = bridgeit.io.auth.getLastAccessToken();
+							ice.push.configuration.account = v.io.auth.getLastKnownAccount();
+							ice.push.configuration.realm = v.io.auth.getLastKnownRealm();
+							ice.push.configuration.access_token = v.io.auth.getLastAccessToken();
 							ice.push.connection.startConnection();
 							setupCloudPush();
-							console.log('bridgeit.io.push.connect() connected');
+							console.log('v.io.push.connect() connected');
 							resolve();
 						}
 						catch(e){
-							console.log('bridgeit.io.push.connect() failed: ' + e);
+							console.log('v.io.push.connect() failed: ' + e);
 							reject(e);
 						}
 					})['catch'](function(error){
@@ -4605,18 +4893,18 @@ var eventArray = [];
 		 *
 		 * @alias addPushListener
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.group The push group name
 		 * @param {String} params.callback The callback function to be called on the push event
-		 * @param {Boolean} params.useCloudPush Use BridgeIt Cloud Push to call the callback through native cloud notification channels when necessary (default true)
+		 * @param {Boolean} params.useCloudPush Use Voyent Cloud Push to call the callback through native cloud notification channels when necessary (default true)
 		 */
 		addPushListener: function(params){
 			return new Promise(function(resolve, reject) {
 
 				function storePushListener(pushId, group, cb){
 					var pushListeners = {};
-					var pushListenersStr = b.getSessionStorageItem(PUSH_CALLBACKS);
+					var pushListenersStr = v.getSessionStorageItem(PUSH_CALLBACKS);
 					if( pushListenersStr ){
 						try{
 							pushListeners = JSON.parse(pushListenersStr);
@@ -4627,16 +4915,16 @@ var eventArray = [];
 						pushListeners[group] = [];
 					}
 					pushListeners[group].push({pushId: pushId, callback: cb});
-					b.setSessionStorageItem(PUSH_CALLBACKS, JSON.stringify(pushListeners));
+					v.setSessionStorageItem(PUSH_CALLBACKS, JSON.stringify(pushListeners));
 				}
 
 				function addCloudPushListener(){
 					var callback = findFunctionInGlobalScope(params.callback);
 					if( !callback ){
-						reject('BridgeIt Cloud Push callbacks must be in window scope. Please pass either a reference to or a name of a global function.');
+						reject('Voyent Cloud Push callbacks must be in window scope. Please pass either a reference to or a name of a global function.');
 					}
 					else{
-						var callbacks = b.getLocalStorageItem(CLOUD_CALLBACKS_KEY);
+						var callbacks = v.getLocalStorageItem(CLOUD_CALLBACKS_KEY);
 						var callbackName = getFunctionName(callback);
 						if (!callbacks)  {
 							callbacks = " ";
@@ -4644,7 +4932,7 @@ var eventArray = [];
 						if (callbacks.indexOf(" " + callbackName + " ") < 0)  {
 							callbacks += callbackName + " ";
 						}
-						b.setLocalStorageItem(CLOUD_CALLBACKS_KEY, callbacks);
+						v.setLocalStorageItem(CLOUD_CALLBACKS_KEY, callbacks);
 					}
 				}
 
@@ -4667,7 +4955,7 @@ var eventArray = [];
 				}
 
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				validateRequiredGroup(params, reject);
 				validateRequiredCallback(params, reject);
@@ -4681,11 +4969,11 @@ var eventArray = [];
 				var realm = validateAndReturnRequiredRealm(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-				var pushURL = (params.ssl ? 'https://' : 'http://') + services.pushURL + '/';
+				var pushURL = (params.ssl ? 'https://' : 'http://') + v.io.pushURL + '/';
 
 				if (ice && ice.push && ice.push.configuration.contextPath) {
 					addPushGroupMember();
-					console.log('bridgeit.io.push.addPushListener() added listener ' +
+					console.log('voyent.io.push.addPushListener() added listener ' +
 						params.callback + ' to group ' + params.group);
 					resolve();
 				} else {
@@ -4700,17 +4988,17 @@ var eventArray = [];
 		 *
 		 * @alias addPushListener
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.group The push group name
 		 */
 		removePushListener: function(params){
 			return new Promise(function(resolve, reject) {
-				console.log('bridgeit.io.push.removePushListener() group: ' + params.group);
+				console.log('voyent.io.push.removePushListener() group: ' + params.group);
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 				validateRequiredGroup(params, reject);
-				var pushListenersStr = b.getSessionStorageItem(PUSH_CALLBACKS);
+				var pushListenersStr = v.getSessionStorageItem(PUSH_CALLBACKS);
 				if( !pushListenersStr ){
 					console.error('Cannot remove push listener ' + params.group + ', missing push listener storage.');
 				}
@@ -4730,7 +5018,7 @@ var eventArray = [];
 							console.log('removed push id ' + listeners[i].pushId);
 						}
 						delete pushListenerStorage[params.group];
-						b.setSessionStorageItem(PUSH_CALLBACKS, JSON.stringify(pushListenerStorage));
+						v.setSessionStorageItem(PUSH_CALLBACKS, JSON.stringify(pushListenerStorage));
 
 					}
 					catch(e){
@@ -4753,8 +5041,8 @@ var eventArray = [];
 		 *
 		 * @alias sendPushEvent
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.group The push group name
 		 * @param {String} params.subject The subject heading for the notification
 		 * @param {String} params.detail The message text to be sent in the notification body
@@ -4763,7 +5051,7 @@ var eventArray = [];
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -4772,17 +5060,17 @@ var eventArray = [];
 
 					validateRequiredGroup(params, reject);
 
-					var pushURL = (params.ssl ? 'https://' : 'http://') + services.pushURL + '/';
+					var pushURL = (params.ssl ? 'https://' : 'http://') + v.io.pushURL + '/';
 
 					/* TODO
-					if (!absoluteGoBridgeItURL)  {
-						if (!!bridgeit.goBridgeItURL)  {
-							absoluteGoBridgeItURL = getAbsoluteURL(bridgeit.goBridgeItURL);
+					if (!absoluteGoVoyentURL)  {
+						if (!!v.goVoyentURL)  {
+							absoluteGoVoyentURL = getAbsoluteURL(v.goVoyentURL);
 						}
 					}
-					if (!!absoluteGoBridgeItURL)  {
+					if (!!absoluteGoVoyentURL)  {
 						if (options && !options.url)  {
-							options.url = absoluteGoBridgeItURL;
+							options.url = absoluteGoVoyentURL;
 						}
 					}
 					*/
@@ -4801,206 +5089,95 @@ var eventArray = [];
 					}
 				}
 			);
-		}
-	};
-
-	/* CONTEXT SERVICE */
-	services.context = {
-
-		getUser: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					var username = validateAndReturnRequiredUsername(params, reject);
-
-					var url = getRealmResourceURL(services.contextURL, account, realm,
-						'users/' + username, token, params.ssl);
-
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
 		},
 
-		getUserState: function(params){
+		/**
+		 * Searches for all cloud registrations in a realm
+		 *
+		 * @alias findCloudRegistrations
+		 * @param {Object} params params
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {Object} The results
+		 */
+		findCloudRegistrations: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
-
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					var username = validateAndReturnRequiredUsername(params, reject);
-
-					var url = getRealmResourceURL(services.contextURL, account, realm,
-						'users/' + username + '/state', token, params.ssl);
-
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
-		},
-
-		setUserState: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					validateRequiredState(params, reject);
-
-					services.checkHost(params);
-
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					var username = validateAndReturnRequiredUsername(params, reject);
-
-					var url = getRealmResourceURL(services.contextURL, account, realm,
-						'users/' + username + '/state', token, params.ssl);
-
-					b.$.post(url, params.state).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
-		},
-
-		getUserInfo: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					var username = validateAndReturnRequiredUsername(params, reject);
-
-					var url = getRealmResourceURL(services.contextURL, account, realm,
-						'users/' + username + '/info', token, params.ssl);
-
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
-		},
-
-		getUpdates: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					var username = validateAndReturnRequiredUsername(params, reject);
-
-					var url = getRealmResourceURL(services.contextURL, account, realm,
-						'users/' + username + '/updates', token, params.ssl);
-
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
-		},
-
-		getUnreadUpdates: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					services.checkHost(params);
-
-					//validate
-					var account = validateAndReturnRequiredAccount(params, reject);
-					var realm = validateAndReturnRequiredRealm(params, reject);
-					var token = validateAndReturnRequiredAccessToken(params, reject);
-					var username = validateAndReturnRequiredUsername(params, reject);
-
-					var url = getRealmResourceURL(services.contextURL, account, realm,
-						'users/' + username + '/updates/unread', token, params.ssl);
-
-					b.$.getJSON(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response);
-					})['catch'](function(error){
-						reject(error);
-					});
-				}
-			);
-		},
-
-		executeContext: function(params){
-			return new Promise(
-				function(resolve, reject) {
-					params = params ? params : {};
-					validateRequiredData(params, reject);
-
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.contextURL, account, realm,
-						'contexts/' + params.name, token, params.ssl, {
-							op: 'exec'
+					var url = getRealmResourceURL(v.io.pushURL, account, realm,
+						'cloud/all', token, params.ssl, {
 						});
 
-					b.$.post(url, params.data).then(function(response){
-						services.auth.updateLastActiveTimestamp();
-						resolve(response);
+					v.$.getJSON(url).then(function(registrations){
+						v.io.auth.updateLastActiveTimestamp();
+						resolve(registrations);
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Deletes all cloud registrations in a realm
+		 *
+		 * @alias deleteCloudRegistrations
+		 * @param {Object} params params
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {Object} The results
+		 */
+		deleteCloudRegistrations: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					v.io.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+
+					var url = getRealmResourceURL(v.io.pushURL, account, realm,
+						'cloud/all', token, params.ssl, {
+						});
+
+					v.$.doDelete(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
+						resolve();
 					})['catch'](function(error){
 						reject(error);
 					});
 				}
 			);
 		}
-
 	};
 
 	/* STORAGE SERVICE */
-	services.storage = {
+	v.io.storage = {
 
 		/**
 		 * Retrieve the storage meta info for the realm
 		 *
 		 * @alias getMetaInfo
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {String} params.scope (default 'self') 'all' or 'self', return meta information for blobs belonging to all users, or only those belonging to the current user
 		 * @returns {Object} The results
@@ -5008,19 +5185,19 @@ var eventArray = [];
 		getMetaInfo: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealm(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 
-				var url = getRealmResourceURL(services.storageURL, account, realm,
+				var url = getRealmResourceURL(v.io.storageURL, account, realm,
 					'meta', token, params.ssl, params.scope ? {scope: params.scope} : null);
 
 
-				b.$.getJSON(url).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(response.directory);
 				})['catch'](function(error){
 					reject(error);
@@ -5033,11 +5210,11 @@ var eventArray = [];
 		 *
 		 * @alias uploadBlob
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.id The blob id. If not provided, the service will return a new id
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Object} params.blob The Blob to store
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Function} params.progressCallback The callback function to call on progress events. eg. function progressCallback(percentComplete, xhr){..}
@@ -5046,7 +5223,7 @@ var eventArray = [];
 		uploadBlob: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -5057,11 +5234,11 @@ var eventArray = [];
 				var formData = new FormData();
 				formData.append('file', params.blob);
 
-				var url = getRealmResourceURL(services.storageURL, account, realm,
+				var url = getRealmResourceURL(v.io.storageURL, account, realm,
 					'blobs' + (params.id ? '/' + params.id : ''), token, params.ssl);
 
-				b.$.post(url, formData, null, true, null, params.progressCallback).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url, formData, null, true, null, params.progressCallback).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(response.location || response.uri);
 				})['catch'](function(error){
 					reject(error);
@@ -5074,11 +5251,11 @@ var eventArray = [];
 		 *
 		 * @alias uploadBlob
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.id The blob id. If not provided, the service will return a new id
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Object} params.file The Blob to store
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Function} params.progressCallback The callback function to call on progress events. eg. function progressCallback(percentComplete, xhr){..}
@@ -5089,7 +5266,7 @@ var eventArray = [];
 		uploadFile: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -5097,13 +5274,13 @@ var eventArray = [];
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				validateRequiredFile(params, reject);
 
-				var url = getRealmResourceURL(services.storageURL, account, realm,
+				var url = getRealmResourceURL(v.io.storageURL, account, realm,
 					'blobs' + (params.id ? '/' + params.id : ''), token, params.ssl);
 				var formData = new FormData();
 				formData.append('file', params.file);
 
-				b.$.post(url, formData, null, true, null, params.progressCallback, params.onabort, params.onerror).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.post(url, formData, null, true, null, params.progressCallback, params.onabort, params.onerror).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(response.location || response.uri);
 				})['catch'](function(error){
 					reject(error);
@@ -5116,18 +5293,18 @@ var eventArray = [];
 		 *
 		 * @alias getBlob
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.id The blob id.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The blob arraybuffer
 		 */
 		getBlob: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -5135,11 +5312,11 @@ var eventArray = [];
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				validateRequiredId(params, reject);
 
-				var url = getRealmResourceURL(services.storageURL, account, realm,
+				var url = getRealmResourceURL(v.io.storageURL, account, realm,
 					'blobs/' + params.id, token, params.ssl);
 
-				b.$.getBlob(url).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.getBlob(url).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(response);
 				})['catch'](function(error){
 					reject(error);
@@ -5152,17 +5329,17 @@ var eventArray = [];
 		 *
 		 * @alias deleteBlob
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.id The blob id.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		deleteBlob: function(params){
 			return new Promise(function(resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -5170,21 +5347,41 @@ var eventArray = [];
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				validateRequiredId(params, reject);
 
-				var url = getRealmResourceURL(services.storageURL, account, realm,
+				var url = getRealmResourceURL(v.io.storageURL, account, realm,
 					'blobs/' + params.id, token, params.ssl);
 
-				b.$.doDelete(url).then(function(response){
-					services.auth.updateLastActiveTimestamp();
+				v.$.doDelete(url).then(function(response){
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function(error){
 					reject(error);
 				});
 			});
-		}
+		},
+
+		getBlobResourcePermissions: function(params){
+			params.path = 'blobs';
+			return v.io.storage.getResourcePermissions(params);
+		},
+
+		updateBlobResourcePermissions: function(params){
+			params.path = 'blobs';
+			return v.io.storage.getResourcePermissions(params);
+		},
+
+		getResourcePermissions: function(params){
+			params.service = 'storage';
+			return v.io.getResourcePermissions(params);
+		},
+
+		updateResourcePermissions: function(params){
+			params.service = 'storage';
+			return v.io.updateResourcePermissions(params);
+		},
 	};
 
 	/* QUERY SERVICE */
-	services.query = {
+	v.io.query = {
 
 		/**
 		 * Create a new query
@@ -5193,10 +5390,10 @@ var eventArray = [];
 		 * @param {Object} params params
 		 * @param {String} params.id The query id. If not provided, the service will return a new id
 		 * @param {Object} params.query The query to be created
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIt host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -5204,18 +5401,19 @@ var eventArray = [];
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredQuery(params, reject);
 
-					var url = getRealmResourceURL(services.queryURL, account, realm,
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
 						'queries/' + (params.id ? params.id : ''), token, params.ssl);
 
-					b.$.post(url, params.query).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.post(url, params.query).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(response.uri);
 					})['catch'](function(error){
 						reject(error);
@@ -5232,10 +5430,10 @@ var eventArray = [];
 		 * @param {Object} params params
 		 * @param {String} params.id The query id, the query to be updated
 		 * @param {Object} params.query The query
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {String} The resource URI
 		 */
@@ -5243,19 +5441,20 @@ var eventArray = [];
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredQuery(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.queryURL, account, realm,
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
 						'queries/' + params.id, token, params.ssl);
 
-					b.$.put(url, params.query).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.put(url, params.query).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
@@ -5270,10 +5469,10 @@ var eventArray = [];
 		 * @alias getQuery
 		 * @param {Object} params params
 		 * @param {String} params.id The query id, the query to fetch
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @returns {Object} The query
 		 */
@@ -5281,7 +5480,7 @@ var eventArray = [];
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -5289,11 +5488,11 @@ var eventArray = [];
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.queryURL, account, realm,
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
 						'queries/' + params.id, token, params.ssl);
 
-					b.$.getJSON(url).then(function(query){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(query){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(query);
 					})['catch'](function(error){
 						reject(error);
@@ -5307,10 +5506,10 @@ var eventArray = [];
 		 *
 		 * @alias findQueries
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 * @param {Object} params.query A mongo query for the queries
 		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
@@ -5322,22 +5521,22 @@ var eventArray = [];
 				function(resolve, reject) {
 
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
 					var realm = validateAndReturnRequiredRealm(params, reject);
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 
-					var url = getRealmResourceURL(services.queryURL, account, realm,
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
 						'queries/', token, params.ssl, {
 							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
 							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
 							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
 						});
 
-					b.$.getJSON(url).then(function(doc){
-						services.auth.updateLastActiveTimestamp();
+					v.$.getJSON(url).then(function(doc){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve(doc);
 					})['catch'](function(response){
 						reject(response);
@@ -5353,17 +5552,17 @@ var eventArray = [];
 		 * @alias deleteQuery
 		 * @param {Object} params params
 		 * @param {String} params.id The query id, the query to be deleted
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
 		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
 		 */
 		deleteQuery: function(params){
 			return new Promise(
 				function(resolve, reject) {
 					params = params ? params : {};
-					services.checkHost(params);
+					v.io.checkHost(params);
 
 					//validate
 					var account = validateAndReturnRequiredAccount(params, reject);
@@ -5371,38 +5570,313 @@ var eventArray = [];
 					var token = validateAndReturnRequiredAccessToken(params, reject);
 					validateRequiredId(params, reject);
 
-					var url = getRealmResourceURL(services.queryURL, account, realm,
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
 						'queries/' + params.id, token, params.ssl);
 
-					b.$.doDelete(url).then(function(response){
-						services.auth.updateLastActiveTimestamp();
+					v.$.doDelete(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
 						resolve();
 					})['catch'](function(error){
 						reject(error);
 					});
 				}
 			);
-		}
+		},
 
+		/**
+		 * Create a new transformer
+		 *
+		 * @alias createTransformer
+		 * @param {Object} params params
+		 * @param {String} params.id The transformer id. If not provided, the service will return a new id
+		 * @param {Object} params.transformer The transformer to be created
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {String} The resource URI
+		 */
+		createTransformer: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					v.io.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredTransformer(params, reject);
+
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
+						'transformers/' + (params.id ? params.id : ''), token, params.ssl);
+
+					v.$.post(url, params.transformer).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
+						resolve(response.uri);
+					})['catch'](function(error){
+						reject(error);
+					});
+
+				}
+			);
+		},
+
+		/**
+		 * Update a transformer
+		 *
+		 * @alias updateTransformer
+		 * @param {Object} params params
+		 * @param {String} params.id The transformer id, the transformer to be updated
+		 * @param {Object} params.transformer The transformer
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {String} The resource URI
+		 */
+		updateTransformer: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					v.io.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredTransformer(params, reject);
+					validateRequiredId(params, reject);
+
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
+						'transformers/' + params.id, token, params.ssl);
+
+					v.$.put(url, params.transformer).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Fetch a transformer
+		 *
+		 * @alias getTransformer
+		 * @param {Object} params params
+		 * @param {String} params.id The transformer id, the transformer to fetch
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {Object} The transformer
+		 */
+		getTransformer: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					v.io.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
+						'transformers/' + params.id, token, params.ssl);
+
+					v.$.getJSON(url).then(function(transformer){
+						v.io.auth.updateLastActiveTimestamp();
+						resolve(transformer);
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Searches for transformers in a realm based on a transformer
+		 *
+		 * @alias findTransformers
+		 * @param {Object} params params
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @param {Object} params.transformer A mongo transformer for the transformers
+		 * @param {Object} params.fields Specify the inclusion or exclusion of fields to return in the result set
+		 * @param {Object} params.options Additional transformer options such as limit and sort
+		 * @returns {Object} The results
+		 */
+		findTransformers: function(params){
+			return new Promise(
+				function(resolve, reject) {
+
+					params = params ? params : {};
+					v.io.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
+						'transformers/', token, params.ssl, {
+							'query': params.query ? encodeURIComponent(JSON.stringify(params.query)) : {},
+							'fields': params.fields ? encodeURIComponent(JSON.stringify(params.fields)) : {},
+							'options': params.options ? encodeURIComponent(JSON.stringify(params.options)) : {}
+						});
+
+					v.$.getJSON(url).then(function(transformers){
+						v.io.auth.updateLastActiveTimestamp();
+						resolve(transformers);
+					})['catch'](function(response){
+						reject(response);
+					});
+
+				}
+			);
+		},
+
+		/**
+		 * Delete a transformer
+		 *
+		 * @alias deleteTransformer
+		 * @param {Object} params params
+		 * @param {String} params.id The transformer id, the transformer to be deleted
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 */
+		deleteTransformer: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					v.io.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
+						'transformers/' + params.id, token, params.ssl);
+
+					v.$.doDelete(url).then(function(response){
+						v.io.auth.updateLastActiveTimestamp();
+						resolve();
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
+
+		/**
+		 * Execute a query or query chain
+		 *
+		 * @alias executeQuery
+		 * @param {Object} params params
+		 * @param {String} params.id The query/chain id, the query or query chain to be executed
+		 * @param {Object} params.execParams Execution parameters that will be passed into parameterized query fields
+		 * @param {String} params.mode Specify "debug" to return step-by-step query execution data
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {Boolean} params.ssl (default false) Whether to use SSL for network traffic.
+		 * @returns {Object} The results
+		 */
+		executeQuery: function(params){
+			return new Promise(
+				function(resolve, reject) {
+					params = params ? params : {};
+					v.io.checkHost(params);
+
+					//validate
+					var account = validateAndReturnRequiredAccount(params, reject);
+					var realm = validateAndReturnRequiredRealm(params, reject);
+					var token = validateAndReturnRequiredAccessToken(params, reject);
+					validateRequiredId(params, reject);
+
+					var queryParams = {'exec': 'true'};
+					queryParams.execParams = (params.execParams ? params.execParams : {});
+					if (params.mode) {
+						queryParams.mode = params.mode;
+					}
+
+					var url = getRealmResourceURL(v.io.queryURL, account, realm,
+						'queries/' + params.id, token, params.ssl, queryParams);
+
+					v.$.getJSON(url).then(function(results){
+						v.io.auth.updateLastActiveTimestamp();
+						resolve(results);
+					})['catch'](function(error){
+						reject(error);
+					});
+				}
+			);
+		},
+
+		getQueryResourcePermissions: function(params){
+			params.path = 'queries';
+			return v.io.query.getResourcePermissions(params);
+		},
+
+		updateQueryResourcePermissions: function(params){
+			params.path = 'queries';
+			return v.io.query.getResourcePermissions(params);
+		},
+
+		getTransformerResourcePermissions: function(params){
+			params.path = 'transformers';
+			return v.io.query.getResourcePermissions(params);
+		},
+
+		updateTransformerResourcePermissions: function(params){
+			params.path = 'transformers';
+			return v.io.query.getResourcePermissions(params);
+		},
+
+		getResourcePermissions: function(params){
+			params.service = 'query';
+			return v.io.getResourcePermissions(params);
+		},
+
+		updateResourcePermissions: function(params){
+			params.service = 'query';
+			return v.io.updateResourcePermissions(params);
+		}
 	};
 
 	/* DEVICE SERVICE */
-	services.device = {
+	v.io.device = {
 		/**
 		 * Start live reporting of a device
 		 *
 		 * @alias startDevice
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.macAddress The address of the device to start.
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
 		 */
 		startDevice: function (params) {
 			return new Promise(function (resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -5410,11 +5884,11 @@ var eventArray = [];
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				validateRequiredId(params, reject);
 
-				var url = getRealmResourceURL(services.deviceURL, account, realm,
+				var url = getRealmResourceURL(v.io.deviceURL, account, realm,
 					params.macAddress + '/start', token, params.ssl);
 
-				b.$.put(url, {}).then(function () {
-					services.auth.updateLastActiveTimestamp();
+				v.$.put(url, {}).then(function () {
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function (error) {
 					reject(error);
@@ -5427,16 +5901,16 @@ var eventArray = [];
 		 *
 		 * @alias stopDevice
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
 		 * @param {String} params.macAddress The address of the device to stop.
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
 		 */
 		stopDevice: function (params) {
 			return new Promise(function (resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -5444,11 +5918,11 @@ var eventArray = [];
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				validateRequiredId(params, reject);
 
-				var url = getRealmResourceURL(services.deviceURL, account, realm,
+				var url = getRealmResourceURL(v.io.deviceURL, account, realm,
 					params.macAddress + '/stop', token, params.ssl);
 
-				b.$.put(url, {}).then(function () {
-					services.auth.updateLastActiveTimestamp();
+				v.$.put(url, {}).then(function () {
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function (error) {
 					reject(error);
@@ -5461,15 +5935,15 @@ var eventArray = [];
 		 *
 		 * @alias stopDevices
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
 		 */
 		stopDevices: function (params) {
 			return new Promise(function (resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
@@ -5477,11 +5951,11 @@ var eventArray = [];
 				var token = validateAndReturnRequiredAccessToken(params, reject);
 				validateRequiredId(params, reject);
 
-				var url = getRealmResourceURL(services.deviceURL, account, realm,
+				var url = getRealmResourceURL(v.io.deviceURL, account, realm,
 					'/stop', token, params.ssl);
 
-				b.$.put(url, {}).then(function () {
-					services.auth.updateLastActiveTimestamp();
+				v.$.put(url, {}).then(function () {
+					v.io.auth.updateLastActiveTimestamp();
 					resolve();
 				})['catch'](function (error) {
 					reject(error);
@@ -5494,24 +5968,24 @@ var eventArray = [];
 		 *
 		 * @alias getRunningDevices
 		 * @param {Object} params params
-		 * @param {String} params.account BridgeIt Services account name. If not provided, the last known BridgeIt Account will be used.
-		 * @param {String} params.realm The BridgeIt Services realm. If not provided, the last known BridgeIt Realm name will be used.
-		 * @param {String} params.host The BridgeIt Services host url. If not supplied, the last used BridgeIT host, or the default will be used. (optional)
-		 * @param {String} params.accessToken The BridgeIt authentication token. If not provided, the stored token from bridgeit.io.auth.connect() will be used
+		 * @param {String} params.account Voyent Services account name. If not provided, the last known Voyent Account will be used.
+		 * @param {String} params.realm The Voyent Services realm. If not provided, the last known Voyent Realm name will be used.
+		 * @param {String} params.host The Voyent Services host url. If not supplied, the last used Voyent host, or the default will be used. (optional)
+		 * @param {String} params.accessToken The Voyent authentication token. If not provided, the stored token from voyent.io.auth.connect() will be used
 		 */
 		getRunningDevices: function (params) {
 			return new Promise(function (resolve, reject) {
 				params = params ? params : {};
-				services.checkHost(params);
+				v.io.checkHost(params);
 
 				//validate
 				var account = validateAndReturnRequiredAccount(params, reject);
 				var realm = validateAndReturnRequiredRealm(params, reject);
 				var token = validateAndReturnRequiredAccessToken(params, reject);
-				var url = getRealmResourceURL(services.deviceURL, account, realm, 'running', token, params.ssl);
+				var url = getRealmResourceURL(v.io.deviceURL, account, realm, 'running', token, params.ssl);
 
-				b.$.getJSON(url).then(function (devices) {
-					services.auth.updateLastActiveTimestamp();
+				v.$.getJSON(url).then(function (devices) {
+					v.io.auth.updateLastActiveTimestamp();
 					resolve(devices);
 				})['catch'](function (error) {
 					reject(error);
@@ -5521,20 +5995,15 @@ var eventArray = [];
 	};
 
 	/* Initialization */
-	services.configureHosts();
+	v.io.configureHosts();
 
 	/* check connect settings */
-	if( services.auth.isLoggedIn()){
-		var connectSettings = services.auth.getConnectSettings();
+	if( v.io.auth.isLoggedIn()){
+		var connectSettings = v.io.auth.getConnectSettings();
 		if( connectSettings ){
 			//user is logged in and has connect settings, so reconnect
-			services.auth.connect(connectSettings);
+			v.io.auth.connect(connectSettings);
 		}
 	}
-
-
-
-
-})(bridgeit);
-
-
+	
+})(voyent);

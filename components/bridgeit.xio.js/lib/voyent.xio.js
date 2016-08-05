@@ -1,12 +1,12 @@
-if (!('bridgeit' in window) || ('bridgeit.io' in window)) {
-    throw new Error('bridgeit.xio.js requires bridgeit.js and bridgeit.io.js, please include these before bridgeit.xio.js');
+if (!('voyent' in window) || ('voyent.io' in window)) {
+    throw new Error('voyent.xio.js requires voyent.js and voyent.io.js, please include these before voyent.xio.js');
 }
 
 if (!('io' in window)) {
-    throw new Error('bridgeit.xio.js requires the socket.io client library.js');
+    throw new Error('voyent.xio.js requires the socket.io client library.js');
 }
 
-(function (b) {
+(function (v) {
 
     "use strict";
 
@@ -14,16 +14,32 @@ if (!('io' in window)) {
     function parseURL(urlString) {
         var parser = document.createElement('a');
         parser.href = urlString;
-        var pathParts = parser.pathname.split('/');
-        parser.service = pathParts[1];
-        parser.account = pathParts[2];
-        parser.realm = pathParts[4];
-        parser.namespace = '/' + parser.account + '/realms/' + parser.realm;
-        return parser;
+
+        //Good old IE does things a bit different.  Like including port 80 always
+        //and not including a leading slash on the pathname.
+        var result = {
+            href: parser.href,
+            hostname: parser.hostname,
+            host: parser.port === "80" ? parser.hostname : parser.host,
+            port: parser.port === "80" ? "" : parser.port
+        };
+
+        if (parser.pathname[0] !== '/') {
+            result.pathname = '/' + parser.pathname;
+        } else {
+            result.pathname = parser.pathname;
+        }
+        var pathParts = result.pathname.split('/');
+
+        result.service = pathParts[1];
+        result.account = pathParts[2];
+        result.realm = pathParts[4];
+        result.namespace = '/' + result.account + '/realms/' + result.realm;
+        return result;
     }
 
     function getNamespaceGroup(groupName) {
-        return b.xio.push.pushURL.namespace + '/' + groupName;
+        return v.xio.push.pushURL.namespace + '/' + groupName;
     }
 
     function getNamespaceGroupEvent(groupName, eventName) {
@@ -35,14 +51,16 @@ if (!('io' in window)) {
     }
 
     var XIO_CLOUD_URI_KEY = "xio.cloudURI";
+    var XIO_SMS_URI_KEY = "xio.smsURI";
+    var XIO_EMAIL_URI_KEY = "xio.emailURI";
 
     function getStoredCloudPushURI() {
-        var cloudURI = bridgeit.getLocalStorageItem(XIO_CLOUD_URI_KEY);
+        var cloudURI = v.getLocalStorageItem(XIO_CLOUD_URI_KEY);
         if (cloudURI) {
             return cloudURI;
         }
 
-        var notifyBack = bridgeit.getCloudPushId();
+        var notifyBack = v.getCloudPushId();
         if (notifyBack) {
             setStoredCloudPushURI(notifyBack);
             return notifyBack;
@@ -51,11 +69,37 @@ if (!('io' in window)) {
     }
 
     function setStoredCloudPushURI(cloudPushURI) {
-        bridgeit.setLocalStorageItem(XIO_CLOUD_URI_KEY, cloudPushURI);
+        v.setLocalStorageItem(XIO_CLOUD_URI_KEY, cloudPushURI);
     }
 
     function removeStoredCloudPushURI(cloudPushURI) {
-        bridgeit.removeLocalStorageItem(XIO_CLOUD_URI_KEY);
+        v.removeLocalStorageItem(XIO_CLOUD_URI_KEY);
+    }
+
+    function getStoredSmsURI() {
+        var smsURI = v.getLocalStorageItem(XIO_SMS_URI_KEY);
+        return smsURI || null;
+    }
+
+    function setStoredSmsURI(smsURI) {
+        v.setLocalStorageItem(XIO_SMS_URI_KEY, smsURI);
+    }
+
+    function removeStoredSmsURI() {
+        v.removeLocalStorageItem(XIO_SMS_URI_KEY);
+    }
+
+    function getStoredEmailURI() {
+        var emailURI = v.getLocalStorageItem(XIO_EMAIL_URI_KEY);
+        return emailURI || null;
+    }
+
+    function setStoredEmailURI(emailURI) {
+        v.setLocalStorageItem(XIO_EMAIL_URI_KEY, emailURI);
+    }
+
+    function removeStoredEmailURI() {
+        v.removeLocalStorageItem(XIO_EMAIL_URI_KEY);
     }
 
     //Unfortunately, cloud push URI values are unsuitable as database ids which
@@ -79,59 +123,110 @@ if (!('io' in window)) {
 
     function getCloudPushURIHash(cloudPushURI) {
         var theURI = cloudPushURI || getStoredCloudPushURI();
-        return 'clouduri_' + getDatabaseId(theURI);
+        return v.io.auth.getLastKnownUsername() + '_' + getDatabaseId(theURI);
     }
 
-    function getCloudPushServiceURL(host, account, realm, cloudPushURI) {
+    function getSmsURIHash(smsURI) {
+        var theURI = smsURI || getStoredSmsURI();
+        return 'smsuri_' + getDatabaseId(theURI);
+    }
+
+    function getEmailURIHash(emailURI) {
+        var theURI = emailURI || getStoredEmailURI();
+        return 'emailuri_' + getDatabaseId(theURI);
+    }
+
+    function getCloudServiceURL(host, account, realm, id) {
         return 'http://' + host + '/push/' +
             account + '/realms/' + realm +
-            '/cloud/' + getCloudPushURIHash(cloudPushURI) +
-            '?access_token=' + b.io.auth.getLastAccessToken();
+            '/cloud/' + id +
+            '?access_token=' + v.io.auth.getLastAccessToken();
     }
 
-    function addCloudPushConfiguration(host, account, realm, username, cloudPushURI) {
+    function addCloudConfiguration(host, account, realm, username, theURI, transport, setConfig) {
 
         return new Promise(function (resolve, reject) {
 
-            var pushServiceURL = getCloudPushServiceURL(host, account, realm, getCloudPushURIHash(cloudPushURI));
 
-            var cloudPushConfig = {
+            var uriHash = getURIHashForTransport(transport,theURI);
+            if (!uriHash) {
+                reject();
+                return;
+            }
+
+            var pushServiceURL = getCloudServiceURL(host, account, realm, uriHash);
+
+            var config;
+
+            if(setConfig){
+              config = setConfig;
+            }
+            else{
+              config = {
                 username: username,
-                cloudPushURI: cloudPushURI
-            };
+                cloudPushURI: theURI,
+                enabled: true
+              };
+            }
 
-            console.log('preparing to store cloud push configuration', pushServiceURL, cloudPushConfig);
+            console.log('preparing to store '+transport+' configuration', pushServiceURL, config);
 
-            return b.$.post(pushServiceURL, cloudPushConfig)
+            return v.$.post(pushServiceURL, config)
                 .then(function (response) {
-                    console.log('cloud push configuration stored');
+                    console.log(transport + ' configuration stored');
                     //Should we still do this?
-                    //b.services.auth.updateLastActiveTimestamp();
+                    //v.services.auth.updateLastActiveTimestamp();
                     resolve(response);
                 })['catch'](function (error) {
-                console.log('error storing cloud push configuration', error);
+                console.log('error storing '+transport+' configuration', error);
                 reject(error);
             });
         });
     }
 
-    function getCloudPushConfiguration(host, account, realm, cloudPushURI) {
+
+    //Sets the cloud configuration's enabled attribute to setTo
+    function setEnabledCloudConfiguration(setTo, host, account, realm, theURI, transport){
+
+      getCloudConfiguration(host,account,realm,theURI,transport).then(function(configuration){
+        console.log(configuration);
+        var newConfig = configuration[0];
+        newConfig.enabled = setTo;
+        addCloudConfiguration(host,account,realm,null,theURI,transport,newConfig);
+      });
+    }
+
+   function toggleEnabledCloudConfiguration(host, account, realm, theURI, transport){
+     getCloudConfiguration(host,account,realm,theURI,transport).then(function(configuration){
+       console.log(configuration);
+       var newConfig = configuration[0];
+       newConfig.enabled = !configuration[0].enabled;
+       addCloudConfiguration(host,account,realm,null,theURI,transport,newConfig);
+     });
+   }
+    function getCloudConfiguration(host, account, realm, theURI, transport) {
 
         return new Promise(
             function (resolve, reject) {
 
-                var pushServiceURL = getCloudPushServiceURL(host, account, realm, getCloudPushURIHash(cloudPushURI));
+                var uriHash = getURIHashForTransport(transport,theURI);
+                if (!uriHash) {
+                    reject();
+                    return;
+                }
 
-                console.log('preparing to get cloud push configuration', pushServiceURL);
+                var pushServiceURL = getCloudServiceURL(host, account, realm, uriHash);
 
-                b.$.getJSON(pushServiceURL)
+                console.log('preparing to get '+transport+' configuration', pushServiceURL);
+
+                v.$.getJSON(pushServiceURL)
                     .then(function (response) {
-                        console.log('cloud push configuration retrieved');
+                        console.log(transport + ' configuration retrieved');
                         //Should we still do this?
-                        //b.services.auth.updateLastActiveTimestamp();
+                        //v.services.auth.updateLastActiveTimestamp();
                         resolve(response);
                     })['catch'](function (error) {
-                    console.log('error getting cloud push configuration', error);
+                    console.log('error getting '+transport+' configuration', error);
                     reject(error);
                 });
             }
@@ -139,35 +234,54 @@ if (!('io' in window)) {
 
     }
 
-    function deleteCloudPushConfiguration(host, account, realm, cloudPushURI) {
+    function deleteCloudConfiguration(host, account, realm, theURI, transport) {
 
         return new Promise(
             function (resolve, reject) {
 
-                var pushServiceURL = getCloudPushServiceURL(host, account, realm, getCloudPushURIHash(cloudPushURI));
+                var uriHash = getURIHashForTransport(transport,theURI);
+                if (!uriHash) {
+                    reject();
+                    return;
+                }
 
-                console.log('preparing to get cloud push configuration', pushServiceURL);
+                var pushServiceURL = getCloudServiceURL(host, account, realm, uriHash);
 
-                b.$.doDelete(pushServiceURL)
+                console.log('preparing to get '+transport+' configuration', pushServiceURL);
+
+                v.$.doDelete(pushServiceURL)
                     .then(function () {
-                        console.log('cloud push configuration deleted');
+                        console.log(transport + ' configuration deleted');
                         //Should we still do this?
-                        //b.services.auth.updateLastActiveTimestamp();
+                        //v.services.auth.updateLastActiveTimestamp();
                         resolve();
                     })['catch'](function (error) {
-                    console.log('error deleting cloud push configuration', error);
+                    console.log('error deleting '+transport+' configuration', error);
                     reject(error);
                 });
             }
         );
 
+    }
+
+    function getURIHashForTransport(transport,theURI) {
+        switch (transport) {
+            case "cloud":
+                return getCloudPushURIHash(theURI);
+            case "sms":
+                return getSmsURIHash(theURI);
+            case "email":
+                return getEmailURIHash(theURI);
+            default:
+                return null;
+        }
     }
 
     function getGroupPushServiceURL(host, account, realm, username) {
         return 'http://' + host + '/push/' +
             account + '/realms/' + realm +
             '/group/' + username +
-            '?access_token=' + b.io.auth.getLastAccessToken();
+            '?access_token=' + v.io.auth.getLastAccessToken();
     }
 
     function isString(s) {
@@ -206,11 +320,11 @@ if (!('io' in window)) {
 
                 console.log('preparing to send push notification', group, JSON.stringify(message));
 
-                b.$.post(groupPushURL, message, null, false, 'application/json')
+                v.$.post(groupPushURL, message, null, false, 'application/json')
                     .then(function (response) {
                         console.log('push notification sent');
                         //Should we still do this?
-                        //b.services.auth.updateLastActiveTimestamp();
+                        //v.services.auth.updateLastActiveTimestamp();
                         resolve();
                     })['catch'](function (error) {
                     console.log('error sending push notification', error);
@@ -221,26 +335,25 @@ if (!('io' in window)) {
     }
 
     function handleNotifications(payload) {
-
         console.log('received notification', JSON.stringify(payload));
-        if (b.xio.push.listener) {
-            b.xio.push.listener(payload);
+        for (var i=0; i<v.xio.push.listeners.length; i++) {
+            v.xio.push.listeners[i](payload);
         }
     }
 
     //Set up the xio namespace.
-    if (!b['xio']) {
-        b.xio = {};
+    if (!v['xio']) {
+        v.xio = {};
     }
 
-    var xio = b.xio;
+    var xio = v.xio;
 
     xio.push = {
 
         connected: false,
         pushURL: null,
         client: null,
-        listener: null,
+        listeners: [],
         groups: [],
         maxReconnectAttempts: 10,
 
@@ -341,11 +454,11 @@ if (!('io' in window)) {
                 usePushService: false
             };
 
-            console.log('connecting via bridgeit.xio', JSON.stringify(connectionInfo, null, 4));
+            console.log('connecting via voyent.xio', JSON.stringify(connectionInfo, null, 4));
 
-            return b.io.auth.connect(connectionInfo).then(function () {
+            return v.io.auth.connect(connectionInfo).then(function () {
                     //Once we connect, we should be able to connect our socket.io client.
-                    var lastToken = b.io.auth.getLastAccessToken();
+                    var lastToken = v.io.auth.getLastAccessToken();
                     console.log('successfully logged into services', connectionInfo.host, lastToken);
                     connectionInfo.connectSocketIO(connectionInfo.pushURL, connectionInfo.username, lastToken);
                 })
@@ -355,7 +468,7 @@ if (!('io' in window)) {
         },
 
         /**
-         * Establish a connection (polling, websocket) to the Push host after bridgeit.io.auth.login() or bridgeit.io.auth.connect()
+         * Establish a connection (polling, websocket) to the Push host after voyent.io.auth.login() or voyent.io.auth.connect()
          *
          * @param {String} pushURLString The URL of the Push host
          * @param {String} username
@@ -365,16 +478,16 @@ if (!('io' in window)) {
             if (this.connected) {
                 return;
             }
-            if (!bridgeit.io.auth.isLoggedIn()) {
-                console.error('cannot attach bridgeit.xio.push, bridgeit is not logged in');
+            if (!v.io.auth.isLoggedIn()) {
+                console.error('cannot attach voyent.xio.push, voyent is not logged in');
             }
 
             this.pushURL = parseURL(pushURLString);
             //console.debug('parsedURL', this.pushURL);
 
-            console.log('attaching via bridgeit.xio', JSON.stringify(this.pushURL, null, 4));
+            console.log('attaching via voyent.xio', JSON.stringify(this.pushURL, null, 4));
 
-            var lastToken = b.io.auth.getLastAccessToken();
+            var lastToken = v.io.auth.getLastAccessToken();
             this.connectWithToken(this.pushURL, username, lastToken);
         },
 
@@ -383,7 +496,7 @@ if (!('io' in window)) {
             //Calling auth.disconnect here removes all the relevant data from
             //from the browser's session storage which causes problems when
             //trying refreshConnection().
-            //b.io.auth.disconnect();
+            //v.io.auth.disconnect();
 
             if (this.client) {
                 console.log('disconnecting socket.io client');
@@ -396,16 +509,23 @@ if (!('io' in window)) {
             xio.push.disconnect();
             xio.push.connectWithToken(
                 xio.push.pushURL,
-                b.io.auth.getLastKnownUsername(),
-                b.io.auth.getLastAccessToken());
+                v.io.auth.getLastKnownUsername(),
+                v.io.auth.getLastAccessToken());
         },
 
         addListener: function (listener) {
-            this.listener = listener;
+            if (!listener || typeof listener !== 'function') {
+                console.log('unable to add new listener since it is not a function');
+                return;
+            }
+            this.listeners.push(listener);
         },
 
-        removeListener: function () {
-            this.listener = null;
+        removeListener: function (listener) {
+            var index = this.listeners.indexOf(listener);
+            if (index > -1) {
+                this.listeners.splice(index,1);
+            }
         },
 
         join: function (group) {
@@ -463,6 +583,7 @@ if (!('io' in window)) {
                 var group = this.groups[i];
                 var ns = getNamespaceGroupNotifyEvent(group);
                 console.log('rejoining', group, ns);
+                this.client.removeListener(getNamespaceGroupNotifyEvent(group),handleNotifications);
                 this.client.on(ns, handleNotifications);
                 this.client.emit('join', group);
             }
@@ -490,35 +611,35 @@ if (!('io' in window)) {
             return new Promise(function (resolve, reject) {
                 var cloudPushURI = getStoredCloudPushURI();
                 if (cloudPushURI) {
-                    return addCloudPushConfiguration(host, account, realm, username, cloudPushURI).then(function(){
+                    return addCloudConfiguration(host, account, realm, username, cloudPushURI, 'cloud').then(function(){
                         resolve();
                     });
                 }
 
-                bridgeit.setLocalStorageItem('xio.host', host);
-                bridgeit.setLocalStorageItem('xio.account', account);
-                bridgeit.setLocalStorageItem('xio.realm', realm);
-                bridgeit.setLocalStorageItem('xio.username', username);
+                v.setLocalStorageItem('xio.host', host);
+                v.setLocalStorageItem('xio.account', account);
+                v.setLocalStorageItem('xio.realm', realm);
+                v.setLocalStorageItem('xio.username', username);
 
                 //intercept launchFailed to report a reject, then set it back
-                var origLaunchFailed = bridgeit.launchFailed;
-                bridgeit.launchFailed = function(){
+                var origLaunchFailed = v.launchFailed;
+                v.launchFailed = function(){
                     console.log('launchFailed from registerCloudPush()');
-                    reject('could not launch the bridgeit client app');
-                    bridgeit.launchFailed = origLaunchFailed;
+                    reject('could not launch the voyent client app');
+                    v.launchFailed = origLaunchFailed;
                 };
                 window.xioCloudRegistrationCallback = function(results) {
                     console.log('global cloud registration callback called', results);
-                    bridgeit.xio.push.registerCloudPush(
-                        bridgeit.getLocalStorageItem('xio.host'),
-                        bridgeit.getLocalStorageItem('xio.account'),
-                        bridgeit.getLocalStorageItem('xio.realm'),
-                        bridgeit.getLocalStorageItem('xio.username')
+                    v.xio.push.registerCloudPush(
+                        v.getLocalStorageItem('xio.host'),
+                        v.getLocalStorageItem('xio.account'),
+                        v.getLocalStorageItem('xio.realm'),
+                        v.getLocalStorageItem('xio.username')
                     );
-                    bridgeit.launchFailed = origLaunchFailed;
+                    v.launchFailed = origLaunchFailed;
                     resolve();
                 };
-                b.register('_xioCloudRegistration', 'xioCloudRegistrationCallback');
+                v.register('_xioCloudRegistration', 'xioCloudRegistrationCallback');
             });
         },
 
@@ -530,7 +651,7 @@ if (!('io' in window)) {
         //    var cloudPushURI = getStoredNotifyBackURI();
         //    console.log('cloud push registration callback', 'results:', results, 'cloudPushURI:', cloudPushURI);
         //    setStoredCloudPushURI(cloudPushURI);
-        //    addCloudPushConfiguration(host, account, realm, username, cloudPushURI)
+        //    addCloudConfiguration(host, account, realm, username, cloudPushURI, 'cloud')
         //        .then(function () {
         //            console.log('registered cloud push URI');
         //        })
@@ -541,14 +662,66 @@ if (!('io' in window)) {
 
         unregisterCloudPush: function (host, account, realm) {
             var cloudPushURI = getStoredCloudPushURI();
-            bridgeit.unregisterCloudPush();
+            v.unregisterCloudPush();
             if (cloudPushURI) {
                 removeStoredCloudPushURI();
-                return deleteCloudPushConfiguration(host, account, realm, cloudPushURI);
+                return deleteCloudConfiguration(host, account, realm, cloudPushURI, 'cloud');
             }
+        },
+
+        registerSms: function (host, account, realm, username, phonenumber) {
+            console.log('registerSms(' + host + ', ' + account + ', ' + realm + ", " + username + ', ' + phonenumber + ')');
+            return new Promise(function (resolve, reject) {
+                var smsURI = getStoredSmsURI();
+                if (!smsURI) {
+                    smsURI = 'sms:'+phonenumber;
+                    setStoredSmsURI(smsURI);
+                }
+                return addCloudConfiguration(host, account, realm, username, smsURI, 'sms').then(function() {
+                    resolve();
+                });
+            });
+        },
+
+        unregisterSms: function (host, account, realm) {
+            var smsURI = getStoredSmsURI();
+            if (smsURI) {
+                removeStoredSmsURI();
+                return deleteCloudConfiguration(host, account, realm, smsURI, 'sms');
+            }
+        },
+
+        smsRegistered: function(){
+            return !!getStoredSmsURI();
+        },
+
+        registerEmail: function (host, account, realm, username, email) {
+            console.log('registerEmail(' + host + ', ' + account + ', ' + realm + ", " + username + ', ' + email + ')');
+            return new Promise(function (resolve, reject) {
+                var emailURI = getStoredEmailURI();
+                if (!emailURI) {
+                    emailURI = 'mailto:'+email;
+                    setStoredEmailURI(emailURI);
+                }
+                return addCloudConfiguration(host, account, realm, username, emailURI, 'email').then(function() {
+                    resolve();
+                });
+            });
+        },
+
+        unregisterEmail: function (host, account, realm) {
+            var emailURI = getStoredEmailURI();
+            if (emailURI) {
+                removeStoredEmailURI();
+                return deleteCloudConfiguration(host, account, realm, emailURI, 'email');
+            }
+        },
+
+        emailRegistered: function(){
+            return !!getStoredEmailURI();
         }
     };
 
 
-})(bridgeit);
+})(voyent);
 
