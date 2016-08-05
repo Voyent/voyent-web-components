@@ -1,0 +1,53 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../polymer/polymer.html">
+
+<!--
+[Voyent Common Properties Behavior](https://github.com/voyent/voyent-web-components/common/voyent-common-properties-behavior.html)
+
+@group Voyent Web Components
+
+-->
+
+<script>
+  VoyentCommonPropertiesBehavior = {
+
+    properties: {
+      /**
+     * The Host URL for Voyent Services
+     *
+     * @attribute host
+     * @type string
+     * @default 'dev.voyent.io'
+     */
+      host: {
+        notify: true,
+        type: String,
+        value: 'dev.voyent.io'
+      },
+      realm: {
+        notify: true,
+        type: String
+      },
+      account: {
+        notify: true,
+        type: String
+      },
+      accessToken: {
+        notify: true,
+        type: String,
+        value: function(){
+          return voyent.io.auth.getLastAccessToken();
+        }
+      }
+    }
+    };
+</script>

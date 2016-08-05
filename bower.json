@@ -1,7 +1,7 @@
 {
-  "name": "bridgeit-web-components",
+  "name": "voyent-web-components",
   "private": true,
   "dependencies": {
-    "bridgeit-web-components": "bridgeit/bridgeit-web-components#master"
+    "voyent-web-components": "Voyent/voyent-web-components#master"
   }
 }

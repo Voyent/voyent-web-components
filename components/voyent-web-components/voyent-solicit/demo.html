@@ -1,0 +1,156 @@
+<!--
+	@license
+	Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+	This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	Code distributed by Google as part of the polymer project is also
+	subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+		<title>Voyent Web Components Demo</title>
+
+		<!-- Load the webcomponents polyfill -->
+		<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+		<!-- Load voyent locations component -->
+		<link rel="import" href="voyent-solicit.html">
+
+		<!-- Demo specific CSS -->
+		<link rel="stylesheet" href="../common/demo.css"/>
+
+		<!-- Define custom styling for the component (optional) -->
+		<style is="custom-style">
+
+			#solicit {
+
+				--solicit-header-style: {
+					background-color: #027244;
+					color: #E4FFD8;
+					height: 60px;
+					padding: 0 10px;
+					transition: height 0.2s;
+				}
+
+				--solicit-body-style: {
+					background-color: white;
+					margin: 12px;
+					height: 100%;
+					width: 100%;
+				}
+
+			}
+
+		</style>
+		
+	</head>
+	<body unresolved>
+
+		<h1>Voyent Locations Map Component Demo</h1>
+		<h3>Login with your Voyent Account Information</h3>
+		<hr/>
+		<div class="container">
+			<form>
+				<div>
+					<label>Account:
+						<input id="account" type="text"/>
+					</label>
+				</div>
+				<div>
+					<label>Realm:
+						<input id="realm" type="text"/>
+					</label>
+				</div>
+				<div>
+					<label>Username:
+						<input id="username" type="text"/>
+					</label>
+				</div>
+				<div>
+					<label>Password:
+						<input id="password" type="password"/>
+					</label>
+				</div>
+				<a onclick="login()">Login</a>
+
+				<div class="settings">
+
+				</div>
+			</form>
+
+			<!-- 3. Declare the element by its tag. -->
+			<div style="height:120px;width:350px; margin: auto;">
+				<voyent-solicit id="solicit"></voyent-solicit>
+			</div>
+		</div>
+
+		<script type="text/javascript">
+			function login(event){
+				var account = document.getElementById('account').value;
+				var realm = document.getElementById('realm').value;
+				var username = document.getElementById('username').value;
+				var password = document.getElementById('password').value;
+
+				voyent.io.auth.connect({
+					account: account,
+					realm: realm,
+					username: username,
+					password: password
+				}).then(function(){
+					setCredentialsOnComponent();
+				})['catch'](function(){
+					//try to login as admin
+					voyent.io.auth.connect({
+						account: account,
+						realm: 'admin',
+						username: username,
+						password: password
+					}).then(function(){
+						setCredentialsOnComponent();
+						document.getElementById('solicit').setAttribute('realm', realm);
+					})
+				});
+			}
+
+			function setCredentialsOnComponent(){
+
+				var elem = document.getElementById('solicit');
+
+				var account = voyent.io.auth.getLastKnownAccount();
+				if( account ){
+					elem.setAttribute('account', account);
+					document.getElementById('account').value = account;
+				}
+
+				var realm = voyent.io.auth.getLastKnownRealm();
+				if( realm ){
+					elem.setAttribute('realm', realm);
+					document.getElementById('realm').value = realm;
+				}
+
+				var token = voyent.io.auth.getLastAccessToken();
+				if( token ){
+					elem.setAttribute('accessToken', token);
+					document.getElementById('username').value = voyent.io.auth.getLastKnownUsername();
+				}
+				
+			}
+
+			function toggleBooleanAttribute(attribute, value) {
+				var solicit = document.getElementById('solicit');
+				value ? solicit.setAttribute(attribute, attribute) : solicit.removeAttribute(attribute);
+			}
+
+			window.addEventListener('WebComponentsReady', function() {
+				// imports are loaded and elements have been registered
+				console.log('WebComponentsReady');
+
+				//initialize known credentials
+				setCredentialsOnComponent();
+			});
+		</script>
+	</body>
+</html>

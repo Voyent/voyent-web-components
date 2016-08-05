@@ -1,11 +1,12 @@
 <!--
     Custom Element with Ace code editor
     http://juicy.github.io/juicy-ace-editor/
-    version: 1.1.1
+    version: 1.1.2
+    @demo index.html
 -->
 <script src="../ace-builds/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 
-<template>
+<template id="juicy-ace-editor">
     <style>
         :host{
             display: block;
@@ -31,7 +32,7 @@
     var thisDoc = (document._currentScript || document.currentScript).ownerDocument;
 
     // Gets content from <template>
-    var template = thisDoc.querySelector('template').content;
+    var template = thisDoc.querySelector('template#juicy-ace-editor').content;
 
     // Creates an object based in the HTML Element prototype
     var TomalecAceEditorPrototype = Object.create(HTMLElement.prototype);
@@ -90,7 +91,7 @@
         // initial attributes
             editor.setTheme( this.getAttribute("theme") );
             editor.setFontSize( this.getAttribute("fontsize") );
-            editor.setReadOnly( this.getAttribute("readonly") );
+            editor.setReadOnly( this.hasAttribute("readonly") );
             var session = editor.getSession();
             session.setMode( this.getAttribute("mode") );
             session.setUseSoftTabs( this.getAttribute("softtabs") );
@@ -140,7 +141,7 @@
                 this.editor.getSession().setTabSize( newVal );
                 break;
             case "readonly":
-                this.editor.setReadOnly( newVal );
+                this.editor.setReadOnly( newVal === '' || newVal );
                 break;
             case "wrapmode":
                 this.editor.getSession().setUseWrapMode( newVal !== null );

@@ -1,0 +1,321 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../voyent-action-editor/voyent-action-list.html">
+<link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-item/paper-item-body.html">
+<link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+
+<!--
+Displays a detailed view of the backpack contents for an action sequence
+
+Example:
+
+    <voyent-backpack-log>
+    </voyent-backpack-log>
+
+@demo demo.html
+-->
+<dom-module id="voyent-backpack-log">
+    <template>
+        <link type="text/css" rel="stylesheet" href="voyent-backpack-log.css">
+        
+        <style type="text/css">
+            paper-dropdown-menu {
+                --paper-dropdown-menu: {
+                    width:100%;
+                };
+            }
+            
+            .container {
+                width: 95% !important;
+                max-width: 95% !important;
+            }
+            
+            .dropWrap {
+                text-align: center;
+                width: 80%;
+            }
+            
+            .taskGroup, .taskItem {
+                border-radius: 3px;
+                align-items: top;
+                vertical-align: top;
+            }
+            
+            .taskGroup {
+                position: relative;
+                padding: 10px;
+                margin-bottom: 10px;
+                background-color: #DBDBDB;
+            }
+            
+            .taskItem {
+                padding: 5px;
+                margin-left: 15px;
+                margin-bottom: 5px;
+                background-color: #E5E5E5;
+            }
+            
+            .taskHeader {
+                cursor: pointer;
+            }
+            
+            .taskPanel {
+                margin-right: 10px;
+            }
+            
+            .twrapLeft {
+                overflow-y: auto;
+            }
+            
+            .twrapMain {
+                overflow-y: scroll;
+                border: 1px inset black;
+            }
+            
+            .twrapLeft, .twrapMain {
+                overflow-x: auto;
+                max-height: 800px;
+            }
+            
+            .table, .tableNoBorder {
+                display: table;
+                width: 100%;
+            }
+            .table {
+                border: 1px solid #ddd;
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+            .th {
+                display: table-cell;
+                text-align:center;
+                vertical-align: middle;
+                padding: 5px;
+                font-weight: bold;
+                border: 1px solid #ddd;
+                background-color: #444444;
+                color: white;
+            }
+            .tr {
+                display: table-row;
+            }
+            .td {
+                padding: 5px;
+                display: table-cell;
+                vertical-align: middle;
+                border: 1px solid #ddd;
+                word-wrap: break-word;
+                max-width: 400px;
+            }
+            .Td { }
+            
+            table {
+                table-layout: fixed;
+                width: 100%;
+                border: 1px solid #ddd;
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+            
+            thead, th {
+                border: 1px solid #ddd;
+            }
+            
+            th {
+                background-color: #444444;
+                color: white;
+            }
+            
+            td {
+                word-wrap: break-word;
+                padding: 5px;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+            
+            .centerT {
+                text-align: center;
+            }
+            
+            .highlight {
+                background-color: #FFFFCC;
+            }
+            .highlightTd {
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+                border-left: 1px solid black;
+                border-right: 1px solid black;
+            }
+            
+            pre {
+                white-space: pre-wrap;
+                white-space: -moz-pre-wrap;
+                white-space: -pre-wrap;
+                white-space: -o-pre-wrap;
+                word-wrap: break-word;
+            }
+        </style>
+        
+        <template is="dom-if" if="{{!_tableView}}">
+            <div class="container flex layout horizontal">
+                <div class="flex-2">
+                    <div class="dropWrap">
+                        <paper-dropdown-menu label="Time Limit" required="true">
+                            <paper-listbox class="dropdown-content" selected="{{selectedLimit}}">
+                                <template is="dom-repeat" strip-whitespace items="[[_timeLimits]]" as="tlimit" strip-whitespace>
+                                    <paper-item>[[tlimit.name]]</paper-item>
+                                </template>
+                            </paper-listbox>
+                        </paper-dropdown-menu>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <paper-button raised on-click="_getLogs">Retrieve Actions</paper-button>
+                </div>
+            </div>
+        </template>
+        
+        <template is="dom-if" if="{{_gotLogs}}">
+            <div class="container flex layout horizontal">
+                <template is="dom-if" if="{{!_tableView}}">
+                    <template is="dom-if" if="{{hasActions()}}">
+                        <!-- We use a pseudo table throughout this page because https://github.com/Polymer/polymer/issues/1567 -->
+                        <div class="table">
+                            <div class="tr">
+                                <div class="th">Recent {{_pastActions.length}} Actions</div>
+                                <div class="th">Name</div>
+                                <div class="th">Time</div>
+                            </div>
+                            <template is="dom-repeat" strip-whitespace items="{{_pastActions}}" as="paction" strip-whitespace>
+                                <div class="tr">
+                                    <div class="td centerT">
+                                        <button on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</button>
+                                    </div>
+                                    <div class="td"><span title="Transaction Code: [[paction.tx]]">[[paction.name]]</span></div>
+                                    <div class="td">[[paction.startDate]] <template is="dom-if" if="{{hasDate(paction.endDate)}}">to [[paction.endDate]]</template></div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </template>
+                <template is="dom-if" if="{{!hasActions()}}">
+                    <h3>No valid actions were found for that time limit</h3>
+                </template>
+            </div>
+        
+            <template is="dom-if" if="{{_tableView}}">
+                <div class="container flex layout horizontal">
+                    <div class="table">
+                        <div class="tr">
+                            <div class="th">
+                                <button on-click="_chooseAnother">Choose Different Action</button>
+                            </div>
+                            <div class="th">Current Action</div>
+                        </div>
+                        <div class="tr">
+                            <div class="td">Name</div>
+                            <div class="td"><span title="Transaction Code: {{_currentAction.tx}}">{{_currentAction.name}}</span></div>
+                        </div>
+                        <template is="dom-if" if="{{hasDate(_currentAction.startDate)}}">
+                            <div class="tr">
+                                <div class="td">Start</div>
+                                <div class="td">{{_currentAction.startDate}}</div>
+                            </div>
+                        </template>
+                        <template is="dom-if" if="{{hasDate(_currentAction.endDate)}}">
+                            <div class="tr">
+                                <div class="td">End</div>
+                                <div class="td">[[_currentAction.endDate]]</div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <div class="container flex layout horizontal" style="margin-bottom: 20px;">
+                    <div class="flex-1 taskPanel">
+                        <div class="twrapLeft" style$="max-height: {{_maxHeight}}px">
+                            <template is="dom-repeat" strip-whitespace items="{{_taskGroups}}" as="group" strip-whitespace>
+                                <div class$="taskGroup {{highlightStyle(group.highlight)}}">
+                                    <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" class="taskHeader" title="{{group.type}}">
+                                        {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{matchCount()}})
+                                            <template is="dom-if" if="{{hasMatches()}}">
+                                                <div>
+                                                    <button on-click="_scrollPrevItem" title="Previous Item">&lt;</button>
+                                                    <button on-click="_scrollNextItem" title="Next Item">&gt;</button>
+                                                </div>
+                                            </template>
+                                        </template>
+                                    </div>
+                                    
+                                    <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task" strip-whitespace>
+                                        <!-- Duplicated for tasks -->
+                                        <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
+                                            {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
+                                                <template is="dom-if" if="{{hasMatches()}}">
+                                                    <div>
+                                                        <button on-click="_scrollPrevItem" title="Previous Item">&lt;</button>
+                                                        <button on-click="_scrollNextItem" title="Next Item">&gt;</button>
+                                                    </div>
+                                                </template>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    
+                                    <template is="dom-if" if="{{isConditionalTaskGroup(group)}}">
+                                        ELSE
+                                        <template is="dom-repeat" strip-whitespace items="{{group.elseTasks}}" as="task" strip-whitespace>
+                                            <!-- Duplicated for elseTasks -->
+                                            <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
+                                                {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
+                                                    <template is="dom-if" if="{{hasMatches()}}">
+                                                        <div>
+                                                            <button on-click="_scrollPrevItem" title="Previous Item">&lt;</button>
+                                                            <button on-click="_scrollNextItem" title="Next Item">&gt;</button>
+                                                        </div>
+                                                    </template>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <template is="dom-if" if="{{hasLogs()}}">
+                        <div id="[[tableWrapId]]" class="flex-3 twrapMain" style$="max-height: {{_maxHeight}}px">
+                            <div class="tableNoBorder">
+                                <div class="tr">
+                                    <div class="th">{{_backpack.length}} Items</div>
+                                </div>
+                                <template is="dom-repeat" strip-whitespace items="{{_backpack}}" as="backpack" strip-whitespace>
+                                    <div id$="item{{index}}" class$="tr {{highlightStyle(backpack.highlight)}} bottomB">
+                                        <div class$="td {{highlightStyle(backpack.highlight)}}Td">{{formatContainer(backpack)}}<pre>{{backpack.message}}</pre></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <template is="dom-if" if="{{!hasLogs()}}">
+                        <div class="flex-3">
+                            <h2>No logs were found for that action and time limit.</h2>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </template>
+        
+        <template is="dom-if" if="{{_loading}}">
+            <div class="throbber-wrapper">
+                <p>One moment, loading...</p>
+                <div class="throbber-loader">...</div>
+            </div>
+        </template>
+    </template>
+</dom-module>
+
+<script src="voyent-backpack-log.js"></script>

@@ -1,0 +1,60 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../common/voyent-common-properties-behavior.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+
+<!--
+[Voyent Document JSON Editor](https://github.com/voyent/voyent-web-components/voyent-document-json-editor/index.html)
+
+Example:
+
+
+### Styling
+
+@group Voyent Web Components
+@demo demo.html
+
+-->
+
+<dom-module id="voyent-document-json-editor">
+	<template>
+		<link rel="stylesheet" href="../../codemirror/lib/codemirror.css">
+    <link rel="stylesheet" href="../../codemirror/addon/lint/lint.css">
+		<style>
+      :host {
+        display: block;
+      }
+      paper-icon-button{
+        float: right;
+      }
+      .message{
+        color: #878787;
+        font-size: 12px;
+        display: inline-block;
+        padding: 3px;
+        float: right;
+        margin-top: -20px;
+      }
+    </style>
+    <span class="message">{{message}}</span>
+    <paper-icon-button icon="save" on-click="saveDocument" disabled="{{!editedDocumentIsValid}}"></paper-icon-button>
+    <textarea class="document-editor-container" hidden="true">{{serializedDocument}}</textarea>
+  </template>
+</dom-module>
+<script src="../../codemirror/lib/codemirror.js"></script>
+<script src="../../jsonlint/lib/jsonlint.js"></script>
+<script src="../../codemirror/mode/javascript/javascript.js"></script>
+<script src="../../codemirror/addon/lint/lint.js"></script>
+<script src="../../codemirror/addon/lint/json-lint.js"></script>
+<script src="voyent-document-json-editor.js"></script>
+
