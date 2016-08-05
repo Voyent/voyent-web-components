@@ -1,5 +1,6 @@
 Polymer({
 	is: "voyent-action-editor",
+    behaviors: [Voyent.ActionBehavior],
 
     properties: {
         /**
@@ -36,9 +37,6 @@ Polymer({
         }
         this._loadedAction = null;
         this._taskGroups = [];
-        this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage','data'];
-        this._taskGroupBaseId = 'taskGroup';
-        this._taskBaseId = 'task';
 
         // Setup our sidebar to scroll alongside the action editor
         // This is necessary in case the action editor is quite long (such as many tasks)
@@ -817,7 +815,7 @@ Polymer({
             });
         }
     },
-    
+
     /**
      * Task group ondragstart event handler.
      * @param e
@@ -843,64 +841,6 @@ Polymer({
         });
     },
 
-    /**
-     * Task ondragstart event handler.
-     * @param e
-     * @private
-     */
-    _startDragTask: function(e) {
-        //Firefox requires using setData in the on-drag handler in order
-        //for drag/drop to work so we'll just set some random text
-        e.dataTransfer.setData('text', 'bar');
-        e.stopPropagation();
-
-        if (e.model.item) {
-            this._lastDragged = e.model.item; //reference task schema so we can populate the UI on drop
-            this._lastDraggedType = 'action/task/new'; //indicate that this item is a new task
-        }
-        else {
-            this._lastDragged = {'task':e.model.task,'groupIndex':this._stripIndex(e.target.getAttribute('data-group-id'))}; //reference task and the group it is from
-            this._lastDraggedType = 'action/task/existing'; //indicate that this item is an existing task (already in a group)
-        }
-
-        // Add a highlight effect showing all droppable areas for tasks
-        var tgroups = this.querySelectorAll('.task-group');
-        Array.prototype.forEach.call(tgroups, function(el, i) {
-            if (el.getAttribute('data-title') === 'conditional-taskgroup') {
-                //for a conditional task group only the if/else sections are highlighted
-                el.querySelector('.if').classList.add('highlight');
-                el.querySelector('.else').classList.add('highlight');
-            }
-            else {
-                el.classList.add('highlight');
-            }
-        });
-    },
-    
-    /**
-     * Action ondragend common handler to remove all existing highlights
-     * @param e
-     * @private
-     */
-    _dragEndCommon: function(e) {
-        var tgroups = this.querySelectorAll('.task-group');
-        Array.prototype.forEach.call(tgroups, function(el, i) {
-            if (el.getAttribute('data-title') === 'conditional-taskgroup') {
-                //for a conditional task group only the if/else sections are highlighted
-                el.querySelector('.if').classList.remove('highlight');
-                el.querySelector('.else').classList.remove('highlight');
-            }
-            else {
-                el.classList.remove('highlight');
-            }
-        });
-        
-        var acont = this.querySelectorAll('.actionContainer');
-        Array.prototype.forEach.call(acont, function(el, i) {
-            el.classList.remove('highlight');
-        });
-    },
-    
     /**
      * Action ondragover event handler.
      * @param e
@@ -1186,19 +1126,6 @@ Polymer({
     },
 
     /**
-     * Get the index based on a task group id.
-     * @param id
-     * @returns {number}
-     * @private
-     */
-    _stripIndex: function(id) {
-        //strip the numbers from the end of the string
-        var index = id.replace(/^\D+/g, '');
-        index = parseInt(index);
-        return index;
-    },
-
-    /**
      * Return the current vertical position of the scroll bar.
      * @param parent
      * @returns {number}
@@ -1225,29 +1152,6 @@ Polymer({
     },
 
     /**
-     * Generates a grow animation when dropping task groups and tasks.
-     * @param selector
-     * @private
-     */
-    _doGrowAnimation: function(selector) {
-        var _this = this;
-        setTimeout(function() {
-            var justadded = _this.querySelector(selector);
-            if (justadded) {
-                justadded.classList.add('growbubble');
-            }
-        },0);
-
-        // Remove the grow animation after it's complete, so that the highlight keyframe still works properly
-        setTimeout(function() {
-            var justadded = _this.querySelector(selector);
-            if (justadded) {
-                justadded.classList.remove('growbubble');
-            }
-        },550);
-    },
-
-    /**
      * Delete a task group.
      * @param e
      * @private
@@ -1259,26 +1163,7 @@ Polymer({
         this._updateTaskGroupIds();
     },
 
-    /**
-     * Delete a task.
-     * @param e
-     * @private
-     */
-    _deleteTask: function(e) {
-        var taskElem = Polymer.dom(e.target.parentNode).parentNode;
-        var groupIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-group-id')));
-        var taskIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
 
-        // Reduce our task count for the action container parent
-        this._taskGroups[groupIndex].schema.taskcount--;
-        this.set('_taskGroups.'+groupIndex+'.schema.taskcount', this._taskGroups[groupIndex].schema.taskcount);
-
-        // Then remove the entire task itself
-        this.splice('_taskGroups.'+groupIndex+'.tasks',taskIndex,1);
-
-        //keep the task ids up to date for drag/drop functionality
-        this._updateTaskIds();
-    },
 
     /**
      * Move a task group up.
@@ -1347,154 +1232,12 @@ Polymer({
     },
 
     /**
-     * Move a task up.
-     * @param e
-     * @private
-     */
-    _moveTaskUp: function(e) {
-        var _this = this;
-        var task = e.model.task;
-        var taskElem = Polymer.dom(e.target.parentNode).parentNode;
-        var groupIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-group-id')));
-        var currPos = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
-        var newPos = currPos-1;
-        if (newPos < 0) {
-            //it's possible the that we have a conditional task group and there
-            //are no tasks inside the "if" section, if that's the case then we
-            //can "move" this one up by changing the isElseTask flag
-            if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
-                this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask) {
-                this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',false);
-            }
-            return;
-        }
-
-        //special handling for conditional task groups for moving tasks between the if / else sections
-        if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
-            this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask &&
-            !this._taskGroups[groupIndex].tasks[newPos].schema.isElseTask) {
-                this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',false);
-                //don't splice since we just "moved" between a conditional if/else group
-                return;
-        }
-
-        //move the task up
-        this.splice('_taskGroups.'+groupIndex+'.tasks',currPos,1);
-        this.splice('_taskGroups.'+groupIndex+'.tasks',newPos,0,task);
-
-        //keep the task ids in sync
-        setTimeout(function() {
-            _this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.id',_this._taskBaseId+currPos);
-            _this.set('_taskGroups.'+groupIndex+'.tasks.'+newPos+'.id',_this._taskBaseId+newPos);
-        },0);
-    },
-
-    /**
-     * Move a task down.
-     * @param e
-     * @private
-     */
-    _moveTaskDown: function(e) {
-        var _this = this;
-        var task = e.model.task;
-        var taskElem = Polymer.dom(e.target.parentNode).parentNode;
-        var groupIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-group-id')));
-        var currPos = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
-        var newPos = currPos+1;
-        if (newPos == this._taskGroups[groupIndex].tasks.length) {
-            //it's possible the that we have a conditional task group and there
-            //are no tasks inside the "else" section, if that's the case then we
-            //can "move" this one down by changing the isElseTask flag
-            if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
-                !this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask) {
-                this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.schema.isElseTask',true);
-            }
-            return;
-        }
-
-        //special handling for conditional task groups for moving tasks between the if / else sections
-        if (this._taskGroups[groupIndex].schema.title === 'conditional-taskgroup' &&
-            !this._taskGroups[groupIndex].tasks[currPos].schema.isElseTask &&
-            this._taskGroups[groupIndex].tasks[newPos].schema.isElseTask) {
-            this.set('_taskGroups.' + groupIndex + '.tasks.' + currPos + '.schema.isElseTask', true);
-            //don't splice since we just "moved" between a conditional if/else group
-            return;
-        }
-
-        //move the task down
-        this.splice('_taskGroups.'+groupIndex+'.tasks',currPos,1);
-        this.splice('_taskGroups.'+groupIndex+'.tasks',newPos,0,task);
-
-        //keep the task ids in sync
-        setTimeout(function() {
-            _this.set('_taskGroups.'+groupIndex+'.tasks.'+currPos+'.id',_this._taskBaseId+currPos);
-            _this.set('_taskGroups.'+groupIndex+'.tasks.'+newPos+'.id',_this._taskBaseId+newPos);
-        },0);
-    },
-
-    /**
-     * Clone a task.
-     * @param e
-     * @private
-     */
-    _cloneTask: function(e) {
-        var taskElem = Polymer.dom(e.target.parentNode).parentNode;
-        var groupIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-group-id')));
-        var taskIndex = parseInt(this._stripIndex(taskElem.getAttribute('data-id')));
-        var newIndex = taskIndex+1;
-
-        var clonedTask = JSON.parse(JSON.stringify(e.model.task));
-        clonedTask.name = clonedTask.name+'_clone';
-
-        //by default add the cloned task after the one that was cloned
-        this.splice('_taskGroups.'+groupIndex+'.tasks',newIndex,0,clonedTask);
-
-        this._updateTaskIds();
-        this._doGrowAnimation('#'+this._taskGroupBaseId+groupIndex + ' [data-id="' + this._taskBaseId+newIndex.toString() + '"]');
-        this.set('_taskGroups.'+groupIndex+'.schema.taskcount', this._taskGroups[groupIndex].tasks.length);
-    },
-
-    /**
-     * Toggle the content of a task group / task.
-     * @param e
-     * @private
-     */
-    _toggleTask: function(e) {
-        // Get our parent element to toggle
-        // We also have to account for the arrow or smaller span text being clicked
-        var parent = Polymer.dom(e.target).parentNode;
-        if ((e.target.classList.contains('arrow')) ||
-           (e.target.tagName === 'SPAN')) {
-            parent = Polymer.dom(parent).parentNode;
-        }
-
-        parent.classList.toggle('toggled');
-        parent.querySelector('.content').classList.toggle('toggled');
-        parent.querySelector('.arrow').classList.toggle('toggled');
-        if (parent.querySelector('.details')) {
-            parent.querySelector('.details').classList.toggle('toggled');
-        }
-    },
-
-    /**
      * Keeps the task group ids in sync.
      * @private
      */
     _updateTaskGroupIds: function() {
         for (var i = 0; i < this._taskGroups.length; i++) {
             this.set('_taskGroups.' + i + '.id', this._taskGroupBaseId+i);
-        }
-    },
-
-    /**
-     * Keeps the task ids in sync.
-     * @private
-     */
-    _updateTaskIds: function() {
-        for (var i=0; i<this._taskGroups.length; i++) {
-            for (var j=0; j<this._taskGroups[i].tasks.length; j++) {
-                this.set('_taskGroups.'+i+'.tasks.'+j+'.id',this._taskBaseId+j);
-            }
         }
     },
 
@@ -1520,109 +1263,6 @@ Polymer({
      */
     _isConditionalTaskGroup: function(title) {
         return title === 'conditional-taskgroup';
-    },
-
-    /**
-     * Sorts the list of properties alphabetically.
-     * @param a
-     * @param b
-     * @returns {number}
-     * @private
-     */
-    _sortProperties: function(a,b) {
-        a = a.title.toLowerCase();
-        b = b.title.toLowerCase();
-        if (a < b) { return -1; }
-        else if (a > b) { return  1; }
-        return 0;
-    },
-
-    /**
-     * Template helper function.
-     * @param properties
-     * @returns {Array}
-     * @private
-     */
-    _toArray: function(properties) {
-        if (!properties) {
-            return [];
-        }
-        return Object.keys(properties).map(function(key) {
-            return properties[key];
-        });
-    },
-
-    /**
-     * Template helper function.
-     * @param index
-     * @private
-     */
-    _toOneBasedIndex: function(index) {
-        return index+1;
-    },
-
-    /**
-     * Template helper function.
-     * @param type
-     * @returns {boolean}
-     * @private
-     */
-    _isString: function(type) {
-        return type=='string';
-    },
-
-    /**
-     * Template helper function.
-     * @param type
-     * @returns {boolean}
-     * @private
-     */
-    _isBoolean: function(type) {
-        return type=='boolean';
-    },
-
-    /**
-     * Template helper function.
-     * @param type
-     * @returns {string}
-     * @private
-     */
-    _addBooleanClass: function(type) {
-        return type=='boolean' ? 'pointer' : '';
-    },
-
-    /**
-     * Template helper function.
-     * @param title
-     * @returns {boolean}
-     * @private
-     */
-    _isCodeEditor: function(title) {
-        return this._codeEditorProperties.indexOf(title.toLowerCase()) > -1;
-    },
-
-    /**
-     * Template helper function.
-     * @param title
-     * @return {boolean}
-     * @private
-     */
-    _isTransportEditor: function(title) {
-        return title.toLowerCase() === 'transporttemplate';
-    },
-
-    /**
-     * Template helper function
-     * Format the passed name with brackets and spacing as necessary
-     * This is meant to be used in the collapsed title of a task group
-     * @param name
-     * @returns {string}
-     * @private
-     */
-    _formatTaskName: function(name) {
-        if (typeof name !== 'undefined' && name) {
-            return ' (' + name + ')';
-        }
     },
 
     /**
@@ -1654,27 +1294,6 @@ Polymer({
 
         toReturn += ')';
         return toReturn;
-    },
-
-    /**
-     * Template helper function.
-     * @param title
-     * @returns {boolean}
-     * @private
-     */
-    _disableValidation: function(title) {
-        //disable syntax checker for messageTemplate since the value can be a simple string
-        return title.toLowerCase() === 'messagetemplate';
-    },
-
-    /**
-     * Template helper function.
-     * @param enumArray
-     * @returns {boolean}
-     * @private
-     */
-    _hasEnum: function(enumArray) {
-        return enumArray && enumArray.length > 0;
     },
 
     //event handler functions
