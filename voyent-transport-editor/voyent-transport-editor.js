@@ -60,6 +60,7 @@ Polymer({
                       '_tool.details.specbrowser, _tool.details.speccloud, _tool.details.specsms, _tool.details.specemail, _tool.details.global, _tool.details.browser, _tool.details.cloud, _tool.details.sms, _tool.details.email,' +
                       '_tool.url.specbrowser, _tool.url.speccloud, _tool.url.specsms, _tool.url.specemail, _tool.url.global, _tool.url.browser, _tool.url.cloud, _tool.url.sms, _tool.url.email,' +
                       '_tool.priority.specbrowser, _tool.priority.speccloud, _tool.priority.specsms, _tool.priority.specemail, _tool.priority.global, _tool.priority.browser, _tool.priority.cloud, _tool.priority.sms, _tool.priority.email,' +
+                      '_tool.emailtemplate.email,' +
                       '_tool.expire_time.global, _tool.icon.global, _tool.payload)'
     ],
     
@@ -68,6 +69,8 @@ Polymer({
      */
 	ready: function() {
 	    this.triggeredFromTool = false;
+	    this._hasEmailTemplates = false;
+	    this._emailTemplates = this._loadEmailTemplates();
 	    
 	    // Log if we don't have any transports available
 	    this.noTransports = false;
@@ -123,6 +126,10 @@ Polymer({
 	    }
 	    if (this.allowEmail && this._tool.transport.email) {
 	        toReturn.email = this._getOverrideData("email");
+	        
+            if (this._hasField("emailtemplate", "email")) {
+                toReturn.email.emailtemplate = this._getField("emailtemplate", "email");
+            }
 	    }
 	    if (this.allowSMS && this._tool.transport.sms) {
 	        toReturn.sms = this._getOverrideData("sms");
@@ -157,6 +164,11 @@ Polymer({
 	        if (this._isDefined(json['global']['payload'])) {
 	            this.set('_tool.payload', JSON.stringify(json['global']['payload']));
 	        }
+	    }
+	    
+	    // Set our email template
+	    if (this._isDefined(json['email'])) {
+	        this._setFieldFromJSON(json, 'email', 'emailtemplate');
 	    }
 	    
 	    // Check our incoming data for each transport type
@@ -294,6 +306,24 @@ Polymer({
     },
     
     /**
+     * Retrieve a list of saved email templates IDs from the doc service
+     */
+	_loadEmailTemplates: function() {
+        if (!voyent.io.auth.isLoggedIn()) {
+            return;
+        }
+	    
+        var _this = this;
+        voyent.io.documents.getDocument({'id': 'emailTemplates'}).then(function(doc) {
+            _this.set('_emailTemplates', doc.ids);
+            
+            if (typeof _this._emailTemplates !== 'undefined' && _this._emailTemplates !== null && _this._emailTemplates.length > 0) {
+                _this.set('_hasEmailTemplates', true);
+            }
+        });
+	},
+    
+    /**
      * Set the default state of the UI tooling controls
      */
     _setDefaultTool: function() {
@@ -347,6 +377,10 @@ Polymer({
                 "cloud": null,
                 "sms": null,
                 "email": null
+            },
+            "emailtemplate": {
+                "specemail": true,
+                "email": ""
             },
             "expire_time": {
                 "global": 4320,

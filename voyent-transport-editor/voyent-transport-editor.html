@@ -344,6 +344,28 @@ Displays a transport editor that can build message templates for various technol
                     </table>
                 </div>
                 
+                <template is="dom-if" if="{{_tool.transport.email}}">
+                    <template is="dom-if" if="{{_hasEmailTemplates}}">
+                        <div class="inputWrap">
+                            <b>Email Template</b>
+                            <paper-dropdown-menu>
+                                <paper-listbox class="dropdown-content" selected="{{_tool.emailtemplate.email}}" attr-for-selected="etid">
+                                    <paper-item etid="">N/A</paper-item>
+                                    <template is="dom-repeat" strip-whitespace items="[[_emailTemplates]]" as="saved">
+                                        <paper-item etid="[[saved]]">[[saved]]</paper-item>
+                                    </template>
+                                </paper-listbox>
+                            </paper-dropdown-menu>
+                            <table class="overrideWrapGlobal">
+                                <tr>
+                                    <td>Override:</td>
+                                    <td><i>N/A (Email Only)</i></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </template>
+                </template>
+                
                 <div class="inputWrap">
                     <b>Payload</b>
                     <voyent-code-editor class="code-editor" value="{{_tool.payload}}"></voyent-code-editor>

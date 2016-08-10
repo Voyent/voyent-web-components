@@ -1,0 +1,59 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../voyent-code-editor/voyent-code-editor.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-item/paper-item-body.html">
+<link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+
+<!--
+Displays a simple code editor input based on the Ace/Cloud9 Editor. You can access the ACE Editor programmatically using the `editor` property (< voyent-code-editor >.editor). More info available at: https://ace.c9.io/.
+
+Example:
+
+    <voyent-code-editor>
+    </voyent-code-editor>
+
+@demo demo.html
+-->
+<dom-module id="voyent-email-editor">
+    <template>
+        <style type="text/css">
+            .newIn, .loadWrap {
+                width: 100%;
+                margin: 10px;
+            }
+            
+            .loadWrap {
+                margin-bottom: 20px;
+            }
+        </style>
+    
+        <div class="loadWrap">
+            <paper-dropdown-menu label="Saved Email Templates">
+                <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
+                    <template is="dom-repeat" strip-whitespace items="[[_savedEmails]]" as="saved">
+                        <paper-item>[[saved]]</paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
+            <paper-button raised on-click="loadEmail">Load</paper-button>
+            <paper-button raised on-click="deleteEmail">Delete</paper-button>
+            <paper-button raised on-click="newEmail">New</paper-button>
+        </div>
+        
+        <div class="newIn">
+            <label>Current Email Template ID:
+                <input type="text" placeholder="Email Template ID" title="The ID of the email template"
+                       required value="{{currentEmailId::input}}"></input>
+            </label>
+            <paper-button raised on-click="saveEmail">Save</paper-button>
+            <paper-button raised on-click="previewEmail">Save & Preview</paper-button>
+        </div>
+        
+        <voyent-code-editor value="{{emailValue}}" disablevalidation="true" mode="html"></voyent-code-editor>
+    </template>
+</dom-module>
+
+<script src="voyent-email-editor.js"></script>
