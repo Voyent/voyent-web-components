@@ -30,12 +30,43 @@ Voyent.CodeEditor = Polymer({
          * Value of the currently used email template
          */
         emailValue: { type: String, value: "" },
+        preview: { type: Boolean, value: false, notify: true }
     },
 
     ready: function() {
-        this.set('_savedEmails', []);
-        
-        this.initialize();
+        // First check if we're in Preview mode
+        // If we are we'll try to get a set of URL parameters:
+        //  id, realm, account, access_token
+        // Then if the params are present we'll try to get the desired email template by ID from the doc service
+        // If successful that HTML content will rewrite over our page
+        if (this.preview) {
+            this.fire('message-info', 'Email editor preview mode detected, attempting to load...');
+            
+            var params = this._getURLParams();
+            
+            if (!this._hasURLParam(params, "id")) { this.fire('message-error', 'Missing "id" param'); return; }
+            if (!this._hasURLParam(params, "realm")) { this.fire('message-error', 'Missing "realm" param'); return; }
+            if (!this._hasURLParam(params, "account")) { this.fire('message-error', 'Missing "account" param'); return; }
+            if (!this._hasURLParam(params, "access_token")) { this.fire('message-error', 'Missing "access_token" param'); return; }
+            
+            var _document = document;
+            var _this = this;
+            voyent.io.documents.getDocument({'realm': params.realm, 'account': params.account, 'accessToken': params.access_token,
+                                             'id': params.id}).then(function(doc) {
+                _this.fire('message-info', 'Successfully found email template to display');
+                
+                _document.write(doc.content);
+                _document.close();
+            });
+        }
+        else {
+            this.hasPreviewURL = false;
+            this.previewURL = null;
+            
+            this.set('_savedEmails', []);
+            
+            this.initialize();
+        }
     },
     
     initialize: function() {
@@ -61,6 +92,7 @@ Voyent.CodeEditor = Polymer({
                                              'id': toLoadId}).then(function(doc) {
                 _this.set('emailValue', doc.content);
                 _this.set('currentEmailId', toLoadId);
+                _this.resetPreviewURL();
                 
                 _this.fire('message-info', 'Successfully loaded "' + toLoadId + '" with ' + _this.emailValue.length + ' characters.');
             }).catch(function(error) {
@@ -110,9 +142,30 @@ Voyent.CodeEditor = Polymer({
         this.set('currentEmailId', 'newEmail');
         this.set('emailValue', '');
         this.set('selectedIndex', null);
+        this.resetPreviewURL();
+    },
+    
+    resetPreviewURL: function() {
+        this.set('hasPreviewURL', false);
+        this.set('previewURL', null);
     },
     
     saveEmail: function() {
+        this._saveEmail(function() { });
+    },
+    
+    previewEmail: function() {
+        var _this = this;
+        this._saveEmail(function() {
+            _this.set('hasPreviewURL', true);
+            _this.set('previewURL', 'preview.html?id=' + _this.currentEmailId +
+                                    '&realm=' + _this.realm +
+                                    '&account=' + _this.account +
+                                    '&access_token=' + voyent.io.auth.getLastAccessToken());
+        });
+    },
+    
+    _saveEmail: function(cb) {
         // Check to see if this ID is already in our doc index. If not we'll need to push and update the index
         if (this._savedEmails.indexOf(this.currentEmailId) === -1) {
             this.push('_savedEmails', this.currentEmailId);
@@ -126,19 +179,17 @@ Voyent.CodeEditor = Polymer({
         
         voyent.io.documents.updateDocument(toPass).then(function(){
             _this.fire('message-info', 'Successfully saved email template "' + _this.currentEmailId + '".');
+            
+            if (cb) { cb(); }
         }).catch(function(error) {
             voyent.io.documents.createDocument(toPass).then(function(){
                 _this.fire('message-info', 'Successfully saved email template "' + _this.currentEmailId + '".');
+                
+                if (cb) { cb(); }
             }).catch(function(error) {
                 _this.fire('message-error', 'Failed to save email template "' + _this.currentEmailId + '".');
             });
         });
-    },
-    
-    previewEmail: function() {
-        this.saveEmail();
-        
-        // TODO Show the HTML content of this.emailValue in an iframe or new window. Need to callback from saveEmail though
     },
     
     _getIndex: function() {
@@ -161,5 +212,17 @@ Voyent.CodeEditor = Polymer({
         }).catch(function(error) {
             voyent.io.documents.createDocument(toPass);
         });
+    },
+    
+    _getURLParams: function() {
+        var params = {};
+        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+            params[key] = value;
+        });
+        return params;
+    },
+    
+    _hasURLParam: function(params, key) {
+        return typeof params[key] !== 'undefined' && params[key] !== null;
     },
 });
