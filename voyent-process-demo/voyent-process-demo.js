@@ -184,6 +184,11 @@ Polymer({
 	sendEvent: function(e) {
 	    e.stopPropagation(); // Prevent double submit in case the image is clicked
 	    
+	    // Don't send an actual event if we're debugged
+	    if (this.debugHighlight) {
+	        return;
+	    }
+	    
 	    var model = JSON.parse(e.target.getAttribute('data-model'));
         var event = {
             time: new Date().toISOString(),
