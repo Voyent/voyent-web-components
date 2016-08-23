@@ -43,7 +43,7 @@ Polymer({
          * Random amount of milliseconds to add to the minimum between a simulated step
          * Only used if debugHighlight=true
          */
-        randMS: { type: Number, value: 5000 },
+        randMS: { type: Number, value: 4000 },
     },
     
     /**
@@ -90,47 +90,49 @@ Polymer({
         // Notify the user
         this.fire('message-info', 'Initialized and prepared to start');
         
-        // Attach and join the push group
-        voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
+        if (!this.debugHighlight) {
+            // Attach and join the push group
+            voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
         
-        // Handle incoming notifications
-        // We don't need to display the notifications, since updating our process model image will show the user enough
-        var _this = this;
-        document.addEventListener('notificationReceived',function(e) {
-            var matchIndex = -1;
-            for (var i = 0; i < _this._currentProcess.model.length; i++) {
-                var current = _this._currentProcess.model[i];
-                if (current.name == (e.detail.notification.subject + ' ' + e.detail.notification.details)) {
-                    matchIndex = i;
-                    break;
+            // Handle incoming notifications
+            // We don't need to display the notifications, since updating our process model image will show the user enough
+            var _this = this;
+            document.addEventListener('notificationReceived',function(e) {
+                var matchIndex = -1;
+                for (var i = 0; i < _this._currentProcess.model.length; i++) {
+                    var current = _this._currentProcess.model[i];
+                    if (current.name == (e.detail.notification.subject + ' ' + e.detail.notification.details)) {
+                        matchIndex = i;
+                        break;
+                    }
                 }
-            }
-            
-            // If we have a match we'll want to update the highlight accordingly
-            if (matchIndex > -1) {
-                _this.clearHighlights();
-                _this.set('_currentProcess.model.' + matchIndex + '.highlight', true);
                 
-                // If the next item has a waitFire we need to manually move to it
-                if ((_this._currentProcess.model[matchIndex+1].waitFire == true) ||
-                    (matchIndex >= (_this._currentProcess.model.length-2))) {
-                    setTimeout(function() {
-                        _this.highlightNext();
-                    }, 1500);
+                // If we have a match we'll want to update the highlight accordingly
+                if (matchIndex > -1) {
+                    _this.clearHighlights();
+                    _this.set('_currentProcess.model.' + matchIndex + '.highlight', true);
+                    
+                    // If the next item has a waitFire we need to manually move to it
+                    if ((_this._currentProcess.model[matchIndex+1].waitFire == true) ||
+                        (matchIndex >= (_this._currentProcess.model.length-2))) {
+                        setTimeout(function() {
+                            _this.highlightNext();
+                        }, 1500);
+                    }
+                    // Also if we're at the second-to-last step we need to automatically move to End
+                    if (matchIndex >= (_this._currentProcess.model.length-2)) {
+                        var prevMS = 3000;
+                        setTimeout(function() {
+                            _this.highlightNext();
+                        }, prevMS);
+                        // And then we'll want to move off End to no highlight
+                        setTimeout(function() {
+                            _this.clearHighlights();
+                        }, prevMS+2000);
+                    }
                 }
-                // Also if we're at the second-to-last step we need to automatically move to End
-                if (matchIndex >= (_this._currentProcess.model.length-2)) {
-                    var prevMS = 3000;
-                    setTimeout(function() {
-                        _this.highlightNext();
-                    }, prevMS);
-                    // And then we'll want to move off End to no highlight
-                    setTimeout(function() {
-                        _this.clearHighlights();
-                    }, prevMS+2000);
-                }
-            }
-        });
+            });
+        }
 	},
 	
 	startProcess: function() {
