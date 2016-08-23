@@ -1,0 +1,133 @@
+<!--
+	@license
+	Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+	This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	Code distributed by Google as part of the polymer project is also
+	subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+	<title>Process Service Demo</title>
+
+	<!-- Load the webcomponents polyfill -->
+	<script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+	<link rel="import" href="voyent-process-demo.html">
+	<link rel="import" href="../voyent-message/voyent-message.html">
+
+	<!-- Demo specific CSS -->
+	<link rel="stylesheet" href="../common/demo.css"/>
+</head>
+<body unresolved>
+
+<style type="text/css">
+    html, body, .container {
+        height: 100%;
+    }
+
+    .container {
+        max-width: 1200px;
+        overflow: visible;
+    }
+</style>
+
+<h1>Process Service Demo</h1>
+<h3>Login with your Voyent Account Information</h3>
+<div class="container">
+    <form>
+        <div>
+            <label>Account:
+                <input id="account" type="text" value="testaccount"/>
+            </label>
+        </div>
+        <div>
+            <label>Realm:
+                <input id="realm" type="text" value="testrealm"/>
+            </label>
+        </div>
+        <div>
+            <label>Host:
+                <input id="host" type="text" value="10.18.39.139"/>
+            </label>
+        </div>
+        <div>
+            <label>Username:
+                <input id="username" type="text" value="testuser"/>
+            </label>
+        </div>
+        <div>
+            <label>Password:
+                <input id="password" type="password" value="password"/>
+            </label>
+        </div>
+        <a onclick="login()">Login</a>
+
+        <div class="settings">
+            &nbsp;
+        </div>
+    </form>
+    <!-- Declare the elements by their tags -->
+    <voyent-process-demo id="processDemo"></voyent-process-demo>
+    <voyent-message></voyent-message>
+</div>
+
+<script type="text/javascript">
+    var loginCall = false;
+
+    function login(event){
+        var account = document.getElementById('account').value;
+        var realm = document.getElementById('realm').value;
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+        var host = document.getElementById('host').value;
+        loginCall = true;
+
+        voyent.io.auth.connect({
+            account: account,
+            realm: realm,
+            username: username,
+            password: password,
+            host: host
+        }).then(function(){
+            setCredentialsOnComponent();
+        });
+    }
+
+    function setCredentialsOnComponent(){
+        var elem = document.getElementById('processDemo');
+
+        var account = voyent.io.auth.getLastKnownAccount();
+        if( account ){
+            elem.setAttribute('account', account);
+            document.getElementById('account').value = account;
+        }
+
+        var realm = voyent.io.auth.getLastKnownRealm();
+        if( realm ){
+            elem.setAttribute('realm', realm);
+            document.getElementById('realm').value = realm;
+        }
+        
+        var host = document.getElementById('host').value;
+        if ( host ){
+            elem.setAttribute('host', host);
+        }
+        
+        elem.initialize();
+    }
+        
+    window.addEventListener('WebComponentsReady', function() {
+        if (!loginCall) {
+            setCredentialsOnComponent();
+        }
+    
+        // imports are loaded and elements have been registered
+        console.log('WebComponentsReady');
+    });
+</script>
+</body>
+</html>
