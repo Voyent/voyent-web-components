@@ -60,14 +60,14 @@ Polymer({
 	    this._currentProcess = { "title": "Update Status Model",
 	                             "forks": [ "High Road", "Low Road" ],
 	                             "model": [ { "name": "Start", "image": "0-start.png" },
-                                             { "name": "Update Status A", "image": "1-update-status-a.png" },
-                                             { "name": "Update Status B", "image": "2-update-status-b.png" },
-                                             { "name": "Synthetic Event A", "image": "3-synthetic-event-a.png", "waitFire": true },
-                                             { "name": "Update Status C", "image": "4-update-status-c.png" },
-                                             { "name": "Synthetic Event B", "image": "5-synthetic-event-b.png", "waitFire": true },
-                                             { "name": "Fork", "image": "6-fork.png" },
-                                             { "name": "Update Status High Road", "image": "7-update-status-road.png" },
-                                             { "name": "End", "image": "8-end.png"} ] };
+                                            { "name": "Update Status A", "image": "1-update-status-a.png" },
+                                            { "name": "Update Status B", "image": "2-update-status-b.png" },
+                                            { "name": "Synthetic Event A", "image": "3-synthetic-event-a.png", "waitFire": true },
+                                            { "name": "Update Status C", "image": "4-update-status-c.png" },
+                                            { "name": "Synthetic Event B", "image": "5-synthetic-event-b.png", "waitFire": true },
+                                            { "name": "Fork", "image": "6-fork.png" },
+                                            { "name": "Update Status High Road", "image": "7-update-status-road.png" },
+                                            { "name": "End", "image": "8-end.png"} ] };
         // Set the default selected fork
         this.selectedFork = this._currentProcess.forks[0];
 	},
@@ -192,6 +192,7 @@ Polymer({
 	    }
 	    
 	    var model = JSON.parse(e.target.getAttribute('data-model'));
+	    // Note the data parameters are case sensitive based on what the Process Service uses
         var event = {
             time: new Date().toISOString(),
             service: 'voyent-process-demo',
@@ -199,7 +200,7 @@ Polymer({
             type: 'synthetic-message-event-withProcessId',
             processId: this.processId,
             data: {
-                'fork': this.selectedFork,
+                'Fork': this.selectedFork,
                 'target': 'process'
             }
         };
