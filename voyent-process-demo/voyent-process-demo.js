@@ -14,7 +14,7 @@ Polymer({
         /**
          * Defines the Voyent host to use for services
          */
-        host: { type: String },
+        host: { type: String, value: "dev.voyent.cloud" },
         /**
          * Push group to attach and join automatically on valid initialization
          * The intent is to listen to the group the process is pushing status updates to
@@ -66,8 +66,11 @@ Polymer({
                                             { "name": "Update Status C", "image": "4-update-status-c.png" },
                                             { "name": "Synthetic Event B", "image": "5-synthetic-event-b.png", "waitFire": true },
                                             { "name": "Fork", "image": "6-fork.png" },
-                                            { "name": "Update Status High Road", "image": "7-update-status-road.png" },
-                                            { "name": "End", "image": "8-end.png"} ] };
+                                            { "name": "Outcome", "image": "blank.png", "fork": true, "groupList": [ { "name": "Update Status High Road", "image": "7-update-status-high-road.png" },
+                                                                                                                    { "name": "Fork Joiner", "image": "8-fork-joiner.png" },
+                                                                                                                    { "name": "Update Status Low Road", "image": "9-update-status-low-road.png" } ] },
+                                            { "name": "End", "image": "10-end.png"} ]
+                               };
         // Set the default selected fork
         this.selectedFork = this._currentProcess.forks[0];
 	},
@@ -99,11 +102,38 @@ Polymer({
             var _this = this;
             document.addEventListener('notificationReceived',function(e) {
                 var matchIndex = -1;
-                for (var i = 0; i < _this._currentProcess.model.length; i++) {
-                    var current = _this._currentProcess.model[i];
-                    if (current.name == (e.detail.notification.subject + ' ' + e.detail.notification.details)) {
-                        matchIndex = i;
-                        break;
+                
+                // Check whether we received a Fork related notification
+                if (_this._currentProcess.forks.indexOf(e.detail.notification.details) > -1) {
+                    // We need to find the "fork" item in our model, that'll be our matchIndex
+                    for (var i = 0; i < _this._currentProcess.model.length; i++) {
+                        if (_this._currentProcess.model[i].fork) {
+                            matchIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    // But we also need to manually highlight the related child element
+                    if (matchIndex > -1) {
+                        var forkItem = _this._currentProcess.model[matchIndex];
+                        
+                        for (var j = 0; j < forkItem.groupList.length; j++) {
+                            if (forkItem.groupList[j].name == (e.detail.notification.subject + ' ' + e.detail.notification.details)) {
+                                _this.set('_currentProcess.model.' + i + '.groupList.' + j + '.highlight', true);
+                                break;
+                            }
+                        }
+                    }
+                }
+                // Otherwise loop as normal and look for a match
+                else {
+                    for (var i = 0; i < _this._currentProcess.model.length; i++) {
+                        var current = _this._currentProcess.model[i];
+                        
+                        if (current.name == (e.detail.notification.subject + ' ' + e.detail.notification.details)) {
+                            matchIndex = i;
+                            break;
+                        }
                     }
                 }
                 
@@ -164,10 +194,18 @@ Polymer({
 	clearHighlights: function() {
         var currentHighlight = -1;
 	    for (var i = 0; i < this._currentProcess.model.length; i++) {
-	        if (this._currentProcess.model[i].highlight) {
+	        var currentItem = this._currentProcess.model[i];
+	        if (currentItem.highlight) {
 	            currentHighlight = i;
 	        }
 	        this.set('_currentProcess.model.' + i + '.highlight', false);
+	        
+	        // Check for any sub-group and clear their highlight too
+	        if (currentItem.fork) {
+	            for (var j = 0; j < currentItem.groupList.length; j++) {
+	                this.set('_currentProcess.model.' + i + '.groupList.' + j + '.highlight', false);
+	            }
+	        }
 	    }
 	    return currentHighlight;
 	},

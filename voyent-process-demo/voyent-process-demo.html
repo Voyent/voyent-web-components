@@ -25,7 +25,7 @@
                 line-height: 100px;
                 vertical-align: middle;
             }
-        
+            
             .highlight, .highlightfalse, .highlighttrue {
                 display: inline-block;
                 padding: 10px 0 10px 0;
@@ -37,14 +37,31 @@
                 background-color: transparent;
             }
             
-            .highlightfalse {
-            }
-            
             .highlighttrue {
                 border: 1px solid rgba(0,85,0,0.8);
                 padding: 10px 20px 10px 20px;
                 -webkit-animation: focus 1s linear 0s infinite alternate;
                 animation: focus 1s linear 0s infinite alternate;
+            }
+            
+            .highlightinnertrue {
+                outline: 3px solid rgba(0,0,85,0.9);
+                padding: 5px !important;
+            }
+            
+            .forktrue {
+                vertical-align: top;
+                margin-top: -25px;
+            }
+            
+            .groupWrap {
+                float: right;
+            }
+            
+            .groupItem {
+                padding: 0;
+                display: block;
+                line-height: normal;
             }
             
             @-webkit-keyframes focus {
@@ -86,7 +103,7 @@
         <h4>{{_currentProcess.title}}</h4>
         <div class="overallModel">
             <template is="dom-repeat" strip-whitespace items="{{_currentProcess.model}}" as="model">
-                <div class$="highlight{{model.highlight}}">
+                <div class$="highlight{{model.highlight}} fork{{model.fork}}">
                     <!-- Display an image most of the time, unless we have a waitFire in which case show a button when highlighted -->
                     <template is="dom-if" if="{{!model.highlight}}">
                         <img src="images/{{model.image}}" alt="{{model.name}}"/>
@@ -102,6 +119,16 @@
                         <template is="dom-if" if="{{!model.waitFire}}">
                             <img src="images/{{model.image}}" alt="{{model.name}}"/>
                         </template>
+                    </template>
+                    
+                    <template is="dom-if" if="{{model.fork}}">
+                        <div class="groupWrap">
+                            <template is="dom-repeat" strip-whitespace items="{{model.groupList}}" as="inner">
+                                <div class$="highlightinner{{inner.highlight}} groupItem">
+                                    <img src="images/{{inner.image}}" alt="{{inner.name}}"/>
+                                </div>
+                            </template>
+                        </div>
                     </template>
                 </div>
             </template>
