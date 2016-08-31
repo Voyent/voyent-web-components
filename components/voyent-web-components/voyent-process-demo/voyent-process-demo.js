@@ -101,6 +101,9 @@ Polymer({
             // We don't need to display the notifications, since updating our process model image will show the user enough
             var _this = this;
             document.addEventListener('notificationReceived',function(e) {
+                // Clear our old highlights
+                _this.clearHighlights();
+                    
                 var matchIndex = -1;
                 
                 // Check whether we received a Fork related notification
@@ -139,7 +142,6 @@ Polymer({
                 
                 // If we have a match we'll want to update the highlight accordingly
                 if (matchIndex > -1) {
-                    _this.clearHighlights();
                     _this.set('_currentProcess.model.' + matchIndex + '.highlight', true);
                     
                     // If the next item has a waitFire we need to manually move to it
