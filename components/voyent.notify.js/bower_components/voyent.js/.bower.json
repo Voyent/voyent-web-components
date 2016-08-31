@@ -1,0 +1,29 @@
+{
+  "name": "voyent.js",
+  "main": "src/voyent.js",
+  "ignore": [
+    "docs",
+    "bower.json",
+    "LICENCE",
+    "README.md",
+    "favicon.ico",
+    ".gitignore"
+  ],
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": [
+    "mobile",
+    "native",
+    "javascript"
+  ],
+  "homepage": "https://github.com/voyent/voyent.js",
+  "_release": "191474e25f",
+  "_resolution": {
+    "type": "branch",
+    "branch": "gh-pages",
+    "commit": "191474e25f67b01094ca6a89bd7bb6a09fafecf1"
+  },
+  "_source": "https://github.com/voyent/voyent.js.git",
+  "_target": "gh-pages",
+  "_originalSource": "https://github.com/voyent/voyent.js.git"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "voyent.notify.js",
+  "main": "lib/voyent.notify.js",
+  "ignore": [
+    "bower.json",
+    "LICENCE",
+    "README.md",
+    ".gitignore"
+  ],
+  "dependencies": {
+    "voyent.js": "https://github.com/voyent/voyent.js.git#gh-pages",
+    "voyent.io.js": "https://github.com/voyent/voyent.io.js.git#dev",
+    "voyent.xio.js": "https://github.com/voyent/voyent.xio.js.git#gh-pages"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "mobile",
+    "javascript",
+    "services"
+  ],
+  "homepage": "https://github.com/voyent/voyent.notify.js",
+  "_release": "89c6d1fab0",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "89c6d1fab06d8521018e4ed5c970324e37c675f8"
+  },
+  "_source": "https://github.com/voyent/voyent.notify.js.git",
+  "_target": "master",
+  "_originalSource": "https://github.com/voyent/voyent.notify.js.git"
+}
