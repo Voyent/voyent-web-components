@@ -36,7 +36,7 @@ Voyent.QueryEditor = Polymer({
          */
         account: { type: String },
         /**
-         * The service that you would like to build the query for. Currently `docs`, `locate`, `event`, `authadmin` and `mailbox` are supported.
+         * The service that you would like to build the query for. Currently `docs`, `locate`, `event` and `authadmin` are supported.
          */
         service: { type: String, value: 'event', observer: '_updateQueriesList' },
         /**
@@ -819,13 +819,6 @@ Voyent.QueryEditor = Polymer({
                     default:
                         this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'AuthAdmin Service Collection "' + this.collection + '" not supported.','type':'error'});
                 }
-                break;
-            case 'mailbox':
-                this.collection = 'mailboxes';
-                this.service_url = protocol+voyent.io.mailboxURL+path+'/'+this.collection;
-                voyent.io.mailbox.findMailboxes(params).then(successCallback).catch(function(error){
-                    _this.fire('message-error', 'findMailboxes caught an error: ' + error.toSource());
-                });
                 break;
             default:
                 this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Service "' + this.service + '" not supported.','type':'error'});
