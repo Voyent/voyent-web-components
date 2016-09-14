@@ -59,10 +59,11 @@ Internal component used to display tasks inside the action editor.
                                     </template>
                                     <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                            <select class="form-control" value="{{property.value::change}}">
+                                            <select id$="{{_calculateSelectId(group.name,task.name,property.title)}}"
+                                                    class="form-control" value="{{property.value::change}}">
                                                 <option value="" selected>Select one...</option>
                                                 <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
-                                                    <option value="{{item}}">{{item}}</option>
+                                                    <option value$="{{item}}">{{item}}</option>
                                                 </template>
                                             </select>
                                         </template>
@@ -95,11 +96,12 @@ Internal component used to display tasks inside the action editor.
                         </template>
                         <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                             <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                <select class="form-control" required value="{{property.value::change}}" data-label$="{{property.title}}"
-                                        data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
+                                <select id$="{{_calculateSelectId(group.name,task.name,property.title)}}"
+                                        class="form-control" required value="{{property.value::change}}"
+                                        data-label$="{{property.title}}"  data-group-id$="{{group.id}}" data-task-id$="{{task.id}}">
                                     <option value="" selected>Select one...</option>
                                     <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
-                                        <option value="{{item}}">{{item}}</option>
+                                        <option value$="{{item}}">{{item}}</option>
                                     </template>
                                 </select>
                             </template>
@@ -129,10 +131,11 @@ Internal component used to display tasks inside the action editor.
                         </template>
                         <template is="dom-if" if="{{!_isCodeEditor(property.title)}}">
                             <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                <select class="form-control" value="{{property.value::change}}">
+                                <select id$="{{_calculateSelectId(group.name,task.name,property.title)}}"
+                                        class="form-control" value="{{property.value::change}}">
                                     <option value="" selected>Select one...</option>
                                     <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
-                                        <option value="{{item}}">{{item}}</option>
+                                        <option value$="{{item}}">{{item}}</option>
                                     </template>
                                 </select>
                             </template>

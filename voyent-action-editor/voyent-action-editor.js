@@ -186,21 +186,26 @@ Polymer({
      * @param callback
      */
     loadAction: function(action, callback) {
+        var _this = this;
         // First reset our task groups, mainly to toggle the state of task group collapsed/opened
         this.set('_taskGroups', []);
 
         // Then do our load in a set timeout
         // This is also necessary to update any select components in the action to their properly loaded value
         setTimeout(function() {
-            this._loadHandler(action._id);
-            this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
-            this._taskGroups = this._convertActionToUI(this._loadedAction);
-            this.set('_taskGroups',JSON.parse(JSON.stringify(this._taskGroups)));
-            this.fire('message-info', 'Loaded action ' + this._loadedAction._id + ' with ' + this._taskGroups.length + ' task groups');
+            _this._loadHandler(action._id);
+            _this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
+            _this._taskGroups = _this._convertActionToUI(_this._loadedAction);
+            _this.set('_taskGroups',JSON.parse(JSON.stringify(_this._taskGroups)));
+            setTimeout(function() {
+                //do this async so we are sure the action is loaded
+                _this._updateSelectMenus();
+            });
+            _this.fire('message-info', 'Loaded action ' + _this._loadedAction._id + ' with ' + _this._taskGroups.length + ' task groups');
             if (callback) {
                 callback();
             }
-        }.bind(this),0);
+        },0);
     },
 
     /**
@@ -813,6 +818,53 @@ Polymer({
                     property.value = task.params[property.title];
                 }
             });
+        }
+    },
+
+    /**
+     * Keeps the select menus in sync with the backing data when loading a saved action.
+     * @private
+     */
+    _updateSelectMenus: function() {
+        var _this = this;
+        //If a select menu binding is set before the select menu is rendered then the value will not be
+        //displayed in the menu. This function works around that by manually updating the select menu.
+        for (var i=0; i<_this._taskGroups.length; i++) {
+            //loop through all properties to determine if we have any select menus rendered
+            for (var j=0; j<_this._taskGroups[i].tasks.length; j++) {
+                var propertyGroups = _this._taskGroups[i].tasks[j].schema.properties;
+                for (var groupKey in propertyGroups) {
+                    if (!propertyGroups.hasOwnProperty(groupKey)) {
+                        continue;
+                    }
+                    var group = propertyGroups[groupKey];
+                    if (groupKey !== 'oneOf') {
+                        iterateProperties(group,_this._taskGroups[i].name,_this._taskGroups[i].tasks[j].name);
+                    }
+                    else {
+                        for (var k=0; k<group.length; k++) {
+                            iterateProperties(group[k],_this._taskGroups[i].name,_this._taskGroups[i].tasks[j].name);
+                        }
+                    }
+                }
+            }
+        }
+        function iterateProperties(group,groupName,taskName) {
+            for (var propertyKey in group) {
+                if (!group.hasOwnProperty(propertyKey)) {
+                    continue;
+                }
+                var property = group[propertyKey];
+                //if we have an enum it means that a select is rendered
+                if (property.enum) {
+                    var val = property.value;
+                    //update the select menu
+                    var opt = _this.querySelector('#'+_this._calculateSelectId(groupName,taskName,propertyKey)+' [value="'+val+'"]');
+                    if (opt) {
+                        opt.selected = true;
+                    }
+                }
+            }
         }
     },
 

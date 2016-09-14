@@ -123,11 +123,12 @@ Example:
                                                     <span class="required">*</span><span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                            <select class="form-control" required value="{{property.value::change}}"
+                                                            <select id$="{{_calculateSelectId(group.name,'none',property.title)}}"
+                                                                    class="form-control" required value="{{property.value::change}}"
                                                                     data-label$="{{property.title}}" data-group-id$="{{group.id}}">
                                                                 <option value="" selected>Select one...</option>
                                                                 <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
-                                                                    <option value="{{item}}">{{item}}</option>
+                                                                    <option value$="{{item}}">{{item}}</option>
                                                                 </template>
                                                             </select>
                                                         </template>
@@ -143,10 +144,11 @@ Example:
                                                     <span>{{property.title}}</span>
                                                     <template is="dom-if" if="{{_isString(property.type)}}">
                                                         <template is="dom-if" if="{{_hasEnum(property.enum)}}">
-                                                            <select class="form-control" value="{{property.value::change}}">
+                                                            <select id$="{{_calculateSelectId(group.name,'none',property.title)}}"
+                                                                    class="form-control" value="{{property.value::change}}">
                                                                 <option value="" selected>Select one...</option>
                                                                 <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
-                                                                    <option value="{{item}}">{{item}}</option>
+                                                                    <option value$="{{item}}">{{item}}</option>
                                                                 </template>
                                                             </select>
                                                         </template>
