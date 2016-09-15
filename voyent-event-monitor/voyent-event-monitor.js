@@ -567,6 +567,7 @@ Polymer({
      * @private
      */
     _getColors: function() {
+        // TODO Replace this with a d3.scale.category20() to ensure uniqueness and prevent duplication for new services
         var colors = {};
         colors['query'] = "crimson";
         colors['storage'] = "purple";
