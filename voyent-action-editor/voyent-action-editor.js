@@ -582,12 +582,11 @@ Polymer({
      * @private
      */
     _organizeSchemas: function(schemas,key) {
-        // We use 4 hardcoded services to sort: doc, locate, mailbox, user
+        // We use 3 hardcoded services to sort: doc, locate, user
         // Anything else goes into misc
         var defaultService = 'misc';
         var serviceArray = [ { label: 'doc', schemas: [] },
                              { label: 'locate', schemas: [] },
-                             { label: 'mailbox', schemas: [] },
                              { label: 'user', schemas: [] },
                              { label: defaultService, schemas: [] } ];
 
