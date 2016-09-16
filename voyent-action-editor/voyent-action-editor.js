@@ -582,12 +582,13 @@ Polymer({
      * @private
      */
     _organizeSchemas: function(schemas,key) {
-        // We use 3 hardcoded services to sort: doc, locate, user
+        // We use 4 hardcoded services to sort: doc, locate, user, scope
         // Anything else goes into misc
         var defaultService = 'misc';
         var serviceArray = [ { label: 'doc', schemas: [] },
                              { label: 'locate', schemas: [] },
                              { label: 'user', schemas: [] },
+                             { label: 'scope', schemas: [] },
                              { label: defaultService, schemas: [] } ];
 
         // Loop through the passed list of schemas, which would be the tasks
