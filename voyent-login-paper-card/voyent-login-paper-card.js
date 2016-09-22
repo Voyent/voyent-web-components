@@ -124,7 +124,7 @@
             host: {
                 notify: true,
                 type: String,
-                value: 'dev.voyent.io'
+                value: 'dev.voyent.cloud'
             }
         },
 
