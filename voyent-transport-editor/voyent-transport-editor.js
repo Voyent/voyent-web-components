@@ -7,6 +7,24 @@ Polymer({
          */
         debug: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
         /**
+         * Show the simple/clean/basic view of this component
+         * The simple view contains a name (subject), body (details), and everything else is preset
+         * There is also no ability to choose or override specific transports
+         * And a list of preset message elements (basically backpack variables) are defined and can be added to the body (details)
+         * @default false
+         */
+        simple: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        /**
+         * Backing for the message elements list
+         * Used with simple view only (simple=true)
+         */
+        clickedList: { type: String, notify: true, observer: '_clickedListChanged' },
+        /**
+         * List of message elements (such as {{user_name}}) that can be clicked to append to our text area
+         * Used with simple view only (simple=true)
+         */
+        messageElements: { type: Array, value: [], notify: true },
+        /**
          * The current value of the transport editor. Data binding is enabled for this attribute.
          * This will link to the underlying notification JSON structure
          */
@@ -69,8 +87,10 @@ Polymer({
      */
 	ready: function() {
 	    this.triggeredFromTool = false;
+	    
 	    this._hasEmailTemplates = false;
 	    this._emailTemplates = this._loadEmailTemplates();
+	    this.messageElements = this._setDefaultMessageElements();
 	    
 	    // Log if we don't have any transports available
 	    this.noTransports = false;
@@ -83,6 +103,39 @@ Polymer({
 	    if (!this._isDefined(this._tool)) {
 	        this._setDefaultTool();
 	    }
+	},
+	
+	/**
+	 * Fired when the Save button is clicked
+	 */
+	clickSave: function() {
+	    // TODO Perform a persist to the parent action
+	    this.set("debug", true);
+	},
+	
+	/**
+	 * Fired when the Open button is clicked
+	 */
+	clickOpen: function() {
+	    // TODO Show a dropdown for previously saved notifications
+	},
+	
+	/**
+	 * Fired when the Delete button is clicked
+	 */
+	clickDelete: function() {
+	    // TODO Confirm and then delete the template from the parent action
+	    this.set("debug", false);
+	    this.clickClear();
+	},
+	
+	/**
+	 * Reset the state of our subject and details
+	 * Used with simple view only (simple=true)
+	 */
+	clickClear: function() {
+	    this.set("_tool.subject.global", "");
+	    this.set("_tool.details.global", "");
 	},
 	
 	/**
@@ -118,22 +171,25 @@ Polymer({
 	    this._getGlobalData(toReturn, "expire_time");
 	    
 	    // Then add any transport specific override data
-	    if (this.allowBrowser && this._tool.transport.browser) {
-	        toReturn.browser = this._getOverrideData("browser");
-	    }
-	    if (this.allowCloud && this._tool.transport.cloud) {
-	        toReturn.cloud = this._getOverrideData("cloud");
-	    }
-	    if (this.allowEmail && this._tool.transport.email) {
-	        toReturn.email = this._getOverrideData("email");
-	        
-            if (this._hasField("emailtemplate", "email")) {
-                toReturn.email.emailtemplate = this._getField("emailtemplate", "email");
+	    // Only necessary if we're not in simple view
+	    if (!this.simple) {
+            if (this.allowBrowser && this._tool.transport.browser) {
+                toReturn.browser = this._getOverrideData("browser");
             }
-	    }
-	    if (this.allowSMS && this._tool.transport.sms) {
-	        toReturn.sms = this._getOverrideData("sms");
-	    }
+            if (this.allowCloud && this._tool.transport.cloud) {
+                toReturn.cloud = this._getOverrideData("cloud");
+            }
+            if (this.allowEmail && this._tool.transport.email) {
+                toReturn.email = this._getOverrideData("email");
+                
+                if (this._hasField("emailtemplate", "email")) {
+                    toReturn.email.emailtemplate = this._getField("emailtemplate", "email");
+                }
+            }
+            if (this.allowSMS && this._tool.transport.sms) {
+                toReturn.sms = this._getOverrideData("sms");
+            }
+        }
 	    
 	    // Finally stringify the result so the service level can use it properly
 	    try{
@@ -298,6 +354,25 @@ Polymer({
     },
     
     /**
+     * Function called when the message elements list is clicked and the value changes
+     * Used with simple view only (simple=true)
+     */
+	_clickedListChanged: function() {
+	    var area = document.getElementById("messageDetails");
+	    if (area && this.clickedList) {
+	        // Append our clicked item and focus the text area
+	        area.value += this.clickedList;
+	        area.focus();
+	        
+	        // Reset the selection of our list so we can re-select the same element as needed
+	        var mElem = document.querySelector("#messageElements");
+	        if (mElem) {
+	            mElem.select(null);
+	        }
+	    }
+	},
+    
+    /**
      * Function called when the underlying UI tooling changes for this component
      */
     _toolChanged: function() {
@@ -322,7 +397,21 @@ Polymer({
             }
         });
 	},
-    
+	
+	/**
+	 * Set a preset list of message elements
+	 * Used with simple view only (simple=true)
+	 */
+	_setDefaultMessageElements: function() {
+	    return [ "{{user_name}}",
+	             "{{incident_type}}",
+	             "{{direction}}",
+	             "{{distance}}",
+	             "{{time_to_contact}}",
+	             "{{speed}}"
+	           ];
+	},
+	
     /**
      * Set the default state of the UI tooling controls
      */

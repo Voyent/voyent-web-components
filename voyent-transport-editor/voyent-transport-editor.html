@@ -24,6 +24,10 @@ Displays a transport editor that can build message templates for various technol
                width: 100%;
                min-height: 200px;
            }
+           input[type=text], textarea, select {
+               font-family: Arial,"Helvetica Neue",Helvetica,sans-serif;
+               font-size: 14px;
+           }
            .inputWrap {
                margin-bottom: 10px;
                width: 95%;
@@ -36,7 +40,6 @@ Displays a transport editor that can build message templates for various technol
            }
            .inputWrap b {
                display: block;
-               font-size: 14px;
            }
            .overrideWrap, .overrideWrapGlobal {
                margin-left: 20px;
@@ -50,12 +53,62 @@ Displays a transport editor that can build message templates for various technol
            .overrideWrapGlobal {
                width: auto;
            }
+           .dragSpan {
+               cursor: grab;
+           }
+           .tinyNote {
+               font-size: 10px;
+               font-style: italic;
+           }
            pre {
                overflow: scroll;
            }
         </style>
         
         <div>
+        
+        <template is="dom-if" if="{{simple}}">
+            <table width="100%" height="100%" cellspacing="5" cellpadding="0">
+                <tr>
+                    <td width="70%" height="100%" valign="top">
+                        <div class="inputWrap" style="height: 20%;">
+                            <b>Message Subject:</b>
+                            <input type="text" placeholder="Subject"
+                                   value="{{_tool.subject.global::input}}"
+                                   ondrop="drop(event)"></input>
+                        </div>
+                        
+                        <div class="inputWrap" style="height: 80%;">
+                            <b>Message Details:</b>
+                            <textarea id="messageDetails" style="height: 80%;"
+                                      value="{{_tool.details.global::input}}"
+                                      ondrop="drop(event)"></textarea>
+                        </div>
+                    </td>
+                    <td width="30%" height="100%" valign="top">
+                        <b>Message Elements:</b><br/>
+                        <span class="tinyNote">(Click to insert, or drag and drop to desired location)</span>
+                        <paper-listbox id="messageElements" selected="{{clickedList}}" attr-for-selected="text">
+                            <template is="dom-repeat" strip-whitespace items="[[messageElements]]" as="element">
+                                <paper-item text="[[element]]">
+                                    <span class="dragSpan" draggable="true" ondragstart="drag(event)">[[element]]</span>
+                                </paper-item>
+                            </template>
+                        </paper-listbox>
+                    </td>
+                </tr>
+                <tfoot><tr>
+                    <td colspan="2">
+                        <paper-button raised on-click="clickClear">New</paper-button>
+                        <paper-button raised on-click="clickOpen">Open</paper-button>
+                        <paper-button raised on-click="clickSave">Save</paper-button>
+                        <paper-button raised on-click="clickDelete">Delete</paper-button>
+                    </td>
+                </tr></tfoot>
+            </table>
+        </template>
+        
+        <template is="dom-if" if="{{!simple}}">
             <!-- Commented out as we want all transports to be enabled for now, and just let the service decide how to cascade between them
             <table cellpadding="5" cellspacing="0" width="90%">
                 <tr>
@@ -371,6 +424,7 @@ Displays a transport editor that can build message templates for various technol
                     <voyent-code-editor class="code-editor" value="{{_tool.payload}}"></voyent-code-editor>
                 </div>
             </template>
+        </template>
             
             <template is="dom-if" if="[[debug]]">
                 <hr/>
@@ -379,6 +433,16 @@ Displays a transport editor that can build message templates for various technol
             </template>
         </div>
     </template>
+    
+    <script>
+    function drag(ev) {
+        ev.dataTransfer.setData("text", ev.target.textContent);
+    }
+    
+    function drop(ev) {
+        ev.target.focus();
+    }
+    </script>
 </dom-module>
 
 <script src="voyent-transport-editor.js"></script>
