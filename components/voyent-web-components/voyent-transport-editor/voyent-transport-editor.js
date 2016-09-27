@@ -7,6 +7,24 @@ Polymer({
          */
         debug: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
         /**
+         * Show the simple/clean/basic view of this component
+         * The simple view contains a name (subject), body (details), and everything else is preset
+         * There is also no ability to choose or override specific transports
+         * And a list of preset message elements (basically backpack variables) are defined and can be added to the body (details)
+         * @default false
+         */
+        simple: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        /**
+         * Backing for the message elements list
+         * Used with simple view only (simple=true)
+         */
+        clickedList: { type: String, notify: true, observer: '_clickedListChanged' },
+        /**
+         * List of message elements (such as {{user_name}}) that can be clicked to append to our text area
+         * Used with simple view only (simple=true)
+         */
+        messageElements: { type: Array, value: [], notify: true },
+        /**
          * The current value of the transport editor. Data binding is enabled for this attribute.
          * This will link to the underlying notification JSON structure
          */
@@ -60,6 +78,7 @@ Polymer({
                       '_tool.details.specbrowser, _tool.details.speccloud, _tool.details.specsms, _tool.details.specemail, _tool.details.global, _tool.details.browser, _tool.details.cloud, _tool.details.sms, _tool.details.email,' +
                       '_tool.url.specbrowser, _tool.url.speccloud, _tool.url.specsms, _tool.url.specemail, _tool.url.global, _tool.url.browser, _tool.url.cloud, _tool.url.sms, _tool.url.email,' +
                       '_tool.priority.specbrowser, _tool.priority.speccloud, _tool.priority.specsms, _tool.priority.specemail, _tool.priority.global, _tool.priority.browser, _tool.priority.cloud, _tool.priority.sms, _tool.priority.email,' +
+                      '_tool.emailtemplate.email,' +
                       '_tool.expire_time.global, _tool.icon.global, _tool.payload)'
     ],
     
@@ -68,6 +87,10 @@ Polymer({
      */
 	ready: function() {
 	    this.triggeredFromTool = false;
+	    
+	    this._hasEmailTemplates = false;
+	    this._emailTemplates = this._loadEmailTemplates();
+	    this.messageElements = this._setDefaultMessageElements();
 	    
 	    // Log if we don't have any transports available
 	    this.noTransports = false;
@@ -80,6 +103,39 @@ Polymer({
 	    if (!this._isDefined(this._tool)) {
 	        this._setDefaultTool();
 	    }
+	},
+	
+	/**
+	 * Fired when the Save button is clicked
+	 */
+	clickSave: function() {
+	    // TODO Perform a persist to the parent action
+	    this.set("debug", true);
+	},
+	
+	/**
+	 * Fired when the Open button is clicked
+	 */
+	clickOpen: function() {
+	    // TODO Show a dropdown for previously saved notifications
+	},
+	
+	/**
+	 * Fired when the Delete button is clicked
+	 */
+	clickDelete: function() {
+	    // TODO Confirm and then delete the template from the parent action
+	    this.set("debug", false);
+	    this.clickClear();
+	},
+	
+	/**
+	 * Reset the state of our subject and details
+	 * Used with simple view only (simple=true)
+	 */
+	clickClear: function() {
+	    this.set("_tool.subject.global", "");
+	    this.set("_tool.details.global", "");
 	},
 	
 	/**
@@ -115,18 +171,25 @@ Polymer({
 	    this._getGlobalData(toReturn, "expire_time");
 	    
 	    // Then add any transport specific override data
-	    if (this.allowBrowser && this._tool.transport.browser) {
-	        toReturn.browser = this._getOverrideData("browser");
-	    }
-	    if (this.allowCloud && this._tool.transport.cloud) {
-	        toReturn.cloud = this._getOverrideData("cloud");
-	    }
-	    if (this.allowEmail && this._tool.transport.email) {
-	        toReturn.email = this._getOverrideData("email");
-	    }
-	    if (this.allowSMS && this._tool.transport.sms) {
-	        toReturn.sms = this._getOverrideData("sms");
-	    }
+	    // Only necessary if we're not in simple view
+	    if (!this.simple) {
+            if (this.allowBrowser && this._tool.transport.browser) {
+                toReturn.browser = this._getOverrideData("browser");
+            }
+            if (this.allowCloud && this._tool.transport.cloud) {
+                toReturn.cloud = this._getOverrideData("cloud");
+            }
+            if (this.allowEmail && this._tool.transport.email) {
+                toReturn.email = this._getOverrideData("email");
+                
+                if (this._hasField("emailtemplate", "email")) {
+                    toReturn.email.emailtemplate = this._getField("emailtemplate", "email");
+                }
+            }
+            if (this.allowSMS && this._tool.transport.sms) {
+                toReturn.sms = this._getOverrideData("sms");
+            }
+        }
 	    
 	    // Finally stringify the result so the service level can use it properly
 	    try{
@@ -157,6 +220,11 @@ Polymer({
 	        if (this._isDefined(json['global']['payload'])) {
 	            this.set('_tool.payload', JSON.stringify(json['global']['payload']));
 	        }
+	    }
+	    
+	    // Set our email template
+	    if (this._isDefined(json['email'])) {
+	        this._setFieldFromJSON(json, 'email', 'emailtemplate');
 	    }
 	    
 	    // Check our incoming data for each transport type
@@ -286,6 +354,25 @@ Polymer({
     },
     
     /**
+     * Function called when the message elements list is clicked and the value changes
+     * Used with simple view only (simple=true)
+     */
+	_clickedListChanged: function() {
+	    var area = document.getElementById("messageDetails");
+	    if (area && this.clickedList) {
+	        // Append our clicked item and focus the text area
+	        area.value += this.clickedList;
+	        area.focus();
+	        
+	        // Reset the selection of our list so we can re-select the same element as needed
+	        var mElem = document.querySelector("#messageElements");
+	        if (mElem) {
+	            mElem.select(null);
+	        }
+	    }
+	},
+    
+    /**
      * Function called when the underlying UI tooling changes for this component
      */
     _toolChanged: function() {
@@ -293,6 +380,38 @@ Polymer({
         this.set('value', this.convertUIToJSON());
     },
     
+    /**
+     * Retrieve a list of saved email templates IDs from the doc service
+     */
+	_loadEmailTemplates: function() {
+        if (!voyent.io.auth.isLoggedIn()) {
+            return;
+        }
+	    
+        var _this = this;
+        voyent.io.documents.getDocument({'id': 'emailTemplates'}).then(function(doc) {
+            _this.set('_emailTemplates', doc.ids);
+            
+            if (typeof _this._emailTemplates !== 'undefined' && _this._emailTemplates !== null && _this._emailTemplates.length > 0) {
+                _this.set('_hasEmailTemplates', true);
+            }
+        });
+	},
+	
+	/**
+	 * Set a preset list of message elements
+	 * Used with simple view only (simple=true)
+	 */
+	_setDefaultMessageElements: function() {
+	    return [ "{{user_name}}",
+	             "{{incident_type}}",
+	             "{{direction}}",
+	             "{{distance}}",
+	             "{{time_to_contact}}",
+	             "{{speed}}"
+	           ];
+	},
+	
     /**
      * Set the default state of the UI tooling controls
      */
@@ -347,6 +466,10 @@ Polymer({
                 "cloud": null,
                 "sms": null,
                 "email": null
+            },
+            "emailtemplate": {
+                "specemail": true,
+                "email": ""
             },
             "expire_time": {
                 "global": 4320,
