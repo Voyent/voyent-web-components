@@ -25,6 +25,12 @@ Polymer({
          */
         messageElements: { type: Array, value: [], notify: true },
         /**
+         * Flag to show the message elements list on the right of the "simple" view
+         * Used with simple view only (simple=true)
+         * @default true
+         */
+        showMessageElements: { type: Boolean, value: true, reflectToAttribute: true, notify: true },
+        /**
          * The current value of the transport editor. Data binding is enabled for this attribute.
          * This will link to the underlying notification JSON structure
          */
@@ -103,6 +109,14 @@ Polymer({
 	    if (!this._isDefined(this._tool)) {
 	        this._setDefaultTool();
 	    }
+	},
+	
+	/**
+	 * Computed binding to calculate if the width of the "simple" view table should be full or not
+	 * This will account for the message elements being shown or not
+	 */
+	calculateSimpleWidth: function() {
+	    return this.showMessageElements ? "70%" : "100%";
 	},
 	
 	/**
