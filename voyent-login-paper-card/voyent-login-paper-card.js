@@ -136,7 +136,8 @@
          */
         handleLogin: function(e){
             var _this = this;
-            var authProvider = document.querySelector('#' + this.authProvider);
+            var authProvider = document.querySelector('#' + this.authProvider) ||
+                               Polymer.dom(this).parentNode.querySelector('#' + this.authProvider);
             if( !authProvider ){
                 console.error('voyent-login-paper-card could not find auth-provider: ' + this.authProvider);
                 return;
