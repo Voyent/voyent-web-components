@@ -24,7 +24,9 @@ Polymer({
         var _this = this;
         Polymer.dom(this).parentNode.addEventListener('actionsRetrieved', function(e) {
             _this._allActions = e.detail.actions.length > 0 ? e.detail.actions : null;
-            _this._allActions.sort(_this._sortList);
+            if (_this._allActions) {
+                _this._allActions.sort(_this._sortList);
+            }
         });
     },
 
