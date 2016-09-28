@@ -585,7 +585,7 @@ Voyent.QueryChainEditor = Polymer({
                     mode: _this._workflow.isChain ? "debug": null,
                     execParams: _this._workflow.properties.execParams ? _this._workflow.properties.execParams : null,
                     id: executeId
-                }).then(function() {
+                }).then(function(results) {
                     if (_this._workflow.isChain) {              
                         // Loop through results and set them into each workflowItem
                         var currentWorkflow = null;
