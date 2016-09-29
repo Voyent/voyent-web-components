@@ -135,7 +135,8 @@ Voyent.QueryEditor = Polymer({
                 document.head.appendChild(document.importNode(e.target.import.body,true));
                 onAfterjQueryLoaded();
             }, function(err) {
-                _this.fire('message-error', 'voyent-query-editor: error loading jquery ' + err.toSource());
+                _this.fire('message-error', 'voyent-query-editor: error loading jquery ' + err);
+                console.error('voyent-query-editor: error loading jquery',err);
             });
         }
         else { onAfterjQueryLoaded(); }
@@ -147,7 +148,8 @@ Voyent.QueryEditor = Polymer({
                     document.head.appendChild(document.importNode(e.target.import.body,true));
                     initialize();
                 }, function(err) {
-                    _this.fire('message-error', 'voyent-query-editor: error loading jquery builder ' + err.toSource());
+                    _this.fire('message-error', 'voyent-query-editor: error loading jquery builder ' + err);
+                    console.error('voyent-query-editor: error loading jquery builder',err);
                 });
             }
             else { initialize(); }
@@ -409,7 +411,8 @@ Voyent.QueryEditor = Polymer({
             _this.fetchQueryList();
             _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
         }).catch(function(error){
-            _this.fire('message-error', 'createQuery caught an error: ' + error.toSource());
+            _this.fire('message-error', 'createQuery caught an error: ' + error);
+            console.error('createQuery caught an error:',error);
         });
     },
 
@@ -430,7 +433,8 @@ Voyent.QueryEditor = Polymer({
             _this.resetEditor();
             _this.fetchQueryList();
         }).catch(function(error){
-            _this.fire('message-error', 'deleteQuery caught an error: ' + error.toSource());
+            _this.fire('message-error', 'deleteQuery caught an error: ' + error);
+            console.error('deleteQuery caught an error:',error);
         });
     },
 
@@ -458,7 +462,8 @@ Voyent.QueryEditor = Polymer({
             _this._setQuerylistresults(filteredResults);
             _this.fire('queriesRetrieved',{results: filteredResults});
         }).catch(function(error){
-            _this.fire('message-error', 'fetchQueryList caught an error: ' + error.toSource());
+            _this.fire('message-error', 'fetchQueryList caught an error: ' + error);
+            console.error('fetchQueryList caught an error:',error);
         });
     },
 
@@ -781,7 +786,8 @@ Voyent.QueryEditor = Polymer({
                 params.collection = this.collection;
                 this.service_url = protocol+voyent.io.documentsURL+path+'/'+this.collection;
                 voyent.io.documents.findDocuments(params).then(successCallback).catch(function(error){
-                    _this.fire('message-error', 'findDocuments caught an error: ' + error.toSource());
+                    _this.fire('message-error', 'findDocuments caught an error: ' + error);
+                    console.error('findDocuments caught an error:',error);
                 });
                 break;
             case 'locate': case 'location': //'location' is here for backwards compatibility
@@ -790,17 +796,20 @@ Voyent.QueryEditor = Polymer({
                 switch (this.collection.toLowerCase()) {
                     case 'locations':
                         voyent.io.location.findLocations(params).then(successCallback).catch(function(error){
-                            _this.fire('message-error', 'findLocations caught an error: ' + error.toSource());
+                            _this.fire('message-error', 'findLocations caught an error: ' + error);
+                            console.error('findLocations caught an error:',error);
                         });
                         break;
                     case 'regions':
                         voyent.io.location.findRegions(params).then(successCallback).catch(function(error){
-                            _this.fire('message-error', 'findRegions caught an error: ' + error.toSource());
+                            _this.fire('message-error', 'findRegions caught an error: ' + error);
+                            console.error('findRegions caught an error:',error);
                         });
                         break;
                     case 'poi':
                         voyent.io.location.findPOIs(params).then(successCallback).catch(function(error){
-                            _this.fire('message-error', 'findPOIs caught an error: ' + error.toSource());
+                            _this.fire('message-error', 'findPOIs caught an error: ' + error);
+                            console.error('findPOIs caught an error:',error);
                         });
                         break;
                     default:
@@ -812,7 +821,8 @@ Voyent.QueryEditor = Polymer({
                 this.collection = 'events';
                 this.service_url = protocol+voyent.io.metricsURL+path+'/'+this.collection;
                 voyent.io.event.findEvents(params).then(successCallback).catch(function(error){
-                    _this.fire('message-error', 'findEvents caught an error: ' + error.toSource());
+                    _this.fire('message-error', 'findEvents caught an error: ' + error);
+                    console.error('findEvents caught an error:',error);
                 });
                 break;
             case 'authadmin':
@@ -821,7 +831,8 @@ Voyent.QueryEditor = Polymer({
                 switch (this.collection.toLowerCase()) {
                     case 'users':
                         voyent.io.admin.getRealmUsers(params).then(successCallback).catch(function(error){
-                            _this.fire('message-error', 'getRealmUsers caught an error: ' + error.toSource());
+                            _this.fire('message-error', 'getRealmUsers caught an error: ' + error);
+                            console.error('getRealmUsers caught an error:',error);
                         });
                         break;
                     default:

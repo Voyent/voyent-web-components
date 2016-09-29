@@ -212,7 +212,8 @@ Polymer({
         
         // Bail if we can't find our div container
         if (typeof wrapper === 'undefined' || wrapper === null) {
-            this.fire('message-error', "No SVG container was found that matches ID " + this.id + ", not drawing event monitor."); 
+            this.fire('message-error', "No SVG container was found that matches ID " + this.id + ", not drawing event monitor.");
+            console.error('No SVG container was found that matches ID ' + this.id + ', not drawing event monitor.');
             return;
         }
         

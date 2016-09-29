@@ -44,10 +44,26 @@ Voyent.CodeEditor = Polymer({
             
             var params = this._getURLParams();
             
-            if (!this._hasURLParam(params, "id")) { this.fire('message-error', 'Missing "id" param'); return; }
-            if (!this._hasURLParam(params, "realm")) { this.fire('message-error', 'Missing "realm" param'); return; }
-            if (!this._hasURLParam(params, "account")) { this.fire('message-error', 'Missing "account" param'); return; }
-            if (!this._hasURLParam(params, "access_token")) { this.fire('message-error', 'Missing "access_token" param'); return; }
+            if (!this._hasURLParam(params, "id")) {
+                this.fire('message-error', 'Missing "id" param');
+                console.error('Missing "id" param');
+                return;
+            }
+            if (!this._hasURLParam(params, "realm")) {
+                this.fire('message-error', 'Missing "realm" param');
+                console.error('Missing "realm" param');
+                return;
+            }
+            if (!this._hasURLParam(params, "account")) {
+                this.fire('message-error', 'Missing "account" param');
+                console.error('Missing "account" param');
+                return;
+            }
+            if (!this._hasURLParam(params, "access_token")) {
+                this.fire('message-error', 'Missing "access_token" param');
+                console.error('Missing "access_token" param');
+                return;
+            }
             
             var _document = document;
             var _this = this;
@@ -97,10 +113,12 @@ Voyent.CodeEditor = Polymer({
                 _this.fire('message-info', 'Successfully loaded "' + toLoadId + '" with ' + _this.emailValue.length + ' characters.');
             }).catch(function(error) {
                 _this.fire('message-error', 'Failed to load the email template "' + toLoadId + '".');
+                console.error('Failed to load the email template "' + toLoadId + '".');
             });
         }
         else {
             this.fire('message-error', 'Please select an email template to load');
+            console.error('Please select an email template to load');
         }
     },
     
@@ -131,10 +149,12 @@ Voyent.CodeEditor = Polymer({
                 _this.fire('message-info', 'Successfully deleted the email template "' + toDeleteId + '".');
             }).catch(function(error) {
                 _this.fire('message-error', 'Failed to delete the email template "' + toDeleteId + '".');
+                console.error('Failed to delete the email template "' + toDeleteId + '".');
             });
         }
         else {
             this.fire('message-error', 'Please select an email template to delete');
+            console.error('Please select an email template to delete');
         }
     },
     
@@ -188,6 +208,7 @@ Voyent.CodeEditor = Polymer({
                 if (cb) { cb(); }
             }).catch(function(error) {
                 _this.fire('message-error', 'Failed to save email template "' + _this.currentEmailId + '".');
+                console.error('Failed to save email template "' + _this.currentEmailId + '".');
             });
         });
     },
@@ -199,7 +220,7 @@ Voyent.CodeEditor = Polymer({
         voyent.io.documents.getDocument({'realm': this.realm, 'account': this.account,
                                          'id': this.indexDocId}).then(function(doc) {
             _this.set('_savedEmails', doc.ids);
-        });
+        }).catch(function(error) {});
     },
     
     _updateIndex: function() {

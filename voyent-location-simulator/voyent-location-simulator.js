@@ -172,7 +172,8 @@ Polymer({
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
-            _this.fire('message-error', 'Issue getting location data: ' + error.toSource());
+            _this.fire('message-error', 'Issue getting location data: ' + error);
+            console.error('Issue getting location data:',error);
         });
     },
 
@@ -300,7 +301,8 @@ Polymer({
             _this._activeSim = params.document; //set as active simulation
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue saving simulation document: ' + error.toSource());
+            _this.fire('message-error', 'Issue saving simulation document: ' + error);
+            console.error('Issue saving simulation document:',error);
         });
     },
 
@@ -325,7 +327,8 @@ Polymer({
             }
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue deleting simulation: ' + error.toSource());
+            _this.fire('message-error', 'Issue deleting simulation: ' + error);
+            console.error('Issue deleting simulation:',error);
         });
     },
 
@@ -341,7 +344,8 @@ Polymer({
         voyent.io.documents.findDocuments({realm:this.realm,collection:collection}).then(function(simulations) {
             _this.fire('simulationsRetrieved',{simulations:simulations});
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue getting simulations: ' + error.toSource());
+            _this.fire('message-error', 'Issue getting simulations: ' + error);
+            console.error('Issue getting simulations:',error);
         });
     },
 
@@ -454,7 +458,8 @@ Polymer({
                     this._poiMarkers.push(poi);
                 }
             } catch (error) {
-                _this.fire('message-error', "Issue importing region or poi: " + error.toSource());
+                _this.fire('message-error', "Issue importing region or poi: " + error);
+                console.error('Issue importing region or poi:',error);
             }
         }
     },
@@ -691,7 +696,8 @@ Polymer({
             if (error.status == 403) {
                 return; //fail "silently" if insufficient privileges
             }
-            _this.fire('message-error', 'Error trying to get realm users: ' + error.toSource());
+            _this.fire('message-error', 'Error trying to get realm users: ' + error);
+            console.error('Error trying to get realm users:',error);
         });
     },
 
@@ -756,7 +762,8 @@ Polymer({
                 _this._userLocationChangedListener(marker,location);
                 _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
             }).catch(function(error) {
-                _this.fire('message-error', 'Issue creating new location: ' + error.toSource());
+                _this.fire('message-error', 'Issue creating new location: ' + error);
+                console.error('Issue creating new location:',error);
             });
         });
     },

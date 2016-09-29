@@ -129,7 +129,8 @@ Voyent.QueryChainEditor = Polymer({
                 callback();
             }
         }).catch(function(error){
-            _this.fire('message-error', "Error when trying to find queries: " + error.toSource()); 
+            _this.fire('message-error', "Error when trying to find queries: " + error);
+            console.error('Error when trying to find queries:',error);
         });
     },
     
@@ -152,7 +153,8 @@ Voyent.QueryChainEditor = Polymer({
                 _this._transformers = results;
             }
         }).catch(function(error){
-            _this.fire('message-error', "Error when trying to find transformers: " + error.toSource()); 
+            _this.fire('message-error', "Error when trying to find transformers: " + error);
+            console.error('Error when trying to find transformers:',error);
         });
     },
     
@@ -476,6 +478,7 @@ Voyent.QueryChainEditor = Polymer({
             }
             else {
                 this.fire('message-error', 'Unrecognized chain item type (looking for query or transform): found '+ currentQuery.type);
+                console.error('Unrecognized chain item type (looking for query or transform): found:',currentQuery.type);
                 pulledItem = null;
             }
             
@@ -486,7 +489,8 @@ Voyent.QueryChainEditor = Polymer({
             // If we don't have an item it means the workflow chain had an invalid or outdated query/transformer
             // We will note this in the logs
             else {
-                this.fire('message-error', "Failed to add " + currentQuery.id + " to workflow (outdated query/transformer?)"); 
+                this.fire('message-error', "Failed to add " + currentQuery.id + " to workflow (outdated query/transformer?)");
+                console.error('Failed to add ' + currentQuery.id + 'to workflow (outdated query/transformer?)');
             }
         }
         
@@ -536,7 +540,8 @@ Voyent.QueryChainEditor = Polymer({
                 _this.splice('_savedWorkflows', deleteIndex, 1);
                 _this.notifyPath('_savedWorkflows');
             }).catch(function(error) {
-                 _this.fire('message-error', 'Failed to delete workflow chain ' + removeId + ':' + error.toSource());
+                 _this.fire('message-error', 'Failed to delete workflow chain ' + removeId + ':' + error);
+                console.error('Failed to delete workflow chain ' + removeId,error);
             });
         }
     },
@@ -607,7 +612,8 @@ Voyent.QueryChainEditor = Polymer({
                     
                     if (callback) { callback(); }
                 }).catch(function(error){
-                    _this.fire('message-error', "Error when trying to execute query: " + error.toSource());
+                    _this.fire('message-error', "Error when trying to execute query: " + error);
+                    console.error('Error when trying to execute query:',error);
                     
                     if (callback) { callback(); }
                 });
@@ -755,7 +761,8 @@ Voyent.QueryChainEditor = Polymer({
                 
                 if (callback) { callback(); }
             }).catch(function(error) {
-                _this.fire('message-error', 'Failed to save workflow chain: ' + error.toSource());
+                _this.fire('message-error', 'Failed to save workflow chain: ' + error);
+                console.error('Failed to save workflow chain:',error);
                 
                 if (callback) { callback(); }
             });
@@ -775,7 +782,8 @@ Voyent.QueryChainEditor = Polymer({
                 
                 if (callback) { callback(); }
             }).catch(function(error){
-                 _this.fire('message-error', 'Failed to update workflow chain: ' + error.toSource());
+                 _this.fire('message-error', 'Failed to update workflow chain: ' + error);
+                console.error('Failed to update workflow chain:',error);
                  
                 if (callback) { callback(); }
             });
@@ -802,7 +810,8 @@ Voyent.QueryChainEditor = Polymer({
             }).then(function() {
                 if (callback) { callback(); }
             }).catch(function(error){
-                _this.fire('message-error', "Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error.toSource());
+                _this.fire('message-error', "Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error);
+                console.error('Failed to save individual query/transformer ' + workflowItem.item._id + ', going to try to update.',error);
                 
                 _this._updateWorkflowItem(workflowItem, callback);
             });
@@ -816,7 +825,8 @@ Voyent.QueryChainEditor = Polymer({
             }).then(function() {
                 if (callback) { callback(); }
             }).catch(function(error){
-                _this.fire('message-error', "Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error.toSource());
+                _this.fire('message-error', "Failed to save individual query/transformer '" + workflowItem.item._id + "', going to try to update. Error: " + error);
+                console.error('Failed to save individual query/transformer ' + workflowItem.item._id + ', going to try to update.',error);
                 
                 _this._updateWorkflowItem(workflowItem, callback);
             });
@@ -841,7 +851,8 @@ Voyent.QueryChainEditor = Polymer({
             }).then(function() {
                 if (callback) { callback(); }
             }).catch(function(error){
-                _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
+                _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error);
+                console.error('Failed to update individual query/transformer ' + workflowItem.item._id,error);
             });
         }
         else if (this._isTransformer(workflowItem.type)) {
@@ -853,7 +864,8 @@ Voyent.QueryChainEditor = Polymer({
             }).then(function() {
                 if (callback) { callback(); }
             }).catch(function(error){
-                _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error.toSource());
+                _this.fire('message-error', "Failed to update individual query/transformer '" + workflowItem.item._id + "': " + error);
+                console.error('Failed to update individual query/transformer ' + workflowItem.item._id,error);
             });
         }
     },
@@ -891,7 +903,8 @@ Voyent.QueryChainEditor = Polymer({
                 }).then(function() {
                     _this.splice(listName, deleteIndex, 1);
                 }).catch(function(error) {
-                     _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
+                     _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error);
+                    console.error('Failed to delete ' + type + ' ' + removeId,error);
                 });
             }
             else if (this._isTransformer(type)) {
@@ -902,7 +915,8 @@ Voyent.QueryChainEditor = Polymer({
                 }).then(function() {
                     _this.splice(listName, deleteIndex, 1);
                 }).catch(function(error) {
-                     _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error.toSource());
+                     _this.fire('message-error', 'Failed to delete ' + type + ' ' + removeId + ':' + error);
+                    console.error('Failed to delete ' + type + ' ' + removeId,error);
                 });
             }
         }

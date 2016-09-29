@@ -93,6 +93,7 @@ Polymer({
         }
         else {
             this.fire('message-error', 'Select a query to view');
+            console.error('Select a query to view');
         }
     },
     

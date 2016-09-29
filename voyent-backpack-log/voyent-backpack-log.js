@@ -203,6 +203,7 @@ Polymer({
         // Check selectedLimit for validity.
         if (this.selectedLimit === null) {
             this.fire('message-error', "Select a time limit");
+            console.error('Select a time limit');
             return;
         }
         
@@ -237,8 +238,8 @@ Polymer({
             
             _this._getDebugLogsCall(_this);
         }).catch(function(error) {
-            _this.fire('message-error', "Error in get actions: " + error.toSource());
-            
+            _this.fire('message-error', "Error in get actions: " + error);
+            console.error('Error in get actions:',error);
             _this._getDebugLogsCall(_this);
         });
     },
@@ -254,7 +255,8 @@ Polymer({
             options: this.options,
             fields: this.fields
         }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
-            _this.fire('message-error', "Error in get debug logs: " + error.toSource());
+            _this.fire('message-error', "Error in get debug logs: " + error);
+            console.error('Error in get debug logs:',error);
             _this._loading = false; // Stop loading on error
         });
     },

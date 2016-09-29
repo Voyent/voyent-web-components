@@ -250,9 +250,10 @@ Polymer({
         
         var _this = this;
 	    voyent.io.event.createCustomEvent({ "event": event }).then(function() {
-            _this.fire('message-info', "Successfully sent event '" + model.name + "'"); 
+            _this.fire('message-info', "Successfully sent event '" + model.name + "'");
 	    }).catch(function(error) {
 	        _this.fire('message-error', "Failed to send event '" + model.name + "'");
+            console.error('Failed to send event:',model.name);
 	    });
 	},
 });

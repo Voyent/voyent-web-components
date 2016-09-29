@@ -45,6 +45,7 @@ Polymer({
         }
         else {
             this.fire('message-error', 'Select an action to view');
+            console.error('Select an action to view');
         }
     },
     
