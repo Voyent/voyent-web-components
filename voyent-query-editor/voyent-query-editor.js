@@ -124,6 +124,9 @@ Voyent.QueryEditor = Polymer({
         //multiple query editors on the same page without conflicts
         this._uniqueId = 'a'+(Date.now()+Math.floor(Math.random() * Date.now()));
 
+        //use scopeSubtree to apply styles to elements included by third-party libraries
+        this.scopeSubtree(Polymer.dom(this.root).querySelector('#'+this._uniqueId), true);
+
         var jqueryBuilderURL = this.resolveUrl('./jquery-builder-import.html');
         var jqueryURL = this.resolveUrl('../jquery-import/jquery-import.html');
         if (!('jQuery' in window)) {
