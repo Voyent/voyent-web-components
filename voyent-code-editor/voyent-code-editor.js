@@ -44,7 +44,9 @@ Voyent.CodeEditor = Polymer({
 
     ready: function() {
         var _this = this;
-        var codeEditorURL = this.resolveUrl('../common/ace-import.html');
+        var componentsDirectory = 'voyent-web-components';
+        var pathToAceImport = 'common/ace-import.html';
+        var codeEditorURL = this.resolveUrl('../'+pathToAceImport);
         //load missing ace-editor dependency
         if (!('ace' in window)) {
             _this.importHref(codeEditorURL, function(e) {
@@ -59,6 +61,10 @@ Voyent.CodeEditor = Polymer({
         function initialize() {
             //initialize editor
             _this.editor = ace.edit(_this.$.editor);
+            //calculate and set the basePath so ACE can correctly import it's dependencies
+            var a = document.createElement('a'); a.href = codeEditorURL;
+            var basePath = a.pathname.split('/'+componentsDirectory+'/'+pathToAceImport)[0]+'/ace-builds/src-min-noconflict';
+            ace.config.set('basePath', basePath);
             //set some static defaults
             _this.editor.setShowPrintMargin(false);
             _this.editor.$blockScrolling = Infinity; //disable console warning
