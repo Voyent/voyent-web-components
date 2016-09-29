@@ -69,8 +69,6 @@ Polymer({
         var _this = this;
         recognizerId = recognizerId && recognizerId.trim().length > 0 ? recognizerId : this._id;
         if (!this.validateRecognizer() || !this.isUniqueRecognizerId(recognizerId)) {
-            this.fire('message-error', 'Invalid data was found in recognizer, fix and try saving again');
-            console.error('Invalid data was found in recognizer, fix and try saving again');
             return;
         }
         var recognizer = {"_id":recognizerId,"active":!!this._active,"script":this._script};
@@ -90,8 +88,6 @@ Polymer({
     updateRecognizer: function() {
         var _this = this;
         if (!this._loadedRecognizer || !this.validateRecognizer()) {
-            this.fire('message-error', 'Invalid data was found in recognizer, fix and try updating again');
-            console.error('Invalid data was found in recognizer, fix and try updating again');
             return;
         }
         //check if the id has changed, if it has we must re-create the recognizer with the new id

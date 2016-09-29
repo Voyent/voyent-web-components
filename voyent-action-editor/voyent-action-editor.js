@@ -218,8 +218,6 @@ Polymer({
         var _this = this;
         actionId = actionId && actionId.trim().length > 0 ? actionId : this._actionId;
         if (!this.validateAction() || !this.isUniqueActionId(actionId)) {
-            this.fire('message-error', 'Invalid data was found in action, fix and try saving again');
-            console.error('Invalid data was found in action, fix and try saving again');
             return;
         }
         var action = this.convertUIToAction();
