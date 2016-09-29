@@ -255,7 +255,8 @@
 					account: account,
 					realm: realm,
 					username: username,
-					password: password
+					password: password,
+					host:'dev.voyent.cloud'
 				}).then(function(){
 					setCredentialsOnComponent();
 					initializeComponent();
@@ -265,7 +266,8 @@
                         account: account,
 						realm: 'admin',
 						username: username,
-						password: password
+						password: password,
+						host:'dev.voyent.cloud'
 					}).then(function(){
 						setCredentialsOnComponent();
 						document.getElementById('queryEditor').setAttribute('realm', realm);

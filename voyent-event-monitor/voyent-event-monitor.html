@@ -1,5 +1,6 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="voyent-event-monitor-styles.html">
 
 <!--
 Displays an event monitor used to graph historical data from the Voyent services
@@ -11,7 +12,7 @@ This uses D3 (http://d3js.org/) and an underlying SVG to achieve the graphing
 <dom-module id="voyent-event-monitor">
     <script src="../../d3/d3.min.js" charset="utf-8"></script>
     <template>
-        <link type="text/css" rel="stylesheet" href="voyent-event-monitor.css">
+        <style include="voyent-event-monitor-styles"></style>
         
         <div id="{{id}}div">
             <label style="float: left;">[[customTitle]]</label>

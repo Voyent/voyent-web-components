@@ -206,6 +206,9 @@ Polymer({
     _generateGraph: function(data) {
         var _this = this;
         var wrapper = d3.select("div#" + this.id + "div");
+
+        //use scopeSubtree to apply styles to elements included by third-party libraries
+        this.scopeSubtree(Polymer.dom(this.root).querySelector('#' + this.id + 'div'), true);
         
         // Bail if we can't find our div container
         if (typeof wrapper === 'undefined' || wrapper === null) {
