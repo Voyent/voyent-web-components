@@ -778,7 +778,7 @@ Voyent.QueryEditor = Polymer({
 
         // Store our last query before we execute
         _this._setLastquery(query);
-        
+
         switch(this.service.toLowerCase()) {
             case 'docs': case 'documents': //'documents' is here for backwards compatibility
                 if (this.service == 'documents') {
@@ -870,7 +870,7 @@ Voyent.QueryEditor = Polymer({
                 _this._setQueryresults(obj);
                 _this.fire('queryExecuted',obj);
                 _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'No data in the "' + _this.collection +'" collection.','type':'error'});
-
+                _this._editorIsEmpty = true;
                 $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
                 $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
                     filters: [{"id":" ","operators":[],"optgroup":"No results found for "+_this.service+" -> "+_this.collection}],
@@ -903,8 +903,9 @@ Voyent.QueryEditor = Polymer({
 
             if (filters.length > 0 && uniqueFields.length > 0) {
                 _this.uniqueFields = uniqueFields.sort(_this._sortAlphabetically);
-                if (destroy) {
+                if (destroy || _this._editorIsEmpty) {
                     $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
+                    _this._editorIsEmpty = false;
                 }
                 $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
                     filters: filters.sort(_this._sortAlphabetically),
