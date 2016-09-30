@@ -781,7 +781,11 @@ Voyent.QueryEditor = Polymer({
         
         switch(this.service.toLowerCase()) {
             case 'docs': case 'documents': //'documents' is here for backwards compatibility
-                this.service = 'docs'; //make sure we are using 'docs' as the service name
+                if (this.service == 'documents') {
+                    //prevent _updateQueriesList from executing
+                    this._isInternalChange = true;
+                    this.service = 'docs'; //make sure we are using 'docs' as the service name
+                }
                 params.collection = this.collection;
                 this.service_url = protocol+voyent.io.documentsURL+path+'/'+this.collection;
                 voyent.io.documents.findDocuments(params).then(successCallback).catch(function(error){
@@ -790,7 +794,12 @@ Voyent.QueryEditor = Polymer({
                 });
                 break;
             case 'locate': case 'location': //'location' is here for backwards compatibility
-                this.service = 'locate'; //make sure we are using 'locate' as the service name
+                if (this.service === 'location') {
+                    //prevent _updateQueriesList from executing
+                    this._isInternalChange = true;
+                    this.service = 'locate'; //make sure we are using 'locate' as the service name
+                }
+
                 this.service_url = protocol+voyent.io.locateURL+path+'/'+this.collection;
                 switch (this.collection.toLowerCase()) {
                     case 'locations':
@@ -816,8 +825,11 @@ Voyent.QueryEditor = Polymer({
                 }
                 break;
             case 'event':
-                this.service = 'event'; //make sure we are using 'event' as the service name
-                this.collection = 'events';
+                if (this.collection !== 'events') {
+                    //prevent _updateQueriesList from executing
+                    this._isInternalChange = true;
+                    this.collection = 'events';
+                }
                 this.service_url = protocol+voyent.io.eventURL+path+'/'+this.collection;
                 voyent.io.event.findEvents(params).then(successCallback).catch(function(error){
                     _this.fire('message-error', 'findEvents caught an error: ' + error);
@@ -825,7 +837,11 @@ Voyent.QueryEditor = Polymer({
                 });
                 break;
             case 'authadmin':
-                this.collection = 'users';
+                if (this.collection !== 'users') {
+                    //prevent _updateQueriesList from executing
+                    this._isInternalChange = true;
+                    this.collection = 'users';
+                }
                 this.service_url = protocol+voyent.io.authAdminURL+path+'/'+this.collection;
                 switch (this.collection.toLowerCase()) {
                     case 'users':
@@ -854,6 +870,18 @@ Voyent.QueryEditor = Polymer({
                 _this._setQueryresults(obj);
                 _this.fire('queryExecuted',obj);
                 _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'No data in the "' + _this.collection +'" collection.','type':'error'});
+
+                $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
+                $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
+                    filters: [{"id":" ","operators":[],"optgroup":"No results found for "+_this.service+" -> "+_this.collection}],
+                    icons: {
+                        add_group: 'fa fa-plus-square',
+                        add_rule: 'fa fa-plus-circle',
+                        remove_group: 'fa fa-minus-square',
+                        remove_rule: 'fa fa-minus-circle',
+                        error: 'fa fa-exclamation-triangle'
+                    }
+                });
             }
         }
         function determineFields(results) {
@@ -1044,6 +1072,12 @@ Voyent.QueryEditor = Polymer({
         //This will be called multiple times as the default values are initialized so only
         //reload the editor when values are changed after the query editor is actually loaded.
         if (!this._queryEditorInitialized) {
+            return;
+        }
+        //Additionally, we only want to call this observer when the attribute
+        //change comes from the user instead of from within the component.
+        if (this._isInternalChange) {
+            this._isInternalChange = false;
             return;
         }
         this.fetchQueryList();
