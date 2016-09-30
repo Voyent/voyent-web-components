@@ -21,7 +21,6 @@ Voyent.QueryEditor = Polymer({
         this.fields = fields || {};
         this.options = options || {};
         this.queryurltarget = queryurltarget || null;
-        this.reloadEditor();
     },
 
     properties: {
@@ -819,7 +818,7 @@ Voyent.QueryEditor = Polymer({
             case 'event': case 'metrics': //'metrics' is here for backwards compatibility
                 this.service = 'event'; //make sure we are using 'event' as the service name
                 this.collection = 'events';
-                this.service_url = protocol+voyent.io.metricsURL+path+'/'+this.collection;
+                this.service_url = protocol+voyent.io.eventURL+path+'/'+this.collection;
                 voyent.io.event.findEvents(params).then(successCallback).catch(function(error){
                     _this.fire('message-error', 'findEvents caught an error: ' + error);
                     console.error('findEvents caught an error:',error);
@@ -861,13 +860,13 @@ Voyent.QueryEditor = Polymer({
             var dateRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])T(0[1-9]|1\d|2[0-3]):(0\d|1\d|2\d|3\d|4\d|5\d):(0\d|1\d|2\d|3\d|4\d|5\d).\d\d\dZ$/;
             var uniqueFields=[];
             var filters=[];
-            var metricsIgnoredFields = ['account','realm'];
+            var eventsIgnoredFields = ['account','realm'];
             for (var i=0; i<results.length; i++) {
                 var keys = Object.keys(results[i]);
                 for (var j=0; j<keys.length; j++) {
                     if (uniqueFields.indexOf(keys[j]) === -1) {
                         //'metrics' is here for backwards compatibility
-                        if ((_this.service === 'event' || _this.service === 'metrics') && metricsIgnoredFields.indexOf(keys[j]) > -1) {
+                        if ((_this.service === 'event' || _this.service === 'metrics') && eventsIgnoredFields.indexOf(keys[j]) > -1) {
                             continue;
                         }
                         determineType(keys[j],results[i][keys[j]]);
@@ -1043,6 +1042,11 @@ Voyent.QueryEditor = Polymer({
      *  query list and always show the correct queries for that service/collection combination
      */
     _updateQueriesList: function() {
+        //This will be called multiple times as the default values are initialized so only
+        //reload the editor when values are changed after the query editor is actually loaded.
+        if (!this._queryEditorInitialized) {
+            return;
+        }
         this.fetchQueryList();
         this.resetEditor();
     }
