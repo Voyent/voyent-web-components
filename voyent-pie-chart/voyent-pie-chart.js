@@ -161,7 +161,7 @@ Polymer({
             makeQuery["time"]=timeblock;
         }
         var _this = this;
-        voyent.io.metrics.findEvents({
+        voyent.io.event.findEvents({
             account: this.account,
             realm: this.realm,
             accessToken: this.accesstoken,

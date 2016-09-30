@@ -815,7 +815,7 @@ Voyent.QueryEditor = Polymer({
                         this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Location Service Collection "' + this.collection + '" not supported.','type':'error'});
                 }
                 break;
-            case 'event': case 'metrics': //'metrics' is here for backwards compatibility
+            case 'event':
                 this.service = 'event'; //make sure we are using 'event' as the service name
                 this.collection = 'events';
                 this.service_url = protocol+voyent.io.eventURL+path+'/'+this.collection;
@@ -865,8 +865,7 @@ Voyent.QueryEditor = Polymer({
                 var keys = Object.keys(results[i]);
                 for (var j=0; j<keys.length; j++) {
                     if (uniqueFields.indexOf(keys[j]) === -1) {
-                        //'metrics' is here for backwards compatibility
-                        if ((_this.service === 'event' || _this.service === 'metrics') && eventsIgnoredFields.indexOf(keys[j]) > -1) {
+                        if (_this.service === 'event' && eventsIgnoredFields.indexOf(keys[j]) > -1) {
                             continue;
                         }
                         determineType(keys[j],results[i][keys[j]]);

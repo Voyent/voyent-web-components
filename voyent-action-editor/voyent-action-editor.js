@@ -692,7 +692,7 @@ Polymer({
      * @private
      */
     _loadQueryEditor: function() {
-        this._queryEditorRef = new Voyent.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
+        this._queryEditorRef = new Voyent.QueryEditor(this.account,this.realm,'event','events',null,{"limit":100,"sort":{"time":-1}},null);
     },
 
     /**

@@ -575,7 +575,7 @@ Polymer({
         var colors = {};
         colors['query'] = "crimson";
         colors['storage'] = "purple";
-        colors['metrics'] = "gold";
+        colors['event'] = "gold";
         colors['locate'] = "cornflowerblue";
         colors['docs'] = "forestgreen";
         colors['action'] = "sienna";
