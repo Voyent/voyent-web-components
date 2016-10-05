@@ -103,6 +103,23 @@
                 type: Boolean
             },
             /**
+             * Show a button that allows the details panel (realm, account, host) to be hidden
+             * This ties to an iron-collapse wrapper
+             */
+            hideallowed: {
+                notify: true,
+                type: Boolean,
+                value: false
+            },
+            /**
+             * Toggle the initial state of the details panel (realm, account, host)
+             */
+            hideclosed: {
+                notify: true,
+                type: Boolean,
+                value: false
+            },
+            /**
              * Realm used for services
              */
             realm: {
