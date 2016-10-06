@@ -167,7 +167,7 @@ Voyent.QueryEditor = Polymer({
 
         //make sure we initialize any queries that are defined in the query property
         this.addEventListener('queryEditorInitialized', function(e) {
-            this.setEditorFromMongo(this._parseQueryProperty(this.query));
+            _this.setEditorFromMongo(_this._parseQueryProperty(_this.query));
         });
     },
 
