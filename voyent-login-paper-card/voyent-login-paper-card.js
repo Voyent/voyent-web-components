@@ -144,6 +144,12 @@
                 value: 'dev.voyent.cloud'
             }
         },
+        
+        attached: function() {
+            if (document.getElementById("username")) {
+                document.getElementById("username").focus();
+            }
+        },
 
         /**
          * Fired when the login card is submitted
