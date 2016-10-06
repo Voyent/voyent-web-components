@@ -870,18 +870,21 @@ Voyent.QueryEditor = Polymer({
                 _this._setQueryresults(obj);
                 _this.fire('queryExecuted',obj);
                 _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'No data in the "' + _this.collection +'" collection.','type':'error'});
-                _this._destroyEditor = true; //set the flag to destroy the editor
-                $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
-                $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
-                    filters: [{"id":" ","operators":[],"optgroup":"No results found for "+_this.service+" -> "+_this.collection}],
-                    icons: {
-                        add_group: 'fa fa-plus-square',
-                        add_rule: 'fa fa-plus-circle',
-                        remove_group: 'fa fa-minus-square',
-                        remove_rule: 'fa fa-minus-circle',
-                        error: 'fa fa-exclamation-triangle'
-                    }
-                });
+                //if the query is empty ({}) then it means that this collection has no records
+                var query = $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('getMongo');
+                if (Object.keys(query).length === 0) {
+                    $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
+                    $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
+                        filters: [{"id":" ","operators":[],"optgroup":"No records found for "+_this.service+" -> "+_this.collection}],
+                        icons: {
+                            add_group: 'fa fa-plus-square',
+                            add_rule: 'fa fa-plus-circle',
+                            remove_group: 'fa fa-minus-square',
+                            remove_rule: 'fa fa-minus-circle',
+                            error: 'fa fa-exclamation-triangle'
+                        }
+                    });
+                }
             }
         }
         function determineFields(results) {
