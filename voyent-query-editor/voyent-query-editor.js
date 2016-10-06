@@ -361,7 +361,8 @@ Voyent.QueryEditor = Polymer({
         if (!voyent.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
             return;
         }
-        this._queryService({},true);
+        this._destroyEditor = true; //set the flag to destroy the editor
+        this._queryService({});
         this._updateQueryURL();
     },
 
@@ -754,13 +755,12 @@ Voyent.QueryEditor = Polymer({
         }
     },
     /**
-     * Use our query service to execute/run the passed query
+     * Use our query service to execute the passed query
      * This function will determine which service to interact with
      *
      * @param query
-     * @param destroy
      */
-    _queryService: function(query,destroy) {
+    _queryService: function(query) {
         if (!voyent.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
             return;
         }
@@ -870,7 +870,7 @@ Voyent.QueryEditor = Polymer({
                 _this._setQueryresults(obj);
                 _this.fire('queryExecuted',obj);
                 _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'No data in the "' + _this.collection +'" collection.','type':'error'});
-                _this._editorIsEmpty = true;
+                _this._destroyEditor = true; //set the flag to destroy the editor
                 $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
                 $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
                     filters: [{"id":" ","operators":[],"optgroup":"No results found for "+_this.service+" -> "+_this.collection}],
@@ -903,9 +903,9 @@ Voyent.QueryEditor = Polymer({
 
             if (filters.length > 0 && uniqueFields.length > 0) {
                 _this.uniqueFields = uniqueFields.sort(_this._sortAlphabetically);
-                if (destroy || _this._editorIsEmpty) {
+                if (_this._destroyEditor) {
                     $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
-                    _this._editorIsEmpty = false;
+                    _this._destroyEditor = false; //set the flag to destroy the editor
                 }
                 $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
                     filters: filters.sort(_this._sortAlphabetically),
@@ -1081,6 +1081,7 @@ Voyent.QueryEditor = Polymer({
             this._isInternalChange = false;
             return;
         }
+        this._destroyEditor = true; //set the flag to destroy the editor
         this.fetchQueryList();
         this.resetEditor();
     }
