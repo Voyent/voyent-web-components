@@ -145,7 +145,7 @@ Polymer({
         this._clearLocationData();
         //get current location data
         var promises = [];
-        promises.push(voyent.io.location.findLocations({realm:this.realm,fields:{_id:0},options:{sort:{lastUpdated:-1}}}).then(function(locations) {
+        promises.push(voyent.io.locate.findLocations({realm:this.realm,fields:{_id:0},options:{sort:{lastUpdated:-1}}}).then(function(locations) {
             if( locations && locations.length ){
                  //process the locations so we only keep the most recent update for each user
                 var userLocations={};
@@ -162,10 +162,10 @@ Polymer({
             }
            
         }));
-        promises.push(voyent.io.location.getAllRegions({realm:this.realm}).then(function(regions) {
+        promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
         }));
-        promises.push(voyent.io.location.getAllPOIs({realm:this.realm}).then(function(pois) {
+        promises.push(voyent.io.locate.getAllPOIs({realm:this.realm}).then(function(pois) {
             _this._updatePOIs(pois);
         }));
         return Promise.all(promises).then(function() {
@@ -297,7 +297,7 @@ Polymer({
                 docCall = 'updateDocument';
             }
         }
-        voyent.io.documents[docCall](params).then(function() {
+        voyent.io.docs[docCall](params).then(function() {
             _this._activeSim = params.document; //set as active simulation
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
@@ -319,7 +319,7 @@ Polymer({
         if (!collection) {
             collection = this.collection;
         }
-        voyent.io.documents.deleteDocument({realm:this.realm,collection:collection,id:simulationId}).then(function() {
+        voyent.io.docs.deleteDocument({realm:this.realm,collection:collection,id:simulationId}).then(function() {
             if (_this._activeSim._id === simulationId) {
                 //the active simulation was deleted so reset the simulation routes
                 _this._activeSim = null;
@@ -341,7 +341,7 @@ Polymer({
         if (!collection) {
             collection = this.collection;
         }
-        voyent.io.documents.findDocuments({realm:this.realm,collection:collection}).then(function(simulations) {
+        voyent.io.docs.findDocuments({realm:this.realm,collection:collection}).then(function(simulations) {
             _this.fire('simulationsRetrieved',{simulations:simulations});
         }).catch(function(error) {
             _this.fire('message-error', 'Issue getting simulations: ' + error);
@@ -756,7 +756,7 @@ Polymer({
             //only allow dropping current user
             location.username = voyent.io.auth.getLastKnownUsername();
             location.demoUsername = voyent.io.auth.getLastKnownUsername(); //(NTFY-301)
-            voyent.io.location.updateLocation({realm:_this.realm,location:location}).then(function(data) {
+            voyent.io.locate.updateLocation({realm:_this.realm,location:location}).then(function(data) {
                 location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._handleNewLocationMarker(location.username,marker);
                 _this._userLocationChangedListener(marker,location);

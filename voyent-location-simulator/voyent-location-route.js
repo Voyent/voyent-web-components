@@ -162,7 +162,7 @@ Voyent.LocationRoute = Polymer({
                     var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [route[_this._index].lng(),route[_this._index].lat()] } } };
                     location.username = _this.user || voyent.io.auth.getLastKnownUsername();
                     location.demoUsername = _this.user || voyent.io.auth.getLastKnownUsername(); //(NTFY-301)
-                    voyent.io.location.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
+                    voyent.io.locate.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
                         //set location object (take best guess at username and lastUpdated without re-retrieving record)
                         _this._location = location;
                         _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
@@ -233,7 +233,7 @@ Voyent.LocationRoute = Polymer({
         }
         var route = this._route;
         this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the next location
-        voyent.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
+        voyent.io.locate.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
             /*if (_this._followUser) {
@@ -264,7 +264,7 @@ Voyent.LocationRoute = Polymer({
         }
         var route = this._route;
         this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the previous location
-        voyent.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
+        voyent.io.locate.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
             /*if (_this._followUser) {
@@ -289,7 +289,7 @@ Voyent.LocationRoute = Polymer({
         if (!this._location) {
             return;
         }
-        voyent.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
+        voyent.io.locate.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
             if (!_this._location) {
                 return; //the simulation has been cleaned up
             }
@@ -435,7 +435,7 @@ Voyent.LocationRoute = Polymer({
                 clearInterval(updateLocation);
                 return;
             }
-            voyent.io.location.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
+            voyent.io.locate.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
                 if (!_this._location) {
                     return; //the simulation has been cleaned up
                 }

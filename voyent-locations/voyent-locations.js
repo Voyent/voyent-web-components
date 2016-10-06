@@ -91,17 +91,17 @@ Polymer({
         this._bounds = new google.maps.LatLngBounds();
         var promises = [];
         if( this.showuserlocations ){
-            promises.push(voyent.io.location.findLocations({realm:_this.realm}).then(function(locationUpdates) {
+            promises.push(voyent.io.locate.findLocations({realm:_this.realm}).then(function(locationUpdates) {
                 _this._updateLocations(locationUpdates);
             }));
         }
         if( this.showregions ){
-            promises.push(voyent.io.location.getAllRegions({realm:_this.realm}).then(function(regions) {
+            promises.push(voyent.io.locate.getAllRegions({realm:_this.realm}).then(function(regions) {
                 _this._updateRegions(regions);
             }));
         }
         if( this.showpois ){
-            promises.push(voyent.io.location.getAllPOIs({realm:_this.realm}).then(function(pois) {
+            promises.push(voyent.io.locate.getAllPOIs({realm:_this.realm}).then(function(pois) {
                 _this._updatePOIs(pois);
             }));
         }

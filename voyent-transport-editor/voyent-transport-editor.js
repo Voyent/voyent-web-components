@@ -405,7 +405,7 @@ Polymer({
         }
 	    
         var _this = this;
-        voyent.io.documents.getDocument({'id': 'emailTemplates'}).then(function(doc) {
+        voyent.io.docs.getDocument({'id': 'emailTemplates'}).then(function(doc) {
             _this.set('_emailTemplates', doc.ids);
             
             if (typeof _this._emailTemplates !== 'undefined' && _this._emailTemplates !== null && _this._emailTemplates.length > 0) {

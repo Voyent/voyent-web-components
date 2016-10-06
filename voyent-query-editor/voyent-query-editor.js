@@ -787,8 +787,8 @@ Voyent.QueryEditor = Polymer({
                     this.service = 'docs'; //make sure we are using 'docs' as the service name
                 }
                 params.collection = this.collection;
-                this.service_url = protocol+voyent.io.documentsURL+path+'/'+this.collection;
-                voyent.io.documents.findDocuments(params).then(successCallback).catch(function(error){
+                this.service_url = protocol+voyent.io.docsURL+path+'/'+this.collection;
+                voyent.io.docs.findDocuments(params).then(successCallback).catch(function(error){
                     _this.fire('message-error', 'findDocuments caught an error: ' + error);
                     console.error('findDocuments caught an error:',error);
                 });
@@ -803,19 +803,19 @@ Voyent.QueryEditor = Polymer({
                 this.service_url = protocol+voyent.io.locateURL+path+'/'+this.collection;
                 switch (this.collection.toLowerCase()) {
                     case 'locations':
-                        voyent.io.location.findLocations(params).then(successCallback).catch(function(error){
+                        voyent.io.locate.findLocations(params).then(successCallback).catch(function(error){
                             _this.fire('message-error', 'findLocations caught an error: ' + error);
                             console.error('findLocations caught an error:',error);
                         });
                         break;
                     case 'regions':
-                        voyent.io.location.findRegions(params).then(successCallback).catch(function(error){
+                        voyent.io.locate.findRegions(params).then(successCallback).catch(function(error){
                             _this.fire('message-error', 'findRegions caught an error: ' + error);
                             console.error('findRegions caught an error:',error);
                         });
                         break;
                     case 'poi':
-                        voyent.io.location.findPOIs(params).then(successCallback).catch(function(error){
+                        voyent.io.locate.findPOIs(params).then(successCallback).catch(function(error){
                             _this.fire('message-error', 'findPOIs caught an error: ' + error);
                             console.error('findPOIs caught an error:',error);
                         });
