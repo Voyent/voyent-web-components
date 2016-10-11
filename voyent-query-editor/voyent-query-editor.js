@@ -1060,7 +1060,7 @@ Voyent.QueryEditor = Polymer({
                     //if there are no collections then 'docs' is an invalid
                     //service choice so use the last valid service name
                     this.service = previousService;
-                    this.fire('message-info', 'No document collections found, reverting service');
+                    this.fire('message-info', 'No docs collections found, reverting service');
                 }
                 break;
             case 'locate':
