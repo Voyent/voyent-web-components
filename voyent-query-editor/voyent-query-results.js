@@ -34,8 +34,7 @@ Polymer({
             if (Object.keys(records).length === 0) {
                 _this._tableHeaders = [];
                 _this._tableRows = [];
-                _this.fire('message-error', 'Query results empty');
-                console.error('Query results empty');
+                _this.fire('message-info', 'No results found for query');
                 return;
             }
 

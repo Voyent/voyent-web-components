@@ -29,8 +29,7 @@ Polymer({
             _this._allQueries = e.detail.results;
             _this._hasQueries = _this._allQueries && _this._allQueries.length > 0;
             if (Object.keys(_this._allQueries).length === 0) {
-                _this.fire('message-error', 'Query list is empty');
-                console.error('Query list is empty');
+                _this.fire('message-info', 'No saved queries found');
             }
         });
     },
