@@ -62,11 +62,33 @@ Voyent.QueryEditor = Polymer({
          */
         collection: { type: String, value: 'events', notify: true, observer: '_collectionChanged' },
         /**
-         * Specifies the raw mongo query that should be loaded into the editor.
+         * Specify the raw mongo query or a complete query object (find type only). If loading an entire query object
+         * then the `fields` and `options` attributes will also be set if they are available.
          *
-         * Example:
+         * Basic Query Example:
          *
          *      {"$and":[{"state":{"$ne":null}}]}
+         *
+         * Full Query Example:
+         *
+         *      {
+         *          "query": {
+         *              "find": {"$and":[{"state":{"$ne":null}}]},
+         *              "fields": {"username": 1},
+         *              "options": {
+         *                  "limit": 3,
+         *                  "sort": {
+         *                      "time": -1
+         *                  }
+         *              }
+         *          },
+         *          "properties": {
+         *              "title": "Find Users With State",
+         *              "service": "docs",
+         *              "collection": "status",
+         *              "type": "find"
+         *          }
+         *      }
          */
         query: { type: Object, value: {}, notify: true, observer: '_queryChanged' },
         /**
@@ -120,13 +142,13 @@ Voyent.QueryEditor = Polymer({
      */
 
     /**
-     * Fired after a query is executed, this occurs on the initial load and when calling `runQuery` or `reloadEditor`. Contains the query results and the unique fields.
+     * Fired after a query is executed. Contains the query results and the unique fields.
      *
      * @event queryExecuted
      */
 
     /**
-     * Fired after the query list is retrieved, this occurs on the initial load and when calling `fetchQueryList`, `saveQuery`, `cloneQuery`, `deleteQuery`. Contains the list of saved queries in this realm.
+     * Fired after the query list is retrieved. Contains the list of saved queries in this realm.
      *
      * @event queriesRetrieved
      */
@@ -335,18 +357,15 @@ Voyent.QueryEditor = Polymer({
         if (!query) {
             return;
         }
-        else if (!query.query) {
-            //comes in as a basic query and nothing else
+        else if (!query.query) { //basic query
             theQuery = query;
         }
-        else if (!query.query.find) {
-            //comes in as the old format
+        else if (!query.query.find) { //old format
             theQuery = query.query;
             theOptions = query.options || {};
             theFields = query.fields || {};
         }
-        else {
-            //comes in as the new format
+        else { //current format
             theQuery = query.query.find;
             theOptions = query.query.options || {};
             theFields = query.query.fields || {};
@@ -366,9 +385,9 @@ Voyent.QueryEditor = Polymer({
             this._setQueryHeader(query);
         }
         catch (e) {
-            var errorMsg = 'Unable to populate query editor';
+            var errorMsg = 'Unable to populate query editor: ';
             if (e.message.indexOf('Undefined filter') !== -1) {
-                errorMsg = errorMsg + '"' + e.message.split('Undefined filter: ').join('') + '"' + ' field does not exist in this database.';
+                errorMsg = errorMsg + '"' + e.message.split('Undefined filter ').join('') + '"' + ' field does not exist in this database.';
             }
             else {
                 errorMsg = errorMsg + e.message;
@@ -1035,7 +1054,7 @@ Voyent.QueryEditor = Polymer({
         catch (e) {
             parsedQuery = query;
         }
-        return {"query":parsedQuery};
+        return parsedQuery;
     },
 
     /**
