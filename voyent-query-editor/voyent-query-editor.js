@@ -4,7 +4,8 @@ Voyent.QueryEditor = Polymer({
     is: "voyent-query-editor",
 
     /**
-     * Custom constructor. Sets any passed properties (or the defaults).
+     * Custom constructor to be used when creating the component via javascript (new Voyent.QueryEditor(..)).
+     * If no attributes are passed to the constructor then the defaults will be used.
      * @param account
      * @param realm
      * @param service
@@ -35,14 +36,29 @@ Voyent.QueryEditor = Polymer({
          */
         account: { type: String },
         /**
-         * The service that you would like to build the query for. Currently `docs`, `locate`, `event` and `admin`
-         * are supported. If an unsupported service is received then the component will reset the attribute to the last
-         * known valid one.
+         * The service that you would like to build the query for. See the `collection` attribute for a complete list
+         * of available services and their matching collections. If an invalid service is set then the value will be
+         * reverted to the last valid one. An invalid service includes setting the service to "docs" when no collections
+         * can be found.
          */
         service: { type: String, value: 'event', notify: true, observer: '_serviceChanged' },
         /**
-         * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
-         * Some services may only support one collection (eg. event, admin, etc..), in this case the collection will change automatically with the service.
+         * The collection that you would like to build the query for. When the `service` attribute is changed this
+         * attribute will be automatically set to the default collection for that service. If an invalid collection is
+         * set then the value will be reverted to the last valid one.
+         *
+         * Service/Collection Mapping:
+         * 
+         *     |------------------------------------------------|
+         *     | Services | Collections             | Default   |
+         *     |----------|-------------------------|-----------|
+         *     | action   | actions                 | actions   |
+         *     | admin    | users                   | users     |
+         *     | docs     | {{*}}                   | {{*[0]}}  |
+         *     | event    | events                  | events    |
+         *     | eventhub | handlers, recognizers   | handlers  |
+         *     | locate   | locations, poi, regions | locations |
+         *     |------------------------------------------------|
          */
         collection: { type: String, value: 'events', notify: true, observer: '_collectionChanged' },
         /**
@@ -71,6 +87,10 @@ Voyent.QueryEditor = Polymer({
          *      {"sort":{"_id":-1},"limit":100}
          */
         options: { type: Object, value: {}, notify: true },
+        /**
+         * Specify whether the service and collection select menus should be shown at the top of the component.
+         */
+        showselectmenus: { type: Boolean, value: false, observer: '_showselectmenusChanged' },
         /**
          * Element ID of where the GET URL of the query will be displayed as the query is built. Supports input and non-input elements.
          */
@@ -295,7 +315,7 @@ Voyent.QueryEditor = Polymer({
             _this._setQuerylistresults(filteredResults);
             _this.fire('queriesRetrieved',{results: filteredResults});
         }).catch(function(error){
-            _this.fire('message-error', 'Error in fetchQueryList: ' + error);
+            _this.fire('message-error', 'Error in fetchQueryList: ' + error.detail);
             console.error('fetchQueryList caught an error:',error);
         });
     },
@@ -464,7 +484,7 @@ Voyent.QueryEditor = Polymer({
             _this.fetchQueryList();
             _this.fire('message-info', 'Successfully saved query: '+queryId);
         }).catch(function(error){
-            _this.fire('message-error', 'createQuery caught an error: ' + error);
+            _this.fire('message-error', 'createQuery caught an error: ' + error.detail);
             console.error('createQuery caught an error:',error);
         });
     },
@@ -486,7 +506,7 @@ Voyent.QueryEditor = Polymer({
             _this.resetEditor();
             _this.fetchQueryList();
         }).catch(function(error){
-            _this.fire('message-error', 'Error in deleteQuery: ' + error);
+            _this.fire('message-error', 'Error in deleteQuery: ' + error.detail);
             console.error('deleteQuery caught an error:',error);
         });
     },
@@ -1028,22 +1048,42 @@ Voyent.QueryEditor = Polymer({
     _serviceChanged: function(service,previousService) {
         switch(service) {
             case 'event':
-                this.collection = 'events'; //only collection is events
+                //only collection is events
+                this.collection = 'events';
+                this._collections = null;
                 break;
             case 'docs':
-                this.collection = 'documents'; //default to documents collection
+                this._collections = this._documentCollections;
+                if (this._collections) {
+                    this.collection = this._collections[0];
+                }
+                else {
+                    //if there are no collections then 'docs' is an invalid
+                    //service choice so use the last valid service name
+                    this.service = previousService;
+                    this.fire('message-error', 'No document collections found, reverting service');
+                    console.error('No document collections found, reverting service');
+                }
                 break;
             case 'locate':
-                this.collection = 'locations'; //default to locations
+                //default to locations
+                this.collection = 'locations';
+                this._collections = ['locations','poi','regions'];
                 break;
             case 'admin':
-                this.collection = 'users';  //only collection is users
+                //only collection is users
+                this.collection = 'users';
+                this._collections = null;
                 break;
             case 'action':
-                this.collection = 'actions'; //only collection is actions
+                //only collection is actions
+                this.collection = 'actions';
+                this._collections = null;
                 break;
             case 'eventhub':
-                this.collection = 'handlers'; //default to handlers
+                //default to handlers
+                this.collection = 'handlers';
+                this._collections = ['handlers','recognizers'];
                 break;
             default:
                 //if the service name specified is not supported then use the last valid one
@@ -1084,5 +1124,62 @@ Voyent.QueryEditor = Polymer({
             return false;
         }
         return this._serviceMappings[this.service][this.collection] || this._serviceMappings[this.service]['collection'];
+    },
+
+    /**
+     * Fetches the list of available document service collections.
+     * @param showselectmenus
+     * @private
+     */
+    _showselectmenusChanged: function(showselectmenus) {
+        //fetch the list of document collections when this attribute is toggled
+        if (showselectmenus) {
+            this._getDocumentCollections();
+        }
+    },
+
+    /**
+     * Returns the list of services available to query.
+     * @returns {Array}
+     * @private
+     */
+    _getServices: function() {
+        return Object.keys(this._serviceMappings);
+    },
+
+    /**
+     * Capitalizes the first letter of the passed string.
+     * @param word
+     * @returns {string}
+     * @private
+     */
+    _capitalize: function(word) {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    },
+
+    /**
+     * Returns the dynamic class list of the service select menu (when showselectmenus is true).
+     * @param service
+     * @returns {string}
+     * @private
+     */
+    _getClass: function(service) {
+        var servicesWithCollections = ['locate','docs','eventhub'];
+        return servicesWithCollections.indexOf(service) > -1 ? 'small floatLeft' : 'large floatLeft';
+    },
+
+    /**
+     * Fetches the list of available document service collections.
+     * @private
+     */
+    _getDocumentCollections: function() {
+        var _this = this;
+        //get a list of available document collections and store it for later use
+        voyent.io.docs.getCollections().then(function (collections) {
+            _this._documentCollections = collections && collections.length ? collections : null;
+        }).catch(function(error) {
+            _this.fire('message-error', 'Error getting available document service collections: ' + error.detail);
+            console.error('Error getting available document service collections:',error);
+        });
     }
 });
