@@ -27,15 +27,14 @@ Example:
             tbody {
                 @apply(--query-list-tbody);
             }
+            paper-dropdown-menu {
+                @apply(--query-list-select);
+            }
             tr {
                 @apply(--query-list-tr);
             }
             td {
                 @apply(--query-list-td);
-            }
-            button {
-                cursor:pointer;
-                @apply(--query-list-button);
             }
         </style>
         <template is="dom-if" if="{{_hasQueries}}">
