@@ -316,7 +316,7 @@ Voyent.QueryEditor = Polymer({
             _this.fire('queriesRetrieved',{results: filteredResults});
         }).catch(function(error){
             _this.fire('message-error', 'Error in fetchQueryList: ' + error.detail);
-            console.error('fetchQueryList caught an error:',error);
+            console.error('Error in fetchQueryList:',error);
         });
     },
 
@@ -484,8 +484,8 @@ Voyent.QueryEditor = Polymer({
             _this.fetchQueryList();
             _this.fire('message-info', 'Successfully saved query: '+queryId);
         }).catch(function(error){
-            _this.fire('message-error', 'createQuery caught an error: ' + error.detail);
-            console.error('createQuery caught an error:',error);
+            _this.fire('message-error', 'Error in createQuery: ' + error.detail);
+            console.error('Error in createQuery:',error);
         });
     },
 
@@ -507,7 +507,7 @@ Voyent.QueryEditor = Polymer({
             _this.fetchQueryList();
         }).catch(function(error){
             _this.fire('message-error', 'Error in deleteQuery: ' + error.detail);
-            console.error('deleteQuery caught an error:',error);
+            console.error('Error in deleteQuery:',error);
         });
     },
     /**
@@ -838,8 +838,7 @@ Voyent.QueryEditor = Polymer({
                 obj = {results: [], uniqueFields: []};
                 _this._setQueryresults(obj);
                 _this.fire('queryExecuted',obj);
-                _this.fire('message-error', 'No data found for '+_this.service+" -> "+_this.collection);
-                console.error('No data found for '+_this.service+" -> "+_this.collection);
+                _this.fire('message-info', 'No data found for '+_this.service+" -> "+_this.collection);
                 //if the query is empty ({}) then it means that this collection has no records
                 var query = $(_this.$.queryBuilder).queryBuilder('getMongo');
                 if (Object.keys(query).length === 0) {
@@ -1061,8 +1060,7 @@ Voyent.QueryEditor = Polymer({
                     //if there are no collections then 'docs' is an invalid
                     //service choice so use the last valid service name
                     this.service = previousService;
-                    this.fire('message-error', 'No document collections found, reverting service');
-                    console.error('No document collections found, reverting service');
+                    this.fire('message-info', 'No document collections found, reverting service');
                 }
                 break;
             case 'locate':
