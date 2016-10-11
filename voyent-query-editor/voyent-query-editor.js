@@ -20,7 +20,7 @@ Voyent.QueryEditor = Polymer({
         this.collection = collection || 'events';
         this.fields = fields || {};
         this.options = options || {};
-        this.queryurltarget = queryurltarget || null;``
+        this.queryurltarget = queryurltarget || null;
     },
 
     properties: {
