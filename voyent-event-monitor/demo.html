@@ -164,17 +164,6 @@
 		</div>
 
 		<script type="text/javascript">
-            //Listen for the queryMsgUpdated event for all components
-            document.getElementById('listenerWrapper').addEventListener('queryMsgUpdated', function(e) {
-                var id = e.detail.id ? e.detail.id + ' : ' : '';
-                document.getElementById('msgs').innerHTML = id + e.detail.message;
-                //clear message 10 seconds after it's received
-                clearTimeout(window.msgTimeout);
-                window.msgTimeout = setTimeout(function() {
-                    document.getElementById('msgs').innerHTML = '';
-                },10000);
-            });
-            
             // Listen for queryExecuted event
             document.getElementById('queryEditor').addEventListener('queryExecuted', function(e) {
                 // Determine if we're using single or multiple event monitors

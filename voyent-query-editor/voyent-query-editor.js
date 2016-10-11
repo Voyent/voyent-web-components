@@ -4,7 +4,7 @@ Voyent.QueryEditor = Polymer({
     is: "voyent-query-editor",
 
     /**
-     * Custom constructor. Sets any passed properties (or the defaults) and calls `reloadEditor`.
+     * Custom constructor. Sets any passed properties (or the defaults).
      * @param account
      * @param realm
      * @param service
@@ -20,7 +20,7 @@ Voyent.QueryEditor = Polymer({
         this.collection = collection || 'events';
         this.fields = fields || {};
         this.options = options || {};
-        this.queryurltarget = queryurltarget || null;
+        this.queryurltarget = queryurltarget || null;``
     },
 
     properties: {
@@ -35,14 +35,16 @@ Voyent.QueryEditor = Polymer({
          */
         account: { type: String },
         /**
-         * The service that you would like to build the query for. Currently `docs`, `locate`, `event` and `authadmin` are supported.
+         * The service that you would like to build the query for. Currently `docs`, `locate`, `event` and `admin`
+         * are supported. If an unsupported service is received then the component will reset the attribute to the last
+         * known valid one.
          */
-        service: { type: String, value: 'event', observer: '_updateQueriesList' },
+        service: { type: String, value: 'event', notify: true, observer: '_serviceChanged' },
         /**
          * The collection that you would like to build the query for. This initial dataset determines the fields available in the editor.
-         * Some services may only support one collection (eg. event, authadmin, etc..), in this case the collection will change automatically with the service.
+         * Some services may only support one collection (eg. event, admin, etc..), in this case the collection will change automatically with the service.
          */
-        collection: { type: String, value: 'events', observer: '_updateQueriesList' },
+        collection: { type: String, value: 'events', notify: true, observer: '_collectionChanged' },
         /**
          * Specifies the raw mongo query that should be loaded into the editor.
          *
@@ -50,7 +52,7 @@ Voyent.QueryEditor = Polymer({
          *
          *      {"$and":[{"state":{"$ne":null}}]}
          */
-        query: { type: Object, value: {}, observer: '_queryChanged' },
+        query: { type: Object, value: {}, notify: true, observer: '_queryChanged' },
         /**
          * Specify the inclusion or exclusion of fields to return in the result set.
          *
@@ -59,7 +61,7 @@ Voyent.QueryEditor = Polymer({
          *      //exclude _id column
          *      {"_id":0}
          */
-        fields: { type: Object, value: {} },
+        fields: { type: Object, value: {}, notify: true },
         /**
          * Additional query options such as limit and sort.
          *
@@ -68,7 +70,7 @@ Voyent.QueryEditor = Polymer({
          *      //sort by _id (descending) + get only 100 records
          *      {"sort":{"_id":-1},"limit":100}
          */
-        options: { type: Object, value: {} },
+        options: { type: Object, value: {}, notify: true },
         /**
          * Element ID of where the GET URL of the query will be displayed as the query is built. Supports input and non-input elements.
          */
@@ -109,62 +111,43 @@ Voyent.QueryEditor = Polymer({
      * @event queriesRetrieved
      */
 
-    /**
-     * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
-     *
-     * @event queryMsgUpdated
-     */
-
     //we use ready instead of created so that the properties get initialized first
     ready: function() {
         var _this = this;
-
-        //generate a unique ID for the editor div so we can render
-        //multiple query editors on the same page without conflicts
-        this._uniqueId = 'a'+(Date.now()+Math.floor(Math.random() * Date.now()));
-
+        var path = '/'+this.account+'/realms/'+this.realm;
+        this._serviceMappings = {
+            "action": {
+                "actions":"findActions",
+                "url":"http://"+voyent.io.actionURL+path+"/"+this.collection
+            },
+            "admin": {
+                "users":"getRealmUsers",
+                "url":"http://"+voyent.io.authAdminURL+path+"/"+this.collection
+            },
+            "docs": {
+                "collection":"findDocuments",
+                "url":"http://"+voyent.io.docsURL+path+"/"+this.collection
+            },
+            "event": {
+                "events":"findEvents",
+                "url":"http://"+voyent.io.eventURL+path+"/"+this.collection
+            },
+            "eventhub": {
+                "handlers":"findHandlers",
+                "recognizers":"findRecognizers",
+                "url":"http://"+voyent.io.eventhubURL+path+"/"+this.collection
+            },
+            "locate": {
+                "locations":"findLocations",
+                "poi":"findPOIs",
+                "regions":"findRegions",
+                "url": "http://"+voyent.io.locateURL+path+"/"+this.collection
+            }
+        };
+        //load component dependencies
+        this._loadDependencies();
         //use scopeSubtree to apply styles to elements included by third-party libraries
-        this.scopeSubtree(Polymer.dom(this.root).querySelector('#'+this._uniqueId), true);
-
-        var jqueryBuilderURL = this.resolveUrl('./jquery-builder-import.html');
-        var jqueryURL = this.resolveUrl('../jquery-import/jquery-import.html');
-        if (!('jQuery' in window)) {
-            //load missing jQuery dependency
-            this.importHref(jqueryURL, function(e) {
-                document.head.appendChild(document.importNode(e.target.import.body,true));
-                onAfterjQueryLoaded();
-            }, function(err) {
-                _this.fire('message-error', 'voyent-query-editor: error loading jquery ' + err);
-                console.error('voyent-query-editor: error loading jquery',err);
-            });
-        }
-        else { onAfterjQueryLoaded(); }
-
-        function onAfterjQueryLoaded() {
-            //load missing jQuery-QueryBuilder dependency
-            if (!$.fn.queryBuilder) {
-                _this.importHref(jqueryBuilderURL, function(e) {
-                    document.head.appendChild(document.importNode(e.target.import.body,true));
-                    initialize();
-                }, function(err) {
-                    _this.fire('message-error', 'voyent-query-editor: error loading jquery builder ' + err);
-                    console.error('voyent-query-editor: error loading jquery builder',err);
-                });
-            }
-            else { initialize(); }
-        }
-
-        function initialize() {
-            if (!_this.realm) {
-                _this.realm = voyent.io.auth.getLastKnownRealm();
-            }
-            if (!_this.account) {
-                _this.account = voyent.io.auth.getLastKnownAccount();
-            }
-            _this.reloadEditor();
-            _this.fetchQueryList();
-        }
-
+        this.scopeSubtree(this.$.queryBuilder, true);
         //make sure we initialize any queries that are defined in the query property
         this.addEventListener('queryEditorInitialized', function(e) {
             _this.setEditorFromMongo(_this._parseQueryProperty(_this.query));
@@ -175,7 +158,7 @@ Voyent.QueryEditor = Polymer({
      * Execute the current query.
      */
     runQuery: function() {
-        var query = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('getMongo');
+        var query = $(this.$.queryBuilder).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
             this._setCurrentquery(query);
             this._processTimeFields(query,true);
@@ -221,7 +204,8 @@ Voyent.QueryEditor = Polymer({
      */
     cloneQuery: function(id,description) {
         if (!this.activeQuery) {
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'No query to clone.','type':'error'});
+            this.fire('message-error', 'Unable to clone query: no query loaded');
+            console.error('No query to clone');
             return;
         }
         var query = this._buildQuery(id,description,true);
@@ -235,7 +219,8 @@ Voyent.QueryEditor = Polymer({
      */
     cloneQueryWithPrompt: function() {
         if (!this.activeQuery) {
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'No query to clone.','type':'error'});
+            this.fire('message-error', 'Unable to clone query: no query loaded');
+            console.error('No query to clone');
             return;
         }
         if (!this.validateQuery()) { return; }
@@ -255,7 +240,8 @@ Voyent.QueryEditor = Polymer({
      */
     deleteQuery: function() {
         if (!this.activeQuery || !this.activeQuery._id) {
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'No query to delete.','type':'error'});
+            this.fire('message-error', 'Unable to clone query: no query loaded');
+            console.error('No query to delete');
             return;
         }
         this._deleteQuery(this.activeQuery._id);
@@ -266,7 +252,7 @@ Voyent.QueryEditor = Polymer({
      */
     resetEditor: function() {
         try {
-            var editor = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId));
+            var editor = $(this.$.queryBuilder);
             if (!editor || !editor.queryBuilder) {
                 return;
             }
@@ -289,10 +275,29 @@ Voyent.QueryEditor = Polymer({
      * Retrieves a list of all the queries in the current realm.
      */
     fetchQueryList: function() {
-        if (!voyent.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
-            return;
-        }
-        this._getAllQueries();
+        var _this = this;
+        voyent.io.query.findQueries({
+            account:this.account,
+            realm: this.realm
+        }).then(function(results) {
+            //store the names of all the queries so we can provide
+            //validation messages indicating if a query name exists
+            _this.allQueries = results.map(function(query) {
+                return query._id;
+            });
+            //filter the query results so that we only show queries for the
+            //currently selected service / collection combination, if available
+            var filteredResults = results.filter(function(obj) {
+                return ((!obj.properties || !obj.properties.service || !obj.properties.collection) ||
+                (obj.properties.service === _this.service &&
+                obj.properties.collection === _this.collection))
+            });
+            _this._setQuerylistresults(filteredResults);
+            _this.fire('queriesRetrieved',{results: filteredResults});
+        }).catch(function(error){
+            _this.fire('message-error', 'Error in fetchQueryList: ' + error);
+            console.error('fetchQueryList caught an error:',error);
+        });
     },
 
     /**
@@ -331,24 +336,25 @@ Voyent.QueryEditor = Polymer({
         this.fields = theFields;
         try {
             if (Object.keys(theQuery).length === 0) {
-                $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('reset');
+                $(this.$.queryBuilder).queryBuilder('reset');
             }
             else {
                 this._processTimeFields(theQuery,false);
-                $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('setRulesFromMongo',theQuery);
+                $(this.$.queryBuilder).queryBuilder('setRulesFromMongo',theQuery);
             }
             this.activeQuery = query;
             this._setQueryHeader(query);
         }
         catch (e) {
-            var errorMsg = 'Unable to populate query editor. ';
+            var errorMsg = 'Unable to populate query editor';
             if (e.message.indexOf('Undefined filter') !== -1) {
                 errorMsg = errorMsg + '"' + e.message.split('Undefined filter: ').join('') + '"' + ' field does not exist in this database.';
             }
             else {
                 errorMsg = errorMsg + e.message;
             }
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: errorMsg,'type':'error'});
+            this.fire('message-error', errorMsg);
+            console.error(errorMsg);
         }
         this._updateQueryURL(theQuery);
         this.skipListeners = false;
@@ -358,10 +364,7 @@ Voyent.QueryEditor = Polymer({
      * Completely destroy and reinitialize the editor.
      */
     reloadEditor: function() {
-        if (!voyent.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
-            return;
-        }
-        this._destroyEditor = true; //set the flag to destroy the editor
+        this._redetermineFields = true;
         this._queryService({});
         this._updateQueryURL();
     },
@@ -371,7 +374,7 @@ Voyent.QueryEditor = Polymer({
      * @return {boolean} Indicates if the query is valid.
      */
     validateQuery: function() {
-        var query = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('getMongo');
+        var query = $(this.$.queryBuilder).queryBuilder('getMongo');
         if (Object.keys(query).length > 0) {
             this._setCurrentquery(query);
             return true;
@@ -381,6 +384,56 @@ Voyent.QueryEditor = Polymer({
 
 
     //******************PRIVATE API******************
+
+    /**
+     * Loads component dependencies dynamically.
+     * @private
+     */
+    _loadDependencies: function() {
+        var _this = this;
+
+        if (!('jQuery' in window)) {
+            //load missing jQuery dependency
+            var jqueryURL = this.resolveUrl('../jquery-import/jquery-import.html');
+            this.importHref(jqueryURL, function(e) {
+                document.head.appendChild(document.importNode(e.target.import.body,true));
+                onAfterjQueryLoaded();
+            }, function(err) {
+                _this.fire('message-error', 'voyent-query-editor: error loading jquery ' + err);
+                console.error('voyent-query-editor: error loading jquery',err);
+            });
+        }
+        else { onAfterjQueryLoaded(); }
+
+        function onAfterjQueryLoaded() {
+            //load missing jQuery-QueryBuilder dependency
+            var jqueryBuilderURL = _this.resolveUrl('./jquery-builder-import.html');
+            if (!$.fn.queryBuilder) {
+                _this.importHref(jqueryBuilderURL, function(e) {
+                    document.head.appendChild(document.importNode(e.target.import.body,true));
+                    initialize();
+                }, function(err) {
+                    _this.fire('message-error', 'voyent-query-editor: error loading jquery builder ' + err);
+                    console.error('voyent-query-editor: error loading jquery builder',err);
+                });
+            }
+            else { initialize(); }
+        }
+
+        function initialize() {
+            if (!_this.realm) {
+                _this.realm = voyent.io.auth.getLastKnownRealm();
+            }
+            if (!_this.account) {
+                _this.account = voyent.io.auth.getLastKnownAccount();
+            }
+            if (!voyent.io.auth.isLoggedIn() || !_this.realm || !_this.account) {
+                return;
+            }
+            _this.reloadEditor();
+            _this.fetchQueryList();
+        }
+    },
 
     /**
      * Create a query in the service, which basically means to save
@@ -409,7 +462,7 @@ Voyent.QueryEditor = Polymer({
             _this.activeQuery = query;
             _this._setQueryHeader(_this.activeQuery);
             _this.fetchQueryList();
-            _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query "'+queryId+'" saved','type':'info'});
+            _this.fire('message-info', 'Successfully saved query: '+queryId);
         }).catch(function(error){
             _this.fire('message-error', 'createQuery caught an error: ' + error);
             console.error('createQuery caught an error:',error);
@@ -429,44 +482,14 @@ Voyent.QueryEditor = Polymer({
             account: this.account,
             realm: this.realm
         }).then(function() {
-            _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query "'+queryId+'" deleted','type':'info'});
+            _this.fire('message-info', 'Successfully deleted query: '+queryId);
             _this.resetEditor();
             _this.fetchQueryList();
         }).catch(function(error){
-            _this.fire('message-error', 'deleteQuery caught an error: ' + error);
+            _this.fire('message-error', 'Error in deleteQuery: ' + error);
             console.error('deleteQuery caught an error:',error);
         });
     },
-
-    /**
-     * Retrieve all queries from the service and filter accordingly for service/collection
-     */
-    _getAllQueries: function() {
-        var _this = this;
-        voyent.io.query.findQueries({
-            account:this.account,
-            realm: this.realm
-        }).then(function(results) {
-            //store the names of all the queries so we can provide
-            //validation messages indicating if a query name exists
-            _this.allQueries = results.map(function(query) {
-                return query._id;
-            });
-            //filter the query results so that we only show queries for the
-            //currently selected service / collection combination, if available
-            var filteredResults = results.filter(function(obj) {
-                return ((!obj.properties || !obj.properties.service || !obj.properties.collection) ||
-                (obj.properties.service === _this.service &&
-                obj.properties.collection === _this.collection))
-            });
-            _this._setQuerylistresults(filteredResults);
-            _this.fire('queriesRetrieved',{results: filteredResults});
-        }).catch(function(error){
-            _this.fire('message-error', 'fetchQueryList caught an error: ' + error);
-            console.error('fetchQueryList caught an error:',error);
-        });
-    },
-
     /**
      * Build a query object based on the passed parameters
      * This will ensure the proper format of our resulting query
@@ -476,7 +499,7 @@ Voyent.QueryEditor = Polymer({
      * @param isClone
      */
     _buildQuery: function(id,description,isClone) {
-        var query = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('getMongo');
+        var query = $(this.$.queryBuilder).queryBuilder('getMongo');
         if (Object.keys(query).length === 0) {
             return null;
         }
@@ -546,7 +569,8 @@ Voyent.QueryEditor = Polymer({
                     }
                 }
                 if (queryExists) {
-                    this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'The query name "'+name+'" already exists in this realm, please choose a different one.','type':'error'});
+                    this.fire('message-error', 'The query name "'+name+'" already exists in this realm, please choose a different one');
+                    console.error('The query name "'+name+'" already exists in this realm, please choose a different one');
                 }
                 return queryExists;
             }
@@ -557,7 +581,7 @@ Voyent.QueryEditor = Polymer({
      * Refresh our query object, time fields, and URL based on the underlying query editor
      */
     _refreshQuery: function() {
-        var query = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).queryBuilder('getMongo');
+        var query = $(this.$.queryBuilder).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
             this._setCurrentquery(query);
             this._processTimeFields(query,true);
@@ -642,7 +666,7 @@ Voyent.QueryEditor = Polymer({
             try {
                 // If we have a '.' then assume milliseconds are present
                 // Such as the modified long format Fri Nov 20 2015 12:26:38.769 GMT-0700 (MST)
-                if (val.indexOf('.') !== -1) { //TODO - Need proper regex solution
+                if (val.indexOf('.') !== -1) { //TODO - Need regex solution
                     // First we parse out milliseconds, in the above example this would be "769"
                     var millis = val.substring(val.indexOf('.')+1, val.indexOf(' ', val.indexOf('.')));
                     // Then we rebuild the string without milliseconds, so back to the standard Date long format
@@ -707,7 +731,7 @@ Voyent.QueryEditor = Polymer({
      * @param query
      */
     _setQueryHeader: function(query) {
-        var container = Polymer.dom(this.root).querySelector('#'+this._uniqueId+'_group_0');
+        var container = Polymer.dom(this.root).querySelector('#queryBuilder'+'_group_0');
         if (!query || !query._id) {
             if (Polymer.dom(this.root).querySelector('#queryTitle')) {
                 container.removeChild(Polymer.dom(this.root).querySelector('#queryTitle'));
@@ -742,7 +766,7 @@ Voyent.QueryEditor = Polymer({
         if (queryURLTarget && document.getElementById(queryURLTarget)) {
             var q = query ? JSON.stringify(query) : '{}';
             var params = '?access_token='+voyent.io.auth.getLastAccessToken()+'&query='+q+'&fields='+JSON.stringify(this.fields)+'&options='+JSON.stringify(this.options);
-            var queryURL = this.service_url+params;
+            var queryURL = this._serviceUrl+params;
             if ($(queryURLTarget).is(':input')) {
                 document.getElementById(queryURLTarget).value=queryURL;
             }
@@ -754,6 +778,7 @@ Voyent.QueryEditor = Polymer({
             }
         }
     },
+
     /**
      * Use our query service to execute the passed query
      * This function will determine which service to interact with
@@ -761,106 +786,30 @@ Voyent.QueryEditor = Polymer({
      * @param query
      */
     _queryService: function(query) {
-        if (!voyent.io.auth.isLoggedIn() || !this.realm || !this.account || !this.service || !this.collection) {
-            return;
-        }
         var _this = this;
         var params = {
-            accessToken: voyent.io.auth.getLastAccessToken(),
             account: this.account,
             realm: this.realm,
             query: query,
             fields: this.fields,
             options: this.options
         };
-        var protocol = 'http://';
-        var path = '/'+this.account+'/realms/'+this.realm;
+        if (this.service === 'docs') {
+            params.collection = this.collection;
+        }
 
         // Store our last query before we execute
-        _this._setLastquery(query);
+        this._setLastquery(query);
 
-        switch(this.service.toLowerCase()) {
-            case 'docs': case 'documents': //'documents' is here for backwards compatibility
-                if (this.service == 'documents') {
-                    //prevent _updateQueriesList from executing
-                    this._isInternalChange = true;
-                    this.service = 'docs'; //make sure we are using 'docs' as the service name
-                }
-                params.collection = this.collection;
-                this.service_url = protocol+voyent.io.docsURL+path+'/'+this.collection;
-                voyent.io.docs.findDocuments(params).then(successCallback).catch(function(error){
-                    _this.fire('message-error', 'findDocuments caught an error: ' + error);
-                    console.error('findDocuments caught an error:',error);
-                });
-                break;
-            case 'locate': case 'location': //'location' is here for backwards compatibility
-                if (this.service === 'location') {
-                    //prevent _updateQueriesList from executing
-                    this._isInternalChange = true;
-                    this.service = 'locate'; //make sure we are using 'locate' as the service name
-                }
-
-                this.service_url = protocol+voyent.io.locateURL+path+'/'+this.collection;
-                switch (this.collection.toLowerCase()) {
-                    case 'locations':
-                        voyent.io.locate.findLocations(params).then(successCallback).catch(function(error){
-                            _this.fire('message-error', 'findLocations caught an error: ' + error);
-                            console.error('findLocations caught an error:',error);
-                        });
-                        break;
-                    case 'regions':
-                        voyent.io.locate.findRegions(params).then(successCallback).catch(function(error){
-                            _this.fire('message-error', 'findRegions caught an error: ' + error);
-                            console.error('findRegions caught an error:',error);
-                        });
-                        break;
-                    case 'poi':
-                        voyent.io.locate.findPOIs(params).then(successCallback).catch(function(error){
-                            _this.fire('message-error', 'findPOIs caught an error: ' + error);
-                            console.error('findPOIs caught an error:',error);
-                        });
-                        break;
-                    default:
-                        this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Location Service Collection "' + this.collection + '" not supported.','type':'error'});
-                }
-                break;
-            case 'event':
-                if (this.collection !== 'events') {
-                    //prevent _updateQueriesList from executing
-                    this._isInternalChange = true;
-                    this.collection = 'events';
-                }
-                this.service_url = protocol+voyent.io.eventURL+path+'/'+this.collection;
-                voyent.io.event.findEvents(params).then(successCallback).catch(function(error){
-                    _this.fire('message-error', 'findEvents caught an error: ' + error);
-                    console.error('findEvents caught an error:',error);
-                });
-                break;
-            case 'authadmin':
-                if (this.collection !== 'users') {
-                    //prevent _updateQueriesList from executing
-                    this._isInternalChange = true;
-                    this.collection = 'users';
-                }
-                this.service_url = protocol+voyent.io.authAdminURL+path+'/'+this.collection;
-                switch (this.collection.toLowerCase()) {
-                    case 'users':
-                        voyent.io.admin.getRealmUsers(params).then(successCallback).catch(function(error){
-                            _this.fire('message-error', 'getRealmUsers caught an error: ' + error);
-                            console.error('getRealmUsers caught an error:',error);
-                        });
-                        break;
-                    default:
-                        this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'AuthAdmin Service Collection "' + this.collection + '" not supported.','type':'error'});
-                }
-                break;
-            default:
-                this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'Service "' + this.service + '" not supported.','type':'error'});
-        }
-        function successCallback(results) {
+        var func = this._serviceMappings[this.service][this.collection] || this._serviceMappings[this.service]['collection'];
+        this._serviceUrl = this._serviceMappings[this.service]['url'];
+        voyent.io[this.service][func](params).then(function (results) {
             var obj = {};
-            if( results && results.length > 0) {
-                determineFields(results);
+            if (results && results.length > 0) {
+                if (_this._redetermineFields) {
+                    determineFields(results);
+                    _this._redetermineFields = false;
+                }
                 obj = {results: results, uniqueFields: _this.uniqueFields};
                 _this._setQueryresults(obj);
                 _this.fire('queryExecuted',obj);
@@ -869,13 +818,14 @@ Voyent.QueryEditor = Polymer({
                 obj = {results: [], uniqueFields: []};
                 _this._setQueryresults(obj);
                 _this.fire('queryExecuted',obj);
-                _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'No data in the "' + _this.collection +'" collection.','type':'error'});
+                _this.fire('message-error', 'No data found for '+_this.service+" -> "+_this.collection);
+                console.error('No data found for '+_this.service+" -> "+_this.collection);
                 //if the query is empty ({}) then it means that this collection has no records
-                var query = $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('getMongo');
+                var query = $(_this.$.queryBuilder).queryBuilder('getMongo');
                 if (Object.keys(query).length === 0) {
-                    $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
-                    $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
-                        filters: [{"id":" ","operators":[],"optgroup":"No records found for "+_this.service+" -> "+_this.collection}],
+                    $(_this.$.queryBuilder).queryBuilder('destroy');
+                    $(_this.$.queryBuilder).queryBuilder({
+                        filters: [{"id":" ","operators":[],"optgroup":"No data found for "+_this.service+" -> "+_this.collection}],
                         icons: {
                             add_group: 'fa fa-plus-square',
                             add_rule: 'fa fa-plus-circle',
@@ -886,7 +836,11 @@ Voyent.QueryEditor = Polymer({
                     });
                 }
             }
-        }
+        }).catch(function(error) {
+            _this.fire('message-error', 'Error in ' + func + ': ' + error.detail);
+            console.error(func + ' caught an error:',error);
+        });
+
         function determineFields(results) {
             var dateRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])T(0[1-9]|1\d|2[0-3]):(0\d|1\d|2\d|3\d|4\d|5\d):(0\d|1\d|2\d|3\d|4\d|5\d).\d\d\dZ$/;
             var uniqueFields=[];
@@ -906,11 +860,8 @@ Voyent.QueryEditor = Polymer({
 
             if (filters.length > 0 && uniqueFields.length > 0) {
                 _this.uniqueFields = uniqueFields.sort(_this._sortAlphabetically);
-                if (_this._destroyEditor) {
-                    $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder('destroy');
-                    _this._destroyEditor = false; //set the flag to destroy the editor
-                }
-                $(Polymer.dom(_this.root).querySelector('#'+_this._uniqueId)).queryBuilder({
+                $(_this.$.queryBuilder).queryBuilder('destroy');
+                $(_this.$.queryBuilder).queryBuilder({
                     filters: filters.sort(_this._sortAlphabetically),
                     icons: {
                         add_group: 'fa fa-plus-square',
@@ -991,7 +942,7 @@ Voyent.QueryEditor = Polymer({
      */
     _setupListeners: function() {
         var _this = this;
-        $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).on('afterCreateRuleInput.queryBuilder', function(e, rule) {
+        $(this.$.queryBuilder).on('afterCreateRuleInput.queryBuilder', function(e, rule) {
             var inputs = $(Polymer.dom(_this.root).querySelector('#'+rule.id + ' .rule-value-container')).children();
             if (inputs) {
                 $(inputs).bind("change",function() {
@@ -1000,19 +951,19 @@ Voyent.QueryEditor = Polymer({
             }
         });
 
-        $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)).on('afterUpdateRuleOperator.queryBuilder', function(e, rule) {
+        $(this.$.queryBuilder).on('afterUpdateRuleOperator.queryBuilder', function(e, rule) {
             if (!_this.skipListeners) {
                 _this._refreshQuery();
             }
         });
 
-        this.editor = $(Polymer.dom(this.root).querySelector('#'+this._uniqueId)); //expose jQuery QueryBuilder programmatically
+        this.editor = $(this.$.queryBuilder); //expose jQuery QueryBuilder programmatically
 
         //fire queryEditorInitialized event only once
         if (!this._queryEditorInitialized) {
             //and fire it after the query editor is actually visible on the page
             var checkExist = setInterval(function() {
-                if (_this.$$('#'+_this._uniqueId+'_group_0')) {
+                if (_this.$$('#queryBuilder'+'_group_0')) {
                     _this._queryEditorInitialized = true;
                     _this.fire('queryEditorInitialized');
                     clearInterval(checkExist);
@@ -1069,23 +1020,69 @@ Voyent.QueryEditor = Polymer({
     },
 
     /**
-     * Get all the queries when the service or collection is changed so we always have an updated
-     *  query list and always show the correct queries for that service/collection combination
+     * Sets the collection based on the new service value.
+     * @param service
+     * @param previousService
+     * @private
      */
-    _updateQueriesList: function() {
-        //This will be called multiple times as the default values are initialized so only
-        //reload the editor when values are changed after the query editor is actually loaded.
-        if (!this._queryEditorInitialized) {
+    _serviceChanged: function(service,previousService) {
+        switch(service) {
+            case 'event':
+                this.collection = 'events'; //only collection is events
+                break;
+            case 'docs':
+                this.collection = 'documents'; //default to documents collection
+                break;
+            case 'locate':
+                this.collection = 'locations'; //default to locations
+                break;
+            case 'admin':
+                this.collection = 'users';  //only collection is users
+                break;
+            case 'action':
+                this.collection = 'actions'; //only collection is actions
+                break;
+            case 'eventhub':
+                this.collection = 'handlers'; //default to handlers
+                break;
+            default:
+                //if the service name specified is not supported then use the last valid one
+                this.service = previousService;
+        }
+    },
+
+    /**
+     * Reloads the query editor when a valid collection is set.
+     * @param collection
+     * @param previousCollection
+     * @private
+     */
+    _collectionChanged: function(collection,previousCollection) {
+        //if serviceMappings is undefined it means the component hasn't loaded yet
+        if (!this._serviceMappings || !this._isCollectionValid()) {
+            if (previousCollection) {
+                //if the service name specified is not supported then use the last valid one
+                this.collection = previousCollection;
+            }
             return;
         }
-        //Additionally, we only want to call this observer when the attribute
-        //change comes from the user instead of from within the component.
-        if (this._isInternalChange) {
-            this._isInternalChange = false;
+        if (!voyent.io.auth.isLoggedIn() || !this.realm || !this.account) {
             return;
         }
-        this._destroyEditor = true; //set the flag to destroy the editor
+        this._redetermineFields = true;
         this.fetchQueryList();
         this.resetEditor();
+    },
+
+    /**
+     * Validates that the collection is valid.
+     * @returns {boolean}
+     * @private
+     */
+    _isCollectionValid: function() {
+        if (!this.collection) {
+            return false;
+        }
+        return this._serviceMappings[this.service][this.collection] || this._serviceMappings[this.service]['collection'];
     }
 });

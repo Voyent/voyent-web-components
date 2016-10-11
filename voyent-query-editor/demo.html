@@ -183,17 +183,6 @@
 				document.getElementById('authProvider').logout();
 			}
 
-			//Listen for the queryMsgUpdated event for all components
-			window.addEventListener('queryMsgUpdated', function(e) {
-				var id = e.detail.id ? e.detail.id + ' : ' : '';
-				document.getElementById('msgs').innerHTML = id + e.detail.message;
-				//clear message 10 seconds after it's received
-				clearTimeout(window.msgTimeout);
-				window.msgTimeout = setTimeout(function() {
-					document.getElementById('msgs').innerHTML = '';
-				},10000);
-			});
-
 			var demo = document.getElementById('demo');
 
 			demo.isEqual = function(val1, val2){
