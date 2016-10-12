@@ -28,9 +28,6 @@ Polymer({
         _this._queryEditor.addEventListener('queriesRetrieved', function(e) {
             _this._allQueries = e.detail.results;
             _this._hasQueries = _this._allQueries && _this._allQueries.length > 0;
-            if (Object.keys(_this._allQueries).length === 0) {
-                _this.fire('message-info', 'No saved queries found');
-            }
         });
     },
 
