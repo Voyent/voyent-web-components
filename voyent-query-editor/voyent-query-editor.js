@@ -10,18 +10,20 @@ Voyent.QueryEditor = Polymer({
      * @param realm
      * @param service
      * @param collection
+     * @param query
      * @param fields
      * @param options
-     * @param queryurltarget
+     * @param showselectmenus
      */
-    factoryImpl: function(account,realm,service,collection,fields,options,queryurltarget) {
+    factoryImpl: function(account,realm,service,collection,query,fields,options,showselectmenus) {
         this.account = account || null;
         this.realm = realm || null;
         this.service = service || 'event';
         this.collection = collection || 'events';
+        this.query = query || {};
         this.fields = fields || {};
         this.options = options || {};
-        this.queryurltarget = queryurltarget || null;
+        this.showselectmenus = !!showselectmenus;
     },
 
     properties: {
@@ -105,8 +107,8 @@ Voyent.QueryEditor = Polymer({
          *
          * Example:
          *
-         *      //sort by _id (descending) + get only 100 records
-         *      {"sort":{"_id":-1},"limit":100}
+         *      //sort by time (descending) + get only 100 records
+         *      {"sort":{"time":-1},"limit":100}
          */
         options: { type: Object, value: {}, notify: true },
         /**
@@ -114,15 +116,13 @@ Voyent.QueryEditor = Polymer({
          */
         showselectmenus: { type: Boolean, value: false, observer: '_showselectmenusChanged' },
         /**
-         * Element ID of where the GET URL of the query will be displayed as the query is built. Supports input and non-input elements.
-         */
-        queryurltarget: { type: String },
-        /**
-         * A string representation of the object returned from the `queryExecuted` event. Use when data binding is preferred over event listeners.
+         * A string representation of the object returned from the `queryExecuted` event. Use when data binding is
+         * preferred over event listeners.
          */
         queryresults: { type: String, notify: true, readOnly: true },
         /**
-         * A string representation of the results array returned from the `queriesRetrieved` event. Use when data binding is preferred over event listeners.
+         * A string representation of the results array returned from the `queriesRetrieved` event. Use when data
+         * binding is preferred over event listeners.
          */
         querylistresults: { type: String, notify: true, readOnly: true },
         /**
@@ -153,47 +153,36 @@ Voyent.QueryEditor = Polymer({
      * @event queriesRetrieved
      */
 
-    //we use ready instead of created so that the properties get initialized first
     ready: function() {
         var _this = this;
-        var path = '/'+this.account+'/realms/'+this.realm;
+        //define the services and collection combinations and their matching voyent.io call
         this._serviceMappings = {
             "action": {
-                "actions":"findActions",
-                "url":"http://"+voyent.io.actionURL+path+"/"+this.collection
+                "actions":"findActions"
             },
             "admin": {
-                "users":"getRealmUsers",
-                "url":"http://"+voyent.io.authAdminURL+path+"/"+this.collection
+                "users":"getRealmUsers"
             },
             "docs": {
-                "collection":"findDocuments",
-                "url":"http://"+voyent.io.docsURL+path+"/"+this.collection
+                "collection":"findDocuments" //since docs can have any collection just group them into "collection"
             },
             "event": {
-                "events":"findEvents",
-                "url":"http://"+voyent.io.eventURL+path+"/"+this.collection
+                "events":"findEvents"
             },
             "eventhub": {
                 "handlers":"findHandlers",
-                "recognizers":"findRecognizers",
-                "url":"http://"+voyent.io.eventhubURL+path+"/"+this.collection
+                "recognizers":"findRecognizers"
             },
             "locate": {
                 "locations":"findLocations",
                 "poi":"findPOIs",
-                "regions":"findRegions",
-                "url": "http://"+voyent.io.locateURL+path+"/"+this.collection
+                "regions":"findRegions"
             }
         };
         //load component dependencies
         this._loadDependencies();
         //use scopeSubtree to apply styles to elements included by third-party libraries
         this.scopeSubtree(this.$.queryBuilder, true);
-        //make sure we initialize any queries that are defined in the query property
-        this.addEventListener('queryEditorInitialized', function(e) {
-            _this.setEditorFromMongo(_this._parseQueryProperty(_this.query));
-        });
     },
 
     /**
@@ -247,7 +236,7 @@ Voyent.QueryEditor = Polymer({
     cloneQuery: function(id,description) {
         if (!this.activeQuery) {
             this.fire('message-error', 'Unable to clone query: no query loaded');
-            console.error('No query to clone');
+            console.error('Unable to clone query: no query loaded');
             return;
         }
         var query = this._buildQuery(id,description,true);
@@ -262,7 +251,7 @@ Voyent.QueryEditor = Polymer({
     cloneQueryWithPrompt: function() {
         if (!this.activeQuery) {
             this.fire('message-error', 'Unable to clone query: no query loaded');
-            console.error('No query to clone');
+            console.error('Unable to clone query: no query loaded');
             return;
         }
         if (!this.validateQuery()) { return; }
@@ -283,7 +272,7 @@ Voyent.QueryEditor = Polymer({
     deleteQuery: function() {
         if (!this.activeQuery || !this.activeQuery._id) {
             this.fire('message-error', 'Unable to clone query: no query loaded');
-            console.error('No query to delete');
+            console.error('Unable to clone query: no query loaded');
             return;
         }
         this._deleteQuery(this.activeQuery._id);
@@ -293,22 +282,15 @@ Voyent.QueryEditor = Polymer({
      * Clears the query editor and restores the `fields` and `options` attributes to their original values.
      */
     resetEditor: function() {
-        try {
-            var editor = $(this.$.queryBuilder);
-            if (!editor || !editor.queryBuilder) {
-                return;
-            }
-            editor.queryBuilder('reset');
+        var editor = $(this.$.queryBuilder);
+        if (!editor || !editor.queryBuilder) {
+            return;
         }
-        catch(e) {
-            //the reset call may throw errors if the query editor has no filter list yet
-            //but if there is no filter list then there is nothing to reset so ignore it
-        }
+        editor.queryBuilder('reset');
         this.options = JSON.parse(this.getAttribute('options')) || {};
         this.fields = JSON.parse(this.getAttribute('fields')) || {};
         this.activeQuery = null;
         this._setQueryHeader(null);
-        this._updateQueryURL();
         this._queryService({});
         this._setCurrentquery({});
     },
@@ -395,7 +377,6 @@ Voyent.QueryEditor = Polymer({
             this.fire('message-error', errorMsg);
             console.error(errorMsg);
         }
-        this._updateQueryURL(theQuery);
         this.skipListeners = false;
     },
 
@@ -405,7 +386,6 @@ Voyent.QueryEditor = Polymer({
     reloadEditor: function() {
         this._redetermineFields = true;
         this._queryService({});
-        this._updateQueryURL();
     },
 
     /**
@@ -624,7 +604,6 @@ Voyent.QueryEditor = Polymer({
         if (Object.keys(query).length !== 0) {
             this._setCurrentquery(query);
             this._processTimeFields(query,true);
-            this._updateQueryURL(query);
         }
     },
 
@@ -795,30 +774,6 @@ Voyent.QueryEditor = Polymer({
     },
 
     /**
-     * Update the query URL based on the passed query
-     * This URL simulates what service interaction endpoint is used
-     *
-     * @param query
-     */
-    _updateQueryURL: function(query) {
-        var queryURLTarget = this.queryurltarget;
-        if (queryURLTarget && document.getElementById(queryURLTarget)) {
-            var q = query ? JSON.stringify(query) : '{}';
-            var params = '?access_token='+voyent.io.auth.getLastAccessToken()+'&query='+q+'&fields='+JSON.stringify(this.fields)+'&options='+JSON.stringify(this.options);
-            var queryURL = this._serviceUrl+params;
-            if ($(queryURLTarget).is(':input')) {
-                document.getElementById(queryURLTarget).value=queryURL;
-            }
-            else {
-                document.getElementById(queryURLTarget).innerHTML=queryURL;
-                if (document.getElementById(queryURLTarget).tagName === 'A') {
-                    document.getElementById(queryURLTarget).href=queryURL;
-                }
-            }
-        }
-    },
-
-    /**
      * Use our query service to execute the passed query
      * This function will determine which service to interact with
      *
@@ -841,7 +796,6 @@ Voyent.QueryEditor = Polymer({
         this._setLastquery(query);
 
         var func = this._serviceMappings[this.service][this.collection] || this._serviceMappings[this.service]['collection'];
-        this._serviceUrl = this._serviceMappings[this.service]['url'];
         voyent.io[this.service][func](params).then(function (results) {
             var obj = {};
             if (results && results.length > 0) {
@@ -976,7 +930,7 @@ Voyent.QueryEditor = Polymer({
 
     /**
      * Setup listeners for the underlying query editor, specifically to refresh our query object
-     *  after a change happens in the query editor component
+     * after a change happens in the query editor component
      */
     _setupListeners: function() {
         var _this = this;
@@ -996,6 +950,11 @@ Voyent.QueryEditor = Polymer({
         });
 
         this.editor = $(this.$.queryBuilder); //expose jQuery QueryBuilder programmatically
+
+        //make sure we initialize any queries that are defined in the query property
+        this.addEventListener('queryEditorInitialized', function(e) {
+            _this.setEditorFromMongo(_this._parseQueryProperty(_this.query));
+        });
 
         //fire queryEditorInitialized event only once
         if (!this._queryEditorInitialized) {
