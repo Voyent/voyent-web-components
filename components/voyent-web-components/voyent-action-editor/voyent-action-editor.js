@@ -159,7 +159,8 @@ Polymer({
                 }
             },10);
         })['catch'](function(error) {
-            _this.fire('message-error', "Error in getTaskItems: " + error.toSource());
+            _this.fire('message-error', "Error in getTaskItems: " + error);
+            console.error('Error in getTaskItems:',error);
         });
     },
 
@@ -176,7 +177,8 @@ Polymer({
             _this.fire('actionsRetrieved',{actions:actions});
             _this._getHandlers();
         }).catch(function(error) {
-            _this.fire('message-error', "Error in getActions: " + error.toSource());
+            _this.fire('message-error', "Error in getActions: " + error);
+            console.error('Error in getActions:',error);
         });
     },
 
@@ -186,21 +188,26 @@ Polymer({
      * @param callback
      */
     loadAction: function(action, callback) {
+        var _this = this;
         // First reset our task groups, mainly to toggle the state of task group collapsed/opened
         this.set('_taskGroups', []);
 
         // Then do our load in a set timeout
         // This is also necessary to update any select components in the action to their properly loaded value
         setTimeout(function() {
-            this._loadHandler(action._id);
-            this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
-            this._taskGroups = this._convertActionToUI(this._loadedAction);
-            this.set('_taskGroups',JSON.parse(JSON.stringify(this._taskGroups)));
-            this.fire('message-info', 'Loaded action ' + this._loadedAction._id + ' with ' + this._taskGroups.length + ' task groups');
+            _this._loadHandler(action._id);
+            _this._loadedAction = JSON.parse(JSON.stringify(action));  //clone object (it is valid JSON so this technique is sufficient)
+            _this._taskGroups = _this._convertActionToUI(_this._loadedAction);
+            _this.set('_taskGroups',JSON.parse(JSON.stringify(_this._taskGroups)));
+            setTimeout(function() {
+                //do this async so we are sure the action is loaded
+                _this._updateSelectMenus();
+            });
+            _this.fire('message-info', 'Loaded action ' + _this._loadedAction._id + ' with ' + _this._taskGroups.length + ' task groups');
             if (callback) {
                 callback();
             }
-        }.bind(this),0);
+        },0);
     },
 
     /**
@@ -211,7 +218,6 @@ Polymer({
         var _this = this;
         actionId = actionId && actionId.trim().length > 0 ? actionId : this._actionId;
         if (!this.validateAction() || !this.isUniqueActionId(actionId)) {
-            this.fire('message-error', 'Invalid data was found in action, fix and try saving again');
             return;
         }
         var action = this.convertUIToAction();
@@ -222,7 +228,8 @@ Polymer({
             _this._saveHandler(actionId);
             _this.fire('message-info', 'Successfully saved ' + _this._loadedAction._id + ' action');
         }).catch(function(error) {
-            _this.fire('message-error', "Error in saveAction: " + error.toSource());
+            _this.fire('message-error', "Error in saveAction: " + error);
+            console.error('Error in saveAction:',error);
         });
     },
 
@@ -232,7 +239,6 @@ Polymer({
     updateAction: function() {
         var _this = this;
         if (!this._loadedAction || !this.validateAction()) {
-            this.fire('message-error', 'Invalid data was found in action, fix and try updating again');
             return;
         }
         //check if the id has changed, if it has we must re-create the action with the new id
@@ -246,7 +252,8 @@ Polymer({
                 _this._updateHandler(_this._actionId);
                 _this.fire('message-info', 'Successfully updated ' + _this._actionId + ' action');
             }).catch(function(error) {
-                _this.fire('message-error', "Error in updateAction: " + error.toSource());
+                _this.fire('message-error', "Error in updateAction: " + error);
+                console.error('Error in updateAction:',error);
             });
         }
     },
@@ -263,7 +270,8 @@ Polymer({
             _this._deleteHandler(id);
             _this.fire('message-info', 'Successfully deleted action ' + id);
         }).catch(function(error) {
-            _this.fire('message-error', "Error in deleteAction: " + error.toSource());
+            _this.fire('message-error', "Error in deleteAction: " + error);
+            console.error('Error in deleteAction:',error);
         });
     },
 
@@ -287,6 +295,7 @@ Polymer({
         //validate handler query
         if (!this._queryEditorRef.validateQuery()) {
             this.fire('message-error', 'Please enter a valid query.');
+            console.error('Please enter a valid query.');
             return false;
         }
         //validate required fields
@@ -294,6 +303,7 @@ Polymer({
            so reverting back to a plain loop that checks the value of each required field
         if (!this.$$('#actionForm').checkValidity()) {
             this.fire('message-error', 'Please enter all required fields.');
+            console.error('Please enter all required fields.');
             return false;
         }*/
         var required = Polymer.dom(this.$$('#actionForm')).querySelectorAll('input:required');
@@ -317,6 +327,7 @@ Polymer({
                     alertStr += '\n\n [' + (groupStr ? (groupStr) : '') + (taskStr ? (' > '+taskStr) : '') + ' > ' + label+']';
                 }
                 this.fire('message-error', alertStr);
+                console.error(alertStr);
                 required[h].focus();
                 return false;
             }
@@ -333,6 +344,7 @@ Polymer({
             //task group names need to be unique
             if (taskGroupNames.indexOf(this._taskGroups[i].name) > -1) {
                 this.fire('message-error', 'Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
+                console.error('Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
                 return false;
             }
             taskGroupNames.push(this._taskGroups[i].name);
@@ -341,6 +353,7 @@ Polymer({
                 //task names need to be unique within the same task group
                 if (taskNames.indexOf(tasks[j].name) > -1) {
                     this.fire('message-error', 'Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
+                    console.error('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
                     return false;
                 }
                 taskNames.push(tasks[j].name);
@@ -371,6 +384,7 @@ Polymer({
                     if (definedCount > 0) {
                         if (someGroupDefined) {
                             this.fire('message-error', 'You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                            console.error('You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                             return false;
                         }
                         someGroupDefined=true;
@@ -381,16 +395,19 @@ Polymer({
                 }
                 if (!allGroupDefined && someGroupDefined) {
                     this.fire('message-error', 'You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                    console.error('You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
                 else if (!someGroupDefined) {
                     this.fire('message-error', 'You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                    console.error('You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
             }
         }
         if (!hasTasks) {
             this.fire('message-error', 'You must define at least one task.');
+            console.error('You must define at least one task.');
             return false;
         }
         return true;
@@ -404,6 +421,7 @@ Polymer({
     isUniqueActionId: function(actionId) {
         if (this._actionIds.indexOf(actionId) > -1) {
             this.fire('message-error', 'This Action ID is already in use, please try a different one.');
+            console.error('This Action ID is already in use, please try a different one.');
             return false;
         }
         return true;
@@ -577,13 +595,13 @@ Polymer({
      * @private
      */
     _organizeSchemas: function(schemas,key) {
-        // We use 4 hardcoded services to sort: doc, locate, mailbox, user
+        // We use 4 hardcoded services to sort: doc, locate, user, scope
         // Anything else goes into misc
         var defaultService = 'misc';
         var serviceArray = [ { label: 'doc', schemas: [] },
                              { label: 'locate', schemas: [] },
-                             { label: 'mailbox', schemas: [] },
                              { label: 'user', schemas: [] },
+                             { label: 'scope', schemas: [] },
                              { label: defaultService, schemas: [] } ];
 
         // Loop through the passed list of schemas, which would be the tasks
@@ -674,7 +692,7 @@ Polymer({
      * @private
      */
     _loadQueryEditor: function() {
-        this._queryEditorRef = new Voyent.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
+        this._queryEditorRef = new Voyent.QueryEditor(this.account,this.realm,'event','events',null,null,{"limit":100,"sort":{"time":-1}},false);
     },
 
     /**
@@ -732,7 +750,8 @@ Polymer({
             _this._loadedAction._id = _this._actionId;
             _this.saveAction();
         }).catch(function(error) {
-            _this.fire('message-error', "Error in update action: " + error.toSource());
+            _this.fire('message-error', "Error in update action: " + error);
+            console.error('Error in update action:',error);
         });
     },
 
@@ -813,6 +832,53 @@ Polymer({
                     property.value = task.params[property.title];
                 }
             });
+        }
+    },
+
+    /**
+     * Keeps the select menus in sync with the backing data when loading a saved action.
+     * @private
+     */
+    _updateSelectMenus: function() {
+        var _this = this;
+        //If a select menu binding is set before the select menu is rendered then the value will not be
+        //displayed in the menu. This function works around that by manually updating the select menu.
+        for (var i=0; i<_this._taskGroups.length; i++) {
+            //loop through all properties to determine if we have any select menus rendered
+            for (var j=0; j<_this._taskGroups[i].tasks.length; j++) {
+                var propertyGroups = _this._taskGroups[i].tasks[j].schema.properties;
+                for (var groupKey in propertyGroups) {
+                    if (!propertyGroups.hasOwnProperty(groupKey)) {
+                        continue;
+                    }
+                    var group = propertyGroups[groupKey];
+                    if (groupKey !== 'oneOf') {
+                        iterateProperties(group,_this._taskGroups[i].name,_this._taskGroups[i].tasks[j].name);
+                    }
+                    else {
+                        for (var k=0; k<group.length; k++) {
+                            iterateProperties(group[k],_this._taskGroups[i].name,_this._taskGroups[i].tasks[j].name);
+                        }
+                    }
+                }
+            }
+        }
+        function iterateProperties(group,groupName,taskName) {
+            for (var propertyKey in group) {
+                if (!group.hasOwnProperty(propertyKey)) {
+                    continue;
+                }
+                var property = group[propertyKey];
+                //if we have an enum it means that a select is rendered
+                if (property.enum) {
+                    var val = property.value;
+                    //update the select menu
+                    var opt = _this.querySelector('#'+_this._calculateSelectId(groupName,taskName,propertyKey)+' [value="'+val+'"]');
+                    if (opt) {
+                        opt.selected = true;
+                    }
+                }
+            }
         }
     },
 
@@ -1309,7 +1375,8 @@ Polymer({
             }
             _this._handlers = handlerMap;
         }).catch(function(error) {
-            _this.fire('message-error', "Error in getHandlers: " + error.toSource());
+            _this.fire('message-error', "Error in getHandlers: " + error);
+            console.error('Error in getHandlers:',error);
         });
     },
 
@@ -1339,7 +1406,8 @@ Polymer({
         }
         voyent.io.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
         }).catch(function(error) {
-            _this.fire('message-error', "Error in saveHandler: " + error.toSource());
+            _this.fire('message-error', "Error in saveHandler: " + error);
+            console.error('Error in saveHandler:',error);
         });
     },
 
@@ -1353,7 +1421,8 @@ Polymer({
         }
         voyent.io.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
         }).catch(function(error) {
-            _this.fire('message-error', "Error in updateHandler: " + error.toSource());
+            _this.fire('message-error', "Error in updateHandler: " + error);
+            console.error('Error in updateHandler:',error);
         });
     },
 
@@ -1365,7 +1434,8 @@ Polymer({
         }
         voyent.io.eventhub.deleteHandler({"realm":this.realm,"id":id}).then(function() {
         }).catch(function(error) {
-            _this.fire('message-error', "Error in deleteHandler: " + error.toSource());
+            _this.fire('message-error', "Error in deleteHandler: " + error);
+            console.error('Error in deleteHandler:',error);
         });
     }
 });

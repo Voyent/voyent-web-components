@@ -130,7 +130,8 @@ Voyent.LocationRoute = Polymer({
                 }, function(response, status) {
                     if (status !== google.maps.DirectionsStatus.OK) {
                         if (failures == 10) {
-                            _this.fire('message-error', 'Directions request failed 10 times for "' + _this.label + '". Not retrying.'); 
+                            _this.fire('message-error', 'Directions request failed 10 times for "' + _this.label + '". Not retrying.');
+                            console.error('Directions request failed 10 times for "' + _this.label + '". Not retrying.');
                             return;
                         }
                         console.log('Error starting route "',_this.label+'"','due to',status+'.','This was failure #',parseInt(failures+1)+'.','Retrying request in 3 seconds...');
@@ -161,7 +162,7 @@ Voyent.LocationRoute = Polymer({
                     var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [route[_this._index].lng(),route[_this._index].lat()] } } };
                     location.username = _this.user || voyent.io.auth.getLastKnownUsername();
                     location.demoUsername = _this.user || voyent.io.auth.getLastKnownUsername(); //(NTFY-301)
-                    voyent.io.location.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
+                    voyent.io.locate.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
                         //set location object (take best guess at username and lastUpdated without re-retrieving record)
                         _this._location = location;
                         _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
@@ -186,7 +187,8 @@ Voyent.LocationRoute = Polymer({
                         _this._cancelBtnDisabled=false;
                         _this._updateBtnDisabled=false;
                     }).catch(function(error) {
-                        _this.fire('message-error', 'Issue updating location: ' + error.toSource());
+                        _this.fire('message-error', 'Issue updating location: ' + error);
+                        console.error('Issue updating location',error);
                     });
                 });
             } )();
@@ -231,7 +233,7 @@ Voyent.LocationRoute = Polymer({
         }
         var route = this._route;
         this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the next location
-        voyent.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
+        voyent.io.locate.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
             /*if (_this._followUser) {
@@ -246,7 +248,8 @@ Voyent.LocationRoute = Polymer({
             _this._index = i;
             _this._previousBtnDisabled=false;
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue stepping to next location of user "' + _this._location.username + '": ' + error.toSource());
+            _this.fire('message-error', 'Issue stepping to next location of user "' + _this._location.username + '": ' + error);
+            console.error('Issue stepping to next location of user:',_this._location.username,error);
         });
     },
 
@@ -261,7 +264,7 @@ Voyent.LocationRoute = Polymer({
         }
         var route = this._route;
         this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the previous location
-        voyent.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
+        voyent.io.locate.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
             /*if (_this._followUser) {
@@ -273,7 +276,8 @@ Voyent.LocationRoute = Polymer({
                 _this._previousBtnDisabled=true;
             }
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue stepping to previous location of user "' + _this._location.username + '": ' + error.toSource());
+            _this.fire('message-error', 'Issue stepping to previous location of user "' + _this._location.username + '": ' + error);
+            console.error('Issue stepping to previous location of user:',_this._location.username,error);
         });
     },
 
@@ -285,13 +289,14 @@ Voyent.LocationRoute = Polymer({
         if (!this._location) {
             return;
         }
-        voyent.io.location.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
+        voyent.io.locate.updateLocation({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
             if (!_this._location) {
                 return; //the simulation has been cleaned up
             }
             _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue updating location:' + error.toSource());
+            _this.fire('message-error', 'Issue updating location:' + error);
+            console.error('Issue updating location:',error);
         });
     },
 
@@ -430,13 +435,14 @@ Voyent.LocationRoute = Polymer({
                 clearInterval(updateLocation);
                 return;
             }
-            voyent.io.location.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
+            voyent.io.locate.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
                 if (!_this._location) {
                     return; //the simulation has been cleaned up
                 }
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             }).catch(function(error) {
-                _this.fire('message-error', 'Issue updating location: ' + error.toSource());
+                _this.fire('message-error', 'Issue updating location: ' + error);
+                console.error('Issue updating location:',error);
             });
         },this.frequency*1000);
     },

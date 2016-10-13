@@ -125,6 +125,18 @@
         },
 
         /**
+         * Generates a select menu id based on the parameters.
+         * @param groupName
+         * @param taskName
+         * @param propertyName
+         * @returns {string}
+         * @private
+         */
+        _calculateSelectId: function(groupName,taskName,propertyName) {
+            return groupName+'-'+taskName+'-'+propertyName;
+        },
+
+        /**
          * Get the index based on a task group id.
          * @param id
          * @returns {number}

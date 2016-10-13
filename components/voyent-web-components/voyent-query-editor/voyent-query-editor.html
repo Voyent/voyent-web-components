@@ -1,6 +1,10 @@
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../common/ace-import.html">
-<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../common/imports/voyent-io.html">
+<link rel="import" href="voyent-query-editor-styles.html">
+<link rel="import" href="query-builder-styles.html">
+<link rel="import" href="font-awesome-styles.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../iron-selector/iron-selector.html">
 
 <!--
 Displays a query editor based on jQuery-QueryBuilder that can build queries for data stored by the Voyent Services.
@@ -10,18 +14,47 @@ You can access the Query Editor programmatically using the editor property (< vo
 Example:
 
 		<voyent-query-editor realm="myRealm"
-                           account="myAccount"
-                           queryurltarget="queryURL">
+                           account="myAccount">
 		</voyent-query-editor>
 
 @demo demo.html
 -->
 <dom-module id="voyent-query-editor">
     <template>
-        <link type="text/css" rel="stylesheet" href="../../jQuery-QueryBuilder/dist/css/query-builder.default.min.css">
-        <link type="text/css" rel="stylesheet" href="./voyent-query-editor.min.css">
-        <link type="text/css" rel="stylesheet" href="../../components-font-awesome/css/font-awesome.min.css">
-        <div id$="{{_uniqueId}}"></div>
+        <style is="custom-style" include="query-builder-styles"></style>
+        <style is="custom-style" include="voyent-query-editor-styles"></style>
+        <style is="custom-style" include="font-awesome-styles"></style>
+        <style>
+            .selectMenus { width:385px; height:60px; margin:0 auto; }
+            iron-selector > * { padding: 8px;}
+            .floatLeft { float:left; }
+            .large { width:385px; }
+            .small { width:190px; }
+            .collection { padding-left:5px; }
+        </style>
+
+        <template is="dom-if" if="{{showselectmenus}}">
+            <div class="selectMenus">
+                <paper-dropdown-menu class$="{{_getClass(service)}}" label="Service:">
+                    <iron-selector class="dropdown-content" attr-for-selected="name" selected={{service}}>
+                        <template is="dom-repeat" items="{{_getServices()}}">
+                            <div name="{{item}}">{{_capitalize(item)}}</div>
+                        </template>
+                    </iron-selector>
+                </paper-dropdown-menu>
+                <template is="dom-if" if="{{_collections}}">
+                    <paper-dropdown-menu class="collection small floatLeft" label="Collection:">
+                        <iron-selector class="dropdown-content" attr-for-selected="name" selected="{{collection}}">
+                            <template is="dom-repeat" items="{{_collections}}">
+                                <div name="{{item}}">{{_capitalize(item)}}</div>
+                            </template>
+                        </iron-selector>
+                    </paper-dropdown-menu>
+                </template>
+                <div style="clear:left;"></div>
+            </div>
+        </template>
+        <div id="queryBuilder"></div>
     </template>
 </dom-module>
 

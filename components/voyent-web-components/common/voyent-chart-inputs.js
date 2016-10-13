@@ -23,20 +23,20 @@ Polymer({
         this.independentOptions["string"]["common"]=["event","type","username","data.origin"];
         this.independentOptions["string"]["storage"]=["data.mimetype","data.originalName"];
         this.independentOptions["string"]["locate"]=[];
-        this.independentOptions["string"]["metrics"]=[];
+        this.independentOptions["string"]["event"]=[];
         this.independentOptions["time"]["common"]=["time"];
         this.independentOptions["time"]["storage"]=[];
         this.independentOptions["time"]["locate"]=[];
-        this.independentOptions["time"]["metrics"]=[];
+        this.independentOptions["time"]["event"]=[];
         this.independentOptions["number"]["common"]=["data.processTime"];
         this.independentOptions["number"]["storage"]=[];
         this.independentOptions["number"]["locate"]=[];
-        this.independentOptions["number"]["metrics"]=[];
+        this.independentOptions["number"]["event"]=[];
         this.dependentOptions = [];
         this.dependentOptions["common"]=["data.processTime"];
         this.dependentOptions["storage"]=["data.size"];
         this.dependentOptions["locate"]=[];
-        this.dependentOptions["metrics"]=[];
+        this.dependentOptions["event"]=[];
     },
 
     ready: function () {

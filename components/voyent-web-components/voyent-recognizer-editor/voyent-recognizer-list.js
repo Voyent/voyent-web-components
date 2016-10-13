@@ -41,6 +41,7 @@ Polymer({
         }
         else {
             this.fire('message-error', 'Select a recognizer to view');
+            console.error('Select a recognizer to view');
         }
     },
     

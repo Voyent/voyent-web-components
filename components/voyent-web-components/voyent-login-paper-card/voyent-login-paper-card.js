@@ -103,6 +103,23 @@
                 type: Boolean
             },
             /**
+             * Show a button that allows the details panel (realm, account, host) to be hidden
+             * This ties to an iron-collapse wrapper
+             */
+            hideallowed: {
+                notify: true,
+                type: Boolean,
+                value: false
+            },
+            /**
+             * Toggle the initial state of the details panel (realm, account, host)
+             */
+            hideclosed: {
+                notify: true,
+                type: Boolean,
+                value: false
+            },
+            /**
              * Realm used for services
              */
             realm: {
@@ -124,7 +141,13 @@
             host: {
                 notify: true,
                 type: String,
-                value: 'dev.voyent.io'
+                value: 'dev.voyent.cloud'
+            }
+        },
+        
+        attached: function() {
+            if (document.getElementById("username")) {
+                document.getElementById("username").focus();
             }
         },
 
@@ -136,7 +159,8 @@
          */
         handleLogin: function(e){
             var _this = this;
-            var authProvider = document.querySelector('#' + this.authProvider);
+            var authProvider = document.querySelector('#' + this.authProvider) ||
+                               Polymer.dom(this).parentNode.querySelector('#' + this.authProvider);
             if( !authProvider ){
                 console.error('voyent-login-paper-card could not find auth-provider: ' + this.authProvider);
                 return;

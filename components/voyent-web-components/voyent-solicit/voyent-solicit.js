@@ -114,7 +114,7 @@ Polymer({
           params.event.data = {'result': e.model.item.value};
           params.event.data.pass = params.event.pass;
           delete params.event.pass;
-          voyent.io.metrics.createCustomEvent(params);
+          voyent.io.event.createCustomEvent(params);
         }
     },
 

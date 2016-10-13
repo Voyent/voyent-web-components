@@ -1,5 +1,5 @@
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../common/imports/voyent-io.html">
 <link rel="import" href="../../paper-header-panel/paper-header-panel.html">
 <link rel="import" href="../../paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../../paper-tabs/paper-tabs.html">
@@ -152,7 +152,7 @@ Example:
             paper-toolbar {
                 --paper-toolbar-height: 40px;
                 --paper-toolbar: {
-                    background: rgba(2, 114, 68, 0.8);
+                    background: var(--app-primary-color, rgba(2, 114, 68, 0.8));
                     color: #ffffff;
                 }
             }
@@ -163,7 +163,7 @@ Example:
             }
             paper-tab {
                 --paper-tab: {
-                    background: rgba(2, 114, 68, 0.8);
+                    background: var(--app-primary-color, rgba(2, 114, 68, 0.8));
                     color: #ffffff;
                     height:40px;
                 };

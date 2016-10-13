@@ -44,7 +44,8 @@ Polymer({
             });
             _this.fire('recognizersRetrieved',{recognizers:recognizers});
         }).catch(function(error) {
-            _this.fire('message-error', 'Error in getRecognizers: ' + error.toSource());
+            _this.fire('message-error', 'Error in getRecognizers: ' + error);
+            console.error('Error in getRecognizers:',error);
         });
     },
 
@@ -68,7 +69,6 @@ Polymer({
         var _this = this;
         recognizerId = recognizerId && recognizerId.trim().length > 0 ? recognizerId : this._id;
         if (!this.validateRecognizer() || !this.isUniqueRecognizerId(recognizerId)) {
-            this.fire('message-error', 'Invalid data was found in recognizer, fix and try saving again');
             return;
         }
         var recognizer = {"_id":recognizerId,"active":!!this._active,"script":this._script};
@@ -77,7 +77,8 @@ Polymer({
             _this.getRecognizers();
             _this.fire('message-info', 'Successfully saved ' + _this._loadedRecognizer._id + ' recognizer');
         }).catch(function(error) {
-            _this.fire('message-error', 'Error in saveRecognizer: ' + error.toSource());
+            _this.fire('message-error', 'Error in saveRecognizer: ' + error);
+            console.error('Error in saveRecognizer:',error);
         });
     },
 
@@ -87,7 +88,6 @@ Polymer({
     updateRecognizer: function() {
         var _this = this;
         if (!this._loadedRecognizer || !this.validateRecognizer()) {
-            this.fire('message-error', 'Invalid data was found in recognizer, fix and try updating again');
             return;
         }
         //check if the id has changed, if it has we must re-create the recognizer with the new id
@@ -100,7 +100,8 @@ Polymer({
                 _this.getRecognizers();
                 _this.fire('message-info', 'Successfully update ' + _this._id + ' recognizer');
             }).catch(function(error) {
-                _this.fire('message-error', 'Error in updateRecognizer: ' + error.toSource());
+                _this.fire('message-error', 'Error in updateRecognizer: ' + error);
+                console.error('Error in updateRecognizer:',error);
             });
         }
     },
@@ -115,7 +116,8 @@ Polymer({
             _this.getRecognizers();
             _this.fire('message-info', 'Successfully deleted recognizer ' + id);
         }).catch(function(error) {
-            _this.fire('message-error', 'Error in deleteRecognizer: '  + error.toSource());
+            _this.fire('message-error', 'Error in deleteRecognizer: '  + error);
+            console.error('Error in deleteRecognizer:',error);
         });
     },
 
@@ -127,14 +129,17 @@ Polymer({
         //validate required fields
         if (!this._id || this._id.trim().length === 0) {
             this.fire('message-error', 'Missing a recognizer name/ID');
+            console.error('Missing a recognizer name/ID');
             return false;
         }
         if (!this._script || this._script.trim().length === 0) {
             this.fire('message-error', 'Missing script contents');
+            console.error('Missing script contents');
             return false;
         }
         if (this._script.indexOf('source') === -1 && this._script.indexOf('realmObservable') === -1) {
             this.fire('message-error', 'Script must contain "source" variable, cancelling create.');
+            console.error('Script must contain "source" variable, cancelling create.');
             return false;
         }
         return true;
@@ -148,6 +153,7 @@ Polymer({
     isUniqueRecognizerId: function(recognizerId) {
         if (this._ids.indexOf(recognizerId) > -1) {
             this.fire('message-error', 'The recognizer "' + recognizerId + '" is already in use, please try a different one.');
+            console.error('The recognizer "' + recognizerId + '" is already in use, please try a different one.');
             return false;
         }
         return true;
@@ -221,7 +227,8 @@ Polymer({
             _this._loadedRecognizer._id = _this._id;
             _this.saveRecognizer();
         }).catch(function(error) {
-            _this.fire('message-error', 'Error in updateRecognizer: ' + error.toSource());
+            _this.fire('message-error', 'Error in updateRecognizer: ' + error);
+            console.error('Error in updateRecognizer:',error);
         });
     },
 

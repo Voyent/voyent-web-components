@@ -1,5 +1,5 @@
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../common/imports/voyent-io.html">
 
 <script>
     var Voyent = Voyent || {};
@@ -19,7 +19,7 @@
                 if (location.username && location.username.length > 0) {
                     location.demoUsername = location.username; //(NTFY-301)
                 }
-                voyent.io.location.updateLocation({location: location}).then(function(data) {
+                voyent.io.locate.updateLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
                     console.log('Issue changing location of user "' + location.username + '":', error);

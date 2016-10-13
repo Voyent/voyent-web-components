@@ -142,7 +142,7 @@
       console.log('_updateNewDocumentId()');
       if( this.documentId ){
         var _this = this;
-        voyent.io.documents.getDocument({id: this.documentId}).then(function(doc){
+        voyent.io.docs.getDocument({id: this.documentId}).then(function(doc){
           _this.document = doc;
         });
       }
@@ -198,7 +198,7 @@
         else{
           this.document = documentFragment;
         }
-        voyent.io.documents.updateDocument({id: this.documentId, document: this.document}).then(function(){
+        voyent.io.docs.updateDocument({id: this.documentId, document: this.document}).then(function(){
           _this.message = 'Successfully updated the document.';
         }).catch(function(error){
           _this.message = JSON.parse(error.responseText).message;

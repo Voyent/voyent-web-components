@@ -26,7 +26,7 @@ Polymer({
     },
 
     ready: function() {
-        this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage','data'];
+        this._codeEditorProperties=['function','messagetemplate','transporttemplate','query','payload','userrecord','pushmessage','data','execparams'];
     },
 
     /**

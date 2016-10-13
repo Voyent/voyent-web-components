@@ -66,6 +66,19 @@
       }
     },
 
+    created: function() {
+      var _this = this;
+      if (!('tinymce' in window)) {
+        //load missing tinymce dependency
+        this.importHref(this.resolveUrl('../common/imports/tinymce.html'), function(e) {
+          document.head.appendChild(document.importNode(e.target.import.body,true));
+        }, function(err) {
+          _this.fire('message-error', 'voyent-document-property-text-editor: error loading tinymce ' + err);
+          console.error('voyent-document-property-text-editor: error loading tinymce',err);
+        });
+      }
+    },
+
     /**
      * Update the document, including serialization and the underlying editor
      */
@@ -116,7 +129,7 @@
       console.log('_updateNewDocumentId()');
       if( this.documentId ){
         var _this = this;
-        voyent.io.documents.getDocument({id: this.documentId}).then(function(doc){
+        voyent.io.docs.getDocument({id: this.documentId}).then(function(doc){
           _this.document = doc;
         });
       }
@@ -153,7 +166,7 @@
     saveDocument: function(){
       var _this = this;
       this._updateDocumentFromEditor(_this);
-      voyent.io.documents.updateDocument({id: this.documentId, document: _this.document}).then(function(){
+      voyent.io.docs.updateDocument({id: this.documentId, document: _this.document}).then(function(){
         _this.message = 'Successfully updated the document.';
       }).catch(function(error){
         _this.message = JSON.parse(error.responseText).message;

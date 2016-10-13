@@ -125,7 +125,7 @@
 
     </div>
 
-    <voyent-auth-provider id="authProvider" account="{{account}}" realm="{{realm}}" host="dev.voyent.io"
+    <voyent-auth-provider id="authProvider" account="{{account}}" realm="{{realm}}" host="dev.voyent.cloud"
       logged-in="{{isLoggedIn}}" error="{{loginError}}" access-token="{{hostAccessToken}}" time-remaining="{{msRemaining}}"></voyent-auth-provider>
     
     <paper-toast id="toast">
@@ -135,7 +135,7 @@
   </template>
   <script>
   function refreshDocumentsList(){
-    voyent.io.documents.findDocuments().then(function(results){
+    voyent.io.docs.findDocuments().then(function(results){
       document.querySelector('#demo').documents = results;
     });
   }

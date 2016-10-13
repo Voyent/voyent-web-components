@@ -1,7 +1,7 @@
 voyent-web-components
 ============
 
-Voyent Web Components are a work in progress to leverage the power of Web Components, Polymer, voyent.io.js and the Voyent Services platform. To use these components you will need a Voyent Account and Realm. You can create a free account in the [Voyent Console](http://dev.voyent.io/console).
+Voyent Web Components are a work in progress to leverage the power of Web Components, Polymer, voyent.io.js and the Voyent Services platform. To use these components you will need a Voyent Account and Realm. You can create a free account in the [Voyent Console](http://dev.voyent.cloud/console).
 
 ### Usage
 
