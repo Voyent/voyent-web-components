@@ -66,6 +66,19 @@
       }
     },
 
+    created: function() {
+      var _this = this;
+      if (!('tinymce' in window)) {
+        //load missing tinymce dependency
+        this.importHref(this.resolveUrl('../common/imports/tinymce.html'), function(e) {
+          document.head.appendChild(document.importNode(e.target.import.body,true));
+        }, function(err) {
+          _this.fire('message-error', 'voyent-document-property-text-editor: error loading tinymce ' + err);
+          console.error('voyent-document-property-text-editor: error loading tinymce',err);
+        });
+      }
+    },
+
     /**
      * Update the document, including serialization and the underlying editor
      */
