@@ -42,28 +42,36 @@ Voyent.CodeEditor = Polymer({
         value: { type: String,  observer: '_valueChanged', notify: true }
     },
 
-    ready: function() {
+    //load the dependencies dynamically in the created to maximise component loading time
+    created: function() {
         var _this = this;
-        var componentsDirectory = 'voyent-web-components';
-        var pathToAceImport = 'common/ace-import.html';
+        var pathToAceImport = 'common/imports/ace.html';
         var codeEditorURL = this.resolveUrl('../'+pathToAceImport);
+        //save these values so we can determine the basePath later
+        this._createdProperties = {"pathToAceImport":pathToAceImport,"codeEditorURL":codeEditorURL};
         //load missing ace-editor dependency
         if (!('ace' in window)) {
             _this.importHref(codeEditorURL, function(e) {
                 document.head.appendChild(document.importNode(e.target.import.body,true));
-                initialize();
             }, function(err) {
                 console.error('voyent-code-editor: error loading ace editor dependency', err);
             });
         }
-        else { initialize(); }
+    },
 
+    ready: function() {
+        var _this = this;
         function initialize() {
+            if (!('ace' in window)) {
+                setTimeout(initialize, 10);
+                return;
+            }
+            var componentsDirectory = 'voyent-web-components';
             //initialize editor
             _this.editor = ace.edit(_this.$.editor);
             //calculate and set the basePath so ACE can correctly import it's dependencies
-            var a = document.createElement('a'); a.href = codeEditorURL;
-            var basePath = a.pathname.split('/'+componentsDirectory+'/'+pathToAceImport)[0]+'/ace-builds/src-min-noconflict';
+            var a = document.createElement('a'); a.href = _this._createdProperties.codeEditorURL;
+            var basePath = a.pathname.split('/'+componentsDirectory+'/'+_this._createdProperties.pathToAceImport)[0]+'/ace-builds/src-min-noconflict';
             ace.config.set('basePath', basePath);
             //set some static defaults
             _this.editor.setShowPrintMargin(false);
@@ -75,6 +83,7 @@ Voyent.CodeEditor = Polymer({
             //setup resizable corner
             _this._setupResizable();
         }
+        initialize();
     },
 
 

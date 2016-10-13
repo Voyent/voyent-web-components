@@ -153,6 +153,36 @@ Voyent.QueryEditor = Polymer({
      * @event queriesRetrieved
      */
 
+    //load the dependencies dynamically in the created to maximise component loading time
+    created: function() {
+        var _this = this;
+        if (!('jQuery' in window)) {
+            //load missing jQuery dependency
+            var jqueryURL = this.resolveUrl('../common/imports/jquery.html');
+            this.importHref(jqueryURL, function(e) {
+                document.head.appendChild(document.importNode(e.target.import.body,true));
+                onAfterjQueryLoaded();
+            }, function(err) {
+                _this.fire('message-error', 'voyent-query-editor: error loading jquery ' + err);
+                console.error('voyent-query-editor: error loading jquery',err);
+            });
+        }
+        else { onAfterjQueryLoaded(); }
+
+        function onAfterjQueryLoaded() {
+            //load missing jQuery-QueryBuilder dependency
+            if (!$.fn.queryBuilder) {
+                var jqueryBuilderURL = _this.resolveUrl('../common/imports/jquery-builder.html');
+                _this.importHref(jqueryBuilderURL, function(e) {
+                    document.head.appendChild(document.importNode(e.target.import.body,true));
+                }, function(err) {
+                    _this.fire('message-error', 'voyent-query-editor: error loading jquery builder ' + err);
+                    console.error('voyent-query-editor: error loading jquery builder',err);
+                });
+            }
+        }
+    },
+
     ready: function() {
         var _this = this;
         //define the services and collection combinations and their matching voyent.io call
@@ -179,10 +209,26 @@ Voyent.QueryEditor = Polymer({
                 "regions":"findRegions"
             }
         };
-        //load component dependencies
-        this._loadDependencies();
-        //use scopeSubtree to apply styles to elements included by third-party libraries
-        this.scopeSubtree(this.$.queryBuilder, true);
+        function initialize() {
+            if (!('jQuery' in window && $.fn.queryBuilder)) {
+                setTimeout(initialize,10);
+                return;
+            }
+            if (!_this.realm) {
+                _this.realm = voyent.io.auth.getLastKnownRealm();
+            }
+            if (!_this.account) {
+                _this.account = voyent.io.auth.getLastKnownAccount();
+            }
+            if (!voyent.io.auth.isLoggedIn() || !_this.realm || !_this.account) {
+                return;
+            }
+            _this.reloadEditor();
+            _this.fetchQueryList();
+            //use scopeSubtree to apply styles to elements included by third-party libraries
+            _this.scopeSubtree(_this.$.queryBuilder, true);
+        }
+        initialize();
     },
 
     /**
@@ -403,56 +449,6 @@ Voyent.QueryEditor = Polymer({
 
 
     //******************PRIVATE API******************
-
-    /**
-     * Loads component dependencies dynamically.
-     * @private
-     */
-    _loadDependencies: function() {
-        var _this = this;
-
-        if (!('jQuery' in window)) {
-            //load missing jQuery dependency
-            var jqueryURL = this.resolveUrl('../jquery-import/jquery-import.html');
-            this.importHref(jqueryURL, function(e) {
-                document.head.appendChild(document.importNode(e.target.import.body,true));
-                onAfterjQueryLoaded();
-            }, function(err) {
-                _this.fire('message-error', 'voyent-query-editor: error loading jquery ' + err);
-                console.error('voyent-query-editor: error loading jquery',err);
-            });
-        }
-        else { onAfterjQueryLoaded(); }
-
-        function onAfterjQueryLoaded() {
-            //load missing jQuery-QueryBuilder dependency
-            var jqueryBuilderURL = _this.resolveUrl('./jquery-builder-import.html');
-            if (!$.fn.queryBuilder) {
-                _this.importHref(jqueryBuilderURL, function(e) {
-                    document.head.appendChild(document.importNode(e.target.import.body,true));
-                    initialize();
-                }, function(err) {
-                    _this.fire('message-error', 'voyent-query-editor: error loading jquery builder ' + err);
-                    console.error('voyent-query-editor: error loading jquery builder',err);
-                });
-            }
-            else { initialize(); }
-        }
-
-        function initialize() {
-            if (!_this.realm) {
-                _this.realm = voyent.io.auth.getLastKnownRealm();
-            }
-            if (!_this.account) {
-                _this.account = voyent.io.auth.getLastKnownAccount();
-            }
-            if (!voyent.io.auth.isLoggedIn() || !_this.realm || !_this.account) {
-                return;
-            }
-            _this.reloadEditor();
-            _this.fetchQueryList();
-        }
-    },
 
     /**
      * Create a query in the service, which basically means to save
