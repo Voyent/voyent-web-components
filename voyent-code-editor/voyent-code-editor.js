@@ -45,7 +45,7 @@ Voyent.CodeEditor = Polymer({
     //load the dependencies dynamically in the created to maximise component loading time
     created: function() {
         var _this = this;
-        var pathToAceImport = 'common/ace-import.html';
+        var pathToAceImport = 'common/imports/ace.html';
         var codeEditorURL = this.resolveUrl('../'+pathToAceImport);
         //save these values so we can determine the basePath later
         this._createdProperties = {"pathToAceImport":pathToAceImport,"codeEditorURL":codeEditorURL};

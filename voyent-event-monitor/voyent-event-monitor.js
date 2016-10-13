@@ -116,7 +116,7 @@ Polymer({
         var _this = this;
         if (!('d3' in window)) {
             //load missing d3 dependency
-            this.importHref(this.resolveUrl('../common/d3-import.html'), function(e) {
+            this.importHref(this.resolveUrl('../common/imports/d3.html'), function(e) {
                 document.head.appendChild(document.importNode(e.target.import.body,true));
             }, function(err) {
                 _this.fire('message-error', 'voyent-event-monitor: error loading d3 ' + err);

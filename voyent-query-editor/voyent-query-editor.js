@@ -158,7 +158,7 @@ Voyent.QueryEditor = Polymer({
         var _this = this;
         if (!('jQuery' in window)) {
             //load missing jQuery dependency
-            var jqueryURL = this.resolveUrl('../jquery-import/jquery-import.html');
+            var jqueryURL = this.resolveUrl('../common/imports/jquery.html');
             this.importHref(jqueryURL, function(e) {
                 document.head.appendChild(document.importNode(e.target.import.body,true));
                 onAfterjQueryLoaded();
@@ -172,7 +172,7 @@ Voyent.QueryEditor = Polymer({
         function onAfterjQueryLoaded() {
             //load missing jQuery-QueryBuilder dependency
             if (!$.fn.queryBuilder) {
-                var jqueryBuilderURL = _this.resolveUrl('./jquery-builder-import.html');
+                var jqueryBuilderURL = _this.resolveUrl('../common/imports/jquery-builder.html');
                 _this.importHref(jqueryBuilderURL, function(e) {
                     document.head.appendChild(document.importNode(e.target.import.body,true));
                 }, function(err) {
