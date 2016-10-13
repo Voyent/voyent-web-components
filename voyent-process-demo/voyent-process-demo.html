@@ -16,128 +16,52 @@
 <dom-module id="voyent-process-demo">
     <template>
         <style type="text/css">
-            .overallModel {
-                margin-bottom: 10px;
-                min-height: 100px;
+            .bpmnWrap {
+                height: 50%;
+                border: 2px inset black;
             }
             
-            .overallModel, .overallModel img {
-                line-height: 100px;
-                vertical-align: middle;
+            .bpmnTip {
+                background-color: #DDDDDD;
+                color: black;
+                box-shadow: 2px 2px 6px black;
+                z-index: 1000;
+                font-size: 12px;
+                padding: 5px;
+                text-align: center;
+                opacity: 0.9;
+                border: 1px solid black;
             }
             
-            .highlight, .highlightfalse, .highlighttrue {
-                display: inline-block;
-                padding: 10px 0 10px 0;
-                transition: padding 0.2s linear, border 0.2s linear;
-                -webkit-transition: padding 0.2s linear, border 0.2s linear;
-            }
-            
-            .highlight button, .highlightfalse button, .highlighttrue button {
-                background-color: transparent;
-            }
-            
-            .highlighttrue {
-                border: 1px solid rgba(0,85,0,0.8);
-                padding: 10px 20px 10px 20px;
-                -webkit-animation: focus 1s linear 0s infinite alternate;
-                animation: focus 1s linear 0s infinite alternate;
-            }
-            
-            .highlightinnertrue {
-                outline: 3px solid rgba(0,0,85,0.9);
-                padding: 5px !important;
-            }
-            
-            .forktrue {
-                vertical-align: top;
-                margin-top: -25px;
-            }
-            
-            .groupWrap {
-                float: right;
-            }
-            
-            .groupItem {
-                padding: 0;
-                display: block;
-                line-height: normal;
-            }
-            
-            @-webkit-keyframes focus {
-                0% {
-                    -webkit-box-shadow: none;
-                    -moz-box-shadow: none;
-                    box-shadow: none;
-                }
-                100% {
-                    -webkit-box-shadow: inset 0px 0px 10px 5px rgba(0,85,0,0.8);
-                    -moz-box-shadow: inset 0px 0px 10px 5px rgba(0,85,0,0.8);
-                    box-shadow: inset 0px 0px 10px 5px rgba(0,85,0,0.8);
-                }
-            }
-            @keyframes focus {
-                0% {
-                    -webkit-box-shadow: none;
-                    -moz-box-shadow: none;
-                    box-shadow: none;
-                }
-                100% {
-                    -webkit-box-shadow: inset 0px 0px 10px 5px rgba(0,85,0,0.8);
-                    -moz-box-shadow: inset 0px 0px 10px 5px rgba(0,85,0,0.8);
-                    box-shadow: inset 0px 0px 10px 5px rgba(0,85,0,0.8);
-                }
+            .highlight .djs-visual > :nth-child(1) {
+                fill: #347DBE !important;
+                stroke: #F7921E !important;
+                stroke-width: 5 !important;
+                
+                transition: stroke-width 0.5s linear;
+                -webkit-transition: stroke-width 0.5s linear;
             }
         </style>
         
         <template is="dom-if" if="{{loggedIn}}">
-        <paper-dropdown-menu label="Fork Gate">
-            <paper-listbox class="dropdown-content" attr-for-selected="forkname" selected="{{selectedFork}}">
-                <template is="dom-repeat" strip-whitespace items="[[_currentProcess.forks]]" as="fork">
-                    <paper-item forkname="[[fork]]">[[fork]]</paper-item>
-                </template>
-            </paper-listbox>
-        </paper-dropdown-menu>
-        <paper-button raised on-click="startProcess">Start Process</paper-button>
-        
-        <h4>{{_currentProcess.title}}</h4>
-        <div class="overallModel">
-            <template is="dom-repeat" strip-whitespace items="{{_currentProcess.model}}" as="model">
-                <div class$="highlight{{model.highlight}} fork{{model.fork}}">
-                    <!-- Display an image most of the time, unless we have a waitFire in which case show a button when highlighted -->
-                    <template is="dom-if" if="{{!model.highlight}}">
-                        <img src="images/{{model.image}}" alt="{{model.name}}"/>
+            <paper-dropdown-menu label="Fork Gate">
+                <paper-listbox class="dropdown-content" attr-for-selected="forkname" selected="{{selectedFork}}">
+                    <template is="dom-repeat" strip-whitespace items="[[_forks]]" as="fork">
+                        <paper-item forkname="[[fork]]">[[fork]]</paper-item>
                     </template>
-                    
-                    <template is="dom-if" if="{{model.highlight}}">
-                        <template is="dom-if" if="{{model.waitFire}}">
-                            <button on-click="sendEvent" data-model$="{{model}}">
-                                <img src="images/{{model.image}}" alt="{{model.name}}"
-                                     on-click="sendEvent" data-model$="{{model}}"/>
-                            </button>
-                        </template>
-                        <template is="dom-if" if="{{!model.waitFire}}">
-                            <img src="images/{{model.image}}" alt="{{model.name}}"/>
-                        </template>
-                    </template>
-                    
-                    <template is="dom-if" if="{{model.fork}}">
-                        <div class="groupWrap">
-                            <template is="dom-repeat" strip-whitespace items="{{model.groupList}}" as="inner">
-                                <div class$="highlightinner{{inner.highlight}} groupItem">
-                                    <img src="images/{{inner.image}}" alt="{{inner.name}}"/>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                </div>
-            </template>
-        </div>
-        
+                </paper-listbox>
+            </paper-dropdown-menu>
+            <paper-button raised on-click="startProcess">Start Process</paper-button>
+            
+            <h4>{{_title}}</h4>
         </template>
+        
+        <div id="bpmn" class="bpmnWrap"></div>
     </template>
 </dom-module>
 
+<script src="../../bpmn-js/dist/bpmn-viewer.js"></script>
+<script src="../../bpmn-js/dist/bpmn-modeler.js"></script>
 <script src="../../socket.io-client/socket.io.js"></script>
 <script src="../../voyent.notify.js/lib/voyent.notify.js"></script>
 <script src="voyent-process-demo.js"></script>
