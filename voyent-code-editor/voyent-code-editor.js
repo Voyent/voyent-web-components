@@ -45,11 +45,12 @@ Voyent.CodeEditor = Polymer({
     //load the dependencies dynamically in the created to maximise component loading time
     created: function() {
         var _this = this;
+        var pathToAceImport = 'common/ace-import.html';
+        var codeEditorURL = this.resolveUrl('../'+pathToAceImport);
+        //save these values so we can determine the basePath later
+        this._createdProperties = {"pathToAceImport":pathToAceImport,"codeEditorURL":codeEditorURL};
         //load missing ace-editor dependency
         if (!('ace' in window)) {
-            var pathToAceImport = 'common/ace-import.html';
-            var codeEditorURL = this.resolveUrl('../'+pathToAceImport);
-            this._initializeProperties = {"pathToAceImport":pathToAceImport,"codeEditorURL":codeEditorURL};
             _this.importHref(codeEditorURL, function(e) {
                 document.head.appendChild(document.importNode(e.target.import.body,true));
             }, function(err) {
@@ -69,8 +70,8 @@ Voyent.CodeEditor = Polymer({
             //initialize editor
             _this.editor = ace.edit(_this.$.editor);
             //calculate and set the basePath so ACE can correctly import it's dependencies
-            var a = document.createElement('a'); a.href = _this._initializeProperties.codeEditorURL;
-            var basePath = a.pathname.split('/'+componentsDirectory+'/'+_this._initializeProperties.pathToAceImport)[0]+'/ace-builds/src-min-noconflict';
+            var a = document.createElement('a'); a.href = _this._createdProperties.codeEditorURL;
+            var basePath = a.pathname.split('/'+componentsDirectory+'/'+_this._createdProperties.pathToAceImport)[0]+'/ace-builds/src-min-noconflict';
             ace.config.set('basePath', basePath);
             //set some static defaults
             _this.editor.setShowPrintMargin(false);
