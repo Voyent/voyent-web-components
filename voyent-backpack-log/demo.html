@@ -74,7 +74,8 @@
 			account: account,
 			realm: realm,
 			username: username,
-			password: password
+			password: password,
+			host:'dev.voyent.cloud'
 		}).then(function(){
 			setCredentialsOnComponent();
 		})['catch'](function(){
@@ -83,7 +84,8 @@
 				account: account,
 				realm: 'admin',
 				username: username,
-				password: password
+				password: password,
+				host:'dev.voyent.cloud'
 			}).then(function(){
 			    setCredentialsOnComponent();
 			    document.getElementById('backpackLog').realm = realm;
