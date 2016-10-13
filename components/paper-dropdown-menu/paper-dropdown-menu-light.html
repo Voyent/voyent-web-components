@@ -175,7 +175,6 @@ To style it:
         transition-duration: .2s;
         transition-timing-function: cubic-bezier(.4,0,.2,1);
         color: var(--paper-dropdown-menu-color, --secondary-text-color);
-        cursor: pointer;
         @apply(--paper-dropdown-menu-label);
       }
 
@@ -186,6 +185,9 @@ To style it:
 
       :host([no-label-float]) label {
         top: 8px;
+        /* Since the label doesn't need to float, remove the animation duration
+        which slows down visibility changes (i.e. when a selection is made) */
+        transition-duration: 0s;
       }
 
       label.label-is-floating {
@@ -194,7 +196,7 @@ To style it:
       }
 
       label.label-is-hidden {
-        display: none;
+        visibility: hidden;
       }
 
       :host([focused]) label.label-is-floating {
@@ -286,8 +288,9 @@ To style it:
       close-on-activate
       allow-outside-scroll="[[allowOutsideScroll]]">
       <div class="dropdown-trigger">
-        <label hidden$="[[!label]]"
-            class$="[[_computeLabelClass(noLabelFloat,alwaysFloatLabel,hasContent)]]">[[label]]</label>
+        <label class$="[[_computeLabelClass(noLabelFloat,alwaysFloatLabel,hasContent)]]">
+          [[label]]
+        </label>
         <div id="input" tabindex="-1">&nbsp;</div>
         <iron-icon icon="paper-dropdown-menu:arrow-drop-down"></iron-icon>
         <span class="error">[[errorMessage]]</span>
