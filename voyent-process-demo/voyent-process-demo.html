@@ -36,10 +36,12 @@
             .highlight .djs-visual > :nth-child(1) {
                 fill: #347DBE !important;
                 stroke: #F7921E !important;
-                stroke-width: 5 !important;
-                
-                transition: stroke-width 0.5s linear;
-                -webkit-transition: stroke-width 0.5s linear;
+                animation: border-pulse 1s infinite alternate;
+            }
+            
+            @keyframes border-pulse {
+                0%   { stroke-width: 2; }
+                100% { stroke-width: 6; }
             }
         </style>
         
