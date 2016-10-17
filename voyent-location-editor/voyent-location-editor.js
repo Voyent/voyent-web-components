@@ -1,5 +1,6 @@
 var self;
 var allRegions;
+var allTrackers;
 var allPOIs;
 var allLocations;
 var drawingManager;
@@ -79,8 +80,17 @@ Polymer({
         isPOI: {type: Boolean, value: false},
         currentId: {type: String, value: ''},
         lat:{type:Number},
-        lng:{type:Number}
-
+        lng:{type:Number},
+        hidesearch:{type:Boolean, value:false},
+        hideplaces:{type:Boolean, value:false},
+        hideimport:{type:Boolean, value:false},
+        hidedraw:{type:Boolean, value:false},
+        hidetracker:{type:Boolean, value:false},
+        istracker:{type:Boolean,value:false},
+        infoWindowState:{type:String,value:'standard', notify:true},
+        infowindowisstandard:{type:Boolean,computed:'checkWindowValue("standard",infoWindowState)', notify:true},
+        infowindowisanchor:{type:Boolean,computed:'checkWindowValue("trackerAnchor",infoWindowState)', notify:true},
+        infowindowiszone:{type:Boolean,computed:'checkWindowValue("trackerZone",infoWindowState)', notify:true}
     },
 
     created: function () {
@@ -91,6 +101,7 @@ Polymer({
         allRegions = {};
         allPOIs = {};
         allLocations = {};
+        allTrackers = {};
     },
 
 
@@ -131,7 +142,7 @@ Polymer({
         if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
             script.type = 'text/javascript';
-            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3.23&' +
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&' +
                 'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
             _loc.$.container.appendChild(script);
         }
@@ -181,26 +192,43 @@ Polymer({
             _loc.resizeMap();
         });
 
-        _loc.drawingManager = new google.maps.drawing.DrawingManager({drawingControlOptions: {
-            position: google.maps.ControlPosition.TOP_RIGHT,
-            drawingModes: [
-                google.maps.drawing.OverlayType.MARKER,
-                google.maps.drawing.OverlayType.CIRCLE,
-                google.maps.drawing.OverlayType.POLYGON,
-                google.maps.drawing.OverlayType.RECTANGLE
-            ]
-        }});
+        if(!_loc.hidedraw) {
+            _loc.drawingManager = new google.maps.drawing.DrawingManager({
+                drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_RIGHT,
+                    drawingModes: [
+                        google.maps.drawing.OverlayType.MARKER,
+                        google.maps.drawing.OverlayType.CIRCLE,
+                        google.maps.drawing.OverlayType.POLYGON,
+                        google.maps.drawing.OverlayType.RECTANGLE
+                    ]
+                }
+            });
+        }
+        else{
+            _loc.drawingManager = new google.maps.drawing.DrawingManager({
+                drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_RIGHT,
+                    drawingModes: [
+                        google.maps.drawing.OverlayType.MARKER
+                    ]
+                }
+            });
+        }
 
         var promises = [];
-        promises.push(voyent.io.location.getAllRegions({realm: _loc.realm}).then(function (regions) {
+        promises.push(voyent.io.locate.getAllRegions({realm: _loc.realm}).then(function (regions) {
             _loc.regionsTemp = regions;
         }));
-        promises.push(voyent.io.location.getAllPOIs({realm: _loc.realm}).then(function (pois) {
+        promises.push(voyent.io.locate.getAllPOIs({realm: _loc.realm}).then(function (pois) {
             _loc.poisTemp = pois;
+        }));
+        promises.push(voyent.io.locate.getAllTrackers({realm: _loc.realm}).then(function (trackers) {
+            _loc.trackersTemp = trackers;
         }));
 
         return Promise.all(promises).then(function () {
-            _loc.startEditor(_loc.regionsTemp.concat(_loc.poisTemp));
+            _loc.startEditor(_loc.regionsTemp.concat(_loc.poisTemp),_loc.trackersTemp);
         })['catch'](function (error) {
             console.log('<voyent-locations> Error: ' + ( error.message || error.responseText));
             console.log(error);
@@ -208,9 +236,12 @@ Polymer({
 
     },
 
-    startEditor: function (locationsData) {
+    startEditor: function (locationsData, trackersData) {
         if (locationsData !== null && locationsData.length > 0) {
             _loc.makeLocations(locationsData);
+        }
+        if (trackersData && trackersData.length > 0) {
+            _loc.makeTrackers(trackersData);
         }
 
         _loc.addCustomButtons();
@@ -220,49 +251,116 @@ Polymer({
 
         _loc._infoWindow.setContent(_loc.$$('#infoWindow'));
 
-        var searchBar = _loc.$$("#locationSearchBar");
-        _loc.autoComplete = new Awesomplete(searchBar,{
-            list:["Ada","Java","Starbucks","Python","Perl","Frisk"]
-        });
-
+        if(!_loc.hidesearch) {
+            var searchBar = _loc.$$("#locationSearchBar");
+            _loc.autoComplete = new Awesomplete(searchBar, {
+                list: ["Ada", "Java", "Starbucks", "Python", "Perl", "Frisk"]
+            });
+        }
         //listener fired when creating new locations
         google.maps.event.addListener(_loc.drawingManager, 'overlaycomplete', function (event) {
             var shape = event.type.toLowerCase();
             var geoJSON;
             var location = event.overlay;
 
-            if (shape !== "marker") {
-                location.setOptions({editable: true}); //always make region editable
+            if(_loc.istracker){
+                var lat = location.getPosition().lat();
+                var lng = location.getPosition().lng();
+                var locationObject = {'anchor':location};
+                location.setDraggable(true);
+                location.setOptions({'zIndex':50});
+                var startCircle = new google.maps.Circle({
+                    center:new google.maps.LatLng(lat, lng),
+                    editable:true,
+                    draggable:false,
+                    map:_loc._map,
+                    fillColor:'red',
+                    radius:100,
+                    zIndex:49
+                });
+                startCircle.bindTo('center',location,'position');
                 geoJSON = {
-                    location: {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [
-                                [
-                                ]
-                            ]
-                        },
-                        "properties": {"googleMaps": {}, "Color": "Black", "Editable": "true"}
-                    }
-                };
-            }
-            else {
-                location.setOptions({draggable: true}); //always make poi draggable
-                geoJSON = {
-                    location: {
+
+                    anchor: {
                         "type": "Feature",
                         "geometry": {
                             "type": "Point",
-                            "coordinates": []
+                            "coordinates": [
+                                lng, lat
+                            ]
                         },
-                        "properties": {"Editable": "true", "Proximity": 500}
-                    }
-                };
-                shape = "point";
+                        "properties": {
+                            "Editable": "true",
+                            "zIndex":50
+                        }
+                    },
+                    zones:{
+                        "type": "FeatureCollection",
+                        "features": [
+                            {
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Polygon",
+                                        "coordinates": [
+                                        []
+                                        ]
+                                    },
+                                    "properties": {
+                                        "googleMaps": {
+                                            "shape": "circle",
+                                            "radius": 100,
+                                            "center": [
+                                                lat,lng
+                                            ],
+                                            "zIndex":49
+                                        },
+                                        "Editable": "true",
+                                        "Color": "Red"
+                                    }
+
+                }]},
+                "properties":{
+                    "zoneNamespace":'default'
+                }};
+                _loc.istracker = false;
+                shape = "tracker";
+                locationObject['zones'] = [startCircle];
+                _loc.setupLocation(locationObject, geoJSON, shape);
+                _loc.drawingManager.setDrawingMode(null);
             }
-            _loc.setupLocation(location, geoJSON, shape);
-            _loc.drawingManager.setDrawingMode(null);
+            else {
+                if (shape !== "marker") {
+                    location.setOptions({editable: true}); //always make region editable
+                    geoJSON = {
+                        location: {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": [
+                                    []
+                                ]
+                            },
+                            "properties": {"googleMaps": {}, "Color": "Black", "Editable": "true"}
+                        }
+                    };
+                }
+                else {
+                    location.setOptions({draggable: true}); //always make poi draggable
+                    geoJSON = {
+                        location: {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": []
+                            },
+                            "properties": {"Editable": "true", "Proximity": 500}
+                        }
+                    };
+                    shape = "point";
+                }
+                _loc.setupLocation(location, geoJSON, shape);
+                _loc.drawingManager.setDrawingMode(null);
+            }
 
         });
 
@@ -280,10 +378,11 @@ Polymer({
 
 
         function SearchControl(controlDiv) {
-            _loc.$$('#searchBarWrap').style.display = '';
-            controlDiv.appendChild(
-                _loc.$$('#searchBarWrap')
-            );
+                _loc.$$('#searchBarWrap').style.display = '';
+                controlDiv.appendChild(
+                    _loc.$$('#searchBarWrap')
+                );
+
         }
 
         var searchControlDiv = document.createElement('div');
@@ -291,11 +390,13 @@ Polymer({
         searchControlDiv.style.paddingTop='15px';
         searchControlDiv.style.width='30%';
         searchControlDiv.style.minWidth='630px';
-        var searchControl = new SearchControl(searchControlDiv);
+        if(!_loc.hidesearch) {
 
-        searchControl.index = 1;
-        _loc._map.controls[google.maps.ControlPosition.TOP_LEFT].push(searchControlDiv);
+            var searchControl = new SearchControl(searchControlDiv);
 
+            searchControl.index = 1;
+            _loc._map.controls[google.maps.ControlPosition.TOP_LEFT].push(searchControlDiv);
+        }
         //Clear region/poi name input on click when "Auto-Named"
 
         _loc.$$("#locationNameInput").addEventListener("click",function () {
@@ -304,6 +405,32 @@ Polymer({
             }
         });
         setup = true;
+    },
+
+    startTracker:function(){
+      _loc.istracker = true;
+        _loc.drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+    },
+
+    checkWindowValue:function(check){
+      return _loc.infoWindowState === check;
+    },
+
+    removeTracker:function(){
+        _loc.deleteTracker(_loc.activeGoogleLocation, _loc.activeLocation);
+    },
+
+    removeZone:function(){
+        var location = _loc.activeGoogleLocation;
+        var geoJSON = _loc.activeLocation;
+        for (var i = 0; i < location.zones.length; i++){
+            if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
+                location.zones.splice(i,1);
+                geoJSON.zones.features.splice(i,1);
+            }
+        }
+        _loc.postTracker(location,geoJSON,'tracker',true);
+        _loc.selectedZone.setMap(null);
     },
 
     /**
@@ -339,21 +466,26 @@ Polymer({
         _loc._bounds = new google.maps.LatLngBounds();
 
         var promises = [];
-        promises.push(voyent.io.location.getAllRegions({realm: _loc.realm}).then(function (regions) {
+        promises.push(voyent.io.locate.getAllRegions({realm: _loc.realm}).then(function (regions) {
             _loc.regionsTemp = regions;
         }));
-        promises.push(voyent.io.location.getAllPOIs({realm: _loc.realm}).then(function (pois) {
+        promises.push(voyent.io.locate.getAllPOIs({realm: _loc.realm}).then(function (pois) {
             _loc.poisTemp = pois;
         }));
-
+        promises.push(voyent.io.locate.getAllTrackers({realm: _loc.realm}).then(function (trackers) {
+            _loc.trackersTemp = trackers;
+        }));
         return Promise.all(promises).then(function () {
             var data = _loc.regionsTemp.concat(_loc.poisTemp);
             if (!setup)
                 _loc.startEditor(data);
-            else
+            else{
                 _loc.makeLocations(data, false);
+                _loc.makeTrackers(_loc.trackersTemp,false);
+            }
         })['catch'](function (error) {
             console.log('<voyent-locations> Error: ' + ( error.message || error.responseText));
+            console.log(error);
         });
 
     },
@@ -386,27 +518,121 @@ Polymer({
             var pos = _loc.$$("#map").querySelectorAll(".gmnoprint");
             for (var i = 0; i < pos.length; i++) {
                 var node = pos[i];
+                //TODO: Make sure that this works with reduced draws
+                if(!_loc.hidedraw){
                 if (node.children.length === 5 && getComputedStyle(node)["right"] === "0px") {
-                    node.appendChild(_loc.$$('#searchAddButtonWrap'));
-                    node.appendChild(_loc.$$('#importButtonWrap'));
-                    _loc.$$('#searchAddButtonWrap').style.display = 'inline-block';
-                    _loc.$$('#importButtonWrap').style.display = 'inline-block';
+                    if(!_loc.hidetracker) {
+                        node.appendChild(_loc.$$('#trackerButtonWrap'));
+                        _loc.$$('#trackerButtonWrap').style.display = 'inline-block';
+                    }
+                    if(!_loc.hidesearch){
+                        node.appendChild(_loc.$$('#searchAddButtonWrap'));
+                        _loc.$$('#searchAddButtonWrap').style.display = 'inline-block';
+                    }
+                    if(!_loc.hideimport) {
+                        node.appendChild(_loc.$$('#importButtonWrap'));
+                        _loc.$$('#importButtonWrap').style.display = 'inline-block';
+                    }
+                }}
+                else{
+                    if (node.children.length === 2 && getComputedStyle(node)["right"] === "0px") {
+                        if(!_loc.hidetracker) {
+                            node.appendChild(_loc.$$('#trackerButtonWrap'));
+                            _loc.$$('#trackerButtonWrap').style.display = 'inline-block';
+                        }
+                        if(!_loc.hidesearch){
+                            node.appendChild(_loc.$$('#searchAddButtonWrap'));
+                            _loc.$$('#searchAddButtonWrap').style.display = 'inline-block';
+                        }
+                        if(!_loc.hideimport) {
+                            node.appendChild(_loc.$$('#importButtonWrap'));
+                            _loc.$$('#importButtonWrap').style.display = 'inline-block';
+                        }
+                    }
                 }
             }
         }, 1500);
     },
 
 
+    addZone:function() {
+        var location = _loc.activeGoogleLocation;
+        var geoJSON = _loc.activeLocation;
+        var smallestIndex = 50;
+        var largestRadius = 0;
+        for (var i = 0; i < location.zones.length; i++) {
+            if (geoJSON.zones.features[i].properties.googleMaps.radius >= largestRadius) {
+                largestRadius = geoJSON.zones.features[i].properties.googleMaps.radius;
+            }
+            if (geoJSON.zones.features[i].properties.googleMaps.zIndex <= smallestIndex){
+                smallestIndex = geoJSON.zones.features[i].properties.googleMaps.zIndex;
+            }
+        }
+        largestRadius = largestRadius + largestRadius * 0.5;
+
+        smallestIndex = smallestIndex - 1;
+        var lat = location.anchor.getPosition().lat();
+        var lng = location.anchor.getPosition().lng();
+
+        var newCircle = new google.maps.Circle({
+            center: new google.maps.LatLng(lat, lng),
+            editable: true,
+            draggable: false,
+            map: _loc._map,
+            fillColor: 'black',
+            radius: largestRadius,
+            zIndex: smallestIndex
+        });
+        newCircle.bindTo('center', location.anchor, 'position');
+        newCircleJSON = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        []
+                    ]
+                },
+                "properties": {
+                    "googleMaps": {
+                        "shape": "circle"
+
+                    },
+                    "Editable": "true",
+                    "Color": "Black",
+                    "zIndex":smallestIndex,
+                    "zoneId":"default"
+                }
+        };
+        geoJSON.zones.features.push(newCircleJSON);
+        location.zones.push(newCircle);
+        google.maps.event.addListener(newCircle, "radius_changed", function (event) {
+            _loc.trackerEdited(location, geoJSON, "tracker");
+        });
+        google.maps.event.addListener(newCircle, "click", function (event) {
+            _loc.selectedZone = newCircle;
+            _loc.infoWindowSetup(location, geoJSON, "trackerZone");
+        });
+        _loc.getCoordinates(location,geoJSON,'tracker');
+        _loc.postTracker(location,geoJSON,'tracker',true);
+    },
+
     //Parses a generalized location into the correct functions to handle it and add it to the map, then sets up and displays the info window for the new property
     setupLocation: function (location, geoJSON, shape) {
+
         _loc.getCoordinates(location, geoJSON, shape);
-        if (shape !== 'point') {
-            _loc.postRegion(location, geoJSON, shape);
+        if (shape === 'tracker'){
+            _loc.postTracker(location,geoJSON,shape);
+            _loc.infoWindowSetup(location, geoJSON, 'trackerAnchor');
         }
+        else if (shape !== 'point') {
+            _loc.postRegion(location, geoJSON, shape);
+            _loc.infoWindowSetup(location, geoJSON, shape);
+        }
+
         else {
             _loc.postPOI(location, geoJSON, shape);
+            _loc.infoWindowSetup(location, geoJSON, shape);
         }
-        _loc.infoWindowSetup(location, geoJSON, shape);
         setTimeout(function(){_loc.setupNameEdit();_loc.locationNameInput = "Auto-Named";},200);
         _loc.regionProperties = [];
     },
@@ -454,13 +680,30 @@ Polymer({
         else if (shape === 'point') {
             geoJSON.location.geometry.coordinates.push(location.getPosition().lng(), location.getPosition().lat());
         }
+        else if (shape === 'tracker'){
+            geoJSON.anchor.geometry.coordinates = [location.anchor.getPosition().lng(),location.anchor.getPosition().lat()];
+            for(var i = 0; i < location.zones.length; i++){
+                var N = 50; //How many sides you want the circle approximation to have in our database.
+                var degreeStep = 360 / N;
+                geoJSON.zones.features[i].properties.googleMaps.shape = "circle";
+                geoJSON.zones.features[i].properties.googleMaps.radius = location.zones[i].getRadius();
+                geoJSON.zones.features[i].properties.googleMaps.center = [location.zones[i].getCenter().lat(), location.zones[i].getCenter().lng()];
+                for (var j = 0; j < N; j++) {
+                    var gpos = google.maps.geometry.spherical.computeOffset(location.zones[i].getCenter(), location.zones[i].getRadius(), degreeStep * j);
+                    geoJSON.zones.features[i].geometry.coordinates[0].push([gpos.lng(), gpos.lat()]);
+                    if (j + 1 === N) {
+                        geoJSON.zones.features[i].geometry.coordinates[0].push(geoJSON.zones.features[i].geometry.coordinates[0][0]);
+                    }
+                }
+            }
+        }
     },
 
     //Posts a new location on draw/edit/search. isUpdate determines which voyent function to use, as well as passes on for later use.
     //Overlay will be deleted from the map if post fails.
     postRegion: function (location, geoJSON, shape, isUpdate) {
         if (isUpdate) {
-            voyent.io.location.updateRegion({
+            voyent.io.locate.updateRegion({
                 realm: _loc.realm,
                 region: geoJSON,
                 id:geoJSON._id
@@ -471,7 +714,7 @@ Polymer({
             });
         }
         else {
-            voyent.io.location.createRegion({
+            voyent.io.locate.createRegion({
                 realm: _loc.realm,
                 region: geoJSON
             }).then(function (uri) {
@@ -482,12 +725,42 @@ Polymer({
             });
         }
     },
+
+    postTracker: function (location, geoJSON, shape, isUpdate) {
+        if (isUpdate) {
+            voyent.io.locate.updateTracker({
+                realm: _loc.realm,
+                tracker: geoJSON,
+                id:geoJSON._id
+            }).then(function (uri) {
+                _loc.postLocationSuccess(uri, location, geoJSON, shape, isUpdate, "tracker");
+            }).catch(function (error) {
+                _loc.postLocationFail(location);
+            });
+        }
+        else {
+            _loc.istracker = false;
+            voyent.io.locate.createTracker({
+                realm: _loc.realm,
+                tracker: geoJSON
+            }).then(function (uri) {
+                _loc.postLocationSuccess(uri, location, geoJSON, shape, isUpdate, "tracker");
+            }).catch(function (error) {
+                console.log(error);
+                _loc.postLocationFail(location);
+            });
+        }
+    },
+
     //Adds the posted reason to the arrays that the program uses, and creates the listeners needed if it's a new creation.
     postLocationSuccess: function (data, location, geoJSON, shape, isUpdate, type) {
         geoJSON._id = data ? data.split("/").pop() : geoJSON._id;
         allLocations[geoJSON._id] = [location, geoJSON];
         if (type === "region") {
             allRegions[geoJSON._id] = [location, geoJSON];
+        }
+        else if (type === 'tracker'){
+            allTrackers[geoJSON._id] = [location, geoJSON];
         }
         else {
             allPOIs[geoJSON._id] = [location, geoJSON];
@@ -507,52 +780,88 @@ Polymer({
     //Removes the remnants of a failed creation
     postLocationFail: function (location) {
         //still push to the location ids array so the length of the array is maintained
+        //TODO: Doublecheck that location === object works correctly
         if (_loc.isPlacesSearch) {
             var newLocationIds = this.get('newLocationIds');
             newLocationIds.push(null);
         }
         console.log("error in adding location to database");
-        location.setMap(null);
+        if(typeof location === 'object'){
+            location.anchor.setMap(null);
+            for (var i = 0; i < location.zones.length; i++){
+                location.zones[i].setMap(null);
+            }
+        }
+        else{
+            location.setMap(null);
+        }
         location = null;
     },
     //Adds whatever google-created listeners apply to that shape's editing functions.
     //All only need the same function to be called, but as there isn't an overarching 'change' listener each needs to be
     //added seperately.
     setupListeners: function (location, geoJSON, shape) {
-        google.maps.event.addListener(location, 'click', function () {
-            _loc.infoWindowSetup(location, geoJSON, shape);
-        });
 
-        if (shape === "polygon") {
-            google.maps.event.addListener(location.getPath(), "insert_at", function (event) {
-                _loc.locationEdited(location, geoJSON, shape);
-            });
-            google.maps.event.addListener(location.getPath(), "set_at", function (event) {
-                _loc.locationEdited(location, geoJSON, shape);
-            });
-            google.maps.event.addListener(location.getPath(), "remove_at", function (event) {
-                _loc.locationEdited(location, geoJSON, shape);
-            });
-        }
-        else if (shape === "circle") {
-            google.maps.event.addListener(location, "center_changed", function (event) {
-                _loc.locationEdited(location, geoJSON, shape);
+        if (shape === "tracker"){
+            google.maps.event.addListener(location.anchor, 'click', function () {
 
+                _loc.infoWindowSetup(location, geoJSON, "trackerAnchor");
             });
-            google.maps.event.addListener(location, "radius_changed", function (event) {
-                _loc.locationEdited(location, geoJSON, shape);
+            google.maps.event.addListener(location.anchor, "dragend", function (event) {
+                _loc.trackerEdited(location, geoJSON, shape);
             });
+            for (var i = 0; i < location.zones.length; i++){
+                google.maps.event.addListener(location.zones[i], "radius_changed", function (event) {
+                    _loc.trackerEdited(location, geoJSON, shape);
+                });
+                var activeCircle = location.zones[i];
+                google.maps.event.addListener(location.zones[i], "click", function (event) {
+                    _loc.selectedZone = activeCircle;
+                    _loc.infoWindowSetup(location, geoJSON, "trackerZone");
+                });
+            }
         }
-        else if (shape === "rectangle") {
-            google.maps.event.addListener(location, "bounds_changed", function (event) {
-                _loc.locationEdited(location, geoJSON, shape);
+        else {
+            google.maps.event.addListener(location, 'click', function () {
+                _loc.infoWindowSetup(location, geoJSON, shape);
             });
+
+            if (shape === "polygon") {
+                google.maps.event.addListener(location.getPath(), "insert_at", function (event) {
+                    _loc.locationEdited(location, geoJSON, shape);
+                });
+                google.maps.event.addListener(location.getPath(), "set_at", function (event) {
+                    _loc.locationEdited(location, geoJSON, shape);
+                });
+                google.maps.event.addListener(location.getPath(), "remove_at", function (event) {
+                    _loc.locationEdited(location, geoJSON, shape);
+                });
+            }
+            else if (shape === "circle") {
+                google.maps.event.addListener(location, "center_changed", function (event) {
+                    _loc.locationEdited(location, geoJSON, shape);
+
+                });
+                google.maps.event.addListener(location, "radius_changed", function (event) {
+                    _loc.locationEdited(location, geoJSON, shape);
+                });
+            }
+            else if (shape === "rectangle") {
+                google.maps.event.addListener(location, "bounds_changed", function (event) {
+                    _loc.locationEdited(location, geoJSON, shape);
+                });
+            }
+            else if (shape === "point") {
+                google.maps.event.addListener(location, "dragend", function (event) {
+                    _loc.locationEdited(location, geoJSON, shape);
+                });
+            }
         }
-        else if (shape === "point") {
-            google.maps.event.addListener(location, "dragend", function (event) {
-                _loc.locationEdited(location, geoJSON, shape);
-            });
-        }
+    },
+
+    trackerEdited:function(location,geoJSON,shape){
+        _loc.getCoordinates(location, geoJSON, shape);
+        _loc.postTracker(location,geoJSON,shape,true)
     },
 
     locationEdited: function (location, geoJSON, shape) {
@@ -571,7 +880,7 @@ Polymer({
     //Identical as postRegion above using the POI apis
     postPOI: function (location, geoJSON, shape, isUpdate) {
         if (isUpdate) {
-            voyent.io.location.updatePOI({
+            voyent.io.locate.updatePOI({
                 realm: _loc.realm,
                 poi: geoJSON,
                 id:geoJSON._id
@@ -582,7 +891,7 @@ Polymer({
             });
         }
         else {
-            voyent.io.location.createPOI({
+            voyent.io.locate.createPOI({
                 realm: _loc.realm,
                 poi: geoJSON
             }).then(function (uri) {
@@ -598,8 +907,46 @@ Polymer({
         //set the active locations to the one that was clicked and cleanup old infoWindows
         _loc.activeGoogleLocation = location;
         _loc.activeLocation = geoJSON;
-        _loc.isPOI = geoJSON.location.geometry.type.toLowerCase() === "point";
-        //Below is because property/tag divs are updated on loading them specifically.
+        if(shape === "trackerAnchor" || shape === "trackerZone"){
+            if (shape === "trackerAnchor"){
+                _loc.isPOI = true;
+                _loc.infoWindowState = "trackerAnchor";
+                if (_loc.showPropertiesDiv) {
+                    _loc.togglePropertiesDivAnchor();
+                    _loc.togglePropertiesDivAnchor();
+
+                }
+                _loc._infoWindow.setPosition(location.anchor.getPosition());
+                _loc._infoWindow.open(map, location.anchor);
+                setTimeout(function () {
+                    _loc.$$('#infoWindow').style.display = "block"; //unhide the infoWindow div
+                    _loc.$$("#locationName").style.fontSize = "30px";
+                    _loc.$$("#locationName").text = geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
+                    _loc.revertNameEdit(); //start the infoWindow with an uneditable name and resize it if necessary
+                }, 0)
+            }
+            else if (shape === "trackerZone"){
+                _loc.infoWindowState = "trackerZone";
+                _loc.isPOI = false;
+                if (_loc.showPropertiesDiv) {
+                    _loc.togglePropertiesDivZone();
+                    _loc.togglePropertiesDivZone();
+                }
+                _loc._infoWindow.setPosition(location.anchor.getPosition());
+                _loc._infoWindow.open(map, location.anchor);
+                setTimeout(function () {
+                    _loc.$$('#infoWindow').style.display = "block"; //unhide the infoWindow div
+                    _loc.$$("#locationName").style.fontSize = "30px";
+                    _loc.$$("#locationName").text = geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
+                    _loc.revertNameEdit(); //start the infoWindow with an uneditable name and resize it if necessary
+                }, 0)
+            }
+        }
+        else {
+        _loc._infoWindow.setContent(_loc.$$('#infoWindow'));
+        _loc.isPOI = shape === "point";
+            _loc.infoWindowState = "standard";
+            //Below is because property/tag divs are updated on loading them specifically.
         //Toggling it off and on serves as a refresh for the current values.
         if (_loc.showPropertiesDiv || _loc.showTagsDiv) {
             if (_loc.showPropertiesDiv) {
@@ -617,39 +964,71 @@ Polymer({
         _loc._infoWindow.close();
 
         //set the new infoWindow position based on the type of location
-        if (shape === "polygon") {
-            _loc._infoWindow.setPosition(location.getPath().getAt(0));
+
+
+            if (shape === "polygon") {
+                _loc._infoWindow.setPosition(location.getPath().getAt(0));
+            }
+            else if (shape === "circle") {
+                _loc._infoWindow.setPosition(location.getCenter());
+            }
+            else if (shape === "rectangle") {
+                _loc._infoWindow.setPosition(location.getBounds().getNorthEast());
+            }
+
+            else { //shape === "point")
+                _loc._infoWindow.setPosition(location.getPosition());
+            }
+            _loc._infoWindow.open(map, location);
+            setTimeout(function () {
+                _loc.$$('#infoWindow').style.display = "block"; //unhide the infoWindow div
+                _loc.$$("#locationName").style.fontSize = "30px";
+                _loc.$$("#locationName").text = geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
+                _loc.revertNameEdit(); //start the infoWindow with an uneditable name and resize it if necessary
+            }, 0)
         }
-        else if (shape === "circle") {
-            _loc._infoWindow.setPosition(location.getCenter());
-        }
-        else if (shape === "rectangle") {
-            _loc._infoWindow.setPosition(location.getBounds().getNorthEast());
-        }
-        else { //shape === "point")
-            _loc._infoWindow.setPosition(location.getPosition());
-        }
-        _loc._infoWindow.open(map, location);
-        setTimeout(function () {
-            _loc.$$('#infoWindow').style.display = "block"; //unhide the infoWindow div
-            _loc.$$("#locationName").style.fontSize = "30px";
-            _loc.$$("#locationName").text = geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
-            _loc.revertNameEdit(); //start the infoWindow with an uneditable name and resize it if necessary
-        },0)
     },
 
     //Convenience methods for clearing, displaying and refreshing various elements of the info window.
     setupNameEdit: function () {
         _loc.$$('#staticLocationName').style.display = 'none';
         _loc.$$('#editLocationName').style.display = '';
-        _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id; //display the id if the label hasn't been set yet
+        if(_loc.infowindowisstandard){
+            _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id; //display the id if the label hasn't been set yet
+        }
+        else if (_loc.infowindowisanchor){
+            _loc.locationNameInput = _loc.activeLocation.properties.zoneNamespace ? _loc.activeLocation.properties.zoneNamespace : _loc.activeLocation._id;
+        }
+        else if (_loc.infowindowiszone){
+            var location = _loc.activeGoogleLocation;
+            var geoJSON = _loc.activeLocation;
+            for (var i = 0; i < location.zones.length; i++){
+                if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
+                    _loc.locationNameInput = geoJSON.zones.features[i].properties.zoneId ? geoJSON.zones.features[i].properties.zoneId : "Unnamed";
+                }
+            }
+        }
     },
 
     revertNameEdit: function () {
         var geoJSON = this.get('activeLocation');
         _loc.$$('#editLocationName').style.display = 'none';
         _loc.$$('#staticLocationName').style.display = '';
-        _loc.$$('#locationName').textContent= geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
+        if(_loc.infowindowiszone){
+            var location = _loc.activeGoogleLocation;
+            var geoJSON = _loc.activeLocation;
+            for (var i = 0; i < location.zones.length; i++){
+                if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
+                    _loc.$$('#locationName').textContent= geoJSON.zones.features[i].properties.zoneId ? geoJSON.zones.features[i].properties.zoneId : "Unnamed";
+                }
+            }
+        }
+        else if (_loc.infowindowisstandard){
+            _loc.$$('#locationName').textContent= geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
+        }
+        else if (_loc.infowindowisanchor){
+            _loc.$$('#locationName').textContent= geoJSON.properties.zoneNamespace ? geoJSON.properties.zoneNamespace : geoJSON._id; //display the id if the label hasn't been set yet
+        }
         _loc.setupLocationIdPopover(); //Setup the location ID popover
         _loc.adjustLocationFontSize();
     },
@@ -709,40 +1088,103 @@ Polymer({
         var newLocationName = _loc.locationNameInput;
         var oldLocationName = geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
         if (newLocationName !== oldLocationName && newLocationName !== "Auto-Named" && newLocationName.trim() !== "") {
-            geoJSON.label = newLocationName;
-            if (!_loc.isPOI) {
-                _loc.postRegion(_loc.activeGoogleLocation, geoJSON, geoJSON.location.properties.googleMaps.shape, true);
+            if(_loc.infowindowisstandard){
+                geoJSON.label = newLocationName;
+                if (!_loc.isPOI) {
+                    _loc.postRegion(_loc.activeGoogleLocation, geoJSON, geoJSON.location.properties.googleMaps.shape, true);
+                }
+                else {
+                    _loc.postPOI(_loc.activeGoogleLocation, geoJSON, "point", true);
+                }
             }
-            else {
-                _loc.postPOI(_loc.activeGoogleLocation, geoJSON, "point", true);
+            else if(_loc.infowindowisanchor){
+                geoJSON.properties.zoneNamespace = newLocationName;
+                _loc.postTracker(_loc.activeGoogleLocation,geoJSON,"tracker",true);
+            }
+            else if (_loc.infowindowiszone){
+                var location = _loc.activeGoogleLocation;
+                for (var i = 0; i < location.zones.length; i++){
+                    if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
+                        geoJSON.zones.features[i].properties.label = newLocationName;
+                    }
+                }
+                _loc.postTracker(location,geoJSON,"tracker",true);
             }
         }
         _loc.revertNameEdit();
     },
 
     //Parses and creates a regionProperties array that polymer uses to populate the custom properties div.
-    populateProperties: function () {
+    populateProperties: function (type) {
         var geoJSON = _loc.activeLocation;
-        var properties = geoJSON.location.properties;
-        setTimeout(function () {
-            if (!(_loc.isPOI)) {
-                _loc.colourProp = properties["Color"];
-                var colourSelect = _loc.$$("#colourSelect");
-                colourSelect.options[colourSelect.selectedIndex].removeAttribute("selected");
-                _loc.$$("#colourSelect").querySelector('option[value="' + _loc.colourProp + '"]').setAttribute("selected", "selected");
-            }
-            _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
-            var editableSelect = _loc.$$("#editableSelect");
-            editableSelect.options[editableSelect.selectedIndex].removeAttribute("selected");
-            _loc.$$("#editableSelect").querySelector('option[value="' + _loc.editableProp + '"]').setAttribute("selected", "selected");
-            var props = [];
-            for (var property in properties) {
-                if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
-                    props.push({key: property, val: properties[property]});
+        if(type === 'standard') {
+            var properties = geoJSON.location.properties;
+            setTimeout(function () {
+                if (!(_loc.isPOI)) {
+                    _loc.colourProp = properties["Color"];
+                    var colourSelect = _loc.$$("#colourSelect");
+                    colourSelect.options[colourSelect.selectedIndex].removeAttribute("selected");
+                    _loc.$$("#colourSelect").querySelector('option[value="' + _loc.colourProp + '"]').setAttribute("selected", "selected");
                 }
+                _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
+                var editableSelect = _loc.$$("#editableSelect");
+                editableSelect.options[editableSelect.selectedIndex].removeAttribute("selected");
+                _loc.$$("#editableSelect").querySelector('option[value="' + _loc.editableProp + '"]').setAttribute("selected", "selected");
+                var props = [];
+                for (var property in properties) {
+                    if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
+                        props.push({key: property, val: properties[property]});
+                    }
+                }
+                _loc.regionProperties = props;
+            }, 100);
+        }
+        else {
+            if (type === 'anchor') {
+                var properties = geoJSON.anchor.properties;
+                setTimeout(function () {
+                    _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
+                    var editableSelect = _loc.$$("#editableSelect");
+                    editableSelect.options[editableSelect.selectedIndex].removeAttribute("selected");
+                    _loc.$$("#editableSelect").querySelector('option[value="' + _loc.editableProp + '"]').setAttribute("selected", "selected");
+                    var props = [];
+                    for (var property in properties) {
+                        if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
+                            props.push({key: property, val: properties[property]});
+                        }
+                    }
+                    _loc.regionProperties = props;
+                }, 100);
             }
-            _loc.regionProperties = props;
-        }, 100);
+            else{
+                var selectedJSON;
+                var location = _loc.activeGoogleLocation;
+                for (var i = 0; i < location.zones.length; i++){
+                    if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
+                        selectedJSON = geoJSON.zones.features[i];
+                    }
+                }
+                var properties = selectedJSON.properties;
+                setTimeout(function () {
+                        _loc.colourProp = properties["Color"];
+                        var colourSelect = _loc.$$("#colourSelect");
+                        colourSelect.options[colourSelect.selectedIndex].removeAttribute("selected");
+                        _loc.$$("#colourSelect").querySelector('option[value="' + _loc.colourProp + '"]').setAttribute("selected", "selected");
+
+                    _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
+                    var editableSelect = _loc.$$("#editableSelect");
+                    editableSelect.options[editableSelect.selectedIndex].removeAttribute("selected");
+                    _loc.$$("#editableSelect").querySelector('option[value="' + _loc.editableProp + '"]').setAttribute("selected", "selected");
+                    var props = [];
+                    for (var property in properties) {
+                        if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
+                            props.push({key: property, val: properties[property]});
+                        }
+                    }
+                    _loc.regionProperties = props;
+                }, 100);
+            }
+        }
     },
 
     populateTags: function () {
@@ -757,13 +1199,27 @@ Polymer({
     updateProperties: function () {
         var location = _loc.activeGoogleLocation;
         var geoJSON = _loc.activeLocation;
-        geoJSON.location.properties = _loc.preparePropertiesForPOST(null);
-        var shape = geoJSON.location.geometry.type.toLowerCase();
-        if (!_loc.isPOI) {
-            _loc.postRegion(location, geoJSON, shape, true);
+        if(_loc.infowindowisstandard){
+            geoJSON.location.properties = _loc.preparePropertiesForPOST(null);
+            var shape = geoJSON.location.geometry.type.toLowerCase();
+            if (!_loc.isPOI) {
+                _loc.postRegion(location, geoJSON, shape, true);
+            }
+            else {
+                _loc.postPOI(location, geoJSON, shape, true);
+            }
         }
-        else {
-            _loc.postPOI(location, geoJSON, shape, true);
+        else if (_loc.infowindowisanchor){
+            geoJSON.anchor.properties = _loc.preparePropertiesForPOST(null);
+            _loc.postTracker(location,geoJSON,"tracker",true);
+        }
+        else if (_loc.infowindowiszone){
+            for (var i = 0; i < location.zones.length; i++){
+                if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
+                    geoJSON.zones.features[i].properties = _loc.preparePropertiesForPOST(null);
+                    _loc.postTracker(location,geoJSON,"tracker",true);
+                }
+            }
         }
     },
 
@@ -804,13 +1260,39 @@ Polymer({
                 for (var key in allLocations) {
                     var obj = allLocations[key];
                     if (_loc.searchBy.indexOf('Properties') !== -1) {
-                        for (var propertyKey in obj[1].location.properties) {
-                            var propertyCombo = propertyKey + ":" + obj[1].location.properties[propertyKey];
-                            if (contains.indexOf(propertyCombo) == -1) {
-                                list.push(propertyCombo);
-                                contains.push(propertyCombo);
+                        if(obj.anchor){
+                            for (var propertyKey in obj[1].location.properties) {
+                                var propertyCombo = propertyKey + ":" + obj[1].location.properties[propertyKey];
+                                if (contains.indexOf(propertyCombo) == -1) {
+                                    list.push(propertyCombo);
+                                    contains.push(propertyCombo);
+                                }
+                            }
+                            for (var anchorKey in obj[1].location.properties) {
+                                var propertyCombo = propertyKey + ":" + obj[1].location.properties[propertyKey];
+                                if (contains.indexOf(propertyCombo) == -1) {
+                                    list.push(propertyCombo);
+                                    contains.push(propertyCombo);
+                                }
+                            }
+                            for (var i in obj[1].location.properties) {
+                                var propertyCombo = propertyKey + ":" + obj[1].location.properties[propertyKey];
+                                if (contains.indexOf(propertyCombo) == -1) {
+                                    list.push(propertyCombo);
+                                    contains.push(propertyCombo);
+                                }
                             }
                         }
+                        else{
+                            for (var propertyKey in obj[1].location.properties) {
+                                var propertyCombo = propertyKey + ":" + obj[1].location.properties[propertyKey];
+                                if (contains.indexOf(propertyCombo) == -1) {
+                                    list.push(propertyCombo);
+                                    contains.push(propertyCombo);
+                                }
+                            }
+                        }
+
                     }
                     else {
                         //Not properties, so search names.
@@ -869,7 +1351,9 @@ Polymer({
                     }
                 }
             }
-            autocomplete.list = list;
+            if(!_loc.hidesearch) {
+                autocomplete.list = list;
+            }
         }
 
     },
@@ -882,9 +1366,10 @@ Polymer({
          var searchBy = _loc.searchBy;
          var mapQueryAutocomplete = _loc.mapQueryAutocomplete;
 
-        _loc.$$('#locationSearchBar').style.display = 'none';
-        _loc.$$('#locationSearchBar').parentNode.style.display = 'none';
-        _loc.$$('#mapSearchBar').style.display = 'none';
+        if(!_loc.hidesearch) {
+            _loc.$$('#locationSearchBar').style.display = 'none';
+            _loc.$$('#locationSearchBar').parentNode.style.display = 'none';
+            _loc.$$('#mapSearchBar').style.display = 'none';
 
          if (searchBy === 'map') {
             _loc.$$('#mapSearchBar').style.display = 'inline-block';
@@ -914,6 +1399,7 @@ Polymer({
             _loc.$$('#locationSearchBar').parentNode.style.display = 'inline-block';
             _loc.$$('#locationSearchBar').style.display = 'inline-block';
             _loc.$$("#locationSearchBar").focus();
+        }
         }
 
     },
@@ -1076,25 +1562,42 @@ Polymer({
         }
     },
     updateColourProperty: function () {
-        var selector = _loc.$$("#colourSelect")
+        var selector = _loc.$$("#colourSelect");
         _loc.colourProp = selector.options[selector.selectedIndex].text;
         var location = _loc.activeLocation;
-        allLocations[location._id][0].setOptions({fillColor: _loc.colourProp});
+        if(_loc.infowindowisstandard){
+            allLocations[location._id][0].setOptions({fillColor: _loc.colourProp});
+        }
+        else{
+            _loc.selectedZone.setOptions({fillColor: _loc.colourProp});
+        }
         _loc.updateProperties();
     },
 
     updateEditableProperty: function () {
-        var location = _loc.activeLocation;
+
         var selector = _loc.$$("#editableSelect");
         _loc.editableProp = selector.options[selector.selectedIndex].getAttribute("value");
         var editableProp = (_loc.editableProp.toLowerCase() === 'true' || _loc.editableProp === true);
-        if (_loc.isPOI) {
-            allPOIs[location._id][0].setDraggable(editableProp);
-            allLocations[location._id][0].setDraggable(editableProp);
+        if(_loc.infowindowisstandard){
+            var location = _loc.activeLocation;
+            if (_loc.isPOI) {
+                allPOIs[location._id][0].setDraggable(editableProp);
+                allLocations[location._id][0].setDraggable(editableProp);
+            }
+            else {
+                allRegions[location._id][0].setEditable(editableProp);
+                allLocations[location._id][0].setEditable(editableProp);
+            }
         }
-        else {
-            allRegions[location._id][0].setEditable(editableProp);
-            allLocations[location._id][0].setEditable(editableProp);
+        else{
+            var location = _loc.activeGoogleLocation;
+            if(_loc.infowindowisanchor){
+                location.anchor.setDraggable(editableProp);
+            }
+            else{
+                _loc.selectedZone.setEditable(editableProp);
+            }
         }
         _loc.updateProperties();
     },
@@ -1117,7 +1620,37 @@ Polymer({
             _loc.isPlacesSearch = false;
             _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
             if (_loc.showPropertiesDiv) {
-                _loc.populateProperties();
+                _loc.populateProperties("standard");
+                _loc.showTagsDiv = false;
+            }
+        },50);
+    },
+
+    togglePropertiesDivAnchor:function(){
+        setTimeout(function () {
+            if (!_loc.showTagsDiv) {
+                var newHeight = _loc.$$('#infoWindow').offsetHeight == 305 ? "100px" : "305px";
+                _loc.$$('#infoWindow').style.height = newHeight;
+            }
+            _loc.isPlacesSearch = false;
+            _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
+            if (_loc.showPropertiesDiv) {
+                _loc.populateProperties("anchor");
+                _loc.showTagsDiv = false;
+            }
+        },50);
+    },
+
+    togglePropertiesDivZone:function(){
+        setTimeout(function () {
+            if (!_loc.showTagsDiv) {
+                var newHeight = _loc.$$('#infoWindow').offsetHeight == 305 ? "100px" : "305px";
+                _loc.$$('#infoWindow').style.height = newHeight;
+            }
+            _loc.isPlacesSearch = false;
+            _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
+            if (_loc.showPropertiesDiv) {
+                _loc.populateProperties("zone");
                 _loc.showTagsDiv = false;
             }
         },50);
@@ -1188,6 +1721,7 @@ Polymer({
 
     //Swaps which types of map overlays are visible or not.
     toggleLocations: function () {
+        //TODO: Update for trackers
         var locationId, googleLocation;
         if (_loc.searchByTxt.indexOf('Location') !== -1) {
             _loc.searchByTxt = 'Region';
@@ -1260,6 +1794,9 @@ Polymer({
         else if (searchBy === 'regions' || searchBy === 'regionProperties') {
             locationList = allRegions;
         }
+        else if (searchBy === 'trackers' || searchBy === 'trackerProperties'){
+            locationList = allTrackers
+        }
         else {
             locationList = allPOIs;
         }
@@ -1267,11 +1804,46 @@ Polymer({
         if (searchBy === 'locations' || searchBy === 'regions' || searchBy === 'pois') {
             searchQuery = optionalQuery ? optionalQuery.value : _loc.$$("#locationSearchBar").value;
             for (locationId in locationList) {
+                if(locationList[locationId][0].zones){
+                    googleLocation = locationList[locationId][0];
+                    locationName = locationList[locationId][1].properties.zoneNamespace ? locationList[locationId][1].properties.zoneNamespace : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
+                    matchFound = _loc.compareStrings(locationName, searchQuery, exactMatch, false);
+                    if (matchFound) {
+                        googleLocation.anchor.setMap(_loc._map);//set location on map
+                        for(var i = 0; i < googleLocation.zones.length; i ++){
+                            googleLocation.zones[i].setMap(_loc.map);
+                        }
+                        matchingLocations.push({'id': locationId, 'name': locationName});
+                    }
+                    else {
+                        googleLocation.setMap(null); //remove location from map
+                    }
+                }
+                else {
+                    googleLocation = locationList[locationId][0];
+                    locationName = locationList[locationId][1].label ? locationList[locationId][1].label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
+                    matchFound = _loc.compareStrings(locationName, searchQuery, exactMatch, false);
+                    if (matchFound) {
+                        googleLocation.setMap(_loc._map); //set location on map
+                        matchingLocations.push({'id': locationId, 'name': locationName});
+                    }
+                    else {
+                        googleLocation.setMap(null); //remove location from map
+                    }
+                }
+            }
+        }
+        else if (searchBy === 'trackers'){
+            searchQuery = optionalQuery ? optionalQuery.value : _loc.$$("#locationSearchBar").value;
+            for (locationId in locationList) {
                 googleLocation = locationList[locationId][0];
-                locationName = locationList[locationId][1].label ? locationList[locationId][1].label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
+                locationName = locationList[locationId][1].properties.zoneNamespace ? locationList[locationId][1].properties.zoneNamespace : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
                 matchFound = _loc.compareStrings(locationName, searchQuery, exactMatch, false);
                 if (matchFound) {
-                    googleLocation.setMap(_loc._map); //set location on map
+                    googleLocation.anchor.setMap(_loc._map);//set location on map
+                    for(var i = 0; i < googleLocation.zones.length; i ++){
+                        googleLocation.zones[i].setMap(_loc.map);
+                    }
                     matchingLocations.push({'id': locationId, 'name': locationName});
                 }
                 else {
@@ -1280,6 +1852,7 @@ Polymer({
             }
         }
         else if (searchBy.indexOf('Properties') !== -1) { //searchBy === 'locationProperties' || 'regionProperties' || 'poiProperties'
+            //TODO: Update for trackers
             searchQuery = optionalQuery ? optionalQuery.value : _loc.$$("#locationSearchBar").value;
             for (locationId in locationList) {
                 googleLocation = locationList[locationId][0];
@@ -1572,11 +2145,30 @@ Polymer({
         var properties = {};
         var isPlacesSearch = _loc.isPlacesSearch;
         var isPOI = _loc.isPOI;
-        if (!isPlacesSearch) {
-            properties = isPOI ? {} : {googleMaps: _loc.activeLocation.location.properties.googleMaps};
+        if(_loc.infowindowisstandard) {
+            if (!isPlacesSearch) {
+                properties = isPOI ? {} : {googleMaps: _loc.activeLocation.location.properties.googleMaps};
+            }
+            else {
+                properties = optionalPlacesType === 'poi' ? {} : {googleMaps: {'shape': 'circle'}};
+            }
         }
-        else {
-            properties = optionalPlacesType === 'poi' ? {} : {googleMaps: {'shape': 'circle'}};
+        else if(_loc.infowindowisanchor){
+            properties['googleMaps'] = _loc.activeLocation.anchor.properties.googleMaps;
+        }
+        else if (_loc.infowindowiszone){
+            var location = _loc.activeGoogleLocation;
+            var geoJSON = _loc.activeLocation;
+            var googleMaps;
+            var colour = _loc.colourProp;
+            properties["Color"] = colour;
+            _loc.selectedZone.setOptions({"fillColor": colour});
+            for (var i = 0; i < location.zones.length; i++){
+                if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
+                    googleMaps = geoJSON.zones.features[i].properties.googleMaps;
+                }
+            }
+            properties['googleMaps'] = googleMaps;
         }
         var newProperties = _loc.regionProperties;
         if (newProperties !== null && newProperties.length > 0) {
@@ -1598,7 +2190,7 @@ Polymer({
         //add editable property
         properties["Editable"] = _loc.editableProp;
         //add colour property
-        if ((!isPlacesSearch && !isPOI) || (isPlacesSearch && optionalPlacesType === 'region')) {
+        if (((!isPlacesSearch && !isPOI) || (isPlacesSearch && optionalPlacesType === 'region')) && _loc.infowindowisstandard) {
             var colour = _loc.colourProp;
             properties["Color"] = colour;
             if (!isPlacesSearch) {
@@ -1847,7 +2439,6 @@ Polymer({
 
         var pos = _loc.$$("#placesBody") == null ? null : _loc.$$("#placesBody").querySelectorAll(".radiusInput[name='radiusInput']");
         if (pos != null) {
-            console.log(pos);
             for (var i = 0; i < pos.length; i++) {
                 var node = pos[i];
                 node.setAttribute("value",_loc.allLocationsRadius.toString());
@@ -2017,11 +2608,23 @@ Polymer({
      * @param geoJSON
      */
     deleteRegion: function (location, geoJSON) {
-        voyent.io.location.deleteRegion({
+        voyent.io.locate.deleteRegion({
             realm: _loc.realm,
             id: geoJSON._id
         }).then(function(){
             _loc.deleteLocationSuccess(location, geoJSON, 'region');
+        }).catch(function(error){
+            _loc.deleteLocationFail();
+        });
+    },
+
+    deleteTracker:function(location,geoJSON){
+
+         voyent.io.locate.deleteTracker({
+            realm: _loc.realm,
+            id: geoJSON._id
+        }).then(function(){
+            _loc.deleteLocationSuccess(location, geoJSON, 'tracker');
         }).catch(function(error){
             _loc.deleteLocationFail();
         });
@@ -2034,7 +2637,7 @@ Polymer({
      */
     deletePOI: function (location, geoJSON) {
         var _this = this;
-        voyent.io.location.deletePOI({
+        voyent.io.locate.deletePOI({
             realm:_loc.realm,
             id: geoJSON._id
         }).then(function () {
@@ -2058,12 +2661,21 @@ Polymer({
             delete allRegions[currentId];
             delete allLocations[currentId];
             _loc.isPOI = false;
-
+            location.setMap(null);
+        }
+        else if (type==="tracker"){
+            delete allTrackers[currentId];
+            delete allLocations[currentId];
+            location.anchor.setMap(null);
+            for (var i = 0; i<location.zones.length;i++){
+                location.zones[i].setMap(null);
+            }
         }
         else {
             delete allPOIs[currentId];
             delete allLocations[currentId];
             _loc.isPOI = true;
+            location.setMap(null);
         }
 
         if (_loc.isMassDelete) {
@@ -2077,7 +2689,7 @@ Polymer({
         else {
             _loc.updateMainAutoComplete();
         }
-        location.setMap(null);
+
     },
 
     /**
@@ -2195,6 +2807,66 @@ Polymer({
             }
             catch (err) {
                 this.fire('message-error', "Issue importing region or poi: " + JSON.stringify(data[record]), err);
+            }
+        }
+        //set the map to the right zoom level for the regions
+        _loc._map.fitBounds(bounds);
+        _loc._map.panToBounds(bounds);
+    },
+
+    /**
+     * Generates trackers on the map and sets up required listeners. If doPOST is true (importing from file or places search creation) then the locations will be created on the map and then POSTed to the DB.
+     * @param data
+     * @param doPOST
+     */
+    makeTrackers: function (data, doPOST) {
+        var bounds = new google.maps.LatLngBounds();
+        for (var i = 0; i < data.length; i++) {
+            try {
+
+                var anchorCoords = data[i].anchor.geometry.coordinates;
+                var googlePoint = new google.maps.LatLng(anchorCoords[1], anchorCoords[0]);
+                var tracker = {};
+                tracker.zones = [];
+                poi = new google.maps.Marker({
+                    position: googlePoint,
+                    map: _loc._map,
+                    draggable: data[i].anchor.properties.Editable === "true",
+                    zIndex: data[i].anchor.properties.zIndex
+                });
+                tracker.anchor = poi;
+                bounds.extend(googlePoint);
+                var geoJSON = data[i];
+
+                for(var j = 0; j < geoJSON.zones.features.length; j++){
+                    for (var cycle = 0; cycle < geoJSON.zones.features[j].geometry.coordinates[0].length; cycle++) {
+                            var coords = geoJSON.zones.features[j].geometry.coordinates[0];
+                            var googlePoint = new google.maps.LatLng(coords[cycle][1], coords[cycle][0]);
+                            bounds.extend(googlePoint);
+                    }
+                    var zone = geoJSON.zones.features[j];
+                    var metadata = zone.properties.googleMaps;
+                    var region = new google.maps.Circle({
+                        'center': new google.maps.LatLng(metadata.center[0], metadata.center[1]),
+                        'radius': metadata.radius,
+                        'map': _loc._map,
+                        'editable': zone.properties.Editable === "true",
+                        'fillColor': zone.properties.Color,
+                        'zIndex': metadata.zIndex
+                    });
+                    region.bindTo('center', tracker.anchor, 'position');
+                    tracker.zones.push(region);
+                }
+                    if (!geoJSON.properties.zoneNamespace) {
+                        geoJSON.properties.zoneNamespace = 'default';
+                    }
+                    allTrackers[geoJSON._id] = [tracker, geoJSON];
+                    allLocations[geoJSON._id] = [tracker, geoJSON];
+                    _loc.setupListeners(tracker, geoJSON, "tracker");
+
+            }
+            catch (err) {
+                this.fire('message-error', "Issue importing tracker: " + JSON.stringify(data[i]), err);
             }
         }
         //set the map to the right zoom level for the regions

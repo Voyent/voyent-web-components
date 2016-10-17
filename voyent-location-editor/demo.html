@@ -62,7 +62,7 @@
     
     <!-- Declare the element by its tag. -->
     <div id="mapContainer" style="height:500px; width:100%;">
-    <voyent-location-editor id="voyentMap">
+    <voyent-location-editor hidesearch hideimport hideplaces id="voyentMap">
     </voyent-location-editor>
         </div>
 
@@ -79,7 +79,8 @@
             account: account,
             realm: realm,
             username: username,
-            password: password
+            password: password,
+            host:'dev.voyent.cloud'
         }).then(function(){
             setCredentialsOnComponent();
             document.getElementById('voyentMap').refreshMap();
