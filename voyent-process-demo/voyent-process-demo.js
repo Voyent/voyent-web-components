@@ -23,11 +23,15 @@ Polymer({
         /**
          * Process model to execute in the Process Service
          */
-        modelId: { type: String, value: "update-status-model", notify: true, reflectToAttribute: true },
+        modelId: { type: String, value: null, notify: true, reflectToAttribute: true },
+        /**
+         * The selected model to load
+         */
+        selectedModel: { type: String, notify: true, observer: '_modelChanged' },
         /**
          * If there is a choosable fork we store the value here
          */
-        selectedFork: { type: String },
+        selectedFork: { type: String, notify: true },
         /**
          * Milliseconds to wait before moving to a synthetic event
          */
@@ -65,14 +69,9 @@ Polymer({
         voyent.notify.config.toast.enabled = false;
         voyent.notify.config.native.enabled = false;
 	    
-        // TODO Retrieve a list of BPMN models and show in a dropdown. Don't draw an initial diagram until one is selected
-        
-        // Default to no forks
+        // Default to no forks and no models
         this._forks = [];
-	},
-	
-	attached: function() {
-	    this.setupBPMN();
+        this._models = [];
 	},
 	
 	initialize: function() {
@@ -92,6 +91,9 @@ Polymer({
         
         // Notify the user
         this.fire('message-info', 'Initialized and prepared to start');
+        
+        // Load a list of saved BPMN models
+        this.retrieveModels();
         
         // Attach and join the push group
         voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
@@ -318,6 +320,24 @@ Polymer({
         });
 	},
 	
+	retrieveModels: function() {
+        var _this = this;
+        voyent.$.get('http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + '/models?access_token=' + voyent.io.auth.getLastAccessToken()).then(function(response){
+            if (response) {
+                var jsonResponse = JSON.parse(response);
+                for (var loopModel in jsonResponse) {
+                    _this.push('_models', jsonResponse[loopModel]._id);
+                }
+                
+                // If we only have a single model load it immediately
+                if (_this._models.length === 1) {
+                    _this.set('modelId', _this._models[0]);
+                    _this.setupBPMN();
+                }
+            }
+        });
+	},
+	
 	startProcess: function() {
         // Clear old highlights
         this.clearHighlights();
@@ -390,5 +410,21 @@ Polymer({
 	    }).catch(function(error) {
 	        _this.fire('message-error', "Failed to send event '" + eventName + "'");
 	    });
+	},
+	
+	hasModel: function(toCheck) {
+	    return toCheck !== null;
+	},
+	
+	_modelChanged: function() {
+	    if (this.selectedModel && this.selectedModel !== null) {
+            this.set('modelId', this.selectedModel);
+            this.setupBPMN();
+            
+            var _this = this;
+            setTimeout(function() {
+                _this.selectedModel = null;
+            }, 2000);
+        }
 	}
 });
