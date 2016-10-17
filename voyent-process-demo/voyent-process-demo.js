@@ -23,11 +23,15 @@ Polymer({
         /**
          * Process model to execute in the Process Service
          */
-        modelId: { type: String, value: "update-status-model", notify: true, reflectToAttribute: true },
+        modelId: { type: String, value: null, notify: true, reflectToAttribute: true },
+        /**
+         * The selected model to load
+         */
+        selectedModel: { type: String, notify: true, observer: '_modelChanged' },
         /**
          * If there is a choosable fork we store the value here
          */
-        selectedFork: { type: String },
+        selectedFork: { type: String, notify: true },
         /**
          * Milliseconds to wait before moving to a synthetic event
          */
@@ -65,16 +69,15 @@ Polymer({
         voyent.notify.config.toast.enabled = false;
         voyent.notify.config.native.enabled = false;
 	    
-        // TODO Retrieve a list of BPMN models and show in a dropdown. Don't draw an initial diagram until one is selected
-        
-        // Default to no forks
+        // Default to no forks and no models
         this._forks = [];
+        this._models = [];
 	},
 	
-	attached: function() {
-	    this.setupBPMN();
-	},
-	
+	/**
+	 * Setup our component
+	 * This will retrieve a list of stored BPMN, attach to push, and add a notificationsReceived listener
+	 */
 	initialize: function() {
         if (!this.realm) {
             this.realm = voyent.io.auth.getLastKnownRealm();
@@ -92,6 +95,9 @@ Polymer({
         
         // Notify the user
         this.fire('message-info', 'Initialized and prepared to start');
+        
+        // Load a list of saved BPMN models
+        this.retrieveModels();
         
         // Attach and join the push group
         voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
@@ -197,10 +203,11 @@ Polymer({
 	
 	/**
 	 * Setup our BPMN diagram, using bpmn-io.js
+	 * This will retrieve and load the diagram for our current this.modelId
 	 */
 	setupBPMN: function(logServiceError) {
 	    // Get the XML for our model
-	    var theUrl = "http://" + this.host + "/process/" + this.account + "/realms/" + this.realm + "/models/" + this.modelId + "?access_token=" + voyent.io.auth.getLastAccessToken();
+	    var theUrl = this._makeURL("/models/" + this.modelId);
 	    var validResponse = false;
         var xmlHttp = new XMLHttpRequest();
         xmlHttp.onreadystatechange = function receiveResponse(e) {
@@ -277,6 +284,12 @@ Polymer({
         });
 	},
 	
+	/**
+	 * Determine if our current BPMN has any forks
+	 * These would come from ExclusiveGateways
+	 * If we find a gate/decision point this function will parse the outcomes and populate a list of forks
+	 * The forks can be chosen by the user at runtime when they execute a process
+	 */
 	parseForks: function() {
 	    var _this = this;
 	    this._viewer.moddle.fromXML(this.xml, function(err, definitions, parseContext) {
@@ -318,6 +331,30 @@ Polymer({
         });
 	},
 	
+	/**
+	 * Retrieve a list of saved BPMN models from our service
+	 */
+	retrieveModels: function() {
+        var _this = this;
+        voyent.$.get(this._makeURL("/models")).then(function(response){
+            if (response) {
+                var jsonResponse = JSON.parse(response);
+                for (var loopModel in jsonResponse) {
+                    _this.push('_models', jsonResponse[loopModel]._id);
+                }
+                
+                // If we only have a single model load it immediately
+                if (_this._models.length === 1) {
+                    _this.set('modelId', _this._models[0]);
+                    _this.setupBPMN();
+                }
+            }
+        });
+	},
+	
+	/**
+	 * Execute a process instance for a BPMN model
+	 */
 	startProcess: function() {
         // Clear old highlights
         this.clearHighlights();
@@ -330,12 +367,16 @@ Polymer({
         
         // Then post to start the process, which should end up with us receiving status notifications
         var _this = this;
-        voyent.$.post('http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + '/processes/' + this.modelId + '?access_token=' + voyent.io.auth.getLastAccessToken()).then(function(response){
+        voyent.$.post(this._makeURL("/processes/" + this.modelId)).then(function(response){
             _this.set('processId', response.processId);
             _this.fire('message-info', "Executed process '" + response.processName + "'");
         });
 	},
 	
+	/**
+	 * Check our BPMN viewer data definitions to try to find a list of matching IDs for the passed type
+	 * An example of a passed type is bpmn:StartEvent
+	 */
 	getIdByType: function(type) {
 	    if (!type) {
 	        return [];
@@ -351,12 +392,18 @@ Polymer({
         return toReturn;
 	},
 	
+	/**
+	 * Apply the 'highlight' class via a marker to an element matching the passed ID in our BPMN viewer
+	 */
 	highlightById: function(id) {
 	    if (id) {
 	        this._viewer.get("canvas").addMarker(id, 'highlight');
 	    }
 	},
 	
+	/**
+	 * Loop through all elements in the BPMN viewer and clear any highlight markers
+	 */
 	clearHighlights: function() {
         var elements = this._viewer.definitions.rootElements[0].flowElements;
         var canvas = this._viewer.get("canvas");
@@ -367,6 +414,10 @@ Polymer({
         }
 	},
 	
+	/**
+	 * Trigger a synthetic event to our service
+	 * Normally used in the process diagram to easily simulate outside events
+	 */
 	sendSynthEvent: function(eventName) {
 	    // Note the data parameters are case sensitive based on what the Process Service uses
         var event = {
@@ -390,5 +441,32 @@ Polymer({
 	    }).catch(function(error) {
 	        _this.fire('message-error', "Failed to send event '" + eventName + "'");
 	    });
+	},
+	
+	hasModel: function(toCheck) {
+	    return toCheck !== null;
+	},
+	
+	/**
+	 * Return a URL to the Process service for our current host, account, realm, and access token
+	 */
+	_makeURL: function(addition) {
+	    return 'http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + addition + '?access_token=' + voyent.io.auth.getLastAccessToken();
+	},
+	
+	/**
+	 * Function called when the selected BPMN model is changed
+	 * This would mainly fire when a user selects an option from the "stored BPMN" CRUD list
+	 */
+	_modelChanged: function() {
+	    if (this.selectedModel && this.selectedModel !== null) {
+            this.set('modelId', this.selectedModel);
+            this.setupBPMN();
+            
+            var _this = this;
+            setTimeout(function() {
+                _this.selectedModel = null;
+            }, 2000);
+        }
 	}
 });
