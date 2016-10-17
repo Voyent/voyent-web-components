@@ -119,36 +119,12 @@ Polymer({
 	calculateSimpleWidth: function() {
 	    return this.showMessageElements ? "70%" : "100%";
 	},
-	
-	/**
-	 * Fired when the Save button is clicked
-	 */
-	clickSave: function() {
-	    // TODO Perform a persist to the parent action
-	    this.set("debug", true);
-	},
-	
-	/**
-	 * Fired when the Open button is clicked
-	 */
-	clickOpen: function() {
-	    // TODO Show a dropdown for previously saved notifications
-	},
-	
-	/**
-	 * Fired when the Delete button is clicked
-	 */
-	clickDelete: function() {
-	    // TODO Confirm and then delete the template from the parent action
-	    this.set("debug", false);
-	    this.clickClear();
-	},
-	
+
 	/**
 	 * Reset the state of our subject and details
 	 * Used with simple view only (simple=true)
 	 */
-	clickClear: function() {
+	resetSimple: function() {
 	    this.set("_tool.subject.global", "");
 	    this.set("_tool.details.global", "");
 	},
