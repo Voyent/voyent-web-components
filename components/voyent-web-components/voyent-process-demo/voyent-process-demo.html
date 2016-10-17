@@ -46,19 +46,34 @@
         </style>
         
         <template is="dom-if" if="{{loggedIn}}">
-            <paper-dropdown-menu label="Fork Gate">
-                <paper-listbox class="dropdown-content" attr-for-selected="forkname" selected="{{selectedFork}}">
-                    <template is="dom-repeat" strip-whitespace items="[[_forks]]" as="fork">
-                        <paper-item forkname="[[fork]]">[[fork]]</paper-item>
+            <paper-dropdown-menu label="Stored BPMNs">
+                <paper-listbox class="dropdown-content" attr-for-selected="modelid" selected="{{selectedModel}}">
+                    <template is="dom-repeat" strip-whitespace items="[[_models]]" as="model">
+                        <paper-item modelid="[[model]]">[[model]]</paper-item>
                     </template>
                 </paper-listbox>
             </paper-dropdown-menu>
-            <paper-button raised on-click="startProcess">Start Process</paper-button>
+            <br/>
             
-            <h4>{{_title}}</h4>
+            <template is="dom-if" if="[[hasModel(modelId)]]">
+                <h4>BPMN Diagram: <u>{{_title}}</u></h4>
+            
+                <paper-dropdown-menu label="Fork Gate">
+                    <paper-listbox class="dropdown-content" attr-for-selected="forkname" selected="{{selectedFork}}">
+                        <template is="dom-repeat" strip-whitespace items="[[_forks]]" as="fork">
+                            <paper-item forkname="[[fork]]">[[fork]]</paper-item>
+                        </template>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+                <paper-button raised on-click="startProcess">Start Process</paper-button>
+            </template>
         </template>
         
-        <div id="bpmn" class="bpmnWrap"></div>
+        <div id="bpmn" class="bpmnWrap">
+            <div style="width: 100%; margin-top: 50px; text-align: center;">
+                <h3>Waiting to load...</h3>
+            </div>
+        </div>
     </template>
 </dom-module>
 
