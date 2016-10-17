@@ -207,7 +207,7 @@ Polymer({
 	 */
 	setupBPMN: function(logServiceError) {
 	    // Get the XML for our model
-	    var theURL = this._makeURL("/models/" + this.modelId);
+	    var theUrl = this._makeURL("/models/" + this.modelId);
 	    var validResponse = false;
         var xmlHttp = new XMLHttpRequest();
         xmlHttp.onreadystatechange = function receiveResponse(e) {
@@ -336,7 +336,7 @@ Polymer({
 	 */
 	retrieveModels: function() {
         var _this = this;
-        voyent.$.get(this.makeURL("/models")).then(function(response){
+        voyent.$.get(this._makeURL("/models")).then(function(response){
             if (response) {
                 var jsonResponse = JSON.parse(response);
                 for (var loopModel in jsonResponse) {
@@ -367,7 +367,7 @@ Polymer({
         
         // Then post to start the process, which should end up with us receiving status notifications
         var _this = this;
-        voyent.$.post(this.makeURL("/processes/" + this.modelId)).then(function(response){
+        voyent.$.post(this._makeURL("/processes/" + this.modelId)).then(function(response){
             _this.set('processId', response.processId);
             _this.fire('message-info', "Executed process '" + response.processName + "'");
         });
