@@ -251,7 +251,7 @@ Polymer({
         }
 
         var _this = this;
-        voyent.io.metrics.findEvents({
+        voyent.io.event.findEvents({
             account: this.account,
             realm: this.realm,
             accessToken: this.accesstoken,
@@ -262,6 +262,7 @@ Polymer({
 
             if(results.length == 0){
                 _this.fire("message-error", "No results found");
+                console.error('No results found');
                 return;
             }
             ChartBehaviors.results = results;
@@ -274,7 +275,8 @@ Polymer({
                 data = ChartBehaviors.parseData(realIndep, realDep);
             gotData(data);
         }).catch(function (error) {
-            _this.fire("message-error", "findEvents failed: " + error.toSource());
+            _this.fire("message-error", "findEvents failed: " + error);
+            console.error('findEvents failed:',error);
         });
     }
 });

@@ -91,17 +91,17 @@ Polymer({
         this._bounds = new google.maps.LatLngBounds();
         var promises = [];
         if( this.showuserlocations ){
-            promises.push(voyent.io.location.findLocations({realm:_this.realm}).then(function(locationUpdates) {
+            promises.push(voyent.io.locate.findLocations({realm:_this.realm}).then(function(locationUpdates) {
                 _this._updateLocations(locationUpdates);
             }));
         }
         if( this.showregions ){
-            promises.push(voyent.io.location.getAllRegions({realm:_this.realm}).then(function(regions) {
+            promises.push(voyent.io.locate.getAllRegions({realm:_this.realm}).then(function(regions) {
                 _this._updateRegions(regions);
             }));
         }
         if( this.showpois ){
-            promises.push(voyent.io.location.getAllPOIs({realm:_this.realm}).then(function(pois) {
+            promises.push(voyent.io.locate.getAllPOIs({realm:_this.realm}).then(function(pois) {
                 _this._updatePOIs(pois);
             }));
         }
@@ -110,7 +110,8 @@ Polymer({
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
-            _this.fire('message-error', "<voyent-locations> Error: " + error.toSource());
+            _this.fire('message-error', 'Error refreshing map: ' + error);
+            console.error('Error refreshing map:',error);
         });
 	},
 
@@ -191,6 +192,7 @@ Polymer({
                 }
             } catch (err) {
                 _this.fire('message-error', "Issue importing region or poi: " + JSON.stringify(data[record]));
+                console.error('Issue importing region or poi:',JSON.stringify(data[record]));
             }
         }
     },
@@ -202,6 +204,7 @@ Polymer({
         var _this = this;
         if (!this._map) {
             this.fire('message-error', 'Locations could not update map markers due to missing map');
+            console.error('Locations could not update map markers due to missing map');
             return;
         }
         locations.forEach(function(locationUpdate) {

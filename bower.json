@@ -34,9 +34,9 @@
     "jsonlint": "~1.6.0",
     "ace-builds": "~1.2.2",
     "awesomplete": "https://github.com/LeaVerou/awesomplete.git#^1.0.0",
-    "components-font-awesome": "~4.4.0",
     "pikaday": "https://github.com/dbushell/Pikaday.git#1.4.0",
-    "randomColor": "https://github.com/davidmerfield/randomColor.git#0.4.1"
+    "randomColor": "https://github.com/davidmerfield/randomColor.git#0.4.1",
+    "bpmn-js": "^0.17.2"
   },
   "devDependencies": {
     "web-component-tester": "*"

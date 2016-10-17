@@ -1504,10 +1504,12 @@ Polymer({
         var newPropVal = _loc.newPropVal;
         if (!newPropKey || newPropKey.toString().trim().length === 0) {
             this.fire('message-error', 'Please enter a property name.');
+            console.error('Please enter a property name.');
             return;
         }
         if (!newPropVal || newPropVal.toString().trim().length === 0) {
             this.fire('message-error', 'Please enter a property value.');
+            console.error('Please enter a property value.');
             return;
         }
 
@@ -1537,6 +1539,7 @@ Polymer({
         var newTag = _loc.newTag;
         if (!newTag || newTag.toString().trim().length === 0) {
             this.fire('message-error', 'Please enter a tag.');
+            console.error('Please enter a tag.');
             return;
         }
         _loc.push('tags', {name: newTag});
@@ -1883,6 +1886,7 @@ Polymer({
                         _loc.mapQueryAutocomplete = mapQueryAutocomplete;
                     } else {
                         this.fire('message-error', 'Geocode was not successful for the following reason: ' + status);
+                        console.error('Geocode was not successful for the following reason:',status);
                     }
                 });
             }
@@ -1968,6 +1972,7 @@ Polymer({
         }
         if (placesTypes && placesTypes.toString().trim().length > 0 && !placesTypes.match("^[a-z_,]*$")) {
             this.fire('message-error', 'Places Types must be a comma separated list of values.');
+            console.error('Places Types must be a comma separated list of values.');
             return;
         }
         var request = {'location': _loc._map.getCenter()};
@@ -2080,12 +2085,14 @@ Polymer({
             var radius = _loc.$$(".radiusInput[placeholder='" + place_id + "']").value;
             if (!radius || radius.toString().trim().length === 0) {
                 this.fire('message-error', 'Please enter a radius for location "' + name + '".');
+                console.error('Please enter a radius for location "' + name + '".');
                 locations = [];
                 return false;
             }
             radius = Number(radius);
             if (isNaN(radius) || (radius % 1) !== 0 || radius <= 0 || radius > 50000) {
                 this.fire('message-error', 'Radius for location "' + name + '" is invalid. Please enter an integer greater than 0 and less than 50,000.');
+                console.error('Radius for location "' + name + '" is invalid. Please enter an integer greater than 0 and less than 50,000.');
                 locations = [];
                 return false;
             }
@@ -2536,6 +2543,7 @@ Polymer({
             var files = document.getElementById('geoJSONUploads').files;
             if (!files || files.length === 0) {
                 this.fire('message-error', 'Please select a geojson file to import.');
+                console.error('Please select a geojson file to import.');
                 return;
             }
             var file;
@@ -2550,12 +2558,14 @@ Polymer({
                     fileExt = file.name.split(".")[1].toLowerCase();
                     if (fileExt !== 'json' && fileExt !== 'geojson') {
                         this.fire('message-error', "File is not in the correct format (must be .json or .geojson)");
+                        console.error('File is not in the correct format (must be .json or .geojson)');
                         _loc.locationImportCount = _loc.locationImportCount - 1;
                         continue;
                     }
                 }
                 else {
                     this.fire('message-error', "Failed to load file");
+                    console.error('Failed to load file');
                     _loc.locationImportCount = _loc.locationImportCount - 1;
                     continue;
                 }
@@ -2573,6 +2583,7 @@ Polymer({
                             }
                             else {
                                 _this.fire('message-error', "Invalid geoJSON: Type of geometry object must be polygon or point");
+                                console.error('Invalid geoJSON: Type of geometry object must be polygon or point');
                             }
                         }
                         else if (type === "featurecollection") {
@@ -2583,6 +2594,7 @@ Polymer({
                                 }
                                 else {
                                     _this.fire('message-error', "Invalid geoJSON: Type of geometry object must be polygon or point");
+                                    console.error('Invalid geoJSON: Type of geometry object must be polygon or point');
                                 }
                             }
                             _loc.importedLocationData = importedLocationData;
@@ -2590,6 +2602,7 @@ Polymer({
                         }
                         else {
                             _this.fire('message-error', "Invalid geoJSON: Type of geoJSON object must be feature or feature collection");
+                            console.error('Invalid geoJSON: Type of geoJSON object must be feature or feature collection');
                         }
                     };
                 })(file); //jshint ignore:line
@@ -2644,6 +2657,7 @@ Polymer({
             _loc.deleteLocationSuccess(location, geoJSON, 'poi');
         }).catch(function (error) {
             _this.fire('message-error', 'deletePOI failed ' + error);
+            console.error('deletePOI failed',error);
             _loc.deleteLocationFail();
         });
     },
@@ -2705,6 +2719,7 @@ Polymer({
             }
         }
         this.fire('message-error', "Error in deleting location from database");
+        console.error('Error in deleting location from database');
     },
 
     /**
@@ -2807,6 +2822,7 @@ Polymer({
             }
             catch (err) {
                 this.fire('message-error', "Issue importing region or poi: " + JSON.stringify(data[record]), err);
+                console.error('Issue importing region or poi:',JSON.stringify(data[record]), err);
             }
         }
         //set the map to the right zoom level for the regions

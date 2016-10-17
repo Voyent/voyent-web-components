@@ -211,7 +211,8 @@ Polymer({
             options: this.options,
             fields: this.fields
         }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
-            _this.fire('message-error', 'fetchLogs (audit) caught an error: ' + error.toSource());
+            _this.fire('message-error', 'fetchLogs (audit) caught an error: ' + error);
+            console.error('fetchLogs (audit) caught an error:',error);
             _this._noLogs = true;
         });
     },
@@ -228,7 +229,8 @@ Polymer({
             options: this.options,
             fields: this.fields
         }).then(this._fetchLogsCallback.bind(this)).catch(function(error){
-            _this.fire('message-error', 'fetchLogs (debug) caught an error: ' + error.toSource());
+            _this.fire('message-error', 'fetchLogs (debug) caught an error: ' + error);
+            console.error('fetchLogs (debug) caught an error:',error);
             _this._noLogs = true;
         });
     },

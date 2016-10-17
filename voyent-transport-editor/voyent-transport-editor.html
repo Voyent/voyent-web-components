@@ -1,5 +1,5 @@
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../common/imports/voyent-io.html">
 <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
 <link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../../paper-input/paper-input.html">
@@ -70,7 +70,7 @@ Displays a transport editor that can build message templates for various technol
         <template is="dom-if" if="{{simple}}">
             <table width="100%" height="100%" cellspacing="5" cellpadding="0">
                 <tr>
-                    <td width="70%" height="100%" valign="top">
+                    <td width$="{{calculateSimpleWidth()}}" height="100%" valign="top">
                         <div class="inputWrap" style="height: 20%;">
                             <b>Message Subject:</b>
                             <input type="text" placeholder="Subject"
@@ -85,17 +85,19 @@ Displays a transport editor that can build message templates for various technol
                                       ondrop="drop(event)"></textarea>
                         </div>
                     </td>
-                    <td width="30%" height="100%" valign="top">
-                        <b>Message Elements:</b><br/>
-                        <span class="tinyNote">(Click to insert, or drag and drop to desired location)</span>
-                        <paper-listbox id="messageElements" selected="{{clickedList}}" attr-for-selected="text">
-                            <template is="dom-repeat" strip-whitespace items="[[messageElements]]" as="element">
-                                <paper-item text="[[element]]">
-                                    <span class="dragSpan" draggable="true" ondragstart="drag(event)">[[element]]</span>
-                                </paper-item>
-                            </template>
-                        </paper-listbox>
-                    </td>
+                    <template is="dom-if" if="{{showMessageElements}}">
+                        <td width="30%" height="100%" valign="top">
+                            <b>Message Elements:</b><br/>
+                            <span class="tinyNote">(Click to insert, or drag and drop to desired location)</span>
+                            <paper-listbox id="messageElements" selected="{{clickedList}}" attr-for-selected="text">
+                                <template is="dom-repeat" strip-whitespace items="[[messageElements]]" as="element">
+                                    <paper-item text="[[element]]">
+                                        <span class="dragSpan" draggable="true" ondragstart="drag(event)">[[element]]</span>
+                                    </paper-item>
+                                </template>
+                            </paper-listbox>
+                        </td>
+                    </template>
                 </tr>
                 <tfoot><tr>
                     <td colspan="2">

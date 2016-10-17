@@ -9,11 +9,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../voyent-io-import/voyent-io-import.html">
+<link rel="import" href="../common/imports/voyent-io.html">
 <link rel="import" href="../common/voyent-common-properties-behavior.html">
 <link rel="import" href="../../iron-form/iron-form.html">
 <link rel="import" href="../../iron-form-element-behavior/iron-form-element-behavior.html">
 <link rel="import" href="../../iron-validatable-behavior/iron-validatable-behavior.html">
+<link rel="import" href="../../iron-collapse/iron-collapse.html">
 <link rel="import" href="../../paper-card/paper-card.html">
 <link rel="import" href="../../paper-input/paper-input.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
@@ -102,27 +103,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <form is="iron-form" id="loginForm" on-submit="handleLogin">
       <paper-card heading="{{heading}}" image="{{headerImage}}">
         <div class="card-content">
-          <paper-input label="Username" required placeholder="Enter your username" value="{{username}}">
+          <paper-input id="username" label="Username" required placeholder="Enter your username" value="{{username}}">
             <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
           </paper-input>
           <paper-input type="password" required label="Password" placeholder="Enter your password" value="{{password}}">
             <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1"></paper-icon-button>
           </paper-input>
-          <template is="dom-if" if="[[showrealminput]]">
-            <paper-input required label="Realm" placeholder="Enter the realm" value="{{realm}}">
-              <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
-            </paper-input>
+          <template is="dom-if" if="[[hideallowed]]">
+              <div style="text-align: right;">
+                  <button type="button" onclick="toggle('#collapse')" title="Toggle the details panel">...</button>
+              </div>
           </template>
-          <template is="dom-if" if="[[showaccountinput]]">
-            <paper-input required label="Account" placeholder="Enter the account" value="{{account}}">
-              <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
-            </paper-input>
-          </template>
-          <template is="dom-if" if="[[showhostinput]]">
-            <paper-input required label="Host" placeholder="Enter the host" value="{{host}}">
-                <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1"></paper-icon-button>
-            </paper-input>
-          </template>
+          <iron-collapse id="collapse" opened="[[!hideclosed]]" no-animation="true">
+              <div id="content">
+                  <template is="dom-if" if="[[showrealminput]]">
+                    <paper-input required label="Realm" placeholder="Enter the realm" value="{{realm}}">
+                      <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
+                    </paper-input>
+                  </template>
+                  <template is="dom-if" if="[[showaccountinput]]">
+                    <paper-input required label="Account" placeholder="Enter the account" value="{{account}}">
+                      <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
+                    </paper-input>
+                  </template>
+                  <template is="dom-if" if="[[showhostinput]]">
+                    <paper-input required label="Host" placeholder="Enter the host" value="{{host}}">
+                        <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1"></paper-icon-button>
+                    </paper-input>
+                  </template>
+              </div>
+          </iron-collapse>
           <content>
           </content>
         </div>
@@ -136,5 +146,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </form>
     </div>
   </template>
+  
+  <script>
+      function toggle(selector) {
+          document.querySelector(selector).toggle();
+      }
+  </script>
 </dom-module>
 <script src="voyent-login-paper-card.js"></script>

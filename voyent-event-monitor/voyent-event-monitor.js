@@ -111,6 +111,19 @@ Polymer({
          */
         _pollfn: { type: Object }
     },
+
+    created: function() {
+        var _this = this;
+        if (!('d3' in window)) {
+            //load missing d3 dependency
+            this.importHref(this.resolveUrl('../common/imports/d3.html'), function(e) {
+                document.head.appendChild(document.importNode(e.target.import.body,true));
+            }, function(err) {
+                _this.fire('message-error', 'voyent-event-monitor: error loading d3 ' + err);
+                console.error('voyent-event-monitor: error loading d3',err);
+            });
+        }
+    },
     
     /**
      * Method to graph and show the passed data
@@ -206,10 +219,14 @@ Polymer({
     _generateGraph: function(data) {
         var _this = this;
         var wrapper = d3.select("div#" + this.id + "div");
+
+        //use scopeSubtree to apply styles to elements included by third-party libraries
+        this.scopeSubtree(Polymer.dom(this.root).querySelector('#' + this.id + 'div'), true);
         
         // Bail if we can't find our div container
         if (typeof wrapper === 'undefined' || wrapper === null) {
-            this.fire('message-error', "No SVG container was found that matches ID " + this.id + ", not drawing event monitor."); 
+            this.fire('message-error', "No SVG container was found that matches ID " + this.id + ", not drawing event monitor.");
+            console.error('No SVG container was found that matches ID ' + this.id + ', not drawing event monitor.');
             return;
         }
         
@@ -571,7 +588,7 @@ Polymer({
         var colors = {};
         colors['query'] = "crimson";
         colors['storage'] = "purple";
-        colors['metrics'] = "gold";
+        colors['event'] = "gold";
         colors['locate'] = "cornflowerblue";
         colors['docs'] = "forestgreen";
         colors['action'] = "sienna";

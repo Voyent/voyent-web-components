@@ -12,10 +12,6 @@ Polymer({
         selectedIndex: { type: Number, notify: true, observer: '_selectedIndexChanged' },
     },
 
-    /**
-     * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
-     * @event queryMsgUpdated
-     */
     ready: function() {
         this._hasQueries = false;
         this._allQueries = [];
@@ -32,9 +28,6 @@ Polymer({
         _this._queryEditor.addEventListener('queriesRetrieved', function(e) {
             _this._allQueries = e.detail.results;
             _this._hasQueries = _this._allQueries && _this._allQueries.length > 0;
-            if (Object.keys(_this._allQueries).length === 0) {
-                _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query list is empty.','type':'error'});
-            }
         });
     },
 
@@ -48,7 +41,8 @@ Polymer({
      */
     _validateFor: function() {
         if (!this.for) {
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'for attribute is required','type':'error'});
+            this.fire('message-error', 'for attribute is required');
+            console.error('for attribute is required');
             return false;
         }
         if (!document.getElementById(this.for)) {
@@ -71,7 +65,8 @@ Polymer({
             this._queryEditor = document.getElementById(this.for);
             return true;
         }
-        this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'element cannot be found or is not a voyent-query-editor','type':'error'});
+        this.fire('message-error', 'element cannot be found or is not a voyent-query-editor');
+        console.error('element cannot be found or is not a voyent-query-editor');
         return false;
     },
 
@@ -93,6 +88,7 @@ Polymer({
         }
         else {
             this.fire('message-error', 'Select a query to view');
+            console.error('Select a query to view');
         }
     },
     
@@ -104,5 +100,5 @@ Polymer({
         if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex !== null) {
             this._viewQuery();
         }
-    },
+    }
 });

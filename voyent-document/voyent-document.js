@@ -105,7 +105,7 @@
       console.log('_updateOutputWithNewDocumentId()');
       if( this.documentId ){
         var _this = this;
-        voyent.io.documents.getDocument({id: this.documentId}).then(function(doc){
+        voyent.io.docs.getDocument({id: this.documentId}).then(function(doc){
           _this.document = doc;
         });
       }

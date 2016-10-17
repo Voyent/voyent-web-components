@@ -68,7 +68,8 @@
                     account: account,
                     realm: realm,
                     username: username,
-                    password: password
+                    password: password,
+                    host:'dev.voyent.cloud'
                 }).then(function(){
                     setCredentialsOnComponent();
                     document.getElementById('emailEditor').initialize();
@@ -78,7 +79,8 @@
                         account: account,
                         realm: 'admin',
                         username: username,
-                        password: password
+                        password: password,
+                        host:'dev.voyent.cloud'
                     }).then(function(){
                         document.getElementById('emailEditor').setAttribute('realm', realm);
                         document.getElementById('emailEditor').initialize();

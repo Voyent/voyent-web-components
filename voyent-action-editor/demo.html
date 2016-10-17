@@ -191,7 +191,8 @@
 			account: account,
 			realm: realm,
 			username: username,
-			password: password
+			password: password,
+            host:'dev.voyent.cloud'
 		}).then(function(){
 			setCredentialsOnComponent();
             document.getElementById('actionEditor').initialize();
@@ -201,7 +202,8 @@
 				account: account,
 				realm: 'admin',
 				username: username,
-				password: password
+				password: password,
+                host:'dev.voyent.cloud'
 			}).then(function(){
 				setCredentialsOnComponent();
 				document.getElementById('actionEditor').setAttribute('realm', realm);

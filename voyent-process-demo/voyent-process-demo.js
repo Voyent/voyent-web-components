@@ -14,42 +14,50 @@ Polymer({
         /**
          * Defines the Voyent host to use for services
          */
-        host: { type: String, value: "dev.voyent.cloud" },
+        host: { type: String, value: "dev.voyent.cloud", notify: true, reflectToAttribute: true },
         /**
          * Push group to attach and join automatically on valid initialization
          * The intent is to listen to the group the process is pushing status updates to
          */
-        pushGroup: { type: String, value: "processDemoGroup" },
+        pushGroup: { type: String, value: "processDemoGroup", notify: true, reflectToAttribute: true },
         /**
          * Process model to execute in the Process Service
-         * Only used if debugHighlight=false
          */
-        modelId: { type: String, value: "update-status-model" },
+        modelId: { type: String, value: "update-status-model", notify: true, reflectToAttribute: true },
         /**
          * If there is a choosable fork we store the value here
          */
         selectedFork: { type: String },
         /**
-         * Set to true to not POST to the Process Service at all, and instead
-         *  run a basic setTimeout to simulate moving between steps in the process
+         * Milliseconds to wait before moving to a synthetic event
          */
-        debugHighlight: { type: Boolean, value: false },
+        waitBeforeEvent: { type: Number, value: 1200, notify: true, reflectToAttribute: true },
         /**
-         * Minimum millisecond wait between a simulated step
-         * Only used if debugHighlight=true
+         * Milliseconds to wait before moving to the end element
          */
-        minMS: { type: Number, value: 2000 },
+        waitBeforeEnd: { type: Number, value: 1500, notify: true, reflectToAttribute: true },
         /**
-         * Random amount of milliseconds to add to the minimum between a simulated step
-         * Only used if debugHighlight=true
+         * Internal global variable for our bpmn-io.js viewer
          */
-        randMS: { type: Number, value: 4000 },
+        _viewer: { type: Object }
     },
     
     /**
      * Define our initial tool data structure for backing our UI controls
      */
 	ready: function() {
+	    // Some BPMN constants for different types
+	    this.TYPE_START = "bpmn:StartEvent";
+	    this.TYPE_END   = "bpmn:EndEvent";
+	    this.TYPE_ARROW = "bpmn:SequenceFlow";
+	    this.TYPE_EVENT = "bpmn:IntermediateCatchEvent";
+	    this.TYPE_GATE  = "bpmn:ExclusiveGateway";
+	    this.TYPE_OUTGOING = "bpmn:outgoing";
+	    this.TYPE_INCOMING = "bpmn:incoming";
+	    
+	    // Our internal XML from the service
+	    this.xml = null;
+	    
 	    // Used by the process to send events back
 	    this.processId = null;
 	    
@@ -57,22 +65,14 @@ Polymer({
         voyent.notify.config.toast.enabled = false;
         voyent.notify.config.native.enabled = false;
 	    
-	    this._currentProcess = { "title": "Update Status Model",
-	                             "forks": [ "High Road", "Low Road" ],
-	                             "model": [ { "name": "Start", "image": "0-start.png" },
-                                            { "name": "Update Status A", "image": "1-update-status-a.png" },
-                                            { "name": "Update Status B", "image": "2-update-status-b.png" },
-                                            { "name": "Synthetic Event A", "image": "3-synthetic-event-a.png", "waitFire": true },
-                                            { "name": "Update Status C", "image": "4-update-status-c.png" },
-                                            { "name": "Synthetic Event B", "image": "5-synthetic-event-b.png", "waitFire": true },
-                                            { "name": "Fork", "image": "6-fork.png" },
-                                            { "name": "Outcome", "image": "blank.png", "fork": true, "groupList": [ { "name": "Update Status High Road", "image": "7-update-status-high-road.png" },
-                                                                                                                    { "name": "Fork Joiner", "image": "8-fork-joiner.png" },
-                                                                                                                    { "name": "Update Status Low Road", "image": "9-update-status-low-road.png" } ] },
-                                            { "name": "End", "image": "10-end.png"} ]
-                               };
-        // Set the default selected fork
-        this.selectedFork = this._currentProcess.forks[0];
+        // TODO Retrieve a list of BPMN models and show in a dropdown. Don't draw an initial diagram until one is selected
+        
+        // Default to no forks
+        this._forks = [];
+	},
+	
+	attached: function() {
+	    this.setupBPMN();
 	},
 	
 	initialize: function() {
@@ -93,150 +93,286 @@ Polymer({
         // Notify the user
         this.fire('message-info', 'Initialized and prepared to start');
         
-        if (!this.debugHighlight) {
-            // Attach and join the push group
-            voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
-        
-            // Handle incoming notifications
-            // We don't need to display the notifications, since updating our process model image will show the user enough
-            var _this = this;
-            document.addEventListener('notificationReceived',function(e) {
-                // Clear our old highlights
-                _this.clearHighlights();
-                    
-                var matchIndex = -1;
-                
-                // Check whether we received a Fork related notification
-                if (_this._currentProcess.forks.indexOf(e.detail.notification.details) > -1) {
-                    // We need to find the "fork" item in our model, that'll be our matchIndex
-                    for (var i = 0; i < _this._currentProcess.model.length; i++) {
-                        if (_this._currentProcess.model[i].fork) {
-                            matchIndex = i;
-                            break;
+        // Attach and join the push group
+        voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
+    
+        // Handle incoming notifications
+        // We don't need to display the notifications, since updating our process model image will show the user enough
+        var _this = this;
+        document.addEventListener('notificationReceived',function(e) {
+            // Clear our old highlights
+            _this.clearHighlights();
+            
+            // Figure out the name and ID that we're trying to update
+            var updateName = e.detail.notification.subject + ' ' + e.detail.notification.details;
+            var updateId = null;
+            var elements = _this._viewer.definitions.rootElements[0].flowElements;
+            for (var i in elements) {
+                if (updateName == elements[i].name) {
+                    updateId = elements[i].id;
+                    _this.highlightById(updateId);
+                    break;
+                }
+            }
+            
+            // Now we need to determine what element is next
+            // This is because we could have a synthetic event the user needs to manually click to fire
+            if (updateId !== null) {
+                _this._viewer.moddle.fromXML(_this.xml, function(err, definitions, parseContext) {
+                    // Can't do much without references
+                    if (parseContext.references) {
+                        // First loop through and find the outgoing connection/flow from our highlighted item
+                        var outgoingConn = null;
+                        for (var loopRef in parseContext.references) {
+                            var currentRef = parseContext.references[loopRef];
+                            
+                            if (currentRef.property && currentRef.element.id == updateId) {
+                                if (currentRef.property == _this.TYPE_OUTGOING) {
+                                    outgoingConn = currentRef.id;
+                                    break;
+                                }
+                            }
                         }
-                    }
-                    
-                    // But we also need to manually highlight the related child element
-                    if (matchIndex > -1) {
-                        var forkItem = _this._currentProcess.model[matchIndex];
                         
-                        for (var j = 0; j < forkItem.groupList.length; j++) {
-                            if (forkItem.groupList[j].name == (e.detail.notification.subject + ' ' + e.detail.notification.details)) {
-                                _this.set('_currentProcess.model.' + i + '.groupList.' + j + '.highlight', true);
-                                break;
+                        // Now we check what the outgoing connection attaches to
+                        if (outgoingConn !== null) {
+                            for (var loopRef in parseContext.references) {
+                                var currentRef = parseContext.references[loopRef];
+                                
+                                // A match is: same id as outgoing connection, type is incoming, and the element type is an event or end
+                                if (currentRef.id === outgoingConn) {
+                                    if (currentRef.property == _this.TYPE_INCOMING) {
+                                        var matchId = currentRef.element.id;
+                                        
+                                        if (currentRef.element.$type === _this.TYPE_EVENT) {
+                                            
+                                            // Wait and then manually highlight, enable click, and show a hint to the user for the synthetic event
+                                            setTimeout(function() {
+                                                _this.clearHighlights();
+                                                _this.highlightById(matchId);
+                                                
+                                                var overlays = _this._viewer.get('overlays');
+                                                var tooltipOverlay = overlays.add(matchId, {
+                                                    position: {
+                                                      top: 70,
+                                                      left: -15
+                                                    },
+                                                    html: '<div class="bpmnTip">Click envelope to send event</div>'
+                                                });
+                                                
+                                                var clickListener = function(e) {
+                                                    eventNode.removeEventListener('click', clickListener);
+                                                    overlays.remove(tooltipOverlay);
+                                                    
+                                                    _this.sendSynthEvent(currentRef.element.name);
+                                                };
+                                                
+                                                var eventNode = document.querySelector('[data-element-id=' + matchId + ']');
+                                                eventNode.addEventListener('click', clickListener);
+                                            }, _this.waitBeforeEvent);
+                                            
+                                            break;
+                                        }
+                                        // If the next element is the end we just jump to it after a pause
+                                        // Then we clear the highlights after a second pause
+                                        else if (currentRef.element.$type === _this.TYPE_END) {
+                                            setTimeout(function() {
+                                                _this.clearHighlights();
+                                                _this.highlightById(matchId);
+                                            }, _this.waitBeforeEnd);
+                                            
+                                            setTimeout(function() {
+                                                _this.clearHighlights();
+                                            }, _this.waitBeforeEnd*2);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                }
-                // Otherwise loop as normal and look for a match
-                else {
-                    for (var i = 0; i < _this._currentProcess.model.length; i++) {
-                        var current = _this._currentProcess.model[i];
-                        
-                        if (current.name == (e.detail.notification.subject + ' ' + e.detail.notification.details)) {
-                            matchIndex = i;
-                            break;
-                        }
-                    }
-                }
-                
-                // If we have a match we'll want to update the highlight accordingly
-                if (matchIndex > -1) {
-                    _this.set('_currentProcess.model.' + matchIndex + '.highlight', true);
-                    
-                    // If the next item has a waitFire we need to manually move to it
-                    if ((_this._currentProcess.model[matchIndex+1].waitFire == true) ||
-                        (matchIndex >= (_this._currentProcess.model.length-2))) {
-                        setTimeout(function() {
-                            _this.highlightNext();
-                        }, 1500);
-                    }
-                    // Also if we're at the second-to-last step we need to automatically move to End
-                    if (matchIndex >= (_this._currentProcess.model.length-2)) {
-                        var prevMS = 3000;
-                        setTimeout(function() {
-                            _this.highlightNext();
-                        }, prevMS);
-                        // And then we'll want to move off End to no highlight
-                        setTimeout(function() {
-                            _this.clearHighlights();
-                        }, prevMS+2000);
-                    }
-                }
-            });
+                });
+            }
+        });
+	},
+	
+	/**
+	 * Setup our BPMN diagram, using bpmn-io.js
+	 */
+	setupBPMN: function(logServiceError) {
+	    // Get the XML for our model
+	    var theUrl = "http://" + this.host + "/process/" + this.account + "/realms/" + this.realm + "/models/" + this.modelId + "?access_token=" + voyent.io.auth.getLastAccessToken();
+	    var validResponse = false;
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function receiveResponse(e) {
+            if (this.readyState == 4) {
+                validResponse = (this.status == 200);
+            }
+        };
+        console.log("Retrieve model from: " + theUrl);
+        xmlHttp.open("GET", theUrl, false);
+        xmlHttp.send(null);
+        
+        // Ensure we have a valid response before continuing
+        if (!validResponse) {
+            if (logServiceError) {
+                this.fire("message-error", "Failed to retrieve XML data for " + this.modelId + " from the service.");
+            }
+            return false;
         }
+        
+        // Parse our response
+        var parsedJSON = JSON.parse(xmlHttp.responseText)[0];
+        this.xml = parsedJSON.model;
+        
+        // Clear the div before adding the diagram, to prevent duplicates
+	    document.getElementById("bpmn").innerHTML = '';
+	    
+	    // Setup our BPMN viewer and import the XML
+        var BpmnViewer = window.BpmnJS;
+        this._viewer = new BpmnViewer({
+            container: '#bpmn',
+            zoomScroll: { enabled: false }
+        });
+        var _this = this;
+        this._viewer.importXML(this.xml, function(err) {
+          if (err) {
+              _this.fire("message-error", "Failed to render the BPMN diagram");
+              console.error("Error: ", err);
+          }
+          else {
+              // Zoom to center properly
+              _this._viewer.get("canvas").zoom('fit-viewport', 'auto');
+              
+              // Loop through and disable each event, to make the diagram read-only
+              var events = [
+                  'element.hover',
+                  'element.out',
+                  'element.click',
+                  'element.dblclick',
+                  'element.mousedown',
+                  'element.mouseup'
+              ];
+              var eventBus = _this._viewer.get('eventBus');
+              events.forEach(function(event) {
+                  eventBus.on(event, 1500, function(e) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                  });
+              });
+              
+              // Generate any gateway fork options from the XML
+              _this.parseForks();
+              
+              // Set our title
+              _this.set("_title", parsedJSON.name);
+              
+              // Polymer workaround to ensure the local styles apply properly to our dynamically generated SVG
+              _this.scopeSubtree(_this.$.bpmn, true);
+          }
+        });
+        
+        // When the window is resized update the zoom of the bpmn diagram to scale
+        window.addEventListener('resize', function() {
+            _this._viewer.get('canvas').zoom('fit-viewport', 'auto');
+        });
+	},
+	
+	parseForks: function() {
+	    var _this = this;
+	    this._viewer.moddle.fromXML(this.xml, function(err, definitions, parseContext) {
+              if (parseContext.references) {
+                  var outgoingConns = [];
+                  for (var loopRef in parseContext.references) {
+                      var currentRef = parseContext.references[loopRef];
+                      
+                      if (currentRef.element.$type == _this.TYPE_GATE) {
+                          if (currentRef.property == _this.TYPE_OUTGOING) {
+                              outgoingConns.push(currentRef.id);
+                          }
+                      }
+                  }
+                  
+                  if (outgoingConns.length > 0) {
+                      _this.set('_forks', []);
+                      for (var loopRef in parseContext.references) {
+                          var currentRef = parseContext.references[loopRef];
+                          
+                          if (outgoingConns.indexOf(currentRef.id) !== -1) {
+                              if (currentRef.property == _this.TYPE_INCOMING) {
+                                  // Some manual tweaking to remove "Update Status" for a known use case
+                                  if (currentRef.element.name.indexOf("Update Status") !== -1) {
+                                      _this.push('_forks', currentRef.element.name.replace("Update Status", ""));
+                                  }
+                                  else {
+                                      _this.push('_forks', currentRef.element.name);
+                                  }
+                              }
+                          }
+                      }
+                      
+                      if (_this._forks.length > 0) {
+                          _this.set('selectedFork', _this._forks[0]);
+                      }
+                  }
+              }
+        });
 	},
 	
 	startProcess: function() {
-	    if (!this.debugHighlight) {
-	        // Begin with highlighting the "Start"
-	        this.clearHighlights();
-	        this.highlightNext();
-	        
-	        // Then post to start the process, which should end up with us receiving status notifications
-	        var _this = this;
-	        voyent.$.post('http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + '/processes/' + this.modelId + '?access_token=' + voyent.io.auth.getLastAccessToken()).then(function(response){
-	            _this.set('processId', response.processId);
-	            _this.fire('message-info', "Executed process '" + response.processName + "'");
-	        });
+        // Clear old highlights
+        this.clearHighlights();
+        
+        // Find our start event and highlight
+        var start = this.getIdByType(this.TYPE_START);
+        if (start && start.length > 0) {
+            this.highlightById(start[0]);
+        }
+        
+        // Then post to start the process, which should end up with us receiving status notifications
+        var _this = this;
+        voyent.$.post('http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + '/processes/' + this.modelId + '?access_token=' + voyent.io.auth.getLastAccessToken()).then(function(response){
+            _this.set('processId', response.processId);
+            _this.fire('message-info', "Executed process '" + response.processName + "'");
+        });
+	},
+	
+	getIdByType: function(type) {
+	    if (!type) {
+	        return [];
 	    }
-	    else {
-            var _this = this;
-            var accumulatedTimeout = 0;
-            for (var i = 0; i < this._currentProcess.model.length+1; i++) {
-                var timeout = i === 0 ? 300 : (this.minMS + Math.floor((Math.random() * this.randMS) + 1));
-                accumulatedTimeout += timeout;
-                setTimeout(function() {
-                    _this.highlightNext();
-                }, accumulatedTimeout);
+	    
+        var elements = this._viewer.definitions.rootElements[0].flowElements;
+        var toReturn = [];
+        for (var i in elements) {
+            if (type == elements[i].$type) {
+                toReturn.push(elements[i].id);
+            }
+        }
+        return toReturn;
+	},
+	
+	highlightById: function(id) {
+	    if (id) {
+	        this._viewer.get("canvas").addMarker(id, 'highlight');
+	    }
+	},
+	
+	clearHighlights: function() {
+        var elements = this._viewer.definitions.rootElements[0].flowElements;
+        var canvas = this._viewer.get("canvas");
+        for (var i in elements) {
+            if (elements[i].$type !== this.TYPE_ARROW) {
+                canvas.removeMarker(elements[i].id, 'highlight');
             }
         }
 	},
 	
-	clearHighlights: function() {
-        var currentHighlight = -1;
-	    for (var i = 0; i < this._currentProcess.model.length; i++) {
-	        var currentItem = this._currentProcess.model[i];
-	        if (currentItem.highlight) {
-	            currentHighlight = i;
-	        }
-	        this.set('_currentProcess.model.' + i + '.highlight', false);
-	        
-	        // Check for any sub-group and clear their highlight too
-	        if (currentItem.fork) {
-	            for (var j = 0; j < currentItem.groupList.length; j++) {
-	                this.set('_currentProcess.model.' + i + '.groupList.' + j + '.highlight', false);
-	            }
-	        }
-	    }
-	    return currentHighlight;
-	},
-	
-	highlightNext: function() {
-	    var currentHighlight = this.clearHighlights();
-	    
-	    // Increase our current highlight
-	    // This will either move through our array, or start at 0 if we don't have a previous highlight
-	    currentHighlight++;
-	    if (currentHighlight <= this._currentProcess.model.length) {
-	        this.set('_currentProcess.model.' + currentHighlight + '.highlight', true);
-	    }
-	},
-	
-	sendEvent: function(e) {
-	    e.stopPropagation(); // Prevent double submit in case the image is clicked
-	    
-	    // Don't send an actual event if we're debugged
-	    if (this.debugHighlight) {
-	        return;
-	    }
-	    
-	    var model = JSON.parse(e.target.getAttribute('data-model'));
+	sendSynthEvent: function(eventName) {
 	    // Note the data parameters are case sensitive based on what the Process Service uses
         var event = {
             time: new Date().toISOString(),
             service: 'voyent-process-demo',
-            event: model.name,
+            event: eventName,
             type: 'synthetic-message-event-withProcessId',
             processId: this.processId,
             data: {
@@ -246,13 +382,13 @@ Polymer({
         };
         
         // Debug infos
-        console.log("Going to send event '" + model.name + "' with process ID " + this.processId + " and fork " + this.selectedFork);
+        console.log("Going to send event '" + eventName + "' with process ID " + this.processId + " and fork " + this.selectedFork);
         
         var _this = this;
 	    voyent.io.event.createCustomEvent({ "event": event }).then(function() {
-            _this.fire('message-info', "Successfully sent event '" + model.name + "'"); 
+            _this.fire('message-info', "Successfully sent event '" + eventName + "'"); 
 	    }).catch(function(error) {
-	        _this.fire('message-error', "Failed to send event '" + model.name + "'");
+	        _this.fire('message-error', "Failed to send event '" + eventName + "'");
 	    });
-	},
+	}
 });

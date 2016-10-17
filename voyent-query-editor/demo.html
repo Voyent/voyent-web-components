@@ -30,16 +30,10 @@
 		<!-- Define custom styling for the components (optional) -->
 		<style is="custom-style">
 			#queryList {
-				--query-list-button: { /* [Custom button styling] */
-					cursor:pointer;
-					padding: 5px 10px;
-					color: rgb(239, 239, 239);
-					background-color: rgb(62, 69, 140);
-					margin: 10px;
-				};
 				/*
 				Other available styling options:
 			    --query-list-wrapper: { key:value; };  [Custom table wrapper styling]
+			    --query-list-select: { key:value; };  [Custom select menu styling]
 				--query-list-table: { key:value; }; [Custom table styling]
 				--query-list-tbody: { key:value; }; [Custom tbody styling]
 				--query-list-tr { key:value; }; [Custom tr styling]
@@ -89,8 +83,8 @@
 					submit-label="Login" 
 					cancel-label="Cancel" 
 					hidden="{{isLoggedIn}}" 
-					show-realm-input="true"
-					show-account-input="true">
+					showrealminput
+					showaccountinput>
 				</voyent-login-paper-card>
 
 				<template is="dom-if" if="{{isLoggedIn}}">
@@ -105,7 +99,7 @@
 									<option disabled selected> -- select an option -- </option>
 									<option>documents</option>
 									<option>location</option>
-									<option>metrics</option>
+									<option>event</option>
 								</select>
 							</label>
 						</div>
@@ -124,7 +118,7 @@
 											<option>locations</option>
 										</select>
 									</template>
-									<template is="dom-if" if="{{isEqual('metrics', service)}}">
+									<template is="dom-if" if="{{isEqual('event', service)}}">
 										<select id='collection' value="{{collection::change}}">
 											<option value=''> -- select an option -- </option>
 											<option>events</option>
@@ -141,13 +135,8 @@
 						</div>
 					</div>
 
-					<h2>Query URL:</h2>
-					<div class="panel">
-						<a id="queryURL" target="_blank"></a>
-					</div>
-
 					<h2>Query Editor</h2>
-					<voyent-query-editor id="queryEditor" queryurltarget="queryURL"
+					<voyent-query-editor id="queryEditor"
 						account="[[account]]" realm="[[realm]]" service="[[service]]" collection="[[collection]]"
 					    options='{"limit":100,"sort":{"time":-1}}'>
 					</voyent-query-editor>
@@ -183,24 +172,14 @@
 				document.getElementById('authProvider').logout();
 			}
 
-			//Listen for the queryMsgUpdated event for all components
-			window.addEventListener('queryMsgUpdated', function(e) {
-				var id = e.detail.id ? e.detail.id + ' : ' : '';
-				document.getElementById('msgs').innerHTML = id + e.detail.message;
-				//clear message 10 seconds after it's received
-				clearTimeout(window.msgTimeout);
-				window.msgTimeout = setTimeout(function() {
-					document.getElementById('msgs').innerHTML = '';
-				},10000);
-			});
-
 			var demo = document.getElementById('demo');
 
 			demo.isEqual = function(val1, val2){
 				return val1 === val2;
 			};
 
-			demo.service = 'documents';
+			demo.service = 'event';
+			demo.collection = 'events';
 
 			function initializeComponent() {
 				//set the collection on the component on change

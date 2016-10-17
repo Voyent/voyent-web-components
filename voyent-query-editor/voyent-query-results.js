@@ -12,11 +12,6 @@ Polymer({
          */
         utc: { type: String, value: "true" }
     },
-    
-    /**
-     * Fired whenever there is a message for an action that was triggered. Contains the message and the message type (info, error).
-     * @event queryMsgUpdated
-     */
 
     ready: function() {
         this._tableHeaders = [];
@@ -39,7 +34,7 @@ Polymer({
             if (Object.keys(records).length === 0) {
                 _this._tableHeaders = [];
                 _this._tableRows = [];
-                _this.fire('queryMsgUpdated',{id:_this.id ? _this.id : null, message: 'Query results empty.','type':'error'});
+                _this.fire('message-info', 'No results found for query');
                 return;
             }
 
@@ -103,7 +98,8 @@ Polymer({
      */
     _validateFor: function() {
         if (!this.for) {
-            this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'for attribute is required','type':'error'});
+            this.fire('message-error', 'for attribute is required');
+            console.error('for attribute is required');
             return false;
         }
         if (!document.getElementById(this.for)) {
@@ -126,7 +122,8 @@ Polymer({
             this._queryEditor = document.getElementById(this.for);
             return true;
         }
-        this.fire('queryMsgUpdated',{id:this.id ? this.id : null, message: 'element cannot be found or is not a voyent-query-editor','type':'error'});
+        this.fire('message-error', 'element cannot be found or is not a voyent-query-editor');
+        console.error('element cannot be found or is not a voyent-query-editor');
         return false;
     },
     

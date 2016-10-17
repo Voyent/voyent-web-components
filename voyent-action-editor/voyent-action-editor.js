@@ -159,7 +159,8 @@ Polymer({
                 }
             },10);
         })['catch'](function(error) {
-            _this.fire('message-error', "Error in getTaskItems: " + error.toSource());
+            _this.fire('message-error', "Error in getTaskItems: " + error);
+            console.error('Error in getTaskItems:',error);
         });
     },
 
@@ -176,7 +177,8 @@ Polymer({
             _this.fire('actionsRetrieved',{actions:actions});
             _this._getHandlers();
         }).catch(function(error) {
-            _this.fire('message-error', "Error in getActions: " + error.toSource());
+            _this.fire('message-error', "Error in getActions: " + error);
+            console.error('Error in getActions:',error);
         });
     },
 
@@ -216,7 +218,6 @@ Polymer({
         var _this = this;
         actionId = actionId && actionId.trim().length > 0 ? actionId : this._actionId;
         if (!this.validateAction() || !this.isUniqueActionId(actionId)) {
-            this.fire('message-error', 'Invalid data was found in action, fix and try saving again');
             return;
         }
         var action = this.convertUIToAction();
@@ -227,7 +228,8 @@ Polymer({
             _this._saveHandler(actionId);
             _this.fire('message-info', 'Successfully saved ' + _this._loadedAction._id + ' action');
         }).catch(function(error) {
-            _this.fire('message-error', "Error in saveAction: " + error.toSource());
+            _this.fire('message-error', "Error in saveAction: " + error);
+            console.error('Error in saveAction:',error);
         });
     },
 
@@ -237,7 +239,6 @@ Polymer({
     updateAction: function() {
         var _this = this;
         if (!this._loadedAction || !this.validateAction()) {
-            this.fire('message-error', 'Invalid data was found in action, fix and try updating again');
             return;
         }
         //check if the id has changed, if it has we must re-create the action with the new id
@@ -251,7 +252,8 @@ Polymer({
                 _this._updateHandler(_this._actionId);
                 _this.fire('message-info', 'Successfully updated ' + _this._actionId + ' action');
             }).catch(function(error) {
-                _this.fire('message-error', "Error in updateAction: " + error.toSource());
+                _this.fire('message-error', "Error in updateAction: " + error);
+                console.error('Error in updateAction:',error);
             });
         }
     },
@@ -268,7 +270,8 @@ Polymer({
             _this._deleteHandler(id);
             _this.fire('message-info', 'Successfully deleted action ' + id);
         }).catch(function(error) {
-            _this.fire('message-error', "Error in deleteAction: " + error.toSource());
+            _this.fire('message-error', "Error in deleteAction: " + error);
+            console.error('Error in deleteAction:',error);
         });
     },
 
@@ -292,6 +295,7 @@ Polymer({
         //validate handler query
         if (!this._queryEditorRef.validateQuery()) {
             this.fire('message-error', 'Please enter a valid query.');
+            console.error('Please enter a valid query.');
             return false;
         }
         //validate required fields
@@ -299,6 +303,7 @@ Polymer({
            so reverting back to a plain loop that checks the value of each required field
         if (!this.$$('#actionForm').checkValidity()) {
             this.fire('message-error', 'Please enter all required fields.');
+            console.error('Please enter all required fields.');
             return false;
         }*/
         var required = Polymer.dom(this.$$('#actionForm')).querySelectorAll('input:required');
@@ -322,6 +327,7 @@ Polymer({
                     alertStr += '\n\n [' + (groupStr ? (groupStr) : '') + (taskStr ? (' > '+taskStr) : '') + ' > ' + label+']';
                 }
                 this.fire('message-error', alertStr);
+                console.error(alertStr);
                 required[h].focus();
                 return false;
             }
@@ -338,6 +344,7 @@ Polymer({
             //task group names need to be unique
             if (taskGroupNames.indexOf(this._taskGroups[i].name) > -1) {
                 this.fire('message-error', 'Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
+                console.error('Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
                 return false;
             }
             taskGroupNames.push(this._taskGroups[i].name);
@@ -346,6 +353,7 @@ Polymer({
                 //task names need to be unique within the same task group
                 if (taskNames.indexOf(tasks[j].name) > -1) {
                     this.fire('message-error', 'Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
+                    console.error('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
                     return false;
                 }
                 taskNames.push(tasks[j].name);
@@ -376,6 +384,7 @@ Polymer({
                     if (definedCount > 0) {
                         if (someGroupDefined) {
                             this.fire('message-error', 'You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                            console.error('You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                             return false;
                         }
                         someGroupDefined=true;
@@ -386,16 +395,19 @@ Polymer({
                 }
                 if (!allGroupDefined && someGroupDefined) {
                     this.fire('message-error', 'You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                    console.error('You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
                 else if (!someGroupDefined) {
                     this.fire('message-error', 'You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                    console.error('You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
             }
         }
         if (!hasTasks) {
             this.fire('message-error', 'You must define at least one task.');
+            console.error('You must define at least one task.');
             return false;
         }
         return true;
@@ -409,6 +421,7 @@ Polymer({
     isUniqueActionId: function(actionId) {
         if (this._actionIds.indexOf(actionId) > -1) {
             this.fire('message-error', 'This Action ID is already in use, please try a different one.');
+            console.error('This Action ID is already in use, please try a different one.');
             return false;
         }
         return true;
@@ -679,7 +692,7 @@ Polymer({
      * @private
      */
     _loadQueryEditor: function() {
-        this._queryEditorRef = new Voyent.QueryEditor(this.account,this.realm,'metrics','events',null,{"limit":100,"sort":{"time":-1}},null);
+        this._queryEditorRef = new Voyent.QueryEditor(this.account,this.realm,'event','events',null,null,{"limit":100,"sort":{"time":-1}},false);
     },
 
     /**
@@ -737,7 +750,8 @@ Polymer({
             _this._loadedAction._id = _this._actionId;
             _this.saveAction();
         }).catch(function(error) {
-            _this.fire('message-error', "Error in update action: " + error.toSource());
+            _this.fire('message-error', "Error in update action: " + error);
+            console.error('Error in update action:',error);
         });
     },
 
@@ -1361,7 +1375,8 @@ Polymer({
             }
             _this._handlers = handlerMap;
         }).catch(function(error) {
-            _this.fire('message-error', "Error in getHandlers: " + error.toSource());
+            _this.fire('message-error', "Error in getHandlers: " + error);
+            console.error('Error in getHandlers:',error);
         });
     },
 
@@ -1391,7 +1406,8 @@ Polymer({
         }
         voyent.io.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
         }).catch(function(error) {
-            _this.fire('message-error', "Error in saveHandler: " + error.toSource());
+            _this.fire('message-error', "Error in saveHandler: " + error);
+            console.error('Error in saveHandler:',error);
         });
     },
 
@@ -1405,7 +1421,8 @@ Polymer({
         }
         voyent.io.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
         }).catch(function(error) {
-            _this.fire('message-error', "Error in updateHandler: " + error.toSource());
+            _this.fire('message-error', "Error in updateHandler: " + error);
+            console.error('Error in updateHandler:',error);
         });
     },
 
@@ -1417,7 +1434,8 @@ Polymer({
         }
         voyent.io.eventhub.deleteHandler({"realm":this.realm,"id":id}).then(function() {
         }).catch(function(error) {
-            _this.fire('message-error', "Error in deleteHandler: " + error.toSource());
+            _this.fire('message-error', "Error in deleteHandler: " + error);
+            console.error('Error in deleteHandler:',error);
         });
     }
 });

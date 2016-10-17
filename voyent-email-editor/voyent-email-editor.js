@@ -44,14 +44,30 @@ Voyent.CodeEditor = Polymer({
             
             var params = this._getURLParams();
             
-            if (!this._hasURLParam(params, "id")) { this.fire('message-error', 'Missing "id" param'); return; }
-            if (!this._hasURLParam(params, "realm")) { this.fire('message-error', 'Missing "realm" param'); return; }
-            if (!this._hasURLParam(params, "account")) { this.fire('message-error', 'Missing "account" param'); return; }
-            if (!this._hasURLParam(params, "access_token")) { this.fire('message-error', 'Missing "access_token" param'); return; }
+            if (!this._hasURLParam(params, "id")) {
+                this.fire('message-error', 'Missing "id" param');
+                console.error('Missing "id" param');
+                return;
+            }
+            if (!this._hasURLParam(params, "realm")) {
+                this.fire('message-error', 'Missing "realm" param');
+                console.error('Missing "realm" param');
+                return;
+            }
+            if (!this._hasURLParam(params, "account")) {
+                this.fire('message-error', 'Missing "account" param');
+                console.error('Missing "account" param');
+                return;
+            }
+            if (!this._hasURLParam(params, "access_token")) {
+                this.fire('message-error', 'Missing "access_token" param');
+                console.error('Missing "access_token" param');
+                return;
+            }
             
             var _document = document;
             var _this = this;
-            voyent.io.documents.getDocument({'realm': params.realm, 'account': params.account, 'accessToken': params.access_token,
+            voyent.io.docs.getDocument({'realm': params.realm, 'account': params.account, 'accessToken': params.access_token,
                                              'id': params.id}).then(function(doc) {
                 _this.fire('message-info', 'Successfully found email template to display');
                 
@@ -88,7 +104,7 @@ Voyent.CodeEditor = Polymer({
             // Get the ID from our index
             var toLoadId = this._savedEmails[this.selectedIndex];
             var _this = this;
-            voyent.io.documents.getDocument({'realm': this.realm, 'account': this.account,
+            voyent.io.docs.getDocument({'realm': this.realm, 'account': this.account,
                                              'id': toLoadId}).then(function(doc) {
                 _this.set('emailValue', doc.content);
                 _this.set('currentEmailId', toLoadId);
@@ -97,10 +113,12 @@ Voyent.CodeEditor = Polymer({
                 _this.fire('message-info', 'Successfully loaded "' + toLoadId + '" with ' + _this.emailValue.length + ' characters.');
             }).catch(function(error) {
                 _this.fire('message-error', 'Failed to load the email template "' + toLoadId + '".');
+                console.error('Failed to load the email template "' + toLoadId + '".');
             });
         }
         else {
             this.fire('message-error', 'Please select an email template to load');
+            console.error('Please select an email template to load');
         }
     },
     
@@ -124,17 +142,19 @@ Voyent.CodeEditor = Polymer({
             
             // Delete the email template document itself
             var _this = this;
-            voyent.io.documents.deleteDocument({'realm': this.realm, 'account': this.account,
+            voyent.io.docs.deleteDocument({'realm': this.realm, 'account': this.account,
                                                 'id': toDeleteId}).then(function(s) {
                 _this.newEmail(); // Reset our editor state
                 
                 _this.fire('message-info', 'Successfully deleted the email template "' + toDeleteId + '".');
             }).catch(function(error) {
                 _this.fire('message-error', 'Failed to delete the email template "' + toDeleteId + '".');
+                console.error('Failed to delete the email template "' + toDeleteId + '".');
             });
         }
         else {
             this.fire('message-error', 'Please select an email template to delete');
+            console.error('Please select an email template to delete');
         }
     },
     
@@ -177,17 +197,18 @@ Voyent.CodeEditor = Polymer({
         var toPass = {'realm': this.realm, 'account': this.account,
                       'id': this.currentEmailId, 'document': { 'content': this.emailValue } };
         
-        voyent.io.documents.updateDocument(toPass).then(function(){
+        voyent.io.docs.updateDocument(toPass).then(function(){
             _this.fire('message-info', 'Successfully saved email template "' + _this.currentEmailId + '".');
             
             if (cb) { cb(); }
         }).catch(function(error) {
-            voyent.io.documents.createDocument(toPass).then(function(){
+            voyent.io.docs.createDocument(toPass).then(function(){
                 _this.fire('message-info', 'Successfully saved email template "' + _this.currentEmailId + '".');
                 
                 if (cb) { cb(); }
             }).catch(function(error) {
                 _this.fire('message-error', 'Failed to save email template "' + _this.currentEmailId + '".');
+                console.error('Failed to save email template "' + _this.currentEmailId + '".');
             });
         });
     },
@@ -196,10 +217,10 @@ Voyent.CodeEditor = Polymer({
         this.set('_savedEmails', []);
         
         var _this = this;
-        voyent.io.documents.getDocument({'realm': this.realm, 'account': this.account,
+        voyent.io.docs.getDocument({'realm': this.realm, 'account': this.account,
                                          'id': this.indexDocId}).then(function(doc) {
             _this.set('_savedEmails', doc.ids);
-        });
+        }).catch(function(error) {});
     },
     
     _updateIndex: function() {
@@ -208,9 +229,9 @@ Voyent.CodeEditor = Polymer({
                       'id': this.indexDocId, 'document': { 'ids': this._savedEmails } };
         
         // Attempt to update our doc list first, and failing that create it instead
-        voyent.io.documents.updateDocument(toPass).then(function(){
+        voyent.io.docs.updateDocument(toPass).then(function(){
         }).catch(function(error) {
-            voyent.io.documents.createDocument(toPass);
+            voyent.io.docs.createDocument(toPass);
         });
     },
     

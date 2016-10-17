@@ -33,14 +33,14 @@
 					height: 60px;
 					padding: 0 10px;
 					transition: height 0.2s;
-				}
+				};
 
 				--solicit-body-style: {
 					background-color: white;
 					margin: 12px;
 					height: 100%;
 					width: 100%;
-				}
+				};
 
 			}
 
@@ -98,7 +98,8 @@
 					account: account,
 					realm: realm,
 					username: username,
-					password: password
+					password: password,
+					host:'dev.voyent.cloud'
 				}).then(function(){
 					setCredentialsOnComponent();
 				})['catch'](function(){
@@ -107,7 +108,8 @@
 						account: account,
 						realm: 'admin',
 						username: username,
-						password: password
+						password: password,
+						host:'dev.voyent.cloud'
 					}).then(function(){
 						setCredentialsOnComponent();
 						document.getElementById('solicit').setAttribute('realm', realm);
