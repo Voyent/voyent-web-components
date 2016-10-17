@@ -71,7 +71,12 @@
         
         <div id="bpmn" class="bpmnWrap">
             <div style="width: 100%; margin-top: 50px; text-align: center;">
-                <h3>Waiting to load...</h3>
+                <template is="dom-if" if="{{!loggedIn}}">
+                    <h3>Please authenticate to proceed...</h3>
+                </template>
+                <template is="dom-if" if="{{loggedIn}}">
+                    <h3>Please select a model to load...</h3>
+                </template>
             </div>
         </div>
     </template>
