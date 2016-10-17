@@ -1015,10 +1015,13 @@ Polymer({
         _loc.$$('#editLocationName').style.display = 'none';
         _loc.$$('#staticLocationName').style.display = '';
         if(_loc.infowindowiszone){
+            console.log('reverting zone');
             var location = _loc.activeGoogleLocation;
             var geoJSON = _loc.activeLocation;
             for (var i = 0; i < location.zones.length; i++){
                 if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
+                    console.log('Found zone');
+                    console.log(geoJSON.zones.features[i]);
                     _loc.$$('#locationName').textContent= geoJSON.zones.features[i].properties.zoneId ? geoJSON.zones.features[i].properties.zoneId : "Unnamed";
                 }
             }
@@ -1105,7 +1108,7 @@ Polymer({
                 var location = _loc.activeGoogleLocation;
                 for (var i = 0; i < location.zones.length; i++){
                     if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
-                        geoJSON.zones.features[i].properties.label = newLocationName;
+                        geoJSON.zones.features[i].properties.zoneId = newLocationName;
                     }
                 }
                 _loc.postTracker(location,geoJSON,"tracker",true);
