@@ -155,7 +155,6 @@ Polymer({
                                         var matchId = currentRef.element.id;
                                         
                                         if (currentRef.element.$type === _this.TYPE_EVENT) {
-                                            
                                             // Wait and then manually highlight, enable click, and show a hint to the user for the synthetic event
                                             setTimeout(function() {
                                                 _this.clearHighlights();
@@ -251,28 +250,30 @@ Polymer({
                   console.error("Error: ", err);
               }
               else {
-                  // Generate any gateway fork options from the XML
-                  _this._parseForks();
-                  
                   // Zoom to center properly
                   _this._viewer.get("canvas").zoom('fit-viewport', 'auto');
                   
                   // Loop through and disable each event, to make the diagram read-only
-                  var events = [
-                      'element.hover',
-                      'element.out',
-                      'element.click',
-                      'element.dblclick',
-                      'element.mousedown',
-                      'element.mouseup'
-                  ];
-                  var eventBus = _this._viewer.get('eventBus');
-                  events.forEach(function(event) {
-                      eventBus.on(event, 1500, function(e) {
-                          e.stopPropagation();
-                          e.preventDefault();
+                  if (!_this.createMode) {
+                      // Generate any gateway fork options from the XML
+                      _this._parseForks();
+                      
+                      var events = [
+                          'element.hover',
+                          'element.out',
+                          'element.click',
+                          'element.dblclick',
+                          'element.mousedown',
+                          'element.mouseup'
+                      ];
+                      var eventBus = _this._viewer.get('eventBus');
+                      events.forEach(function(event) {
+                          eventBus.on(event, 1500, function(e) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                          });
                       });
-                  });
+                  }
                   
                   // Polymer workaround to ensure the local styles apply properly to our dynamically generated SVG
                   _this.scopeSubtree(_this.$.bpmn, true);
@@ -612,10 +613,11 @@ Polymer({
 	 * Setup a BPMN viewer with some default options
 	 */
 	_makeViewer: function() {
+	    var _this = this;
 	    var BpmnViewer = window.BpmnJS;
 	    return new BpmnViewer({
             container: '#bpmn',
-            zoomScroll: { enabled: false }
+            zoomScroll: { enabled: _this.createMode }
         });
 	},
 	
