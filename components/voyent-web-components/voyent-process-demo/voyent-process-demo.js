@@ -97,7 +97,7 @@ Polymer({
         this.fire('message-info', 'Initialized and prepared to start');
         
         // Load a list of saved BPMN models
-        this.retrieveModels(true);
+        this._retrieveModels(true);
         
         // Attach and join the push group
         voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
@@ -252,7 +252,7 @@ Polymer({
               }
               else {
                   // Generate any gateway fork options from the XML
-                  _this.parseForks();
+                  _this._parseForks();
                   
                   // Zoom to center properly
                   _this._viewer.get("canvas").zoom('fit-viewport', 'auto');
@@ -291,6 +291,10 @@ Polymer({
         });
 	},
 	
+	/**
+	 * Persist the current BPMN diagram to our service
+	 * This function will determine if this saves a new record (POST) or updates an existing one (PUT)
+	 */
 	saveBPMN: function() {
 	    // If we don't have an underlying modelId the user is just clicking save without anything in the viewer, so abandon
 	    if (this.modelId === null) {
@@ -321,6 +325,9 @@ Polymer({
 	    this._saveToXML(saveId, persistNew);
 	},
 	
+	/**
+	 * Create a new, blank BPMN diagram with a default ID/title
+	 */
 	createBPMN: function() {
 	    this._unloadBPMN();
 	    
@@ -333,6 +340,10 @@ Polymer({
 	    this.set('_viewer', this._makeViewer());
 	},
 	
+	/**
+	 * Delete the current BPMN diagram from our service
+	 * This function will confirm with the user before proceeding
+	 */
 	deleteBPMN: function() {
 	    if (this.modelId === null) {
 	        this.fire('message-info', 'No diagram to delete');
@@ -353,13 +364,16 @@ Polymer({
             _this.set('selectedModel', null);
             _this.set('modelId', null);
             
-            _this.retrieveModels(false);
+            _this._retrieveModels(false);
         })['catch'](function(error) {
             _this.fire('message-error', 'Failed to delete the "' + _this.modelId + '" diagram');
             console.error("Error: ", error);
         });
 	},
 	
+	/**
+	 * Clear the current BPMN diagram, which means resetting various state elements
+	 */
 	clearBPMN: function() {
 	    this._unloadBPMN();
 	    this.set('_viewer', null);
@@ -368,12 +382,103 @@ Polymer({
 	},
 	
 	/**
+	 * Execute a process instance for a BPMN model
+	 */
+	startProcess: function() {
+        // Clear old highlights
+        this.clearHighlights();
+        
+        // Find our start event and highlight
+        var start = this._getIdByType(this.TYPE_START);
+        if (start && start.length > 0) {
+            this.highlightById(start[0]);
+        }
+        
+        // Then post to start the process, which should end up with us receiving status notifications
+        var _this = this;
+        voyent.$.post(this._makeURL("/processes/" + this.modelId)).then(function(response){
+            _this.set('processId', response.processId);
+            _this.fire('message-info', "Executed process '" + response.processName + "'");
+        });
+	},
+	
+	/**
+	 * Trigger a synthetic event to our service
+	 * Normally used in the process diagram to easily simulate outside events
+	 */
+	sendSynthEvent: function(eventName) {
+	    // Note the data parameters are case sensitive based on what the Process Service uses
+        var event = {
+            time: new Date().toISOString(),
+            service: 'voyent-process-demo',
+            event: eventName,
+            type: 'synthetic-message-event-withProcessId',
+            processId: this.processId,
+            data: {
+                'Fork': this.selectedFork,
+                'target': 'process'
+            }
+        };
+        
+        // Debug infos
+        console.log("Going to send event '" + eventName + "' with process ID " + this.processId + " and fork " + this.selectedFork);
+        
+        var _this = this;
+	    voyent.io.event.createCustomEvent({ "event": event }).then(function() {
+            _this.fire('message-info', "Successfully sent event '" + eventName + "'"); 
+	    }).catch(function(error) {
+	        _this.fire('message-error', "Failed to send event '" + eventName + "'");
+	    });
+	},
+	
+	/**
+	 * Apply the 'highlight' class via a marker to an element matching the passed ID in our BPMN viewer
+	 */
+	highlightById: function(id) {
+	    if (id) {
+	        this._viewer.get("canvas").addMarker(id, 'highlight');
+	    }
+	},
+	
+	/**
+	 * Loop through all elements in the BPMN viewer and clear any highlight markers
+	 */
+	clearHighlights: function() {
+        var elements = this._viewer.definitions.rootElements[0].flowElements;
+        var canvas = this._viewer.get("canvas");
+        for (var i in elements) {
+            if (elements[i].$type !== this.TYPE_ARROW) {
+                canvas.removeMarker(elements[i].id, 'highlight');
+            }
+        }
+	},
+	
+	/**
+	 * Check our BPMN viewer data definitions to try to find a list of matching IDs for the passed type
+	 * An example of a passed type is bpmn:StartEvent
+	 */
+	_getIdByType: function(type) {
+	    if (!type) {
+	        return [];
+	    }
+	    
+        var elements = this._viewer.definitions.rootElements[0].flowElements;
+        var toReturn = [];
+        for (var i in elements) {
+            if (type == elements[i].$type) {
+                toReturn.push(elements[i].id);
+            }
+        }
+        return toReturn;
+	},
+	
+	/**
 	 * Determine if our current BPMN has any forks
 	 * These would come from ExclusiveGateways
 	 * If we find a gate/decision point this function will parse the outcomes and populate a list of forks
 	 * The forks can be chosen by the user at runtime when they execute a process
 	 */
-	parseForks: function() {
+	_parseForks: function() {
 	    var _this = this;
 	    this._viewer.moddle.fromXML(this.xml, function(err, definitions, parseContext) {
               if (parseContext.references) {
@@ -417,9 +522,9 @@ Polymer({
 	/**
 	 * Retrieve a list of saved BPMN models from our service
 	 *
-	 * @param autoload: true to automatically load if there is only one BPMN diagram retrieved (generally meant for first page display only)
+	 * @param autoload true to automatically load if there is only one BPMN diagram retrieved (generally meant for first page display only)
 	 */
-	retrieveModels: function(autoload) {
+	_retrieveModels: function(autoload) {
 	    // Reset our model list first
 	    this.set('_models', []);
 	    
@@ -442,101 +547,16 @@ Polymer({
         });
 	},
 	
-	/**
-	 * Execute a process instance for a BPMN model
-	 */
-	startProcess: function() {
-        // Clear old highlights
-        this.clearHighlights();
-        
-        // Find our start event and highlight
-        var start = this.getIdByType(this.TYPE_START);
-        if (start && start.length > 0) {
-            this.highlightById(start[0]);
-        }
-        
-        // Then post to start the process, which should end up with us receiving status notifications
-        var _this = this;
-        voyent.$.post(this._makeURL("/processes/" + this.modelId)).then(function(response){
-            _this.set('processId', response.processId);
-            _this.fire('message-info', "Executed process '" + response.processName + "'");
-        });
-	},
-	
-	/**
-	 * Check our BPMN viewer data definitions to try to find a list of matching IDs for the passed type
-	 * An example of a passed type is bpmn:StartEvent
-	 */
-	getIdByType: function(type) {
-	    if (!type) {
-	        return [];
-	    }
-	    
-        var elements = this._viewer.definitions.rootElements[0].flowElements;
-        var toReturn = [];
-        for (var i in elements) {
-            if (type == elements[i].$type) {
-                toReturn.push(elements[i].id);
-            }
-        }
-        return toReturn;
-	},
-	
-	/**
-	 * Apply the 'highlight' class via a marker to an element matching the passed ID in our BPMN viewer
-	 */
-	highlightById: function(id) {
-	    if (id) {
-	        this._viewer.get("canvas").addMarker(id, 'highlight');
-	    }
-	},
-	
-	/**
-	 * Loop through all elements in the BPMN viewer and clear any highlight markers
-	 */
-	clearHighlights: function() {
-        var elements = this._viewer.definitions.rootElements[0].flowElements;
-        var canvas = this._viewer.get("canvas");
-        for (var i in elements) {
-            if (elements[i].$type !== this.TYPE_ARROW) {
-                canvas.removeMarker(elements[i].id, 'highlight');
-            }
-        }
-	},
-	
-	/**
-	 * Trigger a synthetic event to our service
-	 * Normally used in the process diagram to easily simulate outside events
-	 */
-	sendSynthEvent: function(eventName) {
-	    // Note the data parameters are case sensitive based on what the Process Service uses
-        var event = {
-            time: new Date().toISOString(),
-            service: 'voyent-process-demo',
-            event: eventName,
-            type: 'synthetic-message-event-withProcessId',
-            processId: this.processId,
-            data: {
-                'Fork': this.selectedFork,
-                'target': 'process'
-            }
-        };
-        
-        // Debug infos
-        console.log("Going to send event '" + eventName + "' with process ID " + this.processId + " and fork " + this.selectedFork);
-        
-        var _this = this;
-	    voyent.io.event.createCustomEvent({ "event": event }).then(function() {
-            _this.fire('message-info', "Successfully sent event '" + eventName + "'"); 
-	    }).catch(function(error) {
-	        _this.fire('message-error', "Failed to send event '" + eventName + "'");
-	    });
-	},
-	
 	hasModel: function(toCheck) {
 	    return toCheck !== null;
 	},
 	
+	/**
+	 * Unload the state of our BPMN diagram
+	 * This means resetting our _forks (and selectedFork)
+	 * We also clear the interactId field
+	 * And finally the BPMN svg from the viewer is removed
+	 */
 	_unloadBPMN: function() {
 	    this.set('_forks', []);
 	    this.set('selectedFork', null);
@@ -545,6 +565,13 @@ Polymer({
 	    document.getElementById("bpmn").innerHTML = '';
 	},
 	
+	/**
+	 * Underlying function to save the current BPMN viewer state to XML
+	 * This XML will then be persisted (either save or update) to our service
+	 *
+	 * @param saveId to save against
+	 * @param persistNew true to create a new record, false to update existing
+	 */
 	_saveToXML: function(saveId, persistNew) {
 	    var _this = this;
         this._viewer.saveXML({ format: true }, function (err, xml) {
@@ -555,7 +582,7 @@ Polymer({
             
             if (persistNew) {
                 voyent.$.post(_this._makeURL("/models/" + saveId), data).then(function(response){
-                    _this.retrieveModels(false);
+                    _this._retrieveModels(false);
                     
                     _this.fire('message-info', 'Successfully saved the "' + saveId + '" diagram');
                 })['catch'](function(error) {
@@ -564,7 +591,7 @@ Polymer({
             }
             else {
                 voyent.$.put(_this._makeURL("/models/" + saveId), data).then(function(response){
-                    _this.retrieveModels(false);
+                    _this._retrieveModels(false);
                     
                     _this.fire('message-info', 'Successfully updated the "' + saveId + '" diagram');
                 })['catch'](function(error) {
@@ -581,6 +608,9 @@ Polymer({
 	    return 'http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + addition + '?access_token=' + voyent.io.auth.getLastAccessToken();
 	},
 	
+	/**
+	 * Setup a BPMN viewer with some default options
+	 */
 	_makeViewer: function() {
 	    var BpmnViewer = window.BpmnJS;
 	    return new BpmnViewer({
@@ -589,6 +619,10 @@ Polymer({
         });
 	},
 	
+	/**
+	 * Create a unique model ID that doesn't exist in our current _models list
+	 * This function is rather rudimentary and will just append the current milliseconds and try again
+	 */
 	_makeUniqueId: function(base) {
 	    if (this._models && this._models.length > 0) {
 	        for (var loopModel in this._models) {
