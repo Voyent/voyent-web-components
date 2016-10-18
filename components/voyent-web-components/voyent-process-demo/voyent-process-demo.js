@@ -21,11 +21,11 @@ Polymer({
          */
         pushGroup: { type: String, value: "processDemoGroup", notify: true, reflectToAttribute: true },
         /**
-         * Process model to execute in the Process Service
+         * Underlying model ID that we are interacting with
          */
         modelId: { type: String, value: null, notify: true, reflectToAttribute: true },
         /**
-         * The selected model to load
+         * Chosen model from the dropdown
          */
         selectedModel: { type: String, notify: true, observer: '_modelChanged' },
         /**
@@ -97,7 +97,7 @@ Polymer({
         this.fire('message-info', 'Initialized and prepared to start');
         
         // Load a list of saved BPMN models
-        this.retrieveModels();
+        this.retrieveModels(true);
         
         // Attach and join the push group
         voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
@@ -124,6 +124,10 @@ Polymer({
             // Now we need to determine what element is next
             // This is because we could have a synthetic event the user needs to manually click to fire
             if (updateId !== null) {
+                if (!_this.xml) {
+                    return;
+                }
+                
                 _this._viewer.moddle.fromXML(_this.xml, function(err, definitions, parseContext) {
                     // Can't do much without references
                     if (parseContext.references) {
@@ -205,7 +209,7 @@ Polymer({
 	 * Setup our BPMN diagram, using bpmn-io.js
 	 * This will retrieve and load the diagram for our current this.modelId
 	 */
-	setupBPMN: function(logServiceError) {
+	loadBPMN: function(logServiceError) {
 	    // Get the XML for our model
 	    var theUrl = this._makeURL("/models/" + this.modelId);
 	    var validResponse = false;
@@ -232,56 +236,135 @@ Polymer({
         this.xml = parsedJSON.model;
         
         // Clear the div before adding the diagram, to prevent duplicates
-	    document.getElementById("bpmn").innerHTML = '';
+        this._unloadBPMN();
+        this.set('createMode', false);
+        this.set('interactId', new String(this.modelId));
 	    
 	    // Setup our BPMN viewer and import the XML
-        var BpmnViewer = window.BpmnJS;
-        this._viewer = new BpmnViewer({
-            container: '#bpmn',
-            zoomScroll: { enabled: false }
-        });
+        this._viewer = this._makeViewer();
         var _this = this;
-        this._viewer.importXML(this.xml, function(err) {
-          if (err) {
-              _this.fire("message-error", "Failed to render the BPMN diagram");
-              console.error("Error: ", err);
-          }
-          else {
-              // Zoom to center properly
-              _this._viewer.get("canvas").zoom('fit-viewport', 'auto');
-              
-              // Loop through and disable each event, to make the diagram read-only
-              var events = [
-                  'element.hover',
-                  'element.out',
-                  'element.click',
-                  'element.dblclick',
-                  'element.mousedown',
-                  'element.mouseup'
-              ];
-              var eventBus = _this._viewer.get('eventBus');
-              events.forEach(function(event) {
-                  eventBus.on(event, 1500, function(e) {
-                      e.stopPropagation();
-                      e.preventDefault();
+        
+        if (this.xml) {
+            this._viewer.importXML(this.xml, function(err) {
+              if (err) {
+                  _this.fire("message-error", "Failed to render the BPMN diagram");
+                  console.error("Error: ", err);
+              }
+              else {
+                  // Generate any gateway fork options from the XML
+                  _this.parseForks();
+                  
+                  // Zoom to center properly
+                  _this._viewer.get("canvas").zoom('fit-viewport', 'auto');
+                  
+                  // Loop through and disable each event, to make the diagram read-only
+                  var events = [
+                      'element.hover',
+                      'element.out',
+                      'element.click',
+                      'element.dblclick',
+                      'element.mousedown',
+                      'element.mouseup'
+                  ];
+                  var eventBus = _this._viewer.get('eventBus');
+                  events.forEach(function(event) {
+                      eventBus.on(event, 1500, function(e) {
+                          e.stopPropagation();
+                          e.preventDefault();
+                      });
                   });
-              });
-              
-              // Generate any gateway fork options from the XML
-              _this.parseForks();
-              
-              // Set our title
-              _this.set("_title", parsedJSON.name);
-              
-              // Polymer workaround to ensure the local styles apply properly to our dynamically generated SVG
-              _this.scopeSubtree(_this.$.bpmn, true);
-          }
-        });
+                  
+                  // Polymer workaround to ensure the local styles apply properly to our dynamically generated SVG
+                  _this.scopeSubtree(_this.$.bpmn, true);
+                  
+                  _this.fire('message-info', 'Loaded ' + parsedJSON.name + ' diagram');
+              }
+            });
+        }
+        else {
+            _this.fire('message-error', 'Partial data found for "' + this.modelId + '" diagram, but missing model');
+        }
         
         // When the window is resized update the zoom of the bpmn diagram to scale
         window.addEventListener('resize', function() {
             _this._viewer.get('canvas').zoom('fit-viewport', 'auto');
         });
+	},
+	
+	saveBPMN: function() {
+	    // If we don't have an underlying modelId the user is just clicking save without anything in the viewer, so abandon
+	    if (this.modelId === null) {
+	        this.fire('message-info', 'No diagram to save');
+	        return false;
+	    }
+	    
+	    // If we don't have an interactId that means the field is blank in the UI, so abandon
+	    if (!this.interactId || this.interactId == null || this.interactId.toString().trim().length === 0) {
+	        this.set('interactId', 'required');
+	        this.fire('message-error', 'Diagram ID is required to save');
+	        return false;
+	    }
+	    
+	    // Determine if we're saving a new diagram or updating an existing one
+	    // If we're in create mode we're doing the former
+	    // Otherwise we are updating, UNLESS our modelId and interactId (editable by the user) are different
+	    var persistNew = false;
+	    var saveId = this.modelId;
+	    if (this.createMode) {
+	        persistNew = true;
+	    }
+	    else if (this.modelId.toString() !== this.interactId.toString()) {
+            persistNew = true;
+            saveId = this.interactId;
+	    }
+	    
+	    this._saveToXML(saveId, persistNew);
+	},
+	
+	createBPMN: function() {
+	    this._unloadBPMN();
+	    
+	    // Ensure we have a unique default name
+	    var defaultId = this._makeUniqueId('new-diagram');
+	    this.set('modelId', defaultId);
+	    this.set('interactId', defaultId);
+	    this.set('selectedModel', null);
+	    this.set('createMode', true);
+	    this.set('_viewer', this._makeViewer());
+	},
+	
+	deleteBPMN: function() {
+	    if (this.modelId === null) {
+	        this.fire('message-info', 'No diagram to delete');
+	        return false;
+	    }
+	    
+	    var confirm = window.confirm('Are you sure you want to delete the "' + this.modelId + '" diagram?');
+	    if (!confirm) {
+	        return;
+	    }
+	    
+	    var _this = this;
+	    voyent.$.doDelete(this._makeURL("/models/" + this.modelId)).then(function(response){
+            _this.fire('message-info', 'Successfully deleted the "' + _this.modelId + '" diagram');
+	            
+            _this._unloadBPMN();
+            _this.set('_viewer', null);
+            _this.set('selectedModel', null);
+            _this.set('modelId', null);
+            
+            _this.retrieveModels(false);
+        })['catch'](function(error) {
+            _this.fire('message-error', 'Failed to delete the "' + _this.modelId + '" diagram');
+            console.error("Error: ", error);
+        });
+	},
+	
+	clearBPMN: function() {
+	    this._unloadBPMN();
+	    this.set('_viewer', null);
+        this.set('selectedModel', null);
+        this.set('modelId', null);
 	},
 	
 	/**
@@ -333,8 +416,13 @@ Polymer({
 	
 	/**
 	 * Retrieve a list of saved BPMN models from our service
+	 *
+	 * @param autoload: true to automatically load if there is only one BPMN diagram retrieved (generally meant for first page display only)
 	 */
-	retrieveModels: function() {
+	retrieveModels: function(autoload) {
+	    // Reset our model list first
+	    this.set('_models', []);
+	    
         var _this = this;
         voyent.$.get(this._makeURL("/models")).then(function(response){
             if (response) {
@@ -344,9 +432,11 @@ Polymer({
                 }
                 
                 // If we only have a single model load it immediately
-                if (_this._models.length === 1) {
-                    _this.set('modelId', _this._models[0]);
-                    _this.setupBPMN();
+                // Only allowed if passed autoload=true
+                if (autoload) {
+                    if (_this._models.length === 1) {
+                        _this.set('selectedModel', _this._models[0]);
+                    }
                 }
             }
         });
@@ -447,11 +537,67 @@ Polymer({
 	    return toCheck !== null;
 	},
 	
+	_unloadBPMN: function() {
+	    this.set('_forks', []);
+	    this.set('selectedFork', null);
+	    this.set('interactId', null);
+	    
+	    document.getElementById("bpmn").innerHTML = '';
+	},
+	
+	_saveToXML: function(saveId, persistNew) {
+	    var _this = this;
+        this._viewer.saveXML({ format: true }, function (err, xml) {
+            var data = {
+                "name": saveId,
+                "model": xml
+            };
+            
+            if (persistNew) {
+                voyent.$.post(_this._makeURL("/models/" + saveId), data).then(function(response){
+                    _this.retrieveModels(false);
+                    
+                    _this.fire('message-info', 'Successfully saved the "' + saveId + '" diagram');
+                })['catch'](function(error) {
+                    _this.fire('message-error', 'Failed to save the "' + saveId + '" diagram');
+                });
+            }
+            else {
+                voyent.$.put(_this._makeURL("/models/" + saveId), data).then(function(response){
+                    _this.retrieveModels(false);
+                    
+                    _this.fire('message-info', 'Successfully updated the "' + saveId + '" diagram');
+                })['catch'](function(error) {
+                    _this.fire('message-error', 'Failed to update the "' + saveId + '" diagram');
+                });
+            }
+        });
+    },
+	
 	/**
 	 * Return a URL to the Process service for our current host, account, realm, and access token
 	 */
 	_makeURL: function(addition) {
 	    return 'http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + addition + '?access_token=' + voyent.io.auth.getLastAccessToken();
+	},
+	
+	_makeViewer: function() {
+	    var BpmnViewer = window.BpmnJS;
+	    return new BpmnViewer({
+            container: '#bpmn',
+            zoomScroll: { enabled: false }
+        });
+	},
+	
+	_makeUniqueId: function(base) {
+	    if (this._models && this._models.length > 0) {
+	        for (var loopModel in this._models) {
+	            if (this._models[loopModel].toString() == base) {
+	                return this._makeUniqueId(base + new Date().getMilliseconds());
+	            }
+	        }
+	    }
+	    return base;
 	},
 	
 	/**
@@ -460,13 +606,8 @@ Polymer({
 	 */
 	_modelChanged: function() {
 	    if (this.selectedModel && this.selectedModel !== null) {
-            this.set('modelId', this.selectedModel);
-            this.setupBPMN();
-            
-            var _this = this;
-            setTimeout(function() {
-                _this.selectedModel = null;
-            }, 2000);
+	        this.set('modelId', new String(this.selectedModel));
+            this.loadBPMN();
         }
 	}
 });
