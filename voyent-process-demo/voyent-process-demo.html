@@ -15,6 +15,10 @@
 -->
 <dom-module id="voyent-process-demo">
     <template>
+        <link rel="stylesheet" href="css/diagram-js.css" />
+        <link rel="stylesheet" href="css/vendor/bpmn-font/css/bpmn-embedded.css" />
+        <link rel="stylesheet" href="css/app.css" />
+        
         <style type="text/css">
             paper-button {
                 background-color: white;
@@ -30,16 +34,23 @@
                 border-top-right-radius: 10px;
                 box-shadow: 0 5px 5px #DEDEDE;
             }
-        
+            
+            .toolWrap {
+                position: relative;
+                height: 70%;
+                margin-bottom: 15px;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 12px;
+            }
+            
             .bpmnWrap {
-                height: 50%;
+                height: 100%;
                 border-bottom: 1px solid black;
                 border-left: 1px solid black;
                 border-right: 1px solid black;
                 border-bottom-left-radius: 10px;
                 border-bottom-right-radius: 10px;
                 box-shadow: 0 5px 5px #DEDEDE;
-                margin-bottom: 15px;
             }
             
             .bpmnTip {
@@ -110,21 +121,27 @@
             <div class="controlBox">&nbsp;</div>
         </template>
         
-        <div id="bpmn" class="bpmnWrap">
-            <div class="initialText">
-                <template is="dom-if" if="{{!loggedIn}}">
-                    Please authenticate to proceed...
-                </template>
-                <template is="dom-if" if="{{loggedIn}}">
-                    Please select a diagram to load...
-                </template>
+        <div class="toolWrap">
+            <div id="bpmn" class="bpmnWrap">
+                <div class="initialText">
+                    <template is="dom-if" if="{{!loggedIn}}">
+                        Please authenticate to proceed...
+                    </template>
+                    <template is="dom-if" if="{{loggedIn}}">
+                        Please select a diagram to load...
+                    </template>
+                </div>
             </div>
+            <div id="js-properties-panel"></div>
         </div>
     </template>
 </dom-module>
 
+<script src="bpmn-custom-bundle/dist/bpmn-js-custom.js" charset="utf-8"></script>
+<!--
 <script src="../../bpmn-js/dist/bpmn-viewer.min.js"></script>
 <script src="../../bpmn-js/dist/bpmn-modeler.min.js"></script>
 <script src="../../socket.io-client/socket.io.js"></script>
+-->
 <script src="../../voyent.notify.js/lib/voyent.notify.js"></script>
 <script src="voyent-process-demo.js"></script>

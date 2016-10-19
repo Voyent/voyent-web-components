@@ -41,9 +41,9 @@ Polymer({
          */
         waitBeforeEnd: { type: Number, value: 1500, notify: true, reflectToAttribute: true },
         /**
-         * Internal global variable for our bpmn-io.js viewer
+         * Internal global variable for our bpmn-io.js tooling
          */
-        _viewer: { type: Object }
+        _tool: { type: Object }
     },
     
     /**
@@ -112,7 +112,7 @@ Polymer({
             // Figure out the name and ID that we're trying to update
             var updateName = e.detail.notification.subject + ' ' + e.detail.notification.details;
             var updateId = null;
-            var elements = _this._viewer.definitions.rootElements[0].flowElements;
+            var elements = _this._tool.definitions.rootElements[0].flowElements;
             for (var i in elements) {
                 if (updateName == elements[i].name) {
                     updateId = elements[i].id;
@@ -128,7 +128,7 @@ Polymer({
                     return;
                 }
                 
-                _this._viewer.moddle.fromXML(_this.xml, function(err, definitions, parseContext) {
+                _this._tool.moddle.fromXML(_this.xml, function(err, definitions, parseContext) {
                     // Can't do much without references
                     if (parseContext.references) {
                         // First loop through and find the outgoing connection/flow from our highlighted item
@@ -160,7 +160,7 @@ Polymer({
                                                 _this.clearHighlights();
                                                 _this.highlightById(matchId);
                                                 
-                                                var overlays = _this._viewer.get('overlays');
+                                                var overlays = _this._tool.get('overlays');
                                                 var tooltipOverlay = overlays.add(matchId, {
                                                     position: {
                                                       top: 70,
@@ -240,18 +240,18 @@ Polymer({
         this.set('interactId', new String(this.modelId));
 	    
 	    // Setup our BPMN viewer and import the XML
-        this._viewer = this._makeViewer();
+        this.set('_tool', this._makeViewer());
         var _this = this;
         
         if (this.xml) {
-            this._viewer.importXML(this.xml, function(err) {
+            this._tool.importXML(this.xml, function(err) {
               if (err) {
                   _this.fire("message-error", "Failed to render the BPMN diagram");
                   console.error("Error: ", err);
               }
               else {
                   // Zoom to center properly
-                  _this._viewer.get("canvas").zoom('fit-viewport', 'auto');
+                  _this._tool.get("canvas").zoom('fit-viewport', 'auto');
                   
                   // Loop through and disable each event, to make the diagram read-only
                   if (!_this.createMode) {
@@ -266,7 +266,7 @@ Polymer({
                           'element.mousedown',
                           'element.mouseup'
                       ];
-                      var eventBus = _this._viewer.get('eventBus');
+                      var eventBus = _this._tool.get('eventBus');
                       events.forEach(function(event) {
                           eventBus.on(event, 1500, function(e) {
                               e.stopPropagation();
@@ -288,7 +288,9 @@ Polymer({
         
         // When the window is resized update the zoom of the bpmn diagram to scale
         window.addEventListener('resize', function() {
-            _this._viewer.get('canvas').zoom('fit-viewport', 'auto');
+            if (_this._tool) {
+                _this._tool.get('canvas').zoom('fit-viewport', 'auto');
+            }
         });
 	},
 	
@@ -338,7 +340,23 @@ Polymer({
 	    this.set('interactId', defaultId);
 	    this.set('selectedModel', null);
 	    this.set('createMode', true);
-	    this.set('_viewer', this._makeViewer());
+	    this.set('_tool', this._makeModeler());
+	    
+	    // Set a default start event
+	    this.set('xml', "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\" id=\""
+	                    + defaultId + "sample-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"Process_1\" isExecutable=\"true\">\n    <bpmn2:startEvent id=\"StartEvent_1\"/>\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_2\" bpmnElement=\"StartEvent_1\">\n        <dc:Bounds height=\"36.0\" width=\"36.0\" x=\"412.0\" y=\"240.0\"/>\n      </bpmndi:BPMNShape>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>");
+	    
+	    var _this = this;
+        this._tool.importXML(this.xml, function(err) {
+              if (err) {
+                  _this.fire("message-error", "Failed to render the BPMN diagram");
+                  console.error("Error: ", err);
+              }
+              else {
+                  _this._tool.get("canvas").zoom('fit-viewport', 'auto');
+                  _this.scopeSubtree(_this.$.bpmn, true);
+              }
+        });
 	},
 	
 	/**
@@ -361,7 +379,7 @@ Polymer({
             _this.fire('message-info', 'Successfully deleted the "' + _this.modelId + '" diagram');
 	            
             _this._unloadBPMN();
-            _this.set('_viewer', null);
+            _this.set('_tool', null);
             _this.set('selectedModel', null);
             _this.set('modelId', null);
             
@@ -377,7 +395,7 @@ Polymer({
 	 */
 	clearBPMN: function() {
 	    this._unloadBPMN();
-	    this.set('_viewer', null);
+	    this.set('_tool', null);
         this.set('selectedModel', null);
         this.set('modelId', null);
 	},
@@ -437,7 +455,7 @@ Polymer({
 	 */
 	highlightById: function(id) {
 	    if (id) {
-	        this._viewer.get("canvas").addMarker(id, 'highlight');
+	        this._tool.get("canvas").addMarker(id, 'highlight');
 	    }
 	},
 	
@@ -445,8 +463,8 @@ Polymer({
 	 * Loop through all elements in the BPMN viewer and clear any highlight markers
 	 */
 	clearHighlights: function() {
-        var elements = this._viewer.definitions.rootElements[0].flowElements;
-        var canvas = this._viewer.get("canvas");
+        var elements = this._tool.definitions.rootElements[0].flowElements;
+        var canvas = this._tool.get("canvas");
         for (var i in elements) {
             if (elements[i].$type !== this.TYPE_ARROW) {
                 canvas.removeMarker(elements[i].id, 'highlight');
@@ -463,7 +481,7 @@ Polymer({
 	        return [];
 	    }
 	    
-        var elements = this._viewer.definitions.rootElements[0].flowElements;
+        var elements = this._tool.definitions.rootElements[0].flowElements;
         var toReturn = [];
         for (var i in elements) {
             if (type == elements[i].$type) {
@@ -481,7 +499,7 @@ Polymer({
 	 */
 	_parseForks: function() {
 	    var _this = this;
-	    this._viewer.moddle.fromXML(this.xml, function(err, definitions, parseContext) {
+	    this._tool.moddle.fromXML(this.xml, function(err, definitions, parseContext) {
               if (parseContext.references) {
                   var outgoingConns = [];
                   for (var loopRef in parseContext.references) {
@@ -564,6 +582,7 @@ Polymer({
 	    this.set('interactId', null);
 	    
 	    document.getElementById("bpmn").innerHTML = '';
+	    document.getElementById("js-properties-panel").innerHTML = '';
 	},
 	
 	/**
@@ -575,7 +594,7 @@ Polymer({
 	 */
 	_saveToXML: function(saveId, persistNew) {
 	    var _this = this;
-        this._viewer.saveXML({ format: true }, function (err, xml) {
+        this._tool.saveXML({ format: true }, function (err, xml) {
             var data = {
                 "name": saveId,
                 "model": xml
@@ -613,11 +632,24 @@ Polymer({
 	 * Setup a BPMN viewer with some default options
 	 */
 	_makeViewer: function() {
-	    var _this = this;
-	    var BpmnViewer = window.BpmnJS;
+	    var BpmnViewer = window.BpmnJS.Viewer;
 	    return new BpmnViewer({
             container: '#bpmn',
-            zoomScroll: { enabled: _this.createMode }
+            zoomScroll: { enabled: false },
+        });
+	},
+	
+	_makeModeler: function() {
+        var BpmnJS = window.BpmnJS;
+        return new BpmnJS({
+          additionalModules: [
+            BpmnJS.propertiesPanelModule,
+            BpmnJS.propertiesProviderModule
+          ],
+          container: '#bpmn',
+          propertiesPanel: {
+            parent: '#js-properties-panel'
+          }
         });
 	},
 	
