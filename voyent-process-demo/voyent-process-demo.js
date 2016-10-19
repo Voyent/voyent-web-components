@@ -202,6 +202,13 @@ Polymer({
                 });
             }
         });
+        
+        // When the window is resized update the zoom of the bpmn diagram to scale
+        window.addEventListener('resize', function() {
+            if ((_this._tool) && (!_this.createMode)) {
+                _this._tool.get('canvas').zoom('fit-viewport', 'auto');
+            }
+        });
 	},
 	
 	/**
@@ -239,7 +246,7 @@ Polymer({
         this.set('createMode', false);
         this.set('interactId', new String(this.modelId));
 	    
-	    // Setup our BPMN viewer and import the XML
+	    // Setup our BPMN tool and import the XML
         this.set('_tool', this._makeViewer());
         var _this = this;
         
@@ -253,27 +260,25 @@ Polymer({
                   // Zoom to center properly
                   _this._tool.get("canvas").zoom('fit-viewport', 'auto');
                   
+                  // Generate any gateway fork options from the XML
+                  _this._parseForks();
+                  
                   // Loop through and disable each event, to make the diagram read-only
-                  if (!_this.createMode) {
-                      // Generate any gateway fork options from the XML
-                      _this._parseForks();
-                      
-                      var events = [
-                          'element.hover',
-                          'element.out',
-                          'element.click',
-                          'element.dblclick',
-                          'element.mousedown',
-                          'element.mouseup'
-                      ];
-                      var eventBus = _this._tool.get('eventBus');
-                      events.forEach(function(event) {
-                          eventBus.on(event, 1500, function(e) {
-                              e.stopPropagation();
-                              e.preventDefault();
-                          });
+                  var events = [
+                      'element.hover',
+                      'element.out',
+                      'element.click',
+                      'element.dblclick',
+                      'element.mousedown',
+                      'element.mouseup'
+                  ];
+                  var eventBus = _this._tool.get('eventBus');
+                  events.forEach(function(event) {
+                      eventBus.on(event, 1500, function(e) {
+                          e.stopPropagation();
+                          e.preventDefault();
                       });
-                  }
+                  });
                   
                   // Polymer workaround to ensure the local styles apply properly to our dynamically generated SVG
                   _this.scopeSubtree(_this.$.bpmn, true);
@@ -285,13 +290,6 @@ Polymer({
         else {
             _this.fire('message-error', 'Partial data found for "' + this.modelId + '" diagram, but missing model');
         }
-        
-        // When the window is resized update the zoom of the bpmn diagram to scale
-        window.addEventListener('resize', function() {
-            if (_this._tool) {
-                _this._tool.get('canvas').zoom('fit-viewport', 'auto');
-            }
-        });
 	},
 	
 	/**
@@ -299,7 +297,7 @@ Polymer({
 	 * This function will determine if this saves a new record (POST) or updates an existing one (PUT)
 	 */
 	saveBPMN: function() {
-	    // If we don't have an underlying modelId the user is just clicking save without anything in the viewer, so abandon
+	    // If we don't have an underlying modelId the user is just clicking save without anything in the tool, so abandon
 	    if (this.modelId === null) {
 	        this.fire('message-info', 'No diagram to save');
 	        return false;
@@ -346,6 +344,7 @@ Polymer({
 	    this.set('xml', "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\" id=\""
 	                    + defaultId + "sample-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"Process_1\" isExecutable=\"true\">\n    <bpmn2:startEvent id=\"StartEvent_1\"/>\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_2\" bpmnElement=\"StartEvent_1\">\n        <dc:Bounds height=\"36.0\" width=\"36.0\" x=\"412.0\" y=\"240.0\"/>\n      </bpmndi:BPMNShape>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>");
 	    
+	    // Setup our BPMN tool and import the XML
 	    var _this = this;
         this._tool.importXML(this.xml, function(err) {
               if (err) {
@@ -451,7 +450,7 @@ Polymer({
 	},
 	
 	/**
-	 * Apply the 'highlight' class via a marker to an element matching the passed ID in our BPMN viewer
+	 * Apply the 'highlight' class via a marker to an element matching the passed ID in our BPMN tooling
 	 */
 	highlightById: function(id) {
 	    if (id) {
@@ -460,7 +459,7 @@ Polymer({
 	},
 	
 	/**
-	 * Loop through all elements in the BPMN viewer and clear any highlight markers
+	 * Loop through all elements in the BPMN tool and clear any highlight markers
 	 */
 	clearHighlights: function() {
         var elements = this._tool.definitions.rootElements[0].flowElements;
@@ -473,7 +472,7 @@ Polymer({
 	},
 	
 	/**
-	 * Check our BPMN viewer data definitions to try to find a list of matching IDs for the passed type
+	 * Check our BPMN data definitions to try to find a list of matching IDs for the passed type
 	 * An example of a passed type is bpmn:StartEvent
 	 */
 	_getIdByType: function(type) {
@@ -574,7 +573,7 @@ Polymer({
 	 * Unload the state of our BPMN diagram
 	 * This means resetting our _forks (and selectedFork)
 	 * We also clear the interactId field
-	 * And finally the BPMN svg from the viewer is removed
+	 * And finally the BPMN svg and properties panel from the tool is removed
 	 */
 	_unloadBPMN: function() {
 	    this.set('_forks', []);
@@ -586,7 +585,7 @@ Polymer({
 	},
 	
 	/**
-	 * Underlying function to save the current BPMN viewer state to XML
+	 * Underlying function to save the current BPMN tool state to XML
 	 * This XML will then be persisted (either save or update) to our service
 	 *
 	 * @param saveId to save against
@@ -639,6 +638,9 @@ Polymer({
         });
 	},
 	
+	/**
+	 * Setup a BPMN modeler and properties panel
+	 */
 	_makeModeler: function() {
         var BpmnJS = window.BpmnJS;
         return new BpmnJS({

@@ -1,11 +1,13 @@
 #js-properties-panel {
   position: absolute;
   top: 20px;
-  bottom: 0;
   right: 20px;
-  min-width: 260px;
-  z-index: 10;
+  min-width: 250px;
+  z-index: 200;
   overflow: auto;
+  border: solid 1px #CCC;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 #js-properties-panel:empty {
   display: none;
@@ -24,9 +26,6 @@
 .bpp-properties-panel {
   background-color: #FAFAFA;
   position: relative;
-  border: solid 1px #CCC;
-  border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 .bpp-properties-panel:empty {
   display: none;
@@ -41,6 +40,7 @@
 .bpp-properties-panel [contenteditable] {
   padding: 3px 6px;
   border: 1px solid #ccc;
+  height: 17px;
 }
 .bpp-properties-panel input:focus,
 .bpp-properties-panel button:focus,
@@ -201,9 +201,6 @@
 .bpp-radios-group label:after,
 .bpp-checkbox label:after {
   display: none;
-}
-.bpp-textfield input {
-  padding-right: 28px;
 }
 .bpp-textfield .clear {
   background: transparent;
