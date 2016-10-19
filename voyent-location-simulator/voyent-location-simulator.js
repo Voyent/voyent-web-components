@@ -576,7 +576,7 @@ Polymer({
                 //associate the zones with the tracker so we can sync them on movement
                 this.trackerZones[trackers[i]._id].push(zone);
                 this._clickListener(zone,zones[j],"circle");
-                this._regions.push(zones[j]);
+                this._regions.push(zone);
 
                 //adjust the map bounds for the rendered zones
                 var coords = zones[j].geometry.coordinates;
