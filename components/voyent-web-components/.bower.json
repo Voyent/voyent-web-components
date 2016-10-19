@@ -43,11 +43,11 @@
   "resolutions": {
     "polymer": "^1.6.0"
   },
-  "_release": "c2c9487772",
+  "_release": "fddb03d7a6",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "c2c94877720952eee8f190175ecb00fdf7aa6371"
+    "commit": "fddb03d7a6430dd68316f757ef5f9df97cc95921"
   },
   "_source": "git://github.com/Voyent/voyent-web-components.git",
   "_target": "master",

@@ -77,10 +77,11 @@ Polymer({
         //set some default values
         this._locationMarkers = [];
         this._regions = [];
-        this._poiMarkers = [];
+        this._pointMarkers = [];
         this._followableUsers = [];
         this._hideContextMenu = true;
         this._activeSim = null;
+        this.trackerZones = {};
         //initialize google maps
         window.initializeLocationsMap = function() {
             _this._map = new google.maps.Map(_this.$.map, {
@@ -120,7 +121,7 @@ Polymer({
         if( !('google' in window) || !('maps' in window.google)){
             var script = document.createElement('script');
             script.type = 'text/javascript';
-            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3.23&' +
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3.25&' +
                 'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
             this.$.container.appendChild(script);
         }
@@ -167,6 +168,9 @@ Polymer({
         }));
         promises.push(voyent.io.locate.getAllPOIs({realm:this.realm}).then(function(pois) {
             _this._updatePOIs(pois);
+        }));
+        promises.push(voyent.io.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
+            _this._updateTrackers(trackers);
         }));
         return Promise.all(promises).then(function() {
             _this._map.fitBounds(_this._bounds);
@@ -455,7 +459,7 @@ Polymer({
                     });
                     this._bounds.extend(googlePoint);
                     this._clickListener(poi,data[i],type);
-                    this._poiMarkers.push(poi);
+                    this._pointMarkers.push(poi);
                 }
             } catch (error) {
                 _this.fire('message-error', "Issue importing region or poi: " + error);
@@ -500,10 +504,10 @@ Polymer({
             region.setMap(null);
         });
         this._regions = [];
-        this._poiMarkers.forEach(function(poi) {
-            poi.setMap(null);
+        this._pointMarkers.forEach(function(point) {
+            point.setMap(null);
         });
-        this._poiMarkers = [];
+        this._pointMarkers = [];
     },
 
     /**
@@ -522,6 +526,68 @@ Polymer({
      */
     _updatePOIs: function(pois) {
         this._updateRegionsAndPOIs(pois);
+    },
+
+    /**
+     * Draw trackers and their associated zones on the map.
+     * @param trackers
+     * @private
+     */
+    _updateTrackers: function(trackers) {
+        var googlePoint, tracker, zones, zone, properties;
+
+        for (var i=0; i<trackers.length; i++) {
+            //process the tracker
+            googlePoint = new google.maps.LatLng(trackers[i].anchor.geometry.coordinates[1],
+                                                 trackers[i].anchor.geometry.coordinates[0]);
+            tracker = new google.maps.Marker({
+                position: googlePoint,
+                map: this._map,
+                draggable: true
+            });
+            this._clickListener(tracker,trackers[i],"point");
+            this._pointMarkers.push(tracker);
+            this._bounds.extend(googlePoint);
+            var location = {
+                "location": {
+                    "type": "Feature",
+                    "geometry": trackers[i].anchor.geometry
+                },
+                "username": trackers[i]._id/*,
+                "demoUsername": trackers[i]._id*/
+            };
+            this._trackerLocationChangedListener(tracker,trackers[i]._id,location);
+
+            //set up a namespace to associate zones with a tracker in
+            this.trackerZones[trackers[i]._id] = [];
+
+            //process the tracker zones
+            zones = trackers[i].zones.features;
+            for (var j=0; j<zones.length; j++) {
+                properties = zones[j].properties;
+                zone = new google.maps.Circle({
+                    'center': new google.maps.LatLng(properties.googleMaps.center[0], properties.googleMaps.center[1]),
+                    'radius': properties.googleMaps.radius,
+                    'fillColor': properties.Color,
+                    'zIndex': properties.googleMaps.zIndex,
+                    'map': this._map,
+                    'editable': false
+                });
+                //associate the zones with the tracker so we can sync them on movement
+                this.trackerZones[trackers[i]._id].push(zone);
+                this._clickListener(zone,zones[j],"circle");
+                this._regions.push(zones[j]);
+
+                //adjust the map bounds for the rendered zones
+                var coords = zones[j].geometry.coordinates;
+                for (var cycle=0; cycle<coords.length; cycle++) {
+                    for (var point = 0; point < coords[cycle].length; point++) {
+                        googlePoint = new google.maps.LatLng(coords[cycle][point][1], coords[cycle][point][0]);
+                        this._bounds.extend(googlePoint);
+                    }
+                }
+            }
+        }
     },
 
     /**
@@ -714,7 +780,7 @@ Polymer({
         }
         //display infoWindow and hide context menu on map click
         google.maps.event.addListener(overlay, 'click', function () {
-            var name = location.label || location._id;
+            var name = location.label || (location.properties ? (location.properties.zoneNamespace || location.properties.zoneId) : null) || location._id;
             var content = '<div style="overflow:auto;font-weight:bold;">';
             if (name) {
                 content = content + name + "</div>";

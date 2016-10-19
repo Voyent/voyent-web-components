@@ -19,11 +19,11 @@
     "services"
   ],
   "homepage": "https://github.com/voyent/voyent.io.js",
-  "_release": "eadcfd512a",
+  "_release": "d31dfb190a",
   "_resolution": {
     "type": "branch",
     "branch": "dev",
-    "commit": "eadcfd512a37484bf9299486465536b40043d4ae"
+    "commit": "d31dfb190aa23c87a959e28c964a35154936db6b"
   },
   "_source": "https://github.com/voyent/voyent.io.js.git",
   "_target": "dev",
