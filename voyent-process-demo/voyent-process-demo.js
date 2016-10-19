@@ -645,12 +645,15 @@ Polymer({
         var BpmnJS = window.BpmnJS;
         return new BpmnJS({
           additionalModules: [
-            BpmnJS.propertiesPanelModule,
-            BpmnJS.propertiesProviderModule
+              BpmnJS.propertiesPanelModule,
+              BpmnJS.propertiesProviderModule
           ],
           container: '#bpmn',
           propertiesPanel: {
-            parent: '#js-properties-panel'
+              parent: '#js-properties-panel'
+          },
+          moddleExtensions: {
+              camunda: BpmnJS.camundaModdleDescriptor
           }
         });
 	},
