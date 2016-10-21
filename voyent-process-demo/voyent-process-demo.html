@@ -15,10 +15,42 @@
 -->
 <dom-module id="voyent-process-demo">
     <template>
+        <link rel="stylesheet" href="css/diagram-js.css" />
+        <link rel="stylesheet" href="css/vendor/bpmn-font/css/bpmn-embedded.css" />
+        <link rel="stylesheet" href="css/app.css" />
+        
         <style type="text/css">
+            paper-button {
+                background-color: white;
+            }
+        
+            .controlBox {
+                background-color: #DEDEDE;
+                padding: 10px;
+                border-top: 1px solid black;
+                border-left: 1px solid black;
+                border-right: 1px solid black;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                box-shadow: 0 5px 5px #DEDEDE;
+            }
+            
+            .toolWrap {
+                position: relative;
+                height: 70%;
+                margin-bottom: 15px;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 12px;
+            }
+            
             .bpmnWrap {
-                height: 50%;
-                border: 2px inset black;
+                height: 100%;
+                border-bottom: 1px solid black;
+                border-left: 1px solid black;
+                border-right: 1px solid black;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+                box-shadow: 0 5px 5px #DEDEDE;
             }
             
             .bpmnTip {
@@ -31,6 +63,14 @@
                 text-align: center;
                 opacity: 0.9;
                 border: 1px solid black;
+            }
+            
+            .initialText {
+                width: 100%;
+                text-align: center;
+                font-size: 1.4vw;
+                font-weight: bold;
+                padding-top: 25px;
             }
             
             .highlight .djs-visual > :nth-child(1) {
@@ -46,7 +86,7 @@
         </style>
         
         <template is="dom-if" if="{{loggedIn}}">
-            <paper-dropdown-menu label="Stored BPMNs">
+            <paper-dropdown-menu label="Select to load a diagram...">
                 <paper-listbox class="dropdown-content" attr-for-selected="modelid" selected="{{selectedModel}}">
                     <template is="dom-repeat" strip-whitespace items="[[_models]]" as="model">
                         <paper-item modelid="[[model]]">[[model]]</paper-item>
@@ -54,36 +94,49 @@
                 </paper-listbox>
             </paper-dropdown-menu>
             <br/>
+            <paper-button raised on-click="createBPMN">New</paper-button>
+            <paper-button raised on-click="saveBPMN">Save</paper-button>
+            <paper-button raised on-click="clearBPMN">Clear</paper-button>
+            <paper-button raised on-click="deleteBPMN">Delete</paper-button>
+            <br/><br/>
             
-            <template is="dom-if" if="[[hasModel(modelId)]]">
-                <h4>BPMN Diagram: <u>{{_title}}</u></h4>
-            
-                <paper-dropdown-menu label="Fork Gate">
-                    <paper-listbox class="dropdown-content" attr-for-selected="forkname" selected="{{selectedFork}}">
-                        <template is="dom-repeat" strip-whitespace items="[[_forks]]" as="fork">
-                            <paper-item forkname="[[fork]]">[[fork]]</paper-item>
-                        </template>
-                    </paper-listbox>
-                </paper-dropdown-menu>
-                <paper-button raised on-click="startProcess">Start Process</paper-button>
-            </template>
-        </template>
-        
-        <div id="bpmn" class="bpmnWrap">
-            <div style="width: 100%; margin-top: 50px; text-align: center;">
-                <template is="dom-if" if="{{!loggedIn}}">
-                    <h3>Please authenticate to proceed...</h3>
-                </template>
-                <template is="dom-if" if="{{loggedIn}}">
-                    <h3>Please select a model to load...</h3>
+            <div class="controlBox">
+                <template is="dom-if" if="[[hasModel(modelId)]]">
+                    <h4>BPMN Diagram: <input type="text" value="{{interactId::input}}"></input></h4>
+                    
+                    <template is="dom-if" if="[[!createMode]]">
+                        <paper-dropdown-menu label="Select a gateway fork...">
+                            <paper-listbox class="dropdown-content" attr-for-selected="forkname" selected="{{selectedFork}}">
+                                <template is="dom-repeat" strip-whitespace items="[[_forks]]" as="fork">
+                                    <paper-item forkname="[[fork]]">[[fork]]</paper-item>
+                                </template>
+                            </paper-listbox>
+                        </paper-dropdown-menu>
+                        <paper-button raised on-click="startProcess">Start Process</paper-button>
+                    </template>
                 </template>
             </div>
+        </template>
+        <template is="dom-if" if="{{!loggedIn}}">
+            <div class="controlBox">&nbsp;</div>
+        </template>
+        
+        <div class="toolWrap">
+            <div id="bpmn" class="bpmnWrap">
+                <div class="initialText">
+                    <template is="dom-if" if="{{!loggedIn}}">
+                        Please authenticate to proceed...
+                    </template>
+                    <template is="dom-if" if="{{loggedIn}}">
+                        Please select a diagram to load...
+                    </template>
+                </div>
+            </div>
+            <div id="js-properties-panel"></div>
         </div>
     </template>
 </dom-module>
 
-<script src="../../bpmn-js/dist/bpmn-viewer.min.js"></script>
-<script src="../../bpmn-js/dist/bpmn-modeler.min.js"></script>
-<script src="../../socket.io-client/socket.io.js"></script>
 <script src="../../voyent.notify.js/lib/voyent.notify.js"></script>
+<script src="bpmn-custom-bundle/dist/bpmn-js-custom.js" charset="utf-8"></script>
 <script src="voyent-process-demo.js"></script>
