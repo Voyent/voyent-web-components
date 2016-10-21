@@ -281,17 +281,21 @@ Polymer({
             currentLog.action = null;
             currentLog.taskGroup = null;
             currentLog.taskItem = null;
-            
+
+            // Using messagePrefix in order to allow for the previously existing checks against taskGroups to work with events containing arrays.
+            var messagePrefix = currentLog.message.indexOf('{') !== -1 ? currentLog.message.split("{")[0] : currentLog.message;
+
             // If we find a "start" string we have a new past action
             if (currentLog.message.lastIndexOf(strStart, 0) === 0) {
                 // There could be starts for taskGroups as well. We just want actions
                 // The desired format is: start [action]
                 // So look for exactly 2 brackets
-                if (currentLog.message.split("[").length-1 === 1 && currentLog.message.split("]").length-1 === 1) {
+
+                if (messagePrefix.split("[").length-1 === 1 && messagePrefix.split("]").length-1 === 1) {
                     // Trim out "start [action]" to "action"
                     currentLog.action = currentLog.message.substring((strStart + " [").length);
                     currentLog.action = currentLog.action.substring(0, currentLog.action.indexOf("]")).trim();
-                    
+
                     // Now we check if the parsed action matches a saved action for this user
                     // If not we ignore it, otherwise we'll continue
                     var match = false;
@@ -300,7 +304,7 @@ Polymer({
                             match = true;
                         }
                     }
-                    
+
                     if (match) {
                         // First we look for a previous start of the same transaction code
                         // If we can't find it, we continue. This ensures we only have unique past actions
@@ -311,23 +315,23 @@ Polymer({
                                 break;
                             }
                         }
-                        
+
                         if (!match) {
                             this.push('_pastActions', {"name":currentLog.action,"tx":currentLog.tx,"startDate":this._formatTime(currentLog.time)});
                         }
                     }
                 }
-                
+
                 // Always parse "start" from the message string so it can be handled properly later
                 currentLog.message = currentLog.message.substring(strStart.length).trim();
                 currentLog.message += strStart;
             }
             // We also want to account for the "end" string that marks the end of an action
             else if (currentLog.message.lastIndexOf(strEnd, 0) === 0) {
-                if (currentLog.message.split("[").length-1 === 1 && currentLog.message.split("]").length-1 === 1) {
+                if (messagePrefix.split("[").length-1 === 1 && messagePrefix.split("]").length-1 === 1) {
                     currentLog.action = currentLog.message.substring((strEnd + " [").length);
                     currentLog.action = currentLog.action.substring(0, currentLog.action.indexOf("]")).trim();
-                    
+
                     // Loop through our current past actions to try to find the start object
                     for (var endLoop = 0; endLoop < this._pastActions.length; endLoop++) {
                         if ((currentLog.action === this._pastActions[endLoop].name) && (currentLog.tx === this._pastActions[endLoop].tx)) {
@@ -338,7 +342,7 @@ Polymer({
                         }
                     }
                 }
-                
+
                 // Always parse "end" from the message string so it can be handled properly later
                 currentLog.message = currentLog.message.substring(strEnd.length).trim();
                 currentLog.message += strEnd;
@@ -347,7 +351,7 @@ Polymer({
             else if (currentLog.message.lastIndexOf(strTaskResult, 0) === 0) {
                 currentLog.message = currentLog.message.substring(strTaskResult.length).trim();
             }
-            
+
             // Finally add our log entry if it's still valid
             if (currentLog !== null) {
                 // Trim the action, taskGroup, and taskItem, as well as the remaining message
@@ -360,34 +364,36 @@ Polymer({
                 if (currentLog.message.indexOf("[") === 0) {
                     this._trimContainer(currentLog, 'taskItem');
                 }
-                
+
                 // If we have an equal sign (=) starting our message, trim it, since the rest is probably JSON
                 if (currentLog.message.indexOf("=") === 0) {
                     currentLog.message = currentLog.message.substring(1).trim();
                 }
-                
+
                 // Final trim, just in case
                 currentLog.message = currentLog.message.trim();
-                
+
                 // Store our finished log entry
                 this.push('_allLogs', currentLog);
             }
         }
-        
+
+        console.log('All LOGS');
+        console.log(this._allLogs);
         // Notify the user
         this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
-        
+
         // Sort our past actions by time
         this._pastActions.sort(function(a,b) {
             return a.startDate - b.startDate;
         });
-        
+
         // Always add an uncategorized option that encompasses log entries not associated with anything
         this.splice('_pastActions', 0, 0, {"name":this.miscName});
-        
+
         // Clear our old full logs
         logs.length = 0;
-        
+
         // Done
         this._gotLogs = true;
         this._loading = false;
