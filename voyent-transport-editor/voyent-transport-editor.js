@@ -395,12 +395,12 @@ Polymer({
 	 * Used with simple view only (simple=true)
 	 */
 	_setDefaultMessageElements: function() {
-	    return [ "{{user_name}}",
-	             "{{incident_type}}",
-	             "{{direction}}",
-	             "{{distance}}",
-	             "{{time_to_contact}}",
-	             "{{speed}}"
+	    return [ "[User Name]",
+	             "[Incident Type]",
+	             "[Direction]",
+	             "[Distance]",
+	             "[Time to Contact]",
+	             "[Speed]"
 	           ];
 	},
 	
