@@ -161,7 +161,7 @@ Polymer({
                 locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
                 _this._updateLocations(locations);
             }
-           
+
         }));
         promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
@@ -550,11 +550,14 @@ Polymer({
             this._bounds.extend(googlePoint);
             var location = {
                 "location": {
-                    "type": "Feature",
-                    "geometry": trackers[i].anchor.geometry
+                    "geometry": trackers[i].anchor.geometry,
+                    "properties": {
+                      "trackerId": trackers[i]._id,
+                      "zoneNamespace": trackers[i].properties.zoneNamespace
+                    }
                 },
-                "username": trackers[i]._id/*,
-                "demoUsername": trackers[i]._id*/
+                "username": trackers[i]._id,
+                "demoUsername": trackers[i]._id
             };
             this._trackerLocationChangedListener(tracker,trackers[i]._id,location);
 
