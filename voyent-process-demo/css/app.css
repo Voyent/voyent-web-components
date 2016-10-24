@@ -22,7 +22,8 @@
 #js-properties-panel, .djs-palette {
     top: 10px;
     opacity: 1.0;
-    transition: opacity 0.5s linear;
+    visibility: visible;
+    transition: opacity 0.5s linear, visibility 0.5s linear;
 }
 .djs-palette {
     left: 5px;

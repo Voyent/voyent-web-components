@@ -757,9 +757,11 @@ Polymer({
 	    
 	    if (propPanel) {
 	        propPanel.style.opacity = show ? '1' : '0';
+	        propPanel.style.visibility = show ? 'visible' : 'hidden';
 	    }
 	    if (palettePanels && palettePanels.length > 0) {
 	        palettePanels[0].style.opacity = show ? '1' : '0';
+	        palettePanels[0].style.visibility = show ? 'visible' : 'hidden';
 	    }
 	    
 	    // Also update our BPMN container to either fill the width (when panels are hidden) or scale accordingly
