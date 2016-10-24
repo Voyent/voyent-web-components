@@ -214,6 +214,7 @@ Polymer({
                                             
                                             setTimeout(function() {
                                                 // Clear our processId, which will also clear highlights
+                                                // This will restore the panels to visibility, as we're done executing now
                                                 _this.set('processId', null);
                                             }, _this.waitBeforeEnd*2);
                                         }
@@ -280,11 +281,12 @@ Polymer({
                   console.error("Error: ", err);
               }
               else {
-                  // Zoom to center properly
-                  _this._tool.get("canvas").zoom('fit-viewport', 'auto');
-                  
                   // Generate any gateway fork options from the XML
                   _this._parseForks();
+                  
+                  // Zoom to center properly
+                  _this._setContainerWidth();
+                  _this._tool.get("canvas").zoom('fit-viewport', 'auto');
                   
                   // Polymer workaround to ensure the local styles apply properly to our dynamically generated SVG
                   _this.scopeSubtree(_this.$.bpmn, true);
@@ -344,6 +346,7 @@ Polymer({
 	    
 	    // Ensure we have a unique default name
 	    var defaultId = this._makeUniqueId('new-diagram');
+	    this.set('processId', null);
 	    this.set('modelId', defaultId);
 	    this.set('interactId', defaultId);
 	    this.set('selectedModel', null);
@@ -745,6 +748,11 @@ Polymer({
 	    return base;
 	},
 	
+	/**
+	 * Show or hide the tooling panels, namely the element properties and palette
+	 * This uses CSS 'display' to toggle visibility
+	 * This will also resize the BPMN container width based on the panel state
+	 */
 	_setPanelShow: function(show) {
 	    var propPanel = document.getElementById('js-properties-panel');
 	    var palettePanels = document.getElementsByClassName('djs-palette');
@@ -755,6 +763,21 @@ Polymer({
 	    if (palettePanels && palettePanels.length > 0) {
 	        palettePanels[0].style.display = show ? '' : 'none';
 	    }
+	    
+	    // Also update our BPMN container to either fill the width (when panels are hidden) or scale accordingly
+	    this._setContainerWidth(!show);
+	},
+	
+	/**
+	 * Set the BPMN container style width
+	 * This is variable based on whether our tooling panels are visible or not
+	 */
+	_setContainerWidth: function(fullSize) {
+	    var container = document.getElementsByClassName('bjs-container');
+	    if (container && container.length > 0) {
+	        container[0].style.width = fullSize ? "100%": "calc(100% - 260px)";
+	        this._tool.get('canvas').resized();
+        }
 	},
 	
 	/**
@@ -781,8 +804,12 @@ Polymer({
 	    }
 	    // Executing
 	    else {
-	        this._tool.get('canvas').zoom('fit-viewport', 'auto');
 	        this._setPanelShow(false);
 	    }
+	    
+	    // Automatically zoom the viewport
+        if (this._tool && this._tool !== null) {
+            this._tool.get('canvas').zoom('fit-viewport', 'auto');
+        }
 	}
 });
