@@ -16220,8 +16220,8 @@ var inherits = require('inherits');
 var EventEmitter = require('events');
 
 var DEFAULT_OPTIONS = {
-  scrollSymbolLeft: '‹',
-  scrollSymbolRight: '›'
+  scrollSymbolLeft: '<',
+  scrollSymbolRight: '>'
 };
 
 
