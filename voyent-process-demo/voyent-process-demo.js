@@ -748,7 +748,7 @@ Polymer({
 	
 	/**
 	 * Show or hide the tooling panels, namely the element properties and palette
-	 * This uses CSS 'display' to toggle visibility
+	 * This uses CSS 'opacity' to toggle visibility
 	 * This will also resize the BPMN container width based on the panel state
 	 */
 	_setPanelShow: function(show) {
@@ -756,10 +756,10 @@ Polymer({
 	    var palettePanels = document.getElementsByClassName('djs-palette');
 	    
 	    if (propPanel) {
-	        propPanel.style.display = show ? '' : 'none';
+	        propPanel.style.opacity = show ? '1' : '0';
 	    }
 	    if (palettePanels && palettePanels.length > 0) {
-	        palettePanels[0].style.display = show ? '' : 'none';
+	        palettePanels[0].style.opacity = show ? '1' : '0';
 	    }
 	    
 	    // Also update our BPMN container to either fill the width (when panels are hidden) or scale accordingly
