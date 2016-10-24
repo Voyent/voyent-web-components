@@ -235,7 +235,7 @@ Voyent.LocationVector = Polymer({
         //allow the location marker to be dragged
         this._marker.setDraggable(true);
         //add listener now that the simulation is done
-        this._trackerLocationChangedListener(this._marker,this._location);
+        this._trackerLocationChangedListener(this._marker,this.tracker,this._location);
         //reset attributes
         this._path = null;
         this._totalDistance = null;
