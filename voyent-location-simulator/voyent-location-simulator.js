@@ -14,12 +14,12 @@ Polymer({
          */
         realm: { type: String },
         /**
-         * Define routes as a JSON object array. This attribute can be used on its own or in conjunction with `voyent-location-route` components.
+         * Define routes as a JSON object array. This attribute can be used on its own or in conjunction with `voyent-location-route` and `voyent-location-vector` components.
          * Changing this attribute dynamically will replace any routes previously created with this attribute, but any routes created using the component will remain unchanged.
          *
          * Example:
          *
-         *      //define two different routes
+         *      //define two different types of routes
          *     [
          *         {
          *              "label":"ICEsoft Technologies To Calgary Tower",
@@ -30,12 +30,11 @@ Polymer({
          *              "frequency": 5
          *          },
          *          {
-         *              "label":"Prince's Island Park To Fort Calgary",
-         *              "user": "jimjones", //only available to admin users
-         *              "origin": "698 Eau Claire Ave SW, Calgary",
-         *              "destination": "750 9th Avenue SE, Calgary",
-         *              "travelmode": "BICYCLING",
-         *              "speed": 15,
+         *              "label":"Storm moving NW",
+         *              "tracker": "Tracker1",
+         *              "bearing": "315",
+         *              "speed": 45,
+         *              "duration":5
          *              "frequency": 10
          *          }
          *      ]
@@ -61,6 +60,10 @@ Polymer({
      * @event usersRetrieved
      */
     /**
+     * Fired when the trackers are retrieved. Contains the list of trackers.
+     * @event trackersRetrieved
+     */
+    /**
      * Fired when the simulations are retrieved. Contains the list of saved simulations in the specified collection.
      *
      * @event simulationsRetrieved
@@ -78,10 +81,10 @@ Polymer({
         this._locationMarkers = [];
         this._regions = [];
         this._pointMarkers = [];
-        this._followableUsers = [];
         this._hideContextMenu = true;
         this._activeSim = null;
-        this.trackerZones = {};
+        this._trackerZones = {};
+        this._contextMenuDisabled = true;
         //initialize google maps
         window.initializeLocationsMap = function() {
             _this._map = new google.maps.Map(_this.$.map, {
@@ -147,10 +150,14 @@ Polymer({
         //get current location data
         var promises = [];
         promises.push(voyent.io.locate.findLocations({realm:this.realm,fields:{_id:0},options:{sort:{lastUpdated:-1}}}).then(function(locations) {
-            if( locations && locations.length ){
+            if (locations && locations.length) {
                  //process the locations so we only keep the most recent update for each user
                 var userLocations={};
                 for (var i=0; i<locations.length; i++) {
+                    if (locations[i].location.properties && locations[i].location.properties.trackerId) {
+                        //ignore locations that are for trackers
+                        continue;
+                    }
                     if (userLocations.hasOwnProperty(locations[i].username)) {
                         if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
                             userLocations[locations[i].username]=locations[i];
@@ -170,6 +177,7 @@ Polymer({
             _this._updatePOIs(pois);
         }));
         promises.push(voyent.io.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
+            //update the map with the trackers
             _this._updateTrackers(trackers);
         }));
         return Promise.all(promises).then(function() {
@@ -189,7 +197,7 @@ Polymer({
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
-            return node.nodeName === 'VOYENT-LOCATION-ROUTE';
+            return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
         });
         if (children.length > 0) { //reset the bounds so we only bound around the simulation
             this._bounds = new google.maps.LatLngBounds();
@@ -207,7 +215,7 @@ Polymer({
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
-            return node.nodeName === 'VOYENT-LOCATION-ROUTE';
+            return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
         });
         for (var i=0; i<children.length; i++) {
             children[i].pauseSimulation();
@@ -222,7 +230,7 @@ Polymer({
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
-            return node.nodeName === 'VOYENT-LOCATION-ROUTE';
+            return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
         });
         for (var i=0; i<children.length; i++) {
             children[i].cancelSimulation();
@@ -261,11 +269,41 @@ Polymer({
     },
 
     /**
+     * Add a new tracker velocity vector. If parameters are not provided then the default values will be used.
+     * @param label
+     * @param tracker
+     * @param bearing
+     * @param speed
+     * @param speedunit
+     * @param duration
+     * @param frequency
+     */
+    addVector: function(label,tracker,bearing,speed,speedunit,duration,frequency) {
+        var _this = this;
+        if (!voyent.io.auth.isLoggedIn()) {
+            return;
+        }
+        //first append the new route as a direct child of the component so it inherits any custom styling
+        Polymer.dom(this).appendChild(new Voyent.LocationVector(this._map,this._trackers,this._trackerZones,label,tracker,bearing,speed,speedunit,duration,frequency));
+        //add a new tab for the child
+        this.push('_children',{
+            "elem":Polymer.dom(this).lastElementChild,
+            "tabClass":"",
+            "tabLabel": label || 'New Vector',
+            "contentHidden": true
+        });
+        //move new child into tab (do this async so the template has time to render the new child tab)
+        setTimeout(function() {
+            Polymer.dom(_this.root).querySelector('div[data-index="'+parseInt(_this._children.length-1)+'"]').appendChild(_this._children[_this._children.length-1].elem);
+        },0);
+    },
+
+    /**
      * Reset the simulation (remove all currently defined routes).
      */
     resetSimulation: function() {
         this._removeAllRoutes();
-        this._generateRouteTabs([{"user":"","origin":"","destination":"","travelmode":"DRIVING","speed":50,"frequency":5}]);
+        this._generateTabs([{"user":"","origin":"","destination":"","travelmode":"DRIVING","speed":50,"frequency":5}]);
         this._activeSim = null;
         //maintain scroll position
         var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
@@ -289,10 +327,10 @@ Polymer({
         var docCall = 'createDocument';
         var routes = [];
         var children = Polymer.dom(this).childNodes.filter(function(node) {
-            return node.nodeName === 'VOYENT-LOCATION-ROUTE';
+            return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
         });
         for (var i=0; i<children.length; i++) {
-            routes.push(children[i].getRouteJSON());
+            routes.push(children[i].getJSON());
         }
         var params = {realm:this.realm,collection:collection,document:{routes:routes}};
         if (simulationId && simulationId.trim().length > 0) {
@@ -362,7 +400,7 @@ Polymer({
             return;
         }
         this._removeAllRoutes();
-        this._generateRouteTabs(simulation.routes);
+        this._generateTabs(simulation.routes);
         this._activeSim = simulation;
         //maintain scroll position
         var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
@@ -400,6 +438,11 @@ Polymer({
                 }
                 var geometry = location.geometry;
                 if (!geometry) {
+                    continue;
+                }
+                if (location.properties && location.properties.zoneId) {
+                    //ignore regions that are connected to zones since
+                    //they will be retrieved when getting trackers
                     continue;
                 }
                 var type = geometry.type.toLowerCase();
@@ -545,24 +588,30 @@ Polymer({
                 map: this._map,
                 draggable: true
             });
+            this._bounds.extend(googlePoint);
             this._clickListener(tracker,trackers[i],"point");
             this._pointMarkers.push(tracker);
-            this._bounds.extend(googlePoint);
             var location = {
                 "location": {
                     "geometry": trackers[i].anchor.geometry,
                     "properties": {
+<<<<<<< Updated upstream
                       "trackerId": trackers[i]._id,
                       "zoneNamespace": trackers[i].properties.zoneNamespace
+=======
+                        "trackerId": trackers[i]._id,
+                        "zoneNamespace": trackers[i].properties.zoneNamespace
+>>>>>>> Stashed changes
                     }
                 },
                 "username": trackers[i]._id,
                 "demoUsername": trackers[i]._id
             };
             this._trackerLocationChangedListener(tracker,trackers[i]._id,location);
+            this._handleNewLocationMarker(location.username,tracker);
 
             //set up a namespace to associate zones with a tracker in
-            this.trackerZones[trackers[i]._id] = [];
+            this._trackerZones[trackers[i]._id] = [];
 
             //process the tracker zones
             zones = trackers[i].zones.features;
@@ -577,7 +626,7 @@ Polymer({
                     'editable': false
                 });
                 //associate the zones with the tracker so we can sync them on movement
-                this.trackerZones[trackers[i]._id].push(zone);
+                this._trackerZones[trackers[i]._id].push(zone);
                 this._clickListener(zone,zones[j],"circle");
                 this._regions.push(zone);
 
@@ -591,83 +640,43 @@ Polymer({
                 }
             }
         }
+        //fire event and set trackers locally
+        this.fire('trackersRetrieved',{trackers:trackers.length>0?trackers:null,trackerZones:this._trackerZones});
+        this._trackers = trackers.length>0?trackers:null;
     },
 
     /**
-     * Maintains custom "Follow User" control on the map during simulation.
-     * @param deleted
-     * @private
-     */
-    _updateMapControl: function(deleted) {
-        var _this = this;
-        if (this._followableUsers && this._followableUsers.length > 0) {
-            setTimeout(function() {
-                var div = _this.$.customControl.getElementsByTagName("DIV")[0].cloneNode(true); //clone hidden div on page
-                var select = div.querySelector("#followableUsers"); //find select
-                //if there is already a custom control on the map, check for a selected value and set it on the new control
-                var oldControl = _this._map.controls[google.maps.ControlPosition.TOP_CENTER].getArray()[0];
-                if (oldControl) {
-                    var oldSelect = oldControl.querySelector("#followableUsers");
-                    var oldVal = oldSelect.options[oldSelect.selectedIndex].value;
-                    if (oldVal >= 0) {
-                        select.value = oldVal;
-                        if (deleted === select.value) {
-                            //the simulation for the selected user has finished or stopped so reset the select
-                            select.value = '';
-                        }
-                    }
-                }
-                //re-create the control
-                _this._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
-                _this._map.controls[google.maps.ControlPosition.TOP_CENTER].push(div);
-                //add listener to handle toggling followUser functionality
-                select.addEventListener('change', function() {
-                    var index = select.options[select.selectedIndex].value;
-                    if (_this._prevChild) {
-                        _this._prevChild._toggleFollowUser(); //disable followUser for the last followed user
-                    }
-                    if (index == "-1") { //no user selected, so don't proceed
-                        _this._prevChild = null;
-                        return;
-                    }
-                    _this._followableUsers[index].child._toggleFollowUser(); //enable followUser for the selected route
-                    //use the tabChangeListener to change tabs to the user being followed
-                    var craftedEvent = {"model":{"item":{"elem":_this._followableUsers[index].child}}};
-                    _this._tabChangeListener(craftedEvent);
-                    _this._prevChild = _this._followableUsers[index].child; //save the child so followUser can be disabled later
-                });
-            },0);
-        }
-        else {
-            //all simulations are done, remove the custom map control
-            this._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
-        }
-    },
-
-    /**
-     * Handles generating tabs for each route and moving the routes into them.
+     * Handles generating tabs for each route/vector and moving the routes into them.
      * @param routes
      * @param isInitialLoad
      * @private
      */
-    _generateRouteTabs: function(routes,isInitialLoad) {
+    _generateTabs: function(routes,isInitialLoad) {
         var _this = this;
         var children = [];
         if (routes && routes.length > 0) {
             //append the new routes as direct children of the component so they inherit any custom styling
             for (var j=0; j<routes.length; j++) {
-                //pass the map and users via the constructor (instead of via the events like markup defined components)
-                children.push(new Voyent.LocationRoute(this._map, this._users, routes[j].label, routes[j].user, routes[j].origin, routes[j].destination,
-                    routes[j].travelmode, routes[j].speed, routes[j].speedunit, routes[j].frequency, routes === this.routes));
+                if (routes[j].tracker) {
+                    //pass the map and trackers via the constructor (instead of via the events like markup defined components)
+                    children.push(new Voyent.LocationVector(this._map, this._trackers, this._trackerZones, routes[j].label, routes[j].tracker, routes[j].bearing,
+                                  routes[j].speed, routes[j].speedunit, routes[j].duration, routes[j].frequency, false));
+                }
+                else {
+                    //pass the map and users via the constructor (instead of via the events like markup defined components)
+                    children.push(new Voyent.LocationRoute(this._map, this._users, routes[j].label, routes[j].user, routes[j].origin, routes[j].destination,
+                        routes[j].travelmode, routes[j].speed, routes[j].speedunit, routes[j].frequency, routes === this.routes));
+                }
                 Polymer.dom(this).appendChild(children[children.length-1]);
             }
         }
         if (isInitialLoad) {
             //since it's the first time, make sure we include any routes defined as child components
             children = Polymer.dom(this).childNodes.filter(function(node) {
-                return node.nodeName === 'VOYENT-LOCATION-ROUTE';
+                return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
             });
         }
+        this.set('_contextMenuDisabled',children[0].nodeName === 'VOYENT-LOCATION-VECTOR');
         setTimeout(function () {
             //create tabs for the new children
             for (var k = 0; k < children.length; k++) {
@@ -698,7 +707,7 @@ Polymer({
     },
 
     /**
-     * Remove all routes.
+     * Remove all routes (user and tracker).
      * @private
      */
     _removeAllRoutes: function() {
@@ -807,10 +816,6 @@ Polymer({
             _this._infoWindow.open(_this._map,overlay);
             _this._hideContextMenu = true;
         });
-        //display context menu on right-click
-        google.maps.event.addListener(overlay, 'rightclick', function (event) {
-            _this._handleRightClick(event);
-        });
     },
 
     /**
@@ -871,21 +876,15 @@ Polymer({
             //add the location marker to the master list
             _this._handleNewLocationMarker(e.detail.location.username, e.detail.locationMarker);
             //create label for follow user menu
-            e.detail.label = e.detail.child.label + (e.detail.child.user.trim().length > 0 ? ' ('+e.detail.child.user+')' : '');
-            //update the custom map control
-            /*_this.push('_followableUsers',e.detail);
-            _this._updateMapControl();*/
+            if (e.detail.type === 'route') {
+                e.detail.label = e.detail.child.label + (e.detail.child.user.trim().length > 0 ? ' ('+e.detail.child.user+')' : '');
+            }
+            else { //type ==== 'vector'
+                e.detail.label = e.detail.child.label + (e.detail.child.tracker.trim().length > 0 ? ' ('+e.detail.child.tracker+')' : '');
+            }
         });
         this.addEventListener('endSimulation', function(e) {
-            for (var i=0; i<_this._followableUsers.length; i++) {
-                if (_this._followableUsers[i].child === e.detail.child) {
-                    //remove the user from the "follow user" list
-                    _this.splice('_followableUsers',i,1);
-                    //update the custom map control
-                    _this._updateMapControl(i.toString());
-                    break;
-                }
-            }
+
         });
         this.addEventListener('labelChanged', function(e) {
             for (var i=0; i<_this._children.length; i++) {
@@ -903,6 +902,9 @@ Polymer({
      * @private
      */
     _handleRightClick: function(event) {
+        if (this._contextMenuDisabled) {
+            return;
+        }
         //convert the lat/long rightclick coordinate to pixel coordinate
         var scale = Math.pow(2, this._map.getZoom());
         var nw = new google.maps.LatLng(this._map.getBounds().getNorthEast().lat(),this._map.getBounds().getSouthWest().lng());
@@ -931,11 +933,13 @@ Polymer({
      * @private
      */
     _tabChangeListener: function(e) {
+        console.log('_tabChangeListener');
         for (var i=0; i<this._children.length; i++) {
             if (this._children[i].elem === e.model.item.elem) {
                 //show tab content
                 this.set('_children.'+i+'.contentHidden',false);
                 this.set('_children.'+i+'.tabClass','active');
+                this.set('_contextMenuDisabled',this._children[i].elem.nodeName === 'VOYENT-LOCATION-VECTOR');
                 continue;
             }
             //hide tab content
@@ -992,12 +996,12 @@ Polymer({
         if (this._map && this._users && this.routes && this.routes.length > 0) {
             //first remove any children that were previously created via the routes attribute
             for (var i=this._children.length-1; i >= 0; i--) {
-                if (this._children[i].elem.viaRoutesAttribute) {
+                if (this._children[i].elem.viaAttribute) {
                     Polymer.dom(this).removeChild(this._children[i].elem);
                     this.splice('_children',i,1);
                 }
             }
-            this._generateRouteTabs(this.routes);
+            this._generateTabs(this.routes);
             //maintain scroll position
             var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
             var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
@@ -1015,7 +1019,7 @@ Polymer({
      */
     _mapOrUsersChanged: function(map,users) {
         this._children = [];
-        this._generateRouteTabs(this.routes,true);
+        this._generateTabs(this.routes,true);
         this.getSimulations();
     },
 
@@ -1028,6 +1032,14 @@ Polymer({
      */
     _addRoute: function() {
         this.addRoute();
+    },
+
+    /**
+     * Wrapper for `addVector(..)`.
+     * @private
+     */
+    _addVector: function() {
+        this.addVector();
     },
 
     /**

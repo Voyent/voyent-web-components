@@ -1,6 +1,8 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../common/imports/voyent-io.html">
 <link rel="import" href="voyent-location-behavior.html">
+<link rel="import" href="voyent-location-route.html">
+<link rel="import" href="voyent-location-vector.html">
 
 <!--
 Show a map of Voyent location data and simulate location changes by dragging users around the map or define routes and simulate motion along a path!
@@ -157,6 +159,7 @@ Example:
                 <button on-click="_deleteSimulation">Delete</button>
             </template>
             <button on-click="_addRoute">Add Route</button>
+            <button on-click="_addVector">Add Vector</button>
         </div>
         <div class="title">{{_activeSim._id}}</div>
         <div id="tabs-container">
@@ -169,16 +172,6 @@ Example:
                 <template is="dom-repeat" strip-whitespace items="{{_children}}">
                     <div hidden$="{{item.contentHidden}}" data-index$="{{index}}" class="tab-content"></div>
                 </template>
-            </div>
-        </div>
-        <div id="customControl" hidden>
-            <div class="simControl">
-                <select id="followableUsers">
-                    <option value="-1" selected>Follow User:</option>
-                    <template is="dom-repeat" strip-whitespace items="{{_followableUsers}}">
-                        <option value="{{index}}">{{item.label}}</option>
-                    </template>
-                </select>
             </div>
         </div>
         <div id="contextMenu" class="context-menu" hidden$="{{_hideContextMenu}}">

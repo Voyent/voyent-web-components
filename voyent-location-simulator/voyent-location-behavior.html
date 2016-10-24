@@ -8,6 +8,201 @@
      @polymerBehavior
      */
     Voyent.LocationBehavior = {
+        properties: {
+            _EARTH_RADIUS: {
+                type: Number,
+                value: 6371000, //earth's mean radius in meters
+                readonly: true
+            },
+            _KPH_TO_MPS: {
+                type: Number,
+                value: 0.277778,
+                readonly: true
+            },
+            _MPH_TO_MPS: {
+                type: Number,
+                value: 0.44704,
+                readonly: true
+            }
+        },
+
+        /**
+         * Pause the simulation at it's current location along the path.
+         */
+        pauseSimulation: function() {
+            if (!this._path) {
+                return;
+            }
+            this._paused = true;
+        },
+
+        /**
+         * Cancel the currently running simulation.
+         */
+        cancelSimulation: function() {
+            if (!this._path) {
+                return;
+            }
+            this._canceled = true;
+            //if the simulation is paused before it's cancelled then we must cleanup manually
+            if (this._paused) {
+                this._cleanupSimulation();
+            }
+        },
+
+        /**
+         * Get the next coordinate in the simulation and send it to the Location Service. Can be used to step forwards when the simulation is paused.
+         */
+        nextCoordinate: function() {
+            var _this = this;
+            var i = this._index+1; //get next coordinate
+            if (!this._path || !this._marker || !this._location || !this._paused) {
+                return;
+            }
+            var func = this.tracker ? 'updateTrackerLocation' : 'updateLocation';
+            var path = this._path;
+            this._location.location.geometry.coordinates = [path[i].lng(),path[i].lat()]; //get the next location
+            voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
+                _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                _this._marker.setPosition({lat:path[i].lat(),lng:path[i].lng()}); //move the marker to the new location
+                if (_this.tracker) {
+                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                }
+                else {
+                    _this._updateETA(_this._totalMills-_this._interval); //update the ETA
+                }
+                if (i+1 == path.length) {
+                    _this.updateLocationAtMarker();
+                    _this._cleanupSimulation();
+                    return;
+                }
+                _this._index = i;
+                _this._previousBtnDisabled=false;
+            }).catch(function(error) {
+                _this.fire('message-error', 'Issue stepping to next location "' + _this._location.username + '": ' + error);
+                console.error('Issue stepping to next location:',_this._location.username,error);
+            });
+        },
+
+
+        /**
+         * Get the previous coordinate in the simulation and send it to the Location Service. Can be used to step backwards when the simulation is paused.
+         */
+        previousCoordinate: function() {
+            var _this = this;
+            var i = this._index-1; //get previous coordinate
+            if (!this._path || !this._marker || !this._location || !this._paused || i<0) {
+                return;
+            }
+            var func = this.tracker ? 'updateTrackerLocation' : 'updateLocation';
+            var route = this._path;
+            this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the previous location
+            voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
+                _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
+                if (_this.tracker) {
+                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                }
+                else {
+                    _this._updateETA(_this._totalMills+_this._interval); //update the ETA
+                }
+                _this._index = i;
+                if (i === 0) {
+                    _this._previousBtnDisabled=true;
+                }
+            }).catch(function(error) {
+                _this.fire('message-error', 'Issue stepping to previous location "' + _this._location.username + '": ' + error);
+                console.error('Issue stepping to previous location:',_this._location.username,error);
+            });
+        },
+
+        /**
+         * Force an update of the location at it's current point in the simulation. This is in addition to the updates already being triggered by the `frequency` attribute.
+         */
+        updateLocationAtMarker: function() {
+            var _this = this;
+            if (!this._location) {
+                return;
+            }
+            var func = this.tracker ? 'updateTrackerLocation' : 'updateLocation';
+            voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
+                if (!_this._location) {
+                    return; //the simulation has been cleaned up
+                }
+                _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+            }).catch(function(error) {
+                _this.fire('message-error', 'Issue updating location:' + error);
+                console.error('Issue updating location:',error);
+            });
+        },
+
+        /**
+         * Handles continuous playing of the simulation.
+         * @private
+         */
+        _doSimulation: function() {
+            var _this = this;
+            this._updateOnFrequency();
+            this._paused = false;
+            var i = this._index+1; //get next coordinate
+            this._location.location.geometry.coordinates = [this._path[i].lng(),this._path[i].lat()]; //get the next location
+            var updatePosition = setInterval(function() {
+                _this._marker.setPosition({lat:_this._path[i].lat(),lng:_this._path[i].lng()}); //update the marker position
+                if (_this.tracker) {
+                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                }
+                else {
+                    _this._updateETA(_this._totalMills-_this._interval); //update the ETA
+                }
+                //keep the map zoomed on the simulation
+                _this._bounds.extend(new google.maps.LatLng(_this._location.location.geometry.coordinates[1],_this._location.location.geometry.coordinates[0]));
+                _this._map.fitBounds(_this._bounds);
+                _this._map.panToBounds(_this._bounds);
+                if (_this._paused) {
+                    //save the current index and stop recursion
+                    _this._index = i;
+                    clearInterval(updatePosition);
+                    return;
+                }
+                if (_this._canceled || i+1 == _this._path.length) {
+                    //submit last coordinate to the location service
+                    if (i+1 == _this._path.length) {
+                        _this.updateLocationAtMarker();
+                    }
+                    //cleanup simulation and stop recursion
+                    _this._cleanupSimulation();
+                    clearInterval(updatePosition);
+                    return;
+                }
+                i++;
+                _this._location.location.geometry.coordinates = [_this._path[i].lng(),_this._path[i].lat()]; //get the next location
+            },this._interval);
+        },
+
+        /**
+         * Handles updating the location in the Location Service during simulation. The `frequency` attribute determines how often the location is updated on the server.
+         * @private
+         */
+        _updateOnFrequency: function() {
+            var _this = this;
+            var updateLocation = setInterval(function() {
+                if (_this._paused || _this._canceled || !_this._location) {
+                    clearInterval(updateLocation);
+                    return;
+                }
+                var func = this.tracker ? 'updateTrackerLocation' : 'updateLocation';
+                voyent.io.locate[func]({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
+                    if (!_this._location) {
+                        return; //the simulation has been cleaned up
+                    }
+                    _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                }).catch(function(error) {
+                    _this.fire('message-error', 'Issue updating location: ' + error);
+                    console.error('Issue updating location:',error);
+                });
+            },this.frequency*1000);
+        },
+
         /**
          * When a user is dragged to a new location on the map update their location in the Location Service.
          * @param marker
@@ -37,22 +232,115 @@
             var _this = this;
             google.maps.event.addListener(marker, "dragend", function () {
                 location.location.geometry.coordinates = [marker.getPosition().lng(), marker.getPosition().lat()];
-                /*if (location.username && location.username.length > 0) {
+                if (location.username && location.username.length > 0) {
                     location.demoUsername = location.username; //(NTFY-301)
-                }*/
-
-                //move the zones with the tracker
-                var zones = _this.trackerZones[id];
-                for (var i=0; i<zones.length; i++) {
-                    zones[i].setCenter(new google.maps.LatLng(marker.getPosition().lat(),marker.getPosition().lng()));
                 }
+                //move the zones with the tracker
+                _this._moveTrackerZones(id,marker);
 
                 voyent.io.locate.updateTrackerLocation({id:id,location: location}).then(function(data) {
-//                    location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                    location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
                     console.log('Issue changing location of tracker "' + location.username + '":', error);
                 });
             });
+        },
+
+        /**
+         * Moves zones associated with a tracker to a new location based on a markers location.
+         * @param id
+         * @param marker
+         */
+        _moveTrackerZones: function(id,marker) {
+            var zones = this._trackerZones[id];
+            for (var i=0; i<zones.length; i++) {
+                var latLng = new google.maps.LatLng(marker.getPosition().lat(),marker.getPosition().lng());
+                zones[i].setCenter(latLng);
+            }
+        },
+
+        /**
+         * Toggle disabled button state.
+         * @param paused
+         * @private
+         */
+        _pausedChanged: function(paused) {
+            this._previousBtnDisabled=!paused;
+            this._nextBtnDisabled=!paused;
+            this._playBtnDisabled = !paused;
+            this._pauseBtnDisabled = paused;
+        },
+
+        /**
+         * Fire `labelChanged` event.
+         * @param newVal
+         * @param oldVal
+         * @private
+         */
+        _labelChanged: function(newVal,oldVal) {
+            this.fire('labelChanged',{child:this,label:newVal});
+        },
+
+        /**
+         * Validates the `speed` attribute. If invalid, the old value, or the default will be used.
+         * @param newVal
+         * @param oldVal
+         * @private
+         */
+        _speedValidation: function(newVal,oldVal) {
+            if (isNaN(newVal) || newVal <= 0) {
+                this.speed = oldVal || 50;
+            }
+        },
+
+        /**
+         * Validates the `speedunit` attribute. If invalid, the old value, or the default will be used.
+         * @param newVal
+         * @param oldVal
+         * @private
+         */
+        _speedunitValidation: function(newVal,oldVal) {
+            if (newVal !== 'kph' && newVal !== 'mph') {
+                this.speedunit = oldVal || 'kph';
+            }
+        },
+
+        /**
+         * Validates the `frequency` attribute. If invalid, the old value, or the default will be used.
+         * @param newVal
+         * @param oldVal
+         * @private
+         */
+        _frequencyValidation: function(newVal,oldVal) {
+            if (isNaN(newVal) || newVal <= 0) {
+                this.frequency = oldVal || 5;
+            }
+        },
+
+        /**
+         * Pass the map bounds object.
+         * @private
+         */
+        _setBounds: function(bounds) {
+            this._bounds = bounds;
+        },
+
+        /**
+         * Convert degrees to radians
+         * @param degrees
+         * @returns {number}
+         */
+        _toRadians: function(degrees) {
+            return degrees * Math.PI / 180;
+        },
+
+        /**
+         * Convert radians to degrees
+         * @param radians
+         * @returns {number}
+         */
+        _toDegrees: function(radians) {
+            return radians * 180 / Math.PI;
         }
     };
 </script>
