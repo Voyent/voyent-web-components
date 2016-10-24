@@ -1,6 +1,6 @@
 Polymer({
 	is: "voyent-process-demo",
-
+ 
     properties: {
         loggedIn: { type: Boolean, value: false, notify: true },
         /**
