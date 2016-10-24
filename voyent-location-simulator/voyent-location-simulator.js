@@ -595,13 +595,8 @@ Polymer({
                 "location": {
                     "geometry": trackers[i].anchor.geometry,
                     "properties": {
-<<<<<<< Updated upstream
-                      "trackerId": trackers[i]._id,
-                      "zoneNamespace": trackers[i].properties.zoneNamespace
-=======
                         "trackerId": trackers[i]._id,
                         "zoneNamespace": trackers[i].properties.zoneNamespace
->>>>>>> Stashed changes
                     }
                 },
                 "username": trackers[i]._id,
