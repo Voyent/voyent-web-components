@@ -63,6 +63,7 @@
                 text-align: center;
                 opacity: 0.9;
                 border: 1px solid black;
+                width: 80px;
             }
             
             .initialText {
@@ -112,7 +113,9 @@
                                 </template>
                             </paper-listbox>
                         </paper-dropdown-menu>
-                        <paper-button raised on-click="startProcess">Start Process</paper-button>
+                        <paper-button raised on-click="startProcess">Execute Process</paper-button>
+                        <paper-button raised on-click="cancelProcess">Cancel Process</paper-button>
+                        <paper-button raised on-click="showDebugXML">Output XML</paper-button>
                     </template>
                 </template>
             </div>
