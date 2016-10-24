@@ -440,6 +440,11 @@ Polymer({
         });
 	},
 	
+	/**
+	 * Attempt to stop the current process, although there is not a ton of service support for this yet
+	 * We basically remove all overlays and nullify our processId,
+	 *  which will have some additional cleanup done in the observer
+	 */
 	cancelProcess: function() {
 	    // Clear all overlays
 	    // Mainly for the tooltip we attach to synthetic event senders
@@ -458,9 +463,12 @@ Polymer({
 	    this.set('processId', null);
 	},
 	
+	/**
+	 * Show the current XML data, useful for debugging
+	 */
 	showDebugXML: function() {
-	    this.fire('message-info', 'Check your web console for XML details');
 	    console.log("XML for " + this.modelId + ": " + this.xml);
+	    alert(this.xml);
 	},
 	
 	/**
