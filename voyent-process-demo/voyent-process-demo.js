@@ -581,7 +581,6 @@ Polymer({
                               _this.set('_gateName', currentRef.element.name);
                           }
                           if (currentRef.property == _this.TYPE_OUTGOING) {
-                              console.log("Outgoing: " + currentRef.toSource());
                               outgoingConns.push(currentRef.id);
                           }
                       }
@@ -675,7 +674,7 @@ Polymer({
                     _this.set('xml', xml);
                     
                     _this._retrieveModels(false);
-                    _this.set('selectedModel', saveId);
+                    _this._setModelWithoutLoading(saveId);
                     
                     _this.fire('message-info', 'Successfully saved the "' + saveId + '" diagram');
                 })['catch'](function(error) {
@@ -780,13 +779,26 @@ Polymer({
 	},
 	
 	/**
+	 * Function to set this.selectedModel without the subsequent this.loadBPMN call in the observer
+	 * This is done via a flag
+	 */
+	_setModelWithoutLoading: function(val) {
+	    this.blockModelLoad = true;
+	    this.set('selectedModel', val);
+	    delete this.blockModelLoad;
+	},
+	
+	/**
 	 * Function called when the selected BPMN model is changed
 	 * This would mainly fire when a user selects an option from the "stored BPMN" CRUD list
 	 */
 	_modelChanged: function() {
 	    if (this.selectedModel && this.selectedModel !== null) {
 	        this.set('modelId', new String(this.selectedModel));
-            this.loadBPMN();
+	        
+	        if (!this.blockModelLoad) {
+	            this.loadBPMN();
+	        }
         }
 	},
 	
