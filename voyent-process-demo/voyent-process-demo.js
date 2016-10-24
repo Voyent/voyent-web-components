@@ -189,8 +189,6 @@ Polymer({
                                                     eventNode.removeEventListener('click', clickListener);
                                                     overlays.remove(tooltipOverlay);
                                                     
-                                                    // Clear old highlights and send event
-                                                    _this.clearHighlights();
                                                     _this.sendSynthEvent(currentRef.element.name);
                                                 };
                                                 
@@ -571,38 +569,31 @@ Polymer({
 	          _this.set('_forks', []);
 	          _this.set('_gateName', null);
 	          
+	          // First loop through our references and look for any TYPE_GATE elements
               if (parseContext.references) {
                   var outgoingConns = [];
                   for (var loopRef in parseContext.references) {
                       var currentRef = parseContext.references[loopRef];
                       
+                      // If we find a gate mark the name, and store outgoing connections
                       if (currentRef.element.$type == _this.TYPE_GATE) {
                           if (currentRef.element.name && currentRef.element.name !== null) {
                               _this.set('_gateName', currentRef.element.name);
                           }
                           if (currentRef.property == _this.TYPE_OUTGOING) {
+                              console.log("Outgoing: " + currentRef.toSource());
                               outgoingConns.push(currentRef.id);
                           }
                       }
                   }
                   
+                  // If we have outgoing connections from a gate we need to get their name
                   if (outgoingConns.length > 0) {
-                      for (var loopRef in parseContext.references) {
-                          var currentRef = parseContext.references[loopRef];
-                          
-                          if (outgoingConns.indexOf(currentRef.id) !== -1) {
-                              if (currentRef.property == _this.TYPE_INCOMING) {
-                                  // Some manual tweaking to remove "Update Status" for a known use case
-                                  // TODO Change process so we don't have to parse anything
-                                  if (currentRef.element && currentRef.element.name &&
-                                      currentRef.element.name.indexOf("Update Status") !== -1) {
-                                      _this.push('_forks', currentRef.element.name.replace("Update Status", ""));
-                                  }
-                                  else {
-                                      // Some elements won't have names (like End Elements), so use $type as a fallback
-                                      _this.push('_forks', currentRef.element.name ? currentRef.element.name : currentRef.element.$type);
-                                  }
-                              }
+                      // So we loop through our definitions and match by ID
+                      var elements = _this._tool.definitions.rootElements[0].flowElements;
+                      for (var i in elements) {
+                          if (outgoingConns.indexOf(elements[i].id) !== -1) {
+                              _this.push('_forks', elements[i].name);
                           }
                       }
                       
