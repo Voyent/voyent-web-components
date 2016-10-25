@@ -25,6 +25,11 @@ Polymer({
          */
         modelId: { type: String, value: null, notify: true, reflectToAttribute: true },
         /**
+         * Underlying process ID from the service
+         * Also doubles as a flag to track if we are running/executing or not. If this is null we assume we are not executing
+         */
+        processId: { type: String, value: null, notify: true, reflectToAttribute: true, observer: '_processChanged' },
+        /**
          * Chosen model from the dropdown
          */
         selectedModel: { type: String, notify: true, observer: '_modelChanged' },
@@ -62,14 +67,12 @@ Polymer({
 	    // Our internal XML from the service
 	    this.xml = null;
 	    
-	    // Used by the process to send events back
-	    this.processId = null;
-	    
 	    // Disable notifications from displaying, as we just need them for payload
         voyent.notify.config.toast.enabled = false;
         voyent.notify.config.native.enabled = false;
 	    
         // Default to no forks and no models
+        this._gateName = null;
         this._forks = [];
         this._models = [];
 	},
@@ -106,15 +109,24 @@ Polymer({
         // We don't need to display the notifications, since updating our process model image will show the user enough
         var _this = this;
         document.addEventListener('notificationReceived',function(e) {
+            // Don't do anything if we don't have a processId
+            if (_this.processId === null) {
+                return;
+            }
+                
             // Clear our old highlights
             _this.clearHighlights();
             
             // Figure out the name and ID that we're trying to update
-            var updateName = e.detail.notification.subject + ' ' + e.detail.notification.details;
+            var updateName = e.detail.notification.subject;
+            if (e.detail.notification.details) {
+                updateName += ' ' + e.detail.notification.details;
+            }
             var updateId = null;
             var elements = _this._tool.definitions.rootElements[0].flowElements;
             for (var i in elements) {
-                if (updateName == elements[i].name) {
+                // Try to match, which we do case insensitively and also without whitespace
+                if (elements[i].name && updateName.toLowerCase().trim() == elements[i].name.toLowerCase().trim()) {
                     updateId = elements[i].id;
                     _this.highlightById(updateId);
                     break;
@@ -157,6 +169,10 @@ Polymer({
                                         if (currentRef.element.$type === _this.TYPE_EVENT) {
                                             // Wait and then manually highlight, enable click, and show a hint to the user for the synthetic event
                                             setTimeout(function() {
+                                                if (_this.processId === null) {
+                                                    return;
+                                                }
+                                                
                                                 _this.clearHighlights();
                                                 _this.highlightById(matchId);
                                                 
@@ -164,9 +180,9 @@ Polymer({
                                                 var tooltipOverlay = overlays.add(matchId, {
                                                     position: {
                                                       top: 70,
-                                                      left: -15
+                                                      left: -30
                                                     },
-                                                    html: '<div class="bpmnTip">Click envelope to send event</div>'
+                                                    html: '<div class="bpmnTip">Click above to send event</div>'
                                                 });
                                                 
                                                 var clickListener = function(e) {
@@ -186,12 +202,18 @@ Polymer({
                                         // Then we clear the highlights after a second pause
                                         else if (currentRef.element.$type === _this.TYPE_END) {
                                             setTimeout(function() {
+                                                if (_this.processId === null) {
+                                                    return;
+                                                }
+                                                
                                                 _this.clearHighlights();
                                                 _this.highlightById(matchId);
                                             }, _this.waitBeforeEnd);
                                             
                                             setTimeout(function() {
-                                                _this.clearHighlights();
+                                                // Clear our processId, which will also clear highlights
+                                                // This will restore the panels to visibility, as we're done executing now
+                                                _this.set('processId', null);
                                             }, _this.waitBeforeEnd*2);
                                         }
                                     }
@@ -247,7 +269,7 @@ Polymer({
         this.set('interactId', new String(this.modelId));
 	    
 	    // Setup our BPMN tool and import the XML
-        this.set('_tool', this._makeViewer());
+        this.set('_tool', this._makeModeler());
         var _this = this;
         
         if (this.xml) {
@@ -257,28 +279,12 @@ Polymer({
                   console.error("Error: ", err);
               }
               else {
-                  // Zoom to center properly
-                  _this._tool.get("canvas").zoom('fit-viewport', 'auto');
-                  
                   // Generate any gateway fork options from the XML
                   _this._parseForks();
                   
-                  // Loop through and disable each event, to make the diagram read-only
-                  var events = [
-                      'element.hover',
-                      'element.out',
-                      'element.click',
-                      'element.dblclick',
-                      'element.mousedown',
-                      'element.mouseup'
-                  ];
-                  var eventBus = _this._tool.get('eventBus');
-                  events.forEach(function(event) {
-                      eventBus.on(event, 1500, function(e) {
-                          e.stopPropagation();
-                          e.preventDefault();
-                      });
-                  });
+                  // Zoom to center properly
+                  _this._setContainerWidth();
+                  _this._tool.get("canvas").zoom('fit-viewport', 'auto');
                   
                   // Polymer workaround to ensure the local styles apply properly to our dynamically generated SVG
                   _this.scopeSubtree(_this.$.bpmn, true);
@@ -317,6 +323,10 @@ Polymer({
 	    var saveId = this.modelId;
 	    if (this.createMode) {
 	        persistNew = true;
+	        
+	        if (this.modelId.toString() !== this.interactId.toString()) {
+	            saveId = this.interactId;
+	        }
 	    }
 	    else if (this.modelId.toString() !== this.interactId.toString()) {
             persistNew = true;
@@ -334,6 +344,7 @@ Polymer({
 	    
 	    // Ensure we have a unique default name
 	    var defaultId = this._makeUniqueId('new-diagram');
+	    this.set('processId', null);
 	    this.set('modelId', defaultId);
 	    this.set('interactId', defaultId);
 	    this.set('selectedModel', null);
@@ -342,7 +353,7 @@ Polymer({
 	    
 	    // Set a default start event
 	    this.set('xml', "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\" id=\""
-	                    + defaultId + "sample-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"Process_1\" isExecutable=\"true\">\n    <bpmn2:startEvent id=\"StartEvent_1\"/>\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_2\" bpmnElement=\"StartEvent_1\">\n        <dc:Bounds height=\"36.0\" width=\"36.0\" x=\"412.0\" y=\"240.0\"/>\n      </bpmndi:BPMNShape>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>");
+	                    + defaultId + "sample-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"Process_1\" name=\"" + defaultId + "\" isExecutable=\"true\">\n    <bpmn2:startEvent id=\"StartEvent_1\"/>\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_2\" bpmnElement=\"StartEvent_1\">\n        <dc:Bounds height=\"36.0\" width=\"36.0\" x=\"412.0\" y=\"240.0\"/>\n      </bpmndi:BPMNShape>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>");
 	    
 	    // Setup our BPMN tool and import the XML
 	    var _this = this;
@@ -393,8 +404,12 @@ Polymer({
 	 * Clear the current BPMN diagram, which means resetting various state elements
 	 */
 	clearBPMN: function() {
+	    // Clear our process ID first to ensure the tool panels are handled properly
+	    this.set('processId', null);
+	    
 	    this._unloadBPMN();
 	    this.set('_tool', null);
+	    this.set('xml', null);
         this.set('selectedModel', null);
         this.set('modelId', null);
 	},
@@ -403,21 +418,55 @@ Polymer({
 	 * Execute a process instance for a BPMN model
 	 */
 	startProcess: function() {
-        // Clear old highlights
-        this.clearHighlights();
-        
-        // Find our start event and highlight
-        var start = this._getIdByType(this.TYPE_START);
-        if (start && start.length > 0) {
-            this.highlightById(start[0]);
-        }
-        
         // Then post to start the process, which should end up with us receiving status notifications
         var _this = this;
         voyent.$.post(this._makeURL("/processes/" + this.modelId)).then(function(response){
+            // Set our processId. Note some additional functionality will happen in the observer
             _this.set('processId', response.processId);
+            
+            // Find our start event and highlight
+            _this.clearHighlights();
+            var start = _this._getIdByType(_this.TYPE_START);
+            if (start && start.length > 0) {
+                _this.highlightById(start[0]);
+            }
+            
             _this.fire('message-info', "Executed process '" + response.processName + "'");
+        })['catch'](function(error) {
+            _this.fire('message-error', "Failed to execute process");
+            console.error("Error: ", error.responseText ? error.responseText : error);
         });
+	},
+	
+	/**
+	 * Attempt to stop the current process, although there is not a ton of service support for this yet
+	 * We basically remove all overlays and nullify our processId,
+	 *  which will have some additional cleanup done in the observer
+	 */
+	cancelProcess: function() {
+	    // Clear all overlays
+	    // Mainly for the tooltip we attach to synthetic event senders
+	    var overlays = this._tool.get('overlays');
+	    if (overlays) {
+	        if (this._tool.definitions && this._tool.definitions.rootElements) {
+                var elements = this._tool.definitions.rootElements[0].flowElements;
+                for (var i in elements) {
+                    overlays.remove({ element: elements[i].id });
+                }
+            }
+        }
+	    
+	    // Mark ourselves stopped
+	    // This will also clear highlights in the processId observer
+	    this.set('processId', null);
+	},
+	
+	/**
+	 * Show the current XML data, useful for debugging
+	 */
+	showDebugXML: function() {
+	    console.log("XML for " + this.modelId + ": " + this.xml);
+	    alert(this.xml);
 	},
 	
 	/**
@@ -425,6 +474,10 @@ Polymer({
 	 * Normally used in the process diagram to easily simulate outside events
 	 */
 	sendSynthEvent: function(eventName) {
+	    if (this.processId === null) {
+	        return;
+	    }
+	    
 	    // Note the data parameters are case sensitive based on what the Process Service uses
         var event = {
             time: new Date().toISOString(),
@@ -433,13 +486,23 @@ Polymer({
             type: 'synthetic-message-event-withProcessId',
             processId: this.processId,
             data: {
-                'Fork': this.selectedFork,
                 'target': 'process'
             }
         };
         
+        // Dynamically set the gate name based on what is in our BPMN diagram
+        // Only bother if we actually have a selected fork
+        if (this.selectedFork && this.selectedFork !== null) {
+            var forkGate = 'Fork';
+            if (this._gateName && this._gateName !== null) {
+                forkGate = this._gateName;
+            }
+            event.data[forkGate] = this.selectedFork;
+        }
+        
         // Debug infos
         console.log("Going to send event '" + eventName + "' with process ID " + this.processId + " and fork " + this.selectedFork);
+        console.log("Event JSON: " + event.toSource());
         
         var _this = this;
 	    voyent.io.event.createCustomEvent({ "event": event }).then(function() {
@@ -462,6 +525,10 @@ Polymer({
 	 * Loop through all elements in the BPMN tool and clear any highlight markers
 	 */
 	clearHighlights: function() {
+	    if (!this._tool || this._tool === null) {
+	        return;
+	    }
+	    
         var elements = this._tool.definitions.rootElements[0].flowElements;
         var canvas = this._tool.get("canvas");
         for (var i in elements) {
@@ -499,38 +566,40 @@ Polymer({
 	_parseForks: function() {
 	    var _this = this;
 	    this._tool.moddle.fromXML(this.xml, function(err, definitions, parseContext) {
+	          _this.set('_forks', []);
+	          _this.set('_gateName', null);
+	          
+	          // First loop through our references and look for any TYPE_GATE elements
               if (parseContext.references) {
                   var outgoingConns = [];
                   for (var loopRef in parseContext.references) {
                       var currentRef = parseContext.references[loopRef];
                       
+                      // If we find a gate mark the name, and store outgoing connections
                       if (currentRef.element.$type == _this.TYPE_GATE) {
+                          if (currentRef.element.name && currentRef.element.name !== null) {
+                              _this.set('_gateName', currentRef.element.name);
+                          }
                           if (currentRef.property == _this.TYPE_OUTGOING) {
                               outgoingConns.push(currentRef.id);
                           }
                       }
                   }
                   
+                  // If we have outgoing connections from a gate we need to get their name
                   if (outgoingConns.length > 0) {
-                      _this.set('_forks', []);
-                      for (var loopRef in parseContext.references) {
-                          var currentRef = parseContext.references[loopRef];
-                          
-                          if (outgoingConns.indexOf(currentRef.id) !== -1) {
-                              if (currentRef.property == _this.TYPE_INCOMING) {
-                                  // Some manual tweaking to remove "Update Status" for a known use case
-                                  if (currentRef.element.name.indexOf("Update Status") !== -1) {
-                                      _this.push('_forks', currentRef.element.name.replace("Update Status", ""));
-                                  }
-                                  else {
-                                      _this.push('_forks', currentRef.element.name);
-                                  }
-                              }
+                      // So we loop through our definitions and match by ID
+                      var elements = _this._tool.definitions.rootElements[0].flowElements;
+                      for (var i in elements) {
+                          if (outgoingConns.indexOf(elements[i].id) !== -1) {
+                              _this.push('_forks', elements[i].name);
                           }
                       }
                       
                       if (_this._forks.length > 0) {
-                          _this.set('selectedFork', _this._forks[0]);
+                          if (!_this.selectedFork || _this.selectedFork === null) {
+                              _this.set('selectedFork', _this._forks[0]);
+                          }
                       }
                   }
               }
@@ -599,18 +668,25 @@ Polymer({
                 "model": xml
             };
             
+            // Create new
             if (persistNew) {
                 voyent.$.post(_this._makeURL("/models/" + saveId), data).then(function(response){
+                    _this.set('xml', xml);
+                    
                     _this._retrieveModels(false);
+                    _this._setModelWithoutLoading(saveId);
                     
                     _this.fire('message-info', 'Successfully saved the "' + saveId + '" diagram');
                 })['catch'](function(error) {
                     _this.fire('message-error', 'Failed to save the "' + saveId + '" diagram');
                 });
             }
+            // Update existing
             else {
                 voyent.$.put(_this._makeURL("/models/" + saveId), data).then(function(response){
-                    _this._retrieveModels(false);
+                    _this.set('xml', xml);
+                    
+                    _this._parseForks();
                     
                     _this.fire('message-info', 'Successfully updated the "' + saveId + '" diagram');
                 })['catch'](function(error) {
@@ -628,20 +704,17 @@ Polymer({
 	},
 	
 	/**
-	 * Setup a BPMN viewer with some default options
-	 */
-	_makeViewer: function() {
-	    var BpmnViewer = window.BpmnJS.Viewer;
-	    return new BpmnViewer({
-            container: '#bpmn',
-            zoomScroll: { enabled: false },
-        });
-	},
-	
-	/**
 	 * Setup a BPMN modeler and properties panel
 	 */
 	_makeModeler: function() {
+	    if (!window.BpmnJS) {
+	        this.fire('message-error', 'No BPMN tooling found, please check app setup');
+	        return null;
+	    }
+	    
+	    // Show our tooling panels
+	    this._setPanelShow(true);
+	    
         var BpmnJS = window.BpmnJS;
         return new BpmnJS({
           additionalModules: [
@@ -674,13 +747,82 @@ Polymer({
 	},
 	
 	/**
+	 * Show or hide the tooling panels, namely the element properties and palette
+	 * This uses CSS 'opacity' to toggle visibility
+	 * This will also resize the BPMN container width based on the panel state
+	 */
+	_setPanelShow: function(show) {
+	    var propPanel = document.getElementById('js-properties-panel');
+	    var palettePanels = document.getElementsByClassName('djs-palette');
+	    
+	    if (propPanel) {
+	        propPanel.style.opacity = show ? '1' : '0';
+	        propPanel.style.visibility = show ? 'visible' : 'hidden';
+	    }
+	    if (palettePanels && palettePanels.length > 0) {
+	        palettePanels[0].style.opacity = show ? '1' : '0';
+	        palettePanels[0].style.visibility = show ? 'visible' : 'hidden';
+	    }
+	    
+	    // Also update our BPMN container to either fill the width (when panels are hidden) or scale accordingly
+	    this._setContainerWidth(!show);
+	},
+	
+	/**
+	 * Set the BPMN container style width
+	 * This is variable based on whether our tooling panels are visible or not
+	 */
+	_setContainerWidth: function(fullSize) {
+	    var container = document.getElementsByClassName('bjs-container');
+	    if (container && container.length > 0) {
+	        container[0].style.width = fullSize ? "100%": "calc(100% - 260px)";
+	        this._tool.get('canvas').resized();
+        }
+	},
+	
+	/**
+	 * Function to set this.selectedModel without the subsequent this.loadBPMN call in the observer
+	 * This is done via a flag
+	 */
+	_setModelWithoutLoading: function(val) {
+	    this.blockModelLoad = true;
+	    this.set('selectedModel', val);
+	    delete this.blockModelLoad;
+	},
+	
+	/**
 	 * Function called when the selected BPMN model is changed
 	 * This would mainly fire when a user selects an option from the "stored BPMN" CRUD list
 	 */
 	_modelChanged: function() {
 	    if (this.selectedModel && this.selectedModel !== null) {
 	        this.set('modelId', new String(this.selectedModel));
-            this.loadBPMN();
+	        
+	        if (!this.blockModelLoad) {
+	            this.loadBPMN();
+	        }
+        }
+	},
+	
+	/**
+	 * Function called when the process ID from our service is changed
+	 * If the processId is null we are not executing, so clear the highlights and show the tooling
+	 * Otherwise we are executing, so hide the tooling
+	 */
+	_processChanged: function() {
+	    // Not executing
+	    if (this.processId === null) {
+	        this.clearHighlights();
+	        this._setPanelShow(true);
+	    }
+	    // Executing
+	    else {
+	        this._setPanelShow(false);
+	    }
+	    
+	    // Automatically zoom the viewport
+        if (this._tool && this._tool !== null) {
+            this._tool.get('canvas').zoom('fit-viewport', 'auto');
         }
 	}
 });

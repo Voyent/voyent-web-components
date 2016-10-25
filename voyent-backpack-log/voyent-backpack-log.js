@@ -110,6 +110,18 @@ Polymer({
         this._pushTimeLimit("1 year", "year", 1);
         this._pushTimeLimit("All Time", "all");
     },
+
+    /**
+     * Get and format the current date
+     * Desired format is YYYY-MM-DD, HH:MM
+     * @param time
+     */
+    getCurrentDate: function() {
+        var date = new Date();
+        
+        return date.getFullYear() + "-" + ('0'+(date.getMonth()+1)).slice(-2) + "-" + ('0'+date.getDate()).slice(-2) + ", " +
+               date.getHours() + ":" + ('0'+date.getMinutes()).slice(-2);
+    },
     
     /**
      * Computed binding function
@@ -273,6 +285,7 @@ Polymer({
         // 2. Parse action/taskGroup/taskName from any log messages
         var strStart = 'start';
         var strEnd = 'end';
+        var strParams = 'params';
         var strTaskResult = 'Task Result';
         var currentLog = null;
         for (var i = 0; i < logs.length; i++) {
@@ -281,6 +294,7 @@ Polymer({
             currentLog.action = null;
             currentLog.taskGroup = null;
             currentLog.taskItem = null;
+            currentLog.isParams = false;
 
             // Using messagePrefix in order to allow for the previously existing checks against taskGroups to work with events containing arrays.
             var messagePrefix = currentLog.message.indexOf('{') !== -1 ? currentLog.message.split("{")[0] : currentLog.message;
@@ -347,6 +361,11 @@ Polymer({
                 currentLog.message = currentLog.message.substring(strEnd.length).trim();
                 currentLog.message += strEnd;
             }
+            // Watch for params, which is an action level JSON object
+            else if (currentLog.message.lastIndexOf(strParams, 0) === 0) {
+                currentLog.message = currentLog.message.substring(strParams.length).trim();
+                currentLog.isParams = true;
+            }
             // Account for Task Result, which is backpack content
             else if (currentLog.message.lastIndexOf(strTaskResult, 0) === 0) {
                 currentLog.message = currentLog.message.substring(strTaskResult.length).trim();
@@ -365,8 +384,12 @@ Polymer({
                     this._trimContainer(currentLog, 'taskItem');
                 }
 
+                // If we are marked as `params` we want to prefix our message
+                if (currentLog.isParams) {
+                    currentLog.message = "Params:\n" + currentLog.message;
+                }
                 // If we have an equal sign (=) starting our message, trim it, since the rest is probably JSON
-                if (currentLog.message.indexOf("=") === 0) {
+                else if (currentLog.message.indexOf("=") === 0) {
                     currentLog.message = currentLog.message.substring(1).trim();
                 }
 
@@ -378,8 +401,6 @@ Polymer({
             }
         }
 
-        console.log('All LOGS');
-        console.log(this._allLogs);
         // Notify the user
         this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
 

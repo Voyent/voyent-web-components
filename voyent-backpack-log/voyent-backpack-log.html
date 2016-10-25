@@ -100,6 +100,8 @@ Example:
                 border: 1px solid #ddd;
                 background-color: #444444;
                 color: white;
+                text-shadow: 1px 1px 2px #9999FF;
+                vertical-align: middle;
             }
             .tr {
                 display: table-row;
@@ -136,6 +138,22 @@ Example:
                 padding: 5px;
                 border-left: 1px solid #ddd;
                 border-right: 1px solid #ddd;
+            }
+            
+            .tr:nth-child(odd) {
+                background: #ddd;
+                background: -moz-linear-gradient(top, #efefef 50%, #dedede 100%);
+                background: -webkit-linear-gradient(top, #efefef 50%, #dedede 100%);
+                background: linear-gradient(to bottom, #efefef 50%, #dedede 100%);
+            }
+            
+            .tr:nth-child(even) {
+                background: #fff;
+            }
+            
+            .thSmall {
+                font-size: 10px;
+                vertical-align: middle;
             }
             
             .centerT {
@@ -189,7 +207,7 @@ Example:
                             <div class="tr">
                                 <div class="th">Recent {{_pastActions.length}} Actions</div>
                                 <div class="th">Name</div>
-                                <div class="th">Time</div>
+                                <div class="th">Time <span class="thSmall">(Current is {{getCurrentDate()}})</span></div>
                             </div>
                             <template is="dom-repeat" strip-whitespace items="{{_pastActions}}" as="paction" strip-whitespace>
                                 <div class="tr">
