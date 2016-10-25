@@ -597,6 +597,7 @@ Polymer({
             if (lastLocation) {
                 googlePoint = new google.maps.LatLng(lastLocation.location.geometry.coordinates[1],
                                                      lastLocation.location.geometry.coordinates[0]);
+                tracker.anchor.geometry.coordinates = [googlePoint.lng(),googlePoint.lat()];
             }
             else {
                 googlePoint = new google.maps.LatLng(tracker.anchor.geometry.coordinates[1],
