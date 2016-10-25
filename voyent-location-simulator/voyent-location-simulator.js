@@ -143,7 +143,6 @@ Polymer({
             return;
         }
         this._bounds = new google.maps.LatLngBounds();
-        _this._trackerLocations = {};
         //refresh realm users
         this._getRealmUsers();
         //delete old location data
@@ -152,47 +151,34 @@ Polymer({
         var promises = [];
         promises.push(voyent.io.locate.findLocations({realm:this.realm,fields:{_id:0},options:{sort:{lastUpdated:-1}}}).then(function(locations) {
             if (locations && locations.length) {
-                 //process the locations so we only keep the most recent update for each user and tracker
+                //process the locations so we only keep the most recent update for each user
                 var userLocations={};
                 for (var i=0; i<locations.length; i++) {
-                    //tracker locations
                     if (locations[i].location.properties && locations[i].location.properties.trackerId) {
-                        var trackerId = locations[i].location.properties.trackerId;
-                        if (_this._trackerLocations.hasOwnProperty(trackerId)) {
-                            if (locations[i].lastUpdated > _this._trackerLocations[trackerId].lastUpdated) {
-                                _this._trackerLocations[trackerId]=locations[i];
-                            }
-                        }
-                        else {
-                            _this._trackerLocations[trackerId]=locations[i];
+                        //ignore locations that are for trackers
+                        continue;
+                    }
+                    if (userLocations.hasOwnProperty(locations[i].username)) {
+                        if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
+                            userLocations[locations[i].username]=locations[i];
                         }
                     }
-                    else { //user locations
-                        if (userLocations.hasOwnProperty(locations[i].username)) {
-                            if (locations[i].lastUpdated > userLocations[locations[i].username].lastUpdated) {
-                                userLocations[locations[i].username]=locations[i];
-                            }
-                        }
-                        else { userLocations[locations[i].username]=locations[i]; }
-                    }
+                    else { userLocations[locations[i].username]=locations[i]; }
                 }
                 locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
                 _this._updateLocations(locations);
-
-                //this call is dependant on the locations call which is why we execute it here
-                voyent.io.locate.getAllTrackers({realm:_this.realm}).then(function(trackers) {
-                    //update the map with the trackers
-                    _this._updateTrackers(trackers);
-                    _this._map.fitBounds(_this._bounds);
-                    _this._map.panToBounds(_this._bounds);
-                });
             }
+
         }));
         promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
         }));
         promises.push(voyent.io.locate.getAllPOIs({realm:this.realm}).then(function(pois) {
             _this._updatePOIs(pois);
+        }));
+        promises.push(voyent.io.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
+            //update the map with the trackers
+            _this._updateTrackers(trackers);
         }));
         return Promise.all(promises).then(function() {
             _this._map.fitBounds(_this._bounds);
@@ -591,74 +577,93 @@ Polymer({
      * @private
      */
     _updateTrackers: function(trackers) {
+        var _this = this;
         var googlePoint, tracker, zones, zone;
 
+        //we want to draw the trackers at their last known location
+        //and not at the position of their template so get the
+        //last known location for each tracker before drawing it
         for (var i=0; i<trackers.length; i++) {
+            (function(i) {
+                voyent.io.locate.getLastUserLocation({"username":trackers[i]._id}).then(function(location) {
+                    drawTracker(trackers[i],location,i===trackers.length-1);
+                }).catch(function(error) {
+
+                });
+            })(i);
+
+        }
+        function drawTracker(theTracker,lastLocation,isLastTracker) {
+            //process the tracker
             //use the last known tracker location as it's anchor point if we have one
-            var lastKnownTrackerLocation = this._trackerLocations[trackers[i]._id];
-            if (lastKnownTrackerLocation) {
-                googlePoint = new google.maps.LatLng(lastKnownTrackerLocation.location.geometry.coordinates[1],
-                                                     lastKnownTrackerLocation.location.geometry.coordinates[0]);
+            if (lastLocation) {
+                googlePoint = new google.maps.LatLng(lastLocation.location.geometry.coordinates[1],
+                    lastLocation.location.geometry.coordinates[0]);
             }
             else {
-                googlePoint = new google.maps.LatLng(trackers[i].anchor.geometry.coordinates[1],
-                                                     trackers[i].anchor.geometry.coordinates[0]);
+                googlePoint = new google.maps.LatLng(theTracker.anchor.geometry.coordinates[1],
+                                                     theTracker.anchor.geometry.coordinates[0]);
             }
 
             tracker = new google.maps.Marker({
                 position: googlePoint,
-                map: this._map,
+                map: _this._map,
                 draggable: true
             });
-            this._bounds.extend(googlePoint);
-            this._clickListener(tracker,trackers[i],"point");
-            this._pointMarkers.push(tracker);
+            _this._bounds.extend(googlePoint);
+            _this._clickListener(tracker,theTracker,"point");
+            _this._pointMarkers.push(tracker);
             var location = {
                 "location": {
-                    "geometry": trackers[i].anchor.geometry,
+                    "geometry": theTracker.anchor.geometry,
                     "properties": {
-                        "trackerId": trackers[i]._id,
-                        "zoneNamespace": trackers[i].properties.zoneNamespace
+                        "trackerId": theTracker._id,
+                        "zoneNamespace": theTracker.properties.zoneNamespace
                     }
                 },
-                "username": trackers[i]._id,
-                "demoUsername": trackers[i]._id
+                "username": theTracker._id,
+                "demoUsername": theTracker._id
             };
-            this._trackerLocationChangedListener(tracker,trackers[i]._id,location);
-            this._handleNewLocationMarker(location.username,tracker);
+            _this._trackerLocationChangedListener(tracker,theTracker._id,location);
+            _this._handleNewLocationMarker(location.username,tracker);
 
             //set up a namespace to associate zones with a tracker in
-            this._trackerZones[trackers[i]._id] = [];
+            _this._trackerZones[theTracker._id] = [];
 
             //process the tracker zones
-            zones = trackers[i].zones.features;
+            zones = theTracker.zones.features;
             for (var j=0; j<zones.length; j++) {
                 zone = new google.maps.Circle({
-                    'center': googlePoint,
+                    'center': googlePoint, //new google.maps.LatLng(properties.googleMaps.center[0], properties.googleMaps.center[1]),
                     'radius': zones[j].properties.googleMaps.radius,
                     'fillColor': zones[j].properties.Color,
                     'zIndex': zones[j].properties.googleMaps.zIndex,
-                    'map': this._map,
+                    'map': _this._map,
                     'editable': false
                 });
                 //associate the zones with the tracker so we can sync them on movement
-                this._trackerZones[trackers[i]._id].push(zone);
-                this._clickListener(zone,zones[j],"circle");
-                this._regions.push(zone);
+                _this._trackerZones[theTracker._id].push(zone);
+                _this._clickListener(zone,zones[j],"circle");
+                _this._regions.push(zone);
 
                 //adjust the map bounds for the rendered zones
                 var coords = zones[j].geometry.coordinates;
                 for (var cycle=0; cycle<coords.length; cycle++) {
                     for (var point = 0; point < coords[cycle].length; point++) {
                         googlePoint = new google.maps.LatLng(coords[cycle][point][1], coords[cycle][point][0]);
-                        this._bounds.extend(googlePoint);
+                        _this._bounds.extend(googlePoint);
                     }
                 }
             }
+            if (isLastTracker) {
+                //fire event and set trackers locally
+                _this.fire('trackersRetrieved',{trackers:trackers.length>0?trackers:null,trackerZones:_this._trackerZones});
+                _this._trackers = trackers.length>0?trackers:null;
+
+                _this._map.fitBounds(_this._bounds);
+                _this._map.panToBounds(_this._bounds);
+            }
         }
-        //fire event and set trackers locally
-        this.fire('trackersRetrieved',{trackers:trackers.length>0?trackers:null,trackerZones:this._trackerZones});
-        this._trackers = trackers.length>0?trackers:null;
     },
 
     /**
@@ -676,7 +681,7 @@ Polymer({
                 if (routes[j].tracker) {
                     //pass the map and trackers via the constructor (instead of via the events like markup defined components)
                     children.push(new Voyent.LocationVector(this._map, this._trackers, this._trackerZones, routes[j].label, routes[j].tracker, routes[j].bearing,
-                                  routes[j].speed, routes[j].speedunit, routes[j].duration, routes[j].frequency, false));
+                        routes[j].speed, routes[j].speedunit, routes[j].duration, routes[j].frequency, false));
                 }
                 else {
                     //pass the map and users via the constructor (instead of via the events like markup defined components)
