@@ -430,6 +430,7 @@ Polymer({
      * @private
      */
     _updateRegionsAndPOIs: function(data) {
+        var _this = this;
         for (var i=0; i<data.length; i++) {
             try {
                 var location = data[i].location;
@@ -455,17 +456,17 @@ Polymer({
                     var path = [];
                     var color = properties.Color;
                     var metadata = typeof properties.googleMaps === "undefined" ? {} : properties.googleMaps;
-                    //set the map bounds and the paths for polygon shapes
-                    for (var cycle = 0; cycle < coords.length; cycle++) {
-                        for (var point = 0; point < coords[cycle].length; point++) {
-                            googlePoint = new google.maps.LatLng(coords[cycle][point][1], coords[cycle][point][0]);
-                            path.push(googlePoint);
-                            this._bounds.extend(googlePoint);
-                        }
-                        paths.push(path);
-                    }
                     if (metadata.shape === "polygon" || typeof metadata.shape === "undefined") {
                         metadata.shape = "polygon";
+                        //generate the paths and extend the map bounds for polygon shapes
+                        for (var j=0; j<coords.length; j++) {
+                            for (var k=0; k<coords[j].length; k++) {
+                                googlePoint = new google.maps.LatLng(coords[j][k][1], coords[j][k][0]);
+                                path.push(googlePoint);
+                                this._bounds.extend(googlePoint);
+                            }
+                            paths.push(path);
+                        }
                         region = new google.maps.Polygon({
                             'paths': paths,
                             'map': this._map,
@@ -489,6 +490,9 @@ Polymer({
                             'editable': false,
                             'fillColor': color
                         });
+                    }
+                    if (metadata.shape !== 'polygon') {
+                        this._bounds.union(region.getBounds());
                     }
                     this._clickListener(region,data[i],metadata.shape);
                     this._regions.push(region);
@@ -603,6 +607,7 @@ Polymer({
                 googlePoint = new google.maps.LatLng(tracker.anchor.geometry.coordinates[1],
                                                      tracker.anchor.geometry.coordinates[0]);
             }
+            //adjust the map bounds for the tracker anchor point
             _this._bounds.extend(googlePoint);
 
             //process the tracker
@@ -633,26 +638,20 @@ Polymer({
             zones = tracker.zones.features;
             for (var i=0; i<zones.length; i++) {
                 circle = new google.maps.Circle({
-                    'center': googlePoint, //new google.maps.LatLng(properties.googleMaps.center[0], properties.googleMaps.center[1]),
+                    'center': googlePoint,
                     'radius': zones[i].properties.googleMaps.radius,
                     'fillColor': zones[i].properties.Color,
                     'zIndex': zones[i].properties.googleMaps.zIndex,
                     'map': _this._map,
                     'editable': false
                 });
-                //associate the zones with the tracker so we can sync them on movement
+                //associate the zone with the tracker so we can sync them on movement
                 _this._trackers[tracker._id].zones.push(circle);
                 _this._clickListener(circle,zones[i],"circle");
                 _this._regions.push(circle);
 
-                //adjust the map bounds for the rendered zones
-                var coords = zones[i].geometry.coordinates;
-                for (var cycle=0; cycle<coords.length; cycle++) {
-                    for (var point = 0; point < coords[cycle].length; point++) {
-                        googlePoint = new google.maps.LatLng(coords[cycle][point][1], coords[cycle][point][0]);
-                        _this._bounds.extend(googlePoint);
-                    }
-                }
+                //adjust the map bounds for the rendered zone
+                _this._bounds.union(circle.getBounds());
             }
             if (isLastTracker) {
                 //fire event and set trackers locally
