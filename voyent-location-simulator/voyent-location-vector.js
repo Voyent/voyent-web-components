@@ -6,7 +6,6 @@ Voyent.LocationVector = Polymer({
      * Custom constructor
      * @param map
      * @param trackers
-     * @param trackerZones
      * @param label
      * @param tracker
      * @param bearing
@@ -17,10 +16,9 @@ Voyent.LocationVector = Polymer({
      * @param viaAttribute
      * @private
      */
-    factoryImpl: function(map,trackers,trackerZones,label,tracker,bearing,speed,speedunit,duration,frequency,viaAttribute) {
+    factoryImpl: function(map,trackers,label,tracker,bearing,speed,speedunit,duration,frequency,viaAttribute) {
         this._map = map;
         this._trackers = trackers;
-        this._trackerZones = trackerZones || null;
         this.label = label || 'New Vector';
         this.tracker = tracker || '';
         this.bearing = bearing || 0;
@@ -55,7 +53,7 @@ Voyent.LocationVector = Polymer({
         /**
          * The time in minutes that the tracker will move along it's vector.
          */
-        duration: { type: Number, value: 0.5, observer: '_durationValidation' },
+        duration: { type: Number, value: 2, observer: '_durationValidation' },
         /**
          * The number of seconds to wait between location updates during a simulation.
          */
@@ -92,7 +90,6 @@ Voyent.LocationVector = Polymer({
             });
             Polymer.dom(this).parentNode.addEventListener('trackersRetrieved', function(e) {
                 _this._trackers = e.detail.trackers;
-                _this._trackerZones = e.detail.trackerZones;
             });
         }
         //set some default values
@@ -113,14 +110,10 @@ Voyent.LocationVector = Polymer({
             return;
         }
         if (!this._path) {
-            if ((this._trackers && this._trackers.length > 0 && !this.tracker) /*|| !this.bearing || !this.duration*/) {
+            if ((this._trackers && Object.keys(this._trackers).length && !this.tracker) /*|| !this.bearing || !this.duration*/) {
                 return;
             }
-
-            var tracker = this._trackers.filter(function(tracker) {
-                return tracker._id === _this.tracker;
-            });
-            tracker = tracker[0];
+            var tracker = this._trackers[_this.tracker].tracker;
 
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
@@ -154,7 +147,7 @@ Voyent.LocationVector = Polymer({
                 });
                 _this._marker = marker;
                 //move the zones with the tracker
-                _this._moveTrackerZones(_this.tracker,marker);
+                _this._trackerMoved(_this.tracker,marker);
                 //start simulation
                 _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
                 _this._doSimulation();
@@ -298,7 +291,7 @@ Voyent.LocationVector = Polymer({
         }
         this.bearingInputClass='form-control';
         this.bearingLblClass='';
-        if ((this.tracker || (!this._trackers || this._trackers.length==0)) && this.duration && this.duration.toString().length > 0) {
+        if ((this.tracker || (!this._trackers || Object.keys(this._trackers).length==0)) && this.duration && this.duration.toString().length > 0) {
             this._playBtnDisabled=false;
         }
     },
@@ -318,7 +311,7 @@ Voyent.LocationVector = Polymer({
         }
         this.durationInputClass='form-control';
         this.durationLblClass='';
-        if ((this.tracker || (!this._trackers || this._trackers.length==0)) && this.bearing && this.bearing.toString().length > 0) {
+        if ((this.tracker || (!this._trackers || Object.keys(this._trackers).length==0)) && this.bearing && this.bearing.toString().length > 0) {
             this._playBtnDisabled=false;
         }
     },
@@ -345,5 +338,17 @@ Voyent.LocationVector = Polymer({
         else {
             this.set('tracker','');
         }
+    },
+
+    /**
+     * Convert trackers mapping to an array.
+     * @param trackers
+     * @returns {Array}
+     * @private
+     */
+    _toArray: function(trackers) {
+        return Object.keys(trackers).map(function (key) {
+            return trackers[key].tracker;
+        });
     }
 });

@@ -66,7 +66,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:path[i].lat(),lng:path[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
@@ -101,7 +101,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills+_this._interval); //update the ETA
@@ -149,7 +149,7 @@
             var updatePosition = setInterval(function() {
                 _this._marker.setPosition({lat:_this._path[i].lat(),lng:_this._path[i].lng()}); //update the marker position
                 if (_this.tracker) {
-                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
@@ -236,7 +236,7 @@
                     location.demoUsername = location.username; //(NTFY-301)
                 }
                 //move the zones with the tracker
-                _this._moveTrackerZones(id,marker);
+                _this._trackerMoved(id,marker);
 
                 voyent.io.locate.updateTrackerLocation({id:id,location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
@@ -247,26 +247,22 @@
         },
 
         /**
-         * Moves zones associated with a tracker to a new location based on a markers location.
+         * Moves zones associated with a tracker to a new location based
+         * on the marker's location + update the stored tracker location.
          * @param id
          * @param marker
          */
-        _moveTrackerZones: function(id,marker) {
-            //update the zone center point
-            var zones = this._trackerZones[id];
+        _trackerMoved: function(id,marker) {
+            //update the center point of associated zones
+            var zones = this._trackers[id].zones;
             for (var i=0; i<zones.length; i++) {
                 var latLng = new google.maps.LatLng(marker.getPosition().lat(),marker.getPosition().lng());
                 zones[i].setCenter(latLng);
             }
-            //update our stored list of trackers so that our saved
-            //tracker location is always the last known location
-            for (var j=0; j<this._trackers.length; j++) {
-                if (id === this._trackers[j]._id) {
-                    this._trackers[j].anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
-                    this.fire('trackersRetrieved',{trackers:this._trackers,trackerZones:this._trackerZones});
-                    break;
-                }
-            }
+            //update the tracker so that the tracker
+            //location is always the last known location
+            this._trackers[id].tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
+            this.fire('trackersRetrieved',{trackers:this._trackers});
         },
 
         /**

@@ -60,7 +60,7 @@ Polymer({
      * @event usersRetrieved
      */
     /**
-     * Fired when the trackers are retrieved. Contains the list of trackers.
+     * Fired when the trackers are retrieved or updated. Contains an object mapping of trackers and their associated zones.
      * @event trackersRetrieved
      */
     /**
@@ -81,9 +81,9 @@ Polymer({
         this._locationMarkers = [];
         this._regions = [];
         this._pointMarkers = [];
+        this._trackers = {};
         this._hideContextMenu = true;
         this._activeSim = null;
-        this._trackerZones = {};
         this._contextMenuDisabled = true;
         //initialize google maps
         window.initializeLocationsMap = function() {
@@ -284,7 +284,7 @@ Polymer({
             return;
         }
         //first append the new route as a direct child of the component so it inherits any custom styling
-        Polymer.dom(this).appendChild(new Voyent.LocationVector(this._map,this._trackers,this._trackerZones,label,tracker,bearing,speed,speedunit,duration,frequency));
+        Polymer.dom(this).appendChild(new Voyent.LocationVector(this._map,this._trackers,label,tracker,bearing,speed,speedunit,duration,frequency));
         //add a new tab for the child
         this.push('_children',{
             "elem":Polymer.dom(this).lastElementChild,
@@ -578,7 +578,7 @@ Polymer({
      */
     _updateTrackers: function(trackers) {
         var _this = this;
-        var googlePoint, tracker, zones, zone;
+        var googlePoint, marker, zones, circle;
 
         //we want to draw the trackers at their last known location
         //and not at the position of their template so get the
@@ -591,63 +591,61 @@ Polymer({
 
                 });
             })(i);
-
         }
-        function drawTracker(theTracker,lastLocation,isLastTracker) {
-            //process the tracker
+        function drawTracker(tracker,lastLocation,isLastTracker) {
             //use the last known tracker location as it's anchor point if we have one
             if (lastLocation) {
                 googlePoint = new google.maps.LatLng(lastLocation.location.geometry.coordinates[1],
-                    lastLocation.location.geometry.coordinates[0]);
+                                                     lastLocation.location.geometry.coordinates[0]);
             }
             else {
-                googlePoint = new google.maps.LatLng(theTracker.anchor.geometry.coordinates[1],
-                                                     theTracker.anchor.geometry.coordinates[0]);
+                googlePoint = new google.maps.LatLng(tracker.anchor.geometry.coordinates[1],
+                                                     tracker.anchor.geometry.coordinates[0]);
             }
+            _this._bounds.extend(googlePoint);
 
-            tracker = new google.maps.Marker({
+            //process the tracker
+            marker = new google.maps.Marker({
                 position: googlePoint,
                 map: _this._map,
                 draggable: true
             });
-            _this._bounds.extend(googlePoint);
-            _this._clickListener(tracker,theTracker,"point");
-            _this._pointMarkers.push(tracker);
+            _this._clickListener(marker,tracker,"point");
+            _this._pointMarkers.push(marker);
             var location = {
                 "location": {
-                    "geometry": theTracker.anchor.geometry,
+                    "geometry": tracker.anchor.geometry,
                     "properties": {
-                        "trackerId": theTracker._id,
-                        "zoneNamespace": theTracker.properties.zoneNamespace
+                        "trackerId": tracker._id,
+                        "zoneNamespace": tracker.properties.zoneNamespace
                     }
                 },
-                "username": theTracker._id,
-                "demoUsername": theTracker._id
+                "username": tracker._id,
+                "demoUsername": tracker._id
             };
-            _this._trackerLocationChangedListener(tracker,theTracker._id,location);
-            _this._handleNewLocationMarker(location.username,tracker);
+            _this._trackerLocationChangedListener(marker,tracker._id,location);
+            _this._handleNewLocationMarker(location.username,marker);
 
-            //set up a namespace to associate zones with a tracker in
-            _this._trackerZones[theTracker._id] = [];
-
+            //keep a reference to the trackers with their associated circle regions
+            _this._trackers[tracker._id] = {"tracker":tracker,"zones":[]};
             //process the tracker zones
-            zones = theTracker.zones.features;
-            for (var j=0; j<zones.length; j++) {
-                zone = new google.maps.Circle({
+            zones = tracker.zones.features;
+            for (var i=0; i<zones.length; i++) {
+                circle = new google.maps.Circle({
                     'center': googlePoint, //new google.maps.LatLng(properties.googleMaps.center[0], properties.googleMaps.center[1]),
-                    'radius': zones[j].properties.googleMaps.radius,
-                    'fillColor': zones[j].properties.Color,
-                    'zIndex': zones[j].properties.googleMaps.zIndex,
+                    'radius': zones[i].properties.googleMaps.radius,
+                    'fillColor': zones[i].properties.Color,
+                    'zIndex': zones[i].properties.googleMaps.zIndex,
                     'map': _this._map,
                     'editable': false
                 });
                 //associate the zones with the tracker so we can sync them on movement
-                _this._trackerZones[theTracker._id].push(zone);
-                _this._clickListener(zone,zones[j],"circle");
-                _this._regions.push(zone);
+                _this._trackers[tracker._id].zones.push(circle);
+                _this._clickListener(circle,zones[i],"circle");
+                _this._regions.push(circle);
 
                 //adjust the map bounds for the rendered zones
-                var coords = zones[j].geometry.coordinates;
+                var coords = zones[i].geometry.coordinates;
                 for (var cycle=0; cycle<coords.length; cycle++) {
                     for (var point = 0; point < coords[cycle].length; point++) {
                         googlePoint = new google.maps.LatLng(coords[cycle][point][1], coords[cycle][point][0]);
@@ -657,9 +655,7 @@ Polymer({
             }
             if (isLastTracker) {
                 //fire event and set trackers locally
-                _this.fire('trackersRetrieved',{trackers:trackers.length>0?trackers:null,trackerZones:_this._trackerZones});
-                _this._trackers = trackers.length>0?trackers:null;
-
+                _this.fire('trackersRetrieved',{trackers:_this._trackers});
                 _this._map.fitBounds(_this._bounds);
                 _this._map.panToBounds(_this._bounds);
             }
@@ -680,7 +676,7 @@ Polymer({
             for (var j=0; j<routes.length; j++) {
                 if (routes[j].tracker) {
                     //pass the map and trackers via the constructor (instead of via the events like markup defined components)
-                    children.push(new Voyent.LocationVector(this._map, this._trackers, this._trackerZones, routes[j].label, routes[j].tracker, routes[j].bearing,
+                    children.push(new Voyent.LocationVector(this._map, this._trackers, routes[j].label, routes[j].tracker, routes[j].bearing,
                         routes[j].speed, routes[j].speedunit, routes[j].duration, routes[j].frequency, false));
                 }
                 else {
