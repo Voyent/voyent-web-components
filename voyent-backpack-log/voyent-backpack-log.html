@@ -161,7 +161,10 @@ Example:
             }
             
             .highlight {
-                background-color: #FFFFCC;
+                background: #FFFFCC !important;
+                background: -moz-linear-gradient(top, #ffffcc 50%, #ffffaa 100%) !important;
+                background: -webkit-linear-gradient(top, #ffffcc 50%, #ffffaa 100%) !important;
+                background: linear-gradient(to bottom, #ffffcc 50%, #ffffaa 100%) !important;
             }
             .highlightTd {
                 border-top: 1px solid black;
