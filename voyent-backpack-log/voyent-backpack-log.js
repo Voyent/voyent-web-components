@@ -395,6 +395,9 @@ Polymer({
 
                 // Final trim, just in case
                 currentLog.message = currentLog.message.trim();
+                
+                // Clean up extra variables
+                delete currentLog.isParam;
 
                 // Store our finished log entry
                 this.push('_allLogs', currentLog);
