@@ -581,7 +581,8 @@ Polymer({
             map: _loc._map,
             fillColor: 'black',
             radius: largestRadius,
-            zIndex: smallestIndex
+            zIndex: smallestIndex,
+            zoneId:geoJSON.zones.features.length + 1
         });
         newCircle.bindTo('center', location.anchor, 'position');
         newCircleJSON = {
@@ -600,7 +601,7 @@ Polymer({
                     "Editable": "true",
                     "Color": "Black",
                     "zIndex":smallestIndex,
-                    "zoneId":"default"
+                    "zoneId":geoJSON.zones.features.length + 1
                 }
         };
         geoJSON.zones.features.push(newCircleJSON);
@@ -612,6 +613,10 @@ Polymer({
             _loc.selectedZone = newCircle;
             _loc.infoWindowSetup(location, geoJSON, "trackerZone");
         });
+        geoJSON.anchor.geometry.coordinates = [];
+        for (var i=0; i < geoJSON.zones.features.length;i++){
+            geoJSON.zones.features[i].geometry.coordinates = [[]];
+        }
         _loc.getCoordinates(location,geoJSON,'tracker');
         _loc.postTracker(location,geoJSON,'tracker',true);
     },
@@ -860,6 +865,10 @@ Polymer({
     },
 
     trackerEdited:function(location,geoJSON,shape){
+        geoJSON.anchor.geometry.coordinates = [];
+        for (var i=0; i < geoJSON.zones.features.length;i++){
+            geoJSON.zones.features[i].geometry.coordinates = [[]];
+        }
         _loc.getCoordinates(location, geoJSON, shape);
         _loc.postTracker(location,geoJSON,shape,true)
     },
@@ -1015,13 +1024,10 @@ Polymer({
         _loc.$$('#editLocationName').style.display = 'none';
         _loc.$$('#staticLocationName').style.display = '';
         if(_loc.infowindowiszone){
-            console.log('reverting zone');
             var location = _loc.activeGoogleLocation;
             var geoJSON = _loc.activeLocation;
             for (var i = 0; i < location.zones.length; i++){
                 if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
-                    console.log('Found zone');
-                    console.log(geoJSON.zones.features[i]);
                     _loc.$$('#locationName').textContent= geoJSON.zones.features[i].properties.zoneId ? geoJSON.zones.features[i].properties.zoneId : "Unnamed";
                 }
             }
@@ -1605,6 +1611,15 @@ Polymer({
                 _loc.selectedZone.setEditable(editableProp);
             }
         }
+        _loc.updateProperties();
+    },
+
+    updateEnabledProperty: function () {
+
+        var selector = _loc.$$("#enabledSelect");
+        _loc.enabledProp = selector.options[selector.selectedIndex].getAttribute("value");
+        var enabledProp = (_loc.enabledProp.toLowerCase() === 'true' || _loc.enabledProp === true);
+        _loc.activeLocation.properties['status']= enabledProp ? 'enabled':'disabled';
         _loc.updateProperties();
     },
 

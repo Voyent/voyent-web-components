@@ -1625,6 +1625,21 @@ Allows editing of voyent location, region and point data
                                     <button on-click="addProperty" class="btn btn-xs btn-success">Add</button>
                                 </td>
                             </tr>
+                            <tr hidden$="{{!infowindowisanchor}}">
+                                <td>
+                                    Enabled
+                                </td>
+                                <td>
+                                    <select id="enabledSelect" class="form-control">
+                                        <option value="true" selected="selected">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="btn btn-xs btn-success" on-click="updateEnabledProperty">Update
+                                    </button>
+                                </td>
+                            </tr>
                             <tr>
                                 <td>
                                     <template is="dom-if" if="{{isPOI}}">Draggable</template>
