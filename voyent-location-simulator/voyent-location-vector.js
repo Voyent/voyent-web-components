@@ -123,16 +123,16 @@ Voyent.LocationVector = Polymer({
             tracker = tracker[0];
 
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
-            var vector = _this._generatePath(tracker);
-            this._path = vector;
-            this._interval = 1000 / (vector.length / (this.duration * 60)); //number of milliseconds to move one point
+            var path = _this._generatePath(tracker);
+            this._path = path;
+            this._interval = 1000 / (path.length / (this.duration * 60)); //number of milliseconds to move one point
 
             //Start by POSTing the first coordinate to the Location Service
             this._index = 0;
             var location = {
                 "location" : {
                     "geometry" : {
-                        "type" : "Point", "coordinates" : [vector[this._index].lng(),vector[this._index].lat()]
+                        "type" : "Point", "coordinates" : [path[this._index].lng(),path[this._index].lat()]
                     },
                     "properties": {
                         "trackerId": this.tracker,
@@ -148,7 +148,7 @@ Voyent.LocationVector = Polymer({
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 //set marker object
                 var marker = new google.maps.Marker({
-                    position: vector[_this._index],
+                    position: path[_this._index],
                     map: _this._map,
                     draggable: false //don't allow manual location changes during simulation
                 });
@@ -167,7 +167,7 @@ Voyent.LocationVector = Polymer({
                 console.error('Issue updating location',error);
             });
         }
-        else if (this._paused) { //since we have a vector, continue the simulation, but only if we are paused (so we don't start an already running simulation)
+        else if (this._paused) { //since we have a path, continue the simulation, but only if we are paused (so we don't start an already running simulation)
             this._doSimulation();
         }
     },
@@ -198,14 +198,14 @@ Voyent.LocationVector = Polymer({
      */
     _generatePath: function(tracker) {
         var _this = this;
-        var vector = [];
+        var path = [];
         var coordDistance = 2; //distance between each coordinate, in meters
-        var numCoords = this._totalDistance / coordDistance; //the number of coordinates needed to cover the vector distance
+        var numCoords = this._totalDistance / coordDistance; //the number of coordinates needed to cover the path distance
 
         var lat1 = this._toRadians(tracker.anchor.geometry.coordinates[1]);
         var lng1 = this._toRadians(tracker.anchor.geometry.coordinates[0]);
         addCoordinates(lat1,lng1);
-        return vector;
+        return path;
 
         //generate coordinates 2 meters apart until we reach the number of coordinates that we need
         function addCoordinates(lat1, lng1) {
@@ -217,9 +217,9 @@ Voyent.LocationVector = Polymer({
             var lng2 = lng1 + Math.atan2(Math.sin(bearing)*Math.sin(coordDistance/eRadius)*Math.cos(lat1),
                     Math.cos(coordDistance/eRadius)-Math.sin(lat1)*Math.sin(lat2));
 
-            vector.push(new google.maps.LatLng(_this._toDegrees(lat2),_this._toDegrees(lng2)));
+            path.push(new google.maps.LatLng(_this._toDegrees(lat2),_this._toDegrees(lng2)));
 
-            if (vector.length < numCoords) {
+            if (path.length < numCoords) {
                 addCoordinates(lat2, lng2);
             }
         }

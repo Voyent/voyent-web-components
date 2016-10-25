@@ -143,6 +143,7 @@ Polymer({
             return;
         }
         this._bounds = new google.maps.LatLngBounds();
+        _this._trackerLocations = {};
         //refresh realm users
         this._getRealmUsers();
         //delete old location data
@@ -151,34 +152,47 @@ Polymer({
         var promises = [];
         promises.push(voyent.io.locate.findLocations({realm:this.realm,fields:{_id:0},options:{sort:{lastUpdated:-1}}}).then(function(locations) {
             if (locations && locations.length) {
-                 //process the locations so we only keep the most recent update for each user
+                 //process the locations so we only keep the most recent update for each user and tracker
                 var userLocations={};
                 for (var i=0; i<locations.length; i++) {
+                    //tracker locations
                     if (locations[i].location.properties && locations[i].location.properties.trackerId) {
-                        //ignore locations that are for trackers
-                        continue;
-                    }
-                    if (userLocations.hasOwnProperty(locations[i].username)) {
-                        if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
-                            userLocations[locations[i].username]=locations[i];
+                        var trackerId = locations[i].location.properties.trackerId;
+                        if (_this._trackerLocations.hasOwnProperty(trackerId)) {
+                            if (locations[i].lastUpdated > _this._trackerLocations[trackerId].lastUpdated) {
+                                _this._trackerLocations[trackerId]=locations[i];
+                            }
+                        }
+                        else {
+                            _this._trackerLocations[trackerId]=locations[i];
                         }
                     }
-                    else { userLocations[locations[i].username]=locations[i]; }
+                    else { //user locations
+                        if (userLocations.hasOwnProperty(locations[i].username)) {
+                            if (locations[i].lastUpdated > userLocations[locations[i].username].lastUpdated) {
+                                userLocations[locations[i].username]=locations[i];
+                            }
+                        }
+                        else { userLocations[locations[i].username]=locations[i]; }
+                    }
                 }
                 locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
                 _this._updateLocations(locations);
-            }
 
+                //this call is dependant on the locations call which is why we execute it here
+                voyent.io.locate.getAllTrackers({realm:_this.realm}).then(function(trackers) {
+                    //update the map with the trackers
+                    _this._updateTrackers(trackers);
+                    _this._map.fitBounds(_this._bounds);
+                    _this._map.panToBounds(_this._bounds);
+                });
+            }
         }));
         promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
         }));
         promises.push(voyent.io.locate.getAllPOIs({realm:this.realm}).then(function(pois) {
             _this._updatePOIs(pois);
-        }));
-        promises.push(voyent.io.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
-            //update the map with the trackers
-            _this._updateTrackers(trackers);
         }));
         return Promise.all(promises).then(function() {
             _this._map.fitBounds(_this._bounds);
@@ -577,12 +591,20 @@ Polymer({
      * @private
      */
     _updateTrackers: function(trackers) {
-        var googlePoint, tracker, zones, zone, properties;
+        var googlePoint, tracker, zones, zone;
 
         for (var i=0; i<trackers.length; i++) {
-            //process the tracker
-            googlePoint = new google.maps.LatLng(trackers[i].anchor.geometry.coordinates[1],
-                                                 trackers[i].anchor.geometry.coordinates[0]);
+            //use the last known tracker location as it's anchor point if we have one
+            var lastKnownTrackerLocation = this._trackerLocations[trackers[i]._id];
+            if (lastKnownTrackerLocation) {
+                googlePoint = new google.maps.LatLng(lastKnownTrackerLocation.location.geometry.coordinates[1],
+                                                     lastKnownTrackerLocation.location.geometry.coordinates[0]);
+            }
+            else {
+                googlePoint = new google.maps.LatLng(trackers[i].anchor.geometry.coordinates[1],
+                                                     trackers[i].anchor.geometry.coordinates[0]);
+            }
+
             tracker = new google.maps.Marker({
                 position: googlePoint,
                 map: this._map,
@@ -611,12 +633,11 @@ Polymer({
             //process the tracker zones
             zones = trackers[i].zones.features;
             for (var j=0; j<zones.length; j++) {
-                properties = zones[j].properties;
                 zone = new google.maps.Circle({
-                    'center': new google.maps.LatLng(properties.googleMaps.center[0], properties.googleMaps.center[1]),
-                    'radius': properties.googleMaps.radius,
-                    'fillColor': properties.Color,
-                    'zIndex': properties.googleMaps.zIndex,
+                    'center': googlePoint,
+                    'radius': zones[j].properties.googleMaps.radius,
+                    'fillColor': zones[j].properties.Color,
+                    'zIndex': zones[j].properties.googleMaps.zIndex,
                     'map': this._map,
                     'editable': false
                 });
@@ -928,7 +949,6 @@ Polymer({
      * @private
      */
     _tabChangeListener: function(e) {
-        console.log('_tabChangeListener');
         for (var i=0; i<this._children.length; i++) {
             if (this._children[i].elem === e.model.item.elem) {
                 //show tab content

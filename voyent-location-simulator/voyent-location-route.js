@@ -152,7 +152,6 @@ Voyent.LocationRoute = Polymer({
                         }
                     }
                     route = _this._processRoute(route); //add more coordinates than what is provided by Google so we can move smoother along the path
-                    console.log('route',route);
                     _this._path = route;
                     var totalSecs = legs[0].distance.value / (_this.speed * (_this.speedunit === 'kph'? _this._KPH_TO_MPS : _this._MPH_TO_MPS)); //number of seconds to travel the entire route (distance in m / speed in m/s)
                     _this._totalMills = 1000 * totalSecs; //number of milliseconds to travel the entire route

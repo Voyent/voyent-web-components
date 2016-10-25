@@ -252,10 +252,20 @@
          * @param marker
          */
         _moveTrackerZones: function(id,marker) {
+            //update the zone center point
             var zones = this._trackerZones[id];
             for (var i=0; i<zones.length; i++) {
                 var latLng = new google.maps.LatLng(marker.getPosition().lat(),marker.getPosition().lng());
                 zones[i].setCenter(latLng);
+            }
+            //update our stored list of trackers so that our saved
+            //tracker location is always the last known location
+            for (var j=0; j<this._trackers.length; j++) {
+                if (id === this._trackers[j]._id) {
+                    this._trackers[j].anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
+                    this.fire('trackersRetrieved',{trackers:this._trackers,trackerZones:this._trackerZones});
+                    break;
+                }
             }
         },
 
