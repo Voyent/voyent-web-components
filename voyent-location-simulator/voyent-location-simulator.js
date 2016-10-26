@@ -199,11 +199,8 @@ Polymer({
         var children = Polymer.dom(this).childNodes.filter(function(node) {
             return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
         });
-        if (children.length > 0) { //reset the bounds so we only bound around the simulation
-            this._bounds = new google.maps.LatLngBounds();
-        }
         for (var i=0; i<children.length; i++) {
-            children[i].playSimulation();
+            children[i]._playSimulationMulti();
         }
     },
 
@@ -883,11 +880,6 @@ Polymer({
         var _this = this;
         //add event listeners for voyent-location-route events to parent since the events bubble up (one listener covers all children)
         this.addEventListener('startSimulation', function(e) {
-            //Extend the bounds to fit the new location
-            _this._bounds.extend(new google.maps.LatLng(e.detail.location.location.geometry.coordinates[1], e.detail.location.location.geometry.coordinates[0]));
-            _this._map.fitBounds(_this._bounds);
-            _this._map.panToBounds(_this._bounds);
-            e.detail.child._setBounds(_this._bounds);
             //add click listener to new location marker
             _this._clickListener(e.detail.locationMarker,e.detail.location,'point');
             //add the location marker to the master list

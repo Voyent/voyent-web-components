@@ -62,6 +62,7 @@ Voyent.LocationVector = Polymer({
 
     //observe non-declared/private properties
     observers: [
+        '_mapChanged(_map)',
         '_trackersChanged(_trackers)',
         '_pausedChanged(_paused)'
     ],
@@ -236,6 +237,7 @@ Voyent.LocationVector = Polymer({
         this._interval = 0;
         this._location = null;
         this._canceled = false;
+        this._isMultiSim = false;
         this._inputsDisabled = false;
         this._previousBtnDisabled=true;
         this._nextBtnDisabled=true;
@@ -313,6 +315,18 @@ Voyent.LocationVector = Polymer({
         this.durationLblClass='';
         if ((this.tracker || (!this._trackers || Object.keys(this._trackers).length==0)) && this.bearing && this.bearing.toString().length > 0) {
             this._playBtnDisabled=false;
+        }
+    },
+
+    /**
+     * Once the map is available then setup map features.
+     * @param map
+     * @private
+     */
+    _mapChanged: function(map) {
+        if (this._map) {
+            //initialize bounds object for later use
+            this._bounds = new google.maps.LatLngBounds();
         }
     },
 

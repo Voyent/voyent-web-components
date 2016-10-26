@@ -129,18 +129,17 @@ Voyent.LocationRoute = Polymer({
                 }, function(response, status) {
                     if (status !== google.maps.DirectionsStatus.OK) {
                         if (failures == 10) {
-                            _this.fire('message-error', 'Directions request failed 10 times for "' + _this.label + '". Not retrying.');
-                            console.error('Directions request failed 10 times for "' + _this.label + '". Not retrying.');
+                            _this.fire('message-error', 'Directions request failed 10 times for: ' + _this.label + '. Not retrying.');
+                            console.error('Directions request failed 10 times for: ' + _this.label + '. Not retrying.');
                             return;
                         }
-                        console.log('Error starting route "',_this.label+'"','due to',status+'.','This was failure #',parseInt(failures+1)+'.','Retrying request in 3 seconds...');
                         setTimeout(function () {
                             routeRequest();
                         },3000);
                         failures++;
                         return;
                     }
-                    _this.fire('message-info', 'Successfully started route' + _this.label + '.');
+                    _this.fire('message-info', 'Successfully started route: ' + _this.label);
                     _this._directionsRenderer.setDirections(response);
                     //Use the steps of the legs instead of overview_path/polyline_path because they are the most atomic unit of a directions route
                     var legs = response.routes[0].legs;
@@ -304,6 +303,7 @@ Voyent.LocationRoute = Polymer({
         this._eta = null;
         this._totalMills = 0;
         this._canceled = false;
+        this._isMultiSim = false;
         this._inputsDisabled = false;
         this._previousBtnDisabled=true;
         this._nextBtnDisabled=true;
@@ -336,6 +336,8 @@ Voyent.LocationRoute = Polymer({
      */
     _mapChanged: function(map) {
         if (this._map) {
+            //initialize bounds object for later use
+            this._bounds = new google.maps.LatLngBounds();
             //setup direction objects for querying and drawing directions
             this._directionsService = new google.maps.DirectionsService();
             this._directionsRenderer = new google.maps.DirectionsRenderer({map:this._map,preserveViewport:true,hideRouteList:true,suppressMarkers:true});
