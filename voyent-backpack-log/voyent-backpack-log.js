@@ -286,6 +286,7 @@ Polymer({
         var strStart = 'start';
         var strEnd = 'end';
         var strParams = 'params';
+        var strDebug = 'debug';
         var strTaskResult = 'Task Result';
         var currentLog = null;
         for (var i = 0; i < logs.length; i++) {
@@ -295,11 +296,12 @@ Polymer({
             currentLog.taskGroup = null;
             currentLog.taskItem = null;
             currentLog.isParams = false;
+            currentLog.isDebug = false;
 
             // Using messagePrefix in order to allow for the previously existing checks against taskGroups to work with events containing arrays.
             var messagePrefix = currentLog.message.indexOf('{') !== -1 ? currentLog.message.split("{")[0] : currentLog.message;
 
-            // If we find a "start" string we have a new past action
+            // start: mark a new past action
             if (currentLog.message.lastIndexOf(strStart, 0) === 0) {
                 // There could be starts for taskGroups as well. We just want actions
                 // The desired format is: start [action]
@@ -340,7 +342,7 @@ Polymer({
                 currentLog.message = currentLog.message.substring(strStart.length).trim();
                 currentLog.message += strStart;
             }
-            // We also want to account for the "end" string that marks the end of an action
+            // start: marks the end of an action
             else if (currentLog.message.lastIndexOf(strEnd, 0) === 0) {
                 if (messagePrefix.split("[").length-1 === 1 && messagePrefix.split("]").length-1 === 1) {
                     currentLog.action = currentLog.message.substring((strEnd + " [").length);
@@ -361,12 +363,17 @@ Polymer({
                 currentLog.message = currentLog.message.substring(strEnd.length).trim();
                 currentLog.message += strEnd;
             }
-            // Watch for params, which is an action level JSON object
+            // Params: action level JSON object
             else if (currentLog.message.lastIndexOf(strParams, 0) === 0) {
                 currentLog.message = currentLog.message.substring(strParams.length).trim();
                 currentLog.isParams = true;
             }
-            // Account for Task Result, which is backpack content
+            // Debug: custom user logging
+            else if (currentLog.message.lastIndexOf(strDebug, 0) === 0) {
+                currentLog.message = currentLog.message.substring(strDebug.length).trim();
+                currentLog.isDebug = true;
+            }
+            // Task Result: backpack content
             else if (currentLog.message.lastIndexOf(strTaskResult, 0) === 0) {
                 currentLog.message = currentLog.message.substring(strTaskResult.length).trim();
             }
@@ -388,6 +395,10 @@ Polymer({
                 if (currentLog.isParams) {
                     currentLog.message = "Params:\n" + currentLog.message;
                 }
+                // Similarly if we're 'debug' prefix the message
+                else if (currentLog.isDebug) {
+                    currentLog.message = "Debug:\n" + currentLog.message;
+                }
                 // If we have an equal sign (=) starting our message, trim it, since the rest is probably JSON
                 else if (currentLog.message.indexOf("=") === 0) {
                     currentLog.message = currentLog.message.substring(1).trim();
@@ -398,6 +409,7 @@ Polymer({
                 
                 // Clean up extra variables
                 delete currentLog.isParam;
+                delete currentLog.isDebug;
 
                 // Store our finished log entry
                 this.push('_allLogs', currentLog);
