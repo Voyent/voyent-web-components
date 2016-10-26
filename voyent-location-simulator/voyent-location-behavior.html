@@ -258,6 +258,9 @@
             for (var i=0; i<zones.length; i++) {
                 var latLng = new google.maps.LatLng(marker.getPosition().lat(),marker.getPosition().lng());
                 zones[i].setCenter(latLng);
+                if (this._bounds) {
+                    this._bounds.union(zones[i].getBounds());
+                }
             }
             //update the tracker so that the tracker
             //location is always the last known location
