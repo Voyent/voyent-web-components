@@ -26,6 +26,20 @@
             }
         },
 
+        ready: function() {
+            var _this = this;
+            window.addEventListener('boundsUpdated', function(e) {
+                //when the map bounds are updated for a route or vector during a multi-path
+                //simulation we need to set the bounds based on all simulation positions
+                if (_this._isMultiSim) {
+                    _this._bounds.union(e.detail.bounds);
+                    _this._map.fitBounds(_this._bounds);
+                    _this._map.panToBounds(_this._bounds);
+
+                }
+            });
+        },
+
         /**
          * Pause the simulation at it's current location along the path.
          */
@@ -137,6 +151,17 @@
         },
 
         /**
+         * Wrapper for playSimulation. Specifies a special flag for playing multiple simulations simultaneously.
+         * @private
+         */
+        _playSimulationMulti: function() {
+            //start the simulation with a clean bounds
+            this._bounds = new google.maps.LatLngBounds();
+            this._isMultiSim = true;
+            this.playSimulation();
+        },
+
+        /**
          * Handles continuous playing of the simulation.
          * @private
          */
@@ -147,6 +172,11 @@
             var i = this._index+1; //get next coordinate
             this._location.location.geometry.coordinates = [this._path[i].lng(),this._path[i].lat()]; //get the next location
             var updatePosition = setInterval(function() {
+                //reset the bounds each time so that previous user/tracker locations are not included in the bounds
+                if (!_this._isMultiSim) {
+                    //reset the bounds every time movement occurs when running a single simulation
+                    _this._bounds = new google.maps.LatLngBounds();
+                }
                 _this._marker.setPosition({lat:_this._path[i].lat(),lng:_this._path[i].lng()}); //update the marker position
                 if (_this.tracker) {
                     _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
@@ -155,9 +185,10 @@
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
                 }
                 //keep the map zoomed on the simulation
-                _this._bounds.extend(new google.maps.LatLng(_this._location.location.geometry.coordinates[1],_this._location.location.geometry.coordinates[0]));
+                _this._bounds.extend(new google.maps.LatLng(_this._path[i].lat(),_this._path[i].lng()));
                 _this._map.fitBounds(_this._bounds);
                 _this._map.panToBounds(_this._bounds);
+                _this.fire('boundsUpdated',{"bounds":_this._bounds});
                 if (_this._paused) {
                     //save the current index and stop recursion
                     _this._index = i;
@@ -324,14 +355,6 @@
             if (isNaN(newVal) || newVal <= 0) {
                 this.frequency = oldVal || 5;
             }
-        },
-
-        /**
-         * Pass the map bounds object.
-         * @private
-         */
-        _setBounds: function(bounds) {
-            this._bounds = bounds;
         },
 
         /**
