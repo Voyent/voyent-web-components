@@ -10,6 +10,12 @@
             }
             .fixedDiv {
                 width:160px;
+                /*
+                2016 - Necessary for a Chrome 54 scrolling glitch
+                Without this the fixed tool panel was blanking to white when scrolling down
+                */
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
             }
             .actionContainer {
                 border: 1px solid #999;
