@@ -199,8 +199,16 @@ Polymer({
         var children = Polymer.dom(this).childNodes.filter(function(node) {
             return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
         });
-        for (var i=0; i<children.length; i++) {
-            children[i]._playSimulationMulti();
+        if (!children.length) {
+            return;
+        }
+        if (children.length !== 1) {
+            for (var i=0; i<children.length; i++) {
+                children[i]._playSimulationMulti();
+            }
+        }
+        else {
+            children[0].playSimulation();
         }
     },
 
