@@ -146,7 +146,10 @@ Polymer({
 	    this.validPayload = {};
         try{
             validPayload = JSON.parse(this._tool.payload);
-        }catch(ignored) {}
+        }catch(error) {
+	        this.fire('message-error', "Failed to parse transport editor payload: " + error);
+			console.error('Failed to parse transport editor payload:', error);
+        }
 	    
 	    // First add our global JSON (required fields here)
 	    toReturn.global = {
@@ -187,7 +190,7 @@ Polymer({
 	        toReturn = JSON.stringify(toReturn, null, 4);
 	    }catch(error) {
 	        this.fire('message-error', "Failed to parse transport editor UI tooling to JSON string: " + error);
-			console.error('Failed to parse transport editor UI tooling to JSON string:',error);
+			console.error('Failed to parse transport editor UI tooling to JSON string:', error);
 	    }
 	    
 	    return toReturn;
