@@ -333,7 +333,7 @@ Polymer({
                         }
 
                         if (!match) {
-                            this.push('_pastActions', {"name":currentLog.action,"tx":currentLog.tx,"startDate":this._formatTime(currentLog.time)});
+                            this.push('_pastActions', {"name":currentLog.action,"tx":currentLog.tx,"startTime":currentLog.time,"startDate":this._formatTime(currentLog.time)});
                         }
                     }
                 }
@@ -425,7 +425,7 @@ Polymer({
 
         // Sort our past actions by time
         this._pastActions.sort(function(a,b) {
-            return a.startDate - b.startDate;
+            return new Date(b.startTime) - new Date(a.startTime);
         });
 
         // Always add an uncategorized option that encompasses log entries not associated with anything

@@ -7,6 +7,10 @@ Polymer({
          */
         debug: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
         /**
+         * Passthrough to disable syntax validation in the payload code editor
+         */
+        disablevalidation: { type: Boolean, value: false },        
+        /**
          * Show the simple/clean/basic view of this component
          * The simple view contains a name (subject), body (details), and everything else is preset
          * There is also no ability to choose or override specific transports
