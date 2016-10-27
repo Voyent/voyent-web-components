@@ -43,7 +43,12 @@ Polymer({
         /**
          * The document collection to be used for CRUD operations on simulations.
          */
-        collection: { type: String, value: 'simulator-routes' }
+        collection: { type: String, value: 'simulator-routes' },
+        /**
+         * The relative path to the `images` resource directory. This may be
+         * necessary when using the component as part of a custom build.
+         */
+        pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' }
     },
 
     //observe non-declared/private properties
@@ -104,7 +109,7 @@ Polymer({
                     position:google.maps.ControlPosition.TOP_RIGHT,
                     drawingModes: [google.maps.drawing.OverlayType.MARKER]
                 },
-                markerOptions: { icon: 'images/user.png', draggable: true }
+                markerOptions: { icon: _this.pathtoimages+'/images/user.png', draggable: true }
             });
             drawingManager.setMap(_this._map);
             _this._setupNewLocationListener(drawingManager);
@@ -535,7 +540,7 @@ Polymer({
                 position: latLng,
                 map: _this._map,
                 draggable: true,
-                icon: 'images/user.png'
+                icon: _this.pathtoimages+'/images/user.png'
             });
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
@@ -1025,6 +1030,20 @@ Polymer({
                 scrollTo(scrollLeft,scrollTop);
             },50);
         }
+    },
+
+    /**
+     *
+     * @param newVal
+     * @param oldVal
+     * @private
+     */
+    _pathtoimagesChanged: function(newVal, oldVal) {
+        if (newVal.charAt[newVal.length-1] === '/') {
+            this.path = newVal.slice(0,-1);
+            return;
+        }
+        this.fire('pathtoimagesChanged',{'path':newVal});
     },
 
     /**
