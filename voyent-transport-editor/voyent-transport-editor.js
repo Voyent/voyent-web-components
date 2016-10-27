@@ -147,18 +147,11 @@ Polymer({
 	    if (!this._isDefined(this._tool.payload) || this._tool.payload == "" || this._tool.payload.trim().length === 0) {
 	        this._tool.payload = "{}";
 	    }
-	    this.validPayload = {};
-        try{
-            validPayload = JSON.parse(this._tool.payload);
-        }catch(error) {
-	        this.fire('message-error', "Failed to parse transport editor payload: " + error);
-			console.error('Failed to parse transport editor payload:', error);
-        }
 	    
 	    // First add our global JSON (required fields here)
 	    toReturn.global = {
 	        "details": this._tool.details.global,
-	        "payload": validPayload
+	        "payload": this._tool.payload
 	    };
 	    
 	    // Also any any non-required fields
