@@ -408,8 +408,12 @@ Polymer({
                 currentLog.message = currentLog.message.trim();
                 
                 // Clean up extra variables
-                delete currentLog.isParam;
-                delete currentLog.isDebug;
+                if (currentLog.isParam) {
+                    delete currentLog.isParam;
+                }
+                if (currentLog.isDebug) {
+                    delete currentLog.isDebug;
+                }
 
                 // Store our finished log entry
                 this.push('_allLogs', currentLog);
