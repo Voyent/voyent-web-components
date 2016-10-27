@@ -144,8 +144,8 @@ Polymer({
 	    
 	    // Payload may be in the process of updating, so ignore any errors for now
 	    // Also restore to default if we're blanked out or undefined
-	    if (!this._isDefined(this._tool.payload) || this._tool.payload == "" || this._tool.payload.trim().length === 0) {
-	        this._tool.payload = "{}";
+	    if (!this._isDefined(this._tool.payload) || JSON.stringify(this._tool.payload).trim().length === 0) {
+	        this._tool.payload = {};
 	    }
 	    
 	    // First add our global JSON (required fields here)
@@ -210,7 +210,7 @@ Polymer({
 	        
 	        // Also update the payload accordingly
 	        if (this._isDefined(json['global']['payload'])) {
-	            this.set('_tool.payload', JSON.stringify(json['global']['payload']));
+	            this.set('_tool.payload', json['global']['payload']);
 	        }
 	    }
 	    
@@ -469,7 +469,7 @@ Polymer({
             "icon": {
                 "global": null,
             },
-            "payload": "{}"
+            "payload": {}
         });
     }
 });
