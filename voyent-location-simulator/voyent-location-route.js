@@ -99,6 +99,7 @@ Voyent.LocationRoute = Polymer({
                 _this._users = e.detail.users;
             });
         }
+        this.pathtoimages = '.';
         document.addEventListener('pathtoimagesChanged', function(e) {
             _this.pathtoimages = e.detail.path;
         });
@@ -172,7 +173,7 @@ Voyent.LocationRoute = Polymer({
                             position: route[_this._index],
                             map: _this._map,
                             draggable: false, //don't allow manual location changes during simulation
-                            icon: _this.pathtoimages+'/images/user.png'
+                            icon: _this.pathtoimages+'/images/user_marker.png'
                         });
                         _this._marker = marker;
                         //initialize ETA

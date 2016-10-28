@@ -17,10 +17,14 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     factoryImpl: function(map,trackers,label,tracker,bearing,speed,speedunit,duration,frequency,viaAttribute) {
+        var _this = this;
         this._map = map;
         this._trackers = trackers;
         this.label = label || 'New Vector';
-        this.tracker = tracker || '';
+        //set the tracker async so the select menu gets populated
+        setTimeout(function() {
+            _this.tracker = tracker || '';
+        },0);
         this.bearing = bearing || 0;
         this.speed = speed || 50;
         this.speedunit = speedunit || 'kph';
@@ -93,6 +97,10 @@ Voyent.LocationVector = Polymer({
                 _this._trackers = e.detail.trackers;
             });
         }
+        this.pathtoimages = '.';
+        document.addEventListener('pathtoimagesChanged', function(e) {
+            _this.pathtoimages = e.detail.path;
+        });
         //set some default values
         this._previousBtnDisabled = true;
         this._nextBtnDisabled = true;
@@ -144,6 +152,7 @@ Voyent.LocationVector = Polymer({
                 var marker = new google.maps.Marker({
                     position: path[_this._index],
                     map: _this._map,
+                    icon:_this.pathtoimages+'/images/incident_marker.png',
                     draggable: false //don't allow manual location changes during simulation
                 });
                 _this._marker = marker;
@@ -352,17 +361,5 @@ Voyent.LocationVector = Polymer({
         else {
             this.set('tracker','');
         }
-    },
-
-    /**
-     * Convert trackers mapping to an array.
-     * @param trackers
-     * @returns {Array}
-     * @private
-     */
-    _toArray: function(trackers) {
-        return Object.keys(trackers).map(function (key) {
-            return trackers[key].tracker;
-        });
     }
 });

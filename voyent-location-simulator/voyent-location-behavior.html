@@ -269,7 +269,7 @@
                 //move the zones with the tracker
                 _this._trackerMoved(id,marker);
 
-                voyent.io.locate.updateTrackerLocation({id:id,location: location}).then(function(data) {
+                voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
                     console.log('Issue changing location of tracker "' + location.username + '":', error);
@@ -373,6 +373,18 @@
          */
         _toDegrees: function(radians) {
             return radians * 180 / Math.PI;
+        },
+
+        /**
+         * Convert trackers mapping to an array.
+         * @param trackers
+         * @returns {Array}
+         * @private
+         */
+        _toArray: function(trackers) {
+            return Object.keys(trackers).map(function (key) {
+                return trackers[key].tracker;
+            });
         }
     };
 </script>

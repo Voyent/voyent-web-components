@@ -87,9 +87,8 @@ Polymer({
         this._regions = [];
         this._pointMarkers = [];
         this._trackers = {};
-        this._hideContextMenu = true;
         this._activeSim = null;
-        this._contextMenuDisabled = true;
+        this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu = this._hideVectorBttn = this._hideUserBttn = this._hideIncidentBttn = true;
         //initialize google maps
         window.initializeLocationsMap = function() {
             _this._map = new google.maps.Map(_this.$.map, {
@@ -107,11 +106,12 @@ Polymer({
             var drawingManager = new google.maps.drawing.DrawingManager({
                 drawingControlOptions: {
                     position:google.maps.ControlPosition.TOP_RIGHT,
-                    drawingModes: [google.maps.drawing.OverlayType.MARKER]
+                    drawingModes: []
                 },
-                markerOptions: { icon: _this.pathtoimages+'/images/user.png', draggable: true }
+                markerOptions: { draggable: true }
             });
             drawingManager.setMap(_this._map);
+            _this._drawingManager = drawingManager;
             _this._setupNewLocationListener(drawingManager);
             //setup listeners for the map (context menu listeners)
             _this._setupMapListeners();
@@ -125,6 +125,7 @@ Polymer({
             google.maps.event.addDomListener(window, "resize", function() {
                 _this.resizeMap();
             });
+            _this._addCustomButtons();
         };
         if( !('google' in window) || !('maps' in window.google)){
             var script = document.createElement('script');
@@ -136,6 +137,30 @@ Polymer({
         else{
             initializeLocationsMap();
         }
+
+        Polymer.dom(this).parentNode.addEventListener('trackersRetrieved', function(e) {
+            _this._hideVectorBttn = false;
+        });
+    },
+
+    _addCustomButtons: function() {
+        //ideally we would just push this.$.*Bttn instead of cloning but google maps
+        //removes the controls when modifying the local DOM (adding tabs). So we clone
+        //the nodes instead and bind the onclick as if we are using plain HTML
+        var incidentBttn = this.$.incidentBttn.cloneNode(true);
+        var userBttn = this.$.userBttn.cloneNode(true);
+        incidentBttn.onclick = this._customBttnClicked;
+        userBttn.onclick = this._customBttnClicked;
+
+        this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(userBttn);
+        this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
+
+        //delay so that the button isn't shown on
+        //the page before being moved into the map
+        setTimeout(function() {
+            incidentBttn.hidden = false;
+            userBttn.hidden = false;
+        },100);
     },
 
     /**
@@ -266,6 +291,7 @@ Polymer({
         //first append the new route as a direct child of the component so it inherits any custom styling
         Polymer.dom(this).appendChild(new Voyent.LocationRoute(this._map,this._users,label,user,origin,destination,travelmode,speed,speedunit,frequency));
         //add a new tab for the child
+        var contentHidden = this._children.length ? true : false;
         this.push('_children',{
             "elem":Polymer.dom(this).lastElementChild,
             "tabClass":"",
@@ -296,11 +322,12 @@ Polymer({
         //first append the new route as a direct child of the component so it inherits any custom styling
         Polymer.dom(this).appendChild(new Voyent.LocationVector(this._map,this._trackers,label,tracker,bearing,speed,speedunit,duration,frequency));
         //add a new tab for the child
+        var contentHidden = this._children.length ? true : false;
         this.push('_children',{
             "elem":Polymer.dom(this).lastElementChild,
             "tabClass":"",
             "tabLabel": label || 'New Vector',
-            "contentHidden": true
+            "contentHidden": contentHidden
         });
         //move new child into tab (do this async so the template has time to render the new child tab)
         setTimeout(function() {
@@ -540,7 +567,7 @@ Polymer({
                 position: latLng,
                 map: _this._map,
                 draggable: true,
-                icon: _this.pathtoimages+'/images/user.png'
+                icon: _this.pathtoimages+'/images/user_marker.png'
             });
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
@@ -592,84 +619,29 @@ Polymer({
      */
     _updateTrackers: function(trackers) {
         var _this = this;
-        var googlePoint, marker, zones, circle;
+        var googlePoint, zones, circle;
 
-        //we want to draw the trackers at their last known location
-        //and not at the position of their template so get the
-        //last known location for each tracker before drawing it
         for (var i=0; i<trackers.length; i++) {
-            (function(i) {
-                voyent.io.locate.getLastUserLocation({"username":trackers[i]._id}).then(function(location) {
-                    drawTracker(trackers[i],location,i===trackers.length-1);
-                }).catch(function(error) {
-
-                });
-            })(i);
-        }
-        function drawTracker(tracker,lastLocation,isLastTracker) {
-            //use the last known tracker location as it's anchor point if we have one
-            if (lastLocation) {
-                googlePoint = new google.maps.LatLng(lastLocation.location.geometry.coordinates[1],
-                                                     lastLocation.location.geometry.coordinates[0]);
-                tracker.anchor.geometry.coordinates = [googlePoint.lng(),googlePoint.lat()];
-            }
-            else {
-                googlePoint = new google.maps.LatLng(tracker.anchor.geometry.coordinates[1],
-                                                     tracker.anchor.geometry.coordinates[0]);
-            }
-            //adjust the map bounds for the tracker anchor point
-            _this._bounds.extend(googlePoint);
-
-            //process the tracker
-            marker = new google.maps.Marker({
-                position: googlePoint,
-                map: _this._map,
-                draggable: true
-            });
-            _this._clickListener(marker,tracker,"point");
-            _this._pointMarkers.push(marker);
-            var location = {
-                "location": {
-                    "geometry": tracker.anchor.geometry,
-                    "properties": {
-                        "trackerId": tracker._id,
-                        "zoneNamespace": tracker.properties.zoneNamespace
-                    }
-                },
-                "username": tracker._id,
-                "demoUsername": tracker._id
-            };
-            _this._trackerLocationChangedListener(marker,tracker._id,location);
-            _this._handleNewLocationMarker(location.username,marker);
+            googlePoint = new google.maps.LatLng(trackers[i].anchor.geometry.coordinates[1],
+                                                 trackers[i].anchor.geometry.coordinates[0]);
 
             //keep a reference to the trackers with their associated circle regions
-            _this._trackers[tracker._id] = {"tracker":tracker,"zones":[]};
+            _this._trackers[trackers[i]._id] = {"tracker":trackers[i],"zones":[]};
             //process the tracker zones
-            zones = tracker.zones.features;
-            for (var i=0; i<zones.length; i++) {
+            zones = trackers[i].zones.features;
+            for (var j=0; j<zones.length; j++) {
                 circle = new google.maps.Circle({
-                    'center': googlePoint,
-                    'radius': zones[i].properties.googleMaps.radius,
-                    'fillColor': zones[i].properties.Color,
-                    'zIndex': zones[i].properties.googleMaps.zIndex,
-                    'map': _this._map,
+                    'radius': zones[j].properties.googleMaps.radius,
+                    'fillColor': zones[j].properties.Color,
+                    'zIndex': zones[j].properties.googleMaps.zIndex,
                     'editable': false
                 });
                 //associate the zone with the tracker so we can sync them on movement
-                _this._trackers[tracker._id].zones.push(circle);
-                _this._clickListener(circle,zones[i],"circle");
-                _this._regions.push(circle);
-
-                //adjust the map bounds for the rendered zone
-                _this._bounds.union(circle.getBounds());
-            }
-            if (isLastTracker) {
-                //fire event and set trackers locally
-                _this.fire('trackersRetrieved',{trackers:_this._trackers});
-                _this._map.fitBounds(_this._bounds);
-                _this._map.panToBounds(_this._bounds);
+                _this._trackers[trackers[i]._id].zones.push(circle);
             }
         }
+        //fire event and set trackers locally
+        // _this.fire('trackersRetrieved',{trackers:_this._trackers});
     },
 
     /**
@@ -703,34 +675,36 @@ Polymer({
                 return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
             });
         }
-        this.set('_contextMenuDisabled',children[0].nodeName === 'VOYENT-LOCATION-VECTOR');
-        setTimeout(function () {
-            //create tabs for the new children
-            for (var k = 0; k < children.length; k++) {
-                _this.push('_children', {
-                    "elem": children[k],
-                    "tabClass": isInitialLoad && k === 0 ? "active" : "", //show first tab by default on initial load
-                    "tabLabel": children[k].label || 'New Route',
-                    "contentHidden": !(isInitialLoad && k === 0) //show first tab by default on initial load
-                });
-            }
-            //move new children into tabs (do this async so all the new children tabs are rendered first)
-            setTimeout(function() {
-                var tabIsSelected=false;
-                //append the children to the content panel of each tab
-                for (var i=0; i<_this._children.length; i++) {
-                    if (_this._children[i].tabClass === 'active') {
-                        tabIsSelected = true;
+        if (children.length) {
+            this.set('_contextMenuDisabled',children[0].nodeName === 'VOYENT-LOCATION-VECTOR');
+            setTimeout(function () {
+                //create tabs for the new children
+                for (var k = 0; k < children.length; k++) {
+                    _this.push('_children', {
+                        "elem": children[k],
+                        "tabClass": isInitialLoad && k === 0 ? "active" : "", //show first tab by default on initial load
+                        "tabLabel": children[k].label || 'New Route',
+                        "contentHidden": !(isInitialLoad && k === 0) //show first tab by default on initial load
+                    });
+                }
+                //move new children into tabs (do this async so all the new children tabs are rendered first)
+                setTimeout(function() {
+                    var tabIsSelected=false;
+                    //append the children to the content panel of each tab
+                    for (var i=0; i<_this._children.length; i++) {
+                        if (_this._children[i].tabClass === 'active') {
+                            tabIsSelected = true;
+                        }
+                        Polymer.dom(_this.root).querySelector('div[data-index="'+i+'"]').appendChild(_this._children[i].elem); //move into tab
                     }
-                    Polymer.dom(_this.root).querySelector('div[data-index="'+i+'"]').appendChild(_this._children[i].elem); //move into tab
-                }
-                //if no tab is selected (eg. the previously selected tab was replaced) then select the first one
-                if (!tabIsSelected) {
-                    _this.set('_children.0.tabClass','active');
-                    _this.set('_children.0.contentHidden',false);
-                }
-            },0);
-        }, 0);
+                    //if no tab is selected (eg. the previously selected tab was replaced) then select the first one
+                    if (!tabIsSelected) {
+                        _this.set('_children.0.tabClass','active');
+                        _this.set('_children.0.contentHidden',false);
+                    }
+                },0);
+            }, 0);
+        }
     },
 
     /**
@@ -853,19 +827,105 @@ Polymer({
     _setupNewLocationListener: function(drawingManager) {
         var _this = this;
         google.maps.event.addListener(drawingManager, 'markercomplete', function (marker) {
-            var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] } } };
-            //only allow dropping current user
-            location.username = voyent.io.auth.getLastKnownUsername();
-            location.demoUsername = voyent.io.auth.getLastKnownUsername(); //(NTFY-301)
-            voyent.io.locate.updateLocation({realm:_this.realm,location:location}).then(function(data) {
-                location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+            marker.setIcon(_this.pathtoimages+'/images/'+_this._selectedBttn+'_marker.png');
+            if (_this._selectedBttn === 'user') {
+                var location = {
+                    "location": {
+                        "geometry": { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] }
+                    },
+                    "username": voyent.io.auth.getLastKnownUsername(),
+                    "demoUsername": voyent.io.auth.getLastKnownUsername()
+                };
                 _this._handleNewLocationMarker(location.username,marker);
-                _this._userLocationChangedListener(marker,location);
-                _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
-            }).catch(function(error) {
-                _this.fire('message-error', 'Issue creating new location: ' + error);
-                console.error('Issue creating new location:',error);
-            });
+                voyent.io.locate.updateLocation({realm:_this.realm,location:location}).then(function(data) {
+                    location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                    _this._userLocationChangedListener(marker,location);
+                    _this._clickListener(marker,location,location.location.geometry.type.toLowerCase());
+                }).catch(function(error) {
+                    _this.fire('message-error', 'Issue creating new location: ' + error);
+                    console.error('Issue creating new location:',error);
+                });
+            }
+            else {
+                marker.setVisible(false);
+                _this._renderIncidentMenu(marker);
+            }
+            _this._selectedIncident = null;
+            _this._drawingManager.setDrawingMode(null);
+        });
+    },
+
+    _renderIncidentMenu: function(marker) {
+        //for some reason doing this as a computed binding in the
+        //template doesn't work, so set the menuItems here instead
+        this._incidentMenuItems = this._toArray(this._trackers).slice(0);
+        for (var i=0; i<this._incidentMenuItems.length; i++) {
+            //save a reference to the marker for later use
+            this._incidentMenuItems[i]._marker = marker;
+        }
+        this.$.incidentMenu.style.height = 24*this._incidentMenuItems.length+'px';
+        //render the context menu at the pixel coordinate
+        var pos = this._returnPixelCoordinate(marker.getPosition());
+        this.$.incidentMenu.style.left = pos.left + 'px';
+        this.$.incidentMenu.style.top = pos.top + 'px';
+        this._hideIncidentMenu = false;
+    },
+
+    _selectIncident: function(e) {
+        var _this = this;
+        this._hideIncidentMenu = true;
+
+        var trackerObj = this._trackers[e.target.getAttribute('data-id')];
+        var tracker = trackerObj.tracker;
+        var zones = trackerObj.zones;
+        var marker = e.model.item._marker;
+        marker.setVisible(true);
+        this._pointMarkers.push(marker);
+
+        //now that we have a location save it in the tracker
+        tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
+
+        var location = {
+            "location": {
+                "geometry": { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] },
+                "properties": {
+                    "trackerId": tracker._id,
+                    "zoneNamespace": tracker.properties.zoneNamespace
+                }
+            },
+            "username": tracker._id,
+            "demoUsername": tracker._id
+        };
+        this._handleNewLocationMarker(location.username,marker);
+
+        for (var i=0; i<zones.length; i++) {
+            // zones[i].setCenter(new google.maps.LatLng(location.location.geometry.coordinates[1],location.location.geometry.coordinates[0]))
+            zones[i].setMap(this._map);
+            this._clickListener(zones[i],tracker.zones.features[i],"circle");
+            this._regions.push(zones[i]);
+        }
+        //set the bounds around this newly dropped tracker
+        this._bounds = new google.maps.LatLngBounds();
+        this._trackerMoved(tracker._id,marker);
+        this._map.fitBounds(this._bounds);
+        this._map.panToBounds(this._bounds);
+
+        //add a new incident tab if one does not exist for this tracker
+        var vectorTabs = this._children.filter(function(obj) {
+            return obj.elem.nodeName === 'VOYENT-LOCATION-VECTOR' && obj.elem.tracker === tracker._id;
+        });
+        if (!vectorTabs.length) {
+            this.addVector(tracker.properties.zoneNamespace,tracker._id);
+        }
+
+        voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
+            location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+            _this._trackerLocationChangedListener(marker,tracker._id,location);
+            _this._clickListener(marker,tracker,"point");
+
+        }).catch(function (error) {
+            _this.fire('message-error', 'Issue creating new incident: ' + tracker.properties.zoneNamespace);
+            console.error('Issue creating new incident: ' + tracker.properties.zoneNamespace, error);
         });
     },
 
@@ -918,6 +978,11 @@ Polymer({
         });
     },
 
+    _customBttnClicked:function(e) {
+        document.querySelector('voyent-location-simulator')._selectedBttn = e.target.getAttribute('data-type');
+        document.querySelector('voyent-location-simulator')._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+    },
+
     /**
      * Display context-menu on rightclick.
      * @param event
@@ -927,11 +992,26 @@ Polymer({
         if (this._contextMenuDisabled) {
             return;
         }
-        //convert the lat/long rightclick coordinate to pixel coordinate
+        //render the context menu at the pixel coordinate
+        var pos = this._returnPixelCoordinate(event.latLng);
+        this.$.contextMenu.style.left = pos.left + 'px';
+        this.$.contextMenu.style.top = pos.top + 'px';
+        this._hideContextMenu = false;
+        //store the lat/lng for later use
+        this._contextMenuPosition = event.latLng;
+    },
+
+    /**
+     * Converts a lat/long coordinate to a pixel (left/top) coordinate.
+     * @param latLng
+     * @returns {{left: Number, top: Number}}
+     * @private
+     */
+    _returnPixelCoordinate: function(latLng) {
         var scale = Math.pow(2, this._map.getZoom());
         var nw = new google.maps.LatLng(this._map.getBounds().getNorthEast().lat(),this._map.getBounds().getSouthWest().lng());
         var worldCoordinateNW = this._map.getProjection().fromLatLngToPoint(nw);
-        var worldCoordinate = this._map.getProjection().fromLatLngToPoint(event.latLng);
+        var worldCoordinate = this._map.getProjection().fromLatLngToPoint(latLng);
         var pixelOffset = new google.maps.Point(
             Math.floor((worldCoordinate.x - worldCoordinateNW.x) * scale),
             Math.floor((worldCoordinate.y - worldCoordinateNW.y) * scale)
@@ -941,12 +1021,7 @@ Polymer({
         var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
         var left = pixelOffset.x + this._map.getDiv().getBoundingClientRect().left + scrollLeft;
         var top = pixelOffset.y + this._map.getDiv().getBoundingClientRect().top + scrollTop;
-        //render the context menu at the pixel coordinate
-        this.$.contextMenu.style.left = left + 'px';
-        this.$.contextMenu.style.top = top + 'px';
-        this._hideContextMenu = false;
-        //store the lat/lng for later use
-        this._contextMenuPosition = event.latLng;
+        return {"left":left,"top":top};
     },
 
     /**
