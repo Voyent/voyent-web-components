@@ -912,7 +912,9 @@ Polymer({
         var tracker = trackerObj.tracker;
         var zones = trackerObj.zones;
         var marker = e.model.item._marker;
-        marker.setIcon(_this.pathtoimages+'/images/'+tracker.properties.icon);
+        if (tracker.properties.icon) {
+            marker.setIcon(_this.pathtoimages+'/images/'+tracker.properties.icon);
+        }
         marker.setVisible(true);
         this._pointMarkers.push(marker);
 
