@@ -177,9 +177,9 @@ Polymer({
         this._getRealmUsers();
         //delete old location data
         this._clearLocationData();
-        //get current location data
+        //get current user location data
         var promises = [];
-        promises.push(voyent.io.locate.findLocations({realm:this.realm,fields:{_id:0},options:{sort:{lastUpdated:-1}}}).then(function(locations) {
+        promises.push(voyent.io.locate.findLocations({realm:this.realm,query:{"location.type":{"$ne": "Feature"}},fields:{"_id":0},options:{sort:{"lastUpdated":-1}}}).then(function(locations) {
             if (locations && locations.length) {
                 //process the locations so we only keep the most recent update for each user
                 var userLocations={};
@@ -621,27 +621,60 @@ Polymer({
         var _this = this;
         var googlePoint, zones, circle;
 
-        for (var i=0; i<trackers.length; i++) {
-            googlePoint = new google.maps.LatLng(trackers[i].anchor.geometry.coordinates[1],
-                                                 trackers[i].anchor.geometry.coordinates[0]);
+        var trackerData;
 
-            //keep a reference to the trackers with their associated circle regions
-            _this._trackers[trackers[i]._id] = {"tracker":trackers[i],"zones":[]};
-            //process the tracker zones
-            zones = trackers[i].zones.features;
-            for (var j=0; j<zones.length; j++) {
-                circle = new google.maps.Circle({
-                    'radius': zones[j].properties.googleMaps.radius,
-                    'fillColor': zones[j].properties.Color,
-                    'zIndex': zones[j].properties.googleMaps.zIndex,
-                    'editable': false
-                });
-                //associate the zone with the tracker so we can sync them on movement
-                _this._trackers[trackers[i]._id].zones.push(circle);
+        //********** - INCIDENT DEMO SPECIFIC CODE START - **********
+        voyent.io.scope.getRealmData({'property':'trackerData'}).then(function(data) {
+            trackerData = data;
+            console.log('trackerData',trackerData);
+            processTrackers();
+        }).catch(function(error) {
+            if (error.status !== 404) {
+                _this.fire('message-error', 'Failed retrieving message templates');
+                console.error('Failed retrieving message templates:',error);
+            }
+        });
+        //********** - INCIDENT DEMO SPECIFIC CODE END - **********
+
+        function processTrackers() {
+            for (var i=0; i<trackers.length; i++) {
+                googlePoint = new google.maps.LatLng(trackers[i].anchor.geometry.coordinates[1],
+                                                     trackers[i].anchor.geometry.coordinates[0]);
+
+                //keep a reference to the trackers with their associated circle regions
+                _this._trackers[trackers[i]._id] = {"tracker":trackers[i],"zones":[]};
+                //process the tracker zones
+                zones = trackers[i].zones.features;
+                for (var j=0; j<zones.length; j++) {
+                    //********** - INCIDENT DEMO SPECIFIC CODE START - **********
+                    //save the tracker icon
+                    if (trackerData[trackers[i].properties.zoneNamespace] &&
+                        trackerData[trackers[i].properties.zoneNamespace][zones[j].properties.zoneId] &&
+                        trackerData[trackers[i].properties.zoneNamespace][zones[j].properties.zoneId].global &&
+                        trackerData[trackers[i].properties.zoneNamespace][zones[j].properties.zoneId].global.icon) {
+                        trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i].properties.zoneNamespace][zones[j].properties.zoneId].global.icon);
+                    }
+                    //********** - INCIDENT DEMO SPECIFIC CODE END - **********
+
+                    circle = new google.maps.Circle({
+                        'radius': zones[j].properties.googleMaps.radius,
+                        'fillColor': zones[j].properties.Color,
+                        'zIndex': zones[j].properties.googleMaps.zIndex,
+                        'editable': false
+                    });
+                    //associate the zone with the tracker so we can sync them on movement
+                    _this._trackers[trackers[i]._id].zones.push(circle);
+                }
             }
         }
-        //fire event and set trackers locally
-        // _this.fire('trackersRetrieved',{trackers:_this._trackers});
+
+        //********** - INCIDENT DEMO SPECIFIC CODE START - **********
+        function _parseIconURL(url) {
+            var parts = url.split('/');
+            var img = parts[parts.length-1];
+            return img.replace('_inverted','');
+        }
+        //********** - INCIDENT DEMO SPECIFIC CODE END - **********
     },
 
     /**
@@ -879,6 +912,7 @@ Polymer({
         var tracker = trackerObj.tracker;
         var zones = trackerObj.zones;
         var marker = e.model.item._marker;
+        marker.setIcon(_this.pathtoimages+'/images/'+tracker.properties.icon);
         marker.setVisible(true);
         this._pointMarkers.push(marker);
 
@@ -939,9 +973,10 @@ Polymer({
         google.maps.event.addListener(this._map,"rightclick",function(event) {
             _this._handleRightClick(event);
         });
-        //hide context menu on map click
+        //hide menus on map click
         google.maps.event.addListener(this._map, "click", function(event) {
             _this._hideContextMenu = true;
+            _this._hideIncidentMenu = true;
         });
     },
 
