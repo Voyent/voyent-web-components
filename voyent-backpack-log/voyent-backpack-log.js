@@ -33,11 +33,7 @@ Polymer({
         fields: { type: Object, value: {} },
         /**
          * Additional query options such as limit and sort. Only one sort parameter can be specified in the options (others will be ignored).
-         *
-         * Example:
-         *
-         *      //500 log records + sort by time (descending)
-         *      {"limit":500,"sort":{"time":-1}}
+         * We pull 500 log records + sort by time (newest to oldest)
          */
         options: { type: Object, value: {"limit":500,"sort":{"time":-1}} },
         /**
@@ -279,6 +275,12 @@ Polymer({
      * @private
      */
     _fetchLogsCallback: function(logs) {
+        // We pull the logs with newest times first. But for parsing we want to order the reverse way
+        // This is important so that "start" preceeds "end" for actions
+        logs = logs.sort(function(a,b) {
+            return new Date(a.time) - new Date(b.time);
+        });
+        
         // Loop through the returned logs
         // We want to achieve a few things here
         // 1. Populate the pastAction list and subsequent dropdown with a unique list of actions, including uncategorized
@@ -297,7 +299,7 @@ Polymer({
             currentLog.taskItem = null;
             currentLog.isParams = false;
             currentLog.isDebug = false;
-
+            
             // Using messagePrefix in order to allow for the previously existing checks against taskGroups to work with events containing arrays.
             var messagePrefix = currentLog.message.indexOf('{') !== -1 ? currentLog.message.split("{")[0] : currentLog.message;
 
@@ -342,7 +344,7 @@ Polymer({
                 currentLog.message = currentLog.message.substring(strStart.length).trim();
                 currentLog.message += strStart;
             }
-            // start: marks the end of an action
+            // end: marks the end of an action
             else if (currentLog.message.lastIndexOf(strEnd, 0) === 0) {
                 if (messagePrefix.split("[").length-1 === 1 && messagePrefix.split("]").length-1 === 1) {
                     currentLog.action = currentLog.message.substring((strEnd + " [").length);
@@ -420,8 +422,13 @@ Polymer({
             }
         }
 
-        // Notify the user
-        this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
+        // We do ANOTHER sort
+        // Currently we're at newest entries first
+        // But that doesn't visually make sense to a user reading the logs as each action would start with "end" instead of "start"
+        // So basically we reverse the order to have the oldest entries first
+        this._allLogs.sort(function(a,b) {
+            return new Date(b.time) - new Date(a.time);
+        });
 
         // Sort our past actions by time
         this._pastActions.sort(function(a,b) {
@@ -430,6 +437,9 @@ Polymer({
 
         // Always add an uncategorized option that encompasses log entries not associated with anything
         this.splice('_pastActions', 0, 0, {"name":this.miscName});
+        
+        // Notify the user
+        this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
 
         // Clear our old full logs
         logs.length = 0;
