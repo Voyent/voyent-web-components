@@ -149,10 +149,11 @@ Voyent.LocationVector = Polymer({
                 _this._location = location;
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 //set marker object
+                var icon = tracker.properties.icon ? tracker.properties.icon : 'incident_marker.png'; //********** - INCIDENT DEMO SPECIFIC CODE - **********
                 var marker = new google.maps.Marker({
                     position: path[_this._index],
                     map: _this._map,
-                    icon:_this.pathtoimages+'/images/incident_marker.png',
+                    icon:_this.pathtoimages+'/images/'+icon,
                     draggable: false //don't allow manual location changes during simulation
                 });
                 _this._marker = marker;

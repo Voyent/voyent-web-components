@@ -626,7 +626,6 @@ Polymer({
         //********** - INCIDENT DEMO SPECIFIC CODE START - **********
         voyent.io.scope.getRealmData({'property':'trackerData'}).then(function(data) {
             trackerData = data;
-            console.log('trackerData',trackerData);
             processTrackers();
         }).catch(function(error) {
             if (error.status !== 404) {
