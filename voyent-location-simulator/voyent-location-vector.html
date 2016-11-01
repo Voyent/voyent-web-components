@@ -88,7 +88,7 @@ Example:
                     <label id="trackersLbl" for="trackers" class$="{{trackerLblClass}}">Tracker:</label>
                     <select id="trackers" class$="{{trackerInputClass}}" value="{{tracker::change}}" disabled$="{{_inputsDisabled}}">
                         <option value="" selected>Select a Tracker</option>
-                        <template is="dom-repeat" strip-whitespace items="{{_trackers}}" as="tracker">
+                        <template is="dom-repeat" strip-whitespace items="{{_toArray(_trackers)}}" as="tracker">
                             <option value="{{tracker._id}}">{{tracker.properties.zoneNamespace}}</option>
                         </template>
                     </select>

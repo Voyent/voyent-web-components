@@ -33,11 +33,7 @@ Polymer({
         fields: { type: Object, value: {} },
         /**
          * Additional query options such as limit and sort. Only one sort parameter can be specified in the options (others will be ignored).
-         *
-         * Example:
-         *
-         *      //500 log records + sort by time (descending)
-         *      {"limit":500,"sort":{"time":-1}}
+         * We pull 500 log records + sort by time (newest to oldest)
          */
         options: { type: Object, value: {"limit":500,"sort":{"time":-1}} },
         /**
@@ -279,6 +275,12 @@ Polymer({
      * @private
      */
     _fetchLogsCallback: function(logs) {
+        // We pull the logs with newest times first. But for parsing we want to order the reverse way
+        // This is important so that "start" preceeds "end" for actions
+        logs = logs.sort(function(a,b) {
+            return new Date(a.time) - new Date(b.time);
+        });
+        
         // Loop through the returned logs
         // We want to achieve a few things here
         // 1. Populate the pastAction list and subsequent dropdown with a unique list of actions, including uncategorized
@@ -286,6 +288,7 @@ Polymer({
         var strStart = 'start';
         var strEnd = 'end';
         var strParams = 'params';
+        var strDebug = 'debug';
         var strTaskResult = 'Task Result';
         var currentLog = null;
         for (var i = 0; i < logs.length; i++) {
@@ -295,11 +298,12 @@ Polymer({
             currentLog.taskGroup = null;
             currentLog.taskItem = null;
             currentLog.isParams = false;
-
+            currentLog.isDebug = false;
+            
             // Using messagePrefix in order to allow for the previously existing checks against taskGroups to work with events containing arrays.
             var messagePrefix = currentLog.message.indexOf('{') !== -1 ? currentLog.message.split("{")[0] : currentLog.message;
 
-            // If we find a "start" string we have a new past action
+            // start: mark a new past action
             if (currentLog.message.lastIndexOf(strStart, 0) === 0) {
                 // There could be starts for taskGroups as well. We just want actions
                 // The desired format is: start [action]
@@ -331,7 +335,7 @@ Polymer({
                         }
 
                         if (!match) {
-                            this.push('_pastActions', {"name":currentLog.action,"tx":currentLog.tx,"startDate":this._formatTime(currentLog.time)});
+                            this.push('_pastActions', {"name":currentLog.action,"tx":currentLog.tx,"startTime":currentLog.time,"startDate":this._formatTime(currentLog.time)});
                         }
                     }
                 }
@@ -340,7 +344,7 @@ Polymer({
                 currentLog.message = currentLog.message.substring(strStart.length).trim();
                 currentLog.message += strStart;
             }
-            // We also want to account for the "end" string that marks the end of an action
+            // end: marks the end of an action
             else if (currentLog.message.lastIndexOf(strEnd, 0) === 0) {
                 if (messagePrefix.split("[").length-1 === 1 && messagePrefix.split("]").length-1 === 1) {
                     currentLog.action = currentLog.message.substring((strEnd + " [").length);
@@ -361,12 +365,17 @@ Polymer({
                 currentLog.message = currentLog.message.substring(strEnd.length).trim();
                 currentLog.message += strEnd;
             }
-            // Watch for params, which is an action level JSON object
+            // Params: action level JSON object
             else if (currentLog.message.lastIndexOf(strParams, 0) === 0) {
                 currentLog.message = currentLog.message.substring(strParams.length).trim();
                 currentLog.isParams = true;
             }
-            // Account for Task Result, which is backpack content
+            // Debug: custom user logging
+            else if (currentLog.message.lastIndexOf(strDebug, 0) === 0) {
+                currentLog.message = currentLog.message.substring(strDebug.length).trim();
+                currentLog.isDebug = true;
+            }
+            // Task Result: backpack content
             else if (currentLog.message.lastIndexOf(strTaskResult, 0) === 0) {
                 currentLog.message = currentLog.message.substring(strTaskResult.length).trim();
             }
@@ -388,6 +397,10 @@ Polymer({
                 if (currentLog.isParams) {
                     currentLog.message = "Params:\n" + currentLog.message;
                 }
+                // Similarly if we're 'debug' prefix the message
+                else if (currentLog.isDebug) {
+                    currentLog.message = "Debug:\n" + currentLog.message;
+                }
                 // If we have an equal sign (=) starting our message, trim it, since the rest is probably JSON
                 else if (currentLog.message.indexOf("=") === 0) {
                     currentLog.message = currentLog.message.substring(1).trim();
@@ -395,22 +408,38 @@ Polymer({
 
                 // Final trim, just in case
                 currentLog.message = currentLog.message.trim();
+                
+                // Clean up extra variables
+                if (currentLog.isParam) {
+                    delete currentLog.isParam;
+                }
+                if (currentLog.isDebug) {
+                    delete currentLog.isDebug;
+                }
 
                 // Store our finished log entry
                 this.push('_allLogs', currentLog);
             }
         }
 
-        // Notify the user
-        this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
+        // We do ANOTHER sort
+        // Currently we're at newest entries first
+        // But that doesn't visually make sense to a user reading the logs as each action would start with "end" instead of "start"
+        // So basically we reverse the order to have the oldest entries first
+        this._allLogs.sort(function(a,b) {
+            return new Date(b.time) - new Date(a.time);
+        });
 
         // Sort our past actions by time
         this._pastActions.sort(function(a,b) {
-            return a.startDate - b.startDate;
+            return new Date(b.startTime) - new Date(a.startTime);
         });
 
         // Always add an uncategorized option that encompasses log entries not associated with anything
         this.splice('_pastActions', 0, 0, {"name":this.miscName});
+        
+        // Notify the user
+        this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
 
         // Clear our old full logs
         logs.length = 0;

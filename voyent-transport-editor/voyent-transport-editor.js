@@ -7,6 +7,10 @@ Polymer({
          */
         debug: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
         /**
+         * Passthrough to disable syntax validation in the payload code editor
+         */
+        disablevalidation: { type: Boolean, value: false },        
+        /**
          * Show the simple/clean/basic view of this component
          * The simple view contains a name (subject), body (details), and everything else is preset
          * There is also no ability to choose or override specific transports
@@ -140,18 +144,14 @@ Polymer({
 	    
 	    // Payload may be in the process of updating, so ignore any errors for now
 	    // Also restore to default if we're blanked out or undefined
-	    if (!this._isDefined(this._tool.payload) || this._tool.payload == "" || this._tool.payload.trim().length === 0) {
-	        this._tool.payload = "{}";
+	    if (!this._isDefined(this._tool.payload) || JSON.stringify(this._tool.payload).trim().length === 0) {
+	        this._tool.payload = {};
 	    }
-	    this.validPayload = {};
-        try{
-            validPayload = JSON.parse(this._tool.payload);
-        }catch(ignored) {}
 	    
 	    // First add our global JSON (required fields here)
 	    toReturn.global = {
 	        "details": this._tool.details.global,
-	        "payload": validPayload
+	        "payload": this._tool.payload
 	    };
 	    
 	    // Also any any non-required fields
@@ -187,7 +187,7 @@ Polymer({
 	        toReturn = JSON.stringify(toReturn, null, 4);
 	    }catch(error) {
 	        this.fire('message-error', "Failed to parse transport editor UI tooling to JSON string: " + error);
-			console.error('Failed to parse transport editor UI tooling to JSON string:',error);
+			console.error('Failed to parse transport editor UI tooling to JSON string:', error);
 	    }
 	    
 	    return toReturn;
@@ -210,7 +210,7 @@ Polymer({
 	        
 	        // Also update the payload accordingly
 	        if (this._isDefined(json['global']['payload'])) {
-	            this.set('_tool.payload', JSON.stringify(json['global']['payload']));
+	            this.set('_tool.payload', json['global']['payload']);
 	        }
 	    }
 	    
@@ -469,7 +469,7 @@ Polymer({
             "icon": {
                 "global": null,
             },
-            "payload": "{}"
+            "payload": {}
         });
     }
 });

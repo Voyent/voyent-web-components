@@ -26,6 +26,20 @@
             }
         },
 
+        ready: function() {
+            var _this = this;
+            window.addEventListener('boundsUpdated', function(e) {
+                //when the map bounds are updated for a route or vector during a multi-path
+                //simulation we need to set the bounds based on all simulation positions
+                if (_this._isMultiSim) {
+                    _this._bounds.union(e.detail.bounds);
+                    _this._map.fitBounds(_this._bounds);
+                    _this._map.panToBounds(_this._bounds);
+
+                }
+            });
+        },
+
         /**
          * Pause the simulation at it's current location along the path.
          */
@@ -66,7 +80,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:path[i].lat(),lng:path[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
@@ -101,7 +115,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills+_this._interval); //update the ETA
@@ -137,6 +151,17 @@
         },
 
         /**
+         * Wrapper for playSimulation. Specifies a special flag for playing multiple simulations simultaneously.
+         * @private
+         */
+        _playSimulationMulti: function() {
+            //start the simulation with a clean bounds
+            this._bounds = new google.maps.LatLngBounds();
+            this._isMultiSim = true;
+            this.playSimulation();
+        },
+
+        /**
          * Handles continuous playing of the simulation.
          * @private
          */
@@ -147,17 +172,23 @@
             var i = this._index+1; //get next coordinate
             this._location.location.geometry.coordinates = [this._path[i].lng(),this._path[i].lat()]; //get the next location
             var updatePosition = setInterval(function() {
+                //reset the bounds each time so that previous user/tracker locations are not included in the bounds
+                if (!_this._isMultiSim) {
+                    //reset the bounds every time movement occurs when running a single simulation
+                    _this._bounds = new google.maps.LatLngBounds();
+                }
                 _this._marker.setPosition({lat:_this._path[i].lat(),lng:_this._path[i].lng()}); //update the marker position
                 if (_this.tracker) {
-                    _this._moveTrackerZones(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
                 }
                 //keep the map zoomed on the simulation
-                _this._bounds.extend(new google.maps.LatLng(_this._location.location.geometry.coordinates[1],_this._location.location.geometry.coordinates[0]));
+                _this._bounds.extend(new google.maps.LatLng(_this._path[i].lat(),_this._path[i].lng()));
                 _this._map.fitBounds(_this._bounds);
                 _this._map.panToBounds(_this._bounds);
+                _this.fire('boundsUpdated',{"bounds":_this._bounds});
                 if (_this._paused) {
                     //save the current index and stop recursion
                     _this._index = i;
@@ -236,9 +267,9 @@
                     location.demoUsername = location.username; //(NTFY-301)
                 }
                 //move the zones with the tracker
-                _this._moveTrackerZones(id,marker);
+                _this._trackerMoved(id,marker);
 
-                voyent.io.locate.updateTrackerLocation({id:id,location: location}).then(function(data) {
+                voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
                     console.log('Issue changing location of tracker "' + location.username + '":', error);
@@ -247,26 +278,25 @@
         },
 
         /**
-         * Moves zones associated with a tracker to a new location based on a markers location.
+         * Moves zones associated with a tracker to a new location based
+         * on the marker's location + update the stored tracker location.
          * @param id
          * @param marker
          */
-        _moveTrackerZones: function(id,marker) {
-            //update the zone center point
-            var zones = this._trackerZones[id];
+        _trackerMoved: function(id,marker) {
+            //update the center point of associated zones
+            var zones = this._trackers[id].zones;
             for (var i=0; i<zones.length; i++) {
                 var latLng = new google.maps.LatLng(marker.getPosition().lat(),marker.getPosition().lng());
                 zones[i].setCenter(latLng);
-            }
-            //update our stored list of trackers so that our saved
-            //tracker location is always the last known location
-            for (var j=0; j<this._trackers.length; j++) {
-                if (id === this._trackers[j]._id) {
-                    this._trackers[j].anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
-                    this.fire('trackersRetrieved',{trackers:this._trackers,trackerZones:this._trackerZones});
-                    break;
+                if (this._bounds) {
+                    this._bounds.union(zones[i].getBounds());
                 }
             }
+            //update the tracker so that the tracker
+            //location is always the last known location
+            this._trackers[id].tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
+            this.fire('trackersRetrieved',{trackers:this._trackers});
         },
 
         /**
@@ -328,14 +358,6 @@
         },
 
         /**
-         * Pass the map bounds object.
-         * @private
-         */
-        _setBounds: function(bounds) {
-            this._bounds = bounds;
-        },
-
-        /**
          * Convert degrees to radians
          * @param degrees
          * @returns {number}
@@ -351,6 +373,18 @@
          */
         _toDegrees: function(radians) {
             return radians * 180 / Math.PI;
+        },
+
+        /**
+         * Convert trackers mapping to an array.
+         * @param trackers
+         * @returns {Array}
+         * @private
+         */
+        _toArray: function(trackers) {
+            return Object.keys(trackers).map(function (key) {
+                return trackers[key].tracker;
+            });
         }
     };
 </script>

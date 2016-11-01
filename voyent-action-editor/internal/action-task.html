@@ -50,7 +50,7 @@ Internal component used to display tasks inside the action editor.
                                 <template is="dom-if" if="{{_isString(property.type)}}">
                                     <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                                         <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                            <voyent-transport-editor value="{{property.value}}"></voyent-transport-editor>
+                                            <voyent-transport-editor value="{{property.value}}" debug="true" disablevalidation="true"></voyent-transport-editor>
                                         </template>
                                         <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
                                             <voyent-code-editor class="code-editor" value="{{property.value}}"
@@ -87,7 +87,7 @@ Internal component used to display tasks inside the action editor.
                     <template is="dom-if" if="{{_isString(property.type)}}">
                         <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                             <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                <voyent-transport-editor value="{{property.value}}"></voyent-transport-editor>
+                                <voyent-transport-editor value="{{property.value}}" debug="true" disablevalidation="true"></voyent-transport-editor>
                             </template>
                             <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
                                 <voyent-code-editor class="code-editor" value="{{property.value}}"
@@ -122,7 +122,7 @@ Internal component used to display tasks inside the action editor.
                     <template is="dom-if" if="{{_isString(property.type)}}">
                         <template is="dom-if" if="{{_isCodeEditor(property.title)}}">
                             <template is="dom-if" if="{{_isTransportEditor(property.title)}}">
-                                <voyent-transport-editor value="{{property.value}}"></voyent-transport-editor>
+                                <voyent-transport-editor value="{{property.value}}" debug="true" disablevalidation="true"></voyent-transport-editor>
                             </template>
                             <template is="dom-if" if="{{!_isTransportEditor(property.title)}}">
                                 <voyent-code-editor class="code-editor" value="{{property.value}}"

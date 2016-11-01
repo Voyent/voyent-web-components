@@ -6,7 +6,6 @@ Voyent.LocationVector = Polymer({
      * Custom constructor
      * @param map
      * @param trackers
-     * @param trackerZones
      * @param label
      * @param tracker
      * @param bearing
@@ -17,12 +16,15 @@ Voyent.LocationVector = Polymer({
      * @param viaAttribute
      * @private
      */
-    factoryImpl: function(map,trackers,trackerZones,label,tracker,bearing,speed,speedunit,duration,frequency,viaAttribute) {
+    factoryImpl: function(map,trackers,label,tracker,bearing,speed,speedunit,duration,frequency,viaAttribute) {
+        var _this = this;
         this._map = map;
         this._trackers = trackers;
-        this._trackerZones = trackerZones || null;
         this.label = label || 'New Vector';
-        this.tracker = tracker || '';
+        //set the tracker async so the select menu gets populated
+        setTimeout(function() {
+            _this.tracker = tracker || '';
+        },0);
         this.bearing = bearing || 0;
         this.speed = speed || 50;
         this.speedunit = speedunit || 'kph';
@@ -55,7 +57,7 @@ Voyent.LocationVector = Polymer({
         /**
          * The time in minutes that the tracker will move along it's vector.
          */
-        duration: { type: Number, value: 0.5, observer: '_durationValidation' },
+        duration: { type: Number, value: 2, observer: '_durationValidation' },
         /**
          * The number of seconds to wait between location updates during a simulation.
          */
@@ -64,6 +66,7 @@ Voyent.LocationVector = Polymer({
 
     //observe non-declared/private properties
     observers: [
+        '_mapChanged(_map)',
         '_trackersChanged(_trackers)',
         '_pausedChanged(_paused)'
     ],
@@ -92,9 +95,12 @@ Voyent.LocationVector = Polymer({
             });
             Polymer.dom(this).parentNode.addEventListener('trackersRetrieved', function(e) {
                 _this._trackers = e.detail.trackers;
-                _this._trackerZones = e.detail.trackerZones;
             });
         }
+        this.pathtoimages = '.';
+        document.addEventListener('pathtoimagesChanged', function(e) {
+            _this.pathtoimages = e.detail.path;
+        });
         //set some default values
         this._previousBtnDisabled = true;
         this._nextBtnDisabled = true;
@@ -113,14 +119,10 @@ Voyent.LocationVector = Polymer({
             return;
         }
         if (!this._path) {
-            if ((this._trackers && this._trackers.length > 0 && !this.tracker) /*|| !this.bearing || !this.duration*/) {
+            if ((this._trackers && Object.keys(this._trackers).length && !this.tracker) /*|| !this.bearing || !this.duration*/) {
                 return;
             }
-
-            var tracker = this._trackers.filter(function(tracker) {
-                return tracker._id === _this.tracker;
-            });
-            tracker = tracker[0];
+            var tracker = this._trackers[_this.tracker].tracker;
 
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
@@ -147,14 +149,16 @@ Voyent.LocationVector = Polymer({
                 _this._location = location;
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 //set marker object
+                var icon = tracker.properties.icon ? tracker.properties.icon : 'incident_marker.png'; //********** - INCIDENT DEMO SPECIFIC CODE - **********
                 var marker = new google.maps.Marker({
                     position: path[_this._index],
                     map: _this._map,
+                    icon:_this.pathtoimages+'/images/'+icon,
                     draggable: false //don't allow manual location changes during simulation
                 });
                 _this._marker = marker;
                 //move the zones with the tracker
-                _this._moveTrackerZones(_this.tracker,marker);
+                _this._trackerMoved(_this.tracker,marker);
                 //start simulation
                 _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
                 _this._doSimulation();
@@ -243,6 +247,7 @@ Voyent.LocationVector = Polymer({
         this._interval = 0;
         this._location = null;
         this._canceled = false;
+        this._isMultiSim = false;
         this._inputsDisabled = false;
         this._previousBtnDisabled=true;
         this._nextBtnDisabled=true;
@@ -298,7 +303,7 @@ Voyent.LocationVector = Polymer({
         }
         this.bearingInputClass='form-control';
         this.bearingLblClass='';
-        if ((this.tracker || (!this._trackers || this._trackers.length==0)) && this.duration && this.duration.toString().length > 0) {
+        if ((this.tracker || (!this._trackers || Object.keys(this._trackers).length==0)) && this.duration && this.duration.toString().length > 0) {
             this._playBtnDisabled=false;
         }
     },
@@ -318,8 +323,20 @@ Voyent.LocationVector = Polymer({
         }
         this.durationInputClass='form-control';
         this.durationLblClass='';
-        if ((this.tracker || (!this._trackers || this._trackers.length==0)) && this.bearing && this.bearing.toString().length > 0) {
+        if ((this.tracker || (!this._trackers || Object.keys(this._trackers).length==0)) && this.bearing && this.bearing.toString().length > 0) {
             this._playBtnDisabled=false;
+        }
+    },
+
+    /**
+     * Once the map is available then setup map features.
+     * @param map
+     * @private
+     */
+    _mapChanged: function(map) {
+        if (this._map) {
+            //initialize bounds object for later use
+            this._bounds = new google.maps.LatLngBounds();
         }
     },
 

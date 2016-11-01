@@ -137,6 +137,51 @@ Example:
                 font-size: 10px;
                 line-height: 10px;
             }
+
+            .customMapBttnWrap {
+                line-height: 0;
+                padding-top:3px;
+            }
+
+            .customMapBttn {
+                direction: ltr;
+                overflow: hidden;
+                text-align: left;
+                position: relative;
+                color: #565656;
+                -webkit-user-select: none;
+                padding: 4px;
+                border-bottom-right-radius: 2px;
+                border-top-right-radius: 2px;
+                -webkit-background-clip: padding-box;
+                -webkit-box-shadow: rgba(0, 0, 0, 0.298039) 0 1px 4px -1px;
+                box-shadow: rgba(0, 0, 0, 0.298039) 0 1px 4px -1px;
+                background-color: #FFF;
+                background-clip: padding-box;
+                left: 5px;
+                top: 2px;
+            }
+
+            .customMapBttn:hover {
+                color: #000;
+                background-color: #EBEBEB;
+            }
+
+            .customMapBttn > span {
+                display: inline-block;
+            }
+
+            .customMapBttnImg {
+                width: 16px;
+                height: 16px;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .customMapBttnImg > img {
+                display: inline;
+            }
+
         </style>
         
         <div id="container">
@@ -159,7 +204,7 @@ Example:
                 <button on-click="_deleteSimulation">Delete</button>
             </template>
             <button on-click="_addRoute">Add Route</button>
-            <button on-click="_addVector">Add Vector</button>
+            <button on-click="_addVector" hidden$="[[_hideVectorBttn]]">Add Vector</button>
         </div>
         <div class="title">{{_activeSim._id}}</div>
         <div id="tabs-container">
@@ -174,9 +219,32 @@ Example:
                 </template>
             </div>
         </div>
-        <div id="contextMenu" class="context-menu" hidden$="{{_hideContextMenu}}">
+        <div id="contextMenu" class="context-menu" hidden$="[[_hideContextMenu]]">
             <div id="setAsOrigin" class="menu-item" on-click="_setAsOrigin">Set Origin</div>
             <div id="setAsDestination" class="menu-item" on-click="_setAsDestination">Set Destination</div>
+        </div>
+        <div id="incidentMenu" class="context-menu" hidden$="[[_hideIncidentMenu]]">
+            <template is="dom-repeat" strip-whitespace items="{{_incidentMenuItems}}">
+                <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{item.properties.zoneNamespace}}</div>
+            </template>
+        </div>
+        <div id="userBttn" class="customMapBttnWrap" hidden$="[[_hideUserBttn]]">
+            <div class="customMapBttn" title="Create user location" data-type="user">
+                <span>
+                    <div class="customMapBttnImg">
+                        <img data-type="user" src="images/user_bttn.png">
+                    </div>
+                </span>
+            </div>
+        </div>
+        <div id="incidentBttn" class="customMapBttnWrap" hidden$="[[_hideIncidentBttn]]">
+            <div class="customMapBttn" title="Create an incident" data-type="incident">
+                <span>
+                    <div class="customMapBttnImg">
+                        <img data-type="incident" src="images/incident_bttn.png">
+                    </div>
+                </span>
+            </div>
         </div>
     </template>
 </dom-module>

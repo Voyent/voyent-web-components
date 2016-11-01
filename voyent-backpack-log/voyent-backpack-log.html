@@ -33,6 +33,7 @@ Example:
             .container {
                 width: 95% !important;
                 max-width: 95% !important;
+                padding: 10px;
             }
             
             .dropWrap {
@@ -161,7 +162,10 @@ Example:
             }
             
             .highlight {
-                background-color: #FFFFCC;
+                background: #FFFFCC !important;
+                background: -moz-linear-gradient(top, #ffffcc 50%, #ffffaa 100%) !important;
+                background: -webkit-linear-gradient(top, #ffffcc 50%, #ffffaa 100%) !important;
+                background: linear-gradient(to bottom, #ffffcc 50%, #ffffaa 100%) !important;
             }
             .highlightTd {
                 border-top: 1px solid black;
@@ -312,7 +316,7 @@ Example:
                                 </div>
                                 <template is="dom-repeat" strip-whitespace items="{{_backpack}}" as="backpack" strip-whitespace>
                                     <div id$="item{{index}}" class$="tr {{highlightStyle(backpack.highlight)}} bottomB">
-                                        <div class$="td {{highlightStyle(backpack.highlight)}}Td">{{formatContainer(backpack)}}<pre>{{backpack.message}}</pre></div>
+                                        <div class$="td {{highlightStyle(backpack.highlight)}}Td" title$="[[backpack.time]]">{{formatContainer(backpack)}}<pre>[[backpack.message]]</pre></div>
                                     </div>
                                 </template>
                             </div>

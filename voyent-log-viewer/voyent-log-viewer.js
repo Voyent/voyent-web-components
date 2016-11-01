@@ -272,9 +272,11 @@ Polymer({
                 
                 if (this._serviceList.indexOf(currentLog.service) === -1) {
                     this.push('_serviceList', currentLog.service);
-                    //this._serviceList.push(currentLog.service);
                 }
             }
+            
+            // Sort the services
+            this.set('_serviceList', this._serviceList.sort());
         }
 
         if (Object.keys(this.fields).length > 0) {
