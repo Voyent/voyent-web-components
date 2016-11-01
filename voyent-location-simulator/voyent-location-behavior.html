@@ -300,6 +300,15 @@
         },
 
         /**
+         * Returns the tracker label or the _id.
+         * @param tracker
+         * @private
+         */
+        _getZoneNamespace: function(tracker) {
+            return tracker.label || tracker._id;
+        },
+
+        /**
          * Toggle disabled button state.
          * @param paused
          * @private

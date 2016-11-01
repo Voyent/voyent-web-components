@@ -89,7 +89,7 @@ Example:
                     <select id="trackers" class$="{{trackerInputClass}}" value="{{tracker::change}}" disabled$="{{_inputsDisabled}}">
                         <option value="" selected>Select a Tracker</option>
                         <template is="dom-repeat" strip-whitespace items="{{_toArray(_trackers)}}" as="tracker">
-                            <option value="{{tracker._id}}">{{tracker.properties.zoneNamespace}}</option>
+                            <option value="{{tracker._id}}">{{_getZoneNamespace(tracker)}}</option>
                         </template>
                     </select>
                 </div>

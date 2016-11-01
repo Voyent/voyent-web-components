@@ -225,7 +225,7 @@ Example:
         </div>
         <div id="incidentMenu" class="context-menu" hidden$="[[_hideIncidentMenu]]">
             <template is="dom-repeat" strip-whitespace items="{{_incidentMenuItems}}">
-                <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{item.properties.zoneNamespace}}</div>
+                <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{_getZoneNamespace(item)}}</div>
             </template>
         </div>
         <div id="userBttn" class="customMapBttnWrap" hidden$="[[_hideUserBttn]]">

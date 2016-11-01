@@ -143,11 +143,11 @@ Polymer({
             _this._hideVectorBttn = false;
         });
     },
-    
+
     calcHeight: function() {
         // Get our overall page height size
         var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-        
+
         // Account for the header
         if (document.getElementById("mainHeader")) {
             var headerHeight = document.getElementById("mainHeader").clientHeight;
@@ -155,10 +155,10 @@ Polymer({
                 h -= headerHeight;
             }
         }
-        
+
         // Reduce the final size by a little bit
         h = Math.round(h/1.25);
-        
+
         // Apply the height variable, which will be used for the map
         this.customStyle['--height-var'] = h + 'px';
         this.updateStyles();
@@ -228,7 +228,6 @@ Polymer({
             _this._updatePOIs(pois);
         }));
         promises.push(voyent.io.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
-            //update the map with the trackers
             _this._updateTrackers(trackers);
         }));
         return Promise.all(promises).then(function() {
@@ -668,11 +667,14 @@ Polymer({
                 for (var j=0; j<zones.length; j++) {
                     //********** - INCIDENT DEMO SPECIFIC CODE START - **********
                     //save the tracker icon
-                    if (trackerData[trackers[i].properties.zoneNamespace] &&
-                        trackerData[trackers[i].properties.zoneNamespace][zones[j].properties.zoneId] &&
-                        trackerData[trackers[i].properties.zoneNamespace][zones[j].properties.zoneId].global &&
-                        trackerData[trackers[i].properties.zoneNamespace][zones[j].properties.zoneId].global.icon) {
-                        trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i].properties.zoneNamespace][zones[j].properties.zoneId].global.icon);
+                    if (trackerData[trackers[i]._id] &&
+                        trackerData[trackers[i]._id][zones[j].properties.zoneId] &&
+                        trackerData[trackers[i]._id][zones[j].properties.zoneId].global &&
+                        trackerData[trackers[i]._id][zones[j].properties.zoneId].global.icon) {
+                        if (!trackers[i].properties) {
+                            trackers[i].properties = {};
+                        }
+                        trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zones[j].properties.zoneId].global.icon);
                     }
                     //********** - INCIDENT DEMO SPECIFIC CODE END - **********
 
@@ -938,6 +940,8 @@ Polymer({
         marker.setVisible(true);
         this._pointMarkers.push(marker);
 
+        var zoneNamespace = this._getZoneNamespace(tracker);
+
         //now that we have a location save it in the tracker
         tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
 
@@ -946,7 +950,7 @@ Polymer({
                 "geometry": { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] },
                 "properties": {
                     "trackerId": tracker._id,
-                    "zoneNamespace": tracker.properties.zoneNamespace
+                    "zoneNamespace": zoneNamespace
                 }
             },
             "username": tracker._id,
@@ -971,7 +975,7 @@ Polymer({
             return obj.elem.nodeName === 'VOYENT-LOCATION-VECTOR' && obj.elem.tracker === tracker._id;
         });
         if (!vectorTabs.length) {
-            this.addVector(tracker.properties.zoneNamespace,tracker._id);
+            this.addVector(zoneNamespace,tracker._id);
         }
 
         voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
@@ -980,8 +984,8 @@ Polymer({
             _this._clickListener(marker,tracker,"point");
 
         }).catch(function (error) {
-            _this.fire('message-error', 'Issue creating new incident: ' + tracker.properties.zoneNamespace);
-            console.error('Issue creating new incident: ' + tracker.properties.zoneNamespace, error);
+            _this.fire('message-error', 'Issue creating new incident: ' + zoneNamespace);
+            console.error('Issue creating new incident: ' + zoneNamespace, error);
         });
     },
 

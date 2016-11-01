@@ -138,7 +138,7 @@ Voyent.LocationVector = Polymer({
                     },
                     "properties": {
                         "trackerId": this.tracker,
-                        "zoneNamespace": tracker.properties.zoneNamespace
+                        "zoneNamespace": this._getZoneNamespace(tracker)
                     }
                 },
                 "username":this.tracker,
