@@ -1005,7 +1005,7 @@ Polymer({
             _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id; //display the id if the label hasn't been set yet
         }
         else if (_loc.infowindowisanchor){
-            _loc.locationNameInput = _loc.activeLocation.properties.label ? _loc.activeLocation.properties.label : _loc.activeLocation._id;
+            _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id;
         }
         else if (_loc.infowindowiszone){
             var location = _loc.activeGoogleLocation;
@@ -1035,7 +1035,7 @@ Polymer({
             _loc.$$('#locationName').textContent= geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
         }
         else if (_loc.infowindowisanchor){
-            _loc.$$('#locationName').textContent= geoJSON.properties.label ? geoJSON.properties.label : geoJSON._id; //display the id if the label hasn't been set yet
+            _loc.$$('#locationName').textContent= geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
         }
         _loc.setupLocationIdPopover(); //Setup the location ID popover
         _loc.adjustLocationFontSize();
@@ -1106,7 +1106,7 @@ Polymer({
                 }
             }
             else if(_loc.infowindowisanchor){
-                geoJSON.properties.label = newLocationName;
+                geoJSON.label = newLocationName;
                 _loc.postTracker(_loc.activeGoogleLocation,geoJSON,"tracker",true);
             }
             else if (_loc.infowindowiszone){
@@ -1826,7 +1826,7 @@ Polymer({
             for (locationId in locationList) {
                 if(locationList[locationId][0].zones){
                     googleLocation = locationList[locationId][0];
-                    locationName = locationList[locationId][1].properties.label ? locationList[locationId][1].properties.label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
+                    locationName = locationList[locationId][1].label ? locationList[locationId][1].label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
                     matchFound = _loc.compareStrings(locationName, searchQuery, exactMatch, false);
                     if (matchFound) {
                         googleLocation.anchor.setMap(_loc._map);//set location on map
@@ -1857,7 +1857,7 @@ Polymer({
             searchQuery = optionalQuery ? optionalQuery.value : _loc.$$("#locationSearchBar").value;
             for (locationId in locationList) {
                 googleLocation = locationList[locationId][0];
-                locationName = locationList[locationId][1].properties.label ? locationList[locationId][1].properties.label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
+                locationName = locationList[locationId][1].label ? locationList[locationId][1].label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
                 matchFound = _loc.compareStrings(locationName, searchQuery, exactMatch, false);
                 if (matchFound) {
                     googleLocation.anchor.setMap(_loc._map);//set location on map
@@ -2890,8 +2890,8 @@ Polymer({
                     region.bindTo('center', tracker.anchor, 'position');
                     tracker.zones.push(region);
                 }
-                    if (!geoJSON.properties.label) {
-                        geoJSON.properties.label = 'default';
+                    if (!geoJSON.label) {
+                        geoJSON.label = 'default';
                     }
                     allTrackers[geoJSON._id] = [tracker, geoJSON];
                     allLocations[geoJSON._id] = [tracker, geoJSON];
