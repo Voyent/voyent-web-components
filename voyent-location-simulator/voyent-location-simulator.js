@@ -101,6 +101,7 @@ Polymer({
                 signed_in: false
             });
             _this.fire('mapInitialized',{map:_this._map});
+            _this.calcHeight();
             _this._bounds = new google.maps.LatLngBounds();
             //setup ui and listener for manually adding new location markers
             var drawingManager = new google.maps.drawing.DrawingManager({
@@ -141,6 +142,26 @@ Polymer({
         Polymer.dom(this).parentNode.addEventListener('trackersRetrieved', function(e) {
             _this._hideVectorBttn = false;
         });
+    },
+    
+    calcHeight: function() {
+        // Get our overall page height size
+        var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        
+        // Account for the header
+        if (document.getElementById("mainHeader")) {
+            var headerHeight = document.getElementById("mainHeader").clientHeight;
+            if (headerHeight) {
+                h -= headerHeight;
+            }
+        }
+        
+        // Reduce the final size by a little bit
+        h = Math.round(h/1.25);
+        
+        // Apply the height variable, which will be used for the map
+        this.customStyle['--height-var'] = h + 'px';
+        this.updateStyles();
     },
 
     _addCustomButtons: function() {
