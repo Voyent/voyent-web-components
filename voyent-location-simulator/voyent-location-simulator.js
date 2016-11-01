@@ -156,9 +156,6 @@ Polymer({
             }
         }
 
-        // Reduce the final size by a little bit
-        h = Math.round(h/1.25);
-
         // Apply the height variable, which will be used for the map
         this.customStyle['--height-var'] = h + 'px';
         this.updateStyles();
