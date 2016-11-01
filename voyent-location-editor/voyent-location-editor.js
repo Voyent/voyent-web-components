@@ -320,7 +320,7 @@ Polymer({
 
                 }]},
                 "properties":{
-                    "zoneNamespace":'default'
+                    "label":'default'
                 }};
                 _loc.istracker = false;
                 shape = "tracker";
@@ -581,8 +581,7 @@ Polymer({
             map: _loc._map,
             fillColor: 'black',
             radius: largestRadius,
-            zIndex: smallestIndex,
-            zoneId:geoJSON.zones.features.length + 1
+            zIndex: smallestIndex
         });
         newCircle.bindTo('center', location.anchor, 'position');
         newCircleJSON = {
@@ -1006,7 +1005,7 @@ Polymer({
             _loc.locationNameInput = _loc.activeLocation.label ? _loc.activeLocation.label : _loc.activeLocation._id; //display the id if the label hasn't been set yet
         }
         else if (_loc.infowindowisanchor){
-            _loc.locationNameInput = _loc.activeLocation.properties.zoneNamespace ? _loc.activeLocation.properties.zoneNamespace : _loc.activeLocation._id;
+            _loc.locationNameInput = _loc.activeLocation.properties.label ? _loc.activeLocation.properties.label : _loc.activeLocation._id;
         }
         else if (_loc.infowindowiszone){
             var location = _loc.activeGoogleLocation;
@@ -1036,7 +1035,7 @@ Polymer({
             _loc.$$('#locationName').textContent= geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
         }
         else if (_loc.infowindowisanchor){
-            _loc.$$('#locationName').textContent= geoJSON.properties.zoneNamespace ? geoJSON.properties.zoneNamespace : geoJSON._id; //display the id if the label hasn't been set yet
+            _loc.$$('#locationName').textContent= geoJSON.properties.label ? geoJSON.properties.label : geoJSON._id; //display the id if the label hasn't been set yet
         }
         _loc.setupLocationIdPopover(); //Setup the location ID popover
         _loc.adjustLocationFontSize();
@@ -1107,7 +1106,7 @@ Polymer({
                 }
             }
             else if(_loc.infowindowisanchor){
-                geoJSON.properties.zoneNamespace = newLocationName;
+                geoJSON.properties.label = newLocationName;
                 _loc.postTracker(_loc.activeGoogleLocation,geoJSON,"tracker",true);
             }
             else if (_loc.infowindowiszone){
@@ -1827,7 +1826,7 @@ Polymer({
             for (locationId in locationList) {
                 if(locationList[locationId][0].zones){
                     googleLocation = locationList[locationId][0];
-                    locationName = locationList[locationId][1].properties.zoneNamespace ? locationList[locationId][1].properties.zoneNamespace : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
+                    locationName = locationList[locationId][1].properties.label ? locationList[locationId][1].properties.label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
                     matchFound = _loc.compareStrings(locationName, searchQuery, exactMatch, false);
                     if (matchFound) {
                         googleLocation.anchor.setMap(_loc._map);//set location on map
@@ -1858,7 +1857,7 @@ Polymer({
             searchQuery = optionalQuery ? optionalQuery.value : _loc.$$("#locationSearchBar").value;
             for (locationId in locationList) {
                 googleLocation = locationList[locationId][0];
-                locationName = locationList[locationId][1].properties.zoneNamespace ? locationList[locationId][1].properties.zoneNamespace : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
+                locationName = locationList[locationId][1].properties.label ? locationList[locationId][1].properties.label : locationList[locationId][1]._id; //use the id to search if the label hasn't been set yet
                 matchFound = _loc.compareStrings(locationName, searchQuery, exactMatch, false);
                 if (matchFound) {
                     googleLocation.anchor.setMap(_loc._map);//set location on map
@@ -2891,8 +2890,8 @@ Polymer({
                     region.bindTo('center', tracker.anchor, 'position');
                     tracker.zones.push(region);
                 }
-                    if (!geoJSON.properties.zoneNamespace) {
-                        geoJSON.properties.zoneNamespace = 'default';
+                    if (!geoJSON.properties.label) {
+                        geoJSON.properties.label = 'default';
                     }
                     allTrackers[geoJSON._id] = [tracker, geoJSON];
                     allLocations[geoJSON._id] = [tracker, geoJSON];
