@@ -3,28 +3,7 @@
 <link rel="import" href="voyent-location-behavior.html">
 
 <!--
-Define a single route for the `voyent-location-simulator` component.
-
-Example:
-
-    <voyent-location-simulator account="myAccount"
-                                 realm="myRealm">
-            <voyent-location-vector label="ICEsoft Technologies To Calgary Tower"
-                                     origin="1717 10 St NW, Calgary"
-                                     destination="101 9 Ave SW, Calgary"
-                                     travelmode="DRIVING"
-                                     speed="60"
-                                     frequency="5">
-            </voyent-location-vector>
-            <voyent-location-vector label="Princes Island Park To Fort Calgary"
-                                     user="jimjones"
-                                     origin="698 Eau Claire Ave SW, Calgary"
-                                     destination="750 9th Avenue SE, Calgary"
-                                     travelmode="BICYCLING"
-                                     speed="15"
-                                     frequency="10">
-            </voyent-location-vector>
-    </voyent-location-simulator>
+This component is used internally by the location simulator.
 
 @demo demo.html
 -->
@@ -58,12 +37,10 @@ Example:
             .simulatorWrapper {
                 @apply(--location-route-wrapper);
             }
-            #traclersLbl.error,
             #bearingLbl.error,
             #durationLbl.error {
                 color:#a94442;
             }
-            #trackers.error,
             #bearing.error,
             #duration.error {
                 border:1px solid #a94442;
@@ -79,21 +56,6 @@ Example:
                 <br/><br/>
                 <button on-click="updateLocationAtMarker" disabled$="{{_updateBtnDisabled}}">Manual Location Update</button>
             </div>
-            <div class="form-group">
-                <label for="label">Label:</label>
-                <input id="label" type="text" class="form-control" value="{{label::change}}" disabled$="{{_inputsDisabled}}" placeholder="Enter a label">
-            </div>
-            <template is="dom-if" if="{{_trackers}}">
-                <div class="form-group">
-                    <label id="trackersLbl" for="trackers" class$="{{trackerLblClass}}">Tracker:</label>
-                    <select id="trackers" class$="{{trackerInputClass}}" value="{{tracker::change}}" disabled$="{{_inputsDisabled}}">
-                        <option value="" selected>Select a Tracker</option>
-                        <template is="dom-repeat" strip-whitespace items="{{_toArray(_trackers)}}" as="tracker">
-                            <option value="{{tracker._id}}">{{_getZoneNamespace(tracker)}}</option>
-                        </template>
-                    </select>
-                </div>
-            </template>
             <div class="form-group">
                 <label id="bearingLbl" for="bearing" class$="{{bearingLblClass}}">Bearing (degrees):</label>
                 <input id="bearing" type="text" class$="{{bearingInputClass}}" value="{{bearing::change}}" disabled$="{{_inputsDisabled}}" placeholder="Enter a bearing">

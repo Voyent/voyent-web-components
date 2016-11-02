@@ -14,10 +14,10 @@ Voyent.LocationRoute = Polymer({
      * @param speed
      * @param speedunit
      * @param frequency
-     * @param viaAttribute
+     * @param viaRoutesAttribute
      * @private
      */
-    factoryImpl: function(map,users,label,user,origin,destination,travelmode,speed,speedunit,frequency,viaAttribute) {
+    factoryImpl: function(map,users,label,user,origin,destination,travelmode,speed,speedunit,frequency,viaRoutesAttribute) {
         this._map = map;
         this._users = users;
         this.label = label || 'New Route';
@@ -28,7 +28,7 @@ Voyent.LocationRoute = Polymer({
         this.speed = speed || 50;
         this.speedunit = speedunit || 'kph';
         this.frequency = frequency || 5;
-        this.viaAttribute = !!viaAttribute;
+        this.viaRoutesAttribute = !!viaRoutesAttribute;
     },
 
     properties: {
@@ -76,10 +76,6 @@ Voyent.LocationRoute = Polymer({
     /**
      * Fired at the beginning of a new simulation.
      * @event startSimulation
-     */
-    /**
-     * Fired when the simulation finishes or is stopped manually.
-     * @event endSimulation
      */
     /**
      * Fired when the label is changed.
@@ -291,8 +287,6 @@ Voyent.LocationRoute = Polymer({
      * @private
      */
     _cleanupSimulation: function() {
-        //fire endSimulation event
-        this.fire('endSimulation',{child:this,type:'route'});
         //allow the location marker to be dragged
         this._marker.setDraggable(true);
         //remove the directions overlay
@@ -428,6 +422,16 @@ Voyent.LocationRoute = Polymer({
             }
             this.travelmode = oldVal || 'DRIVING';
         }
+    },
+
+    /**
+     * Fire `labelChanged` event.
+     * @param newVal
+     * @param oldVal
+     * @private
+     */
+    _labelChanged: function(newVal,oldVal) {
+        this.fire('labelChanged',{child:this,label:newVal});
     },
 
     /**

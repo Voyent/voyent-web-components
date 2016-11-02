@@ -204,7 +204,6 @@ Example:
                 <button on-click="_deleteSimulation">Delete</button>
             </template>
             <button on-click="_addRoute">Add Route</button>
-            <button on-click="_addVector" hidden$="[[_hideVectorBttn]]">Add Vector</button>
         </div>
         <div class="title">{{_activeSim._id}}</div>
         <div id="tabs-container">
@@ -225,7 +224,7 @@ Example:
         </div>
         <div id="incidentMenu" class="context-menu" hidden$="[[_hideIncidentMenu]]">
             <template is="dom-repeat" strip-whitespace items="{{_incidentMenuItems}}">
-                <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{_getZoneNamespace(item)}}</div>
+                <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{_getTrackerName(item)}}</div>
             </template>
         </div>
         <div id="userBttn" class="customMapBttnWrap" hidden$="[[_hideUserBttn]]">

@@ -6,42 +6,37 @@ Voyent.LocationVector = Polymer({
      * Custom constructor
      * @param map
      * @param trackers
-     * @param label
      * @param tracker
+     * @param zonenamespace
      * @param bearing
      * @param speed
      * @param speedunit
      * @param duration
      * @param frequency
-     * @param viaAttribute
      * @private
      */
-    factoryImpl: function(map,trackers,label,tracker,bearing,speed,speedunit,duration,frequency,viaAttribute) {
+    factoryImpl: function(map,trackers,tracker,zonenamespace,bearing,speed,speedunit,duration,frequency) {
         var _this = this;
         this._map = map;
-        this._trackers = trackers;
-        this.label = label || 'New Vector';
-        //set the tracker async so the select menu gets populated
-        setTimeout(function() {
-            _this.tracker = tracker || '';
-        },0);
+        this._trackerInstances = trackers;
+        this.tracker = tracker || null;
+        this.zonenamespace = zonenamespace || null;
         this.bearing = bearing || 0;
         this.speed = speed || 50;
         this.speedunit = speedunit || 'kph';
         this.duration = duration || 2;
         this.frequency = frequency || 5;
-        this.viaAttribute = !!viaAttribute;
     },
 
     properties: {
         /**
-         * The name or label of this route.
+         * The tracker id to create the tracker instance from. This attribute must be set to a valid tracker in the realm.
          */
-        label: { type: String, value: 'New Vector', observer: '_labelChanged' },
+        tracker: { type: String, value: null },
         /**
-         * The tracker id to simulate motion for. This attribute must be set to a valid tracker in the realm.
+         * The zoneNamespace (name) of this tracker instance.
          */
-        tracker: { type: String, value: '', observer: '_trackerValidation' },
+        zonenamespace: { type: String, value: null },
         /**
          * The direction of motion in degrees (0-359).
          */
@@ -67,21 +62,13 @@ Voyent.LocationVector = Polymer({
     //observe non-declared/private properties
     observers: [
         '_mapChanged(_map)',
-        '_trackersChanged(_trackers)',
+        '_trackersChanged(_trackerInstances)',
         '_pausedChanged(_paused)'
     ],
 
     /**
      * Fired at the beginning of a new simulation.
      * @event startSimulation
-     */
-    /**
-     * Fired when the simulation finishes or is stopped manually.
-     * @event endSimulation
-     */
-    /**
-     * Fired when the label is changed.
-     * @event labelChanged
      */
 
     ready: function() {
@@ -94,7 +81,7 @@ Voyent.LocationVector = Polymer({
                 _this._map = e.detail.map;
             });
             Polymer.dom(this).parentNode.addEventListener('trackersRetrieved', function(e) {
-                _this._trackers = e.detail.trackers;
+                _this._trackerInstances = e.detail.trackers;
             });
         }
         this.pathtoimages = '.';
@@ -119,10 +106,10 @@ Voyent.LocationVector = Polymer({
             return;
         }
         if (!this._path) {
-            if ((this._trackers && Object.keys(this._trackers).length && !this.tracker) /*|| !this.bearing || !this.duration*/) {
+            if ((this._trackerInstances && Object.keys(this._trackerInstances).length && !this.tracker) /*|| !this.bearing || !this.duration*/) {
                 return;
             }
-            var tracker = this._trackers[_this.tracker].tracker;
+            var tracker = this._trackerInstances[_this.tracker+'-'+_this.zonenamespace].tracker;
 
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
@@ -138,7 +125,7 @@ Voyent.LocationVector = Polymer({
                     },
                     "properties": {
                         "trackerId": this.tracker,
-                        "zoneNamespace": this._getZoneNamespace(tracker)
+                        "zoneNamespace": this.zonenamespace
                     }
                 },
                 "username":this.tracker,
@@ -158,7 +145,7 @@ Voyent.LocationVector = Polymer({
                 });
                 _this._marker = marker;
                 //move the zones with the tracker
-                _this._trackerMoved(_this.tracker,marker);
+                _this._trackerMoved(_this.tracker+'-'+_this.zonenamespace,marker);
                 //start simulation
                 _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
                 _this._doSimulation();
@@ -178,12 +165,12 @@ Voyent.LocationVector = Polymer({
 
     /**
      * Retrieve the vector in JSON format.
-     * @returns {{label: *, tracker: *, bearing: *, speed: *, speedunit: *, duration: *, frequency: *}}
+     * @returns {{tracker: *, zonenamespace: *, bearing: *, speed: *, speedunit: *, duration: *, frequency: *}}
      */
     getJSON: function() {
         return {
-            label:this.label,
             tracker:this.tracker,
+            zonenamespace:this.zonenamespace,
             bearing:this.bearing,
             speed:this.speed,
             speedunit:this.speedunit,
@@ -234,12 +221,10 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     _cleanupSimulation: function() {
-        //fire endSimulation event
-        this.fire('endSimulation',{child:this,type:'vector'});
         //allow the location marker to be dragged
         this._marker.setDraggable(true);
         //add listener now that the simulation is done
-        this._trackerLocationChangedListener(this._marker,this.tracker,this._location);
+        this._trackerLocationChangedListener(this._marker,this.tracker+'-'+this.zonenamespace,this._location);
         //reset attributes
         this._path = null;
         this._totalDistance = null;
@@ -269,26 +254,6 @@ Voyent.LocationVector = Polymer({
     },
 
     /**
-     * Validates the `tracker` attribute. If invalid show indication on the input.
-     * @param newVal
-     * @param oldVal
-     * @private
-     */
-    _trackerValidation: function(newVal,oldVal) {
-        if (!newVal || newVal.trim().length === 0) {
-            this.trackerInputClass='form-control error';
-            this.trackerLblClass='error';
-            this._playBtnDisabled=true;
-            return;
-        }
-        this.trackerInputClass='form-control';
-        this.trackerLblClass='';
-        if (this.bearing.toString() && this.duration.toString()) {
-            this._playBtnDisabled=false;
-        }
-    },
-
-    /**
      * Validates the `bearing` attribute. If invalid show indication on the input.
      * @param newVal
      * @param oldVal
@@ -303,7 +268,7 @@ Voyent.LocationVector = Polymer({
         }
         this.bearingInputClass='form-control';
         this.bearingLblClass='';
-        if ((this.tracker || (!this._trackers || Object.keys(this._trackers).length==0)) && this.duration && this.duration.toString().length > 0) {
+        if ((this.tracker || (!this._trackerInstances || Object.keys(this._trackerInstances).length==0)) && this.duration && this.duration.toString().length > 0) {
             this._playBtnDisabled=false;
         }
     },
@@ -323,7 +288,7 @@ Voyent.LocationVector = Polymer({
         }
         this.durationInputClass='form-control';
         this.durationLblClass='';
-        if ((this.tracker || (!this._trackers || Object.keys(this._trackers).length==0)) && this.bearing && this.bearing.toString().length > 0) {
+        if ((this.tracker || (!this._trackerInstances || Object.keys(this._trackerInstances).length==0)) && this.bearing && this.bearing.toString().length > 0) {
             this._playBtnDisabled=false;
         }
     },

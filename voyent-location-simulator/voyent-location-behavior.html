@@ -80,7 +80,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:path[i].lat(),lng:path[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker+'-'+_this.zonenamespace,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
@@ -115,7 +115,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker+'-'+_this.zonenamespace,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills+_this._interval); //update the ETA
@@ -179,7 +179,7 @@
                 }
                 _this._marker.setPosition({lat:_this._path[i].lat(),lng:_this._path[i].lng()}); //update the marker position
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker+'-'+_this.zonenamespace,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
@@ -240,6 +240,7 @@
          * @param location
          */
         _userLocationChangedListener: function(marker,location) {
+            var _this = this;
             google.maps.event.addListener(marker, "dragend", function () {
                 location.location.geometry.coordinates = [marker.getPosition().lng(), marker.getPosition().lat()];
                 if (location.username && location.username.length > 0) {
@@ -248,7 +249,8 @@
                 voyent.io.locate.updateLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
-                    console.log('Issue changing location of user "' + location.username + '":', error);
+                    _this.fire('message-error', 'Issue changing location of user "' + location.username + '":' + error);
+                    console.error('Issue changing location of user "' + location.username + '":', error);
                 });
             });
         },
@@ -256,10 +258,10 @@
         /**
          * When a tracker is dragged to a new location on the map update it's location in the Location Service.
          * @param marker
-         * @param id
+         * @param instanceKey
          * @param location
          */
-        _trackerLocationChangedListener: function(marker,id,location) {
+        _trackerLocationChangedListener: function(marker,instanceKey,location) {
             var _this = this;
             google.maps.event.addListener(marker, "dragend", function () {
                 location.location.geometry.coordinates = [marker.getPosition().lng(), marker.getPosition().lat()];
@@ -267,12 +269,13 @@
                     location.demoUsername = location.username; //(NTFY-301)
                 }
                 //move the zones with the tracker
-                _this._trackerMoved(id,marker);
+                _this._trackerMoved(instanceKey,marker);
 
                 voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
-                    console.log('Issue changing location of tracker "' + location.username + '":', error);
+                    _this.fire('message-error', 'Issue changing location of tracker "' + location.username + '":' + error);
+                    console.error('Issue changing location of tracker "' + location.username + '":', error);
                 });
             });
         },
@@ -280,12 +283,12 @@
         /**
          * Moves zones associated with a tracker to a new location based
          * on the marker's location + update the stored tracker location.
-         * @param id
+         * @param instanceKey
          * @param marker
          */
-        _trackerMoved: function(id,marker) {
+        _trackerMoved: function(instanceKey,marker) {
             //update the center point of associated zones
-            var zones = this._trackers[id].zones;
+            var zones = this._trackerInstances[instanceKey].zones;
             for (var i=0; i<zones.length; i++) {
                 var latLng = new google.maps.LatLng(marker.getPosition().lat(),marker.getPosition().lng());
                 zones[i].setCenter(latLng);
@@ -295,8 +298,8 @@
             }
             //update the tracker so that the tracker
             //location is always the last known location
-            this._trackers[id].tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
-            this.fire('trackersRetrieved',{trackers:this._trackers});
+            this._trackerInstances[instanceKey].tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
+            this.fire('trackersRetrieved',{trackers:this._trackerInstances});
         },
 
         /**
@@ -304,7 +307,7 @@
          * @param tracker
          * @private
          */
-        _getZoneNamespace: function(tracker) {
+        _getTrackerName: function(tracker) {
             return tracker.label || tracker._id;
         },
 
@@ -318,16 +321,6 @@
             this._nextBtnDisabled=!paused;
             this._playBtnDisabled = !paused;
             this._pauseBtnDisabled = paused;
-        },
-
-        /**
-         * Fire `labelChanged` event.
-         * @param newVal
-         * @param oldVal
-         * @private
-         */
-        _labelChanged: function(newVal,oldVal) {
-            this.fire('labelChanged',{child:this,label:newVal});
         },
 
         /**
@@ -392,7 +385,7 @@
          */
         _toArray: function(trackers) {
             return Object.keys(trackers).map(function (key) {
-                return trackers[key].tracker;
+                return trackers[key];
             });
         }
     };
