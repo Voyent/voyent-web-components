@@ -1,6 +1,13 @@
 Polymer({
     is: "voyent-location-simulations",
 
+    properties: {
+        /**
+         * Selected index of the saved simulations dropdown
+         */
+        _selectedIndex: { type: Number, observer: '_selectedIndexChanged' }
+    },
+
     ready: function() {
         this._setupListener();
     },
@@ -19,11 +26,12 @@ Polymer({
     },
 
     /**
-     * Loads the selected simulation.
-     * @param e
-     * @private
+     * Fired when the selectedIndex changes
+     * If we have a valid new index we try to load it
      */
-    _loadSimulation: function(e) {
-        Polymer.dom(this).parentNode.loadSimulation(e.model.item);
+    _selectedIndexChanged: function() {
+        if (typeof this._selectedIndex !== 'undefined' && this._selectedIndex !== null) {
+            Polymer.dom(this).parentNode.loadSimulation(this._allSimulations[this._selectedIndex]);
+        }
     }
 });

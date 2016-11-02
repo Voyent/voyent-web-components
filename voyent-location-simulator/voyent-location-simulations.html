@@ -1,5 +1,9 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../common/imports/voyent-io.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<!--<link rel="import" href="../../paper-item/paper-item-body.html">-->
 
 <!--
 Display a list of previously created simulations stored in the doc service.
@@ -32,44 +36,23 @@ Example:
 <dom-module id="voyent-location-simulations">
     <template>
         <style type="text/css">
-            .tableWrapper {
+            .selectWrapper {
+                text-align:center;
                 @apply(--location-simulations-wrapper);
-            }
-            table {
-                margin:0 auto;
-                @apply(--location-simulations-table);
-            }
-            tbody {
-                @apply(--location-simulations-tbody);
-            }
-            tr {
-                @apply(--location-simulations-tr);
-            }
-            td {
-                @apply(--location-simulations-td);
-            }
-            button {
-                cursor:pointer;
-                @apply(--location-simulations-button);
             }
             .noSimTxt {
                 text-align: center;
             }
         </style>
-        <div class="tableWrapper">
+        <div class="selectWrapper">
             <template is="dom-if" if="{{_allSimulations}}">
-                <table>
-                    <tbody>
-                        <template is="dom-repeat" strip-whitespace items="{{_allSimulations}}">
-                            <tr>
-                                <td>{{item._id}}</td>
-                                <td>
-                                    <button on-click="_loadSimulation">View</button>
-                                </td>
-                            </tr>
+                <paper-dropdown-menu label="View Saved Simulations">
+                    <paper-listbox class="dropdown-content" selected="{{_selectedIndex}}">
+                        <template is="dom-repeat" strip-whitespace items="[[_allSimulations]]" as="simulation">
+                            <paper-item>[[simulation._id]]</paper-item>
                         </template>
-                    </tbody>
-                </table>
+                    </paper-listbox>
+                </paper-dropdown-menu>
             </template>
             <template is="dom-if" if="{{!_allSimulations}}">
                 <div class="noSimTxt">No existing simulations found.</div>

@@ -16,11 +16,10 @@
     <!-- Load the webcomponents polyfill -->
     <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
 
-    <!-- Load voyent location simulator component -->
+    <!-- Load voyent location simulator components -->
     <link rel="import" href="voyent-location-simulator.html">
-    <!-- Load voyent location route component -->
     <link rel="import" href="voyent-location-route.html">
-    <!-- Load voyent location simulations component -->
+    <link rel="import" href="voyent-location-vector.html">
     <link rel="import" href="voyent-location-simulations.html">
     <!-- Load voyent message component -->
     <link rel="import" href="../voyent-message/voyent-message.html">
@@ -72,7 +71,7 @@
                 --location-sim-contextmenu-item-hover: {}; [Custom context-menu item:hover styling]
             */
         }
-        voyent-location-route {
+        voyent-location-route, voyent-location-vector {
             --location-route-wrapper: { /* [Custom inputs and/or buttons wrapper styling] */
                  padding: 20px;
                  background-color: #EFEFEF;
@@ -119,23 +118,10 @@
             */
         }
         voyent-location-simulations {
-            --location-simulations-wrapper: { /* [Custom table wrapper (div) styling] */
+            --location-simulations-wrapper: { /* [Custom select menu wrapper (div) styling] */
                  padding:10px 0 10px 0;
                  background-color: #EFEFEF;
             };
-            --location-simulations-button: { /* [Custom button styling] */
-                 padding: 5px 10px;
-                 color: rgb(239, 239, 239);
-                 background-color: rgb(62, 69, 140);
-                 margin: 10px;
-             };
-            /*
-            Other available styling options:
-            --location-simulations-table: { key:value; }; /* [Custom table styling]
-            --location-simulations-tbody: { key:value; }; [Custom tbody styling]
-            --location-simulations-tr { key:value; }; [Custom tr styling]
-            --location-simulations-td: { key:value; }; [Custom td styling]
-            */
         }
     </style>
 
@@ -170,8 +156,8 @@
             <div>
                 <label>Host:
                     <select id="host">
-                        <option selected>api.voyent.mobi</option>
-                        <option>dev.voyent.cloud</option>
+                        <option>api.voyent.mobi</option>
+                        <option selected>dev.voyent.cloud</option>
                     </select>
                 </label>
             </div>
@@ -190,7 +176,6 @@
         
         <!-- Declare the elements by their tags. -->
         <voyent-location-simulator id="motionSimulator">
-            <voyent-location-route></voyent-location-route>
             <voyent-location-simulations></voyent-location-simulations>
         </voyent-location-simulator>
     </div>
