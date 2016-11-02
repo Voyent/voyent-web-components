@@ -107,7 +107,7 @@ Polymer({
         window.initializeLocationsMap = function () {
             _this._map = new google.maps.Map(_this.$.map, {
                 zoom: 8,
-                center: new google.maps.LatLng(51.067799, -114.085237),
+                center: new google.maps.LatLng(51.08427,-114.13062),
                 mapTypeControlOptions: {
                     style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
                     position: google.maps.ControlPosition.RIGHT_TOP
