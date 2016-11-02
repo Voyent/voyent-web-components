@@ -308,6 +308,9 @@ Polymer({
             "tabLabel": label || 'New Route',
             "contentHidden": contentHidden
         });
+        if (!contentHidden) {
+            this.set('_contextMenuDisabled',false);
+        }
         //move new child into tab (do this async so the template has time to render the new child tab)
         setTimeout(function() {
             Polymer.dom(_this.root).querySelector('div[data-index="'+parseInt(_this._children.length-1)+'"]').appendChild(_this._children[_this._children.length-1].elem);
@@ -1154,6 +1157,10 @@ Polymer({
                     if (index !== null) {
                         this.set('_children.'+index+'.tabClass','active');
                         this.set('_children.'+index+'.contentHidden',false);
+                        this.set('_contextMenuDisabled',this._children[index].elem.nodeName === 'VOYENT-LOCATION-VECTOR');
+                    }
+                    else {
+                        this.set('_contextMenuDisabled',true);
                     }
                 }
                 //if a vector is deleted then remove it from the map as well
