@@ -49,7 +49,19 @@ Polymer({
          * The relative path to the `images` resource directory. This may be
          * necessary when using the component as part of a custom build.
          */
-        pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' }
+        pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' },
+        /**
+         * The number of pixels to offset the origin/destination context and tracker instance selection menus from the
+         * top. This may be necessary to use if there are parent elements of the component with significant margins,
+         * padding or borders. A positive number moves the menu position down and vise versa.
+         */
+        menuoffsettop: { type: Number, value: 0 },
+        /**
+         * The number of pixels to offset the origin/destination context and tracker instance selection menus from the
+         * left. This may be necessary to use if there are parent elements of the component with significant margins,
+         * padding or borders. A positive number moves the menu position right and vise versa.
+         */
+        menuoffsetleft: { type: Number, value: 0 }
     },
 
     //observe non-declared/private properties
@@ -1095,8 +1107,8 @@ Polymer({
         //take into account the position of the map in the view and the position of the scrollbars
         var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
         var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
-        var left = pixelOffset.x + this._map.getDiv().getBoundingClientRect().left + scrollLeft;
-        var top = pixelOffset.y + this._map.getDiv().getBoundingClientRect().top + scrollTop;
+        var left = pixelOffset.x + this._map.getDiv().getBoundingClientRect().left + scrollLeft + this.menuoffsetleft;
+        var top = pixelOffset.y + this._map.getDiv().getBoundingClientRect().top + scrollTop + this.menuoffsettop;
         return {"left":left,"top":top};
     },
 
