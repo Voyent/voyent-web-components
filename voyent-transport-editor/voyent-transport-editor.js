@@ -180,15 +180,16 @@ Polymer({
             if (this.allowSMS && this._tool.transport.sms) {
                 toReturn.sms = this._getOverrideData("sms");
             }
+            
+            // Finally stringify the result so the service level can use it properly
+            // We only stringify for non-simple requests, to be able to fit into action editor and other tools
+            try{
+                toReturn = JSON.stringify(toReturn, null, 4);
+            }catch(error) {
+                this.fire('message-error', "Failed to parse transport editor UI tooling to JSON string: " + error);
+                console.error('Failed to parse transport editor UI tooling to JSON string:', error);
+            }
         }
-	    
-	    // Finally stringify the result so the service level can use it properly
-	    try{
-	        toReturn = JSON.stringify(toReturn, null, 4);
-	    }catch(error) {
-	        this.fire('message-error', "Failed to parse transport editor UI tooling to JSON string: " + error);
-			console.error('Failed to parse transport editor UI tooling to JSON string:', error);
-	    }
 	    
 	    return toReturn;
 	},
