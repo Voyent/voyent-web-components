@@ -367,6 +367,13 @@ Polymer({
      * Reset the simulation (remove all currently defined routes).
      */
     resetSimulation: function() {
+        //check for simulations component and if found reset the selected index
+        var simulations = Polymer.dom(this).childNodes.filter(function(node) {
+            return node.nodeName === 'VOYENT-LOCATION-SIMULATIONS';
+        });
+        if (simulations) {
+            simulations[0]._selectedIndex = null;
+        }
         this._removeAllRoutes();
         this._generateRouteTabs([{"user":"","origin":"","destination":"","travelmode":"DRIVING","speed":50,"frequency":5}]);
         this._activeSim = null;
