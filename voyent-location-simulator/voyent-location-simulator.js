@@ -61,7 +61,19 @@ Polymer({
          * left. This may be necessary to use if there are parent elements of the component with significant margins,
          * padding or borders. A positive number moves the menu position right and vise versa.
          */
-        menuoffsetleft: { type: Number, value: 0 }
+        menuoffsetleft: { type: Number, value: 0 },
+        /**
+         * Height and width of the google map to be created, as an integer. If left empty, values will default to height/width of the parent container.
+         * If a height cannot be found from those calculations, a default minimum of 300 will be used
+         */
+        height: Number,
+        width: Number,
+        /**
+         * Enable a percent of the full page height to automatically fill with the map
+         * To disable use a value of -1
+         * Otherwise something like 0.8 corresponds to 80% of the page height. 1.2 would be 120%, etc. Basically height = "h*autoheight"
+         */
+        autoheight: { type: Number, value: -1, notify: true }
     },
 
     //observe non-declared/private properties
@@ -115,7 +127,7 @@ Polymer({
                 signed_in: false
             });
             _this.fire('mapInitialized', {map: _this._map});
-            _this._calcMapHeight();
+            _this._calcMapSize();
             _this._bounds = new google.maps.LatLngBounds();
             //setup ui and listener for manually adding new location markers
             var drawingManager = new google.maps.drawing.DrawingManager({
@@ -487,6 +499,7 @@ Polymer({
      */
     resizeMap: function() {
         if (('google' in window) && this._map) {
+            this._calcMapSize();
             google.maps.event.trigger(this._map, "resize");
             this._map.fitBounds(this._bounds);
             this._map.panToBounds(this._bounds);
@@ -1205,24 +1218,42 @@ Polymer({
     },
 
     /**
-     * Dynamically calculate the default map size.
-     * @private
+     * Determine the map size to use
+     * This will leverage this.height and this.width if applicable
+     * Otherwise the parent container size will be used
+     * Note that if this.autoheight is specified that will override this.height
      */
-    _calcMapHeight: function() {
-        // Get our overall page height size
-        var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-
-        // Account for the header
-        if (document.getElementById("mainHeader")) {
-            var headerHeight = document.getElementById("mainHeader").clientHeight;
-            if (headerHeight) {
-                h -= headerHeight;
+    _calcMapSize: function() {
+        var height = this.height;
+        // If we have a valid autoheight specified we override with that
+        if (this.autoheight && this.autoheight !== null && this.autoheight > 0) {
+            var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+            
+            if (h) {
+                height = Math.round(h * this.autoheight);
             }
         }
-
+        else {
+            // If we don't have a height try the parent
+            if (height == null) {
+                height = _loc.$$("#container").clientHeight;
+            }
+            // If we still don't have a valid height default to a minimum
+            if (height <= 0) {
+                height = 300;
+            }
+        }
         // Apply the height variable, which will be used for the map
-        this.customStyle['--height-var'] = h + 'px';
+        this.customStyle['--height-var'] = height + 'px';
         this.updateStyles();
+        
+        // For width we default to 100% unless this.width is specified
+        if (this.width && this.width !== null && this.width > 0) {
+            this.$$("#map").style.width = this.width + "px";
+        }
+        else {
+            this.$$("#map").style.width = "100%";
+        }
     },
 
     /**

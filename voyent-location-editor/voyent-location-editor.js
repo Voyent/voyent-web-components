@@ -16,9 +16,17 @@ Polymer({
     properties: {
         /**
          * Height and width of the google map to be created, as an integer. If left empty, values will default to height/width of the parent container.
+         * If a height cannot be found from those calculations, a default minimum of 300 will be used
          */
         height: Number,
         width: Number,
+        /**
+         * Enable a percent of the full page height to automatically fill with the map
+         * This will override the 'height' parameter
+         * To disable use a value of -1
+         * Otherwise something like 0.8 corresponds to 80% of the page height. 1.2 would be 120%, etc. Basically height = "h*autoheight"
+         */
+        autoheight: { type: Number, value: -1, notify: true },
         /**
          * Account/realm/host/accesstoken: The information used by the voyent services. If left blank, they will default to the last used values.
          */
@@ -153,20 +161,8 @@ Polymer({
 
     //Basic map setup
     _makeMap: function (lat, lng) {
-        var height = _loc.height;
-        var width = _loc.width;
-
-        // if the height or width is not set on the component then set them here based on view size
-        if (height == null) {
-            height = _loc.$$("#container").clientHeight;
-        }
-        if (width == null) {
-            width = _loc.$$("#container").clientWidth;
-        }
-        _loc.$$("#map").style.height = height + "px";
-        _loc.$$("#map").style.width = width + "px";
-
-
+        this._calcMapSize();
+        
         var mapOptions = {
             zoom: 14,
             center: new google.maps.LatLng(lat, lng),
@@ -233,7 +229,44 @@ Polymer({
             console.log('<voyent-locations> Error: ' + ( error.message || error.responseText));
             console.log(error);
         });
-
+    },
+    
+    /**
+     * Determine the map size to use
+     * This will leverage this.height and this.width if applicable
+     * Otherwise the parent container size will be used
+     * Note that if this.autoheight is specified that will override this.height
+     */
+    _calcMapSize: function() {
+        var height = _loc.height;
+        // If we have a valid autoheight specified we override with that
+        if (this.autoheight && this.autoheight !== null && this.autoheight > 0) {
+            var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+            
+            if (h) {
+                height = Math.round(h * this.autoheight);
+            }
+        }
+        else {
+            // If we don't have a height try the parent
+            if (height == null) {
+                height = _loc.$$("#container").clientHeight;
+            }
+            // If we still don't have a valid height default to a minimum
+            if (height <= 0) {
+                height = 300;
+            }
+        }
+        
+        _loc.$$("#map").style.height = height + "px";
+        
+        // For width we default to 100% unless this.width is specified
+        if (this.width && this.width !== null && this.width > 0) {
+            _loc.$$("#map").style.width = this.width + "px";
+        }
+        else {
+            _loc.$$("#map").style.width = "100%";
+        }
     },
 
     startEditor: function (locationsData, trackersData) {
@@ -438,25 +471,14 @@ Polymer({
      */
     resizeMap: function () {
         if (('google' in window) && this._map) {
-            var height = _loc.height;
-            var width = _loc.width;
-
-            // if the height or width is not set on the component then set them here based on view size
-            if (height == null) {
-                height = _loc.$$("#container").clientHeight;
-            }
-            if (width == null) {
-                width = _loc.$$("#container").clientWidth;
-            }
-            _loc.$$("#map").style.height = height + "px";
-            _loc.$$("#map").style.width = width + "px";
+            this._calcMapSize();
+            
             var center = this._map.getCenter();
             google.maps.event.trigger(this._map, "resize");
             this._map.setCenter(center);
         }
     },
-
-
+    
     //Refresh all regions/POIs. Setup variable is designed to prevent errors on this being triggered during setup
     refreshMap: function () {
         if (typeof google === 'undefined' || !_loc.realm) {
