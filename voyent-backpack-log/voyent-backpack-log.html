@@ -213,7 +213,8 @@ Example:
                                 <div class="th">Name</div>
                                 <div class="th">Time <span class="thSmall">(Current is {{getCurrentDate()}})</span></div>
                             </div>
-                            <template is="dom-repeat" strip-whitespace items="{{_pastActions}}" as="paction" strip-whitespace sort="_pastActionSort">
+                            <template is="dom-repeat" strip-whitespace items="{{_pastActions}}"
+                                      as="paction" sort="_pastActionSort">
                                 <div class="tr">
                                     <div class="td centerT">
                                         <button on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</button>
