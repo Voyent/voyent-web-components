@@ -93,8 +93,9 @@
                 _this._index = i;
                 _this._previousBtnDisabled=false;
             }).catch(function(error) {
-                _this.fire('message-error', 'Issue stepping to next location "' + _this._location.username + '": ' + error);
-                console.error('Issue stepping to next location:',_this._location.username,error);
+                var locationName = _this.tracker ? _this._location.location.properties.zoneNamespace : _this._location.username;
+                _this.fire('message-error', 'Issue stepping to next location "' + locationName + '": ' + error);
+                console.error('Issue stepping to next location:',locationName,error);
             });
         },
 
@@ -125,8 +126,9 @@
                     _this._previousBtnDisabled=true;
                 }
             }).catch(function(error) {
-                _this.fire('message-error', 'Issue stepping to previous location "' + _this._location.username + '": ' + error);
-                console.error('Issue stepping to previous location:',_this._location.username,error);
+                var locationName = _this.tracker ? _this._location.location.properties.zoneNamespace : _this._location.username;
+                _this.fire('message-error', 'Issue stepping to previous location "' + locationName + '": ' + error);
+                console.error('Issue stepping to previous location:',locationName,error);
             });
         },
 
@@ -274,8 +276,8 @@
                 voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
-                    _this.fire('message-error', 'Issue changing location of tracker "' + location.username + '":' + error);
-                    console.error('Issue changing location of tracker "' + location.username + '":', error);
+                    _this.fire('message-error', 'Issue changing location of tracker "' + location.location.properties.zoneNamespace + '":' + error);
+                    console.error('Issue changing location of tracker "' + location.location.properties.zoneNamespace + '":', error);
                 });
             });
         },

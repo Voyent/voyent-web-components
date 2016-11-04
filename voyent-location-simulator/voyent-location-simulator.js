@@ -173,7 +173,7 @@ Polymer({
         //get user locations
         promises.push(voyent.io.locate.findLocations({
             realm:this.realm,
-            query:{"location.properties.trackerId":{"$exists": false}},
+            query:{"location.properties.zoneNamespace":{"$exists": false}},
             fields:{"_id":0},
             options:{sort:{"lastUpdated":-1}}
         }).then(function(locations) {
@@ -203,7 +203,7 @@ Polymer({
         }));
         promises.push(voyent.io.locate.findLocations({
             realm:this.realm,
-            query:{"location.properties.trackerId":{"$exists": true}},
+            query:{"location.properties.zoneNamespace":{"$exists": true}},
             fields:{"_id":0},
             options:{sort:{"lastUpdated":-1}}
         }).then(function(locations) {
@@ -211,12 +211,12 @@ Polymer({
                 //process the locations so we only keep the most recent update for each tracker
                 var trackerLocations={};
                 for (var i=0; i<locations.length; i++) {
-                    if (trackerLocations.hasOwnProperty(locations[i].username)) {
-                        if (locations[i].lastUpdated > trackerLocations[locations[i].username].lastUpdated) {
-                            trackerLocations[locations[i].username]=locations[i];
+                    if (trackerLocations.hasOwnProperty(locations[i].location.properties.zoneNamespace)) {
+                        if (locations[i].lastUpdated > trackerLocations[locations[i].location.properties.zoneNamespace].lastUpdated) {
+                            trackerLocations[locations[i].location.properties.zoneNamespace]=locations[i];
                         }
                     }
-                    else { trackerLocations[locations[i].username]=locations[i]; }
+                    else { trackerLocations[locations[i].location.properties.zoneNamespace]=locations[i]; }
                 }
                 locations = Object.keys(trackerLocations).map(function(key){return trackerLocations[key]});
                 _this._updateTrackerInstances(locations);
@@ -744,6 +744,10 @@ Polymer({
                 return;
             }
             for (var i=0; i<locations.length; i++) {
+                //only proceed if the tracker instance has a matching template
+                if (!_this._trackers[locations[i].location.properties.trackerId]) {
+                    continue;
+                }
                 _this.addVector(locations[i].location.properties.trackerId,
                                 locations[i].location.properties.zoneNamespace,
                                 locations[i].location.geometry.coordinates.reverse(),
@@ -1032,8 +1036,8 @@ Polymer({
                     "zoneNamespace": zoneNamespace
                 }
             },
-            "username": trackerId,
-            "demoUsername": trackerId
+            "username": voyent.io.auth.getLastKnownUsername(),
+            "demoUsername": voyent.io.auth.getLastKnownUsername()
         };
         this._handleNewLocationMarker(zoneNamespace,marker);
 
@@ -1227,11 +1231,11 @@ Polymer({
         var trackerId = child.elem.tracker;
         var zoneNamespace = child.elem.zonenamespace;
         //remove it from the service
-        /*voyent.io.locate.deleteTrackerInstance({realm:this.realm,zoneNamespace:zoneNamespace}).then(function() {
+        voyent.io.locate.deleteTrackerInstance({realm:this.realm,zoneNamespace:zoneNamespace}).then(function() {
         }).catch(function(error) {
             _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
             console.error('Issue deleting tracker instance:',zoneNamespace,error);
-        });*/
+        });
         //remove it from the map
         var instance = this._trackerInstances[trackerId+'-'+zoneNamespace];
         for (var j=0; j<instance.zones.length; j++) {
