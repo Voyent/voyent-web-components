@@ -1003,7 +1003,6 @@ Polymer({
         this._pointMarkers.push(marker);
 
         //associate the circle regions with the tracker
-        this._trackerInstances[trackerId+'-'+zoneNamespace] = {"tracker":tracker,"zones":[],"marker":marker};
         //create the circle zones
         var circle;
         var zones = tracker.zones.features;
@@ -1051,6 +1050,10 @@ Polymer({
                 _this.fire('message-error', 'Issue creating new incident: ' + zoneNamespace);
                 console.error('Issue creating new incident: ' + zoneNamespace, error);
             });
+        }
+        else {
+            this._trackerLocationChangedListener(marker,trackerId+'-'+zoneNamespace,location);
+            this._clickListener(marker,zoneNamespace,null,"point");
         }
     },
 
