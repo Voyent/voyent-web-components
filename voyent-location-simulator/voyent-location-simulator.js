@@ -14,34 +14,6 @@ Polymer({
          */
         realm: { type: String },
         /**
-         * Define routes as a JSON object array. This attribute can be used on its own or in conjunction with `voyent-location-route` components.
-         * Changing this attribute dynamically will replace any routes previously created with this attribute, but any routes created using the component will remain unchanged.
-         *
-         * Example:
-         *
-         *      //define two different routes
-         *     [
-         *         {
-         *              "label":"ICEsoft Technologies To Calgary Tower",
-         *              "origin": "1717 10 St NW, Calgary",
-         *              "destination": "101 9 Ave SW, Calgary",
-         *              "travelmode": "DRIVING",
-         *              "speed": 60,
-         *              "frequency": 5
-         *          },
-         *          {
-         *              "label":"Prince's Island Park To Fort Calgary",
-         *              "user": "jimjones", //only available to admin users
-         *              "origin": "698 Eau Claire Ave SW, Calgary",
-         *              "destination": "750 9th Avenue SE, Calgary",
-         *              "travelmode": "BICYCLING",
-         *              "speed": 15,
-         *              "frequency": 10
-         *          }
-         *      ]
-         */
-        routes: { type: Array, observer: '_routesChanged' },
-        /**
          * The document collection to be used for CRUD operations on simulations.
          */
         collection: { type: String, value: 'simulator-routes' },
@@ -88,10 +60,6 @@ Polymer({
     /**
      * Fired when the realm users are retrieved. Contains the list of users.
      * @event usersRetrieved
-     */
-    /**
-     * Fired when the trackers are retrieved or updated. Contains an object mapping of trackers and their associated zones.
-     * @event trackersRetrieved
      */
     /**
      * Fired when the simulations are retrieved. Contains the list of saved simulations in the specified collection.
@@ -311,35 +279,38 @@ Polymer({
             return;
         }
         //first append the new route as a direct child of the component so it inherits any custom styling
-        Polymer.dom(this).appendChild(new Voyent.LocationRoute(this._map,this._users,label,user,origin,destination,travelmode,speed,speedunit,frequency));
-        //add a new tab for the child
-        var contentHidden = this._children.length ? true : false;
-        this.push('_children',{
-            "elem":Polymer.dom(this).lastElementChild,
-            "tabClass":contentHidden ? "" : "active",
-            "tabLabel": label || 'New Route',
-            "contentHidden": contentHidden
-        });
-        if (!contentHidden) {
-            this.set('_contextMenuDisabled',false);
-        }
-        //move new child into tab (do this async so the template has time to render the new child tab)
-        setTimeout(function() {
-            Polymer.dom(_this.root).querySelector('div[data-index="'+parseInt(_this._children.length-1)+'"]').appendChild(_this._children[_this._children.length-1].elem);
-        },0);
+        var route = new Voyent.LocationRoute(this._map,this._users,label,user,origin,destination,travelmode,speed,speedunit,frequency);
+        Polymer.dom(this).appendChild(route);
+        setTimeout(function(route) {
+            var contentHidden = _this._children.length ? true : false;
+            _this.set('_contextMenuDisabled',contentHidden);
+            //add a new tab for the child
+            _this.push('_children',{
+                "elem":route,
+                "tabClass":contentHidden ? "" : "active",
+                "tabLabel": label || 'New Route',
+                "contentHidden": contentHidden
+            });
+            var lastChild = _this._children[_this._children.length-1];
+            //move new child into tab (do this async so the template has time to render the new child tab)
+            setTimeout(function(i) {
+                Polymer.dom(_this.root).querySelector('div[data-index="'+i+'"]').appendChild(_this._children[i].elem);
+            },0,_this._children.length-1);
+        },0,route);
     },
 
     /**
-     * Add a new tracker velocity vector. If parameters are not provided then the default values will be used.
-     * @param tracker (required)
-     * @param zoneNamespace (required)
+     * Add a new tracker velocity vector. If optional parameters are not provided then the default values will be used.
+     * @param tracker - The tracker template ID to draw the tracker from (required)
+     * @param zoneNamespace - The tracker instance name (required)
+     * @param position lat/lng coordinates provided as an array [lat,lng] (required)
      * @param bearing
      * @param speed
      * @param speedunit
      * @param duration
      * @param frequency
      */
-    addVector: function(tracker,zoneNamespace,bearing,speed,speedunit,duration,frequency) {
+    addVector: function(tracker,zoneNamespace,position,bearing,speed,speedunit,duration,frequency) {
         var _this = this;
         if (!voyent.io.auth.isLoggedIn()) {
             return;
@@ -349,7 +320,6 @@ Polymer({
             console.error('Issue adding vector: tracker id is required');
             return;
         }
-        //Only allow adding vectors with a valid tracker ID
         if (!this._trackers[tracker]) {
             this.fire('message-error', 'Issue adding vector: invalid tracker id');
             console.error('Issue adding vector: invalid tracker id');
@@ -359,20 +329,31 @@ Polymer({
             this.fire('message-error', 'Issue adding vector: zoneNamespace is required');
             console.error('Issue adding vector: zoneNamespace is required');
         }
-        //first append the new route as a direct child of the component so it inherits any custom styling
-        Polymer.dom(this).appendChild(new Voyent.LocationVector(this._map,this._trackerInstances,tracker,zoneNamespace,bearing,speed,speedunit,duration,frequency));
-        //add a new tab for the child
-        var contentHidden = this._children.length ? true : false;
-        this.push('_children',{
-            "elem":Polymer.dom(this).lastElementChild,
-            "tabClass":contentHidden ? "" : "active",
-            "tabLabel": zoneNamespace + ' ['+(this._trackers[tracker].label || tracker)+']',
-            "contentHidden": contentHidden
-        });
-        //move new child into tab (do this async so the template has time to render the new child tab)
-        setTimeout(function() {
-            Polymer.dom(_this.root).querySelector('div[data-index="'+parseInt(_this._children.length-1)+'"]').appendChild(_this._children[_this._children.length-1].elem);
-        },0);
+        if (!position || !Array.isArray(position) || position.length !== 2) {
+            this.fire('message-error', 'Issue adding vector: position is required and must be in the form [lat,lng]');
+            console.error('Issue adding vector: zoneNpositionamespace is required and must be in the form [lat,lng]');
+        }
+        //draw the tracker on the map
+        this._drawTracker(tracker,zoneNamespace,position);
+        //first append the new vector as a direct child of the component so it inherits any custom styling
+        var vector = new Voyent.LocationVector(this._map,this._trackerInstances,tracker,zoneNamespace,bearing,speed,speedunit,duration,frequency);
+        Polymer.dom(this).appendChild(vector);
+        setTimeout(function (vector) {
+            var contentHidden = _this._children.length ? true : false;
+            _this.set('_contextMenuDisabled',!contentHidden);
+            //add a new tab for the child
+            _this.push('_children',{
+                "elem":vector,
+                "tabClass":contentHidden ? "" : "active",
+                "tabLabel": zoneNamespace + ' ['+(_this._trackers[tracker].label || tracker)+']',
+                "contentHidden": contentHidden
+            });
+            var lastChild = _this._children[_this._children.length-1];
+            //move new child into tab (do this async so the template has time to render the new child tab)
+            setTimeout(function(i) {
+                Polymer.dom(_this.root).querySelector('div[data-index="'+i+'"]').appendChild(_this._children[i].elem);
+            },0,_this._children.length-1);
+        },0,vector);
     },
 
     /**
@@ -387,7 +368,6 @@ Polymer({
             simulations[0]._selectedIndex = null;
         }
         this._removeAllRoutes();
-        this._generateRouteTabs([{"user":"","origin":"","destination":"","travelmode":"DRIVING","speed":50,"frequency":5}]);
         this._activeSim = null;
         //maintain scroll position
         var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
@@ -423,7 +403,13 @@ Polymer({
                 docCall = 'updateDocument';
             }
         }
-        voyent.io.docs[docCall](params).then(function() {
+        voyent.io.docs[docCall](params).then(function(uri) {
+            if (params.id) {
+                params.document._id = params.id;
+            }
+            else if (uri) {
+                params.document._id = uri.split("/").pop();
+            }
             _this._activeSim = params.document; //set as active simulation
             _this.getSimulations(collection); //refresh simulation list
         }).catch(function(error) {
@@ -484,7 +470,7 @@ Polymer({
             return;
         }
         this._removeAllRoutes();
-        this._generateRouteTabs(simulation.routes);
+        this._generateTabs(simulation.routes);
         this._activeSim = simulation;
         //maintain scroll position
         var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
@@ -676,8 +662,8 @@ Polymer({
             processMessageTemplates();
         }).catch(function(error) {
             if (error.status !== 404) {
-                _this.fire('message-error', 'Failed retrieving message templates');
-                console.error('Failed retrieving message templates:',error);
+                _this.fire('message-error', 'Issue retrieving message templates');
+                console.error('Issue retrieving message templates:',error);
             }
         });
         function processMessageTemplates() {
@@ -709,65 +695,24 @@ Polymer({
     },
 
     /**
-     * Handles generating tabs for each route/vector and moving the routes into them.
+     * Handles generating tabs when loading a simulation.
      * @param routes
-     * @param isInitialLoad
      * @private
      */
-    _generateRouteTabs: function(routes,isInitialLoad) {
-        var _this = this;
-        var children = [];
+    _generateTabs: function(routes) {
+        //reset the bounds so we fit the map to the loaded sim
+        this._bounds = new google.maps.LatLngBounds();
         if (routes && routes.length > 0) {
-            //append the new routes as direct children of the component so they inherit any custom styling
             for (var j=0; j<routes.length; j++) {
                 if (routes[j].tracker) {
-                    //pass the map and trackers via the constructor (instead of via the events like markup defined components)
-                    children.push(new Voyent.LocationVector(this._map, this._trackerInstances, routes[j].tracker, routes[j].zonenamespace,
-                        routes[j].bearing, routes[j].speed, routes[j].speedunit, routes[j].duration, routes[j].frequency));
+                    this.addVector(routes[j].tracker, routes[j].zonenamespace, routes[j].position, routes[j].bearing,
+                                   routes[j].speed, routes[j].speedunit, routes[j].duration, routes[j].frequency);
                 }
                 else {
-                    //pass the map and users via the constructor (instead of via the events like markup defined components)
-                    children.push(new Voyent.LocationRoute(this._map, this._users, routes[j].label, routes[j].user, routes[j].origin, routes[j].destination,
-                        routes[j].travelmode, routes[j].speed, routes[j].speedunit, routes[j].frequency, routes === this.routes));
+                    this.addRoute(routes[j].label, routes[j].user, routes[j].origin, routes[j].destination,
+                                  routes[j].travelmode, routes[j].speed, routes[j].speedunit, routes[j].frequency);
                 }
-                Polymer.dom(this).appendChild(children[children.length-1]);
             }
-        }
-        if (isInitialLoad) {
-            //since it's the first time, make sure we include any routes defined as child components
-            children = Polymer.dom(this).childNodes.filter(function(node) {
-                return node.nodeName === 'VOYENT-LOCATION-ROUTE' || node.nodeName === 'VOYENT-LOCATION-VECTOR';
-            });
-        }
-        if (children.length) {
-            this.set('_contextMenuDisabled',children[0].nodeName === 'VOYENT-LOCATION-VECTOR');
-            setTimeout(function () {
-                //create tabs for the new children
-                for (var k = 0; k < children.length; k++) {
-                    _this.push('_children', {
-                        "elem": children[k],
-                        "tabClass": isInitialLoad && k === 0 ? "active" : "", //show first tab by default on initial load
-                        "tabLabel": children[k].label || 'New Route',
-                        "contentHidden": !(isInitialLoad && k === 0) //show first tab by default on initial load
-                    });
-                }
-                //move new children into tabs (do this async so all the new children tabs are rendered first)
-                setTimeout(function() {
-                    var tabIsSelected=false;
-                    //append the children to the content panel of each tab
-                    for (var i=0; i<_this._children.length; i++) {
-                        if (_this._children[i].tabClass === 'active') {
-                            tabIsSelected = true;
-                        }
-                        Polymer.dom(_this.root).querySelector('div[data-index="'+i+'"]').appendChild(_this._children[i].elem); //move into tab
-                    }
-                    //if no tab is selected (eg. the previously selected tab was replaced) then select the first one
-                    if (!tabIsSelected) {
-                        _this.set('_children.0.tabClass','active');
-                        _this.set('_children.0.contentHidden',false);
-                    }
-                },0);
-            }, 0);
         }
     },
 
@@ -777,6 +722,10 @@ Polymer({
      */
     _removeAllRoutes: function() {
         for (var i=this._children.length-1; i >= 0; i--) {
+            //if the routes contained a vector be sure to remove the associated entity from the map
+            if (this._children[i].elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
+                this._removeVector(this._children[i]);
+            }
             Polymer.dom(this).removeChild(this._children[i].elem);
             this.splice('_children',i,1);
         }
@@ -840,7 +789,7 @@ Polymer({
                 return; //fail "silently" if insufficient privileges
             }
             _this.fire('message-error', 'Error trying to get realm users: ' + error);
-            console.error('Error trying to get realm users:',error);
+            console.error('Issue getting realm users:',error);
         });
     },
 
@@ -909,8 +858,10 @@ Polymer({
                     _this.fire('message-error', 'Issue creating new location: ' + error);
                     console.error('Issue creating new location:',error);
                 });
+                _this._pointMarkers.push(marker);
             }
             else {
+                //hide the marker since will will re-generate it later
                 marker.setVisible(false);
                 _this._renderIncidentMenu(marker);
             }
@@ -930,7 +881,7 @@ Polymer({
         this._incidentMenuItems = this._toArray(JSON.parse(JSON.stringify(this._trackers)));
         for (var i=0; i<this._incidentMenuItems.length; i++) {
             //save a reference to the marker for later use
-            this._incidentMenuItems[i]._marker = marker;
+            this._incidentMenuItems[i]._position = [marker.getPosition().lat(),marker.getPosition().lng()];
         }
         this.$.incidentMenu.style.height = 24*this._incidentMenuItems.length+'px';
         //render the context menu at the pixel coordinate
@@ -938,6 +889,8 @@ Polymer({
         this.$.incidentMenu.style.left = pos.left + 'px';
         this.$.incidentMenu.style.top = pos.top + 'px';
         this._hideIncidentMenu = false;
+        //we no longer need the marker so delete it
+        marker.setMap(null);
     },
 
     /**
@@ -964,26 +917,34 @@ Polymer({
      * @private
      */
     _selectIncident: function(e) {
-        var _this = this;
         this._hideIncidentMenu = true;
+        var trackerId = e.target.getAttribute('data-id');
+        //ask the user to enter a zoneNamespace
+        var zoneNamespace = this._showIncidentNamePrompt(trackerId);
+        if (!zoneNamespace) { return; }
+        //reset the bounds so we fit the map to the new tracker
+        this._bounds = new google.maps.LatLngBounds();
+        this.addVector(trackerId,zoneNamespace,e.model.item._position);
+    },
+
+    _drawTracker: function(trackerId,zoneNamespace,position) {
+        var _this = this;
 
         //we will use our tracker template object to store the latest coordinates of a tracker instance
         //since we can have multiple instances of a single template we want to clone the object first
-        var tracker = JSON.parse(JSON.stringify(this._trackers[e.target.getAttribute('data-id')]));
+        var tracker = JSON.parse(JSON.stringify(this._trackers[trackerId]));
 
-        //ask the user to enter a zoneNamespace
-        var zoneNamespace = this._showIncidentNamePrompt(tracker._id);
-        if (!zoneNamespace) { return; }
-        //set the icon and visibility of the tracker anchor
-        var marker = e.model.item._marker;
-        if (tracker.properties.icon) {
-            marker.setIcon(_this.pathtoimages+'/images/'+tracker.properties.icon);
-        }
-        marker.setVisible(true);
+        //create marker based on position
+        var marker = new google.maps.Marker({
+            position: new google.maps.LatLng(position[0],position[1]),
+            map: this._map,
+            draggable: false,
+            icon: this.pathtoimages+'/images/'+tracker.properties.icon
+        });
         this._pointMarkers.push(marker);
 
         //associate the circle regions with the tracker
-        _this._trackerInstances[tracker._id+'-'+zoneNamespace] = {"tracker":tracker,"zones":[],"marker":marker};
+        this._trackerInstances[trackerId+'-'+zoneNamespace] = {"tracker":tracker,"zones":[],"marker":marker};
         //create the circle zones
         var circle;
         var zones = tracker.zones.features;
@@ -996,9 +957,9 @@ Polymer({
                 'editable': false
             });
             //associate the zone with the tracker so we can sync them on movement
-            _this._trackerInstances[tracker._id+'-'+zoneNamespace].zones.push(circle);
+            this._trackerInstances[trackerId+'-'+zoneNamespace].zones.push(circle);
             this._clickListener(zones[i],zones[i].properties.zoneId,null,"circle");
-            this._regions.push(zones[i]);
+            this._regions.push(circle);
         }
 
         //now that we have a location save it in the tracker
@@ -1008,27 +969,23 @@ Polymer({
             "location": {
                 "geometry": { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] },
                 "properties": {
-                    "trackerId": tracker._id,
+                    "trackerId": trackerId,
                     "zoneNamespace": zoneNamespace
                 }
             },
-            "username": tracker._id,
-            "demoUsername": tracker._id
+            "username": trackerId,
+            "demoUsername": trackerId
         };
         this._handleNewLocationMarker(zoneNamespace,marker);
 
         //set the bounds around this newly dropped tracker
-        this._bounds = new google.maps.LatLngBounds();
-        this._trackerMoved(tracker._id+'-'+zoneNamespace,marker);
+        this._trackerMoved(trackerId+'-'+zoneNamespace,marker);
         this._map.fitBounds(this._bounds);
         this._map.panToBounds(this._bounds);
 
-        //add a new incident tab
-        this.addVector(tracker._id,zoneNamespace);
-
         voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
             location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
-            _this._trackerLocationChangedListener(marker,tracker._id+'-'+zoneNamespace,location);
+            _this._trackerLocationChangedListener(marker,trackerId+'-'+zoneNamespace,location);
             _this._clickListener(marker,zoneNamespace,null,"point");
         }).catch(function (error) {
             _this.fire('message-error', 'Issue creating new incident: ' + zoneNamespace);
@@ -1185,15 +1142,7 @@ Polymer({
                 }
                 //if a vector is deleted then remove it from the map as well
                 if (matchingChild.elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
-                    var instance = this._trackerInstances[matchingChild.elem.tracker+'-'+matchingChild.elem.zonenamespace];
-                    for (var j=0; j<instance.zones.length; j++) {
-                        //remove the regions from the map
-                        instance.zones[j].setMap(null);
-                    }
-                    //remove the marker from the map
-                    instance.marker.setMap(null);
-                    //delete the tracker instance ref
-                    delete this._trackerInstances[matchingChild.elem.tracker+'-'+matchingChild.elem.zonenamespace];
+                   this._removeVector(matchingChild);
                 }
                 //delete route and remove tab
                 Polymer.dom(this).removeChild(matchingChild.elem);
@@ -1201,6 +1150,21 @@ Polymer({
                 break;
             }
         }
+    },
+
+    _removeVector: function(child) {
+        //if a vector is deleted then remove it from the map as well
+        var instance = this._trackerInstances[child.elem.tracker+'-'+child.elem.zonenamespace];
+        for (var j=0; j<instance.zones.length; j++) {
+            //remove the regions from the map
+            instance.zones[j].setMap(null);
+            this._regions.splice(this._regions.indexOf(instance.zones[j]),1);
+        }
+        //remove the marker from the map
+        instance.marker.setMap(null);
+        this._pointMarkers.splice(this._pointMarkers.indexOf(instance.marker),1);
+        //delete the tracker instance ref
+        delete this._trackerInstances[child.elem.tracker+'-'+child.elem.zonenamespace];
     },
 
     /**
@@ -1236,7 +1200,7 @@ Polymer({
         else {
             // If we don't have a height try the parent
             if (height == null) {
-                height = _loc.$$("#container").clientHeight;
+                height = this.$$("#container").clientHeight;
             }
             // If we still don't have a valid height default to a minimum
             if (height <= 0) {
@@ -1253,34 +1217,6 @@ Polymer({
         }
         else {
             this.$$("#map").style.width = "100%";
-        }
-    },
-
-    /**
-     * Re-draw the routes and associated tabs when the `routes` attribute changes.
-     * @param newVal
-     * @param oldVal
-     * @private
-     */
-    _routesChanged: function(newVal, oldVal) {
-        //The initial attribute value triggers this observer before the ready is called, which is where we set the map and users. So if the map/users
-        //are not set then the change event is for the initial value and we will ignore it (since the initial attribute value will be handled after
-        //both the map and users are set, in the _mapOrUsersChanged observer).
-        if (this._map && this._users && this.routes && this.routes.length > 0) {
-            //first remove any children that were previously created via the routes attribute
-            for (var i=this._children.length-1; i >= 0; i--) {
-                if (this._children[i].elem.viaRoutesAttribute) {
-                    Polymer.dom(this).removeChild(this._children[i].elem);
-                    this.splice('_children',i,1);
-                }
-            }
-            this._generateRouteTabs(this.routes);
-            //maintain scroll position
-            var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
-            var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
-            setTimeout(function() {
-                scrollTo(scrollLeft,scrollTop);
-            },50);
         }
     },
 
@@ -1306,7 +1242,6 @@ Polymer({
      */
     _mapOrUsersChanged: function(map,users) {
         this._children = [];
-        this._generateRouteTabs(this.routes,true);
         this.getSimulations();
     },
 

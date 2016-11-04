@@ -299,7 +299,7 @@
             //update the tracker so that the tracker
             //location is always the last known location
             this._trackerInstances[instanceKey].tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
-            this.fire('trackersRetrieved',{trackers:this._trackerInstances});
+            this.fire('_trackerInstancesRetrieved',{trackerInstances:this._trackerInstances});
         },
 
         /**

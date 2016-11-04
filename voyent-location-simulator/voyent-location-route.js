@@ -14,10 +14,9 @@ Voyent.LocationRoute = Polymer({
      * @param speed
      * @param speedunit
      * @param frequency
-     * @param viaRoutesAttribute
      * @private
      */
-    factoryImpl: function(map,users,label,user,origin,destination,travelmode,speed,speedunit,frequency,viaRoutesAttribute) {
+    factoryImpl: function(map,users,label,user,origin,destination,travelmode,speed,speedunit,frequency) {
         this._map = map;
         this._users = users;
         this.label = label || 'New Route';
@@ -28,7 +27,6 @@ Voyent.LocationRoute = Polymer({
         this.speed = speed || 50;
         this.speedunit = speedunit || 'kph';
         this.frequency = frequency || 5;
-        this.viaRoutesAttribute = !!viaRoutesAttribute;
     },
 
     properties: {
