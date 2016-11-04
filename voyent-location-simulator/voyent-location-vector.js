@@ -126,8 +126,8 @@ Voyent.LocationVector = Polymer({
                         "zoneNamespace": this.zonenamespace
                     }
                 },
-                "username":this.tracker,
-                "demoUsername":this.tracker
+                "username":voyent.io.auth.getLastKnownUsername(),
+                "demoUsername":voyent.io.auth.getLastKnownUsername()
             };
             voyent.io.locate.updateTrackerLocation({realm:Polymer.dom(this).parentNode.realm,location:location}).then(function(data) {
                 //set location object (take best guess at username and lastUpdated without re-retrieving record)
