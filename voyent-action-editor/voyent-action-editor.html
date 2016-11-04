@@ -48,7 +48,7 @@ Example:
                                 <div class="header" on-click="_toggleTask">Containers<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane">
                                     <!-- This 'strip-whitespace' attribute is added here (and in other components) due to Polymer issue 2292, where IE11 was crashing when a splice was used on an array backing a dynamic loop -->
-                                    <template is="dom-repeat" strip-whitespace strip-whitespace items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
+                                    <template is="dom-repeat" strip-whitespace items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
                                         <div class="taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" title$="{{item.description}}">
                                             <div class="title">{{item.label}}</div>
                                         </div>

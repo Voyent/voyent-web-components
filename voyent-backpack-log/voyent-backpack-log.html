@@ -262,7 +262,7 @@ Example:
                 <div class="container flex layout horizontal" style="margin-bottom: 20px;">
                     <div class="flex-1 taskPanel">
                         <div class="twrapLeft" style$="max-height: {{_maxHeight}}px">
-                            <template is="dom-repeat" strip-whitespace items="{{_taskGroups}}" as="group" strip-whitespace>
+                            <template is="dom-repeat" strip-whitespace items="{{_taskGroups}}" as="group">
                                 <div class$="taskGroup {{highlightStyle(group.highlight)}}">
                                     <div on-click="_viewGroup" data-workflow-item$="{{group.name}}" class="taskHeader" title="{{group.type}}">
                                         {{group.name}} <template is="dom-if" if="{{group.highlight}}">({{matchCount()}})
@@ -275,7 +275,7 @@ Example:
                                         </template>
                                     </div>
                                     
-                                    <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task" strip-whitespace>
+                                    <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
                                         <!-- Duplicated for tasks -->
                                         <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
                                             {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
@@ -291,7 +291,7 @@ Example:
                                     
                                     <template is="dom-if" if="{{isConditionalTaskGroup(group)}}">
                                         ELSE
-                                        <template is="dom-repeat" strip-whitespace items="{{group.elseTasks}}" as="task" strip-whitespace>
+                                        <template is="dom-repeat" strip-whitespace items="{{group.elseTasks}}" as="task">
                                             <!-- Duplicated for elseTasks -->
                                             <div on-click="_viewItem" data-workflow-item$="{{task.name}}" data-parent-item$="{{group.name}}" title="{{task.type}}" class$="taskItem taskHeader {{highlightStyle(task.highlight)}}">
                                                 {{task.name}} <template is="dom-if" if="{{task.highlight}}">({{matchCount()}})
@@ -315,7 +315,7 @@ Example:
                                 <div class="tr">
                                     <div class="th">{{_backpack.length}} Items</div>
                                 </div>
-                                <template is="dom-repeat" strip-whitespace items="{{_backpack}}" as="backpack" strip-whitespace>
+                                <template is="dom-repeat" strip-whitespace items="{{_backpack}}" as="backpack">
                                     <div id$="item{{index}}" class$="tr {{highlightStyle(backpack.highlight)}} bottomB">
                                         <div class$="td {{highlightStyle(backpack.highlight)}}Td" title$="[[backpack.time]]">{{formatContainer(backpack)}}<pre>[[backpack.message]]</pre></div>
                                     </div>
