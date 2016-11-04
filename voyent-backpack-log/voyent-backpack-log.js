@@ -429,6 +429,11 @@ Polymer({
         this._allLogs.sort(function(a,b) {
             return new Date(b.time) - new Date(a.time);
         });
+        
+        // Sort the past actions
+        this._pastActions.sort(function(a,b) {
+            return new Date(b.startTime) - new Date(a.startTime);
+        });
 
         // Always add an uncategorized option that encompasses log entries not associated with anything
         this.splice('_pastActions', 0, 0, {"name":this.miscName});
