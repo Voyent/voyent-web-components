@@ -79,7 +79,7 @@ Polymer({
         this._locationMarkers = [];
         this._regions = [];
         this._pointMarkers = [];
-        this._trackers = {};
+        this._trackers = null;
         this._trackerInstances = {};
         this._activeSim = null;
         this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu = this._hideUserBttn = this._hideIncidentBttn = true;
@@ -170,17 +170,19 @@ Polymer({
         this._clearLocationData();
         //get current user location data
         var promises = [];
-        promises.push(voyent.io.locate.findLocations({realm:this.realm,query:{"location.type":{"$ne": "Feature"}},fields:{"_id":0},options:{sort:{"lastUpdated":-1}}}).then(function(locations) {
+        //get user locations
+        promises.push(voyent.io.locate.findLocations({
+            realm:this.realm,
+            query:{"location.properties.trackerId":{"$exists": false}},
+            fields:{"_id":0},
+            options:{sort:{"lastUpdated":-1}}
+        }).then(function(locations) {
             if (locations && locations.length) {
                 //process the locations so we only keep the most recent update for each user
                 var userLocations={};
                 for (var i=0; i<locations.length; i++) {
-                    if (locations[i].location.properties && locations[i].location.properties.trackerId) {
-                        //ignore locations that are for trackers
-                        continue;
-                    }
                     if (userLocations.hasOwnProperty(locations[i].username)) {
-                        if (locations[i].username.lastUpdated > userLocations[locations[i].username].lastUpdated) {
+                        if (locations[i].lastUpdated > userLocations[locations[i].username].lastUpdated) {
                             userLocations[locations[i].username]=locations[i];
                         }
                     }
@@ -189,7 +191,6 @@ Polymer({
                 locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
                 _this._updateLocations(locations);
             }
-
         }));
         promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
@@ -198,7 +199,29 @@ Polymer({
             _this._updatePOIs(pois);
         }));
         promises.push(voyent.io.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
-            _this._updateTrackers(trackers);
+            _this._mapTrackers(trackers);
+        }));
+        promises.push(voyent.io.locate.findLocations({
+            realm:this.realm,
+            query:{"location.properties.trackerId":{"$exists": true}},
+            fields:{"_id":0},
+            options:{sort:{"lastUpdated":-1}}
+        }).then(function(locations) {
+            if (locations && locations.length) {
+                //process the locations so we only keep the most recent update for each tracker
+                var trackerLocations={};
+                for (var i=0; i<locations.length; i++) {
+                    if (trackerLocations.hasOwnProperty(locations[i].username)) {
+                        if (locations[i].lastUpdated > trackerLocations[locations[i].username].lastUpdated) {
+                            trackerLocations[locations[i].username]=locations[i];
+                        }
+                    }
+                    else { trackerLocations[locations[i].username]=locations[i]; }
+                }
+                locations = Object.keys(trackerLocations).map(function(key){return trackerLocations[key]});
+                _this._updateTrackerInstances(locations);
+            }
+
         }));
         return Promise.all(promises).then(function() {
             _this._map.fitBounds(_this._bounds);
@@ -647,11 +670,11 @@ Polymer({
     },
 
     /**
-     * Draw trackers and their associated zones on the map.
+     * Store the fetched tracker templates, keyed by _id.
      * @param trackers
      * @private
      */
-    _updateTrackers: function(trackers) {
+    _mapTrackers: function(trackers) {
         var _this = this;
         var trackerData, zones;
 
@@ -667,9 +690,13 @@ Polymer({
             }
         });
         function processMessageTemplates() {
+            if (!trackers.length) {
+                return;
+            }
+            var trackerMapping = {};
             for (var i=0; i<trackers.length; i++) {
                 //keep a mapping of all the trackers so we can easily create instances of them later
-                _this._trackers[trackers[i]._id] = trackers[i];
+                trackerMapping[trackers[i]._id] = trackers[i];
                 zones = trackers[i].zones.features;
                 for (var j=0; j<zones.length; j++) {
                     //search the message templates for an icon and save the first one that is found in the tracker
@@ -686,12 +713,42 @@ Polymer({
                     }
                 }
             }
+            _this._trackers = trackerMapping;
         }
         function _parseIconURL(url) {
             var parts = url.split('/');
             var img = parts[parts.length-1];
             return img.replace('_inverted','');
         }
+    },
+
+    /**
+     * Draw tracker instances and their associated zones on the map.
+     * @param locations
+     * @private
+     */
+    _updateTrackerInstances: function(locations) {
+        var _this = this;
+        //since the call for getting the tracker templates and instances occurs simultaneously we must make
+        //sure we are done fetching the trackers before proceeding. We do the calls simultaneously instead
+        //of chaining the calls so that we fetch all required data from the services as soon as possible
+        function waitForTrackers() {
+            if (!_this._trackers) {
+                setTimeout(function(){waitForTrackers();},500);
+                return;
+            }
+            //the trackers object was initialized which means we fetched
+            //the tracker templates but none we're found so we'll bail
+            if (!Object.keys(_this._trackers).length) {
+                return;
+            }
+            for (var i=0; i<locations.length; i++) {
+                _this.addVector(locations[i].location.properties.trackerId,
+                                locations[i].location.properties.zoneNamespace,
+                                locations[i].location.geometry.coordinates.reverse());
+            }
+        }
+        waitForTrackers();
     },
 
     /**
@@ -724,7 +781,7 @@ Polymer({
         for (var i=this._children.length-1; i >= 0; i--) {
             //if the routes contained a vector be sure to remove the associated entity from the map
             if (this._children[i].elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
-                this._removeVector(this._children[i]);
+                this._removeTracker(this._children[i]);
             }
             Polymer.dom(this).removeChild(this._children[i].elem);
             this.splice('_children',i,1);
@@ -1142,7 +1199,7 @@ Polymer({
                 }
                 //if a vector is deleted then remove it from the map as well
                 if (matchingChild.elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
-                   this._removeVector(matchingChild);
+                   this._removeTracker(matchingChild);
                 }
                 //delete route and remove tab
                 Polymer.dom(this).removeChild(matchingChild.elem);
@@ -1152,9 +1209,23 @@ Polymer({
         }
     },
 
-    _removeVector: function(child) {
-        //if a vector is deleted then remove it from the map as well
-        var instance = this._trackerInstances[child.elem.tracker+'-'+child.elem.zonenamespace];
+    /**
+     * Removes a tracker instance and it's associated zones from the map and service.
+     * @param child
+     * @private
+     */
+    _removeTracker: function(child) {
+        var _this = this;
+        var trackerId = child.elem.tracker;
+        var zoneNamespace = child.elem.zonenamespace;
+        //remove it from the service
+        /*voyent.io.locate.deleteTrackerInstance({realm:this.realm,zoneNamespace:zoneNamespace}).then(function() {
+        }).catch(function(error) {
+            _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
+            console.error('Issue deleting tracker instance:',zoneNamespace,error);
+        });*/
+        //remove it from the map
+        var instance = this._trackerInstances[trackerId+'-'+zoneNamespace];
         for (var j=0; j<instance.zones.length; j++) {
             //remove the regions from the map
             instance.zones[j].setMap(null);
@@ -1164,7 +1235,7 @@ Polymer({
         instance.marker.setMap(null);
         this._pointMarkers.splice(this._pointMarkers.indexOf(instance.marker),1);
         //delete the tracker instance ref
-        delete this._trackerInstances[child.elem.tracker+'-'+child.elem.zonenamespace];
+        delete this._trackerInstances[trackerId+'-'+zoneNamespace];
     },
 
     /**
