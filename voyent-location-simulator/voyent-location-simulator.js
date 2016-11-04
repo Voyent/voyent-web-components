@@ -997,7 +997,7 @@ Polymer({
         var marker = new google.maps.Marker({
             position: new google.maps.LatLng(position[0],position[1]),
             map: this._map,
-            draggable: false,
+            draggable: true,
             icon: this.pathtoimages+'/images/'+tracker.properties.icon
         });
         this._pointMarkers.push(marker);
