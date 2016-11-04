@@ -253,7 +253,7 @@ Polymer({
                 height = _loc.$$("#container").clientHeight;
             }
             // If we still don't have a valid height default to a minimum
-            if (height <= 0) {
+            if (height < 50) {
                 height = 300;
             }
         }
