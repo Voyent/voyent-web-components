@@ -332,8 +332,9 @@ Polymer({
      * @param speedunit
      * @param duration
      * @param frequency
+     * @param noLocationUpdate - Set to true to disable submitting the tracker location to the service on creation
      */
-    addVector: function(tracker,zoneNamespace,position,bearing,speed,speedunit,duration,frequency) {
+    addVector: function(tracker,zoneNamespace,position,bearing,speed,speedunit,duration,frequency,noLocationUpdate) {
         var _this = this;
         if (!voyent.io.auth.isLoggedIn()) {
             return;
@@ -357,7 +358,7 @@ Polymer({
             console.error('Issue adding vector: zoneNpositionamespace is required and must be in the form [lat,lng]');
         }
         //draw the tracker on the map
-        this._drawTracker(tracker,zoneNamespace,position);
+        this._drawTracker(tracker,zoneNamespace,position,!!noLocationUpdate);
         //first append the new vector as a direct child of the component so it inherits any custom styling
         var vector = new Voyent.LocationVector(this._map,this._trackerInstances,tracker,zoneNamespace,bearing,speed,speedunit,duration,frequency);
         Polymer.dom(this).appendChild(vector);
@@ -745,7 +746,8 @@ Polymer({
             for (var i=0; i<locations.length; i++) {
                 _this.addVector(locations[i].location.properties.trackerId,
                                 locations[i].location.properties.zoneNamespace,
-                                locations[i].location.geometry.coordinates.reverse());
+                                locations[i].location.geometry.coordinates.reverse(),
+                                null,null,null,null,null,true);
             }
         }
         waitForTrackers();
@@ -984,7 +986,7 @@ Polymer({
         this.addVector(trackerId,zoneNamespace,e.model.item._position);
     },
 
-    _drawTracker: function(trackerId,zoneNamespace,position) {
+    _drawTracker: function(trackerId,zoneNamespace,position,noLocationUpdate) {
         var _this = this;
 
         //we will use our tracker template object to store the latest coordinates of a tracker instance
@@ -1040,14 +1042,16 @@ Polymer({
         this._map.fitBounds(this._bounds);
         this._map.panToBounds(this._bounds);
 
-        voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
-            location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
-            _this._trackerLocationChangedListener(marker,trackerId+'-'+zoneNamespace,location);
-            _this._clickListener(marker,zoneNamespace,null,"point");
-        }).catch(function (error) {
-            _this.fire('message-error', 'Issue creating new incident: ' + zoneNamespace);
-            console.error('Issue creating new incident: ' + zoneNamespace, error);
-        });
+        if (!noLocationUpdate) {
+            voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
+                location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                _this._trackerLocationChangedListener(marker,trackerId+'-'+zoneNamespace,location);
+                _this._clickListener(marker,zoneNamespace,null,"point");
+            }).catch(function (error) {
+                _this.fire('message-error', 'Issue creating new incident: ' + zoneNamespace);
+                console.error('Issue creating new incident: ' + zoneNamespace, error);
+            });
+        }
     },
 
     /**
