@@ -141,8 +141,8 @@ Polymer({
      * Computed binding function
      * Used to figure out if our past actions array has any content
      */
-    hasActions: function() {
-        return this._pastActions.length > 0;
+    hasActions: function(toCheck) {
+        return toCheck && toCheck.length > 0;
     },
     
     /**
@@ -430,11 +430,6 @@ Polymer({
             return new Date(b.time) - new Date(a.time);
         });
 
-        // Sort our past actions by time
-        this._pastActions.sort(function(a,b) {
-            return new Date(b.startTime) - new Date(a.startTime);
-        });
-
         // Always add an uncategorized option that encompasses log entries not associated with anything
         this.splice('_pastActions', 0, 0, {"name":this.miscName});
         
@@ -447,6 +442,21 @@ Polymer({
         // Done
         this._gotLogs = true;
         this._loading = false;
+    },
+    
+    /**
+     * Computed binding for a dom-repeat to sort past actions properly by newest first
+     */
+    _pastActionSort: function(a, b) {
+        // Ensure that we always keep our misc name 'Uncategorized' at the top of the list
+        if (a.name === this.miscName) {
+            return -1;
+        }
+        if (b.name === this.miscName) {
+            return 1;
+        }
+        // Otherwise sort as normal by time
+        return new Date(b.startTime) - new Date(a.startTime);
     },
     
     /**
