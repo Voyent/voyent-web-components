@@ -116,6 +116,8 @@ Polymer({
             google.maps.event.addDomListener(window, "resize", function () {
                 _this.resizeMap();
             });
+            //add the user location button
+            _this._addUserButton();
         };
         if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
@@ -130,27 +132,35 @@ Polymer({
     },
 
     /**
-     * Handles adding custom map buttons for creating user and tracker locations.
+     * Handles adding button for creating user locations.
      * @private
      */
-    _addCustomButtons: function() {
+    _addUserButton: function() {
         var userBttn = this.$.userBttn.cloneNode(true);
         userBttn.onclick = this._customBttnClicked;
         this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(userBttn);
-        var incidentBttn;
-        if (this._trackers && Object.keys(this._trackers).length) {
-            incidentBttn = this.$.incidentBttn.cloneNode(true);
-            incidentBttn.onclick = this._customBttnClicked;
-            this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
-        }
         //delay so that the button isn't shown on
         //the page before being moved into the map
         setTimeout(function() {
-            if (incidentBttn) {
-                incidentBttn.hidden = false;
-            }
             userBttn.hidden = false;
         },100);
+    },
+
+    /**
+     * Handles adding button for creating tracker locations.
+     * @private
+     */
+    _addTrackerButton: function() {
+        if (this._trackers && Object.keys(this._trackers).length) {
+            var incidentBttn = this.$.incidentBttn.cloneNode(true);
+            incidentBttn.onclick = this._customBttnClicked;
+            this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
+            //delay so that the button isn't shown on
+            //the page before being moved into the map
+            setTimeout(function () {
+                incidentBttn.hidden = false;
+            }, 100);
+        }
     },
 
     /**
@@ -724,9 +734,9 @@ Polymer({
                 }
             }
             _this._trackers = trackerMapping;
-            //add our custom map buttons once (do this here since we want to wait until we have _trackers)
-            if (!_this._map.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
-                _this._addCustomButtons();
+            //add the tracker location button if we haven't already
+            if (_this._map.controls[google.maps.ControlPosition.TOP_RIGHT].length < 2) {
+                _this._addTrackerButton();
             }
         }
         function _parseIconURL(url) {
