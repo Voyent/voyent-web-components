@@ -166,6 +166,8 @@ Polymer({
         this._getRealmUsers();
         //delete old location data
         this._clearLocationData();
+        //clear tracker instances
+        this._removeAllRoutes(true);
         var promises = [];
         //get regioins, poi, tracker template and last user and tracker locations
         promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
@@ -784,14 +786,18 @@ Polymer({
     },
 
     /**
-     * Remove all routes (user and tracker).
+     * Remove all routes (user and tracker) or just trackers.
+     * @param trackersOnly
      * @private
      */
-    _removeAllRoutes: function() {
+    _removeAllRoutes: function(trackersOnly) {
         for (var i=this._children.length-1; i >= 0; i--) {
+            if (trackersOnly && this._children[i].elem.nodeName !== 'VOYENT-LOCATION-VECTOR') {
+                continue;
+            }
             //if the routes contained a vector be sure to remove the associated entity from the map
             if (this._children[i].elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
-                this._removeTracker(this._children[i]);
+                this._removeTracker(this._children[i],!!trackersOnly);
             }
             Polymer.dom(this).removeChild(this._children[i].elem);
             this.splice('_children',i,1);
@@ -1228,18 +1234,21 @@ Polymer({
     /**
      * Removes a tracker instance and it's associated zones from the map and service.
      * @param child
+     * @param localDeleteOnly
      * @private
      */
-    _removeTracker: function(child) {
+    _removeTracker: function(child,localDeleteOnly) {
         var _this = this;
         var trackerId = child.elem.tracker;
         var zoneNamespace = child.elem.zonenamespace;
-        //remove it from the service
-        voyent.io.locate.deleteTrackerInstance({realm:this.realm,zoneNamespace:zoneNamespace}).then(function() {
-        }).catch(function(error) {
-            _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
-            console.error('Issue deleting tracker instance:',zoneNamespace,error);
-        });
+        if (!localDeleteOnly) {
+            //remove it from the service
+            voyent.io.locate.deleteTrackerInstance({realm:this.realm,zoneNamespace:zoneNamespace}).then(function() {
+            }).catch(function(error) {
+                _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
+                console.error('Issue deleting tracker instance:',zoneNamespace,error);
+            });
+        }
         //remove it from the map
         var instance = this._trackerInstances[trackerId+'-'+zoneNamespace];
         for (var j=0; j<instance.zones.length; j++) {
