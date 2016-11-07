@@ -209,7 +209,7 @@ Example:
                 <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{_getTrackerName(item)}}</div>
             </template>
         </div>
-        <div id="userBttn" class="customMapBttnWrap" hidden$="[[_hideUserBttn]]">
+        <div id="userBttn" class="customMapBttnWrap" hidden>
             <div class="customMapBttn" title="Create user location" data-type="user">
                 <span>
                     <div class="customMapBttnImg">
@@ -218,7 +218,7 @@ Example:
                 </span>
             </div>
         </div>
-        <div id="incidentBttn" class="customMapBttnWrap" hidden$="[[_hideIncidentBttn]]">
+        <div id="incidentBttn" class="customMapBttnWrap" hidden>
             <div class="customMapBttn" title="Create an incident" data-type="incident">
                 <span>
                     <div class="customMapBttnImg">

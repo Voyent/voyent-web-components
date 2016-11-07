@@ -78,7 +78,7 @@ Polymer({
         this._trackerInstances = {};
         this._activeSim = null;
         this._children = [];
-        this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu = this._hideUserBttn = this._hideIncidentBttn = true;
+        this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu = true;
         //fetch the list of simulations
         this.getSimulations();
         //initialize google maps
@@ -118,7 +118,6 @@ Polymer({
             google.maps.event.addDomListener(window, "resize", function () {
                 _this.resizeMap();
             });
-            _this._addCustomButtons();
         };
         if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
@@ -184,6 +183,10 @@ Polymer({
         Promise.all(promises).then(function() {
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
+            //add our custom buttons once
+            if (!_this._map.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
+                _this._addCustomButtons();
+            }
         })['catch'](function(error) {
             _this.fire('message-error', 'Issue getting location data: ' + error);
             console.error('Issue getting location data:',error);
