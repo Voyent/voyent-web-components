@@ -74,7 +74,6 @@ Polymer({
         this._locationMarkers = [];
         this._regions = [];
         this._pointMarkers = [];
-        this._trackers = null;
         this._trackerInstances = {};
         this._activeSim = null;
         this._children = [];
@@ -187,6 +186,7 @@ Polymer({
         this._clearLocationData();
         //clear tracker instances
         this._removeAllRoutes(true);
+        this._trackers = null;
         var promises = [];
         //get regioins, poi, tracker template and last user and tracker locations
         promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
@@ -718,9 +718,6 @@ Polymer({
             }
         });
         function processMessageTemplates() {
-            if (!trackers.length) {
-                return;
-            }
             var trackerMapping = {};
             for (var i=0; i<trackers.length; i++) {
                 //keep a mapping of all the trackers so we can easily create instances of them later
