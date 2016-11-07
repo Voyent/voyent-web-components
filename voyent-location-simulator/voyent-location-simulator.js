@@ -79,8 +79,6 @@ Polymer({
         this._activeSim = null;
         this._children = [];
         this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu =  this._hideUserMenu = true;
-        //fetch the list of simulations
-        this.getSimulations();
         //initialize google maps
         window.initializeLocationsMap = function () {
             _this._map = new google.maps.Map(_this.$.map, {
@@ -131,22 +129,26 @@ Polymer({
         }
     },
 
+    /**
+     * Handles adding custom map buttons for creating user and tracker locations.
+     * @private
+     */
     _addCustomButtons: function() {
-        //ideally we would just push this.$.*Bttn instead of cloning but google maps
-        //removes the controls when modifying the local DOM (adding tabs). So we clone
-        //the nodes instead and bind the onclick as if we are using plain HTML
-        var incidentBttn = this.$.incidentBttn.cloneNode(true);
         var userBttn = this.$.userBttn.cloneNode(true);
-        incidentBttn.onclick = this._customBttnClicked;
         userBttn.onclick = this._customBttnClicked;
-
         this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(userBttn);
-        this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
-
+        var incidentBttn;
+        if (this._trackers && Object.keys(this._trackers).length) {
+            incidentBttn = this.$.incidentBttn.cloneNode(true);
+            incidentBttn.onclick = this._customBttnClicked;
+            this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
+        }
         //delay so that the button isn't shown on
         //the page before being moved into the map
         setTimeout(function() {
-            incidentBttn.hidden = false;
+            if (incidentBttn) {
+                incidentBttn.hidden = false;
+            }
             userBttn.hidden = false;
         },100);
     },
@@ -161,6 +163,8 @@ Polymer({
             return;
         }
         this._bounds = new google.maps.LatLngBounds();
+        //refresh list of simulations
+        this.getSimulations();
         //refresh realm users
         this._getRealmUsers();
         //delete old location data
@@ -183,10 +187,6 @@ Polymer({
         Promise.all(promises).then(function() {
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
-            //add our custom buttons once
-            if (!_this._map.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
-                _this._addCustomButtons();
-            }
         })['catch'](function(error) {
             _this.fire('message-error', 'Issue getting location data: ' + error);
             console.error('Issue getting location data:',error);
@@ -724,6 +724,10 @@ Polymer({
                 }
             }
             _this._trackers = trackerMapping;
+            //add our custom map buttons once (do this here since we want to wait until we have _trackers)
+            if (!_this._map.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
+                _this._addCustomButtons();
+            }
         }
         function _parseIconURL(url) {
             var parts = url.split('/');
