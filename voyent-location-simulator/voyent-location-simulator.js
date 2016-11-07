@@ -983,7 +983,7 @@ Polymer({
         //doing this as a computed binding in the template doesn't work, so set the menuItems here instead
         this._incidentMenuItems = this._toArray(JSON.parse(JSON.stringify(this._trackers)));
         //set the menu width based on the longest string in the menu
-        var strLength = Math.max.apply(Math, this._incidentMenuItems.map(function(obj) {
+        var strLength = Math.max.apply(null, this._incidentMenuItems.map(function(obj) {
             return obj.label.length;
         }));
         this.$.incidentMenu.style.width = (7.5*strLength)+'px';
@@ -1230,11 +1230,23 @@ Polymer({
             Math.floor((worldCoordinate.x - worldCoordinateNW.x) * scale),
             Math.floor((worldCoordinate.y - worldCoordinateNW.y) * scale)
         );
+        //consider parent containers that scroll
+        var parent = this.parentNode;
+        var parentsScrollLeft=0, parentsScrollTop=0;
+        while (parent) {
+            if (typeof parent.scrollLeft !== 'undefined' && !Number.isNaN(parent.scrollLeft)) {
+                parentsScrollLeft += parent.scrollLeft;
+            }
+            if (typeof parent.scrollTop !== 'undefined' && !Number.isNaN(parent.scrollTop)) {
+                parentsScrollTop += parent.scrollTop;
+            }
+            parent = parent.parentNode;
+        }
         //take into account the position of the map in the view and the position of the scrollbars
         var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
         var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
-        var left = pixelOffset.x + this._map.getDiv().getBoundingClientRect().left + scrollLeft + this.menuoffsetleft;
-        var top = pixelOffset.y + this._map.getDiv().getBoundingClientRect().top + scrollTop + this.menuoffsettop;
+        var left = pixelOffset.x + this._map.getDiv().getBoundingClientRect().left + scrollLeft + parentsScrollLeft + this.menuoffsetleft;
+        var top = pixelOffset.y + this._map.getDiv().getBoundingClientRect().top + scrollTop + parentsScrollTop + this.menuoffsettop;
         return {"left":left,"top":top};
     },
 
