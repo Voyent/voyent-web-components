@@ -134,16 +134,18 @@ Polymer({
      * @private
      */
     _addUserButton: function() {
-        var _this = this;
-        var userBttn = this.$.userBttn.cloneNode(true);
-        userBttn.onclick = this._customBttnClicked;
-        this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(userBttn);
-        //delay so that the button isn't shown on
-        //the page before being moved into the map
-        setTimeout(function() {
-            userBttn.hidden = false;
-            _this._userButtonAdded = true;
-        },100);
+        if (!this._userButtonAdded) {
+            var _this = this;
+            var userBttn = this.$.userBttn.cloneNode(true);
+            userBttn.onclick = this._customBttnClicked;
+            this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(userBttn);
+            //delay so that the button isn't shown on
+            //the page before being moved into the map
+            setTimeout(function() {
+                userBttn.hidden = false;
+                _this._userButtonAdded = true;
+            },100);
+        }
     },
 
     /**
@@ -151,17 +153,19 @@ Polymer({
      * @private
      */
     _addTrackerButton: function() {
-        var _this = this;
-        if (this._trackers && Object.keys(this._trackers).length) {
-            var incidentBttn = this.$.incidentBttn.cloneNode(true);
-            incidentBttn.onclick = this._customBttnClicked;
-            this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
-            //delay so that the button isn't shown on
-            //the page before being moved into the map
-            setTimeout(function () {
-                incidentBttn.hidden = false;
-                _this._trackerButtonAdded = true;
-            }, 100);
+        if (!this._trackerButtonAdded) {
+            var _this = this;
+            if (this._trackers && Object.keys(this._trackers).length) {
+                var incidentBttn = this.$.incidentBttn.cloneNode(true);
+                incidentBttn.onclick = this._customBttnClicked;
+                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
+                //delay so that the button isn't shown on
+                //the page before being moved into the map
+                setTimeout(function () {
+                    incidentBttn.hidden = false;
+                    _this._trackerButtonAdded = true;
+                }, 100);
+            }
         }
     },
 
@@ -652,10 +656,8 @@ Polymer({
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
         });
-        //add the user location button if we haven't already
-        if (!_this._userButtonAdded) {
-            _this._addUserButton();
-        }
+        //add the user location button
+        _this._addUserButton();
     },
 
     /**
@@ -740,10 +742,8 @@ Polymer({
                 }
             }
             _this._trackers = trackerMapping;
-            //add the tracker location button if we haven't already
-            if (!_this._trackerButtonAdded) {
-                _this._addTrackerButton();
-            }
+            //add the tracker location button
+            _this._addTrackerButton();
         }
         function _parseIconURL(url) {
             var parts = url.split('/');
