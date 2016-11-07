@@ -78,7 +78,7 @@ Polymer({
         this._trackerInstances = {};
         this._activeSim = null;
         this._children = [];
-        this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu = true;
+        this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu =  this._hideUserMenu = true;
         //fetch the list of simulations
         this.getSimulations();
         //initialize google maps
@@ -916,34 +916,43 @@ Polymer({
     _setupNewLocationListener: function(drawingManager) {
         var _this = this;
         google.maps.event.addListener(drawingManager, 'markercomplete', function (marker) {
+            //hide the marker since we'll draw it later
+            marker.setVisible(false);
+            //set the icon based on the selected button
             marker.setIcon(_this.pathtoimages+'/images/'+_this._selectedBttn+'_marker.png');
-            if (_this._selectedBttn === 'user') {
-                var location = {
-                    "location": {
-                        "geometry": { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] }
-                    },
-                    "username": voyent.io.auth.getLastKnownUsername(),
-                    "demoUsername": voyent.io.auth.getLastKnownUsername()
-                };
-                _this._handleNewLocationMarker(location.username,marker);
-                voyent.io.locate.updateLocation({realm:_this.realm,location:location}).then(function(data) {
-                    location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
-                    _this._userLocationChangedListener(marker,location);
-                    _this._clickListener(marker,null,location,location.location.geometry.type.toLowerCase());
-                }).catch(function(error) {
-                    _this.fire('message-error', 'Issue creating new location: ' + error);
-                    console.error('Issue creating new location:',error);
-                });
-                _this._pointMarkers.push(marker);
-            }
-            else {
-                //hide the marker since will will re-generate it later
-                marker.setVisible(false);
-                _this._renderIncidentMenu(marker);
-            }
-            _this._selectedIncident = null;
+            _this._selectedBttn === 'user' ? _this._renderUserMenu(marker) : _this._renderIncidentMenu(marker);
+            //back to regular (no drawing) mode
             _this._drawingManager.setDrawingMode(null);
         });
+    },
+
+    /**
+     * Displays a list menu where you can select a user to create a new location for.
+     * @param marker
+     * @private
+     */
+    _renderUserMenu: function(marker) {
+        //store the click coordinates for later use
+        this._lastClickCoordinates = [marker.getPosition().lat(),marker.getPosition().lng()];
+        if (!this._users || !this._users.length) {
+            this._selectUser(null);
+        }
+        else {
+            //set the menu width based on the longest string in the menu
+            var strLength = Math.max.apply(Math, this._users.map(function(username) {
+                return username.length;
+            }));
+            this.$.userMenu.style.width = (7.5*strLength)+'px';
+            //set the menu height based on the number of menu items
+            this.$.userMenu.style.height = 24*this._users.length+'px';
+            //render the context menu at the pixel coordinate
+            var pos = this._returnPixelCoordinate(marker.getPosition());
+            this.$.userMenu.style.left = pos.left + 'px';
+            this.$.userMenu.style.top = pos.top + 'px';
+            this._hideUserMenu = false;
+        }
+        //we no longer need the marker so delete it
+        marker.setMap(null);
     },
 
     /**
@@ -952,13 +961,16 @@ Polymer({
      * @private
      */
     _renderIncidentMenu: function(marker) {
-        //for some reason doing this as a computed binding in the
-        //template doesn't work, so set the menuItems here instead
+        //store the click coordinates for later use
+        this._lastClickCoordinates = [marker.getPosition().lat(),marker.getPosition().lng()];
+        //doing this as a computed binding in the template doesn't work, so set the menuItems here instead
         this._incidentMenuItems = this._toArray(JSON.parse(JSON.stringify(this._trackers)));
-        for (var i=0; i<this._incidentMenuItems.length; i++) {
-            //save a reference to the marker for later use
-            this._incidentMenuItems[i]._position = [marker.getPosition().lat(),marker.getPosition().lng()];
-        }
+        //set the menu width based on the longest string in the menu
+        var strLength = Math.max.apply(Math, this._incidentMenuItems.map(function(obj) {
+            return obj.label.length;
+        }));
+        this.$.incidentMenu.style.width = (7.5*strLength)+'px';
+        //set the menu height based on the number of menu items
         this.$.incidentMenu.style.height = 24*this._incidentMenuItems.length+'px';
         //render the context menu at the pixel coordinate
         var pos = this._returnPixelCoordinate(marker.getPosition());
@@ -992,6 +1004,43 @@ Polymer({
      * @param e
      * @private
      */
+    _selectUser: function(e) {
+        var _this = this;
+        this._hideUserMenu = true;
+        var username = e && e.target ? e.target.getAttribute('data-user') : voyent.io.auth.getLastKnownUsername();
+        var coordinates = this._lastClickCoordinates;
+        //create marker based on position
+        var marker = new google.maps.Marker({
+            position: new google.maps.LatLng(coordinates[0],coordinates[1]),
+            map: this._map,
+            draggable: true,
+            icon: this.pathtoimages+'/images/user_marker.png'
+        });
+        this._pointMarkers.push(marker);
+        var location = {
+            "location": {
+                "geometry": { "type" : "Point", "coordinates" : [coordinates[1],coordinates[0]] }
+            },
+            "username": username,
+            "demoUsername": username
+        };
+        this._handleNewLocationMarker(username,marker);
+        voyent.io.locate.updateLocation({realm:_this.realm,location:location}).then(function(data) {
+            location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+            _this._userLocationChangedListener(marker,location);
+            _this._clickListener(marker,null,location,location.location.geometry.type.toLowerCase());
+        }).catch(function(error) {
+            _this.fire('message-error', 'Issue creating new location: ' + error);
+            console.error('Issue creating new location:',error);
+        });
+        this._lastClickCoordinates = null;
+    },
+
+    /**
+     * Fired when a tracker template is selected after creating a tracker instance.
+     * @param e
+     * @private
+     */
     _selectIncident: function(e) {
         this._hideIncidentMenu = true;
         var trackerId = e.target.getAttribute('data-id');
@@ -1000,7 +1049,8 @@ Polymer({
         if (!zoneNamespace) { return; }
         //reset the bounds so we fit the map to the new tracker
         this._bounds = new google.maps.LatLngBounds();
-        this.addVector(trackerId,zoneNamespace,e.model.item._position);
+        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates);
+        this._lastClickCoordinates = null;
     },
 
     _drawTracker: function(trackerId,zoneNamespace,position,noLocationUpdate) {
@@ -1087,8 +1137,7 @@ Polymer({
         });
         //hide menus on map click
         google.maps.event.addListener(this._map, "click", function(event) {
-            _this._hideContextMenu = true;
-            _this._hideIncidentMenu = true;
+            _this._hideContextMenu = _this._hideIncidentMenu = _this._hideUserMenu = true;
         });
     },
 

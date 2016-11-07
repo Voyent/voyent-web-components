@@ -209,6 +209,11 @@ Example:
                 <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{_getTrackerName(item)}}</div>
             </template>
         </div>
+        <div id="userMenu" class="context-menu" hidden$="[[_hideUserMenu]]">
+            <template is="dom-repeat" strip-whitespace items="{{_users}}">
+                <div class="menu-item" on-click="_selectUser" data-user$="{{item}}">{{item}}</div>
+            </template>
+        </div>
         <div id="userBttn" class="customMapBttnWrap" hidden>
             <div class="customMapBttn" title="Create user location" data-type="user">
                 <span>
