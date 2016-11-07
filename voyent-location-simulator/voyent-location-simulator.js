@@ -1115,9 +1115,7 @@ Polymer({
                     "trackerId": trackerId,
                     "zoneNamespace": zoneNamespace
                 }
-            },
-            "username": voyent.io.auth.getLastKnownUsername(),
-            "demoUsername": voyent.io.auth.getLastKnownUsername()
+            }
         };
         this._handleNewLocationMarker(zoneNamespace,marker);
 
