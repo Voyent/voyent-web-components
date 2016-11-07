@@ -116,8 +116,6 @@ Polymer({
             google.maps.event.addDomListener(window, "resize", function () {
                 _this.resizeMap();
             });
-            //add the user location button
-            _this._addUserButton();
         };
         if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
@@ -136,6 +134,7 @@ Polymer({
      * @private
      */
     _addUserButton: function() {
+        var _this = this;
         var userBttn = this.$.userBttn.cloneNode(true);
         userBttn.onclick = this._customBttnClicked;
         this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(userBttn);
@@ -143,6 +142,7 @@ Polymer({
         //the page before being moved into the map
         setTimeout(function() {
             userBttn.hidden = false;
+            _this._userButtonAdded = true;
         },100);
     },
 
@@ -151,6 +151,7 @@ Polymer({
      * @private
      */
     _addTrackerButton: function() {
+        var _this = this;
         if (this._trackers && Object.keys(this._trackers).length) {
             var incidentBttn = this.$.incidentBttn.cloneNode(true);
             incidentBttn.onclick = this._customBttnClicked;
@@ -159,6 +160,7 @@ Polymer({
             //the page before being moved into the map
             setTimeout(function () {
                 incidentBttn.hidden = false;
+                _this._trackerButtonAdded = true;
             }, 100);
         }
     },
@@ -650,6 +652,10 @@ Polymer({
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
         });
+        //add the user location button if we haven't already
+        if (!_this._userButtonAdded) {
+            _this._addUserButton();
+        }
     },
 
     /**
@@ -735,7 +741,7 @@ Polymer({
             }
             _this._trackers = trackerMapping;
             //add the tracker location button if we haven't already
-            if (_this._map.controls[google.maps.ControlPosition.TOP_RIGHT].length < 2) {
+            if (!_this._trackerButtonAdded) {
                 _this._addTrackerButton();
             }
         }
