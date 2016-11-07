@@ -48,11 +48,6 @@ Polymer({
         autoheight: { type: Number, value: -1, notify: true }
     },
 
-    //observe non-declared/private properties
-    observers: [
-        '_mapOrUsersChanged(_map, _users)'
-    ],
-
     /**
      * Fired after the Google Map has been initialized. Contains the map object.
      * @event mapInitialized
@@ -82,7 +77,10 @@ Polymer({
         this._trackers = null;
         this._trackerInstances = {};
         this._activeSim = null;
+        this._children = [];
         this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu = this._hideUserBttn = this._hideIncidentBttn = true;
+        //fetch the list of simulations
+        this.getSimulations();
         //initialize google maps
         window.initializeLocationsMap = function () {
             _this._map = new google.maps.Map(_this.$.map, {
@@ -168,30 +166,8 @@ Polymer({
         this._getRealmUsers();
         //delete old location data
         this._clearLocationData();
-        //get current user location data
         var promises = [];
-        //get user locations
-        promises.push(voyent.io.locate.findLocations({
-            realm:this.realm,
-            query:{"location.properties.zoneNamespace":{"$exists": false}},
-            fields:{"_id":0},
-            options:{sort:{"lastUpdated":-1}}
-        }).then(function(locations) {
-            if (locations && locations.length) {
-                //process the locations so we only keep the most recent update for each user
-                var userLocations={};
-                for (var i=0; i<locations.length; i++) {
-                    if (userLocations.hasOwnProperty(locations[i].username)) {
-                        if (locations[i].lastUpdated > userLocations[locations[i].username].lastUpdated) {
-                            userLocations[locations[i].username]=locations[i];
-                        }
-                    }
-                    else { userLocations[locations[i].username]=locations[i]; }
-                }
-                locations = Object.keys(userLocations).map(function(key){return userLocations[key]});
-                _this._updateLocations(locations);
-            }
-        }));
+        //get regioins, poi, tracker template and last user and tracker locations
         promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
             _this._updateRegions(regions);
         }));
@@ -201,29 +177,9 @@ Polymer({
         promises.push(voyent.io.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
             _this._mapTrackers(trackers);
         }));
-        promises.push(voyent.io.locate.findLocations({
-            realm:this.realm,
-            query:{"location.properties.zoneNamespace":{"$exists": true}},
-            fields:{"_id":0},
-            options:{sort:{"lastUpdated":-1}}
-        }).then(function(locations) {
-            if (locations && locations.length) {
-                //process the locations so we only keep the most recent update for each tracker
-                var trackerLocations={};
-                for (var i=0; i<locations.length; i++) {
-                    if (trackerLocations.hasOwnProperty(locations[i].location.properties.zoneNamespace)) {
-                        if (locations[i].lastUpdated > trackerLocations[locations[i].location.properties.zoneNamespace].lastUpdated) {
-                            trackerLocations[locations[i].location.properties.zoneNamespace]=locations[i];
-                        }
-                    }
-                    else { trackerLocations[locations[i].location.properties.zoneNamespace]=locations[i]; }
-                }
-                locations = Object.keys(trackerLocations).map(function(key){return trackerLocations[key]});
-                _this._updateTrackerInstances(locations);
-            }
-
-        }));
-        return Promise.all(promises).then(function() {
+        promises.push(this._executeAggregate(this._lastUserLocations));
+        promises.push(this._executeAggregate(this._lastTrackerLocations));
+        Promise.all(promises).then(function() {
             _this._map.fitBounds(_this._bounds);
             _this._map.panToBounds(_this._bounds);
         })['catch'](function(error) {
@@ -520,6 +476,51 @@ Polymer({
     //******************PRIVATE API******************
 
     /**
+     * Creates aggregate queries for getting last user and tracker locations.
+     * @param query
+     * @private
+     */
+    _createAggregate: function(query) {
+        var _this = this;
+        var id = query._id;
+        voyent.io.query.createQuery({realm:this.realm,id:id,query:query}).then(function() {
+            _this._executeAggregate(query);
+        });
+    },
+
+    /**
+     * Executes aggregate queries for getting last user and tracker locations.
+     * @param query
+     * @private
+     */
+    _executeAggregate: function(query) {
+        var _this = this;
+        var id = query._id;
+        voyent.io.query.executeQuery({realm:this.realm,id:id}).then(function(results) {
+            if (id === '_getLastUserLocations') {
+                _this._updateLocations(results);
+            }
+            else {
+                _this._updateTrackerInstances(results);
+            }
+        }).catch(function(error) {
+            if (error.status === 404) {
+                _this._createAggregate(query);
+            }
+        })
+    },
+
+    /**
+     * Aggregate query for getting all last user locations.
+     */
+    _lastUserLocations: {"_id":"_getLastUserLocations","query":[{"$match":{"_data.location.properties.trackerId":{"$exists":false}}},{"$sort":{"_data.lastUpdated":-1}},{"$group":{"_id":"$_data.username","username":{"$first":"$_data.username"},"location":{"$first":"$_data.location"},"lastUpdated":{"$first":"$_data.lastUpdated"}}},{"$project":{"_id":0,"location":1,"username":1,"lastUpdated":1}}],"properties":{"title":"Find Last User Locations","service":"locate","collection":"locations","type":"aggregate"}},
+
+    /**
+     * Aggregate query for getting all last tracker locations.
+     */
+    _lastTrackerLocations: {"_id":"_getLastTrackerLocations","query":[{"$match":{"_data.location.properties.trackerId":{"$exists":true}}},{"$sort":{"_data.lastUpdated":-1}},{"$group":{"_id":"$_data.location.properties.zoneNamespace","username":{"$first":"$_data.username"},"location":{"$first":"$_data.location"},"lastUpdated":{"$first":"$_data.lastUpdated"}}},{"$project":{"_id":0,"location":1,"username":1,"lastUpdated":1}}],"properties":{"title":"Find Last Tracker Locations","service":"locate","collection":"locations","type":"aggregate"}},
+
+    /**
      * Draw regions and points of interest on the map.
      * @param data
      * @private
@@ -630,6 +631,9 @@ Polymer({
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,null,location,location.location.geometry.type.toLowerCase());
             _this._handleNewLocationMarker(location.username,marker);
+            //extend the bounds
+            _this._map.fitBounds(_this._bounds);
+            _this._map.panToBounds(_this._bounds);
         });
     },
 
@@ -1315,17 +1319,6 @@ Polymer({
             return;
         }
         this.fire('pathtoimagesChanged',{'path':newVal});
-    },
-
-    /**
-     * Fired when the map and users properties are both set (since they are only changed on initial load).
-     * @param map
-     * @param users
-     * @private
-     */
-    _mapOrUsersChanged: function(map,users) {
-        this._children = [];
-        this.getSimulations();
     },
 
     //We use these wrappers because the on-click in the template passes an event parameter that we
