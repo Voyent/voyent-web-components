@@ -371,10 +371,9 @@ Polymer({
         this._removeAllRoutes();
         this._activeSim = null;
         //maintain scroll position
-        var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
-        var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+        var scroll = this._getParentsScroll();
         setTimeout(function() {
-            scrollTo(scrollLeft,scrollTop);
+            scrollTo(scroll.left,scroll.top);
         },50);
     },
 
@@ -474,10 +473,9 @@ Polymer({
         this._generateTabs(simulation.routes);
         this._activeSim = simulation;
         //maintain scroll position
-        var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
-        var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+        var scroll = this._getParentsScroll();
         setTimeout(function() {
-            scrollTo(scrollLeft,scrollTop);
+            scrollTo(scroll.left,scroll.top);
         },50);
     },
 
@@ -735,6 +733,9 @@ Polymer({
                         trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zones[j].properties.zoneId].global.icon);
                         //found an icon so break out of the zones loop
                         break;
+                    }
+                    else {
+                        trackers[i].properties.icon = 'incident_marker.png';
                     }
                 }
             }
@@ -1230,24 +1231,30 @@ Polymer({
             Math.floor((worldCoordinate.x - worldCoordinateNW.x) * scale),
             Math.floor((worldCoordinate.y - worldCoordinateNW.y) * scale)
         );
-        //consider parent containers that scroll
+        var scroll = this._getParentsScroll();
+        var left = pixelOffset.x + this._map.getDiv().getBoundingClientRect().left + scroll.left + this.menuoffsetleft;
+        var top = pixelOffset.y + this._map.getDiv().getBoundingClientRect().top + scroll.top + this.menuoffsettop;
+        return {"left":left,"top":top};
+    },
+
+    /**
+     * Returns the sum of scrollLeft and scrollTop for the component's parents.
+     * @returns {{left: number, top: number}}
+     * @private
+     */
+    _getParentsScroll: function() {
         var parent = this.parentNode;
-        var parentsScrollLeft=0, parentsScrollTop=0;
+        var scrollLeft=0, scrollTop=0;
         while (parent) {
             if (typeof parent.scrollLeft !== 'undefined' && !Number.isNaN(parent.scrollLeft)) {
-                parentsScrollLeft += parent.scrollLeft;
+                scrollLeft += parent.scrollLeft;
             }
             if (typeof parent.scrollTop !== 'undefined' && !Number.isNaN(parent.scrollTop)) {
-                parentsScrollTop += parent.scrollTop;
+                scrollTop += parent.scrollTop;
             }
             parent = parent.parentNode;
         }
-        //take into account the position of the map in the view and the position of the scrollbars
-        var scrollLeft = (typeof window.pageXOffset !== "undefined") ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
-        var scrollTop = (typeof window.pageYOffset !== "undefined") ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
-        var left = pixelOffset.x + this._map.getDiv().getBoundingClientRect().left + scrollLeft + parentsScrollLeft + this.menuoffsetleft;
-        var top = pixelOffset.y + this._map.getDiv().getBoundingClientRect().top + scrollTop + parentsScrollTop + this.menuoffsettop;
-        return {"left":left,"top":top};
+        return {left:scrollLeft,top:scrollTop};
     },
 
     /**
