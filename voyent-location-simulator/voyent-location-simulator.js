@@ -1155,6 +1155,11 @@ Polymer({
         google.maps.event.addListener(this._map, "click", function(event) {
             _this._hideContextMenu = _this._hideIncidentMenu = _this._hideUserMenu = true;
         });
+        //odd fix for an issue where sometimes the map markers
+        //would not be visible after fitting/panning the map
+        google.maps.event.addListener(this._map, "idle", function(event) {
+            _this._map.panTo(_this._map.getCenter());
+        });
     },
 
     /**
