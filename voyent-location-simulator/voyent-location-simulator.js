@@ -480,14 +480,12 @@ Polymer({
     },
 
     /**
-     * Trigger the Google Map resize event and pan the map to the last known bounds.
+     * Trigger the Google Map resize event and recalculate the map size.
      */
     resizeMap: function() {
         if (('google' in window) && this._map) {
             this._calcMapSize();
             google.maps.event.trigger(this._map, "resize");
-            this._map.fitBounds(this._bounds);
-            this._map.panToBounds(this._bounds);
         }
     },
 
