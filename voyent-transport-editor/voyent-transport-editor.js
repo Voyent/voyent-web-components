@@ -400,7 +400,7 @@ Polymer({
 	             "[Incident Type]",
 	             "[Direction]",
 	             "[Distance]",
-	             "[Time to Contact]",
+	             "[Bearing]",
 	             "[Speed]"
 	           ];
 	},
