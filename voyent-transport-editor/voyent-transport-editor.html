@@ -423,7 +423,12 @@ Displays a transport editor that can build message templates for various technol
             <template is="dom-if" if="[[debug]]">
                 <hr/>
                 <b>Notification JSON Preview</b>
-                <pre>[[value]]</pre>
+                <template is="dom-if" if="[[simple]]">
+                    <pre>{{_valueStringify(value)}}</pre>
+                </template>
+                <template is="dom-if" if="[[!simple]]">
+                    <pre>[[value]]</pre>
+                </template>
             </template>
         </div>
     </template>

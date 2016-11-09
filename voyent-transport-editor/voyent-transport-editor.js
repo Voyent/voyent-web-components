@@ -373,6 +373,10 @@ Polymer({
         this.set('value', this.convertUIToJSON());
     },
     
+    _valueStringify: function(toConvert) {
+        return JSON.stringify(toConvert, null, 4);
+    },
+    
     /**
      * Retrieve a list of saved email templates IDs from the doc service
      */
@@ -396,12 +400,12 @@ Polymer({
 	 * Used with simple view only (simple=true)
 	 */
 	_setDefaultMessageElements: function() {
-	    return [ "[User Name]",
-	             "[Incident Type]",
+	    return [ "[Bearing]",
 	             "[Direction]",
 	             "[Distance]",
-	             "[Bearing]",
-	             "[Speed]"
+	             "[Incident Type]",
+	             "[Speed]",
+	             "[User Name]"
 	           ];
 	},
 	
