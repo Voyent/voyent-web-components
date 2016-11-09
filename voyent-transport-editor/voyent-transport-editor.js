@@ -351,7 +351,12 @@ Polymer({
      * Used with simple view only (simple=true)
      */
 	_clickedListChanged: function() {
-	    var area = document.getElementById("messageDetails");
+        // Default to details if none is found or stored
+        if (!this.lastFocus) {
+            this.lastFocus = "messageDetails";
+        }
+	    
+	    var area = document.getElementById(this.lastFocus);
 	    if (area && this.clickedList) {
 	        // Append our clicked item and focus the text area
 	        area.value += this.clickedList;
@@ -363,6 +368,14 @@ Polymer({
 	            mElem.select(null);
 	        }
 	    }
+	},
+	
+	/**
+	 * Store the last focused element
+	 * This will be leveraged when clicking a simple element list
+	 */
+	_updateLastFocus: function(event) {
+	    this.lastFocus = event.target.id;
 	},
     
     /**

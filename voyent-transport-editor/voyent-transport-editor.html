@@ -73,16 +73,18 @@ Displays a transport editor that can build message templates for various technol
                     <td width$="{{calculateSimpleWidth()}}" height="100%" valign="top">
                         <div class="inputWrap" style="height: 20%;">
                             <b>Message Subject:</b>
-                            <input type="text" placeholder="Subject"
+                            <input id="messageSubject" type="text" placeholder="Subject"
                                    value="{{_tool.subject.global::input}}"
-                                   ondrop="drop(event)"></input>
+                                   ondrop="drop(event)"
+                                   on-focus="_updateLastFocus"></input>
                         </div>
                         
                         <div class="inputWrap" style="height: 80%;">
                             <b>Message Details:</b>
                             <textarea id="messageDetails" style="height: 80%;"
                                       value="{{_tool.details.global::input}}"
-                                      ondrop="drop(event)"></textarea>
+                                      ondrop="drop(event)"
+                                      on-focus="_updateLastFocus"></textarea>
                         </div>
                     </td>
                     <template is="dom-if" if="{{showMessageElements}}">
