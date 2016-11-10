@@ -782,10 +782,19 @@ Polymer({
                 if (!_this._trackers[locations[i].location.properties.trackerId]) {
                     continue;
                 }
+                //load default bearing/speed/duration values from tracker properties
+                var properties = _this._trackers[locations[i].location.properties.trackerId].properties;
+                var bearing = null, speed = null, speedunit = null, duration = null;
+                if (properties) {
+                    bearing = properties.bearing;
+                    speed = properties.speed;
+                    speedunit = properties.speedunit;
+                    duration = properties.duration;
+                }
                 _this.addVector(locations[i].location.properties.trackerId,
                                 locations[i].location.properties.zoneNamespace,
                                 locations[i].location.geometry.coordinates.reverse(),
-                                null,null,null,null,null,true);
+                                bearing,speed,speedunit,duration,null,true);
             }
         }
         waitForTrackers();
