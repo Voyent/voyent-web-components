@@ -714,26 +714,35 @@ Polymer({
             }
         });
         function processMessageTemplates() {
-            var trackerMapping = {};
+            var trackerMapping = {}, zone;
             for (var i=0; i<trackers.length; i++) {
                 //keep a mapping of all the trackers so we can easily create instances of them later
                 trackerMapping[trackers[i]._id] = trackers[i];
                 zones = trackers[i].zones.features;
+                if (!trackers[i].properties) {
+                    trackers[i].properties = {};
+                }
                 for (var j=0; j<zones.length; j++) {
-                    //search the message templates for an icon and save the first one that is found in the tracker
-                    if (trackerData[trackers[i]._id] &&
-                        trackerData[trackers[i]._id][zones[j].properties.zoneId] &&
-                        trackerData[trackers[i]._id][zones[j].properties.zoneId].global &&
-                        trackerData[trackers[i]._id][zones[j].properties.zoneId].global.icon) {
-                        if (!trackers[i].properties) {
-                            trackers[i].properties = {};
+                    zone = zones[j].properties.zoneId;
+                    //set default icon to fallback to in case we don't find an icon
+                    trackers[i].properties.icon = 'incident_marker.png';
+                    //search the message templates for an icon and save the first one that is found
+                    if (trackerData[trackers[i]._id] && trackerData[trackers[i]._id][zone]) {
+                        if (trackerData[trackers[i]._id][zone].global &&
+                            trackerData[trackers[i]._id][zone].global.icon) {
+                            trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zone].global.icon);
+                            break;
                         }
-                        trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zones[j].properties.zoneId].global.icon);
-                        //found an icon so break out of the zones loop
-                        break;
-                    }
-                    else {
-                        trackers[i].properties.icon = 'incident_marker.png';
+                        else if (trackerData[trackers[i]._id][zone].increase &&
+                                 trackerData[trackers[i]._id][zone].increase.icon) {
+                            trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zone].increase.icon);
+                            break;
+                        }
+                        else if (trackerData[trackers[i]._id][zone].decrease &&
+                                 trackerData[trackers[i]._id][zone].decrease.icon) {
+                            trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zone].decrease.icon);
+                            break;
+                        }
                     }
                 }
             }
