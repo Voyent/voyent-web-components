@@ -1626,6 +1626,37 @@ Allows editing of voyent location, region and point data
                                 </td>
                             </tr>
                             <tr hidden$="{{!infowindowisanchor}}">
+                                <td>Bearing</td>
+                                <td>
+                                    <input placeholder="Bearing" class='form-control' value="{{_anchorBearing::change}}">
+                                </td>
+                                <td>
+                                    <button class="btn btn-xs btn-success" data-property="bearing" on-click="updateAnchorProperty">Update</button>
+                                </td>
+                            </tr>
+                            <tr hidden$="{{!infowindowisanchor}}">
+                                    <td>Speed</td>
+                                    <td>
+                                        <input placeholder="Speed" class='form-control' value="{{_anchorSpeed::change}}">
+                                        <select class="form-control" value="{{_anchorSpeedUnit::change}}">
+                                            <option value="kph" selected>KPH</option>
+                                            <option value="mph">MPH</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-xs btn-success" data-property="speed" on-click="updateAnchorProperty">Update</button>
+                                    </td>
+                                </tr>
+                            <tr hidden$="{{!infowindowisanchor}}">
+                                <td>Duration</td>
+                                <td>
+                                    <input placeholder="Duration" class='form-control' value="{{_anchorDuration::change}}">
+                                </td>
+                                <td>
+                                    <button class="btn btn-xs btn-success" data-property="duration" on-click="updateAnchorProperty">Update</button>
+                                </td>
+                            </tr>
+                            <tr hidden$="{{!infowindowisanchor}}">
                                 <td>
                                     Enabled
                                 </td>

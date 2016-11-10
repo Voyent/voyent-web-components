@@ -944,7 +944,6 @@ Polymer({
                 if (_loc.showPropertiesDiv) {
                     _loc.togglePropertiesDivAnchor();
                     _loc.togglePropertiesDivAnchor();
-
                 }
                 _loc._infoWindow.setPosition(location.anchor.getPosition());
                 _loc._infoWindow.open(map, location.anchor);
@@ -953,7 +952,18 @@ Polymer({
                     _loc.$$("#locationName").style.fontSize = "30px";
                     _loc.$$("#locationName").text = geoJSON.label ? geoJSON.label : geoJSON._id; //display the id if the label hasn't been set yet
                     _loc.revertNameEdit(); //start the infoWindow with an uneditable name and resize it if necessary
-                }, 0)
+                }, 0);
+                //load bearing/speed/duration properties
+                if (geoJSON.properties) {
+                    _loc._anchorBearing = geoJSON.properties.bearing || null;
+                    _loc._anchorSpeed = geoJSON.properties.speed || null;
+                    _loc._anchorSpeedUnit = geoJSON.properties.speedUnit || 'kph';
+                    _loc._anchorDuration = geoJSON.properties.duration || null;
+                }
+                else {
+                    _loc._anchorBearing = _loc._anchorSpeed = _loc._anchorDuration = null;
+                    _loc._anchorSpeedUnit = 'kph';
+                }
             }
             else if (shape === "trackerZone"){
                 _loc.infoWindowState = "trackerZone";
@@ -1633,6 +1643,56 @@ Polymer({
             }
         }
         _loc.updateProperties();
+    },
+
+    updateAnchorProperty: function (e) {
+        var property = e.target.getAttribute('data-property');
+        var value;
+        if (!this.activeLocation.properties) {
+            this.activeLocation.properties = {};
+        }
+        if (property === 'bearing') {
+            if (!this._anchorBearing && typeof this.activeLocation.properties.bearing !== 'undefined') {
+                delete this.activeLocation.properties.bearing;
+            }
+            else {
+                value = Number(this._anchorBearing);
+                if (!Number.isNaN(value) && value >= 0 && value < 360) {
+                    this.activeLocation.properties.bearing=value;
+                }
+                else { this._anchorBearing = null; return; }
+            }
+        }
+        else if (property === 'speed') {
+            if (!this._anchorSpeed && typeof this.activeLocation.properties.speed !== 'undefined') {
+                delete this.activeLocation.properties.speed;
+                delete this.activeLocation.properties.speedUnit;
+            }
+            else {
+                value = Number(this._anchorSpeed);
+                if (!Number.isNaN(value) && value > 0) {
+                    this.activeLocation.properties.speed=value;
+                    this.activeLocation.properties.speedUnit=this._anchorSpeedUnit || 'kph';
+                }
+                else { this._anchorSpeed = null; return; }
+            }
+        }
+        else { //duration
+            if (!this._anchorSpeed && typeof this.activeLocation.properties.duration !== 'undefined') {
+                delete this.activeLocation.properties.duration;
+            }
+            else {
+                value = Number(this._anchorDuration);
+                if (!Number.isNaN(value) && value > 0) {
+                    this.activeLocation.properties.duration=value;
+                }
+                else { this._anchorDuration = null; return; }
+            }
+        }
+        if (!Object.keys(this.activeLocation.properties).length) {
+            delete this.activeLocation.properties;
+        }
+        this.postTracker(this.activeGoogleLocation,this.activeLocation,"tracker",true);
     },
 
     updateEnabledProperty: function () {
