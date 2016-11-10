@@ -1001,7 +1001,7 @@ Polymer({
         this._incidentMenuItems = this._toArray(JSON.parse(JSON.stringify(this._trackers)));
         //set the menu width based on the longest string in the menu
         var strLength = Math.max.apply(null, this._incidentMenuItems.map(function(obj) {
-            return obj.label.length;
+            return (obj.label ? obj.label.length : 0);
         }));
         this.$.incidentMenu.style.width = (7.5*strLength)+'px';
         //set the menu height based on the number of menu items
