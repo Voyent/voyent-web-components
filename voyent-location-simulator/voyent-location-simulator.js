@@ -1074,7 +1074,16 @@ Polymer({
         if (!zoneNamespace) { return; }
         //reset the bounds so we fit the map to the new tracker
         this._bounds = new google.maps.LatLngBounds();
-        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates);
+        //load default bearing/speed/duration values from tracker properties
+        var properties = this._trackers[trackerId].properties;
+        var bearing = null, speed = null, speedunit = null, duration = null;
+        if (properties) {
+            bearing = properties.bearing;
+            speed = properties.speed;
+            speedunit = properties.speedunit;
+            duration = properties.duration;
+        }
+        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates,bearing,speed,speedunit,duration);
         this._lastClickCoordinates = null;
     },
 
