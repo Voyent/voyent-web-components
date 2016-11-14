@@ -1083,8 +1083,6 @@ Polymer({
         //ask the user to enter a zoneNamespace
         var zoneNamespace = this._showIncidentNamePrompt(trackerId);
         if (!zoneNamespace) { return; }
-        //reset the bounds so we fit the map to the new tracker
-        this._bounds = new google.maps.LatLngBounds();
         //load default bearing/speed/duration values from tracker properties
         var properties = this._trackers[trackerId].properties;
         var bearing = null, speed = null, speedunit = null, duration = null;
@@ -1094,6 +1092,7 @@ Polymer({
             speedunit = properties.speedunit;
             duration = properties.duration;
         }
+        this._mapBoundsFixed = true; //don't adjust map bounds when creating tracker instance
         this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates,bearing,speed,speedunit,duration);
         this._lastClickCoordinates = null;
     },
@@ -1149,8 +1148,11 @@ Polymer({
 
         //set the bounds around this newly dropped tracker
         this._trackerMoved(trackerId+'-'+zoneNamespace,marker);
-        this._map.fitBounds(this._bounds);
-        this._map.panToBounds(this._bounds);
+        if (!this._mapBoundsFixed) {
+            this._map.fitBounds(this._bounds);
+            this._map.panToBounds(this._bounds);
+        }
+        this._mapBoundsFixed = false;
 
         if (!noLocationUpdate) {
             voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
