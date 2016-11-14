@@ -413,11 +413,11 @@ Polymer({
 	 * Used with simple view only (simple=true)
 	 */
 	_setDefaultMessageElements: function() {
-	    return [ "[Bearing]",
-	             "[Direction]",
+	    return [ "[Incident Type]",
 	             "[Distance]",
-	             "[Incident Type]",
+	             "[Direction]",
 	             "[Speed]",
+	             "[Bearing]",
 	             "[User Name]"
 	           ];
 	},
