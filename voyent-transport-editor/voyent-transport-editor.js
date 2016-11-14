@@ -358,9 +358,20 @@ Polymer({
 	    
 	    var area = document.getElementById(this.lastFocus);
 	    if (area && this.clickedList) {
-	        // Append our clicked item and focus the text area
-	        area.value += this.clickedList;
+	        // Bring focus back to our area after clicking the list
 	        area.focus();
+	        
+	        // Try to use the caret position (via selectionEnd) to insert our clicked element
+            var caret = area.selectionEnd;
+            if (caret) {
+                var originalVal = area.value;
+                area.value = originalVal.substring(0, caret) + this.clickedList + originalVal.substring(caret);
+                area.selectionEnd = (caret + this.clickedList.length);
+            }
+            // Otherwise we'll just append
+            else {
+                area.value += this.clickedList;
+            }
 	        
 	        // Reset the selection of our list so we can re-select the same element as needed
 	        var mElem = document.querySelector("#messageElements");
