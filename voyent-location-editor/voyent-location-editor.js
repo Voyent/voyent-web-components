@@ -220,6 +220,10 @@ Polymer({
             _loc.poisTemp = pois;
         }));
         promises.push(voyent.io.locate.getAllTrackers({realm: _loc.realm}).then(function (trackers) {
+            //don't show "child" tracker templates
+            trackers = trackers.filter(function(tracker) {
+                return !tracker.properties || !tracker.properties.parentTrackerId;
+            });
             _loc.trackersTemp = trackers;
         }));
 
@@ -495,6 +499,10 @@ Polymer({
             _loc.poisTemp = pois;
         }));
         promises.push(voyent.io.locate.getAllTrackers({realm: _loc.realm}).then(function (trackers) {
+            //don't show "child" tracker templates
+            trackers = trackers.filter(function(tracker) {
+                return !tracker.properties || !tracker.properties.parentTrackerId;
+            });
             _loc.trackersTemp = trackers;
         }));
         return Promise.all(promises).then(function () {
