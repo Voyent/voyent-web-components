@@ -58,6 +58,17 @@ This component is used internally by the location simulator for building tracker
             </div>
             <div class="form-group">
                 <label id="bearingLbl" for="bearing" class$="{{bearingLblClass}}">Bearing (degrees):</label>
+                <select class="form-control" value="{{_direction::change}}" disabled$="{{_inputsDisabled}}">
+                    <option value="-1">Select a direction or enter a custom bearing below...</option>
+                    <option value="0">North</option>
+                    <option value="45">North East</option>
+                    <option value="90">East</option>
+                    <option value="135">South East</option>
+                    <option value="180">South</option>
+                    <option value="225">South West</option>
+                    <option value="270">West</option>
+                    <option value="315">North West</option>
+                </select>
                 <input id="bearing" type="text" class$="{{bearingInputClass}}" value="{{bearing::change}}" disabled$="{{_inputsDisabled}}" placeholder="Enter a bearing">
             </div>
             <div class="form-group">

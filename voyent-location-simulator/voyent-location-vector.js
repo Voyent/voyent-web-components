@@ -61,7 +61,8 @@ Voyent.LocationVector = Polymer({
     //observe non-declared/private properties
     observers: [
         '_mapChanged(_map)',
-        '_pausedChanged(_paused)'
+        '_pausedChanged(_paused)',
+        '_directionChanged(_direction)'
     ],
 
     /**
@@ -254,6 +255,19 @@ Voyent.LocationVector = Polymer({
     },
 
     /**
+     * Adjusts the bearing based on which direction is selected.
+     * @param newVal
+     * @param oldVal
+     * @private
+     */
+    _directionChanged: function(newVal,oldVal) {
+        newVal = Number(newVal);
+        if (!Number.isNaN(newVal) && newVal >= 0) {
+            this.bearing = newVal;
+        }
+    },
+
+    /**
      * Validates the `tracker` attribute.
      * @param newVal
      * @param oldVal
@@ -312,6 +326,8 @@ Voyent.LocationVector = Polymer({
             this._playBtnDisabled=true;
             return;
         }
+        var direction = {"0":"N","45":"NE","90":"E","135":"SE","180":"S","225":"SW","270":"W","315":"NW"}[val];
+        this._direction = (direction ? val : -1);
         this.bearingInputClass='form-control';
         this.bearingLblClass='';
         if (this.tracker && this._trackerInstances && Object.keys(this._trackerInstances).length>0 &&
