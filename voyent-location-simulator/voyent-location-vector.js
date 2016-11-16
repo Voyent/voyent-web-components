@@ -144,7 +144,7 @@ Voyent.LocationVector = Polymer({
                 //move the zones with the tracker
                 _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,marker);
                 //disable tracker edits during simulation
-                this._toggleEditableTracker(zones,marker,false);
+                _this._toggleEditableTracker(zones,marker,false);
                 //start simulation
                 _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
                 _this._doSimulation();
