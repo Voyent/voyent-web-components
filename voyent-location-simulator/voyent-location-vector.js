@@ -305,7 +305,8 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     _bearingValidation: function(newVal,oldVal) {
-        if (isNaN(newVal) || newVal < 0 || newVal >= 360) {
+        var val = Number(newVal);
+        if (Number.isNaN(val) || val < 0 || val >= 360) {
             this.bearingInputClass='form-control error';
             this.bearingLblClass='error';
             this._playBtnDisabled=true;
@@ -326,7 +327,8 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     _durationValidation: function(newVal,oldVal) {
-        if (isNaN(newVal) || newVal <= 0) {
+        var val = Number(newVal);
+        if (Number.isNaN(val) || val <= 0) {
             this.durationInputClass='form-control error';
             this.durationLblClass='error';
             this._playBtnDisabled=true;

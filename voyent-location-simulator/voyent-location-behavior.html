@@ -348,7 +348,8 @@
          * @private
          */
         _speedValidation: function(newVal,oldVal) {
-            if (isNaN(newVal) || newVal <= 0) {
+            var val = Number(newVal);
+            if (Number.isNaN(val) || val <= 0) {
                 this.speed = oldVal || 50;
             }
         },
@@ -372,7 +373,8 @@
          * @private
          */
         _frequencyValidation: function(newVal,oldVal) {
-            if (isNaN(newVal) || newVal <= 0) {
+            var val = Number(newVal);
+            if (Number.isNaN(val) || val <= 0) {
                 this.frequency = oldVal || 5;
             }
         },
