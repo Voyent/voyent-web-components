@@ -71,12 +71,12 @@ Polymer({
         }
         var _this = this;
         //set some default values
-        this._locationMarkers = [];
-        this._regions = [];
-        this._pointMarkers = [];
-        this._trackerInstances = {};
-        this._activeSim = null;
-        this._children = [];
+        this._locationMarkers = {}; //mapping of location markers (user markers mapped to username, tracker markers mapped to trackerId.zoneNamespace)
+        this._regions = []; //list of regions (regular regions + tracker zones)
+        this._pointMarkers = []; //list of pois
+        this._trackerInstances = {}; //mapping of tracker instances
+        this._activeSim = null; //currently active/loaded simulation
+        this._children = []; //list of child components (location-route, location-vector) and related tab info
         this._hideContextMenu = this._contextMenuDisabled = this._hideIncidentMenu =  this._hideUserMenu = true;
         //initialize google maps
         window.initializeLocationsMap = function () {
@@ -103,7 +103,7 @@ Polymer({
             drawingManager.setMap(_this._map);
             _this._drawingManager = drawingManager;
             _this._setupNewLocationListener(drawingManager);
-            //setup listeners for the map (context menu listeners)
+            //setup misc listeners for the map
             _this._setupMapListeners();
             //setup listeners for voyent-location-route components
             _this._setupRouteListeners();
@@ -112,7 +112,7 @@ Polymer({
                 _this.refreshMap();
             }
             //make sure the map is sized correctly when the window size changes
-            google.maps.event.addDomListener(window, "resize", function () {
+            google.maps.event.addListener(window, "resize", function () {
                 _this.resizeMap();
             });
         };
@@ -186,7 +186,9 @@ Polymer({
         this._clearLocationData();
         //clear tracker instances
         this._removeAllRoutes(true);
+        //all tracker templates
         this._trackers = null;
+        //chain async calls so we can have one unified callback
         var promises = [];
         //get regioins, poi, tracker template and last user and tracker locations
         promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
@@ -282,7 +284,7 @@ Polymer({
         var route = new Voyent.LocationRoute(this._map,this._users,label,user,origin,destination,travelmode,speed,speedunit,frequency);
         Polymer.dom(this).appendChild(route);
         setTimeout(function(route) {
-            var contentHidden = _this._children.length ? true : false;
+            var contentHidden = !!_this._children.length;
             _this.set('_contextMenuDisabled',contentHidden);
             //add a new tab for the child
             _this.push('_children',{
@@ -291,7 +293,6 @@ Polymer({
                 "tabLabel": label || 'New Route',
                 "contentHidden": contentHidden
             });
-            var lastChild = _this._children[_this._children.length-1];
             //move new child into tab (do this async so the template has time to render the new child tab)
             setTimeout(function(i) {
                 Polymer.dom(_this.root).querySelector('div[data-index="'+i+'"]').appendChild(_this._children[i].elem);
@@ -332,7 +333,7 @@ Polymer({
         }
         if (!position || !Array.isArray(position) || position.length !== 2) {
             this.fire('message-error', 'Issue adding vector: position is required and must be in the form [lat,lng]');
-            console.error('Issue adding vector: zoneNpositionamespace is required and must be in the form [lat,lng]');
+            console.error('Issue adding vector: zoneNamespace is required and must be in the form [lat,lng]');
         }
         //draw the tracker on the map
         this._drawTracker(tracker,zoneNamespace,position,!!noLocationUpdate);
@@ -340,7 +341,7 @@ Polymer({
         var vector = new Voyent.LocationVector(this._map,this._trackerInstances,tracker,zoneNamespace,bearing,speed,speedunit,duration,frequency);
         Polymer.dom(this).appendChild(vector);
         setTimeout(function (vector) {
-            var contentHidden = _this._children.length ? true : false;
+            var contentHidden = !!_this._children.length;
             _this.set('_contextMenuDisabled',!contentHidden);
             //add a new tab for the child
             _this.push('_children',{
@@ -349,7 +350,6 @@ Polymer({
                 "tabLabel": zoneNamespace + ' ['+(_this._trackers[tracker].label || tracker)+']',
                 "contentHidden": contentHidden
             });
-            var lastChild = _this._children[_this._children.length-1];
             //move new child into tab (do this async so the template has time to render the new child tab)
             setTimeout(function(i) {
                 Polymer.dom(_this.root).querySelector('div[data-index="'+i+'"]').appendChild(_this._children[i].elem);
@@ -535,7 +535,7 @@ Polymer({
     /**
      * Aggregate query for getting all last tracker locations.
      */
-    _lastTrackerLocations: {"_id":"_getLastTrackerLocations","query":[{"$match":{"_data.location.properties.trackerId":{"$exists":true}}},{"$sort":{"_data.lastUpdated":-1}},{"$group":{"_id":"$_data.location.properties.zoneNamespace","username":{"$first":"$_data.username"},"location":{"$first":"$_data.location"},"lastUpdated":{"$first":"$_data.lastUpdated"}}},{"$project":{"_id":0,"location":1,"username":1,"lastUpdated":1}}],"properties":{"title":"Find Last Tracker Locations","service":"locate","collection":"locations","type":"aggregate"}},
+    _lastTrackerLocations: {"_id":"_getLastTrackerLocations","query":[{"$match":{"_data.location.properties.trackerId":{"$exists":true}}},{"$sort":{"_data.lastUpdated":-1}},{"$group":{"_id":"$_data.username","location":{"$first":"$_data.location"},"lastUpdated":{"$first":"$_data.lastUpdated"}}},{"$project":{"_id":0,"location":1,"username":1,"lastUpdated":1}}],"properties":{"title":"Find Last Tracker Locations","service":"locate","collection":"locations","type":"aggregate"}},
 
     /**
      * Draw regions and points of interest on the map.
@@ -661,10 +661,12 @@ Polymer({
      * @private
      */
     _clearLocationData: function() {
-        this._locationMarkers.forEach(function(marker) {
-            marker[Object.keys(marker)[0]].setMap(null);
-        });
-        this._locationMarkers = [];
+        for (var key in this._locationMarkers) {
+            if (this._locationMarkers.hasOwnProperty(key)) {
+                this._locationMarkers[key].setMap(null);
+            }
+        }
+        this._locationMarkers = {};
         this._regions.forEach(function(region) {
             region.setMap(null);
         });
@@ -717,7 +719,12 @@ Polymer({
             var trackerMapping = {}, zone;
             for (var i=0; i<trackers.length; i++) {
                 //keep a mapping of all the trackers so we can easily create instances of them later
-                trackerMapping[trackers[i]._id] = trackers[i];
+                var trackerId = trackers[i]._id;
+                trackerMapping[trackerId] = trackers[i];
+                //if we have a "child" tracker template we set the trackerId to the parent's when searching for icons
+                if (trackers[i].properties && trackers[i].properties.parentTrackerId) {
+                    trackerId = trackers[i].properties.parentTrackerId;
+                }
                 zones = trackers[i].zones.features;
                 if (!trackers[i].properties) {
                     trackers[i].properties = {};
@@ -727,20 +734,20 @@ Polymer({
                     //set default icon to fallback to in case we don't find an icon
                     trackers[i].properties.icon = 'incident_marker.png';
                     //search the message templates for an icon and save the first one that is found
-                    if (trackerData[trackers[i]._id] && trackerData[trackers[i]._id][zone]) {
-                        if (trackerData[trackers[i]._id][zone].global &&
-                            trackerData[trackers[i]._id][zone].global.icon) {
-                            trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zone].global.icon);
+                    if (trackerData[trackerId] && trackerData[trackerId][zone]) {
+                        if (trackerData[trackerId][zone].global &&
+                            trackerData[trackerId][zone].global.icon) {
+                            trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].global.icon);
                             break;
                         }
-                        else if (trackerData[trackers[i]._id][zone].increase &&
-                                 trackerData[trackers[i]._id][zone].increase.icon) {
-                            trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zone].increase.icon);
+                        else if (trackerData[trackerId][zone].increase &&
+                                 trackerData[trackerId][zone].increase.icon) {
+                            trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].increase.icon);
                             break;
                         }
-                        else if (trackerData[trackers[i]._id][zone].decrease &&
-                                 trackerData[trackers[i]._id][zone].decrease.icon) {
-                            trackers[i].properties.icon = _parseIconURL(trackerData[trackers[i]._id][zone].decrease.icon);
+                        else if (trackerData[trackerId][zone].decrease &&
+                                 trackerData[trackerId][zone].decrease.icon) {
+                            trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].decrease.icon);
                             break;
                         }
                     }
@@ -779,17 +786,17 @@ Polymer({
             }
             for (var i=0; i<locations.length; i++) {
                 //only proceed if the tracker instance has a matching template
-                if (!_this._trackers[locations[i].location.properties.trackerId]) {
+                var tracker = _this._trackers[locations[i].location.properties.trackerId];
+                if (!tracker) {
                     continue;
                 }
                 //load default bearing/speed/duration values from tracker properties
-                var properties = _this._trackers[locations[i].location.properties.trackerId].properties;
                 var bearing = null, speed = null, speedunit = null, duration = null;
-                if (properties) {
-                    bearing = properties.bearing;
-                    speed = properties.speed;
-                    speedunit = properties.speedunit;
-                    duration = properties.duration;
+                if (tracker.properties) {
+                    bearing = tracker.properties.bearing;
+                    speed = tracker.properties.speed;
+                    speedunit = tracker.properties.speedunit;
+                    duration = tracker.properties.duration;
                 }
                 _this.addVector(locations[i].location.properties.trackerId,
                                 locations[i].location.properties.zoneNamespace,
@@ -961,6 +968,152 @@ Polymer({
     },
 
     /**
+     * Handles creating and updating tracker templates when the zones of a tracker instance are resized.
+     * @param trackerId
+     * @param zoneNamespace
+     * @param zoneId
+     * @param circle
+     * @private
+     */
+    _zoneResizeListener: function(trackerId,zoneNamespace,zoneId,circle) {
+        var _this = this;
+        //clear the listeners first since we will call this function twice
+        //in cases where we need to dynamically create a template
+        google.maps.event.clearListeners(circle,'radius_changed');
+        google.maps.event.addListener(circle, "radius_changed", function() {
+            var trackerInstance = _this._trackerInstances[trackerId+'.'+zoneNamespace];
+            //clone the parent tracker if we are creating a new template
+            //because we'll use it as the base for our new one
+            var tracker = _this._trackers[trackerId];
+            var isNewTemplate = !tracker.properties || !tracker.properties.parentTrackerId;
+            if (isNewTemplate) {
+                tracker = JSON.parse(JSON.stringify(tracker));
+                //set the new template position to the tracker instance coordinate
+                tracker.anchor.geometry.coordinates = [trackerInstance.marker.getPosition().lng(),trackerInstance.marker.getPosition().lat()]; //anchor coordinates are lng,lat
+            }
+            var matchingZone = null;
+            var zones = tracker.zones.features;
+            for (var i=0; i<zones.length; i++) {
+                if (isNewTemplate) {
+                    //set the new template zones to the tracker instance coordinate
+                    zones[i].properties.googleMaps.center = [trackerInstance.marker.getPosition().lat(),trackerInstance.marker.getPosition().lng()]; //googleMaps coordinates are lat,lng
+                }
+                if (zones[i].properties.zoneId === zoneId) {
+                    matchingZone = zones[i];
+                }
+            }
+            if (matchingZone) {
+                //disable tracker movements and resizing until we've saved the tracker template
+                _this._toggleEditableTracker(trackerInstance.zones,trackerInstance.marker,false);
+                //add parentTrackerId property if this isn't already a child
+                if (!tracker.properties) {
+                    tracker.properties = {};
+                }
+                if (isNewTemplate) {
+                    tracker.properties.parentTrackerId = trackerId;
+                    //set tracker id based on instance name + time
+                    tracker._id = zoneNamespace+'_'+new Date().getTime();
+                }
+                //set the new zone radius and coordinates
+                matchingZone.properties.googleMaps.radius = circle.getRadius();
+                _this._setCoordinates(matchingZone,circle);
+                //save the template
+                _this._saveTrackerTemplate(tracker.properties.parentTrackerId,zoneNamespace,tracker,isNewTemplate);
+            }
+        });
+    },
+
+    /**
+     * Calculates and sets the coordinates of a zone based on it's center position and radius.
+     * @param zone
+     * @param circle
+     * @private
+     */
+    _setCoordinates: function (zone,circle) {
+        var N = 50; //number of "sides" the circle approximation will have
+        var degreeStep = 360 / N;
+        zone.geometry.coordinates = [[]];
+        for (var i = 0; i < N; i++) {
+            var latLng = google.maps.geometry.spherical.computeOffset(circle.getCenter(), circle.getRadius(), degreeStep * i);
+            zone.geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
+            //push the same coordinate as the start coordinate to complete the circle
+            if (i + 1 === N) {
+                zone.geometry.coordinates[0].push(zone.geometry.coordinates[0][0]);
+            }
+        }
+    },
+
+    /**
+     *
+     * @param parentTrackerId
+     * @param zoneNamespace
+     * @param tracker
+     * @param isNewTemplate
+     * @private
+     */
+    _saveTrackerTemplate: function(parentTrackerId,zoneNamespace,tracker,isNewTemplate) {
+        var _this = this;
+
+        var func = isNewTemplate ? 'createTracker' : 'updateTracker';
+        //delete icon before posting since it's just used locally
+        var icon = tracker.properties.icon; delete tracker.properties.icon;
+
+        voyent.io.locate[func]({realm:this.realm, id:tracker._id, tracker:tracker}).then(function (uri) {
+            //save the icon again
+            tracker.properties.icon = icon;
+            //store new tracker template in mapping
+            _this._trackers[tracker._id] = tracker;
+            var trackerInstance = _this._trackerInstances[tracker._id+'.'+zoneNamespace]; //will be undefined if it is a new template
+            if (isNewTemplate) {
+                //update the child component with the new tracker template ID, loop
+                //backwards since it's likely one of the last children added
+                for (var i=_this._children.length-1; i>=0; i--) {
+                    if (_this._children[i].elem.tracker === tracker.properties.parentTrackerId &&
+                        _this._children[i].elem.zonenamespace === tracker._id.split('_')[0]) { //the first part of the id is the instance name
+                        _this._children[i].elem.tracker = tracker._id;
+                        break;
+                    }
+                }
+                //associate the tracker instance with the new template instead of the parent
+                if (_this._trackerInstances[parentTrackerId+'.'+zoneNamespace]) {
+                    _this._trackerInstances[tracker._id+'.'+zoneNamespace] = _this._trackerInstances[parentTrackerId+'.'+zoneNamespace];
+                    delete _this._trackerInstances[parentTrackerId+'.'+zoneNamespace];
+                    trackerInstance = _this._trackerInstances[tracker._id+'.'+zoneNamespace];
+                }
+                //create a tracker instance for the new template
+                var location = {
+                    "location": {
+                        "geometry": { "type" : "Point", "coordinates" : [tracker.anchor.geometry.coordinates[0],tracker.anchor.geometry.coordinates[1]] },
+                        "properties": {
+                            "trackerId": tracker._id,
+                            "zoneNamespace": zoneNamespace
+                        }
+                    }
+                };
+                //send a location update for this instance
+                _this._updateTrackerLocation(location,function() {
+                    //re-initialize tracker location changed listener so it's associated with the new tracker instance
+                    _this._trackerLocationChangedListener(trackerInstance.marker,tracker._id+'.'+zoneNamespace,location);
+                    //re-initialize zone resize listener so it's associated with the new tracker template
+                    for (var i=0; i<trackerInstance.tracker.zones.features.length; i++) {
+                        _this._zoneResizeListener(tracker._id,zoneNamespace,trackerInstance.tracker.zones.features[i].properties.zoneId,trackerInstance.zones[i]);
+                    }
+                    //re-enable tracker movements and resizing since we've
+                    //saved the tracker template and created an instance
+                    _this._toggleEditableTracker(trackerInstance.zones,trackerInstance.marker,true);
+                });
+            }
+            else {
+                //re-enable tracker movements and resizing since we've updated the tracker template
+                _this._toggleEditableTracker(trackerInstance.zones,trackerInstance.marker,true);
+            }
+        }).catch(function (error) {
+            _this.fire('message-error', 'Issue updating tracker template: ' + error);
+            console.error('Issue updating tracker template:',error);
+        });
+    },
+
+    /**
      * Displays a list menu where you can select a user to create a new location for.
      * @param marker
      * @private
@@ -998,7 +1151,17 @@ Polymer({
         //store the click coordinates for later use
         this._lastClickCoordinates = [marker.getPosition().lat(),marker.getPosition().lng()];
         //doing this as a computed binding in the template doesn't work, so set the menuItems here instead
-        this._incidentMenuItems = this._toArray(JSON.parse(JSON.stringify(this._trackers)));
+        this._incidentMenuItems = [];
+        for (var trackerKey in this._trackers) {
+            if (!this._trackers.hasOwnProperty(trackerKey)) {
+                continue;
+            }
+            //only show "parent" tracker templates
+            if (!this._trackers[trackerKey].properties ||
+                !this._trackers[trackerKey].properties.parentTrackerId) {
+                this.push('_incidentMenuItems',this._trackers[trackerKey]);
+            }
+        }
         //set the menu width based on the longest string in the menu
         var strLength = Math.max.apply(null, this._incidentMenuItems.map(function(obj) {
             if (obj.label) { return obj.label.length; }
@@ -1026,7 +1189,7 @@ Polymer({
     _showIncidentNamePrompt: function (trackerId) {
         var incidentName = '';
         //check that the instance name is valid and not already being used
-        while (!incidentName || !incidentName.trim().length || this._trackerInstances[trackerId+'-'+incidentName]) {
+        while (!incidentName || !incidentName.trim().length || this._trackerInstances[trackerId+'.'+incidentName]) {
             incidentName = prompt('Please enter an incident name', '');
             if (incidentName === null) { //cancel was pressed
                 return null;
@@ -1052,7 +1215,7 @@ Polymer({
             draggable: true,
             icon: this.pathtoimages+'/images/user_marker.png'
         });
-        this._pointMarkers.push(marker);
+        this._handleNewLocationMarker(username,marker);
         var location = {
             "location": {
                 "geometry": { "type" : "Point", "coordinates" : [coordinates[1],coordinates[0]] }
@@ -1060,7 +1223,6 @@ Polymer({
             "username": username,
             "demoUsername": username
         };
-        this._handleNewLocationMarker(username,marker);
         voyent.io.locate.updateLocation({realm:_this.realm,location:location}).then(function(data) {
             location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._userLocationChangedListener(marker,location);
@@ -1093,7 +1255,7 @@ Polymer({
             duration = properties.duration;
         }
         this._mapBoundsFixed = true; //don't adjust map bounds when creating tracker instance
-        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates,bearing,speed,speedunit,duration);
+        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates,bearing,speed,speedunit,duration,null,true);
         this._lastClickCoordinates = null;
     },
 
@@ -1111,26 +1273,7 @@ Polymer({
             draggable: true,
             icon: this.pathtoimages+'/images/'+tracker.properties.icon
         });
-        this._pointMarkers.push(marker);
-
-        //associate the circle regions with the tracker
-        this._trackerInstances[trackerId+'-'+zoneNamespace] = {"tracker":tracker,"zones":[],"marker":marker};
-        //create the circle zones
-        var circle;
-        var zones = tracker.zones.features;
-        for (var i=0; i<zones.length; i++) {
-            circle = new google.maps.Circle({
-                'map': this._map,
-                'radius': zones[i].properties.googleMaps.radius,
-                'fillColor': zones[i].properties.Color,
-                'zIndex': zones[i].properties.googleMaps.zIndex,
-                'editable': false
-            });
-            //associate the zone with the tracker so we can sync them on movement
-            this._trackerInstances[trackerId+'-'+zoneNamespace].zones.push(circle);
-            this._clickListener(zones[i],zones[i].properties.zoneId,null,"circle");
-            this._regions.push(circle);
-        }
+        this._handleNewLocationMarker(trackerId+'.'+zoneNamespace,marker);
 
         //now that we have a location save it in the tracker
         tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
@@ -1144,10 +1287,31 @@ Polymer({
                 }
             }
         };
-        this._handleNewLocationMarker(zoneNamespace,marker);
+
+        //associate the circle regions with the tracker
+        this._trackerInstances[trackerId+'.'+zoneNamespace] = {"tracker":tracker,"zones":[],"marker":marker};
+        //create the circle zones
+        var circle;
+        var zones = tracker.zones.features;
+        for (var i=0; i<zones.length; i++) {
+            circle = new google.maps.Circle({
+                'map': this._map,
+                'radius': zones[i].properties.googleMaps.radius,
+                'fillColor': zones[i].properties.Color,
+                'zIndex': zones[i].properties.googleMaps.zIndex,
+                'editable': true
+            });
+            //associate the zone with the tracker so we can sync them on movement
+            this._trackerInstances[trackerId+'.'+zoneNamespace].zones.push(circle);
+            //add listeners
+            this._clickListener(zones[i],zones[i].properties.zoneId,null,"circle");
+            this._zoneResizeListener(trackerId,zoneNamespace,zones[i].properties.zoneId,circle);
+            //add to regions master list
+            this._regions.push(circle);
+        }
 
         //set the bounds around this newly dropped tracker
-        this._trackerMoved(trackerId+'-'+zoneNamespace,marker);
+        this._trackerMoved(trackerId+'.'+zoneNamespace,marker);
         if (!this._mapBoundsFixed) {
             this._map.fitBounds(this._bounds);
             this._map.panToBounds(this._bounds);
@@ -1155,23 +1319,30 @@ Polymer({
         this._mapBoundsFixed = false;
 
         if (!noLocationUpdate) {
-            voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
-                location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
-                _this._trackerLocationChangedListener(marker,trackerId+'-'+zoneNamespace,location);
+            this._updateTrackerLocation(location,function() {
+                _this._trackerLocationChangedListener(marker,trackerId+'.'+zoneNamespace,location);
                 _this._clickListener(marker,zoneNamespace,null,"point");
-            }).catch(function (error) {
-                _this.fire('message-error', 'Issue creating new incident: ' + zoneNamespace);
-                console.error('Issue creating new incident: ' + zoneNamespace, error);
             });
         }
         else {
-            this._trackerLocationChangedListener(marker,trackerId+'-'+zoneNamespace,location);
+            this._trackerLocationChangedListener(marker,trackerId+'.'+zoneNamespace,location);
             this._clickListener(marker,zoneNamespace,null,"point");
         }
     },
 
+    _updateTrackerLocation: function(location,cb) {
+        var _this = this;
+        voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
+            location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+            cb();
+        }).catch(function (error) {
+            _this.fire('message-error', 'Issue creating new incident: ' + location.location.properties.zoneNamespace);
+            console.error('Issue creating new incident: ' + location.location.properties.zoneNamespace, error);
+        });
+    },
+
     /**
-     * Setup listeners for the map context menu.
+     * Setup various map listeners.
      * @private
      */
     _setupMapListeners: function() {
@@ -1207,9 +1378,10 @@ Polymer({
                 _this._handleNewLocationMarker(location.username,marker);
             }
             else { //vector
+                var trackerId = location.location.properties.trackerId;
                 var zoneNamespace = location.location.properties.zoneNamespace;
                 _this._clickListener(marker,zoneNamespace,null,'point');
-                _this._handleNewLocationMarker(zoneNamespace,marker);
+                _this._handleNewLocationMarker(trackerId+'.'+zoneNamespace,marker);
             }
         });
         this.addEventListener('labelChanged', function(e) {
@@ -1361,16 +1533,24 @@ Polymer({
         var _this = this;
         var trackerId = child.elem.tracker;
         var zoneNamespace = child.elem.zonenamespace;
+        var instance = this._trackerInstances[trackerId+'.'+zoneNamespace];
         if (!localDeleteOnly) {
-            //remove it from the service
+            //remove tracker instance from the service
             voyent.io.locate.deleteTrackerInstance({realm:this.realm,zoneNamespace:zoneNamespace}).then(function() {
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
                 console.error('Issue deleting tracker instance:',zoneNamespace,error);
             });
+            //delete tracker template if it is a "child"
+            if (instance.tracker.properties && instance.tracker.properties.parentTrackerId) {
+                voyent.io.locate.deleteTracker({realm:this.realm,id:trackerId}).then(function() {
+                }).catch(function(error) {
+                    _this.fire('message-error', 'Issue deleting tracker template: ' + trackerId + ' ' + error);
+                    console.error('Issue deleting tracker template´:',trackerId,error);
+                });
+            }
         }
         //remove it from the map
-        var instance = this._trackerInstances[trackerId+'-'+zoneNamespace];
         for (var j=0; j<instance.zones.length; j++) {
             //remove the regions from the map
             instance.zones[j].setMap(null);
@@ -1378,14 +1558,15 @@ Polymer({
         }
         //remove the marker from the map
         instance.marker.setMap(null);
-        this._pointMarkers.splice(this._pointMarkers.indexOf(instance.marker),1);
-        //delete the tracker instance ref
-        delete this._trackerInstances[trackerId+'-'+zoneNamespace];
+        //remove marker from list
+        delete this._locationMarkers[trackerId+'.'+zoneNamespace];
+        //delete the tracker instance reference
+        delete this._trackerInstances[trackerId+'.'+zoneNamespace];
     },
 
     /**
      * Only keep the last location for a location (either tracker or user).
-     * @param key
+     * @param key - username of user locations, trackerId.zoneNamespace for tracker anchors
      * @param marker
      * @private
      */

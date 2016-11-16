@@ -107,7 +107,8 @@ Voyent.LocationVector = Polymer({
             if ((this._trackerInstances && Object.keys(this._trackerInstances).length && !this.tracker) /*|| !this.bearing || !this.duration*/) {
                 return;
             }
-            var tracker = this._trackerInstances[_this.tracker+'-'+_this.zonenamespace].tracker;
+            var tracker = this._trackerInstances[_this.tracker+'.'+_this.zonenamespace].tracker;
+            var zones = tracker.zones;
 
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
@@ -141,7 +142,9 @@ Voyent.LocationVector = Polymer({
                 });
                 _this._marker = marker;
                 //move the zones with the tracker
-                _this._trackerMoved(_this.tracker+'-'+_this.zonenamespace,marker);
+                _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,marker);
+                //disable tracker edits during simulation
+                this._toggleEditableTracker(zones,marker,false);
                 //start simulation
                 _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
                 _this._doSimulation();
@@ -167,7 +170,7 @@ Voyent.LocationVector = Polymer({
         return {
             tracker:this.tracker,
             zonenamespace:this.zonenamespace,
-            position:this._trackerInstances[this.tracker+'-'+this.zonenamespace].tracker.anchor.geometry.coordinates.reverse(),
+            position:this._trackerInstances[this.tracker+'.'+this.zonenamespace].tracker.anchor.geometry.coordinates.reverse(),
             bearing:this.bearing,
             speed:this.speed,
             speedunit:this.speedunit,
@@ -218,10 +221,10 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     _cleanupSimulation: function() {
-        //allow the location marker to be dragged
-        this._marker.setDraggable(true);
+        //allow the zones to be resized again
+        this._toggleEditableTracker(this._trackerInstances[this.tracker+'.'+this.zonenamespace].zones,this._marker,true);
         //add listener now that the simulation is done
-        this._trackerLocationChangedListener(this._marker,this.tracker+'-'+this.zonenamespace,this._location);
+        this._trackerLocationChangedListener(this._marker,this.tracker+'.'+this.zonenamespace,this._location);
         //reset attributes
         this._path = null;
         this._totalDistance = null;
@@ -247,7 +250,7 @@ Voyent.LocationVector = Polymer({
     _calculateTotalDistance: function() {
         var speed = this.speed * (this.speedunit === 'kph'? this._KPH_TO_MPS : this._MPH_TO_MPS); //speed in m/s
         var time = this.duration * 60; //time of travel in seconds
-        return speed * time; //duration in meters
+        return speed * time; //distance in meters
     },
 
     /**

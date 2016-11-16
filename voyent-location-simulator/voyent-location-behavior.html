@@ -80,7 +80,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:path[i].lat(),lng:path[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker+'-'+_this.zonenamespace,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
@@ -116,7 +116,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker+'-'+_this.zonenamespace,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills+_this._interval); //update the ETA
@@ -181,7 +181,7 @@
                 }
                 _this._marker.setPosition({lat:_this._path[i].lat(),lng:_this._path[i].lng()}); //update the marker position
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker+'-'+_this.zonenamespace,_this._marker); //update the zone positions
+                    _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,_this._marker); //update the zone positions
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
@@ -265,6 +265,9 @@
          */
         _trackerLocationChangedListener: function(marker,instanceKey,location) {
             var _this = this;
+            //clear the listeners first since we will call this function twice
+            //in cases where we need to dynamically create a tracker template
+            google.maps.event.clearListeners(marker,'dragend');
             google.maps.event.addListener(marker, "dragend", function () {
                 location.location.geometry.coordinates = [marker.getPosition().lng(), marker.getPosition().lat()];
                 if (location.username && location.username.length > 0) {
@@ -284,15 +287,15 @@
 
         /**
          * Moves zones associated with a tracker to a new location based
-         * on the marker's location + update the stored tracker location.
+         * on the marker's location and update the stored tracker location.
          * @param instanceKey
          * @param marker
          */
         _trackerMoved: function(instanceKey,marker) {
             //update the center point of associated zones
             var zones = this._trackerInstances[instanceKey].zones;
+            var latLng = marker.getPosition();
             for (var i=0; i<zones.length; i++) {
-                var latLng = new google.maps.LatLng(marker.getPosition().lat(),marker.getPosition().lng());
                 zones[i].setCenter(latLng);
                 if (this._bounds) {
                     this._bounds.union(zones[i].getBounds());
@@ -302,6 +305,19 @@
             //location is always the last known location
             this._trackerInstances[instanceKey].tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
             this.fire('_trackerInstancesRetrieved',{trackerInstances:this._trackerInstances});
+        },
+
+        /**
+         * Toggles editable/draggable on the passed zones and anchor.
+         * @param zones
+         * @param marker
+         * @param editable - whether or not to allow the zones to be resized
+         */
+        _toggleEditableTracker: function(zones,marker,editable) {
+            for (var i=0; i<zones.length; i++) {
+                zones[i].setEditable(!!editable);
+            }
+            marker.setDraggable(!!editable);
         },
 
         /**
@@ -377,18 +393,6 @@
          */
         _toDegrees: function(radians) {
             return radians * 180 / Math.PI;
-        },
-
-        /**
-         * Convert trackers mapping to an array.
-         * @param trackers
-         * @returns {Array}
-         * @private
-         */
-        _toArray: function(trackers) {
-            return Object.keys(trackers).map(function (key) {
-                return trackers[key];
-            });
         }
     };
 </script>
