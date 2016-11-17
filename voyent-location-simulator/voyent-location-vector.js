@@ -83,10 +83,6 @@ Voyent.LocationVector = Polymer({
                 _this._trackerInstances = e.detail.trackerInstances;
             });
         }
-        this.pathtoimages = '.';
-        document.addEventListener('pathtoimagesChanged', function(e) {
-            _this.pathtoimages = e.detail.path;
-        });
         //set some default values
         this._previousBtnDisabled = true;
         this._nextBtnDisabled = true;
@@ -109,7 +105,8 @@ Voyent.LocationVector = Polymer({
                 return;
             }
             var tracker = this._trackerInstances[_this.tracker+'.'+_this.zonenamespace].tracker;
-            var zones = tracker.zones;
+            var zones = this._trackerInstances[_this.tracker+'.'+_this.zonenamespace].zones;
+            this._marker = this._trackerInstances[_this.tracker+'.'+_this.zonenamespace].marker;
 
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
@@ -133,21 +130,13 @@ Voyent.LocationVector = Polymer({
                 //set location object (take best guess at username and lastUpdated without re-retrieving record)
                 _this._location = location;
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
-                //set marker object
-                var icon = tracker.properties.icon; //********** - INCIDENT DEMO SPECIFIC CODE - **********
-                var marker = new google.maps.Marker({
-                    position: path[_this._index],
-                    map: _this._map,
-                    icon:_this.pathtoimages+'/images/'+icon,
-                    draggable: false //don't allow manual location changes during simulation
-                });
-                _this._marker = marker;
+                _this._marker.setPosition(path[_this._index]);
                 //move the zones with the tracker
-                _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,marker);
+                _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,_this._marker);
                 //disable tracker edits during simulation
-                _this._toggleEditableTracker(zones,marker,false);
+                _this._toggleEditableTracker(zones,_this._marker,false);
                 //start simulation
-                _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
+                _this.fire('startSimulation',{locationMarker:_this._marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
                 _this._doSimulation();
                 //set button states
                 _this._inputsDisabled=true;

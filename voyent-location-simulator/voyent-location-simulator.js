@@ -1383,12 +1383,6 @@ Polymer({
                 _this._clickListener(marker,null,location,'point');
                 _this._handleNewLocationMarker(location.username,marker);
             }
-            else { //vector
-                var trackerId = location.location.properties.trackerId;
-                var zoneNamespace = location.location.properties.zoneNamespace;
-                _this._clickListener(marker,zoneNamespace,null,'point');
-                _this._handleNewLocationMarker(trackerId+'.'+zoneNamespace,marker);
-            }
         });
         this.addEventListener('labelChanged', function(e) {
             for (var i=0; i<_this._children.length; i++) {
