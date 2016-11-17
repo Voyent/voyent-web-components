@@ -301,8 +301,7 @@
                     this._bounds.union(zones[i].getBounds());
                 }
             }
-            //update the tracker so that the tracker
-            //location is always the last known location
+            //keep the tracker instance updated with the latest coordinates
             this._trackerInstances[instanceKey].tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
             this.fire('_trackerInstancesRetrieved',{trackerInstances:this._trackerInstances});
         },
