@@ -176,9 +176,8 @@ Voyent.LocationRoute = Polymer({
                         _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'route'}); //pass required data to the parent component
                         _this._doSimulation();
                         //set button states
-                        _this._inputsDisabled=true;
-                        _this._cancelBtnDisabled=false;
-                        _this._updateBtnDisabled=false;
+                        _this._inputsDisabled = _this._playBtnDisabled = true;
+                        _this._pauseBtnDisabled = _this._cancelBtnDisabled = _this._updateBtnDisabled = false;
                     }).catch(function(error) {
                         _this.fire('message-error', 'Issue updating location: ' + error);
                         console.error('Issue updating location',error);
