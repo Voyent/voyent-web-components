@@ -25,7 +25,7 @@ Voyent.LocationRoute = Polymer({
         this.destination = destination || '';
         this.travelmode = travelmode || 'DRIVING';
         this.speed = speed || 50;
-        this.speedunit = speedunit || 'kph';
+        this.speedunit = speedunit || 'mph';
         this.frequency = frequency || 5;
     },
 
@@ -57,7 +57,7 @@ Voyent.LocationRoute = Polymer({
         /**
          * The unit of speed. Valid values are are `kph` or `mph`.
          */
-        speedunit: { type: String, value: 'kph', observer: '_speedunitValidation' },
+        speedunit: { type: String, value: 'mph', observer: '_speedunitValidation' },
         /**
          * The number of seconds to wait between location updates during a simulation.
          */
