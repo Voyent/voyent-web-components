@@ -837,7 +837,6 @@ Polymer({
 
         if (shape === "tracker"){
             google.maps.event.addListener(location.anchor, 'click', function () {
-
                 _loc.infoWindowSetup(location, geoJSON, "trackerAnchor");
             });
             google.maps.event.addListener(location.anchor, "dragend", function (event) {
@@ -848,8 +847,8 @@ Polymer({
                     _loc.trackerEdited(location, geoJSON, shape);
                 });
                 var activeCircle = location.zones[i];
-                google.maps.event.addListener(location.zones[i], "click", function (event) {
-                    _loc.selectedZone = activeCircle;
+                google.maps.event.addListener(activeCircle, "click", function (event) {
+                    _loc.selectedZone = this;
                     _loc.infoWindowSetup(location, geoJSON, "trackerZone");
                 });
             }
