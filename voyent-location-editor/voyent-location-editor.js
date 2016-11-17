@@ -305,7 +305,7 @@ Polymer({
                 var lng = location.getPosition().lng();
                 var locationObject = {'anchor':location};
                 location.setDraggable(true);
-                location.setOptions({'zIndex':50});
+                //location.setOptions({'zIndex':50});
                 var startCircle = new google.maps.Circle({
                     center:new google.maps.LatLng(lat, lng),
                     editable:true,
@@ -357,7 +357,7 @@ Polymer({
 
                 }]},
                 "properties":{
-                    "label":'default'
+                    "label":'1'
                 }};
                 _loc.istracker = false;
                 shape = "tracker";
@@ -624,12 +624,11 @@ Polymer({
                 },
                 "properties": {
                     "googleMaps": {
-                        "shape": "circle"
-
+                        "shape": "circle",
+                        "zIndex":smallestIndex
                     },
                     "Editable": "true",
                     "Color": "Black",
-                    "zIndex":smallestIndex,
                     "zoneId":geoJSON.zones.features.length + 1
                 }
         };
