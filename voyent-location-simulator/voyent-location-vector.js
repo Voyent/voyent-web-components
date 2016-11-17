@@ -22,7 +22,7 @@ Voyent.LocationVector = Polymer({
         this.zonenamespace = zonenamespace || null;
         this.bearing = bearing || 0;
         this.speed = speed || 50;
-        this.speedunit = speedunit || 'kph';
+        this.speedunit = speedunit || 'mph';
         this.duration = duration || 2;
         this.frequency = frequency || 5;
     },
@@ -47,7 +47,7 @@ Voyent.LocationVector = Polymer({
         /**
          * The unit of speed. Valid values are are `kph` or `mph`.
          */
-        speedunit: { type: String, value: 'kph', observer: '_speedunitValidation' },
+        speedunit: { type: String, value: 'mph', observer: '_speedunitValidation' },
         /**
          * The time in minutes that the tracker will move along it's vector.
          */
