@@ -968,7 +968,7 @@ Polymer({
     },
 
     /**
-     * Handles creating and updating tracker templates when the zones of a tracker instance are resized.
+     * Listener for tracker zone resizing that triggers child template creation or updating.
      * @param trackerId
      * @param zoneNamespace
      * @param zoneId
@@ -1011,8 +1011,8 @@ Polymer({
                 }
                 if (isNewTemplate) {
                     tracker.properties.parentTrackerId = trackerId;
-                    //set tracker id based on instance name + time
-                    tracker._id = zoneNamespace+'_'+new Date().getTime();
+                    //set tracker id based on trackerId and instance name
+                    tracker._id = trackerId+'.'+zoneNamespace
                 }
                 //set the new zone radius and coordinates
                 matchingZone.properties.googleMaps.radius = circle.getRadius();
@@ -1044,7 +1044,7 @@ Polymer({
     },
 
     /**
-     *
+     * Handles saving or updating child tracker templates.
      * @param parentTrackerId
      * @param zoneNamespace
      * @param tracker
@@ -1069,7 +1069,7 @@ Polymer({
                 //backwards since it's likely one of the last children added
                 for (var i=_this._children.length-1; i>=0; i--) {
                     if (_this._children[i].elem.tracker === tracker.properties.parentTrackerId &&
-                        _this._children[i].elem.zonenamespace === tracker._id.split('_')[0]) { //the first part of the id is the instance name
+                        _this._children[i].elem.zonenamespace === zoneNamespace) {
                         _this._children[i].elem.tracker = tracker._id;
                         break;
                     }
@@ -1079,6 +1079,12 @@ Polymer({
                     _this._trackerInstances[tracker._id+'.'+zoneNamespace] = _this._trackerInstances[parentTrackerId+'.'+zoneNamespace];
                     delete _this._trackerInstances[parentTrackerId+'.'+zoneNamespace];
                     trackerInstance = _this._trackerInstances[tracker._id+'.'+zoneNamespace];
+                    //remove tracker instances from the service that were created under the parent template
+                    voyent.io.locate.deleteTrackerInstance({realm:_this.realm,id:parentTrackerId,zoneNamespace:zoneNamespace}).then(function() {
+                    }).catch(function(error) {
+                        _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
+                        console.error('Issue deleting tracker instance:',zoneNamespace,error);
+                    });
                 }
                 //create a tracker instance for the new template
                 var location = {
@@ -1535,20 +1541,13 @@ Polymer({
         var zoneNamespace = child.elem.zonenamespace;
         var instance = this._trackerInstances[trackerId+'.'+zoneNamespace];
         if (!localDeleteOnly) {
-            //remove tracker instance from the service
-            voyent.io.locate.deleteTrackerInstance({realm:this.realm,zoneNamespace:zoneNamespace}).then(function() {
+            //remove tracker instance from the service, if the instance was based
+            //on the child template the service will also delete that template
+            voyent.io.locate.deleteTrackerInstance({realm:this.realm,id:trackerId,zoneNamespace:zoneNamespace}).then(function() {
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
                 console.error('Issue deleting tracker instance:',zoneNamespace,error);
             });
-            //delete tracker template if it is a "child"
-            if (instance.tracker.properties && instance.tracker.properties.parentTrackerId) {
-                voyent.io.locate.deleteTracker({realm:this.realm,id:trackerId}).then(function() {
-                }).catch(function(error) {
-                    _this.fire('message-error', 'Issue deleting tracker template: ' + trackerId + ' ' + error);
-                    console.error('Issue deleting tracker template´:',trackerId,error);
-                });
-            }
         }
         //remove it from the map
         for (var j=0; j<instance.zones.length; j++) {
