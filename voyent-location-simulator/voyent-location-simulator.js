@@ -1678,5 +1678,15 @@ Polymer({
             return;
         }
         this.deleteSimulation(this._activeSim._id);
+    },
+
+    /**
+     * Determine whether or not we display the buttons for managing multiple simulations.
+     * @param numTabs
+     * @returns {boolean}
+     * @private
+     */
+    _displayAllBttns: function(numTabs) {
+        return numTabs > 1;
     }
 });

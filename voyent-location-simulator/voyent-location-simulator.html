@@ -170,9 +170,11 @@ Example:
             <div id="map"></div>
         </div>
         <div class="buttonContainer">
-            <button on-click="cancelAll">Stop All</button>
-            <button on-click="playAll">Play All</button>
-            <button on-click="pauseAll">Pause All</button>
+            <template is="dom-if" if="{{_displayAllBttns(_children.length)}}">
+                <button on-click="cancelAll">Stop All</button>
+                <button on-click="playAll">Run All</button>
+                <button on-click="pauseAll">Pause All</button>
+            </template>
         </div>
         <content select="voyent-location-simulations"></content>
         <div class="buttonContainer">
