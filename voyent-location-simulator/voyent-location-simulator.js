@@ -721,13 +721,13 @@ Polymer({
                 //keep a mapping of all the trackers so we can easily create instances of them later
                 var trackerId = trackers[i]._id;
                 trackerMapping[trackerId] = trackers[i];
-                //if we have a "child" tracker template we set the trackerId to the parent's when searching for icons
-                if (trackers[i].properties && trackers[i].properties.parentTrackerId) {
-                    trackerId = trackers[i].properties.parentTrackerId;
-                }
                 zones = trackers[i].zones.features;
                 if (!trackers[i].properties) {
                     trackers[i].properties = {};
+                }
+                //if we have a "child" tracker template we set the trackerId to the parent's when searching for icons
+                if (trackers[i].properties.parentTrackerId) {
+                    trackerId = trackers[i].properties.parentTrackerId;
                 }
                 for (var j=0; j<zones.length; j++) {
                     zone = zones[j].properties.zoneId;

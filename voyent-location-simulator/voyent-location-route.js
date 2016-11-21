@@ -159,7 +159,7 @@ Voyent.LocationRoute = Polymer({
                     location.username = _this.user || voyent.io.auth.getLastKnownUsername();
                     location.demoUsername = _this.user || voyent.io.auth.getLastKnownUsername(); //(NTFY-301)
                     voyent.io.locate.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
-                        //set location object (take best guess at username and lastUpdated without re-retrieving record)
+                        //set location object
                         _this._location = location;
                         _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                         //set marker object
@@ -306,6 +306,8 @@ Voyent.LocationRoute = Polymer({
         this._playBtnDisabled = false;
         this._pauseBtnDisabled = true;
         this._updateBtnDisabled = true;
+        //disable any maxZoom settings we may have set while running simulation
+        this._map.setOptions({ maxZoom: null });
     },
 
     /**

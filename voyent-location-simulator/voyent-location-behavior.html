@@ -172,7 +172,9 @@
             this._updateOnFrequency();
             this._paused = false;
             var i = this._index+1; //get next coordinate
-            this._location.location.geometry.coordinates = [this._path[i].lng(),this._path[i].lat()]; //get the next location
+            this._location.location.geometry.coordinates = [this._path[i].lng(),this._path[i].lat()];
+            //set the max zoom so the map doesn't zoom in too far when panning during the simulation
+            this._map.setOptions({ maxZoom: 15 });
             var updatePosition = setInterval(function() {
                 //reset the bounds each time so that previous user/tracker locations are not included in the bounds
                 if (!_this._isMultiSim) {
@@ -192,6 +194,7 @@
                 _this._map.panToBounds(_this._bounds);
                 _this.fire('boundsUpdated',{"bounds":_this._bounds});
                 if (_this._paused) {
+                    _this._map.setOptions({ maxZoom: null });
                     //save the current index and stop recursion
                     _this._index = i;
                     clearInterval(updatePosition);

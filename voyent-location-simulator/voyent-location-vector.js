@@ -127,7 +127,7 @@ Voyent.LocationVector = Polymer({
                 }
             };
             voyent.io.locate.updateTrackerLocation({realm:Polymer.dom(this).parentNode.realm,location:location}).then(function(data) {
-                //set location object (take best guess at username and lastUpdated without re-retrieving record)
+                //set location object
                 _this._location = location;
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition(path[_this._index]);
@@ -229,6 +229,8 @@ Voyent.LocationVector = Polymer({
         this._playBtnDisabled = false;
         this._pauseBtnDisabled = true;
         this._updateBtnDisabled = true;
+        //disable any maxZoom settings we may have set while running simulation
+        this._map.setOptions({ maxZoom: null });
     },
 
     /**
