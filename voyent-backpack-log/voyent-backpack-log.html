@@ -7,6 +7,7 @@
 <link rel="import" href="../../paper-item/paper-item.html">
 <link rel="import" href="../../paper-item/paper-item-body.html">
 <link rel="import" href="../../paper-listbox/paper-listbox.html">
+<link rel="import" href="../../paper-dialog/paper-dialog.html">
 <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
 
 <!--
@@ -31,8 +32,8 @@ Example:
             }
             
             .container {
-                width: 95% !important;
-                max-width: 95% !important;
+                width: var(--container-width);
+                max-width: var(--container-width);
                 padding: 10px;
             }
             
@@ -173,6 +174,16 @@ Example:
                 border-left: 1px solid black;
                 border-right: 1px solid black;
             }
+            .viewLink {
+                text-decoration: underline;
+                cursor: pointer;
+            }
+            .mainPane {
+                display: flex;
+                flex-flow: row wrap;
+                align-content: space-between;
+                justify-content: space-between;
+            }
             
             pre {
                 white-space: pre-wrap;
@@ -185,20 +196,26 @@ Example:
         
         <template is="dom-if" if="{{!_tableView}}">
             <div class="container flex layout horizontal">
-                <div class="flex-2">
-                    <div class="dropWrap">
-                        <paper-dropdown-menu label="Time Limit" required="true">
-                            <paper-listbox class="dropdown-content" selected="{{selectedLimit}}">
-                                <template is="dom-repeat" strip-whitespace items="[[_timeLimits]]" as="tlimit" strip-whitespace>
-                                    <paper-item>[[tlimit.name]]</paper-item>
-                                </template>
-                            </paper-listbox>
-                        </paper-dropdown-menu>
+                <template is="dom-if" if="{{!inline}}">
+                    <div class="flex-2">
+                        <div class="dropWrap">
+                            <paper-dropdown-menu label="Time Limit" required="true">
+                                <paper-listbox class="dropdown-content" selected="{{selectedLimit}}">
+                                    <template is="dom-repeat" strip-whitespace items="[[_timeLimits]]" as="tlimit" strip-whitespace>
+                                        <paper-item>[[tlimit.name]]</paper-item>
+                                    </template>
+                                </paper-listbox>
+                            </paper-dropdown-menu>
+                        </div>
                     </div>
-                </div>
-                <div class="flex-1">
-                    <paper-button raised on-click="_getLogs">Retrieve Actions</paper-button>
-                </div>
+                    <div class="flex-1">
+                        <paper-button raised on-click="_getLogs">Retrieve Actions</paper-button>
+                    </div>
+                </template>
+                <template is="dom-if" if="{{inline}}">
+                    <h3>Debug Logs</h3>
+                    <paper-button raised on-click="_getLogs">Refresh</paper-button>
+                </template>
             </div>
         </template>
         
@@ -209,17 +226,29 @@ Example:
                         <!-- We use a pseudo table throughout this page because https://github.com/Polymer/polymer/issues/1567 -->
                         <div class="table">
                             <div class="tr">
-                                <div class="th">Recent {{_pastActions.length}} Actions</div>
-                                <div class="th">Name</div>
+                                <template is="dom-if" if="{{!inline}}">
+                                    <div class="th">Recent {{_pastActions.length}} Actions</div>
+                                    <div class="th">Name</div>
+                                </template>
+                                <template is="dom-if" if="{{inline}}">
+                                    <div class="th">Name</div>
+                                </template>
                                 <div class="th">Time <span class="thSmall">(Current is {{getCurrentDate()}})</span></div>
                             </div>
                             <template is="dom-repeat" strip-whitespace items="{{_pastActions}}"
                                       as="paction" sort="_pastActionSort">
                                 <div class="tr">
-                                    <div class="td centerT">
-                                        <button on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</button>
-                                    </div>
-                                    <div class="td"><span title="Transaction Code: [[paction.tx]]">[[paction.name]]</span></div>
+                                    <template is="dom-if" if="{{!inline}}">
+                                        <div class="td centerT">
+                                            <button on-click="_viewBackpack" data-workflow-item$="{{index}}">View Backpack</button>
+                                        </div>
+                                        <div class="td"><span title="Transaction Code: [[paction.tx]]">[[paction.name]]</span></div>
+                                    </template>
+                                    <template is="dom-if" if="{{inline}}">
+                                        <div class="td">
+                                            <span title="Transaction Code: [[paction.tx]]" on-click="_viewBackpack" data-workflow-item$="{{index}}" class="viewLink">[[paction.name]]</span>
+                                        </div>
+                                    </template>
                                     <div class="td">[[paction.startDate]] <template is="dom-if" if="{{hasDate(paction.endDate)}}">to [[paction.endDate]]</template></div>
                                 </div>
                             </template>
@@ -236,7 +265,12 @@ Example:
                     <div class="table">
                         <div class="tr">
                             <div class="th">
-                                <button on-click="_chooseAnother">Choose Different Action</button>
+                                <template is="dom-if" if="{{!inline}}">
+                                    <button on-click="_chooseAnother">Choose Different Action</button>
+                                </template>
+                                <template is="dom-if" if="{{inline}}">
+                                    <button on-click="_chooseAnother">RETURN</button>
+                                </template>
                             </div>
                             <div class="th">Current Action</div>
                         </div>
@@ -259,7 +293,7 @@ Example:
                     </div>
                 </div>
                 
-                <div class="container flex layout horizontal" style="margin-bottom: 20px;">
+                <div class="container flex layout horizontal mainPane" style="margin-bottom: 20px;">
                     <div class="flex-1 taskPanel">
                         <div class="twrapLeft" style$="max-height: {{_maxHeight}}px">
                             <template is="dom-repeat" strip-whitespace items="{{_taskGroups}}" as="group">
@@ -309,6 +343,11 @@ Example:
                             </template>
                         </div>
                     </div>
+                    
+                    <template is="dom-if" if="{{inline}}">
+                        <div style="width: 100%;"></div>
+                    </template>
+                    
                     <template is="dom-if" if="{{hasLogs()}}">
                         <div id="[[tableWrapId]]" class="flex-3 twrapMain" style$="max-height: {{_maxHeight}}px">
                             <div class="tableNoBorder">

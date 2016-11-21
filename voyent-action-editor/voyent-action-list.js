@@ -38,6 +38,8 @@ Polymer({
         if (typeof this.selectedIndex !== 'undefined' && this.selectedIndex >= 0 && this.selectedIndex <= (this._allActions.length-1)) {
             var _this = this;
             Polymer.dom(this).parentNode.loadAction(this._allActions[this.selectedIndex], function() {
+                _this.fire('action-loaded', _this._allActions[_this.selectedIndex]);
+                    
                 setTimeout(function() {
                     _this.set('selectedIndex', null);
                 },2000);

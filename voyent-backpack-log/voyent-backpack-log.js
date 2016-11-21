@@ -12,6 +12,7 @@ Polymer({
          * @default voyent.io.auth.getLastKnownRealm()
          */
         realm: { type: String },
+        inline: { type: Boolean, value: false, notify: true },
         /**
          * A query object that can be used to find specific log entries.
          *
@@ -40,6 +41,11 @@ Polymer({
          * Selected index of the time limit dropdown
          */
         selectedLimit: { type: Number, value: 1, notify: true },
+        /**
+         * Optional parameter to filter our logs to only include the passed action ID
+         * This is useful for an inline or trimmed down view of the backpack log
+         */
+        filterAction: { type: String, notify: true, reflectToAttribute: true, observer: "_filterActionChanged" }
     },
 
     /**
@@ -54,6 +60,14 @@ Polymer({
         if (!this.account) {
             this.account = voyent.io.auth.getLastKnownAccount();
         }
+        
+        if (this.inline === false) {
+            this.customStyle['--container-width'] = "95% !important";
+        }
+        else {
+            this.customStyle['--container-width'] = "auto";
+        }
+        this.updateStyles();
         
         // Some static variables
         this.getTimeLimits();
@@ -82,6 +96,8 @@ Polymer({
             calcH = 800;
         }
         this.set('_maxHeight', calcH);
+        
+        this.isReady = true;
 	},
 	
     /**
@@ -243,6 +259,16 @@ Polymer({
         var _this = this;
         voyent.io.action.findActions({"realm":this.realm}).then(function(actions) {
             _this._savedActions = actions.length > 0 ? actions : null;
+            
+            // If we have a filterAction set, we will parse the saved list to just that
+            // This will ensure we only bother with log messages associated to that action
+            if (_this.filterAction && _this.filterAction !== null) {
+                for (var i = (_this._savedActions.length-1); i >= 0; i--) {
+                    if (_this.filterAction !== _this._savedActions[i]._id) {
+                        _this._savedActions.splice(i, 1);
+                    }
+                }
+            }
             
             _this._getDebugLogsCall(_this);
         }).catch(function(error) {
@@ -439,7 +465,9 @@ Polymer({
         this.splice('_pastActions', 0, 0, {"name":this.miscName});
         
         // Notify the user
-        this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
+        if (this.inline === false) {
+            this.fire('message-info', "Log size is " + this._allLogs.length + " from " + logs.length + " entries");
+        }
 
         // Clear our old full logs
         logs.length = 0;
@@ -765,5 +793,12 @@ Polymer({
                 }
             }
         },0);
+    },
+    
+    _filterActionChanged: function() {
+        console.log("Filter action in backpack changed to " + this.filterAction);
+        if (this.isReady && this.filterAction && this.filterAction !== null) {
+            this._getLogs();
+        }
     },
 });
