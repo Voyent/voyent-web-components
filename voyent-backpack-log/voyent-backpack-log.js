@@ -796,7 +796,6 @@ Polymer({
     },
     
     _filterActionChanged: function() {
-        console.log("Filter action in backpack changed to " + this.filterAction);
         if (this.isReady && this.filterAction && this.filterAction !== null) {
             this._getLogs();
         }
