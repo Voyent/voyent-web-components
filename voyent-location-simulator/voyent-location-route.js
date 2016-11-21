@@ -216,6 +216,7 @@ Voyent.LocationRoute = Polymer({
      * @private
      */
     _processRoute: function(route) {
+        var _this = this;
         var newRoute = route.slice(0);
         for (var i=0; i<route.length; i++) {
             //nothing to do if we're at the last coordinate
@@ -244,7 +245,7 @@ Voyent.LocationRoute = Polymer({
             var bearing = Math.atan2(y, x);
             //calculate next point, 2 meters from current point towards next point
             var dist = 2; //distance in meters
-            var eRadius = this._EARTH_RADIUS;
+            var eRadius = _this._EARTH_RADIUS;
             var lat = Math.asin(Math.sin(lat1)*Math.cos(dist/eRadius) +
                 Math.cos(lat1)*Math.sin(dist/eRadius)*Math.cos(bearing));
             var lng = lng1 + Math.atan2(Math.sin(bearing)*Math.sin(dist/eRadius)*Math.cos(lat1),
@@ -253,7 +254,7 @@ Voyent.LocationRoute = Polymer({
             if ( !((compare(latOp,lat,lat2)) && (compare(lngOp,lng,lng2))) ) {
                 return false; //we've reached the next point so stop adding coordinates for this iteration
             }
-            newRoute.splice(i+1+(newRoute.length-route.length), 0, new google.maps.LatLng(this._toDegrees(lat),this._toDegrees(lng))); //add the new coordinates to the correct position in the route
+            newRoute.splice(i+1+(newRoute.length-route.length), 0, new google.maps.LatLng(_this._toDegrees(lat),_this._toDegrees(lng))); //add the new coordinates to the correct position in the route
             addCoordinates(lat, lng);
         }
         //compare lat or long values with dynamic operator
