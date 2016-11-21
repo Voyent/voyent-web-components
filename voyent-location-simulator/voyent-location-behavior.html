@@ -289,17 +289,14 @@
         },
 
         /**
-         * Moves zones associated with a tracker to a new location based
-         * on the marker's location and update the stored tracker location.
+         * Update the map bounds and the stored tracker location.
          * @param instanceKey
          * @param marker
          */
         _trackerMoved: function(instanceKey,marker) {
             //update the center point of associated zones
             var zones = this._trackerInstances[instanceKey].zones;
-            var latLng = marker.getPosition();
             for (var i=0; i<zones.length; i++) {
-                zones[i].setCenter(latLng);
                 if (this._bounds) {
                     this._bounds.union(zones[i].getBounds());
                 }

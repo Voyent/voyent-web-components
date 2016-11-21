@@ -1307,6 +1307,8 @@ Polymer({
                 'zIndex': zones[i].properties.googleMaps.zIndex,
                 'editable': true
             });
+            //bind the circle center to the marker position so that when we move the marker the circles get updated
+            circle.bindTo('center', marker, 'position');
             //associate the zone with the tracker so we can sync them on movement
             this._trackerInstances[trackerId+'.'+zoneNamespace].zones.push(circle);
             //add listeners
