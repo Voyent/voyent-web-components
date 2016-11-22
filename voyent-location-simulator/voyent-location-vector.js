@@ -60,7 +60,6 @@ Voyent.LocationVector = Polymer({
 
     //observe non-declared/private properties
     observers: [
-        '_mapChanged(_map)',
         '_pausedChanged(_paused)',
         '_directionChanged(_direction)'
     ],
@@ -101,12 +100,13 @@ Voyent.LocationVector = Polymer({
             return;
         }
         if (!this._path) {
-            if ((this._trackerInstances && Object.keys(this._trackerInstances).length && !this.tracker) /*|| !this.bearing || !this.duration*/) {
+            if ((this._trackerInstances && Object.keys(this._trackerInstances).length && !this.tracker)) {
                 return;
             }
-            var tracker = this._trackerInstances[_this.tracker+'.'+_this.zonenamespace].tracker;
-            var zones = this._trackerInstances[_this.tracker+'.'+_this.zonenamespace].zones;
-            this._marker = this._trackerInstances[_this.tracker+'.'+_this.zonenamespace].marker;
+            var instanceKey = _this.tracker+'.'+_this.zonenamespace;
+            var tracker = this._trackerInstances[instanceKey].tracker;
+            var zones = this._trackerInstances[instanceKey].zones;
+            this._marker = this._trackerInstances[instanceKey].marker;
 
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
@@ -131,8 +131,8 @@ Voyent.LocationVector = Polymer({
                 _this._location = location;
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition(path[_this._index]);
-                //move the zones with the tracker
-                _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,_this._marker);
+                //keep the tracker instance updated with the latest coordinates
+                _this._updateTrackerInstanceLocation(instanceKey,_this._marker.getPosition());
                 //disable tracker edits during simulation
                 _this._toggleEditableTracker(zones,_this._marker,false);
                 //start simulation
@@ -210,27 +210,21 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     _cleanupSimulation: function() {
+        //de-increment pauseCount if a simulation is stopped after being paused
+        if (this._paused) {
+            this.fire('simulationPauseCountUpdated',{"count":this._simulationPauseCount-1});
+        }
+        //fire endSimulation event
+        this.fire('endSimulation',{type:'vector'});
         //allow the zones to be resized again
         this._toggleEditableTracker(this._trackerInstances[this.tracker+'.'+this.zonenamespace].zones,this._marker,true);
         //add listener now that the simulation is done
         this._trackerLocationChangedListener(this._marker,this.tracker+'.'+this.zonenamespace,this._location);
         //reset attributes
-        this._path = null;
-        this._totalDistance = null;
-        this._index = 0;
-        this._interval = 0;
-        this._location = null;
-        this._canceled = false;
-        this._isMultiSim = false;
-        this._inputsDisabled = false;
-        this._previousBtnDisabled=true;
-        this._nextBtnDisabled=true;
-        this._cancelBtnDisabled = true;
-        this._playBtnDisabled = false;
-        this._pauseBtnDisabled = true;
-        this._updateBtnDisabled = true;
-        //disable any maxZoom settings we may have set while running simulation
-        this._map.setOptions({ maxZoom: null });
+        this._path = this._location = this._totalDistance = null;
+        this._index = this._interval = 0;
+        this._canceled = this._inputsDisabled = this._playBtnDisabled = false;
+        this._previousBtnDisabled = this._nextBtnDisabled = this._cancelBtnDisabled = this._pauseBtnDisabled = this._updateBtnDisabled = true;
     },
 
     /**
@@ -345,18 +339,6 @@ Voyent.LocationVector = Polymer({
         if (this.tracker && this._trackerInstances && Object.keys(this._trackerInstances).length>0 &&
             this.zonenamespace && this.bearing.toString().trim()) {
             this._playBtnDisabled=false;
-        }
-    },
-
-    /**
-     * Once the map is available then setup map features.
-     * @param map
-     * @private
-     */
-    _mapChanged: function(map) {
-        if (this._map) {
-            //initialize bounds object for later use
-            this._bounds = new google.maps.LatLngBounds();
         }
     }
 });

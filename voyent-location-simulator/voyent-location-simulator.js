@@ -224,13 +224,8 @@ Polymer({
         if (!children.length) {
             return;
         }
-        if (children.length !== 1) {
-            for (var i=0; i<children.length; i++) {
-                children[i]._playSimulationMulti();
-            }
-        }
-        else {
-            children[0].playSimulation();
+        for (var i=0; i<children.length; i++) {
+            children[i].playSimulation();
         }
     },
 
@@ -1316,10 +1311,10 @@ Polymer({
             this._zoneResizeListener(trackerId,zoneNamespace,zones[i].properties.zoneId,circle);
             //add to regions master list
             this._regions.push(circle);
+            //set the bounds around this newly dropped tracker
+            this._bounds.union(circle.getBounds());
         }
-
-        //set the bounds around this newly dropped tracker
-        this._trackerMoved(trackerId+'.'+zoneNamespace,marker);
+        //pan the map when the tracker is not created via the menu
         if (!this._mapBoundsFixed) {
             this._map.fitBounds(this._bounds);
             this._map.panToBounds(this._bounds);
@@ -1378,6 +1373,10 @@ Polymer({
         var _this = this;
         //add event listeners for voyent-location-route events to parent since the events bubble up (one listener covers all children)
         this.addEventListener('startSimulation', function(e) {
+            //set the max zoom so the map doesn't zoom in too far when panning during the simulation
+            _this._map.setOptions({ maxZoom: 15 });
+            //update our simulation count
+            _this.fire('simulationCountUpdated',{"count":_this._simulationCount+1});
             var marker = e.detail.locationMarker;
             var location = e.detail.location;
             //add click listener to new location marker + make sure we only have one instance of the location marker
@@ -1385,6 +1384,9 @@ Polymer({
                 _this._clickListener(marker,null,location,'point');
                 _this._handleNewLocationMarker(location.username,marker);
             }
+        });
+        this.addEventListener('endSimulation',function(e) {
+            _this.fire('simulationCountUpdated',{"count":_this._simulationCount-1});
         });
         this.addEventListener('labelChanged', function(e) {
             for (var i=0; i<_this._children.length; i++) {

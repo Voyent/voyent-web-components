@@ -28,14 +28,40 @@
 
         ready: function() {
             var _this = this;
-            window.addEventListener('boundsUpdated', function(e) {
-                //when the map bounds are updated for a route or vector during a multi-path
-                //simulation we need to set the bounds based on all simulation positions
-                if (_this._isMultiSim) {
-                    _this._bounds.union(e.detail.bounds);
-                    _this._map.fitBounds(_this._bounds);
-                    _this._map.panToBounds(_this._bounds);
-
+            this._simulationCount = 0; //the number of simulations started (but could be paused)
+            this._simulationPauseCount = 0; //the number of simulations paused
+            //handles updating map bounds during simulations
+            window.addEventListener('_updateBounds', function(e) {
+                //reset the bounds at each movement when running a single simulation
+                //or when running multiple simulations and all are paused except one
+                if (!_this._bounds ||
+                    _this._simulationCount === 1 ||
+                    (_this._simulationCount-1) === _this._simulationPauseCount) {
+                    _this._bounds = new google.maps.LatLngBounds();
+                }
+                //extend the bounds to the passed coordinates
+                for (var i=0; i<e.detail.coordinates.length; i++) {
+                    _this._bounds.extend(e.detail.coordinates[i]);
+                }
+                //fit and pan the map
+                _this._map.fitBounds(_this._bounds);
+                _this._map.panToBounds(_this._bounds);
+            });
+            //keeps the simulationCount in sync across components
+            window.addEventListener('simulationCountUpdated', function(e) {
+                _this._simulationCount = e.detail.count;
+                //if we are not running any simulations then make sure we can zoom the map freely
+                if (_this._simulationCount === 0) {
+                    _this._map.setOptions({ maxZoom: null });
+                }
+            });
+            //keeps the paused simulation count in sync across components
+            window.addEventListener('simulationPauseCountUpdated', function(e) {
+                _this._simulationPauseCount = e.detail.count;
+                //if we are running simulations then make sure we have a maxzoom set
+                //for the bounds (it will be disabled if all simulations are paused)
+                if (_this._simulationCount > _this._simulationPauseCount) {
+                    _this._map.setOptions({ maxZoom: 15 });
                 }
             });
         },
@@ -80,7 +106,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:path[i].lat(),lng:path[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,_this._marker); //update the zone positions
+                    _this._updateTrackerInstanceLocation(_this.tracker+'.'+_this.zonenamespace,_this._marker.getPosition());
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
@@ -116,7 +142,7 @@
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,_this._marker); //update the zone positions
+                    _this._updateTrackerInstanceLocation(_this.tracker+'.'+_this.zonenamespace,_this._marker.getPosition());
                 }
                 else {
                     _this._updateETA(_this._totalMills+_this._interval); //update the ETA
@@ -153,17 +179,6 @@
         },
 
         /**
-         * Wrapper for playSimulation. Specifies a special flag for playing multiple simulations simultaneously.
-         * @private
-         */
-        _playSimulationMulti: function() {
-            //start the simulation with a clean bounds
-            this._bounds = new google.maps.LatLngBounds();
-            this._isMultiSim = true;
-            this.playSimulation();
-        },
-
-        /**
          * Handles continuous playing of the simulation.
          * @private
          */
@@ -173,31 +188,31 @@
             this._paused = false;
             var i = this._index+1; //get next coordinate
             this._location.location.geometry.coordinates = [this._path[i].lng(),this._path[i].lat()];
-            //set the max zoom so the map doesn't zoom in too far when panning during the simulation
-            this._map.setOptions({ maxZoom: 15 });
             var updatePosition = setInterval(function() {
-                //reset the bounds each time so that previous user/tracker locations are not included in the bounds
-                if (!_this._isMultiSim) {
-                    //reset the bounds every time movement occurs when running a single simulation
-                    _this._bounds = new google.maps.LatLngBounds();
-                }
                 _this._marker.setPosition({lat:_this._path[i].lat(),lng:_this._path[i].lng()}); //update the marker position
+                var coordinates = [new google.maps.LatLng(_this._path[i].lat(),_this._path[i].lng())];
                 if (_this.tracker) {
-                    _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,_this._marker); //update the zone positions
+                    var instanceKey = _this.tracker+'.'+_this.zonenamespace;
+                    _this._updateTrackerInstanceLocation(instanceKey,_this._marker.getPosition());
+                    //we need to include the bounds of the tracker zones when updating map bounds
+                    var zones = _this._trackerInstances[instanceKey].zones;
+                    for (var j=0; j<zones.length; j++) {
+                        coordinates.push(zones[j].getBounds().getNorthEast());
+                        coordinates.push(zones[j].getBounds().getSouthWest());
+                    }
                 }
                 else {
                     _this._updateETA(_this._totalMills-_this._interval); //update the ETA
                 }
-                //keep the map zoomed on the simulation
-                _this._bounds.extend(new google.maps.LatLng(_this._path[i].lat(),_this._path[i].lng()));
-                _this._map.fitBounds(_this._bounds);
-                _this._map.panToBounds(_this._bounds);
-                _this.fire('boundsUpdated',{"bounds":_this._bounds});
+                _this.fire('_updateBounds',{"coordinates":coordinates});
                 if (_this._paused) {
-                    _this._map.setOptions({ maxZoom: null });
                     //save the current index and stop recursion
                     _this._index = i;
                     clearInterval(updatePosition);
+                    //if all simulations are paused then allow the map to be zoomed freely
+                    if (_this._simulationPauseCount === _this._simulationCount) {
+                        _this._map.setOptions({ maxZoom: null });
+                    }
                     return;
                 }
                 if (_this._canceled || i+1 == _this._path.length) {
@@ -276,8 +291,7 @@
                 if (location.username && location.username.length > 0) {
                     location.demoUsername = location.username; //(NTFY-301)
                 }
-                //move the zones with the tracker
-                _this._trackerMoved(instanceKey,marker);
+                _this._updateTrackerInstanceLocation(instanceKey,marker.getPosition());
 
                 voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
@@ -289,20 +303,13 @@
         },
 
         /**
-         * Update the map bounds and the stored tracker location.
+         * Keeps the coordinates of the tracker in sync with the passed latLng object.
          * @param instanceKey
-         * @param marker
+         * @param latLng
          */
-        _trackerMoved: function(instanceKey,marker) {
-            //update the center point of associated zones
-            var zones = this._trackerInstances[instanceKey].zones;
-            for (var i=0; i<zones.length; i++) {
-                if (this._bounds) {
-                    this._bounds.union(zones[i].getBounds());
-                }
-            }
+        _updateTrackerInstanceLocation: function(instanceKey,latLng) {
             //keep the tracker instance updated with the latest coordinates
-            this._trackerInstances[instanceKey].tracker.anchor.geometry.coordinates = [marker.getPosition().lng(),marker.getPosition().lat()];
+            this._trackerInstances[instanceKey].tracker.anchor.geometry.coordinates = [latLng.lng(),latLng.lat()];
             this.fire('_trackerInstancesRetrieved',{trackerInstances:this._trackerInstances});
         },
 
@@ -334,10 +341,14 @@
          * @private
          */
         _pausedChanged: function(paused) {
+            //update button state
             this._previousBtnDisabled=!paused;
             this._nextBtnDisabled=!paused;
             this._playBtnDisabled = !paused;
             this._pauseBtnDisabled = paused;
+            //keep our pause count in sync
+            var count = paused?(this._simulationPauseCount+1):(this._simulationPauseCount-1);
+            this.fire('simulationPauseCountUpdated',{"count":count<0?0:count});
         },
 
         /**

@@ -285,6 +285,12 @@ Voyent.LocationRoute = Polymer({
      * @private
      */
     _cleanupSimulation: function() {
+        //de-increment pauseCount if a simulation is stopped after being paused
+        if (this._paused) {
+            this.fire('simulationPauseCountUpdated',{"count":this._simulationPauseCount-1});
+        }
+        //fire endSimulation event
+        this.fire('endSimulation',{type:'route'});
         //allow the location marker to be dragged
         this._marker.setDraggable(true);
         //remove the directions overlay
@@ -292,23 +298,10 @@ Voyent.LocationRoute = Polymer({
         //add listener now that the simulation is done
         this._userLocationChangedListener(this._marker,this._location);
         //reset attributes
-        this._path = null;
-        this._index = 0;
-        this._interval = 0;
-        this._location = null;
-        this._eta = null;
-        this._totalMills = 0;
-        this._canceled = false;
-        this._isMultiSim = false;
-        this._inputsDisabled = false;
-        this._previousBtnDisabled=true;
-        this._nextBtnDisabled=true;
-        this._cancelBtnDisabled = true;
-        this._playBtnDisabled = false;
-        this._pauseBtnDisabled = true;
-        this._updateBtnDisabled = true;
-        //disable any maxZoom settings we may have set while running simulation
-        this._map.setOptions({ maxZoom: null });
+        this._path = this._location = this._eta = null;
+        this._index = this._interval = this._totalMills = 0;
+        this._canceled = this._inputsDisabled = this._playBtnDisabled = false;
+        this._previousBtnDisabled = this._nextBtnDisabled = this._cancelBtnDisabled = this._pauseBtnDisabled = this._updateBtnDisabled = true;
     },
 
     /**
@@ -334,8 +327,6 @@ Voyent.LocationRoute = Polymer({
      */
     _mapChanged: function(map) {
         if (this._map) {
-            //initialize bounds object for later use
-            this._bounds = new google.maps.LatLngBounds();
             //setup direction objects for querying and drawing directions
             this._directionsService = new google.maps.DirectionsService();
             this._directionsRenderer = new google.maps.DirectionsRenderer({map:this._map,preserveViewport:true,hideRouteList:true,suppressMarkers:true});
