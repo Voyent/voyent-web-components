@@ -1296,11 +1296,12 @@ Polymer({
         var zones = tracker.zones.features;
         for (var i=0; i<zones.length; i++) {
             circle = new google.maps.Circle({
-                'map': this._map,
-                'radius': zones[i].properties.googleMaps.radius,
-                'fillColor': zones[i].properties.Color,
-                'zIndex': zones[i].properties.googleMaps.zIndex,
-                'editable': true
+                map: this._map,
+                radius: zones[i].properties.googleMaps.radius,
+                fillColor: zones[i].properties.Color,
+                zIndex: zones[i].properties.googleMaps.zIndex,
+                editable: true,
+                draggable: false
             });
             //bind the circle center to the marker position so that when we move the marker the circles get updated
             circle.bindTo('center', marker, 'position');

@@ -64,6 +64,8 @@
                     _this._map.setOptions({ maxZoom: 15 });
                 }
             });
+            //toggle for properly handling tracker location changes
+            this._ignoreCenterChanges = false;
         },
 
         /**
@@ -285,13 +287,38 @@
             var _this = this;
             //clear the listeners first since we will call this function twice
             //in cases where we need to dynamically create a tracker template
+
+            //Originally we just had the "dragend" listener attached to the marker but once we enabled editable tracker
+            //zones there is another drag point created at the center of the circle. We need to handle dragging by this
+            //point and also by the original marker so we add the following listeners to cover all cases.
+            google.maps.event.clearListeners(marker,'dragstart');
+            google.maps.event.addListener(marker, "dragstart", function () {
+                _this._ignoreCenterChanges = true;
+            });
             google.maps.event.clearListeners(marker,'dragend');
             google.maps.event.addListener(marker, "dragend", function () {
-                location.location.geometry.coordinates = [marker.getPosition().lng(), marker.getPosition().lat()];
+                handleLocationChange(instanceKey,marker.getPosition(),location);
+                _this._ignoreCenterChanges = false;
+            });
+            //this zone drag listener is because the center-most zone can be dragged when
+            //enabling editing on circles so we need to handle this case as well
+            var circle = this._trackerInstances[instanceKey].zones[0];
+            google.maps.event.clearListeners(circle,'center_changed');
+            google.maps.event.addListener(circle, "center_changed", function() {
+                //when dragging by the marker this will fire continuously so we want to ignore the listener
+                //firing in these cases and only handle it when dragging by the center point
+                if (_this._ignoreCenterChanges) {
+                    return;
+                }
+                handleLocationChange(instanceKey,circle.getCenter(),location);
+            });
+
+            function handleLocationChange(instanceKey,latLng,location) {
+                location.location.geometry.coordinates = [latLng.lng(), latLng.lat()];
                 if (location.username && location.username.length > 0) {
                     location.demoUsername = location.username; //(NTFY-301)
                 }
-                _this._updateTrackerInstanceLocation(instanceKey,marker.getPosition());
+                _this._updateTrackerInstanceLocation(instanceKey,latLng);
 
                 voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
@@ -299,7 +326,7 @@
                     _this.fire('message-error', 'Issue changing location of tracker "' + location.location.properties.zoneNamespace + '":' + error);
                     console.error('Issue changing location of tracker "' + location.location.properties.zoneNamespace + '":', error);
                 });
-            });
+            }
         },
 
         /**
