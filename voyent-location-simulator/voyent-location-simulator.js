@@ -979,6 +979,8 @@ Polymer({
             var isNewTemplate = !tracker.properties || !tracker.properties.parentTrackerId;
             if (isNewTemplate) {
                 tracker = JSON.parse(JSON.stringify(tracker));
+                //set our new tracker base into our instance
+                trackerInstance.tracker = tracker;
                 //set the new template position to the tracker instance coordinate
                 tracker.anchor.geometry.coordinates = [trackerInstance.marker.getPosition().lng(),trackerInstance.marker.getPosition().lat()]; //anchor coordinates are lng,lat
             }
