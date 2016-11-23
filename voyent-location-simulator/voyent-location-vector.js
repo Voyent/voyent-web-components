@@ -177,32 +177,29 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     _generatePath: function(tracker) {
-        var _this = this;
-        var path = [];
+        var path = []; //array of latLng objects containing all coordinates for the path
         var coordDistance = 2; //distance between each coordinate, in meters
         var numCoords = this._totalDistance / coordDistance; //the number of coordinates needed to cover the path distance
 
         var lat1 = this._toRadians(tracker.anchor.geometry.coordinates[1]);
         var lng1 = this._toRadians(tracker.anchor.geometry.coordinates[0]);
-        addCoordinates(lat1,lng1);
-        return path;
 
         //generate coordinates 2 meters apart until we reach the number of coordinates that we need
-        function addCoordinates(lat1, lng1) {
-            var bearing = _this._toRadians(_this.bearing);
-            var eRadius = _this._EARTH_RADIUS;
+        var lat2, lng2;
+        for (var i=0; i<numCoords; i++) {
+            var bearing = this._toRadians(this.bearing);
+            var eRadius = this._EARTH_RADIUS;
 
-            var lat2 = Math.asin(Math.sin(lat1)*Math.cos(coordDistance/eRadius) +
+            lat2 = Math.asin(Math.sin(lat1)*Math.cos(coordDistance/eRadius) +
                 Math.cos(lat1)*Math.sin(coordDistance/eRadius)*Math.cos(bearing));
-            var lng2 = lng1 + Math.atan2(Math.sin(bearing)*Math.sin(coordDistance/eRadius)*Math.cos(lat1),
+            lng2 = lng1 + Math.atan2(Math.sin(bearing)*Math.sin(coordDistance/eRadius)*Math.cos(lat1),
                     Math.cos(coordDistance/eRadius)-Math.sin(lat1)*Math.sin(lat2));
 
-            path.push(new google.maps.LatLng(_this._toDegrees(lat2),_this._toDegrees(lng2)));
-
-            if (path.length < numCoords) {
-                addCoordinates(lat2, lng2);
-            }
+            path.push(new google.maps.LatLng(this._toDegrees(lat2),this._toDegrees(lng2)));
+            lat1 = lat2;
+            lng1 = lng2;
         }
+        return path;
     },
 
     /**
