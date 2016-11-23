@@ -305,9 +305,9 @@
             var circle = this._trackerInstances[instanceKey].zones[0];
             google.maps.event.clearListeners(circle,'center_changed');
             google.maps.event.addListener(circle, "center_changed", function() {
-                //when dragging by the marker this will fire continuously so we want to ignore the listener
-                //firing in these cases and only handle it when dragging by the center point
-                if (_this._ignoreCenterChanges) {
+                //don't fire this listener when dragging by the marker or while running a simulation
+                if (_this._ignoreCenterChanges ||
+                    (_this._simulationCount && _this._simulationCount > _this._simulationPauseCount)) {
                     return;
                 }
                 handleLocationChange(instanceKey,circle.getCenter(),location);
