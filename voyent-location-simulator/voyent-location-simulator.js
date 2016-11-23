@@ -191,7 +191,8 @@ Polymer({
         //chain async calls so we can have one unified callback
         var promises = [];
         //get regioins, poi, tracker template and last user and tracker locations
-        promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
+        //ignore regions that are tracker zones
+        promises.push(voyent.io.locate.findRegions({realm:this.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function(regions) {
             _this._updateRegions(regions);
         }));
         promises.push(voyent.io.locate.getAllPOIs({realm:this.realm}).then(function(pois) {
@@ -547,11 +548,6 @@ Polymer({
                 }
                 var geometry = location.geometry;
                 if (!geometry) {
-                    continue;
-                }
-                if (location.properties && location.properties.zoneId) {
-                    //ignore regions that are connected to zones since
-                    //they will be retrieved when getting trackers
                     continue;
                 }
                 var type = geometry.type.toLowerCase();
@@ -1011,7 +1007,7 @@ Polymer({
                 }
                 //set the new zone radius and coordinates
                 matchingZone.properties.googleMaps.radius = circle.getRadius();
-                _this._setCoordinates(matchingZone,circle);
+                _this._setCoordinates(trackerInstance);
                 //save the template
                 _this._saveTrackerTemplate(tracker.properties.parentTrackerId,zoneNamespace,tracker,isNewTemplate);
             }
@@ -1019,22 +1015,23 @@ Polymer({
     },
 
     /**
-     * Calculates and sets the coordinates of a zone based on it's center position and radius.
-     * @param zone
-     * @param circle
+     * Calculates and sets the coordinates of zones based on their center position and radius.
+     * @param trackerInstance
      * @private
      */
-    _setCoordinates: function (zone,circle) {
+    _setCoordinates: function (trackerInstance) {
         var N = 50; //number of "sides" the circle approximation will have
         var degreeStep = 360 / N;
-        zone.geometry.coordinates = [[]];
-        for (var i = 0; i < N; i++) {
-            var latLng = google.maps.geometry.spherical.computeOffset(circle.getCenter(), circle.getRadius(), degreeStep * i);
-            zone.geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
-            //push the same coordinate as the start coordinate to complete the circle
-            if (i + 1 === N) {
-                zone.geometry.coordinates[0].push(zone.geometry.coordinates[0][0]);
+        var geoZone;
+        for (var i=0; i<trackerInstance.tracker.zones.features.length; i++) {
+            geoZone = trackerInstance.tracker.zones.features[i];
+            geoZone.geometry.coordinates = [[]];
+            for (var j = 0; j < N; j++) {
+                var latLng = google.maps.geometry.spherical.computeOffset(trackerInstance.zones[i].getCenter(), trackerInstance.zones[i].getRadius(), degreeStep * j);
+                geoZone.geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
             }
+            //push the same coordinate as the start coordinate to complete the circle
+            geoZone.geometry.coordinates[0].push(geoZone.geometry.coordinates[0][0]);
         }
     },
 

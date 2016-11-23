@@ -186,10 +186,9 @@ Voyent.LocationVector = Polymer({
 
         //generate coordinates 2 meters apart until we reach the number of coordinates that we need
         var lat2, lng2;
+        var bearing = this._toRadians(this.bearing);
+        var eRadius = this._EARTH_RADIUS;
         for (var i=0; i<numCoords; i++) {
-            var bearing = this._toRadians(this.bearing);
-            var eRadius = this._EARTH_RADIUS;
-
             lat2 = Math.asin(Math.sin(lat1)*Math.cos(coordDistance/eRadius) +
                 Math.cos(lat1)*Math.sin(coordDistance/eRadius)*Math.cos(bearing));
             lng2 = lng1 + Math.atan2(Math.sin(bearing)*Math.sin(coordDistance/eRadius)*Math.cos(lat1),
