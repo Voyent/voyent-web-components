@@ -49,7 +49,7 @@ Voyent.LocationVector = Polymer({
          */
         speedunit: { type: String, value: 'mph', observer: '_speedunitValidation' },
         /**
-         * The time in minutes that the tracker will move along it's vector.
+         * The time in minutes that the tracker will move along the bearing.
          */
         duration: { type: Number, value: 2, observer: '_durationValidation' },
         /**
@@ -152,7 +152,7 @@ Voyent.LocationVector = Polymer({
     },
 
     /**
-     * Retrieve the vector in JSON format.
+     * Retrieve the tracker vector in JSON format.
      * @returns {{tracker: *, zonenamespace: *, bearing: *, speed: *, speedunit: *, duration: *, frequency: *}}
      */
     getJSON: function() {
@@ -225,7 +225,7 @@ Voyent.LocationVector = Polymer({
     },
 
     /**
-     * Calculate the total vector distance based on the current speed and duration.
+     * Calculate the total tracker vector distance based on the current speed and duration.
      * @returns {number}
      * @private
      */

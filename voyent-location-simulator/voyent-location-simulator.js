@@ -155,13 +155,13 @@ Polymer({
         if (!this._trackerButtonAdded) {
             var _this = this;
             if (this._trackers && Object.keys(this._trackers).length) {
-                var incidentBttn = this.$.incidentBttn.cloneNode(true);
-                incidentBttn.onclick = this._customBttnClicked;
-                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
+                var trackerBttn = this.$.trackerBttn.cloneNode(true);
+                trackerBttn.onclick = this._customBttnClicked;
+                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(trackerBttn);
                 //delay so that the button isn't shown on
                 //the page before being moved into the map
                 setTimeout(function () {
-                    incidentBttn.hidden = false;
+                    trackerBttn.hidden = false;
                     _this._trackerButtonAdded = true;
                 }, 100);
             }
@@ -332,7 +332,7 @@ Polymer({
         }
         //draw the tracker on the map
         this._drawTracker(tracker,zoneNamespace,position,!!noLocationUpdate);
-        //first append the new vector as a direct child of the component so it inherits any custom styling
+        //first append the new tracker vector as a direct child of the component so it inherits any custom styling
         var vector = new Voyent.LocationVector(this._map,this._trackerInstances,tracker,zoneNamespace,bearing,speed,speedunit,duration,frequency);
         Polymer.dom(this).appendChild(vector);
         setTimeout(function (vector) {
@@ -834,7 +834,7 @@ Polymer({
             if (trackersOnly && this._children[i].elem.nodeName !== 'VOYENT-LOCATION-VECTOR') {
                 continue;
             }
-            //if the routes contained a vector be sure to remove the associated entity from the map
+            //if the routes contain a tracker vector be sure to remove the associated entity from the map
             if (this._children[i].elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
                 this._removeTracker(this._children[i],!!trackersOnly);
             }
@@ -1152,7 +1152,7 @@ Polymer({
         //store the click coordinates for later use
         this._lastClickCoordinates = [marker.getPosition().lat(),marker.getPosition().lng()];
         //doing this as a computed binding in the template doesn't work, so set the menuItems here instead
-        this._incidentMenuItems = [];
+        this._trackerMenuItems = [];
         for (var trackerKey in this._trackers) {
             if (!this._trackers.hasOwnProperty(trackerKey)) {
                 continue;
@@ -1160,22 +1160,22 @@ Polymer({
             //only show "parent" tracker templates
             if (!this._trackers[trackerKey].properties ||
                 !this._trackers[trackerKey].properties.parentTrackerId) {
-                this.push('_incidentMenuItems',this._trackers[trackerKey]);
+                this.push('_trackerMenuItems',this._trackers[trackerKey]);
             }
         }
         //set the menu width based on the longest string in the menu
-        var strLength = Math.max.apply(null, this._incidentMenuItems.map(function(obj) {
+        var strLength = Math.max.apply(null, this._trackerMenuItems.map(function(obj) {
             if (obj.label) { return obj.label.length; }
             else if (obj._id) { return obj._id.length; }
             return 0;
         }));
-        this.$.incidentMenu.style.width = (7.5*strLength)+'px';
+        this.$.trackerMenu.style.width = (7.5*strLength)+'px';
         //set the menu height based on the number of menu items
-        this.$.incidentMenu.style.height = 24*this._incidentMenuItems.length+'px';
+        this.$.trackerMenu.style.height = 24*this._trackerMenuItems.length+'px';
         //render the context menu at the pixel coordinate
         var pos = this._returnPixelCoordinate(marker.getPosition());
-        this.$.incidentMenu.style.left = pos.left + 'px';
-        this.$.incidentMenu.style.top = pos.top + 'px';
+        this.$.trackerMenu.style.left = pos.left + 'px';
+        this.$.trackerMenu.style.top = pos.top + 'px';
         this._hideIncidentMenu = false;
         //we no longer need the marker so delete it
         marker.setMap(null);
@@ -1188,15 +1188,15 @@ Polymer({
      * @private
      */
     _showIncidentNamePrompt: function (trackerId) {
-        var incidentName = '';
+        var trackerName = '';
         //check that the instance name is valid and not already being used
-        while (!incidentName || !incidentName.trim().length || this._trackerInstances[trackerId+'.'+incidentName]) {
-            incidentName = prompt('Please enter an incident name', '');
-            if (incidentName === null) { //cancel was pressed
+        while (!trackerName || !trackerName.trim().length || this._trackerInstances[trackerId+'.'+trackerName]) {
+            trackerName = prompt('Please enter an incident name', '');
+            if (trackerName === null) { //cancel was pressed
                 return null;
             }
         }
-        return incidentName;
+        return trackerName;
     },
 
     /**
@@ -1340,8 +1340,8 @@ Polymer({
             location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             cb();
         }).catch(function (error) {
-            _this.fire('message-error', 'Issue creating new incident: ' + location.location.properties.zoneNamespace);
-            console.error('Issue creating new incident: ' + location.location.properties.zoneNamespace, error);
+            _this.fire('message-error', 'Issue creating new tracker location: ' + location.location.properties.zoneNamespace);
+            console.error('Issue creating new tracker location: ' + location.location.properties.zoneNamespace, error);
         });
     },
 
@@ -1516,7 +1516,7 @@ Polymer({
                         this.set('_contextMenuDisabled',true);
                     }
                 }
-                //if a vector is deleted then remove it from the map as well
+                //if a tracker vector is deleted then remove it from the map as well
                 if (matchingChild.elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
                    this._removeTracker(matchingChild);
                 }
