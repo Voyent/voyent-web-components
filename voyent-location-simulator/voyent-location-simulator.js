@@ -83,11 +83,15 @@ Polymer({
             _this._map = new google.maps.Map(_this.$.map, {
                 zoom: 8,
                 center: new google.maps.LatLng(51.08427,-114.13062),
+                streetViewControl: false,
                 mapTypeControlOptions: {
                     style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
                     position: google.maps.ControlPosition.RIGHT_TOP
                 },
-                signed_in: false
+                zoomControlOptions: {
+                    style: google.maps.ZoomControlStyle.LARGE,
+                    position: google.maps.ControlPosition.LEFT_CENTER
+                }
             });
             _this.fire('mapInitialized', {map: _this._map});
             _this._calcMapSize();
