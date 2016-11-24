@@ -1090,7 +1090,8 @@ Polymer({
                         "geometry": { "type" : "Point", "coordinates" : [tracker.anchor.geometry.coordinates[0],tracker.anchor.geometry.coordinates[1]] },
                         "properties": {
                             "trackerId": tracker._id,
-                            "zoneNamespace": zoneNamespace
+                            "zoneNamespace": zoneNamespace,
+                            "updateType": "manual" //incident demo
                         }
                     }
                 };
@@ -1294,7 +1295,8 @@ Polymer({
                 "geometry": { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] },
                 "properties": {
                     "trackerId": trackerId,
-                    "zoneNamespace": zoneNamespace
+                    "zoneNamespace": zoneNamespace,
+                    "updateType": "manual" //incident demo
                 }
             }
         };
@@ -1344,6 +1346,12 @@ Polymer({
         }
     },
 
+    /**
+     * Convenience function for updating a tracker location.
+     * @param location
+     * @param cb
+     * @private
+     */
     _updateTrackerLocation: function(location,cb) {
         var _this = this;
         voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
