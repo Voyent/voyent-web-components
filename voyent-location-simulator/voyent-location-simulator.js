@@ -634,11 +634,20 @@ Polymer({
             var coords = location.location.geometry.coordinates;
             var latLng = new google.maps.LatLng(coords[1], coords[0]);
             _this._bounds.extend(latLng);
+            
+            var labelText = "?";
+            if (location.username && location.username.length > 0) {
+                labelText = location.username.substring(0, 1).toLowerCase();
+            }
             var marker = new google.maps.Marker({
                 position: latLng,
                 map: _this._map,
                 draggable: true,
-                icon: _this.pathtoimages+'/images/user_marker.png'
+                icon: _this.pathtoimages+'/images/user_marker.png',
+                label: {
+                    text: labelText,
+                    color: "white",
+                }
             });
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,null,location,location.location.geometry.type.toLowerCase());
