@@ -133,8 +133,8 @@ Voyent.LocationVector = Polymer({
                 _this._marker.setPosition(path[_this._index]);
                 //keep the tracker instance updated with the latest coordinates
                 _this._updateTrackerInstanceLocation(instanceKey,_this._marker.getPosition());
-                //disable tracker edits during simulation
-                _this._toggleEditableTracker(zones,_this._marker,false);
+                //disable all tracker edits during simulation
+                _this._toggleEditableTracker(null,null,false);
                 //start simulation
                 _this.fire('startSimulation',{locationMarker:_this._marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
                 _this._doSimulation();
@@ -212,8 +212,10 @@ Voyent.LocationVector = Polymer({
         }
         //fire endSimulation event
         this.fire('endSimulation',{type:'vector'});
-        //allow the zones to be resized again
-        this._toggleEditableTracker(this._trackerInstances[this.tracker+'.'+this.zonenamespace].zones,this._marker,true);
+        //allow all the tracker zones to be resized again if we aren't running simulations
+        if (!this._simulationCount) {
+            this._toggleEditableTracker(null,null,true);
+        }
         //add listener now that the simulation is done
         this._trackerLocationChangedListener(this._marker,this.tracker+'.'+this.zonenamespace,this._location);
         //reset attributes

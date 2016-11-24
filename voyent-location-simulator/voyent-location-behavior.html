@@ -341,16 +341,32 @@
         },
 
         /**
-         * Toggles editable/draggable on the passed zones and anchor.
+         * Toggles editable/draggable on the passed zones and marker.
+         * If zones and marker are null we'll toggle all trackers.
          * @param zones
          * @param marker
-         * @param editable - whether or not to allow the zones to be resized
+         * @param editable - whether or not to allow the zones to be resized and the marker dragged
          */
         _toggleEditableTracker: function(zones,marker,editable) {
-            for (var i=0; i<zones.length; i++) {
-                zones[i].setEditable(!!editable);
+            if (!zones && !marker) {
+                for (var instance in this._trackerInstances) {
+                    if (!this._trackerInstances.hasOwnProperty(instance)) {
+                        continue;
+                    }
+                    zones = this._trackerInstances[instance].zones;
+                    marker = this._trackerInstances[instance].marker;
+                    for (var i=0; i<zones.length; i++) {
+                        zones[i].setEditable(!!editable);
+                    }
+                    marker.setDraggable(!!editable);
+                }
             }
-            marker.setDraggable(!!editable);
+            else {
+                for (var j=0; j<zones.length; j++) {
+                    zones[j].setEditable(!!editable);
+                }
+                marker.setDraggable(!!editable);
+            }
         },
 
         /**
