@@ -1193,10 +1193,17 @@ Polymer({
     _showIncidentNamePrompt: function (trackerId) {
         var trackerName = '';
         //check that the instance name is valid and not already being used
-        while (!trackerName || !trackerName.trim().length || this._trackerInstances[trackerId+'.'+trackerName]) {
-            trackerName = prompt('Please enter an incident name', '');
+        var invalid = false;
+        var msg = 'Please enter an incident name';
+        while (!trackerName || !trackerName.trim().length || invalid) {
+            trackerName = prompt(msg, '');
             if (trackerName === null) { //cancel was pressed
                 return null;
+            }
+            invalid = !!(this._trackerInstances[trackerId+'.'+trackerName] || //check for zoneNamespace being used for parent trackers
+                         this._trackerInstances[trackerId+'.'+trackerName+'.'+trackerName]); //check for zoneNamespace being used for child trackers
+            if (invalid) {
+                msg = 'Incident name already in use, please try another';
             }
         }
         return trackerName;
