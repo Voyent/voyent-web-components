@@ -101,7 +101,14 @@
             if (!this._path || !this._marker || !this._location || !this._paused) {
                 return;
             }
-            var func = this.tracker ? 'updateTrackerLocation' : 'updateLocation';
+            var func;
+            if (this.tracker) {
+                func = 'updateTrackerLocation';
+                this._location.location.properties.updateType = 'manual'; //incident demo
+            }
+            else {
+                func = 'updateLocation';
+            }
             var path = this._path;
             this._location.location.geometry.coordinates = [path[i].lng(),path[i].lat()]; //get the next location
             voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
@@ -137,7 +144,14 @@
             if (!this._path || !this._marker || !this._location || !this._paused || i<0) {
                 return;
             }
-            var func = this.tracker ? 'updateTrackerLocation' : 'updateLocation';
+            var func;
+            if (this.tracker) {
+                func = 'updateTrackerLocation';
+                this._location.location.properties.updateType = 'manual'; //incident demo
+            }
+            else {
+                func = 'updateLocation';
+            }
             var route = this._path;
             this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the previous location
             voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
@@ -168,7 +182,14 @@
             if (!this._location) {
                 return;
             }
-            var func = this.tracker ? 'updateTrackerLocation' : 'updateLocation';
+            var func;
+            if (this.tracker) {
+                func = 'updateTrackerLocation';
+                this._location.location.properties.updateType = 'simulated'; //incident demo
+            }
+            else {
+                func = 'updateLocation';
+            }
             voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
                 if (!_this._location) {
                     return; //the simulation has been cleaned up
@@ -243,7 +264,14 @@
                     clearInterval(updateLocation);
                     return;
                 }
-                var func = this.tracker ? 'updateTrackerLocation' : 'updateLocation';
+                var func;
+                if (_this.tracker) {
+                    func = 'updateTrackerLocation';
+                    _this._location.location.properties.updateType = 'simulated'; //incident demo
+                }
+                else {
+                    func = 'updateLocation';
+                }
                 voyent.io.locate[func]({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
                     if (!_this._location) {
                         return; //the simulation has been cleaned up
@@ -320,6 +348,7 @@
                 }
                 _this._updateTrackerInstanceLocation(instanceKey,latLng);
 
+                location.location.properties.updateType = 'manual'; //incident demo
                 voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {

@@ -122,7 +122,8 @@ Voyent.LocationVector = Polymer({
                     },
                     "properties": {
                         "trackerId": this.tracker,
-                        "zoneNamespace": this.zonenamespace
+                        "zoneNamespace": this.zonenamespace,
+                        "updateType": "manual" //incident demo (this first update is manual)
                     }
                 }
             };
@@ -130,13 +131,15 @@ Voyent.LocationVector = Polymer({
                 //set location object
                 _this._location = location;
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
+                //send startSimulation event
+                _this.fire('startSimulation',{locationMarker:_this._marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
+                //update marker position
                 _this._marker.setPosition(path[_this._index]);
                 //keep the tracker instance updated with the latest coordinates
                 _this._updateTrackerInstanceLocation(instanceKey,_this._marker.getPosition());
                 //disable all tracker edits during simulation
                 _this._toggleEditableTracker(null,null,false);
-                //start simulation
-                _this.fire('startSimulation',{locationMarker:_this._marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
+                //actually start simulation
                 _this._doSimulation();
                 //set button states
                 _this._inputsDisabled = _this._playBtnDisabled = true;
