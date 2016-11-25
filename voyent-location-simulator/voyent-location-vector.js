@@ -107,14 +107,14 @@ Voyent.LocationVector = Polymer({
             var tracker = this._trackerInstances[instanceKey].tracker;
             this._marker = this._trackerInstances[instanceKey].marker;
 
-            var distance = this._calculateTotalDistance(); //store total distance of path
+            this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
             if (path.length < 2) {
                 this.fire('message-info','The calculated distance is too short, please adjust simulation parameters and try again.');
+                this._totalDistance = null;
                 return;
             }
             this._path = path;
-            this._totalDistance = distance;
             this._interval = 1000 / (path.length / (this.duration * 60)); //number of milliseconds to move one point
 
             //Start by POSTing the first coordinate to the Location Service
