@@ -1276,7 +1276,7 @@ Polymer({
             duration = properties.duration;
         }
         this._mapBoundsFixed = true; //don't adjust map bounds when creating tracker instance
-        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates,bearing,speed,speedunit,duration,null,true);
+        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates,bearing,speed,speedunit,duration);
         this._lastClickCoordinates = null;
     },
 

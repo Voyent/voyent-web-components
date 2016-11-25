@@ -424,14 +424,16 @@
         },
 
         /**
-         * Validates the `speed` attribute. If invalid, the old value, or the default will be used.
+         * Validates the `speed` attribute. A minimum speed of 5kph or 3mph is enforced. If invalid, the old value, or the default will be used.
          * @param newVal
          * @param oldVal
          * @private
          */
         _speedValidation: function(newVal,oldVal) {
             var val = Number(newVal);
-            if (Number.isNaN(val) || val <= 0) {
+            if (Number.isNaN(val) ||
+                (this.speedunit === 'kph' && val < 5) ||
+                (this.speedunit === 'mph' && val < 3)) { //min speed of 5kph or 3mph
                 this.speed = oldVal || 50;
             }
         },
@@ -445,6 +447,12 @@
         _speedunitValidation: function(newVal,oldVal) {
             if (newVal !== 'kph' && newVal !== 'mph') {
                 this.speedunit = oldVal || 'mph';
+            }
+            else {
+                //make sure that when changing the speedunit we respect the minimum values for kph
+                if (newVal === 'kph' && this.speed < 5) {
+                    this.speed = 5;
+                }
             }
         },
 
