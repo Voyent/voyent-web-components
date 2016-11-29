@@ -1,11 +1,14 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../common/imports/voyent-io.html">
+<link rel="import" href="../../paper-slider/paper-slider.html">
 <!--
 Allows editing of voyent location, region and point data
 
 @demo demo.html
 -->
 <script src="../../awesomplete/awesomplete.js"></script>
+<script src="../../jscolor/jscolor.js"></script>
+
 <dom-module id="voyent-location-editor">
     <template>
         <style type="text/css">
@@ -1566,6 +1569,7 @@ Allows editing of voyent location, region and point data
                             <button class="btn btn-sm btn-danger" on-click="removeLocation">Delete</button>
                         </div>
                       </div>
+
                     <div class="regionButtonsDiv text-center" hidden$="{{!infowindowisanchor}}">
                             <div class="col-sm-3" style="padding-left:20px;">
                                 <!-- Had class {{ {active:showPropertiesDiv} | tokenList}} -->
@@ -1691,7 +1695,7 @@ Allows editing of voyent location, region and point data
                                 <tr class="colourRow">
                                     <td>Colour</td>
                                     <td>
-                                        <select id="colourSelect" class="form-control">
+                                        <!--select id="colourSelect" class="form-control">
                                             <option value="Black" selected="selected">Black</option>
                                             <option value="White">White</option>
                                             <option value="Red">Red</option>
@@ -1701,10 +1705,22 @@ Allows editing of voyent location, region and point data
                                             <option value="Blue">Blue</option>
                                             <option value="Pink">Pink</option>
                                             <option value="Purple">Purple</option>
-                                        </select>
+                                        </select-->
+                                        <input id="colourSelect" style="width:95%;" class="jscolor">
                                     </td>
                                     <td>
                                         <button class="btn btn-xs btn-success" on-click="updateColourProperty">Update
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="colourRow">
+                                    <td>Opacity</td>
+                                    <td>
+                                        <!--input id="colourSelect" style="width:95%;" class="jscolor"-->
+                                        <paper-slider min=0 max=1 step=0.05 pin snaps style="width:100%;padding-top:10px;" id="opacitySlider"></paper-slider>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-xs btn-success" on-click="updateOpacityProperty">Update
                                         </button>
                                     </td>
                                 </tr>
@@ -1880,7 +1896,7 @@ Allows editing of voyent location, region and point data
                                         <tr class="colourRow">
                                             <td>Colour</td>
                                             <td>
-                                                <select id="colourSelect2" class="form-control">
+                                                <!--select id="colourSelect2" class="form-control">
                                                     <option value="Black" selected="selected">Black</option>
                                                     <option value="White">White</option>
                                                     <option value="Red">Red</option>
@@ -1890,7 +1906,8 @@ Allows editing of voyent location, region and point data
                                                     <option value="Blue">Blue</option>
                                                     <option value="Pink">Pink</option>
                                                     <option value="Purple">Purple</option>
-                                                </select>
+                                                </select-->
+                                                <input id="colourSelect2" style="width:95%;" class="jscolor">
                                             </td>
                                             <td></td>
                                         </tr>

@@ -311,7 +311,7 @@ Polymer({
                     editable:true,
                     draggable:false,
                     map:_loc._map,
-                    fillColor:'red',
+                    fillColor:'#FF0000',
                     radius:100,
                     zIndex:49
                 });
@@ -352,7 +352,7 @@ Polymer({
                                             "zIndex":49
                                         },
                                         "Editable": "true",
-                                        "Color": "Red"
+                                        "Color": "FF0000"
                                     }
 
                 }]},
@@ -377,7 +377,7 @@ Polymer({
                                     []
                                 ]
                             },
-                            "properties": {"googleMaps": {}, "Color": "Black", "Editable": "true"}
+                            "properties": {"googleMaps": {}, "Color": "000000", "Editable": "true"}
                         }
                     };
                 }
@@ -628,7 +628,7 @@ Polymer({
                         "zIndex":smallestIndex
                     },
                     "Editable": "true",
-                    "Color": "Black",
+                    "Color": "000000",
                     "zoneId":geoJSON.zones.features.length + 1
                 }
         };
@@ -989,7 +989,7 @@ Polymer({
             }
         }
         else {
-        _loc._infoWindow.setContent(_loc.$$('#infoWindow'));
+        //_loc._infoWindow.setContent(_loc.$$('#infoWindow'));
         _loc.isPOI = shape === "point";
             _loc.infoWindowState = "standard";
             //Below is because property/tag divs are updated on loading them specifically.
@@ -1168,9 +1168,13 @@ Polymer({
             setTimeout(function () {
                 if (!(_loc.isPOI)) {
                     _loc.colourProp = properties["Color"];
+                    _loc.opacityProp = properties["Opacity"]
                     var colourSelect = _loc.$$("#colourSelect");
-                    colourSelect.options[colourSelect.selectedIndex].removeAttribute("selected");
-                    _loc.$$("#colourSelect").querySelector('option[value="' + _loc.colourProp + '"]').setAttribute("selected", "selected");
+                    //colourSelect.options[colourSelect.selectedIndex].removeAttribute("selected");
+                    //colourSelect.value = _loc.colourProp;
+                    colourSelect.jscolor.fromString(_loc.colourProp);
+                    var opacitySelect = _loc.$$("#opacitySlider");
+                    opacitySelect.value = _loc.opacityProp;
                 }
                 _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
                 var editableSelect = _loc.$$("#editableSelect");
@@ -1178,7 +1182,7 @@ Polymer({
                 _loc.$$("#editableSelect").querySelector('option[value="' + _loc.editableProp + '"]').setAttribute("selected", "selected");
                 var props = [];
                 for (var property in properties) {
-                    if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
+                    if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags' && property.toLowerCase() !== 'zindex' && property.toLowerCase() !== 'zoneid' && property.toLowerCase() !== 'opacity') {
                         props.push({key: property, val: properties[property]});
                     }
                 }
@@ -1195,7 +1199,7 @@ Polymer({
                     _loc.$$("#editableSelect").querySelector('option[value="' + _loc.editableProp + '"]').setAttribute("selected", "selected");
                     var props = [];
                     for (var property in properties) {
-                        if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
+                        if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags' && property.toLowerCase() !== 'zindex' && property.toLowerCase() !== 'zoneid' && property.toLowerCase() !== 'opacity') {
                             props.push({key: property, val: properties[property]});
                         }
                     }
@@ -1212,18 +1216,23 @@ Polymer({
                 }
                 var properties = selectedJSON.properties;
                 setTimeout(function () {
-                        _loc.colourProp = properties["Color"];
-                        var colourSelect = _loc.$$("#colourSelect");
-                        colourSelect.options[colourSelect.selectedIndex].removeAttribute("selected");
-                        _loc.$$("#colourSelect").querySelector('option[value="' + _loc.colourProp + '"]').setAttribute("selected", "selected");
+                    _loc.colourProp = properties["Color"];
+                    _loc.opacityProp = properties["Opacity"];
+                    var colourSelect = _loc.$$("#colourSelect");
 
+                    //_loc.$$("#colourSelect").querySelector('option[value="' + _loc.colourProp + '"]').setAttribute("selected", "selected");
+
+                    //colourSelect.value = _loc.colourProp;
+                    colourSelect.jscolor.fromString(_loc.colourProp);
+                    var opacitySelect = _loc.$$("#opacitySlider");
+                    opacitySelect.value = _loc.opacityProp;
                     _loc.editableProp = typeof properties["Editable"] === "undefined" ? true : properties["Editable"];
                     var editableSelect = _loc.$$("#editableSelect");
                     editableSelect.options[editableSelect.selectedIndex].removeAttribute("selected");
                     _loc.$$("#editableSelect").querySelector('option[value="' + _loc.editableProp + '"]').setAttribute("selected", "selected");
                     var props = [];
                     for (var property in properties) {
-                        if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags') {
+                        if (property !== "googleMaps" && property.toLowerCase() !== "color" && property.toLowerCase() !== "editable" && property.toLowerCase() !== 'tags' && property.toLowerCase() !== 'zindex' && property.toLowerCase() !== 'zoneid' && property.toLowerCase() !== 'opacity') {
                             props.push({key: property, val: properties[property]});
                         }
                     }
@@ -1612,13 +1621,25 @@ Polymer({
     },
     updateColourProperty: function () {
         var selector = _loc.$$("#colourSelect");
-        _loc.colourProp = selector.options[selector.selectedIndex].text;
+        _loc.colourProp = selector.value;
         var location = _loc.activeLocation;
         if(_loc.infowindowisstandard){
-            allLocations[location._id][0].setOptions({fillColor: _loc.colourProp});
+            allLocations[location._id][0].setOptions({fillColor: '#' + _loc.colourProp});
         }
         else{
-            _loc.selectedZone.setOptions({fillColor: _loc.colourProp});
+            _loc.selectedZone.setOptions({fillColor: '#'+_loc.colourProp});
+        }
+        _loc.updateProperties();
+    },
+    updateOpacityProperty: function () {
+        var selector = _loc.$$("#opacitySlider");
+        _loc.opacityProp = selector.value;
+        var location = _loc.activeLocation;
+        if(_loc.infowindowisstandard){
+            allLocations[location._id][0].setOptions({fillOpacity: _loc.opacityProp});
+        }
+        else{
+            _loc.selectedZone.setOptions({fillOpacity: _loc.opacityProp});
         }
         _loc.updateProperties();
     },
@@ -1728,6 +1749,9 @@ Polymer({
             _loc.isPlacesSearch = false;
             _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
             if (_loc.showPropertiesDiv) {
+                setTimeout(function(){
+                    jscolor.installByClassName("jscolor");
+                },50);
                 _loc.populateProperties("standard");
                 _loc.showTagsDiv = false;
             }
@@ -1758,6 +1782,9 @@ Polymer({
             _loc.isPlacesSearch = false;
             _loc.showPropertiesDiv = !_loc.showPropertiesDiv;
             if (_loc.showPropertiesDiv) {
+                setTimeout(function(){
+                    jscolor.installByClassName("jscolor");
+                },50);
                 _loc.populateProperties("zone");
                 _loc.showTagsDiv = false;
             }
@@ -1768,6 +1795,9 @@ Polymer({
         _loc.isPlacesSearch = true;
         _loc.showPlacesPropertiesDiv = !_loc.showPlacesPropertiesDiv;
         if (_loc.showPlacesPropertiesDiv) {
+            setTimeout(function(){
+                jscolor.installByClassName("jscolor");
+            },50);
             _loc.showPlacesTagsDiv = false;
         }
     },
@@ -2162,8 +2192,8 @@ Polymer({
         var locations = [];
         var placesSearchResultsMap = _loc.placesSearchResultsMap;
         var selector = _loc.$$("#colourSelect2");
-        _loc.colourProp = selector == null? "" : selector.options[selector.selectedIndex].text;
-        _loc.colourProp = _loc.colourProp == "" ? "Black" : _loc.colourProp;
+        _loc.colourProp = selector == null? "" : selector.value;
+        _loc.colourProp = _loc.colourProp == "" ? "000000" : _loc.colourProp;
         var selector2 = _loc.$$("#editableSelect2");
         _loc.editableProp = selector2 == null? "" : selector2.options[selector2.selectedIndex].getAttribute("value");
         _loc.editableProp = _loc.editableProp == "" ? true : (_loc.editableProp.toLowerCase() === 'true' || _loc.editableProp === true);
@@ -2274,10 +2304,12 @@ Polymer({
             var googleMaps;
             var colour = _loc.colourProp;
             properties["Color"] = colour;
-            _loc.selectedZone.setOptions({"fillColor": colour});
+            properties["Opacity"] = _loc.opacityProp;
+            _loc.selectedZone.setOptions({"fillColor": '#'+colour});
             for (var i = 0; i < location.zones.length; i++){
                 if (_loc.selectedZone.getRadius() === location.zones[i].getRadius()){
                     googleMaps = geoJSON.zones.features[i].properties.googleMaps;
+                    properties['zoneId'] = geoJSON.zones.features[i].properties.zoneId;
                 }
             }
             properties['googleMaps'] = googleMaps;
@@ -2305,8 +2337,9 @@ Polymer({
         if (((!isPlacesSearch && !isPOI) || (isPlacesSearch && optionalPlacesType === 'region')) && _loc.infowindowisstandard) {
             var colour = _loc.colourProp;
             properties["Color"] = colour;
+            properties["Opacity"] = _loc.opacityProp;
             if (!isPlacesSearch) {
-                _loc.activeGoogleLocation.setOptions({"fillColor": colour});
+                _loc.activeGoogleLocation.setOptions({"fillColor": '#' + colour});
             }
         }
         return properties;
@@ -2846,7 +2879,8 @@ Polymer({
                     var region;
                     var paths = [];
                     var path = [];
-                    var color = properties["Color"];
+                    var color = '#' + properties["Color"];
+                    var opacity = properties['Opacity'] ? properties['Opacity'] : 0.5;
                     var metadata = typeof properties.googleMaps === "undefined" ? {} : properties.googleMaps;
                     //set the map bounds and the paths for polygon shapes
                     for (var cycle = 0; cycle < coords.length; cycle++) {
@@ -2863,7 +2897,8 @@ Polymer({
                             'paths': paths,
                             'map': _loc._map,
                             'editable': editable,
-                            'fillColor': color
+                            'fillColor': color,
+                            'fillOpacity':opacity
                         });
                     }
                     else if (metadata.shape === "circle") {
@@ -2872,7 +2907,8 @@ Polymer({
                             'radius': metadata.radius,
                             'map': _loc._map,
                             'editable': editable,
-                            'fillColor': color
+                            'fillColor': color,
+                            'fillOpacity':opacity
                         });
 
                     }
@@ -2884,7 +2920,8 @@ Polymer({
                             ),
                             'map': _loc._map,
                             'editable': editable,
-                            'fillColor': color
+                            'fillColor': color,
+                            'fillOpacity':opacity
                         });
                     }
                     geoJSON = data[record];
@@ -2972,7 +3009,8 @@ Polymer({
                         'radius': metadata.radius,
                         'map': _loc._map,
                         'editable': zone.properties.Editable === "true",
-                        'fillColor': zone.properties.Color,
+                        'fillColor': '#' + zone.properties.Color,
+                        'fillOpacity':zone.properties.Opacity,
                         'zIndex': metadata.zIndex
                     });
                     region.bindTo('center', tracker.anchor, 'position');
