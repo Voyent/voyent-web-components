@@ -159,7 +159,7 @@ Voyent.LocationRoute = Polymer({
                     location.username = _this.user || voyent.io.auth.getLastKnownUsername();
                     location.demoUsername = _this.user || voyent.io.auth.getLastKnownUsername(); //(NTFY-301)
                     voyent.io.locate.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
-                        //set location object (take best guess at username and lastUpdated without re-retrieving record)
+                        //set location object
                         _this._location = location;
                         _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                         //set marker object
@@ -176,9 +176,8 @@ Voyent.LocationRoute = Polymer({
                         _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'route'}); //pass required data to the parent component
                         _this._doSimulation();
                         //set button states
-                        _this._inputsDisabled=true;
-                        _this._cancelBtnDisabled=false;
-                        _this._updateBtnDisabled=false;
+                        _this._inputsDisabled = _this._playBtnDisabled = true;
+                        _this._pauseBtnDisabled = _this._cancelBtnDisabled = _this._updateBtnDisabled = false;
                     }).catch(function(error) {
                         _this.fire('message-error', 'Issue updating location: ' + error);
                         console.error('Issue updating location',error);
@@ -217,6 +216,7 @@ Voyent.LocationRoute = Polymer({
      * @private
      */
     _processRoute: function(route) {
+        var _this = this;
         var newRoute = route.slice(0);
         for (var i=0; i<route.length; i++) {
             //nothing to do if we're at the last coordinate
@@ -245,7 +245,7 @@ Voyent.LocationRoute = Polymer({
             var bearing = Math.atan2(y, x);
             //calculate next point, 2 meters from current point towards next point
             var dist = 2; //distance in meters
-            var eRadius = this._EARTH_RADIUS;
+            var eRadius = _this._EARTH_RADIUS;
             var lat = Math.asin(Math.sin(lat1)*Math.cos(dist/eRadius) +
                 Math.cos(lat1)*Math.sin(dist/eRadius)*Math.cos(bearing));
             var lng = lng1 + Math.atan2(Math.sin(bearing)*Math.sin(dist/eRadius)*Math.cos(lat1),
@@ -254,7 +254,7 @@ Voyent.LocationRoute = Polymer({
             if ( !((compare(latOp,lat,lat2)) && (compare(lngOp,lng,lng2))) ) {
                 return false; //we've reached the next point so stop adding coordinates for this iteration
             }
-            newRoute.splice(i+1+(newRoute.length-route.length), 0, new google.maps.LatLng(this._toDegrees(lat),this._toDegrees(lng))); //add the new coordinates to the correct position in the route
+            newRoute.splice(i+1+(newRoute.length-route.length), 0, new google.maps.LatLng(_this._toDegrees(lat),_this._toDegrees(lng))); //add the new coordinates to the correct position in the route
             addCoordinates(lat, lng);
         }
         //compare lat or long values with dynamic operator
@@ -285,6 +285,12 @@ Voyent.LocationRoute = Polymer({
      * @private
      */
     _cleanupSimulation: function() {
+        //de-increment pauseCount if a simulation is stopped after being paused
+        if (this._paused) {
+            this.fire('simulationPauseCountUpdated',{"count":this._simulationPauseCount-1});
+        }
+        //fire endSimulation event
+        this.fire('endSimulation',{type:'route'});
         //allow the location marker to be dragged
         this._marker.setDraggable(true);
         //remove the directions overlay
@@ -292,21 +298,10 @@ Voyent.LocationRoute = Polymer({
         //add listener now that the simulation is done
         this._userLocationChangedListener(this._marker,this._location);
         //reset attributes
-        this._path = null;
-        this._index = 0;
-        this._interval = 0;
-        this._location = null;
-        this._eta = null;
-        this._totalMills = 0;
-        this._canceled = false;
-        this._isMultiSim = false;
-        this._inputsDisabled = false;
-        this._previousBtnDisabled=true;
-        this._nextBtnDisabled=true;
-        this._cancelBtnDisabled = true;
-        this._playBtnDisabled = false;
-        this._pauseBtnDisabled = true;
-        this._updateBtnDisabled = true;
+        this._path = this._location = this._eta = null;
+        this._index = this._interval = this._totalMills = 0;
+        this._canceled = this._inputsDisabled = this._playBtnDisabled = false;
+        this._previousBtnDisabled = this._nextBtnDisabled = this._cancelBtnDisabled = this._pauseBtnDisabled = this._updateBtnDisabled = true;
     },
 
     /**
@@ -332,8 +327,6 @@ Voyent.LocationRoute = Polymer({
      */
     _mapChanged: function(map) {
         if (this._map) {
-            //initialize bounds object for later use
-            this._bounds = new google.maps.LatLngBounds();
             //setup direction objects for querying and drawing directions
             this._directionsService = new google.maps.DirectionsService();
             this._directionsRenderer = new google.maps.DirectionsRenderer({map:this._map,preserveViewport:true,hideRouteList:true,suppressMarkers:true});

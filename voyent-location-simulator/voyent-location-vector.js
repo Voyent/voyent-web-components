@@ -49,7 +49,7 @@ Voyent.LocationVector = Polymer({
          */
         speedunit: { type: String, value: 'mph', observer: '_speedunitValidation' },
         /**
-         * The time in minutes that the tracker will move along it's vector.
+         * The time in minutes that the tracker will move along the bearing.
          */
         duration: { type: Number, value: 2, observer: '_durationValidation' },
         /**
@@ -60,7 +60,6 @@ Voyent.LocationVector = Polymer({
 
     //observe non-declared/private properties
     observers: [
-        '_mapChanged(_map)',
         '_pausedChanged(_paused)',
         '_directionChanged(_direction)'
     ],
@@ -83,10 +82,6 @@ Voyent.LocationVector = Polymer({
                 _this._trackerInstances = e.detail.trackerInstances;
             });
         }
-        this.pathtoimages = '.';
-        document.addEventListener('pathtoimagesChanged', function(e) {
-            _this.pathtoimages = e.detail.path;
-        });
         //set some default values
         this._previousBtnDisabled = true;
         this._nextBtnDisabled = true;
@@ -105,14 +100,20 @@ Voyent.LocationVector = Polymer({
             return;
         }
         if (!this._path) {
-            if ((this._trackerInstances && Object.keys(this._trackerInstances).length && !this.tracker) /*|| !this.bearing || !this.duration*/) {
+            if ((this._trackerInstances && Object.keys(this._trackerInstances).length && !this.tracker)) {
                 return;
             }
-            var tracker = this._trackerInstances[_this.tracker+'.'+_this.zonenamespace].tracker;
-            var zones = tracker.zones;
+            var instanceKey = _this.tracker+'.'+_this.zonenamespace;
+            var tracker = this._trackerInstances[instanceKey].tracker;
+            this._marker = this._trackerInstances[instanceKey].marker;
 
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
+            if (path.length < 2) {
+                this.fire('message-info','The calculated distance is too short, please adjust simulation parameters and try again.');
+                this._totalDistance = null;
+                return;
+            }
             this._path = path;
             this._interval = 1000 / (path.length / (this.duration * 60)); //number of milliseconds to move one point
 
@@ -125,34 +126,28 @@ Voyent.LocationVector = Polymer({
                     },
                     "properties": {
                         "trackerId": this.tracker,
-                        "zoneNamespace": this.zonenamespace
+                        "zoneNamespace": this.zonenamespace,
+                        "updateType": "manual" //incident demo (this first update is manual)
                     }
                 }
             };
             voyent.io.locate.updateTrackerLocation({realm:Polymer.dom(this).parentNode.realm,location:location}).then(function(data) {
-                //set location object (take best guess at username and lastUpdated without re-retrieving record)
+                //set location object
                 _this._location = location;
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
-                //set marker object
-                var icon = tracker.properties.icon; //********** - INCIDENT DEMO SPECIFIC CODE - **********
-                var marker = new google.maps.Marker({
-                    position: path[_this._index],
-                    map: _this._map,
-                    icon:_this.pathtoimages+'/images/'+icon,
-                    draggable: false //don't allow manual location changes during simulation
-                });
-                _this._marker = marker;
-                //move the zones with the tracker
-                _this._trackerMoved(_this.tracker+'.'+_this.zonenamespace,marker);
-                //disable tracker edits during simulation
-                _this._toggleEditableTracker(zones,marker,false);
-                //start simulation
-                _this.fire('startSimulation',{locationMarker:marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
+                //send startSimulation event
+                _this.fire('startSimulation',{locationMarker:_this._marker,location:location,child:_this,type:'vector'}); //pass required data to the parent component
+                //update marker position
+                _this._marker.setPosition(path[_this._index]);
+                //keep the tracker instance updated with the latest coordinates
+                _this._updateTrackerInstanceLocation(instanceKey,_this._marker.getPosition());
+                //disable all tracker edits during simulation
+                _this._toggleEditableTracker(null,null,false);
+                //actually start simulation
                 _this._doSimulation();
                 //set button states
-                _this._inputsDisabled=true;
-                _this._cancelBtnDisabled=false;
-                _this._updateBtnDisabled=false;
+                _this._inputsDisabled = _this._playBtnDisabled = true;
+                _this._pauseBtnDisabled = _this._cancelBtnDisabled = _this._updateBtnDisabled = false;
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue updating tracker location: ' + error);
                 console.error('Issue updating location',error);
@@ -164,7 +159,7 @@ Voyent.LocationVector = Polymer({
     },
 
     /**
-     * Retrieve the vector in JSON format.
+     * Retrieve the tracker vector in JSON format.
      * @returns {{tracker: *, zonenamespace: *, bearing: *, speed: *, speedunit: *, duration: *, frequency: *}}
      */
     getJSON: function() {
@@ -189,32 +184,28 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     _generatePath: function(tracker) {
-        var _this = this;
-        var path = [];
+        var path = []; //array of latLng objects containing all coordinates for the path
         var coordDistance = 2; //distance between each coordinate, in meters
         var numCoords = this._totalDistance / coordDistance; //the number of coordinates needed to cover the path distance
 
         var lat1 = this._toRadians(tracker.anchor.geometry.coordinates[1]);
         var lng1 = this._toRadians(tracker.anchor.geometry.coordinates[0]);
-        addCoordinates(lat1,lng1);
-        return path;
 
         //generate coordinates 2 meters apart until we reach the number of coordinates that we need
-        function addCoordinates(lat1, lng1) {
-            var bearing = _this._toRadians(_this.bearing);
-            var eRadius = _this._EARTH_RADIUS;
-
-            var lat2 = Math.asin(Math.sin(lat1)*Math.cos(coordDistance/eRadius) +
+        var lat2, lng2;
+        var bearing = this._toRadians(this.bearing);
+        var eRadius = this._EARTH_RADIUS;
+        for (var i=0; i<numCoords; i++) {
+            lat2 = Math.asin(Math.sin(lat1)*Math.cos(coordDistance/eRadius) +
                 Math.cos(lat1)*Math.sin(coordDistance/eRadius)*Math.cos(bearing));
-            var lng2 = lng1 + Math.atan2(Math.sin(bearing)*Math.sin(coordDistance/eRadius)*Math.cos(lat1),
+            lng2 = lng1 + Math.atan2(Math.sin(bearing)*Math.sin(coordDistance/eRadius)*Math.cos(lat1),
                     Math.cos(coordDistance/eRadius)-Math.sin(lat1)*Math.sin(lat2));
 
-            path.push(new google.maps.LatLng(_this._toDegrees(lat2),_this._toDegrees(lng2)));
-
-            if (path.length < numCoords) {
-                addCoordinates(lat2, lng2);
-            }
+            path.push(new google.maps.LatLng(this._toDegrees(lat2),this._toDegrees(lng2)));
+            lat1 = lat2;
+            lng1 = lng2;
         }
+        return path;
     },
 
     /**
@@ -222,29 +213,27 @@ Voyent.LocationVector = Polymer({
      * @private
      */
     _cleanupSimulation: function() {
-        //allow the zones to be resized again
-        this._toggleEditableTracker(this._trackerInstances[this.tracker+'.'+this.zonenamespace].zones,this._marker,true);
+        //de-increment pauseCount if a simulation is stopped after being paused
+        if (this._paused) {
+            this.fire('simulationPauseCountUpdated',{"count":this._simulationPauseCount-1});
+        }
+        //fire endSimulation event
+        this.fire('endSimulation',{type:'vector'});
+        //allow all the tracker zones to be resized again if we aren't running simulations
+        if (!this._simulationCount) {
+            this._toggleEditableTracker(null,null,true);
+        }
         //add listener now that the simulation is done
         this._trackerLocationChangedListener(this._marker,this.tracker+'.'+this.zonenamespace,this._location);
         //reset attributes
-        this._path = null;
-        this._totalDistance = null;
-        this._index = 0;
-        this._interval = 0;
-        this._location = null;
-        this._canceled = false;
-        this._isMultiSim = false;
-        this._inputsDisabled = false;
-        this._previousBtnDisabled=true;
-        this._nextBtnDisabled=true;
-        this._cancelBtnDisabled = true;
-        this._playBtnDisabled = false;
-        this._pauseBtnDisabled = true;
-        this._updateBtnDisabled = true;
+        this._path = this._location = this._totalDistance = null;
+        this._index = this._interval = 0;
+        this._canceled = this._inputsDisabled = this._playBtnDisabled = false;
+        this._previousBtnDisabled = this._nextBtnDisabled = this._cancelBtnDisabled = this._pauseBtnDisabled = this._updateBtnDisabled = true;
     },
 
     /**
-     * Calculate the total vector distance based on the current speed and duration.
+     * Calculate the total tracker vector distance based on the current speed and duration.
      * @returns {number}
      * @private
      */
@@ -355,18 +344,6 @@ Voyent.LocationVector = Polymer({
         if (this.tracker && this._trackerInstances && Object.keys(this._trackerInstances).length>0 &&
             this.zonenamespace && this.bearing.toString().trim()) {
             this._playBtnDisabled=false;
-        }
-    },
-
-    /**
-     * Once the map is available then setup map features.
-     * @param map
-     * @private
-     */
-    _mapChanged: function(map) {
-        if (this._map) {
-            //initialize bounds object for later use
-            this._bounds = new google.maps.LatLngBounds();
         }
     }
 });

@@ -83,11 +83,15 @@ Polymer({
             _this._map = new google.maps.Map(_this.$.map, {
                 zoom: 8,
                 center: new google.maps.LatLng(51.08427,-114.13062),
+                streetViewControl: false,
                 mapTypeControlOptions: {
                     style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
                     position: google.maps.ControlPosition.RIGHT_TOP
                 },
-                signed_in: false
+                zoomControlOptions: {
+                    style: google.maps.ZoomControlStyle.LARGE,
+                    position: google.maps.ControlPosition.LEFT_CENTER
+                }
             });
             _this.fire('mapInitialized', {map: _this._map});
             _this._calcMapSize();
@@ -155,13 +159,13 @@ Polymer({
         if (!this._trackerButtonAdded) {
             var _this = this;
             if (this._trackers && Object.keys(this._trackers).length) {
-                var incidentBttn = this.$.incidentBttn.cloneNode(true);
-                incidentBttn.onclick = this._customBttnClicked;
-                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(incidentBttn);
+                var trackerBttn = this.$.trackerBttn.cloneNode(true);
+                trackerBttn.onclick = this._customBttnClicked;
+                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(trackerBttn);
                 //delay so that the button isn't shown on
                 //the page before being moved into the map
                 setTimeout(function () {
-                    incidentBttn.hidden = false;
+                    trackerBttn.hidden = false;
                     _this._trackerButtonAdded = true;
                 }, 100);
             }
@@ -191,7 +195,8 @@ Polymer({
         //chain async calls so we can have one unified callback
         var promises = [];
         //get regioins, poi, tracker template and last user and tracker locations
-        promises.push(voyent.io.locate.getAllRegions({realm:this.realm}).then(function(regions) {
+        //ignore regions that are tracker zones
+        promises.push(voyent.io.locate.findRegions({realm:this.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function(regions) {
             _this._updateRegions(regions);
         }));
         promises.push(voyent.io.locate.getAllPOIs({realm:this.realm}).then(function(pois) {
@@ -224,13 +229,8 @@ Polymer({
         if (!children.length) {
             return;
         }
-        if (children.length !== 1) {
-            for (var i=0; i<children.length; i++) {
-                children[i]._playSimulationMulti();
-            }
-        }
-        else {
-            children[0].playSimulation();
+        for (var i=0; i<children.length; i++) {
+            children[i].playSimulation();
         }
     },
 
@@ -337,7 +337,7 @@ Polymer({
         }
         //draw the tracker on the map
         this._drawTracker(tracker,zoneNamespace,position,!!noLocationUpdate);
-        //first append the new vector as a direct child of the component so it inherits any custom styling
+        //first append the new tracker vector as a direct child of the component so it inherits any custom styling
         var vector = new Voyent.LocationVector(this._map,this._trackerInstances,tracker,zoneNamespace,bearing,speed,speedunit,duration,frequency);
         Polymer.dom(this).appendChild(vector);
         setTimeout(function (vector) {
@@ -554,11 +554,6 @@ Polymer({
                 if (!geometry) {
                     continue;
                 }
-                if (location.properties && location.properties.zoneId) {
-                    //ignore regions that are connected to zones since
-                    //they will be retrieved when getting trackers
-                    continue;
-                }
                 var type = geometry.type.toLowerCase();
                 var coords = data[i].location.geometry.coordinates;
                 var properties = typeof data[i].location.properties === "undefined" ? {} : data[i].location.properties;
@@ -643,11 +638,20 @@ Polymer({
             var coords = location.location.geometry.coordinates;
             var latLng = new google.maps.LatLng(coords[1], coords[0]);
             _this._bounds.extend(latLng);
+
+            var labelText = "?";
+            if (location.username && location.username.length > 0) {
+                labelText = location.username.substring(0, 1).toLowerCase();
+            }
             var marker = new google.maps.Marker({
                 position: latLng,
                 map: _this._map,
                 draggable: true,
-                icon: _this.pathtoimages+'/images/user_marker.png'
+                icon: _this.pathtoimages+'/images/user_marker.png',
+                label: {
+                    text: labelText,
+                    color: "white",
+                }
             });
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,null,location,location.location.geometry.type.toLowerCase());
@@ -725,13 +729,13 @@ Polymer({
                 //keep a mapping of all the trackers so we can easily create instances of them later
                 var trackerId = trackers[i]._id;
                 trackerMapping[trackerId] = trackers[i];
-                //if we have a "child" tracker template we set the trackerId to the parent's when searching for icons
-                if (trackers[i].properties && trackers[i].properties.parentTrackerId) {
-                    trackerId = trackers[i].properties.parentTrackerId;
-                }
                 zones = trackers[i].zones.features;
                 if (!trackers[i].properties) {
                     trackers[i].properties = {};
+                }
+                //if we have a "child" tracker template we set the trackerId to the parent's when searching for icons
+                if (trackers[i].properties.parentTrackerId) {
+                    trackerId = trackers[i].properties.parentTrackerId;
                 }
                 for (var j=0; j<zones.length; j++) {
                     zone = zones[j].properties.zoneId;
@@ -843,7 +847,7 @@ Polymer({
             if (trackersOnly && this._children[i].elem.nodeName !== 'VOYENT-LOCATION-VECTOR') {
                 continue;
             }
-            //if the routes contained a vector be sure to remove the associated entity from the map
+            //if the routes contain a tracker vector be sure to remove the associated entity from the map
             if (this._children[i].elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
                 this._removeTracker(this._children[i],!!trackersOnly);
             }
@@ -992,6 +996,8 @@ Polymer({
             var isNewTemplate = !tracker.properties || !tracker.properties.parentTrackerId;
             if (isNewTemplate) {
                 tracker = JSON.parse(JSON.stringify(tracker));
+                //set our new tracker base into our instance
+                trackerInstance.tracker = tracker;
                 //set the new template position to the tracker instance coordinate
                 tracker.anchor.geometry.coordinates = [trackerInstance.marker.getPosition().lng(),trackerInstance.marker.getPosition().lat()]; //anchor coordinates are lng,lat
             }
@@ -1020,7 +1026,7 @@ Polymer({
                 }
                 //set the new zone radius and coordinates
                 matchingZone.properties.googleMaps.radius = circle.getRadius();
-                _this._setCoordinates(matchingZone,circle);
+                _this._setCoordinates(trackerInstance);
                 //save the template
                 _this._saveTrackerTemplate(tracker.properties.parentTrackerId,zoneNamespace,tracker,isNewTemplate);
             }
@@ -1028,22 +1034,23 @@ Polymer({
     },
 
     /**
-     * Calculates and sets the coordinates of a zone based on it's center position and radius.
-     * @param zone
-     * @param circle
+     * Calculates and sets the coordinates of zones based on their center position and radius.
+     * @param trackerInstance
      * @private
      */
-    _setCoordinates: function (zone,circle) {
+    _setCoordinates: function (trackerInstance) {
         var N = 50; //number of "sides" the circle approximation will have
         var degreeStep = 360 / N;
-        zone.geometry.coordinates = [[]];
-        for (var i = 0; i < N; i++) {
-            var latLng = google.maps.geometry.spherical.computeOffset(circle.getCenter(), circle.getRadius(), degreeStep * i);
-            zone.geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
-            //push the same coordinate as the start coordinate to complete the circle
-            if (i + 1 === N) {
-                zone.geometry.coordinates[0].push(zone.geometry.coordinates[0][0]);
+        var geoZone;
+        for (var i=0; i<trackerInstance.tracker.zones.features.length; i++) {
+            geoZone = trackerInstance.tracker.zones.features[i];
+            geoZone.geometry.coordinates = [[]];
+            for (var j = 0; j < N; j++) {
+                var latLng = google.maps.geometry.spherical.computeOffset(trackerInstance.zones[i].getCenter(), trackerInstance.zones[i].getRadius(), degreeStep * j);
+                geoZone.geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
             }
+            //push the same coordinate as the start coordinate to complete the circle
+            geoZone.geometry.coordinates[0].push(geoZone.geometry.coordinates[0][0]);
         }
     },
 
@@ -1096,7 +1103,8 @@ Polymer({
                         "geometry": { "type" : "Point", "coordinates" : [tracker.anchor.geometry.coordinates[0],tracker.anchor.geometry.coordinates[1]] },
                         "properties": {
                             "trackerId": tracker._id,
-                            "zoneNamespace": zoneNamespace
+                            "zoneNamespace": zoneNamespace,
+                            "updateType": "manual" //incident demo
                         }
                     }
                 };
@@ -1161,7 +1169,7 @@ Polymer({
         //store the click coordinates for later use
         this._lastClickCoordinates = [marker.getPosition().lat(),marker.getPosition().lng()];
         //doing this as a computed binding in the template doesn't work, so set the menuItems here instead
-        this._incidentMenuItems = [];
+        this._trackerMenuItems = [];
         for (var trackerKey in this._trackers) {
             if (!this._trackers.hasOwnProperty(trackerKey)) {
                 continue;
@@ -1169,22 +1177,22 @@ Polymer({
             //only show "parent" tracker templates
             if (!this._trackers[trackerKey].properties ||
                 !this._trackers[trackerKey].properties.parentTrackerId) {
-                this.push('_incidentMenuItems',this._trackers[trackerKey]);
+                this.push('_trackerMenuItems',this._trackers[trackerKey]);
             }
         }
         //set the menu width based on the longest string in the menu
-        var strLength = Math.max.apply(null, this._incidentMenuItems.map(function(obj) {
+        var strLength = Math.max.apply(null, this._trackerMenuItems.map(function(obj) {
             if (obj.label) { return obj.label.length; }
             else if (obj._id) { return obj._id.length; }
             return 0;
         }));
-        this.$.incidentMenu.style.width = (7.5*strLength)+'px';
+        this.$.trackerMenu.style.width = (7.5*strLength)+'px';
         //set the menu height based on the number of menu items
-        this.$.incidentMenu.style.height = 24*this._incidentMenuItems.length+'px';
+        this.$.trackerMenu.style.height = 24*this._trackerMenuItems.length+'px';
         //render the context menu at the pixel coordinate
         var pos = this._returnPixelCoordinate(marker.getPosition());
-        this.$.incidentMenu.style.left = pos.left + 'px';
-        this.$.incidentMenu.style.top = pos.top + 'px';
+        this.$.trackerMenu.style.left = pos.left + 'px';
+        this.$.trackerMenu.style.top = pos.top + 'px';
         this._hideIncidentMenu = false;
         //we no longer need the marker so delete it
         marker.setMap(null);
@@ -1197,15 +1205,22 @@ Polymer({
      * @private
      */
     _showIncidentNamePrompt: function (trackerId) {
-        var incidentName = '';
+        var trackerName = '';
         //check that the instance name is valid and not already being used
-        while (!incidentName || !incidentName.trim().length || this._trackerInstances[trackerId+'.'+incidentName]) {
-            incidentName = prompt('Please enter an incident name', '');
-            if (incidentName === null) { //cancel was pressed
+        var invalid = false;
+        var msg = 'Please enter an incident name';
+        while (!trackerName || !trackerName.trim().length || invalid) {
+            trackerName = prompt(msg, '');
+            if (trackerName === null) { //cancel was pressed
                 return null;
             }
+            invalid = !!(this._trackerInstances[trackerId+'.'+trackerName] || //check for zoneNamespace being used for parent trackers
+                         this._trackerInstances[trackerId+'.'+trackerName+'.'+trackerName]); //check for zoneNamespace being used for child trackers
+            if (invalid) {
+                msg = 'Incident name already in use, please try another';
+            }
         }
-        return incidentName;
+        return trackerName;
     },
 
     /**
@@ -1265,7 +1280,7 @@ Polymer({
             duration = properties.duration;
         }
         this._mapBoundsFixed = true; //don't adjust map bounds when creating tracker instance
-        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates,bearing,speed,speedunit,duration,null,true);
+        this.addVector(trackerId,zoneNamespace,this._lastClickCoordinates,bearing,speed,speedunit,duration);
         this._lastClickCoordinates = null;
     },
 
@@ -1293,7 +1308,8 @@ Polymer({
                 "geometry": { "type" : "Point", "coordinates" : [marker.getPosition().lng(),marker.getPosition().lat()] },
                 "properties": {
                     "trackerId": trackerId,
-                    "zoneNamespace": zoneNamespace
+                    "zoneNamespace": zoneNamespace,
+                    "updateType": "manual" //incident demo
                 }
             }
         };
@@ -1305,13 +1321,16 @@ Polymer({
         var zones = tracker.zones.features;
         for (var i=0; i<zones.length; i++) {
             circle = new google.maps.Circle({
-                'map': this._map,
-                'radius': zones[i].properties.googleMaps.radius,
-                'fillColor': '#' + zones[i].properties.Color,
-                'zIndex': zones[i].properties.googleMaps.zIndex,
-                'fillOpacity':zones[i].properties.Opacity,
-                'editable': true
+                map: this._map,
+                radius: zones[i].properties.googleMaps.radius,
+                fillColor: '#'+ zones[i].properties.Color,
+                fillOpacity:zones[i].properties.Opacity,
+                zIndex: zones[i].properties.googleMaps.zIndex,
+                editable: true,
+                draggable: false
             });
+            //bind the circle center to the marker position so that when we move the marker the circles get updated
+            circle.bindTo('center', marker, 'position');
             //associate the zone with the tracker so we can sync them on movement
             this._trackerInstances[trackerId+'.'+zoneNamespace].zones.push(circle);
             //add listeners
@@ -1319,10 +1338,10 @@ Polymer({
             this._zoneResizeListener(trackerId,zoneNamespace,zones[i].properties.zoneId,circle);
             //add to regions master list
             this._regions.push(circle);
+            //set the bounds around this newly dropped tracker
+            this._bounds.union(circle.getBounds());
         }
-
-        //set the bounds around this newly dropped tracker
-        this._trackerMoved(trackerId+'.'+zoneNamespace,marker);
+        //pan the map when the tracker is not created via the menu
         if (!this._mapBoundsFixed) {
             this._map.fitBounds(this._bounds);
             this._map.panToBounds(this._bounds);
@@ -1341,14 +1360,20 @@ Polymer({
         }
     },
 
+    /**
+     * Convenience function for updating a tracker location.
+     * @param location
+     * @param cb
+     * @private
+     */
     _updateTrackerLocation: function(location,cb) {
         var _this = this;
         voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
             location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             cb();
         }).catch(function (error) {
-            _this.fire('message-error', 'Issue creating new incident: ' + location.location.properties.zoneNamespace);
-            console.error('Issue creating new incident: ' + location.location.properties.zoneNamespace, error);
+            _this.fire('message-error', 'Issue creating new tracker location: ' + location.location.properties.zoneNamespace);
+            console.error('Issue creating new tracker location: ' + location.location.properties.zoneNamespace, error);
         });
     },
 
@@ -1381,6 +1406,10 @@ Polymer({
         var _this = this;
         //add event listeners for voyent-location-route events to parent since the events bubble up (one listener covers all children)
         this.addEventListener('startSimulation', function(e) {
+            //set the max zoom so the map doesn't zoom in too far when panning during the simulation
+            _this._map.setOptions({ maxZoom: 15 });
+            //update our simulation count
+            _this.fire('simulationCountUpdated',{"count":_this._simulationCount+1});
             var marker = e.detail.locationMarker;
             var location = e.detail.location;
             //add click listener to new location marker + make sure we only have one instance of the location marker
@@ -1388,12 +1417,9 @@ Polymer({
                 _this._clickListener(marker,null,location,'point');
                 _this._handleNewLocationMarker(location.username,marker);
             }
-            else { //vector
-                var trackerId = location.location.properties.trackerId;
-                var zoneNamespace = location.location.properties.zoneNamespace;
-                _this._clickListener(marker,zoneNamespace,null,'point');
-                _this._handleNewLocationMarker(trackerId+'.'+zoneNamespace,marker);
-            }
+        });
+        this.addEventListener('endSimulation',function(e) {
+            _this.fire('simulationCountUpdated',{"count":_this._simulationCount-1});
         });
         this.addEventListener('labelChanged', function(e) {
             for (var i=0; i<_this._children.length; i++) {
@@ -1522,7 +1548,7 @@ Polymer({
                         this.set('_contextMenuDisabled',true);
                     }
                 }
-                //if a vector is deleted then remove it from the map as well
+                //if a tracker vector is deleted then remove it from the map as well
                 if (matchingChild.elem.nodeName === 'VOYENT-LOCATION-VECTOR') {
                    this._removeTracker(matchingChild);
                 }
@@ -1687,5 +1713,15 @@ Polymer({
             return;
         }
         this.deleteSimulation(this._activeSim._id);
+    },
+
+    /**
+     * Determine whether or not we display the buttons for managing multiple simulations.
+     * @param numTabs
+     * @returns {boolean}
+     * @private
+     */
+    _displayAllBttns: function(numTabs) {
+        return numTabs > 1;
     }
 });

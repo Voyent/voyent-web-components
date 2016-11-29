@@ -213,7 +213,7 @@ Polymer({
         }
 
         var promises = [];
-        promises.push(voyent.io.locate.getAllRegions({realm: _loc.realm}).then(function (regions) {
+        promises.push(voyent.io.locate.findRegions({realm: _loc.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function (regions) {
             _loc.regionsTemp = regions;
         }));
         promises.push(voyent.io.locate.getAllPOIs({realm: _loc.realm}).then(function (pois) {
@@ -492,7 +492,7 @@ Polymer({
         _loc._bounds = new google.maps.LatLngBounds();
 
         var promises = [];
-        promises.push(voyent.io.locate.getAllRegions({realm: _loc.realm}).then(function (regions) {
+        promises.push(voyent.io.locate.findRegions({realm: _loc.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function (regions) {
             _loc.regionsTemp = regions;
         }));
         promises.push(voyent.io.locate.getAllPOIs({realm: _loc.realm}).then(function (pois) {
@@ -1697,9 +1697,14 @@ Polymer({
             }
             else {
                 value = Number(this._anchorSpeed);
-                if (!Number.isNaN(value) && value > 0) {
+                if (!this._anchorSpeedUnit) {
+                    this._anchorSpeedUnit = 'kph';
+                }
+                if (!Number.isNaN(value) &&
+                    ((this._anchorSpeedUnit === 'kph' && value >= 5) ||
+                    (this._anchorSpeedUnit === 'mph' && value >= 3))) {
                     this.activeLocation.properties.speed=value;
-                    this.activeLocation.properties.speedUnit=this._anchorSpeedUnit || 'kph';
+                    this.activeLocation.properties.speedUnit=this._anchorSpeedUnit;
                 }
                 else { this._anchorSpeed = null; return; }
             }

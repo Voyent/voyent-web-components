@@ -1,6 +1,8 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../common/imports/voyent-io.html">
 <link rel="import" href="voyent-location-behavior.html">
+<link rel="import" href="../../iron-icon/iron-icon.html">
+<link rel="import" href="../../iron-icons/av-icons.html">
 
 <!--
 This component is used internally by the location simulator for building tracker vectors.
@@ -45,13 +47,28 @@ This component is used internally by the location simulator for building tracker
             #duration.error {
                 border:1px solid #a94442;
             }
+            .redButton {
+                --iron-icon-fill-color: #FF0000;
+            }
+            .greenButton {
+                --iron-icon-fill-color: #00DD00;
+            }
+            .orangeButton {
+                --iron-icon-fill-color: #FFA500;
+            }
         </style>
         <div class="simulatorWrapper">
             <div class="buttonContainer">
                 <button on-click="previousCoordinate" disabled$="{{_previousBtnDisabled}}">Previous</button>
-                <button on-click="cancelSimulation" disabled$="{{_cancelBtnDisabled}}">Stop</button>
-                <button on-click="playSimulation" disabled$="{{_playBtnDisabled}}">Play</button>
-                <button on-click="pauseSimulation" disabled$="{{_pauseBtnDisabled}}">Pause</button>
+                <button on-click="playSimulation" disabled$="{{_playBtnDisabled}}">
+                    <iron-icon icon="av:play-arrow" class="greenButton"></iron-icon>Run
+                </button>
+                <button on-click="pauseSimulation" disabled$="{{_pauseBtnDisabled}}">
+                    <iron-icon icon="av:pause" class="orangeButton"></iron-icon>Pause
+                </button>
+                <button on-click="cancelSimulation" disabled$="{{_cancelBtnDisabled}}">
+                    <iron-icon icon="av:stop" class="redButton"></iron-icon>Stop
+                </button>
                 <button on-click="nextCoordinate" disabled$="{{_nextBtnDisabled}}">Next</button>
                 <br/><br/>
                 <button on-click="updateLocationAtMarker" disabled$="{{_updateBtnDisabled}}">Manual Location Update</button>

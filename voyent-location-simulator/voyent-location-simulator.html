@@ -170,9 +170,11 @@ Example:
             <div id="map"></div>
         </div>
         <div class="buttonContainer">
-            <button on-click="cancelAll">Stop All</button>
-            <button on-click="playAll">Play All</button>
-            <button on-click="pauseAll">Pause All</button>
+            <template is="dom-if" if="{{_displayAllBttns(_children.length)}}">
+                <button on-click="cancelAll">Stop All</button>
+                <button on-click="playAll">Run All</button>
+                <button on-click="pauseAll">Pause All</button>
+            </template>
         </div>
         <content select="voyent-location-simulations"></content>
         <div class="buttonContainer">
@@ -204,8 +206,8 @@ Example:
             <div id="setAsOrigin" class="menu-item" on-click="_setAsOrigin">Set Origin</div>
             <div id="setAsDestination" class="menu-item" on-click="_setAsDestination">Set Destination</div>
         </div>
-        <div id="incidentMenu" class="context-menu" hidden$="[[_hideIncidentMenu]]">
-            <template is="dom-repeat" strip-whitespace items="{{_incidentMenuItems}}">
+        <div id="trackerMenu" class="context-menu" hidden$="[[_hideIncidentMenu]]">
+            <template is="dom-repeat" strip-whitespace items="{{_trackerMenuItems}}">
                 <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{_getTrackerName(item)}}</div>
             </template>
         </div>
@@ -223,11 +225,11 @@ Example:
                 </span>
             </div>
         </div>
-        <div id="incidentBttn" class="customMapBttnWrap" hidden>
-            <div class="customMapBttn" title="Create an incident" data-type="incident">
+        <div id="trackerBttn" class="customMapBttnWrap" hidden>
+            <div class="customMapBttn" title="Create an incident" data-type="tracker">
                 <span>
                     <div class="customMapBttnImg">
-                        <img data-type="incident" src="images/incident_bttn.png">
+                        <img data-type="tracker" src="images/incident_bttn.png">
                     </div>
                 </span>
             </div>
