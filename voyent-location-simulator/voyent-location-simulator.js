@@ -567,7 +567,8 @@ Polymer({
                     var region;
                     var paths = [];
                     var path = [];
-                    var color = properties.Color;
+                    var color = '#' + properties.Color;
+                    var opacity = properties.Opacity ? properties.Opacity : 0.5;
                     var metadata = typeof properties.googleMaps === "undefined" ? {} : properties.googleMaps;
                     if (metadata.shape === "polygon" || typeof metadata.shape === "undefined") {
                         metadata.shape = "polygon";
@@ -584,7 +585,8 @@ Polymer({
                             'paths': paths,
                             'map': this._map,
                             'editable': false,
-                            'fillColor': color
+                            'fillColor': color,
+                            'fillOpacity': opacity
                         });
                     } else if (metadata.shape === "circle") {
                         region = new google.maps.Circle({
@@ -592,7 +594,8 @@ Polymer({
                             'radius': metadata.radius,
                             'map': this._map,
                             'editable': false,
-                            'fillColor': color
+                            'fillColor': color,
+                            'fillOpacity': opacity
                         });
                     } else if (metadata.shape === "rectangle") {
                         region = new google.maps.Rectangle({
@@ -601,7 +604,8 @@ Polymer({
                                 coords[0][2][0])),
                             'map': this._map,
                             'editable': false,
-                            'fillColor': color
+                            'fillColor': color,
+                            'fillOpacity': opacity
                         });
                     }
                     if (metadata.shape !== 'polygon') {
@@ -1303,8 +1307,9 @@ Polymer({
             circle = new google.maps.Circle({
                 'map': this._map,
                 'radius': zones[i].properties.googleMaps.radius,
-                'fillColor': zones[i].properties.Color,
+                'fillColor': '#' + zones[i].properties.Color,
                 'zIndex': zones[i].properties.googleMaps.zIndex,
+                'fillOpacity':zones[i].properties.Opacity,
                 'editable': true
             });
             //associate the zone with the tracker so we can sync them on movement
