@@ -7,6 +7,9 @@
 <!--
 Paging content switcher with Next/Back buttons
 Define the interior panels as <neon-animatable>
+Note that the height WON'T dynamically scale to fit your content, due to how the neon-animated-pages work
+ (see https://github.com/PolymerElements/neon-animation/issues/101)
+This can be achieved with the --voyent-wizard-panel-height mixin
 
 Example:
 
@@ -28,9 +31,10 @@ Example:
             :host {
                 display: block;
             }
+            
             neon-animated-pages {
                 min-width:100%;
-                min-height:200px;
+                @apply(--voyent-wizard-panel-height);
                 background-color:transparent;
             }
             neon-animatable {

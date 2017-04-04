@@ -20,25 +20,24 @@ Polymer({
             value: false
         }
     },
-
+    
+    ready: function() {
+        var childCount = this.querySelector('#pages').childElementCount;
+        if (childCount <= 0) {
+            console.error("No children pages found for voyent-wizard-panel");
+        }
+    },
+    
     /**
      * Maintains the correct state for the previous and next buttons.
      * @param selected
      */
     selectedChanged: function(selected) {
         var childCount = this.querySelector('#pages').childElementCount;
-        if (selected === 0) {
-            this.previousDisabled = true;
-        }
-        else if (selected === childCount-1) {
-            this.nextDisabled = true;
-        }
-        else if (selected > 0) {
-            this.previousDisabled = false;
-            if (selected < childCount-1) {
-                this.nextDisabled = false;
-            }
-        }
+
+        // Disable Back if we don't have a previous page, and similarly Next if we are at the end
+        this.previousDisabled = (selected-1 < 0);
+        this.nextDisabled = (selected+1 >= childCount);
     },
     /**
      * Increment the selected page number.
