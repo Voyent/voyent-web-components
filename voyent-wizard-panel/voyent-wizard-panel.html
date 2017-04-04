@@ -1,0 +1,61 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../neon-animation/neon-animated-pages.html">
+<link rel="import" href="../../neon-animation/neon-animatable.html">
+<link rel="import" href="../../neon-animation/neon-animations.html">
+
+<!--
+Paging content switcher with Next/Back buttons
+Define the interior panels as <neon-animatable>
+
+Example:
+
+    <voyent-wizard-panel visible="true" selected="0"
+                         previousDisabled="false" nextDisabled="false">
+        <neon-animatable>
+            Page 1
+        </neon-animatable>
+        <neon-animatable>
+            Page 2
+        </neon-animatable>
+    </voyent-wizard-panel>
+
+@demo demo.html
+-->
+<dom-module id="voyent-wizard-panel">
+    <template>
+        <style type="text/css">
+            :host {
+                display: block;
+            }
+            neon-animated-pages {
+                min-width:100%;
+                min-height:200px;
+                background-color:transparent;
+            }
+            neon-animatable {
+                box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+                            0 1px 5px 0 rgba(0, 0, 0, 0.12),
+                            0 3px 1px -2px rgba(0, 0, 0, 0.2);
+            }
+            .buttonContainer {
+                width:100%;
+                margin-top:10px;
+                text-align:center;
+            }
+        </style>
+        
+        <neon-animated-pages id="pages" selected="{{selected}}"
+                             entry-animation="fade-in-animation"
+                             exit-animation="fade-out-animation">
+            <content></content>
+        </neon-animated-pages>
+
+        <div class="buttonContainer">
+            <paper-button raised disabled="{{previousDisabled}}" on-click="previous">Back</paper-button>
+            <paper-button raised disabled="{{nextDisabled}}" on-click="next">Next</paper-button>
+        </div>
+    </template>
+</dom-module>
+
+<script src="./voyent-wizard-panel.js"></script>

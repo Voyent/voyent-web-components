@@ -1,0 +1,50 @@
+<!--
+	@license
+	Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+	This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	Code distributed by Google as part of the polymer project is also
+	subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <title>Voyent Web Components Demo</title>
+
+   <!-- Load the webcomponents polyfill -->
+    <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+    <!-- Load voyent log viewer component -->
+    <link rel="import" href="voyent-wizard-panel.html">
+    <link rel="import" href="../../neon-animation/neon-animatable.html">
+
+    <!-- Demo specific CSS -->
+    <link rel="stylesheet" href="../common/demo.css"/>
+</head>
+<body unresolved>
+
+<h1>Voyent Wizard Panel Component Demo</h1>
+
+<!-- Declare the element by its tag. -->
+<voyent-wizard-panel>
+    <neon-animatable>
+        <h3>Page 1</h3>
+        <p>The Voyent Services Client (voyent.io.js) is an easy-to-use JavaScript API for Voyent Services. To take advantage of it, include both the voyent.io.js library and it's parent, voyent.js</p>
+    </neon-animatable>
+    <neon-animatable>
+        <h3>Page 2</h3>
+        <p>The Voyent Services Client API is written with ECMAScript 6 Promise/A+ support. All API functions that use asynchronous network io will return a Promise. If your application already supports ES6 Promises, you can continue using those. ES6 Promises are supported in all modern browsers except IE11 (http://caniuse.com/#search=promise). To support older browsers, you can use a shim, such as es6-promises.</p>
+    </neon-animatable>
+    <neon-animatable>
+        <h3>Page 3</h3>
+        <p>Voyent.notify.js is a client library for displaying and interacting with notifications received from the Voyent Push Service. The library provides tools for displaying notifications, managing the notification queue and injecting notification data into web pages.</p>
+    </neon-animatable>
+    <neon-animatable>
+        <h3>Page 4</h3>
+        <p>Voyent.notify.js provides a function (injectNotificationData) for automatically injecting data from a notification into an application. In order for this to work the app markup must use HTML data properties on elements that they want to inject the data on. The data property names define which data should be injected. The data is simply copied into the view, it remains stored in the library at all times.</p>
+    </neon-animatable>
+</voyent-wizard-panel>
+</body>
+</html>
