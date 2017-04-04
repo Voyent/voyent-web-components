@@ -6,24 +6,91 @@ Polymer({
             type: Boolean,
             value: false
         },
+        /**
+         * Zero based index of the selected page
+         * @default 0
+         */
         selected: {
             type: Number,
             value: 0,
+            notify: true,
+            reflectToAttribute: true,
             observer: 'selectedChanged'
         },
-        previousDisabled: {
+        /**
+         * Disable the previous/back button
+         */
+        previousdisabled: {
             type: Boolean,
-            value: true
+            value: true,
+            notify: true,
+            reflectToAttribute: true
         },
-        nextDisabled: {
+        /**
+         * Disable the next button
+         */
+        nextdisabled: {
             type: Boolean,
-            value: false
-        }
+            value: false,
+            notify: true,
+            reflectToAttribute: true
+        },
+        /**
+         * Text label of the previous/back button
+         * @default Back
+         */
+        previouslabel: {
+            type: String,
+            value: "Back",
+            notify: true,
+            reflectToAttribute: true
+        },
+        /**
+         * Text label of the next button
+         * @default Next
+         */
+        nextlabel: {
+            type: String,
+            value: "Next",
+            notify: true,
+            reflectToAttribute: true
+        },
+        /**
+         * Hide/unrender the previous/back button
+         */
+        previoushidden: {
+            type: Boolean,
+            value: false,
+            notify: true,
+            reflectToAttribute: true
+        },
+        /**
+         * Hide/unrender the next button
+         */
+        nexthidden: {
+            type: Boolean,
+            value: false,
+            notify: true,
+            reflectToAttribute: true
+        },
+        entryanimation: {
+            type: String,
+            value: "dynamic",
+            notify: true,
+            reflectToAttribute: true
+        },
+        exitanimation: {
+            type: String,
+            value: "fade-out-animation",
+            notify: true,
+            reflectToAttribute: true
+        },
     },
     
     ready: function() {
-        var childCount = this.querySelector('#pages').childElementCount;
-        if (childCount <= 0) {
+        this.useDynamicAnimation = (this.entryanimation === "dynamic");
+        
+        if (this.getChildCount() <= 0) {
             console.error("No children pages found for voyent-wizard-panel");
         }
     },
@@ -33,22 +100,36 @@ Polymer({
      * @param selected
      */
     selectedChanged: function(selected) {
-        var childCount = this.querySelector('#pages').childElementCount;
-
         // Disable Back if we don't have a previous page, and similarly Next if we are at the end
-        this.previousDisabled = (selected-1 < 0);
-        this.nextDisabled = (selected+1 >= childCount);
+        this.previousdisabled = (selected-1 < 0);
+        this.nextdisabled = (selected+1 >= this.getChildCount());
     },
+    
     /**
      * Increment the selected page number.
      */
     next: function() {
+        if (this.useDynamicAnimation) {
+            this.entryanimation = "slide-from-right-animation";        
+        }
         this.selected++;
+        
+        this.fire('voyent-wizard-panel-next', { selected: this.selected });
     },
+    
     /**
      * De-increment the selected page number.
      */
     previous: function() {
+        if (this.useDynamicAnimation) {
+            this.entryanimation = "slide-from-left-animation";
+        }
         this.selected--;
-    }
+        
+        this.fire('voyent-wizard-panel-previous', { selected: this.selected });
+    },
+    
+    getChildCount: function() {
+        return this.querySelector('#pages').childElementCount;
+    },
 });

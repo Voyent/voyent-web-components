@@ -1,0 +1,96 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/imports/voyent-io.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-card/paper-card.html">
+<link rel="import" href="../../iron-form/iron-form.html">
+<link rel="import" href="../voyent-message/voyent-message.html">
+<link rel="import" href="../voyent-wizard-panel/voyent-wizard-panel.html">
+
+<!--
+Displays a registration pane for creating a new Voyent account and username
+
+Example:
+
+    <voyent-registration>
+    </voyent-registration>
+
+@demo demo.html
+-->
+
+<dom-module id="voyent-registration">
+  <template>
+    <style>
+      paper-card {
+        width: 100%;
+      }
+      paper-card::shadow .header.paper-card {
+        background-color: #027244;
+        @apply(--voyent-shadow);
+      }
+      paper-card::shadow .header.paper-card .title-text.paper-card {
+        color: #FFF;
+        @apply(--voyent-header-text);
+      }
+      paper-card {
+        --paper-card-header-image:{
+          @apply(--voyent-register-image);
+        };
+      }
+      voyent-wizard-panel {
+          --voyent-wizard-panel-height: {
+              height: 285px;
+          }
+      }
+    </style>
+    
+    <form id="regForm" is="iron-form">
+      <paper-card heading="Register New Account">
+        <div class="card-content">
+          <p style="font-style: italic;"><content select="description"></content></p>
+          <voyent-wizard-panel nexthidden="{{hideNext}}" selected="{{wizSelected}}">
+             <neon-animatable>
+                <fieldset>
+                  <legend>Group Information</legend>
+                  <paper-input id="account" required label="Organization" value="{{account}}" autofocus
+                               placeholder="{{accountPlaceholder}}"></paper-input>
+                  <paper-input required label="Company Name" value="{{company}}"
+                               placeholder="{{companyPlaceholder}}"></paper-input>
+                  <paper-input required label="Company Address" value="{{address}}"
+                               placeholder="{{addressPlaceholder}}"></paper-input>
+                  <paper-input required label="Email" value="{{email}}"
+                               placeholder="{{emailPlaceholder}}"></paper-input>
+                </fieldset>
+            </neon-animatable>
+            <neon-animatable>
+                <fieldset>
+                  <legend>Personal Information</legend>
+                  <paper-input id="firstName" required label="First Name" value="{{firstName}}"
+                               placeholder="{{firstNamePlaceholder}}"></paper-input>
+                  <paper-input required label="Last Name" value="{{lastName}}"
+                               placeholder="{{lastNamePlaceholder}}"></paper-input>
+                  <paper-input required label="Username" value="{{username}}"
+                               placeholder="{{usernamePlaceholder}}"></paper-input>
+                  <paper-input type="password" required label="Password" value="{{password}}"
+                               placeholder="{{passwordPlaceholder}}"></paper-input>
+                </fieldset>
+            </neon-animatable>
+            
+            <buttons-between>
+              <paper-button raised on-click="reset">Reset</paper-button>
+            </buttons-between>
+            <buttons-after hidden$="{{!hideNext}}">
+              <paper-button raised on-click="submitRegistration">Submit</paper-button>        
+            </buttons-after>
+          </voyent-wizard-panel>
+          
+          <center>
+            <voyent-message></voyent-message>
+          </center>
+        </div>
+      </paper-card>
+    </form>
+  </template>
+</dom-module>
+<script src="voyent-registration.js"></script>

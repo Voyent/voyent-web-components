@@ -11,16 +11,32 @@ Note that the height WON'T dynamically scale to fit your content, due to how the
  (see https://github.com/PolymerElements/neon-animation/issues/101)
 This can be achieved with the --voyent-wizard-panel-height mixin
 
+This component fires 2 events that can be used to listen externally for button presses:
+ voyent-wizard-panel-next
+ voyent-wizard-panel-previous
+These events have "selected" as a piece of detail information
+ 
 Example:
 
     <voyent-wizard-panel visible="true" selected="0"
-                         previousDisabled="false" nextDisabled="false">
+                         previousdisabled="false" nextdisabled="false"
+                         previouslabel="Back" nextlabel="Next"
+                         previoushidden="false" nexthidden="false">
         <neon-animatable>
             Page 1
         </neon-animatable>
         <neon-animatable>
             Page 2
         </neon-animatable>
+        
+        <buttons-before>
+        </buttons-before>
+        
+        <buttons-between>
+        </buttons-between>
+        
+        <buttons-after>
+        </buttons-after>
     </voyent-wizard-panel>
 
 @demo demo.html
@@ -50,14 +66,17 @@ Example:
         </style>
         
         <neon-animated-pages id="pages" selected="{{selected}}"
-                             entry-animation="fade-in-animation"
-                             exit-animation="fade-out-animation">
-            <content></content>
+                             entry-animation="{{entryanimation}}"
+                             exit-animation="{{exitanimation}}">
+            <content select="neon-animatable"></content>
         </neon-animated-pages>
-
+        
         <div class="buttonContainer">
-            <paper-button raised disabled="{{previousDisabled}}" on-click="previous">Back</paper-button>
-            <paper-button raised disabled="{{nextDisabled}}" on-click="next">Next</paper-button>
+            <content select="buttons-before"></content>
+            <paper-button raised disabled="{{previousdisabled}}" hidden$="{{previoushidden}}" on-click="previous">{{previouslabel}}</paper-button>
+            <content select="buttons-between"></content>
+            <paper-button raised disabled="{{nextdisabled}}" hidden$="{{nexthidden}}" on-click="next">{{nextlabel}}</paper-button>
+            <content select="buttons-after"></content>
         </div>
     </template>
 </dom-module>
