@@ -46,7 +46,7 @@ Example:
       }
     </style>
     
-    <template is="dom-if" if="{{!submitted}}">
+    <template is="dom-if" if="{{!_submitted}}">
     <form id="regForm" is="iron-form">
       <paper-card heading="Register New Account">
         <div class="card-content">
@@ -97,7 +97,7 @@ Example:
     </form>
     </template>
     
-    <template is="dom-if" if="{{submitted}}">
+    <template is="dom-if" if="{{_submitted}}">
         <form id="successForm" is="iron-form">
         <paper-card heading="Registration Successful">
             <div class="card-content">
