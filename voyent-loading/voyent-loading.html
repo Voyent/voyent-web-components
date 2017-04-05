@@ -1,0 +1,32 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/imports/voyent-io.html">
+
+<!--
+Display a loading throbber/notification on the page
+
+Change the state by toggling "on"
+
+Arbitrary content (such as messages) can be injected before the throbber as well
+
+<voyent-loading on="true">
+    Loading...
+</voyent-loading>
+
+Two events can also be fired to manage the state:
+ loading-on
+ loading-off
+
+@demo demo.html
+-->
+<dom-module id="voyent-loading">
+    <template>
+        <link type="text/css" rel="stylesheet" href="./voyent-loading.css">
+    
+        <div class="throbber-wrapper" hidden$="{{!on}}">
+            <content></content>
+            <div class="throbber-loader">...</div>
+        </div>
+    </template>
+</dom-module>
+
+<script src="./voyent-loading.js"></script>
