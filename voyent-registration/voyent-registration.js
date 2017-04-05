@@ -100,7 +100,8 @@ Polymer({
 	      return;
 	  }
 	  
-	  // TODO Add a loading/processing icon during submission
+	  this.fire('loading-on');
+	  
 	  var _this = this;
       voyent.io.admin.createAccount({
           account: this.account,
@@ -116,6 +117,8 @@ Polymer({
           host: this.host
       }).then(function(token) {
           _this.fire('message-info', 'Successfully registered new account');
+          
+          _this.fire('loading-off');
       }).catch(function(error) {
           if (error) {
               if (error.responseText) {
@@ -127,6 +130,8 @@ Polymer({
               }
           }
           console.error("Registration submission error: ", error);
+          
+          _this.fire('loading-off');
       });
 	},
 	
