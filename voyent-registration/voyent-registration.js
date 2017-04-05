@@ -21,6 +21,7 @@ Polymer({
         company: { type: String, notify: true, reflectToAttribute: true },
         wizSelected: { type: Number, value: 0 },
         hideNext: { type: Boolean, value: false },
+        _submitted: { type: Boolean, value: false, notify: true },
     },
     
 	ready: function() {
@@ -31,7 +32,7 @@ Polymer({
             
             // Also focus the Account field in the form
             setTimeout(function() {
-                _this.$.account.$.input.focus();
+                _this._focusAccount();
             },100);
 	    });
 	    
@@ -41,12 +42,24 @@ Polymer({
             
             // Also focus the First Name field in the form
             setTimeout(function() {
-                _this.$.firstName.$.input.focus();
+                _this._focusName();
             },100);
 	    });
 	},
 	
-	checkField: function(value) {
+	_focusAccount: function() {
+	    if (this.$ && this.$.account && this.$.account.$ && this.$.account.$.input) {
+	        this.$.account.$.input.focus();
+	    }
+	},
+	
+	_focusName: function() {
+	    if (this.$ && this.$.firstName && this.$.firstName.$ && this.$.firstName.$.input) {
+	        this.$.firstName.$.input.focus();
+	    }
+	},
+	
+	_checkField: function(value) {
 	    return (value && value.trim().length > 0);
 	},
 	
@@ -54,14 +67,14 @@ Polymer({
 	    // First check for missing required fields
 	    var required = [];
 	    
-	    if (!this.checkField(this.account)) { required.push("Organization"); }
-	    if (!this.checkField(this.company)) { required.push("Company Name"); }
-	    if (!this.checkField(this.address)) { required.push("Company Address"); }
-	    if (!this.checkField(this.email)) { required.push("Email"); }
-	    if (!this.checkField(this.firstName)) { required.push("First Name"); }
-	    if (!this.checkField(this.lastName)) { required.push("Last Name"); }
-	    if (!this.checkField(this.username)) { required.push("Username"); }
-	    if (!this.checkField(this.password)) { required.push("Password"); }
+	    if (!this._checkField(this.account)) { required.push("Organization"); }
+	    if (!this._checkField(this.company)) { required.push("Company Name"); }
+	    if (!this._checkField(this.address)) { required.push("Company Address"); }
+	    if (!this._checkField(this.email)) { required.push("Email"); }
+	    if (!this._checkField(this.firstName)) { required.push("First Name"); }
+	    if (!this._checkField(this.lastName)) { required.push("Last Name"); }
+	    if (!this._checkField(this.username)) { required.push("Username"); }
+	    if (!this._checkField(this.password)) { required.push("Password"); }
 	    
 	    if (required.length > 0) {
 	        var requiredMessage = "";
@@ -119,6 +132,8 @@ Polymer({
           _this.fire('message-info', 'Successfully registered new account');
           
           _this.fire('loading-off');
+          
+          _this._submitted = true;
       }).catch(function(error) {
           if (error) {
               if (error.responseText) {
@@ -141,15 +156,26 @@ Polymer({
             this.company = null;
             this.address = null;
             this.email = null;
-            this.$.account.$.input.focus();
+            this._focusAccount();
         }
         else if (this.wizSelected === 1) {
             this.firstName = null;
             this.lastName = null;
             this.username = null;
             this.password = null;
-            this.$.firstName.$.input.focus();
+            this._focusName();
         }
+	},
+	
+	submittedBack: function() {
+	    this.wizSelected = 0;
+	    this._submitted = false;
+	},
+	
+	resendEmail: function() {
+	    // TODO Resend the confirmation email
+	    this.fire('message-info',
+	              'Confirmation email sent' + (this._checkField(this.email) ? ' to ' + this.email : ''));
 	},
 });
 

@@ -46,6 +46,7 @@ Example:
       }
     </style>
     
+    <template is="dom-if" if="{{!submitted}}">
     <form id="regForm" is="iron-form">
       <paper-card heading="Register New Account">
         <div class="card-content">
@@ -94,6 +95,24 @@ Example:
         </div>
       </paper-card>
     </form>
+    </template>
+    
+    <template is="dom-if" if="{{submitted}}">
+        <form id="successForm" is="iron-form">
+        <paper-card heading="Registration Successful">
+            <div class="card-content">
+                <p><content select="success-message">Thank you for registering!</content></p>
+                
+                <center>
+                  <paper-button raised on-click="resendEmail">Resend Email</paper-button>
+                  <paper-button raised on-click="submittedBack">Back</paper-button>
+                
+                  <voyent-message></voyent-message>
+                </center>
+            </div>
+        </paper-card>
+        </form>
+    </template>
   </template>
 </dom-module>
 <script src="voyent-registration.js"></script>
