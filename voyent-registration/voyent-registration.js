@@ -33,7 +33,7 @@ Polymer({
             // Also focus the Account field in the form
             setTimeout(function() {
                 _this._focusAccount();
-            },100);
+            },200);
 	    });
 	    
 	    window.addEventListener('voyent-wizard-panel-next', function(e) {
@@ -43,7 +43,7 @@ Polymer({
             // Also focus the First Name field in the form
             setTimeout(function() {
                 _this._focusName();
-            },100);
+            },200);
 	    });
 	},
 	
