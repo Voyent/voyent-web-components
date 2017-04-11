@@ -18,6 +18,9 @@ Example:
 <dom-module id="voyent-location-simulator">
     <template>
         <style type="text/css">
+            #container {
+                position:relative;
+            }
             #map {
                 width:100%;
                 height: var(--height-var);
@@ -164,10 +167,55 @@ Example:
                 display: inline;
             }
 
+            .incidentTemplatePopup {
+                width: 50%;
+                max-height:var(--height-var);
+                overflow:auto;
+                position: absolute;
+                border: 1px solid;
+                background-color:white;
+                top: 25%;
+                left: 25%;
+                z-index: 99;
+            }
+            .incidentTemplatePopup .item {
+                height:35px;
+                padding:3px 0 1px 2px;
+                border:1px solid #ccc;
+                cursor:pointer;
+            }
+            .incidentTemplatePopup .item:hover {
+                background:rgb(235,235,235);
+            }
+            .incidentTemplatePopup .imgDiv {
+                width: 10%;
+                display: inline-block;
+                vertical-align: top;
+                height: 100%;
+                cursor: pointer;
+            }
+            .incidentTemplatePopup .nameDiv {
+                width: 90%;
+                display: inline-block;
+                vertical-align: top;
+                height: 100%;
+                cursor: pointer;
+            }
+
         </style>
-        
+
         <div id="container">
             <div id="map"></div>
+            <div hidden$="{{_hideIncidentMenu}}" class="incidentTemplatePopup">
+                <template is="dom-repeat" strip-whitespace items="{{_trackerMenuItems}}">
+                    <div class="item" on-click="_selectIncident" data-id$="{{item._id}}" data-label$="{{item.label}}">
+                        <div class="imgDiv" data-id$="{{item._id}}" data-label$="{{item.label}}">
+                            <img src="[[pathtoimages]]/images/{{item.properties.icon}}" data-id$="{{item._id}}" data-label$="{{item.label}}"/>
+                        </div>
+                        <div class="nameDiv" data-id$="{{item._id}}" data-label$="{{item.label}}">{{_getTrackerName(item)}}</div>
+                    </div>
+                </template>
+            </div>
         </div>
         <div class="buttonContainer">
             <template is="dom-if" if="{{_displayAllBttns(_children.length)}}">
@@ -205,11 +253,6 @@ Example:
         <div id="contextMenu" class="context-menu" hidden$="[[_hideContextMenu]]">
             <div id="setAsOrigin" class="menu-item" on-click="_setAsOrigin">Set Origin</div>
             <div id="setAsDestination" class="menu-item" on-click="_setAsDestination">Set Destination</div>
-        </div>
-        <div id="trackerMenu" class="context-menu" hidden$="[[_hideIncidentMenu]]">
-            <template is="dom-repeat" strip-whitespace items="{{_trackerMenuItems}}">
-                <div class="menu-item" on-click="_selectIncident" data-id$="{{item._id}}">{{_getTrackerName(item)}}</div>
-            </template>
         </div>
         <div id="userMenu" class="context-menu" hidden$="[[_hideUserMenu]]">
             <template is="dom-repeat" strip-whitespace items="{{_users}}">

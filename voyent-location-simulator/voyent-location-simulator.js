@@ -160,7 +160,7 @@ Polymer({
             var _this = this;
             if (this._trackers && Object.keys(this._trackers).length) {
                 var trackerBttn = this.$.trackerBttn.cloneNode(true);
-                trackerBttn.onclick = this._customBttnClicked;
+                trackerBttn.onclick = this._customBttnClicked.bind(this);
                 this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(trackerBttn);
                 //delay so that the button isn't shown on
                 //the page before being moved into the map
@@ -347,7 +347,7 @@ Polymer({
             _this.push('_children',{
                 "elem":vector,
                 "tabClass":contentHidden ? "" : "active",
-                "tabLabel": zoneNamespace + ' ['+(_this._trackers[tracker].label || tracker)+']',
+                "tabLabel": _this._trackers[tracker].label || tracker,
                 "contentHidden": contentHidden
             });
             //move new child into tab (do this async so the template has time to render the new child tab)
@@ -958,7 +958,8 @@ Polymer({
     },
 
     /**
-     * When a new user is dropped on the map save them to the Location Service and setup required listeners.
+     * When a new user is dropped on the map then display a menu for selecting the user or drop the current user.
+     * When an incident is dropped we'll draw it immediately since the type of incident was already selected.
      * @param drawingManager
      * @private
      */
@@ -969,7 +970,14 @@ Polymer({
             marker.setVisible(false);
             //set the icon based on the selected button
             marker.setIcon(_this.pathtoimages+'/images/'+_this._selectedBttn+'_marker.png');
-            _this._selectedBttn === 'user' ? _this._renderUserMenu(marker) : _this._renderIncidentMenu(marker);
+            if (_this._selectedBttn === 'user') {
+                _this._renderUserMenu(marker)
+            }
+            else {
+                //store the click coordinates for later use
+                _this._lastClickCoordinates = [marker.getPosition().lat(),marker.getPosition().lng()];
+                _this._drawIncident();
+            }
             //back to regular (no drawing) mode
             _this._drawingManager.setDrawingMode(null);
         });
@@ -1161,44 +1169,6 @@ Polymer({
     },
 
     /**
-     * Displays a list menu where you can select a tracker template to create an instance of.
-     * @param marker
-     * @private
-     */
-    _renderIncidentMenu: function(marker) {
-        //store the click coordinates for later use
-        this._lastClickCoordinates = [marker.getPosition().lat(),marker.getPosition().lng()];
-        //doing this as a computed binding in the template doesn't work, so set the menuItems here instead
-        this._trackerMenuItems = [];
-        for (var trackerKey in this._trackers) {
-            if (!this._trackers.hasOwnProperty(trackerKey)) {
-                continue;
-            }
-            //only show "parent" tracker templates
-            if (!this._trackers[trackerKey].properties ||
-                !this._trackers[trackerKey].properties.parentTrackerId) {
-                this.push('_trackerMenuItems',this._trackers[trackerKey]);
-            }
-        }
-        //set the menu width based on the longest string in the menu
-        var strLength = Math.max.apply(null, this._trackerMenuItems.map(function(obj) {
-            if (obj.label) { return obj.label.length; }
-            else if (obj._id) { return obj._id.length; }
-            return 0;
-        }));
-        this.$.trackerMenu.style.width = (7.5*strLength)+'px';
-        //set the menu height based on the number of menu items
-        this.$.trackerMenu.style.height = 24*this._trackerMenuItems.length+'px';
-        //render the context menu at the pixel coordinate
-        var pos = this._returnPixelCoordinate(marker.getPosition());
-        this.$.trackerMenu.style.left = pos.left + 'px';
-        this.$.trackerMenu.style.top = pos.top + 'px';
-        this._hideIncidentMenu = false;
-        //we no longer need the marker so delete it
-        marker.setMap(null);
-    },
-
-    /**
      * Displays a prompt for naming a tracker instance.
      * @param trackerId
      * @returns {string}
@@ -1260,16 +1230,27 @@ Polymer({
     },
 
     /**
-     * Fired when a tracker template is selected after creating a tracker instance.
+     * Fired when a tracker template is selected.
      * @param e
      * @private
      */
     _selectIncident: function(e) {
+        //enable the marker mode
+        document.querySelector('voyent-location-simulator')._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+        //hide the menu since we're done with it
         this._hideIncidentMenu = true;
-        var trackerId = e.target.getAttribute('data-id');
-        //ask the user to enter a zoneNamespace
-        var zoneNamespace = this._showIncidentNamePrompt(trackerId);
-        if (!zoneNamespace) { return; }
+        //store the id of the selected tracker for later use
+        this._selectedIncidentId = e.target.getAttribute('data-id');
+    },
+
+    /**
+     * Fired when the user clicks on the map to set the position of a tracker.
+     * @private
+     */
+    _drawIncident: function() {
+        var trackerId = this._selectedIncidentId;
+        //generate a zoneNamespace so we don't need to ask the user to input it
+        var zoneNamespace = trackerId + '_' + new Date().getTime();
         //load default bearing/speed/duration values from tracker properties
         var properties = this._trackers[trackerId].properties;
         var bearing = null, speed = null, speedunit = null, duration = null;
@@ -1437,8 +1418,36 @@ Polymer({
      * @private
      */
     _customBttnClicked:function(e) {
+        //store the type of button for later user
         document.querySelector('voyent-location-simulator')._selectedBttn = e.target.getAttribute('data-type');
-        document.querySelector('voyent-location-simulator')._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+        //if we selected a tracker then display a popup menu
+        if (e.target.getAttribute('data-type') === 'tracker') {
+            this._displayTemplateMenu();
+        }
+        else { //otherwise just enable drawing mode since the user menu will be displayed after
+            document.querySelector('voyent-location-simulator')._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+        }
+    },
+
+    /**
+     * Toggles and populates the tracker template selection menu with the latest trackers.
+     * @private
+     */
+    _displayTemplateMenu: function() {
+        this._hideIncidentMenu = !this._hideIncidentMenu;
+        if (!this._hideIncidentMenu) {
+            //populate the menu with the latest tracker templates
+            this._trackerMenuItems = [];
+            for (var trackerKey in this._trackers) {
+                if (!this._trackers.hasOwnProperty(trackerKey)) {
+                    continue;
+                }
+                //only show "parent" tracker templates
+                if (!this._trackers[trackerKey].properties || !this._trackers[trackerKey].properties.parentTrackerId) {
+                    this.push('_trackerMenuItems', this._trackers[trackerKey]);
+                }
+            }
+        }
     },
 
     /**
