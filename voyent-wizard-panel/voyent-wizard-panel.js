@@ -12,7 +12,6 @@ Polymer({
          */
         selected: {
             type: Number,
-            value: 0,
             notify: true,
             reflectToAttribute: true,
             observer: 'selectedChanged'
@@ -90,6 +89,14 @@ Polymer({
     ready: function() {
         this.useDynamicAnimation = (this.entryanimation === "dynamic");
         
+        // Timeout set the default `selected`
+        // This is so that any parent pages using the component can add their event listener in time
+        //  to do initial setup based on selected=0 and the voyent-wizard-panel-changed event
+        var _this = this;
+        setTimeout(function() {
+            _this.selected = 0;
+        },0);
+        
         if (this.getChildCount() <= 0) {
             console.error("No children pages found for voyent-wizard-panel");
         }
@@ -103,6 +110,8 @@ Polymer({
         // Disable Back if we don't have a previous page, and similarly Next if we are at the end
         this.previousdisabled = (selected-1 < 0);
         this.nextdisabled = (selected+1 >= this.getChildCount());
+        
+        this.fire('voyent-wizard-panel-changed', { selected: this.selected });
     },
     
     /**

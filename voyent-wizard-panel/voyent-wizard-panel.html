@@ -11,9 +11,10 @@ Note that the height WON'T dynamically scale to fit your content, due to how the
  (see https://github.com/PolymerElements/neon-animation/issues/101)
 This can be achieved with the --voyent-wizard-panel-height mixin
 
-This component fires 2 events that can be used to listen externally for button presses:
+This component fires 3 events that can be used to listen externally for button presses:
  voyent-wizard-panel-next
  voyent-wizard-panel-previous
+ voyent-wizard-panel-changed (on any button press)
 These events have "selected" as a piece of detail information
  
 Example:
@@ -68,7 +69,8 @@ Example:
         <neon-animated-pages id="pages" selected="{{selected}}"
                              entry-animation="{{entryanimation}}"
                              exit-animation="{{exitanimation}}"
-                             class="fit">
+                             class="fit"
+                             style="overflow: hidden;">
             <content select="neon-animatable"></content>
         </neon-animated-pages>
         
