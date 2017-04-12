@@ -48,14 +48,14 @@ Polymer({
 	},
 	
 	_focusAccount: function() {
-	    if (this.$ && this.$.account && this.$.account.$ && this.$.account.$.input) {
-	        this.$.account.$.input.focus();
+	    if (document.getElementById('account')) {
+	        document.getElementById('account').focus();
 	    }
 	},
 	
 	_focusName: function() {
-	    if (this.$ && this.$.firstName && this.$.firstName.$ && this.$.firstName.$.input) {
-	        this.$.firstName.$.input.focus();
+	    if (document.getElementById('firstName')) {
+	        document.getElementById('firstName').focus();
 	    }
 	},
 	
