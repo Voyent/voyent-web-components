@@ -16,6 +16,12 @@ This component fires 3 events that can be used to listen externally for button p
  voyent-wizard-panel-previous
  voyent-wizard-panel-changed (on any button press)
 These events have "selected" as a piece of detail information
+
+In addition validation can be attached to each step of the wizard, by using
+ wizardcomp.attachValidator(step, parentThis, validationFn)
+The "step" above is a non-zero based index for the step you want to validate
+The "parentThis" is the "this" from the code that calls attachValidator, and will be used via call() on the validationFn
+The "validationFn" is an arbitrary function that must return true/false. If false the Next button will abort
  
 Example:
 
