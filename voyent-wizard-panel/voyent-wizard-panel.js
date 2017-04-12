@@ -128,7 +128,7 @@ Polymer({
      */
     attachValidator: function(step, parent, validatorFn) {
          // Account for zero index by doing step-1
-        this.validators[step-1] = { "parent": parent, "fn": fn };
+        this.validators[step-1] = { "parent": parent, "fn": validatorFn };
     },
     
     /**
