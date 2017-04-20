@@ -144,8 +144,7 @@ Polymer({
         _loc.accesstoken = voyent.io.auth.getLastAccessToken();
         _loc.realm = voyent.io.auth.getLastKnownRealm();
         _loc.account = voyent.io.auth.getLastKnownAccount();
-        _loc.host = voyent.io.auth.getConnectSettings().host;
-
+        _loc.host = voyent.io.auth.getLastKnownHost();
 
         if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
