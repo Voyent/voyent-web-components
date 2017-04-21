@@ -17,6 +17,16 @@ Polymer({
             observer: 'selectedChanged'
         },
         /**
+         * Zero based index of how many layers deep the user is, for dynamic wizards
+         * @default 0
+         */
+        step: {
+            type: Number,
+            value: 0,
+            notify: true,
+            reflectToAttribute: true
+        },
+        /**
          * Disable the previous/back button
          */
         previousdisabled: {
@@ -84,6 +94,15 @@ Polymer({
             notify: true,
             reflectToAttribute: true
         },
+        /**
+         * Added to account for changing internal panel #s caused by repeat or conditional templates.
+         */
+        childcount:{
+            type:Number,
+            value:0,
+            notify:true,
+            observer:'childCountChanged'
+        }
     },
     
     ready: function() {
@@ -109,10 +128,14 @@ Polymer({
      */
     selectedChanged: function(selected) {
         // Disable Back if we don't have a previous page, and similarly Next if we are at the end
-        this.previousdisabled = (selected-1 < 0);
-        this.nextdisabled = (selected+1 >= this._getChildCount());
-        
+        this.updateDisabled();
+
         this.fire('voyent-wizard-panel-changed', { selected: this.selected });
+    },
+
+    updateDisabled:function(){
+        this.previousdisabled = (this.getLastReal() === -1);
+        this.nextdisabled = (this.getNextReal() === -1);
     },
     
     /**
@@ -132,7 +155,7 @@ Polymer({
     },
     
     /**
-     * Increment the selected page number.
+     * Go to next real page, increment the step number.
      */
     next: function() {
         // Check for any attached validators
@@ -147,25 +170,70 @@ Polymer({
             if (this.useDynamicAnimation) {
                 this.entryanimation = "slide-from-right-animation";        
             }
-            this.selected++;
-            
+            this.selected = this.getNextReal() ;
+            this.step++;
             this.fire('voyent-wizard-panel-next', { selected: this.selected });
         }
     },
     
     /**
-     * De-increment the selected page number.
+     * Go to last real page, de-increment the step number.
      */
     previous: function() {
         if (this.useDynamicAnimation) {
             this.entryanimation = "slide-from-left-animation";
         }
-        this.selected--;
-        
+        this.selected = this.getLastReal();
+        this.step--;
         this.fire('voyent-wizard-panel-previous', { selected: this.selected });
     },
     
     _getChildCount: function() {
+        this.childcount = this.querySelector('#pages').childElementCount;
         return this.querySelector('#pages').childElementCount;
     },
+
+    childCountChanged:function(){
+        this.updateDisabled();
+    },
+
+    /**
+     * Added to allow the wizard panel to work with interior conditional templates.
+     * Returns -1 in the event that there are no more valid/displayed panels remaining, otherwise returns index.
+     */
+    getNextReal:function(){
+        var nextToTry = this.selected + 1;
+        while(true){
+            var nextElement = this.querySelector('#pages').children[nextToTry];
+            if((nextToTry >= this._getChildCount())||!nextElement){
+                return -1;
+            }
+            else if(nextElement.style.display === 'none'){
+                //else if(nextElement.offsetParent === null){
+                nextToTry++;
+            }
+            else{
+                return nextToTry;
+            }
+        }
+
+    },
+
+    getLastReal:function(){
+        var nextToTry = this.selected - 1;
+        while(true){
+            var nextElement = this.querySelector('#pages').children[nextToTry];
+            if((nextToTry < 0)||!nextElement){
+                return -1;
+            }
+            else if(nextElement.style.display === 'none'){
+                //else if(nextElement.offsetParent === null){
+                nextToTry--;
+            }
+            else{
+                return nextToTry;
+            }
+        }
+
+    }
 });
