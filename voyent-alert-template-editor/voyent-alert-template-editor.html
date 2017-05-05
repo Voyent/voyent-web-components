@@ -3,10 +3,12 @@
 <link rel="import" href="../common/imports/jscolor.html">
 <link rel="import" href="../../iron-selector/iron-selector.html">
 <link rel="import" href="../../paper-input/paper-input.html">
-<link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../../paper-slider/paper-slider.html">
 <link rel="import" href="../../paper-item/paper-item.html">
 <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../iron-icon/iron-icon.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
 
 <!--
 Displays a map-based tool for creating new Alert Templates.
@@ -14,26 +16,20 @@ Displays a map-based tool for creating new Alert Templates.
 Example:
 
     <voyent-alert-template-editor account="myAccount"
-                                  realm="myRealm">
+                                  realm="myRealm"
+                                  height="500">
     </voyent-alert-template-editor>
 
 @demo demo.html
 -->
 <dom-module id="voyent-alert-template-editor">
     <template>
-        <style type="text/css">
-            #container {
-                /*position:relative;*/
-            }
-            #map {
-                /*height: var(--height-var);*/
-                margin-bottom:10px;
-            }
+        <style is="custom-style" type="text/css">
             #map,
             #propertiesPanel {
-                /*height: var(--height-var);*/
-                height:500px;
+                height: var(--height-var);
                 border: 1px solid black;
+                margin-bottom:10px;
             }
             #propertiesPanel {
                 width: 200px;
@@ -41,23 +37,19 @@ Example:
                 border-left: none;
                 overflow-y: scroll;
             }
-
-            .ac-container{
+            .accordion {
                 text-align: left;
             }
-            .ac-container label{
-                font-family: 'BebasNeueRegular', 'Arial Narrow', Arial, sans-serif;
-                padding: 5px 20px;
+            .accordion label {
+                padding: 5px;
                 position: relative;
                 z-index: 20;
                 display: block;
-                /*height: 30px;*/
-                min-height: 30px;
+                min-height: 20px;
                 cursor: pointer;
                 color: #777;
                 text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
-                line-height: 33px;
-                font-size: 19px;
+                font-size: 16px;
                 background: #ffffff;
                 background: -moz-linear-gradient(top, #ffffff 1%, #eaeaea 100%);
                 background: -webkit-gradient(linear, left top, left bottom, color-stop(1%,#ffffff), color-stop(100%,#eaeaea));
@@ -71,35 +63,32 @@ Example:
                         1px 0px 0px 0px rgba(255,255,255,0.9) inset,
                         0px 2px 2px rgba(0,0,0,0.1);
             }
-            .ac-container label:hover{
+            .accordion label:hover {
                 background: #fff;
             }
-            .ac-container input:checked + label,
-            .ac-container input:checked + label:hover{
+            .accordion input:checked + label,
+            .accordion input:checked + label:hover {
                 background: #c6e1ec;
                 color: black;
                 text-shadow: 0px 1px 1px rgba(255,255,255, 0.6);
                 box-shadow:
                         0px 0px 0px 1px rgba(155,155,155,0.3),
                         0px 2px 2px rgba(0,0,0,0.1);
+                word-wrap: break-word;
             }
-            .ac-container label:hover:after,
-            .ac-container input:checked + label:hover:after{
+            .accordion label:hover:after,
+            .accordion input:checked + label:hover:after {
                 content: '';
                 position: absolute;
                 width: 24px;
                 height: 24px;
                 right: 13px;
                 top: 7px;
-                /* Add arrow_down icon */
             }
-            .ac-container input:checked + label:hover:after{
-                /* Add arrow_up icon */
-            }
-            .ac-container input[type=radio]{
+            .accordion input[type=radio] {
                 display: none;
             }
-            .ac-container article{
+            .accordion article {
                 background: rgba(255, 255, 255, 0.5);
                 margin-top: -1px;
                 overflow: hidden;
@@ -112,15 +101,15 @@ Example:
                 -ms-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
                 transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
             }
-            .ac-container article p{
+            .accordion article p {
                 font-style: italic;
                 color: #777;
                 line-height: 23px;
-                font-size: 14px;
+                font-size: 13px;
                 padding: 20px;
                 text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
             }
-            .ac-container input:checked ~ article{
+            .accordion input:checked ~ article {
                 -webkit-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
                 -moz-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
                 -o-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
@@ -128,12 +117,10 @@ Example:
                 transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
                 box-shadow: 0px 0px 0px 1px rgba(155,155,155,0.3);
             }
-            .ac-container input:checked ~ article{
+            .accordion input:checked ~ article {
                 height: 100%;
-                padding-bottom: 20px;
             }
-
-            iron-selector > div:nth-of-type(odd){
+            iron-selector > div:nth-of-type(odd) {
                 background-color: #ededed;
             }
             iron-selector, iron-selector > * {
@@ -156,27 +143,96 @@ Example:
                 background-color: #dddddd;
                 font-weight: bold;
                 text-align: center;
+                font-size: 15px;
             }
             .propertyCol,
-            .valueCol {
+            .valueCol,
+            .addCol {
                 display: table-cell;
                 width: 50%;
                 padding: 8px;
+                font-size: 13px;
+                text-align: center;
+            }
+            .addCol {
+                width:100%;
+                padding: 0;
+                height:31px;
+                vertical-align:middle;
+            }
+            .addCol > paper-icon-button {
+                padding:0;
+                width:19px;
+                height:19px;
             }
             .clickable,
-            paper-button {
+            paper-icon-button {
                 cursor: pointer;
-            }
-            paper-button {
-                font-size: 11px !important;
-                line-height: 11px !important;
             }
             paper-slider {
                 width:100%;
                 padding-top:20px;
             }
+            paper-input-container {
+                padding:0;
+            }
+            paper-input,
+            paper-dropdown-menu {
+                margin: 0 5px 0 5px;
+            }
+            paper-icon-button {
+                padding: 0;
+                width: 20px;
+                height: 20px;
+            }
+            paper-input {
+                --paper-input-container-input: {
+                    font-size:13px;
+                };
+            }
+            .jscolor-wrapper {
+                margin: 5px 11px 5px 5px;
+            }
             .jscolor {
                 width:100%;
+            }
+            .alert-template-title,
+            .alert-zones-label,
+            .alert-template-desc {
+                padding: 0 5px 0 5px;
+            }
+            .alert-template-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin: 10px 0 20px 0;
+            }
+            .alert-zones-label {
+                font-size: 15px;
+                font-weight: bold;
+                margin: 10px 0 10px 0;
+            }
+            .alert-template-desc {
+                font-size:13px;
+            }
+            .float-right {
+                float: right;
+            }
+            .title,
+            .title-bttns {
+                display:inline-block;
+            }
+            .title {
+                width:125px;
+                word-wrap:break-word;
+            }
+            .title.zone {
+                width:101px;
+            }
+            .title-bttns {
+                width:45px;
+            }
+            .confirm-cancel-bttns {
+                margin: 0 0 15px 4px;
             }
         </style>
             <div id="container">
@@ -184,47 +240,65 @@ Example:
                     <template is="dom-if" if="[[_trackerData.tracker]]">
                         <div>
                             <template is="dom-if" if="[[!_trackerData.tracker.tmpProperties.renaming]]">
-                                [[_trackerData.tracker.label]]
-                                <paper-button raised on-click="_toggleTrackerRenaming">
-                                    Rename
-                                </paper-button>
+                                <div class="alert-template-title">
+                                    <div class="title">
+                                        [[_trackerData.tracker.label]]
+                                    </div>
+                                    <div class="title-bttns">
+                                        <paper-icon-button raised icon="create" on-click="_toggleTrackerRenaming"></paper-icon-button>
+                                        <paper-icon-button raised icon="delete" on-click="_removeTracker"></paper-icon-button>
+                                    </div>
+                                </div>
                             </template>
                             <template is="dom-if" if="[[_trackerData.tracker.tmpProperties.renaming]]">
-                                <paper-input placeholder="New Value" value="{{_trackerData.tracker.tmpProperties.newName::input}}"></paper-input>
-                                <paper-button raised on-click="_renameTracker">
-                                    Save
-                                </paper-button>
-                                <paper-button raised on-click="_toggleTrackerRenaming">
-                                    Cancel
-                                </paper-button>
+                                <paper-input label="Alert Template"
+                                             placeholder="New Value"
+                                             value="{{_trackerData.tracker.tmpProperties.newName::input}}">
+                                </paper-input>
+                                <paper-icon-button class="confirm-cancel-bttns" icon="check" on-click="_renameTracker"></paper-icon-button>
+                                <paper-icon-button class="confirm-cancel-bttns" icon="cancel" on-click="_toggleTrackerRenaming"></paper-icon-button>
                             </template>
                         </div>
                         <div>
-                            <paper-button raised on-click="_addProximityZone">Add Zone</paper-button>
+                            <div class="alert-zones-label">
+                                Proximity Zones
+                                <paper-icon-button class="float-right" icon="add" on-click="_addProximityZone"></paper-icon-button>
+                            </div>
                         </div>
-                        <section class="ac-container">
+                        <section class="accordion">
                             <template is="dom-repeat" items="[[_trackerData.tracker.zones.features]]" as="zone">
                                 <div>
-                                    <input id$="ac-[[index]]" name="accordion" type="radio" on-click="_toggleAccordion" checked="{{zone.tmpProperties.visible::change}}"/>
+                                    <input id$="ac-[[index]]" name="accordion" type="radio"
+                                           on-click="_toggleAccordion" checked="{{zone.tmpProperties.visible::change}}"/>
                                     <label for$="ac-[[index]]">
                                         <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
-                                            [[zone.properties.zoneId]]
-                                            <paper-button raised on-click="_toggleProximityZoneRenaming" data-index$="[[index]]">
-                                                Rename
-                                            </paper-button>
-                                            <paper-button raised on-click="_removeProximityZone"
-                                                          hidden$="[[_hasOneZone]]" data-index$="[[index]]">
-                                                Remove
-                                            </paper-button>
+                                            <template is="dom-if" if="[[!_editing]]">
+                                                <template is="dom-if" if="[[zone.tmpProperties.visible]]">
+                                                    <paper-icon-button icon="expand-more"></paper-icon-button>
+                                                </template>
+                                                <template is="dom-if" if="[[!zone.tmpProperties.visible]]">
+                                                    <paper-icon-button icon="expand-less"></paper-icon-button>
+                                                </template>
+                                            </template>
+                                            <div class="title zone">
+                                                [[zone.properties.zoneId]]
+                                            </div>
+                                            <div class="title-bttns">
+                                                <paper-icon-button icon="create" data-index$="[[index]]"
+                                                                   on-click="_toggleProximityZoneRenaming">
+                                                </paper-icon-button>
+                                                <paper-icon-button icon="delete" on-click="_removeProximityZone"
+                                                                   disabled="[[_hasOneZone]]" data-index$="[[index]]" >
+                                                </paper-icon-button>
+                                            </div>
                                         </template>
                                         <template is="dom-if" if="[[zone.tmpProperties.renaming]]">
-                                            <paper-input placeholder="New Value" value="{{zone.tmpProperties.newName::input}}"></paper-input>
-                                            <paper-button raised on-click="_renameProximityZone" data-index$="[[index]]">
-                                                Save
-                                            </paper-button>
-                                            <paper-button raised on-click="_toggleProximityZoneRenaming" data-index$="[[index]]">
-                                                Cancel
-                                            </paper-button>
+                                            <paper-input label="Zone"
+                                                         placeholder="New Value"
+                                                         value="{{zone.tmpProperties.newName::input}}">
+                                            </paper-input>
+                                            <paper-icon-button class="confirm-cancel-bttns" icon="check" on-click="_renameProximityZone" data-index$="[[index]]"></paper-icon-button>
+                                            <paper-icon-button class="confirm-cancel-bttns" icon="cancel" on-click="_toggleProximityZoneRenaming" data-index$="[[index]]"></paper-icon-button>
                                         </template>
                                     </label>
                                     <article>
@@ -233,10 +307,16 @@ Example:
                                                 <div class="tableWrap">
                                                     <div class="table">
                                                         <div class="propertyCol tableHeader">
-                                                            <div on-click="_sortListProperty" class="clickable" title="Click to sort by property">Property</div>
+                                                            <div on-click="_sortByProperty" class="clickable"
+                                                                 title="Click to sort by property">
+                                                                Property
+                                                            </div>
                                                         </div>
                                                         <div class="valueCol tableHeader">
-                                                            <div on-click="_sortListValue" class="clickable" title="Click to sort by property value">Value</div>
+                                                            <div on-click="_sortByValue" class="clickable"
+                                                                 title="Click to sort by property value">
+                                                                Value
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <iron-selector id$="propertySelector-[[index]]"
@@ -244,7 +324,7 @@ Example:
                                                                    attr-for-selected="data-property"
                                                                    on-iron-activate="_onIronActivate">
                                                         <template id$="propertyRepeat-[[index]]" is="dom-repeat" as="property"
-                                                                  items="[[_toArray(zone.properties)]]" sort="_sortList">
+                                                                  items="[[_toArray(zone.properties)]]" sort="_sortProperties">
                                                             <div class="table clickable" data-property$="[[property.key]]">
                                                                 <div class="propertyCol">
                                                                     [[property.key]]
@@ -255,30 +335,41 @@ Example:
                                                             </div>
                                                         </template>
                                                     </iron-selector>
-                                                </div>
+                                                    <div class="table">
+                                                        <div class="addCol">
+                                                            <paper-icon-button icon="add"
+                                                                               on-click="_toggleAddingNewProperty">
+                                                            </paper-icon-button>
+                                                            <paper-icon-button icon="create"
+                                                                               on-click="_togglePropertyEditing"
+                                                                               disabled$="[[!_selected]]">
+                                                            </paper-icon-button>
+                                                            <paper-icon-button icon="delete"
+                                                                               on-click="_removeSelectedProperty"
+                                                                               disabled$="[[!_isRemoveableProperty(_selected)]]"
+                                                                               data-index$="[[index]]">
 
-                                                <paper-button raised on-click="_toggleAddingNew">Add Property</paper-button>
-                                                <template is="dom-if" if="{{_selected}}">
-                                                    <paper-button raised on-click="_toggleEditing">Edit</paper-button>
-                                                    <template is="dom-if" if="[[_isRemoveableProperty(_selected)]]">
-                                                        <paper-button raised on-click="_removeSelectedProperty" data-index$="[[index]]">Remove</paper-button>
-                                                    </template>
-                                                </template>
+                                                            </paper-icon-button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </template>
                                         </template>
 
                                         <template is="dom-if" if="[[_addingNew]]">
-                                            <paper-input required label="Key" autofocus value="{{_customPropKey}}"
-                                                         placeholder="The property key"></paper-input>
+                                            <paper-input required label="Name" autofocus value="{{_customPropKey}}"
+                                                         placeholder="The property name"></paper-input>
                                             <paper-input required label="Value" value="{{_customPropVal}}"
-                                                         placeholder="The new property value"></paper-input>
-                                            <paper-button raised on-click="_saveNewProperty" data-index$="[[index]]">Save</paper-button>
-                                            <paper-button raised on-click="_toggleAddingNew">Cancel</paper-button>
+                                                         placeholder="The property value"></paper-input>
+                                            <paper-icon-button icon="check" on-click="_saveNewProperty"
+                                                               data-index$="[[index]]"></paper-icon-button>
+                                            <paper-icon-button icon="cancel" on-click="_toggleAddingNewProperty"></paper-icon-button>
                                         </template>
 
                                         <template is="dom-if" if="[[_editing]]">
                                             <template is="dom-if" if="{{_selectedEquals('Editable',_selected)}}">
-                                                <paper-dropdown-menu value="{{_editableVal}}">
+                                                <paper-dropdown-menu label="Editable"
+                                                                     value="{{_editableVal}}">
                                                     <iron-selector class="dropdown-content"
                                                                    selected="{{_editableVal}}"
                                                                    attr-for-selected="name">
@@ -289,7 +380,9 @@ Example:
                                             </template>
 
                                             <template is="dom-if" if="{{_selectedEquals('Color',_selected)}}">
-                                                <input id$="jsColor-[[index]]" class="jscolor" value="{{_colorVal::change}}">
+                                                <div class="jscolor-wrapper">
+                                                    <input id$="jsColor-[[index]]" class="jscolor" value="{{_colorVal::change}}">
+                                                </div>
                                             </template>
 
                                             <template is="dom-if" if="{{_selectedEquals('Opacity',_selected)}}">
@@ -297,18 +390,26 @@ Example:
                                             </template>
 
                                             <template is="dom-if" if="{{_selectedEquals('Other',_selected)}}">
-                                                <paper-input required label="Key" autofocus value="{{_customPropKey}}"
-                                                             placeholder="The property key"></paper-input>
+                                                <paper-input required label="Name" autofocus value="{{_customPropKey}}"
+                                                             placeholder="The property name"></paper-input>
                                                 <paper-input required label="Value" value="{{_customPropVal}}"
-                                                             placeholder="The new property value"></paper-input>
+                                                             placeholder="The property value"></paper-input>
                                             </template>
-                                            <paper-button raised on-click="_saveEditing" data-index$="[[index]]">Save</paper-button>
-                                            <paper-button raised on-click="_toggleEditing">Cancel</paper-button>
+                                            <paper-icon-button class="confirm-cancel-bttns" icon="check" on-click="_editProperty" data-index$="[[index]]"></paper-icon-button>
+                                            <paper-icon-button class="confirm-cancel-bttns" icon="cancel" on-click="_togglePropertyEditing"></paper-icon-button>
+
                                         </template>
                                     </article>
                                 </div>
                             </template>
                         </section>
+                    </template>
+                    <template is="dom-if" if="[[!_trackerData.tracker]]">
+                        <div class="alert-template-title">New Alert Template</div>
+                        <div class="alert-template-desc">
+                            Activate the marker icon from the toolbar in the
+                            top-right corner and click a location on the map.
+                        </div>
                     </template>
                 </div>
                 <div id="map"></div>
