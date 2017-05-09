@@ -231,9 +231,6 @@ Example:
             .title-bttns {
                 width:45px;
             }
-            .confirm-cancel-bttns {
-                margin: 0 0 15px 4px;
-            }
         </style>
             <div id="container">
                 <div id="propertiesPanel">
@@ -253,10 +250,9 @@ Example:
                             <template is="dom-if" if="[[_trackerData.tracker.tmpProperties.renaming]]">
                                 <paper-input label="Alert Template"
                                              placeholder="New Value"
+                                             on-keydown="_renameTrackerViaKeydown"
                                              value="{{_trackerData.tracker.tmpProperties.newName::input}}">
                                 </paper-input>
-                                <paper-icon-button class="confirm-cancel-bttns" icon="check" on-click="_renameTracker"></paper-icon-button>
-                                <paper-icon-button class="confirm-cancel-bttns" icon="cancel" on-click="_toggleTrackerRenaming"></paper-icon-button>
                             </template>
                         </div>
                         <div>
@@ -295,10 +291,10 @@ Example:
                                         <template is="dom-if" if="[[zone.tmpProperties.renaming]]">
                                             <paper-input label="Zone"
                                                          placeholder="New Value"
+                                                         on-keydown="_renameProximityZoneViaKeydown"
+                                                         data-index$="[[index]]"
                                                          value="{{zone.tmpProperties.newName::input}}">
                                             </paper-input>
-                                            <paper-icon-button class="confirm-cancel-bttns" icon="check" on-click="_renameProximityZone" data-index$="[[index]]"></paper-icon-button>
-                                            <paper-icon-button class="confirm-cancel-bttns" icon="cancel" on-click="_toggleProximityZoneRenaming" data-index$="[[index]]"></paper-icon-button>
                                         </template>
                                     </label>
                                     <article>
@@ -357,18 +353,21 @@ Example:
                                         </template>
 
                                         <template is="dom-if" if="[[_addingNew]]">
-                                            <paper-input required label="Name" autofocus value="{{_customPropKey}}"
+                                            <paper-input required label="Name" value="{{_customPropKey}}"
+                                                         data-index$="[[index]]"
+                                                         on-keydown="_saveNewPropertyViaKeydown"
                                                          placeholder="The property name"></paper-input>
                                             <paper-input required label="Value" value="{{_customPropVal}}"
+                                                         data-index$="[[index]]"
+                                                         on-keydown="_saveNewPropertyViaKeydown"
                                                          placeholder="The property value"></paper-input>
-                                            <paper-icon-button icon="check" on-click="_saveNewProperty"
-                                                               data-index$="[[index]]"></paper-icon-button>
-                                            <paper-icon-button icon="cancel" on-click="_toggleAddingNewProperty"></paper-icon-button>
                                         </template>
 
                                         <template is="dom-if" if="[[_editing]]">
                                             <template is="dom-if" if="{{_selectedEquals('Editable',_selected)}}">
                                                 <paper-dropdown-menu label="Editable"
+                                                                     data-index$="[[index]]"
+                                                                     on-keydown="_editPropertyViaKeydown"
                                                                      value="{{_editableVal}}">
                                                     <iron-selector class="dropdown-content"
                                                                    selected="{{_editableVal}}"
@@ -381,23 +380,30 @@ Example:
 
                                             <template is="dom-if" if="{{_selectedEquals('Color',_selected)}}">
                                                 <div class="jscolor-wrapper">
-                                                    <input id$="jsColor-[[index]]" class="jscolor" value="{{_colorVal::change}}">
+                                                    <input id$="jsColor-[[index]]" class="jscolor"
+                                                           data-index$="[[index]]"
+                                                           on-keydown="_editPropertyViaKeydown"
+                                                           value="{{_colorVal::change}}">
                                                 </div>
                                             </template>
 
                                             <template is="dom-if" if="{{_selectedEquals('Opacity',_selected)}}">
-                                                <paper-slider id="opacitySlider" min=0 max=1 step=0.05 pin snaps value="{{_opacityVal}}"></paper-slider>
+                                                <paper-slider id="opacitySlider" min=0 max=1 step=0.05 pin snaps
+                                                              on-keydown="_editPropertyViaKeydown"
+                                                              data-index$="[[index]]" value="{{_opacityVal}}">
+                                                </paper-slider>
                                             </template>
 
                                             <template is="dom-if" if="{{_selectedEquals('Other',_selected)}}">
-                                                <paper-input required label="Name" autofocus value="{{_customPropKey}}"
+                                                <paper-input required label="Name" value="{{_customPropKey}}"
+                                                             data-index$="[[index]]"
+                                                             on-keydown="_editPropertyViaKeydown"
                                                              placeholder="The property name"></paper-input>
                                                 <paper-input required label="Value" value="{{_customPropVal}}"
+                                                             data-index$="[[index]]"
+                                                             on-keydown="_editPropertyViaKeydown"
                                                              placeholder="The property value"></paper-input>
                                             </template>
-                                            <paper-icon-button class="confirm-cancel-bttns" icon="check" on-click="_editProperty" data-index$="[[index]]"></paper-icon-button>
-                                            <paper-icon-button class="confirm-cancel-bttns" icon="cancel" on-click="_togglePropertyEditing"></paper-icon-button>
-
                                         </template>
                                     </article>
                                 </div>
