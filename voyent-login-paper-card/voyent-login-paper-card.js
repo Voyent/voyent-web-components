@@ -103,6 +103,24 @@
                 type: Boolean
             },
             /**
+             * Label for the Realm field
+             * Also used automatically as part of the placeholder
+             */
+            realminputlabel: {
+                type: String,
+                notify: true,
+                value: 'Realm'
+            },
+            /**
+             * Label for the Account field
+             * Also used automatically as part of the placeholder
+             */
+            accountinputlabel: {
+                type: String,
+                notify: true,
+                value: 'Account'
+            },
+            /**
              * Show a button that allows the details panel (realm, account, host) to be hidden
              * This ties to an iron-collapse wrapper
              */

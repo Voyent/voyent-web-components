@@ -114,12 +114,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <iron-collapse id="collapse" opened="[[!hideclosed]]" no-animation="true">
               <div id="content">
                   <template is="dom-if" if="[[showrealminput]]">
-                    <paper-input required label="Realm" placeholder="Enter the realm" value="{{realm}}">
+                    <paper-input required label="{{realminputlabel}}" placeholder="Enter the {{realminputlabel}}" value="{{realm}}">
                       <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
                     </paper-input>
                   </template>
                   <template is="dom-if" if="[[showaccountinput]]">
-                    <paper-input required label="Account" placeholder="Enter the account" value="{{account}}">
+                    <paper-input required label="{{accountinputlabel}}" placeholder="Enter the {{accountinputlabel}}" value="{{account}}">
                       <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
                     </paper-input>
                   </template>
