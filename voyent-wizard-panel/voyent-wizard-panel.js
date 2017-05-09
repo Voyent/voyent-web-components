@@ -95,6 +95,15 @@ Polymer({
             reflectToAttribute: true
         },
         /**
+         * Disable the Enter key automatically submitting the Next button
+         * By default this is enabled, but will only work if nexthidden and nextdisabled are false
+         * @value false
+         */
+        disableenterkey: {
+            type: Boolean,
+            value: false
+        },
+        /**
          * Added to account for changing internal panel #s caused by repeat or conditional templates.
          */
         childcount:{
@@ -234,6 +243,16 @@ Polymer({
                 return nextToTry;
             }
         }
-
-    }
+    },
+    
+    onEnter: function() {
+        if (!this.disableenterkey) {
+            if (!this.nexthidden && !this.nextdisabled) {
+                var nextButton = this.querySelector('#nextButton');
+                if (nextButton) {
+                    nextButton.click();
+                }
+            }
+        }
+    },
 });
