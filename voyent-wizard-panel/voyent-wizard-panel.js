@@ -14,6 +14,7 @@ Polymer({
             type: Number,
             notify: true,
             reflectToAttribute: true,
+            value: 0,
             observer: 'selectedChanged'
         },
         /**
@@ -112,10 +113,6 @@ Polymer({
             notify:true,
             observer:'childCountChanged'
         },
-        initialized:{
-            type:Boolean,
-            value:false
-        }
     },
     
     ready: function() {
@@ -141,14 +138,9 @@ Polymer({
      */
     selectedChanged: function(selected) {
         // Disable Back if we don't have a previous page, and similarly Next if we are at the end
-        if(this.initialized){
-            this.updateDisabled();
+        this.updateDisabled();
 
-            this.fire('voyent-wizard-panel-changed', { selected: this.selected });
-        }
-        else{
-            this.initialized = true;
-        }
+        this.fire('voyent-wizard-panel-changed', { selected: this.selected });
     },
 
     updateDisabled:function(){
