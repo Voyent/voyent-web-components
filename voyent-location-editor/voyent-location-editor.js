@@ -149,7 +149,7 @@ Polymer({
         if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
             script.type = 'text/javascript';
-            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3.25&' +
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3.27&' +
                 'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
             _loc.$.container.appendChild(script);
         }
