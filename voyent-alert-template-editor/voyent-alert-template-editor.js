@@ -175,6 +175,22 @@ Polymer({
     },
 
     /**
+     * Confirms or cancels the renaming of an Alert Template via enter and esc keys.
+     * @param e
+     * @private
+     */
+    _renameTrackerViaKeydown: function(e) {
+        //Prevent the event from bubbling up the DOM tree
+        e.stopPropagation();
+        if (e.which === 13) { //Enter
+            this._renameTracker();
+        }
+        else if (e.which === 27) { //Esc
+            this._toggleTrackerRenaming();
+        }
+    },
+
+    /**
      * Removes the current tracker from the database.
      * @private
      */
@@ -283,7 +299,11 @@ Polymer({
         if (renaming) {
             //Set the input value to the current zoneId.
             this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.newName',
-                     this.get('_trackerData.tracker.zones.features.'+i+'.properties.zoneId'));
+                     this._trackerData.tracker.zones.features[i].properties.zoneId);
+        }
+        else {
+            //Always reset the input value so it updates each time editing mode is entered
+            this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.newName','');
         }
         //Toggle renaming mode.
         this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.renaming',renaming);
@@ -305,14 +325,29 @@ Polymer({
     },
 
     /**
+     * Confirms or cancels the renaming of a Proximity Zone via enter and esc keys.
+     * @param e
+     * @private
+     */
+    _renameProximityZoneViaKeydown: function(e) {
+        //Prevent the event from bubbling up the DOM tree
+        if (e.which === 13) { //Enter
+            this._renameProximityZone(e);
+        }
+        else if (e.which === 27) { //Esc
+            this._toggleProximityZoneRenaming(e);
+        }
+    },
+
+    /**
      * Toggles Proximity Zone property editing mode.
-     * @param e - The event from the template or null if this was toggled after a successful save.
+     * @param e
      * @private
      */
     _togglePropertyEditing: function(e) {
         var _this = this;
         this._editing = !this._editing;
-        var index = e ? e.model.get('index') : null;
+        var index = e.model.get('index');
         if (this._editing) { //We are entering edit mode.
             var properties = this._trackerData.tracker.zones.features[index].properties;
             switch (this._selected) {
@@ -351,6 +386,11 @@ Polymer({
         else { //We are exiting editing mode.
             //Clear the editing mode inputs.
             this._editableVal = this._colorVal = this._opacityVal = this._customPropKey = this._customPropVal = null;
+            //Force the jscolor picker to be hidden in case the color was confirmed via keydown
+            var jscolorPicker = this.querySelector('#jsColor-'+index);
+            if (this._selected === 'Color' && jscolorPicker) {
+                jscolorPicker.jscolor.hide();
+            }
         }
     },
 
@@ -398,7 +438,23 @@ Polymer({
         }
         this.set('_trackerData.tracker.zones.features.'+index+'.properties',properties);
         //Toggle editing mode.
-        this._togglePropertyEditing(null);
+        this._togglePropertyEditing(e);
+    },
+
+    /**
+     * Confirms or cancels the edit of a Proximity Zone property via enter and esc keys.
+     * @param e
+     * @private
+     */
+    _editPropertyViaKeydown: function(e) {
+        //Prevent the event from bubbling up the DOM tree
+        e.stopPropagation();
+        if (e.which === 13) { //Enter
+            this._editProperty(e);
+        }
+        else if (e.which === 27) { //Esc
+            this._togglePropertyEditing(e);
+        }
     },
 
     /**
@@ -408,6 +464,10 @@ Polymer({
      */
     _toggleAddingNewProperty: function(e) {
         this._addingNew = !this._addingNew;
+        //Always reset the input values so they update each time editing mode is entered
+        if (!this._addingNew) {
+            this._customPropKey = this._customPropVal = null;
+        }
     },
 
     /**
@@ -426,6 +486,21 @@ Polymer({
             this._customPropKey = this._customPropVal = null;
             //Toggle new property mode.
             this._toggleAddingNewProperty();
+        }
+    },
+
+    /**
+     * Confirms or cancels the saving of a new custom property via enter and esc keys.
+     * @param e
+     * @private
+     */
+    _saveNewPropertyViaKeydown: function(e) {
+        e.stopPropagation();
+        if (e.which === 13) { //Enter
+            this._saveNewProperty(e);
+        }
+        else if (e.which === 27) { //Esc
+            this._toggleAddingNewProperty(e);
         }
     },
 

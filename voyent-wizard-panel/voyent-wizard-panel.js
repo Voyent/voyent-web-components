@@ -111,6 +111,10 @@ Polymer({
             value:0,
             notify:true,
             observer:'childCountChanged'
+        },
+        initialized:{
+            type:Boolean,
+            value:false
         }
     },
     
@@ -137,9 +141,14 @@ Polymer({
      */
     selectedChanged: function(selected) {
         // Disable Back if we don't have a previous page, and similarly Next if we are at the end
-        this.updateDisabled();
+        if(this.initialized){
+            this.updateDisabled();
 
-        this.fire('voyent-wizard-panel-changed', { selected: this.selected });
+            this.fire('voyent-wizard-panel-changed', { selected: this.selected });
+        }
+        else{
+            this.initialized = true;
+        }
     },
 
     updateDisabled:function(){
