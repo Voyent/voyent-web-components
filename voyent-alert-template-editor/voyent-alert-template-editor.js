@@ -153,10 +153,15 @@ Polymer({
      * @private
      */
     _toggleTrackerRenaming: function() {
+        var _this = this;
         var renaming = !this.get('_trackerData.tracker.tmpProperties.renaming');
         if (renaming) {
             //Set the input value to the current zoneId.
             this.set('_trackerData.tracker.tmpProperties.newName',this.get('_trackerData.tracker.label'));
+            //Focus on the input.
+            setTimeout(function() {
+                _this.querySelector('#tracker').focus();
+            },0);
         }
         //Toggle renaming mode.
         this.set('_trackerData.tracker.tmpProperties.renaming',renaming);
@@ -293,6 +298,7 @@ Polymer({
      * @private
      */
     _toggleProximityZoneRenaming: function(eOrI) {
+        var _this = this;
         //This function will either be passed an event (from the ui) or a direct index (from the JS).
         var i = eOrI.model ? eOrI.model.get('index') : eOrI;
         var renaming = !this.get('_trackerData.tracker.zones.features.'+i+'.tmpProperties.renaming');
@@ -300,6 +306,10 @@ Polymer({
             //Set the input value to the current zoneId.
             this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.newName',
                      this._trackerData.tracker.zones.features[i].properties.zoneId);
+            //Focus on the input.
+            setTimeout(function() {
+                _this.querySelector('#zone-'+i).focus();
+            },0);
         }
         else {
             //Always reset the input value so it updates each time editing mode is entered
@@ -330,7 +340,7 @@ Polymer({
      * @private
      */
     _renameProximityZoneViaKeydown: function(e) {
-        //Prevent the event from bubbling up the DOM tree
+        //Prevent the event from bubbling up the DOM tree.
         if (e.which === 13) { //Enter
             this._renameProximityZone(e);
         }
@@ -355,27 +365,46 @@ Polymer({
                 case 'Editable':
                     //Convert boolean to string for UI.
                     this.set('_editableVal',properties['Editable'] ? 'true' : 'false');
+                    //Focus on the input.
+                    setTimeout(function() {
+                        _this.querySelector('#editable-'+index).focus();
+                    },0);
                     break;
                 case 'Color':
                     this.set('_colorVal',properties['Color']);
-                    //Also call the jscolor API so we are sure the input style updates properly
-                function waitForJSColor() {
-                    var colorPicker = _this.querySelector('#jsColor-'+index);
-                    //Wait till we have a reference to the colour picker
-                    if (!colorPicker || !colorPicker.jscolor) {
-                        setTimeout(function(){waitForJSColor();},10);
-                        return;
+                    //Also call the jscolor API so we are sure the input style updates properly.
+                    function waitForJSColor() {
+                        var colorPicker = _this.querySelector('#jsColor-'+index);
+                        //Wait till we have a reference to the colour picker.
+                        if (!colorPicker || !colorPicker.jscolor) {
+                            setTimeout(function(){waitForJSColor();},10);
+                            return;
+                        }
+                        colorPicker.jscolor.fromString(_this.get('_colorVal'));
+                        //Focus on the input and display the color picker.
+                        setTimeout(function() {
+                            colorPicker.focus();
+                            colorPicker.jscolor.show();
+                        },0);
                     }
-                    _this.querySelector('#jsColor-'+index).jscolor.fromString(_this.get('_colorVal'));
-                }
                     waitForJSColor();
                     break;
                 case 'Opacity':
                     this.set('_opacityVal',properties['Opacity']);
+                    //Focus on the input.
+                    setTimeout(function() {
+                        var opacitySlider = _this.querySelector('#opacity-'+index);
+                        opacitySlider.focus();
+                    },0);
                     break;
                 default:
                     this._customPropKey = this._selected;
                     this._customPropVal = properties[this._customPropKey];
+                    //Focus on the input.
+                    setTimeout(function() {
+                        var customInput = _this.querySelector('#custom-'+index);
+                        customInput.focus();
+                    },0);
             }
 
             //Setup the jscolor picker.
@@ -387,9 +416,9 @@ Polymer({
             //Clear the editing mode inputs.
             this._editableVal = this._colorVal = this._opacityVal = this._customPropKey = this._customPropVal = null;
             //Force the jscolor picker to be hidden in case the color was confirmed via keydown
-            var jscolorPicker = this.querySelector('#jsColor-'+index);
-            if (this._selected === 'Color' && jscolorPicker) {
-                jscolorPicker.jscolor.hide();
+            var colorPicker = this.querySelector('#jsColor-'+index);
+            if (this._selected === 'Color' && colorPicker) {
+                colorPicker.jscolor.hide();
             }
         }
     },
@@ -425,6 +454,10 @@ Polymer({
                 this.set('_opacityVal',null);
                 break;
             default:
+                //Block the user from creating a property with one of the standard keys.
+                if (this._readOnlyProperties.indexOf(this._customPropKey) !== -1) {
+                    return;
+                }
                 properties[this._customPropKey] = this._customPropVal;
                 //If the selected property key changed delete the old one and update the table selection.
                 if (this._selected !== this._customPropKey) {
@@ -463,9 +496,16 @@ Polymer({
      * @private
      */
     _toggleAddingNewProperty: function(e) {
+        var _this = this;
         this._addingNew = !this._addingNew;
-        //Always reset the input values so they update each time editing mode is entered
-        if (!this._addingNew) {
+        if (this._addingNew) {
+            //Focus on the input.
+            setTimeout(function() {
+                _this.querySelector('#new-'+e.model.get('index')).focus();
+            },0);
+        }
+        else {
+            //Reset the input values so they update each time editing mode is entered.
             this._customPropKey = this._customPropVal = null;
         }
     },
@@ -476,7 +516,9 @@ Polymer({
      * @private
      */
     _saveNewProperty: function(e) {
-        if (this._customPropKey && this._customPropVal) {
+        //Make sure we have values for and that the key is not one of the standard keys.
+        if (this._customPropKey && this._customPropVal &&
+            this._readOnlyProperties.indexOf(this._customPropKey) === -1) {
             var index = e.model.get('index');
             //Clone properties and re-set it so the computed binding _toArray updates.
             var properties = JSON.parse(JSON.stringify(this._trackerData.tracker.zones.features[index].properties));
@@ -515,6 +557,8 @@ Polymer({
         var properties = JSON.parse(JSON.stringify(this._trackerData.tracker.zones.features[index].properties));
         delete properties[this._selected];
         this.set('_trackerData.tracker.zones.features.'+index+'.properties',properties);
+        //Toggle property editing since this function is only available during editing mode.
+        this._togglePropertyEditing(e);
     },
 
     /**
@@ -710,16 +754,6 @@ Polymer({
     },
 
     /**
-     * Template helper that determines if the passed property is allowed to be removed.
-     * @param selected
-     * @returns {boolean}
-     * @private
-     */
-    _isRemoveableProperty: function(selected) {
-        return !!selected && this._readOnlyProperties.indexOf(selected) === -1;
-    },
-
-    /**
      * Set the Proximity Zone properties list to be sorted by property keys.
      * @param e
      * @private
@@ -777,16 +811,17 @@ Polymer({
     },
 
     /**
-     * Triggered each time a property row is selected and handles the de-selection of a previously selected row.
+     * Triggered each time a property row is selected or de-selected. Toggles the editing mode for that property.
      * @param e
      * @param detail
      * @private
      */
     _onIronActivate: function(e,detail) {
-        if (detail.selected === this._selected) {
-            this.querySelector('#propertySelector-'+e.model.get('index')).selected = null;
-            e.preventDefault();
-        }
+        var _this = this;
+        //Do this async since iron-activate fires before this._selected changes.
+        setTimeout(function() {
+            _this._togglePropertyEditing(e);
+        },0);
     },
 
     /**
