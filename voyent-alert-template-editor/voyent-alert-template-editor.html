@@ -28,14 +28,18 @@ Example:
             #map,
             #propertiesPanel {
                 height: var(--height-var);
-                border: 1px solid black;
+                border: 2px inset rgba(0,0,0,0.5);
                 margin-bottom:10px;
+            }
+            #map {
+                border-radius: 15px 0 0 15px;
             }
             #propertiesPanel {
                 width: 200px;
                 float: right;
                 border-left: none;
                 overflow-y: scroll;
+                background-color: white;
             }
             .accordion {
                 text-align: left;
