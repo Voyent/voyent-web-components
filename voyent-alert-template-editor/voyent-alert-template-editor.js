@@ -80,11 +80,12 @@ Polymer({
             google.maps.event.addListener(window, 'resize', function () {
                 _this.resizeMap();
             });
-
             //Initialize some vars
             _this._selected = _this._editing = _this._addingNew = false;
             _this._trackerData = null;
             _this._readOnlyProperties = ['Editable','Color','Opacity'];
+            //Initialize our custom OverlayView class.
+            _this._initializeProximityZoneOverlayView();
         };
         if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
@@ -204,10 +205,11 @@ Polymer({
         if (!confirm) {
             return;
         }
-        //Remove the marker and circles form the map.
+        //Remove the marker, circles and zoneOverlays from the map.
         this._trackerData.marker.setMap(null);
         for (var i=0; i<this._trackerData.circles.length; i++) {
             this._trackerData.circles[i].setMap(null);
+            this._trackerData.zoneOverlays[i].setMap(null);
         }
         //Wipe all references to the tracker and re-enable drawing mode.
         this._trackerData = null;
@@ -268,7 +270,7 @@ Polymer({
 
         //Build the geoJSON structure for the proximity zone.
         var newCircleJSON = this._getZoneJSON();
-        newCircleJSON.properties.zoneId = this._trackerData.tracker.zones.features.length + 1;
+        newCircleJSON.properties.zoneId = 'Zone_' + (this._trackerData.tracker.zones.features.length + 1);
         //Update our lists.
         this.push('_trackerData.tracker.zones.features',newCircleJSON);
         this.push('_trackerData.circles',newCircle);
@@ -276,6 +278,8 @@ Polymer({
         this._setupChangeListeners();
         //Update the JSON to include the new circle.
         this._updateAlertTemplateJSON();
+        //Draw the Proximity Zone label overlay and save a reference to it.
+        this.push('_trackerData.zoneOverlays',new this._ProximityZoneOverlay(this._trackerData.tracker.zones.features.length-1));
     },
 
     /**
@@ -290,6 +294,9 @@ Polymer({
         //Remove the circle from the map and the reference to it.
         this._trackerData.circles[i].setMap(null);
         this.splice('_trackerData.circles',i,1);
+        //Remove the overlay.
+        this._trackerData.zoneOverlays[i].setMap(null);
+        this.splice('_trackerData.zoneOverlays',i,1);
     },
 
     /**
@@ -332,6 +339,8 @@ Polymer({
         this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.newName','');
         //Toggle renaming mode.
         this._toggleProximityZoneRenaming(i);
+        //Redraw the overlay since the content changed.
+        this._redrawZoneOverlay(i);
     },
 
     /**
@@ -415,10 +424,15 @@ Polymer({
         else { //We are exiting editing mode.
             //Clear the editing mode inputs.
             this._editableVal = this._colorVal = this._opacityVal = this._customPropKey = this._customPropVal = null;
-            //Force the jscolor picker to be hidden in case the color was confirmed via keydown
-            var colorPicker = this.querySelector('#jsColor-'+index);
-            if (this._selected === 'Color' && colorPicker) {
-                colorPicker.jscolor.hide();
+            switch (this._selected) {
+                case 'Color':
+                    //Force the jscolor picker to be hidden in case the color was confirmed via keydown
+                    var colorPicker = this.querySelector('#jsColor-'+index);
+                    if (colorPicker) {
+                        colorPicker.jscolor.hide();
+                    }
+                    //Redraw the overlay since the colour changed.
+                    this._redrawZoneOverlay(index);
             }
         }
     },
@@ -562,6 +576,22 @@ Polymer({
     },
 
     /**
+     * Redraws a specific Proximity Zone overlay based on the passed index or redraws them all if no index is available.
+     * @param i
+     * @private
+     */
+    _redrawZoneOverlay: function(i) {
+        if (typeof i !== 'undefined') {
+            this._trackerData.zoneOverlays[i].draw();
+        }
+        else {
+            for (i=0; i<this._trackerData.zoneOverlays.length; i++) {
+                this._trackerData.zoneOverlays[i].draw();
+            }
+        }
+    },
+
+    /**
      * Determine the map size to use. This will leverage this.height and this.width if available. Otherwise the parent
      * container size will be used. If this.autoheight is specified than it will override this.height.
      */
@@ -606,6 +636,10 @@ Polymer({
         var features = this._trackerData.tracker.zones.features;
         var N = 50; //The number of coordinates the circle approximation will have.
         var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
+        //Use the following two vars to calculate and store the northern most point of a Proximity
+        //Zone circle. This is used to calculate where to render the Proximity Zone overlay label.
+        var highestLat = -100;
+        this._trackerData.highestLats = [];
         for (var i=0; i<features.length; i++) {
             //Sync the tracker zone properties with the zone drawn on the map.
             features[i].properties.googleMaps.radius = this._trackerData.circles[i].getRadius();
@@ -620,10 +654,16 @@ Polymer({
                                                                           this._trackerData.circles[i].getRadius(),
                                                                           degreeStep * j);
                 features[i].geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
+                //Look for the northern most point of the circle.
+                if (latLng.lat() > highestLat) {
+                    highestLat = latLng.lat();
+                }
             }
             //In addition to N coordinates we also need to copy the
             //first one to the last one to complete the circle.
             features[i].geometry.coordinates[0].push(features[i].geometry.coordinates[0][0]);
+            //Save the highest known latitude.
+            this._trackerData.highestLats.push(highestLat);
         }
     },
 
@@ -644,9 +684,11 @@ Polymer({
                 var tracker = _this._getTrackerJSON();
                 tracker.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
                 //Store the various pieces together so we can reference them later.
-                _this._trackerData = {"tracker":tracker,"marker":shape,"circles":[newCircle]};
+                _this._trackerData = {"tracker":tracker,"marker":shape,"circles":[newCircle],"zoneOverlays":[],"highestLats":[]};
                 //Determine and set the coordinates for the circle.
                 _this._updateAlertTemplateJSON();
+                //Draw the Proximity Zone label overlay and save a reference to it.
+                _this.push('_trackerData.zoneOverlays',new _this._ProximityZoneOverlay(0));
                 //Disable further Alert Template creations - only allowed one at a time.
                 _this._drawingManager.setOptions({
                     "drawingControlOptions":{
@@ -687,25 +729,110 @@ Polymer({
             google.maps.event.addListener(this._trackerData.marker, 'dragend', function (event) {
                 //Update the JSON since the position changed.
                 _this._updateAlertTemplateJSON();
+                //Adjust the position of the Proximity Zone labels since all of their positions changed.
+                _this._redrawZoneOverlay();
             });
         }
         if (this._trackerData.circles) {
             for (var i=0; i<this._trackerData.circles.length; i++) {
-                //Clear any previously added listeners (since we call this function again for newly added zones).
-                google.maps.event.clearInstanceListeners(this._trackerData.circles[i]);
-                //Add resize listener to circles.
-                google.maps.event.addListener(this._trackerData.circles[i], 'radius_changed', function (event) {
-                    //Update the JSON since the size of a zone changed.
-                    _this._updateAlertTemplateJSON();
-                });
-                //Add click listener to circles.
                 (function(i) {
+                    //Clear any previously added listeners (since we call this function again for newly added zones).
+                    google.maps.event.clearInstanceListeners(_this._trackerData.circles[i]);
+                    //Add resize listener to circles.
+                    google.maps.event.addListener(_this._trackerData.circles[i], 'radius_changed', function (event) {
+                        //Update the JSON since the size of a zone changed.
+                        _this._updateAlertTemplateJSON();
+                        //Adjust the position of the Proximity Zone label since the radius changed.
+                        _this._redrawZoneOverlay(i);
+                    });
+                    //Add click listener to circles.
                     google.maps.event.addListener(_this._trackerData.circles[i], 'click', function (event) {
                         _this._toggleAccordion(i);
                     });
                 }(i))
             }
         }
+    },
+
+    /**
+     * Our simple implementation of Google's OverlayView Class. Used to display Proximity Zone labels on the map.
+     * @private
+     */
+    _initializeProximityZoneOverlayView: function() {
+        var _outer = this;
+
+        //Constructor
+        this._ProximityZoneOverlay = function(i) {
+            //Set the index of this Proximity Zone which we'll use later.
+            this.i = i;
+            //Set the map for this overlay.
+            this.setMap(_outer._map);
+        };
+
+        //Set the custom overlay object's prototype to a new instance of OverlayView.
+        this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
+
+        //Called automatically when the map is ready for the overlay to be attached.
+        this._ProximityZoneOverlay.prototype.onAdd = function () {
+            //Begin to setup the div.
+            this.div = document.createElement('div');
+            this.div.style.borderStyle = 'none';
+            this.div.style.borderWidth = '0px';
+            this.div.style.position = 'absolute';
+            // Add the element to the "overlayLayer" pane.
+            var panes = this.getPanes();
+            panes.overlayLayer.appendChild(this.div);
+        };
+
+        //Handles visually displaying the overlay on the map. Called when the object is first displayed
+        //and again whenever we want to redraw the overlay, like when the positon changes.
+        this._ProximityZoneOverlay.prototype.draw = function () {
+            var properties = _outer._trackerData.tracker.zones.features[this.i].properties;
+
+            //Retrieve the north-center coordinates of this overlay and convert them to pixel coordinates.
+            var nc = this.getProjection().fromLatLngToDivPixel(
+                new google.maps.LatLng(_outer._trackerData.highestLats[this.i],
+                _outer._trackerData.circles[this.i].getCenter().lng())
+            );
+            //Set the div content.
+            this.div.innerHTML = properties.zoneId;
+            //Center the label above the zone.
+            this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
+            this.div.style.top = nc.y-20 + 'px';
+            //Configure the styling.
+            this.div.style.backgroundColor = '#'+properties.Color;
+            this.div.style.color = this.returnColorBasedOnBackground(properties.Color);
+            this.div.style.padding = '5px';
+            this.div.style.fontSize = '8px';
+            this.div.style.zIndex = 10000;
+            this.div.style.opacity = 0.8;
+            this.div.style.borderRadius = '25px';
+        };
+
+        //Cleans up the overlay whenever the overlays map property is set to null.
+        this._ProximityZoneOverlay.prototype.onRemove = function () {
+            this.div.parentNode.removeChild(this.div);
+            this.div = null;
+        };
+
+        //Returns #000 or #FFF depending on the passed HEX value.
+        this._ProximityZoneOverlay.prototype.returnColorBasedOnBackground = function(hex) {
+            //Convert 3 digits to 6.
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+            //Just return black if we receive an invalid colour.
+            if (hex.length !== 6) {
+                return '#000';
+            }
+            //Calculate
+            var r = parseInt(hex.slice(0, 2), 16),
+                g = parseInt(hex.slice(2, 4), 16),
+                b = parseInt(hex.slice(4, 6), 16);
+            return (r * 0.299 + g * 0.587 + b * 0.114) > 186
+                ? '#000'
+                : '#FFF';
+        };
     },
 
     /**
@@ -878,7 +1005,7 @@ Polymer({
                 },
                 "Editable": true,
                 "Color": "000000",
-                "zoneId": 1,
+                "zoneId": "Zone_1",
                 "Opacity": 0.30
             },
             //These properties are used by the view and will be removed before saving the tracker.
