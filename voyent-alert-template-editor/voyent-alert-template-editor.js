@@ -150,6 +150,27 @@ Polymer({
     },
 
     /**
+     * Loads an Alert Template into the editor based on the passed id.
+     * @param alertTemplateId
+     */
+    loadAlertTemplate: function(alertTemplateId) {
+        var _this = this;
+        voyent.io.locate.findTrackers({
+            realm: this.realm,
+            account: this.account,
+            query: {"_id":alertTemplateId}
+        }).then(function (results) {
+            if (!results || !results.length) {
+                _this.fire('message-error', 'Tracker not found');
+                return;
+            }
+            _this._drawAlertTemplate(results[0]);
+        }).catch(function (error) {
+            _this.fire('message-error', 'Error loading or drawing saved tracker: ' + error);
+        });
+    },
+
+    /**
      * Toggles renaming mode for an Alert Template.
      * @private
      */
@@ -576,6 +597,57 @@ Polymer({
     },
 
     /**
+     * Draws the passed Alert Template on the map and sets up the properties panel.
+     * @param alertTemplate
+     * @private
+     */
+    _drawAlertTemplate: function(alertTemplate) {
+        //Create the marker and build the trackerData.
+        var marker = new google.maps.Marker({
+            position: new google.maps.LatLng(alertTemplate.anchor.geometry.coordinates[1],alertTemplate.anchor.geometry.coordinates[0]),
+            map: this._map,
+            draggable: true,
+            zIndex: 50
+        });
+        this._trackerData = {"tracker":alertTemplate,"marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[]};
+
+        //Generate the circles and bind them to the marker.
+        var zones = alertTemplate.zones.features, bounds = new google.maps.LatLngBounds(), highestLats = [], circle, properties;
+        for (var i=0; i<zones.length; i++) {
+            //Set the properties of the circle based on the tracker JSON.
+            properties = this._getCircleProperties();
+            properties.radius = zones[i].properties.googleMaps.radius;
+            properties.fillColor = '#'+ zones[i].properties.Color;
+            properties.fillOpacity = zones[i].properties.Opacity;
+            properties.zIndex = zones[i].properties.googleMaps.zIndex;
+            //Create the circle and bind it.
+            circle = new google.maps.Circle(properties);
+            circle.bindTo('center', marker, 'position');
+            this._trackerData.circles.push(circle);
+            //Determine where to draw the Proximity Zone label overlay and draw it.
+            //NOTE - We push to this array and set it instead of pushing directly to _trackerData.highestLats because
+            //pushing directly to _trackerData.highestLats only pushes the first item for an unknown reason.
+            highestLats.push(this._determineHighestLat(zones[i].geometry.coordinates[0]));
+            this.set('_trackerData.highestLats',highestLats);
+            this._trackerData.zoneOverlays.push(new this._ProximityZoneOverlay(i));
+            //Update our bounds object so we can pan the map later.
+            bounds.union(circle.getBounds());
+        }
+
+        //Add the change listeners to the marker and circles.
+        this._setupChangeListeners();
+        //Disable further Alert Template creations - only allowed one at a time.
+        this._drawingManager.setOptions({
+            "drawingControlOptions":{
+                "drawingModes":[],
+                "position":google.maps.ControlPosition.TOP_RIGHT}
+        });
+        //Focus the map on the loaded template.
+        this._map.fitBounds(bounds);
+        this._map.panToBounds(bounds);
+    },
+
+    /**
      * Redraws a specific Proximity Zone overlay based on the passed index or redraws them all if no index is available.
      * @param i
      * @private
@@ -665,6 +737,24 @@ Polymer({
             //Save the highest known latitude.
             this._trackerData.highestLats.push(highestLat);
         }
+    },
+
+    /**
+     * Determines the highest latitude of the passed coordinates array, used to
+     * calculate where to render the Proximity Zone overlay label.
+     * @param coordinates
+     * @returns {number}
+     * @private
+     */
+    _determineHighestLat: function(coordinates) {
+        var highestLat = -100;
+        this._trackerData.highestLats = [];
+        for (var i=0; i<coordinates.length; i++) {
+            if (coordinates[i][1] > highestLat) {
+                highestLat = coordinates[i][1];
+            }
+        }
+        return highestLat;
     },
 
     /**
@@ -780,8 +870,7 @@ Polymer({
             this.div.style.borderWidth = '0px';
             this.div.style.position = 'absolute';
             // Add the element to the "overlayLayer" pane.
-            var panes = this.getPanes();
-            panes.overlayLayer.appendChild(this.div);
+            this.getPanes().overlayLayer.appendChild(this.div);
         };
 
         //Handles visually displaying the overlay on the map. Called when the object is first displayed
