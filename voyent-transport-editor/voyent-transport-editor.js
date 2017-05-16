@@ -372,6 +372,14 @@ Polymer({
             else {
                 area.value += this.clickedList;
             }
+            
+            // Ensure that our new input value is propogated up the chhhhhhhhhhhhhha
+            if (area.id === 'messageSubject') {
+                this.set('value.global.subject', area.value);
+            }
+            else if (area.id === 'messageDetails') {
+                this.set('value.global.details', area.value);
+            }
 	        
 	        // Reset the selection of our list so we can re-select the same element as needed
 	        var mElem = document.querySelector("#messageElements");
