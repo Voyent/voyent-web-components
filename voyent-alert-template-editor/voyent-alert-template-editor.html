@@ -243,6 +243,7 @@ Example:
             <div id="container">
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_trackerData.tracker]]">
+                        <content select="propertiesTop"></content>
                         <div>
                             <template is="dom-if" if="[[!_trackerData.tracker.tmpProperties.renaming]]">
                                 <div class="alert-template-title">
