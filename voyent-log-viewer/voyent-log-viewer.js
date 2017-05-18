@@ -5,7 +5,7 @@ Polymer({
         
         /**
          * Defines the Voyent account to view logs for.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
@@ -68,7 +68,7 @@ Polymer({
     
     ready: function() {
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount()
+            this.account = voyent.auth.getLastKnownAccount()
         }
         this._serviceList = null;
         this.fetchLogs();
@@ -80,7 +80,7 @@ Polymer({
      */
     fetchLogs: function() {
         if( !this.account ){
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
         if (!this.account) {
             return;
@@ -205,7 +205,7 @@ Polymer({
      */
     _getAuditLogs: function() {
         var _this = this;
-        voyent.io.admin.getLogs({
+        voyent.admin.getLogs({
             account: this.account,
             query: this.query,
             options: this.options,
@@ -223,7 +223,7 @@ Polymer({
      */
     _getDebugLogs: function() {
         var _this = this;
-        voyent.io.admin.getDebugLogs({
+        voyent.admin.getDebugLogs({
             account: this.account,
             query: this.query,
             options: this.options,

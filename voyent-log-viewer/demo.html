@@ -106,7 +106,7 @@
         var username = document.getElementById('username').value;
         var password = document.getElementById('password').value;
 
-        voyent.io.auth.connect({
+        voyent.auth.connect({
             account: account,
             realm: 'admin',
             username: username,
@@ -120,14 +120,14 @@
     function setCredentialsOnComponent() {
         var elem = document.getElementById('logViewer');
 
-        var account = voyent.io.auth.getLastKnownAccount();
+        var account = voyent.auth.getLastKnownAccount();
         if (account) {
             elem.setAttribute('account', account);
             document.getElementById('account').value = account;
         }
 
-        if (voyent.io.auth.isLoggedIn()) {
-            document.getElementById('username').value = voyent.io.auth.getLastKnownUsername();
+        if (voyent.auth.isLoggedIn()) {
+            document.getElementById('username').value = voyent.auth.getLastKnownUsername();
         }
     }
 

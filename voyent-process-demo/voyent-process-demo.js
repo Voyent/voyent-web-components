@@ -83,12 +83,12 @@ Polymer({
 	 */
 	initialize: function() {
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
-        if (!voyent.io.auth.isLoggedIn()) {
+        if (!voyent.auth.isLoggedIn()) {
             this.set('loggedIn', false);
             return;
         }
@@ -103,7 +103,8 @@ Polymer({
         this._retrieveModels(true);
         
         // Attach and join the push group
-        voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
+        // NTFY-496 TODO Move this to the new push style
+        //voyent.xio.push.attach('http://' + this.host + '/pushio/' + this.account + '/realms/' + this.realm, this.pushGroup);
     
         // Handle incoming notifications
         // We don't need to display the notifications, since updating our process model image will show the user enough
@@ -505,7 +506,7 @@ Polymer({
         console.log("Event JSON: " + event.toSource());
         
         var _this = this;
-	    voyent.io.event.createCustomEvent({ "event": event }).then(function() {
+	    voyent.event.createCustomEvent({ "event": event }).then(function() {
             _this.fire('message-info', "Successfully sent event '" + eventName + "'"); 
 	    }).catch(function(error) {
 	        _this.fire('message-error', "Failed to send event '" + eventName + "'");
@@ -700,7 +701,7 @@ Polymer({
 	 * Return a URL to the Process service for our current host, account, realm, and access token
 	 */
 	_makeURL: function(addition) {
-	    return 'http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + addition + '?access_token=' + voyent.io.auth.getLastAccessToken();
+	    return 'http://' + this.host + '/process/' + this.account + '/realms/' + this.realm + addition + '?access_token=' + voyent.auth.getLastAccessToken();
 	},
 	
 	/**

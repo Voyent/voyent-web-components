@@ -413,12 +413,12 @@ Polymer({
      * Retrieve a list of saved email templates IDs from the doc service
      */
 	_loadEmailTemplates: function() {
-        if (!voyent.io.auth.isLoggedIn()) {
+        if (!voyent.auth.isLoggedIn()) {
             return;
         }
 	    
         var _this = this;
-        voyent.io.docs.getDocument({'id': 'emailTemplates'}).then(function(doc) {
+        voyent.docs.getDocument({'id': 'emailTemplates'}).then(function(doc) {
             _this.set('_emailTemplates', doc.ids);
             
             if (typeof _this._emailTemplates !== 'undefined' && _this._emailTemplates !== null && _this._emailTemplates.length > 0) {

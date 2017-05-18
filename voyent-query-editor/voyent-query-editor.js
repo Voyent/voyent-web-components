@@ -29,12 +29,12 @@ Voyent.QueryEditor = Polymer({
     properties: {
         /**
          * Defines the Voyent realm to build queries for.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
         realm: { type: String },
         /**
          * Defines the Voyent account to build queries for.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
@@ -185,7 +185,7 @@ Voyent.QueryEditor = Polymer({
 
     ready: function() {
         var _this = this;
-        //define the services and collection combinations and their matching voyent.io call
+        //define the services and collection combinations and their matching voyent call
         this._serviceMappings = {
             "action": {
                 "actions":"findActions"
@@ -215,12 +215,12 @@ Voyent.QueryEditor = Polymer({
                 return;
             }
             if (!_this.realm) {
-                _this.realm = voyent.io.auth.getLastKnownRealm();
+                _this.realm = voyent.auth.getLastKnownRealm();
             }
             if (!_this.account) {
-                _this.account = voyent.io.auth.getLastKnownAccount();
+                _this.account = voyent.auth.getLastKnownAccount();
             }
-            if (!voyent.io.auth.isLoggedIn() || !_this.realm || !_this.account) {
+            if (!voyent.auth.isLoggedIn() || !_this.realm || !_this.account) {
                 return;
             }
             _this.reloadEditor();
@@ -346,7 +346,7 @@ Voyent.QueryEditor = Polymer({
      */
     fetchQueryList: function() {
         var _this = this;
-        voyent.io.query.findQueries({
+        voyent.query.findQueries({
             account:this.account,
             realm: this.realm
         }).then(function(results) {
@@ -468,7 +468,7 @@ Voyent.QueryEditor = Polymer({
             delete query._id;
         }
         //create/update the query
-        voyent.io.query[func](params).then(function(uri) {
+        voyent.query[func](params).then(function(uri) {
             var queryId = _this.activeQuery._id;
             if (uri) {
                 queryId = uri.split("/").pop();
@@ -492,7 +492,7 @@ Voyent.QueryEditor = Polymer({
      */
     _deleteQuery: function(queryId) {
         var _this = this;
-        voyent.io.query.deleteQuery({
+        voyent.query.deleteQuery({
             id:queryId,
             account: this.account,
             realm: this.realm
@@ -792,7 +792,7 @@ Voyent.QueryEditor = Polymer({
         this._setLastquery(query);
 
         var func = this._serviceMappings[this.service][this.collection] || this._serviceMappings[this.service]['collection'];
-        voyent.io[this.service][func](params).then(function (results) {
+        voyent[this.service][func](params).then(function (results) {
             var obj = {};
             if (results && results.length > 0) {
                 if (_this._redetermineFields) {
@@ -1078,7 +1078,7 @@ Voyent.QueryEditor = Polymer({
             }
             return;
         }
-        if (!voyent.io.auth.isLoggedIn() || !this.realm || !this.account) {
+        if (!voyent.auth.isLoggedIn() || !this.realm || !this.account) {
             return;
         }
         this._redetermineFields = true;
@@ -1147,7 +1147,7 @@ Voyent.QueryEditor = Polymer({
     _getDocumentCollections: function() {
         var _this = this;
         //get a list of available document collections and store it for later use
-        voyent.io.docs.getCollections().then(function (collections) {
+        voyent.docs.getCollections().then(function (collections) {
             _this._documentCollections = collections && collections.length ? collections : null;
         }).catch(function(error) {
             _this.fire('message-error', 'Error getting available document service collections: ' + error.detail);

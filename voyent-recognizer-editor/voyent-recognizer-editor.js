@@ -4,12 +4,12 @@ Polymer({
     properties: {
         /**
          * Defines the Voyent account of the realm.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
          * Defines the Voyent realm to build recognizers for.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
         realm: { type: String }
     },
@@ -21,12 +21,12 @@ Polymer({
 
 	ready: function() {
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
-        if (voyent.io.auth.isLoggedIn()) {
+        if (voyent.auth.isLoggedIn()) {
             this.getRecognizers();
         }
         this._loadedRecognizer = null;
@@ -37,7 +37,7 @@ Polymer({
      */
     getRecognizers: function() {
         var _this = this;
-        voyent.io.eventhub.findRecognizers({"realm":this.realm}).then(function(recognizers) {
+        voyent.eventhub.findRecognizers({"realm":this.realm}).then(function(recognizers) {
             //save the list of recognizer IDs so we can check for uniqueness
             _this._ids = recognizers.map(function(recognizer) {
                 return recognizer._id;
@@ -72,7 +72,7 @@ Polymer({
             return;
         }
         var recognizer = {"_id":recognizerId,"active":!!this._active,"script":this._script};
-        voyent.io.eventhub.createRecognizer({"realm":this.realm,"id":recognizerId,"recognizer":recognizer}).then(function() {
+        voyent.eventhub.createRecognizer({"realm":this.realm,"id":recognizerId,"recognizer":recognizer}).then(function() {
             _this._loadedRecognizer = recognizer;
             _this.getRecognizers();
             _this.fire('message-info', 'Successfully saved ' + _this._loadedRecognizer._id + ' recognizer');
@@ -96,7 +96,7 @@ Polymer({
         }
         else {
             var recognizer = {"active":!!this._active,"script":this._script};
-            voyent.io.eventhub.updateRecognizer({"realm":this.realm,"id":this._id,"recognizer":recognizer}).then(function() {
+            voyent.eventhub.updateRecognizer({"realm":this.realm,"id":this._id,"recognizer":recognizer}).then(function() {
                 _this.getRecognizers();
                 _this.fire('message-info', 'Successfully update ' + _this._id + ' recognizer');
             }).catch(function(error) {
@@ -111,7 +111,7 @@ Polymer({
      */
     deleteRecognizer: function(id) {
         var _this = this;
-        voyent.io.eventhub.deleteRecognizer({"realm":this.realm,id:id}).then(function() {
+        voyent.eventhub.deleteRecognizer({"realm":this.realm,id:id}).then(function() {
             _this.resetEditor();
             _this.getRecognizers();
             _this.fire('message-info', 'Successfully deleted recognizer ' + id);
@@ -223,7 +223,7 @@ Polymer({
      */
     _deleteAndSaveRecognizer: function() {
         var _this = this;
-        voyent.io.eventhub.deleteRecognizer({"realm":this.realm,id:this._loadedRecognizer._id}).then(function() {
+        voyent.eventhub.deleteRecognizer({"realm":this.realm,id:this._loadedRecognizer._id}).then(function() {
             _this._loadedRecognizer._id = _this._id;
             _this.saveRecognizer();
         }).catch(function(error) {

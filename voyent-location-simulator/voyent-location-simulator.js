@@ -5,12 +5,12 @@ Polymer({
     properties: {
         /**
          * The Voyent account of the realm.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
          * The Voyent realm to simulate motion in.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
         realm: { type: String },
         /**
@@ -64,10 +64,10 @@ Polymer({
 
     ready: function() {
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
         var _this = this;
         //set some default values
@@ -112,7 +112,7 @@ Polymer({
             //setup listeners for voyent-location-route components
             _this._setupRouteListeners();
             //initialize location data on the map
-            if (voyent.io.auth.isLoggedIn()) {
+            if (voyent.auth.isLoggedIn()) {
                 _this.refreshMap();
             }
             //make sure the map is sized correctly when the window size changes
@@ -196,13 +196,13 @@ Polymer({
         var promises = [];
         //get regioins, poi, tracker template and last user and tracker locations
         //ignore regions that are tracker zones
-        promises.push(voyent.io.locate.findRegions({realm:this.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function(regions) {
+        promises.push(voyent.locate.findRegions({realm:this.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function(regions) {
             _this._updateRegions(regions);
         }));
-        promises.push(voyent.io.locate.getAllPOIs({realm:this.realm}).then(function(pois) {
+        promises.push(voyent.locate.getAllPOIs({realm:this.realm}).then(function(pois) {
             _this._updatePOIs(pois);
         }));
-        promises.push(voyent.io.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
+        promises.push(voyent.locate.getAllTrackers({realm:this.realm}).then(function(trackers) {
             _this._mapTrackers(trackers);
         }));
         promises.push(this._executeAggregate(this._lastUserLocations));
@@ -220,7 +220,7 @@ Polymer({
      * Play all simulations (paused routes will be continued).
      */
     playAll: function() {
-        if (!voyent.io.auth.isLoggedIn()) {
+        if (!voyent.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -238,7 +238,7 @@ Polymer({
      * Pause all simulation routes.
      */
     pauseAll: function() {
-        if (!voyent.io.auth.isLoggedIn()) {
+        if (!voyent.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -253,7 +253,7 @@ Polymer({
      * Cancel all simulation routes.
      */
     cancelAll: function() {
-        if (!voyent.io.auth.isLoggedIn()) {
+        if (!voyent.auth.isLoggedIn()) {
             return;
         }
         var children = Polymer.dom(this).childNodes.filter(function(node) {
@@ -277,7 +277,7 @@ Polymer({
      */
     addRoute: function(label,user,origin,destination,travelmode,speed,speedunit,frequency) {
         var _this = this;
-        if (!voyent.io.auth.isLoggedIn()) {
+        if (!voyent.auth.isLoggedIn()) {
             return;
         }
         //first append the new route as a direct child of the component so it inherits any custom styling
@@ -314,7 +314,7 @@ Polymer({
      */
     addVector: function(tracker,zoneNamespace,position,bearing,speed,speedunit,duration,frequency,noLocationUpdate) {
         var _this = this;
-        if (!voyent.io.auth.isLoggedIn()) {
+        if (!voyent.auth.isLoggedIn()) {
             return;
         }
         if (!tracker) {
@@ -403,7 +403,7 @@ Polymer({
                 docCall = 'updateDocument';
             }
         }
-        voyent.io.docs[docCall](params).then(function(uri) {
+        voyent.docs[docCall](params).then(function(uri) {
             if (params.id) {
                 params.document._id = params.id;
             }
@@ -431,7 +431,7 @@ Polymer({
         if (!collection) {
             collection = this.collection;
         }
-        voyent.io.docs.deleteDocument({realm:this.realm,collection:collection,id:simulationId}).then(function() {
+        voyent.docs.deleteDocument({realm:this.realm,collection:collection,id:simulationId}).then(function() {
             if (_this._activeSim._id === simulationId) {
                 //the active simulation was deleted so reset the simulation routes
                 _this._activeSim = null;
@@ -453,7 +453,7 @@ Polymer({
         if (!collection) {
             collection = this.collection;
         }
-        voyent.io.docs.findDocuments({realm:this.realm,collection:collection}).then(function(simulations) {
+        voyent.docs.findDocuments({realm:this.realm,collection:collection}).then(function(simulations) {
             _this.fire('simulationsRetrieved',{simulations:simulations});
         }).catch(function(error) {
             _this.fire('message-error', 'Issue getting simulations: ' + error);
@@ -500,7 +500,7 @@ Polymer({
     _createAggregate: function(query) {
         var _this = this;
         var id = query._id;
-        voyent.io.query.createQuery({realm:this.realm,id:id,query:query}).then(function() {
+        voyent.query.createQuery({realm:this.realm,id:id,query:query}).then(function() {
             _this._executeAggregate(query);
         });
     },
@@ -513,7 +513,7 @@ Polymer({
     _executeAggregate: function(query) {
         var _this = this;
         var id = query._id;
-        voyent.io.query.executeQuery({realm:this.realm,id:id}).then(function(results) {
+        voyent.query.executeQuery({realm:this.realm,id:id}).then(function(results) {
             if (id === '_getLastUserLocations') {
                 _this._updateLocations(results);
             }
@@ -714,7 +714,7 @@ Polymer({
 
         //the following code is mostly incident demo specific, the
         //only piece that isn't is setting '_trackers' object
-        voyent.io.scope.getRealmData({'property':'trackerData'}).then(function(data) {
+        voyent.scope.getRealmData({'property':'trackerData'}).then(function(data) {
             trackerData = data;
             processMessageTemplates();
         }).catch(function(error) {
@@ -894,14 +894,14 @@ Polymer({
     _getRealmUsers: function() {
         var _this = this;
         //pass the users to the child components and set the users internally so they can be passed in the constructor of new routes defined via the `routes` attribute
-        voyent.io.admin.getRealmUsers({realmName:this.realm}).then(function(users) {
+        voyent.admin.getRealmUsers({realmName:this.realm}).then(function(users) {
             var usernames = [];
             if (users && users.length > 0) {
                 usernames = users.map(function(user) {
                     return user.username;
                 });
                 //add the current user to the list (they won't be included because the current user is an admin)
-                usernames.unshift(voyent.io.auth.getLastKnownUsername());
+                usernames.unshift(voyent.auth.getLastKnownUsername());
             }
             //fire event and set users locally
             _this.fire('usersRetrieved',{users:usernames.length>0?usernames:null});
@@ -1077,7 +1077,7 @@ Polymer({
         //delete icon before posting since it's just used locally
         var icon = tracker.properties.icon; delete tracker.properties.icon;
 
-        voyent.io.locate[func]({realm:this.realm, id:tracker._id, tracker:tracker}).then(function (uri) {
+        voyent.locate[func]({realm:this.realm, id:tracker._id, tracker:tracker}).then(function (uri) {
             //save the icon again
             tracker.properties.icon = icon;
             //store new tracker template in mapping
@@ -1099,7 +1099,7 @@ Polymer({
                     delete _this._trackerInstances[parentTrackerId+'.'+zoneNamespace];
                     trackerInstance = _this._trackerInstances[tracker._id+'.'+zoneNamespace];
                     //remove tracker instances from the service that were created under the parent template
-                    voyent.io.locate.deleteTrackerInstance({realm:_this.realm,id:parentTrackerId,zoneNamespace:zoneNamespace}).then(function() {
+                    voyent.locate.deleteTrackerInstance({realm:_this.realm,id:parentTrackerId,zoneNamespace:zoneNamespace}).then(function() {
                     }).catch(function(error) {
                         _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
                         console.error('Issue deleting tracker instance:',zoneNamespace,error);
@@ -1201,7 +1201,7 @@ Polymer({
     _selectUser: function(e) {
         var _this = this;
         this._hideUserMenu = true;
-        var username = e && e.target ? e.target.getAttribute('data-user') : voyent.io.auth.getLastKnownUsername();
+        var username = e && e.target ? e.target.getAttribute('data-user') : voyent.auth.getLastKnownUsername();
         var coordinates = this._lastClickCoordinates;
         //create marker based on position
         var marker = new google.maps.Marker({
@@ -1218,7 +1218,7 @@ Polymer({
             "username": username,
             "demoUsername": username
         };
-        voyent.io.locate.updateLocation({realm:_this.realm,location:location}).then(function(data) {
+        voyent.locate.updateLocation({realm:_this.realm,location:location}).then(function(data) {
             location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             _this._userLocationChangedListener(marker,location);
             _this._clickListener(marker,null,location,location.location.geometry.type.toLowerCase());
@@ -1349,7 +1349,7 @@ Polymer({
      */
     _updateTrackerLocation: function(location,cb) {
         var _this = this;
-        voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
+        voyent.locate.updateTrackerLocation({location: location}).then(function(data) {
             location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
             cb();
         }).catch(function (error) {
@@ -1583,7 +1583,7 @@ Polymer({
         if (!localDeleteOnly) {
             //remove tracker instance from the service, if the instance was based
             //on the child template the service will also delete that template
-            voyent.io.locate.deleteTrackerInstance({realm:this.realm,id:trackerId,zoneNamespace:zoneNamespace}).then(function() {
+            voyent.locate.deleteTrackerInstance({realm:this.realm,id:trackerId,zoneNamespace:zoneNamespace}).then(function() {
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue deleting tracker instance: ' + zoneNamespace + ' ' + error);
                 console.error('Issue deleting tracker instance:',zoneNamespace,error);

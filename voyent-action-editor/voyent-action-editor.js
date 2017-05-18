@@ -5,12 +5,12 @@ Polymer({
     properties: {
         /**
          * Defines the Voyent account of the realm.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
          * Defines the Voyent realm to build actions for.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
         realm: { type: String },
         /**
@@ -27,12 +27,12 @@ Polymer({
      */
 	ready: function() {
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
-        if (voyent.io.auth.isLoggedIn()) {
+        if (voyent.auth.isLoggedIn()) {
             this.initialize();
         }
         this._loadedAction = null;
@@ -137,10 +137,10 @@ Polymer({
     getTaskItems: function() {
         var _this = this;
         var promises = [];
-        promises.push(voyent.io.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
+        promises.push(voyent.action.getTaskGroups({"realm":this.realm}).then(function(schemas) {
             _this._processSchemas(schemas,'_taskGroupSchemas');
         }));
-        promises.push(voyent.io.action.getTasks({"realm":this.realm}).then(function(schemas) {
+        promises.push(voyent.action.getTasks({"realm":this.realm}).then(function(schemas) {
             var key = '_taskSchemas';
             _this._processSchemas(schemas,key);
 
@@ -169,7 +169,7 @@ Polymer({
      */
     getActions: function() {
         var _this = this;
-        voyent.io.action.findActions({"realm":this.realm}).then(function(actions) {
+        voyent.action.findActions({"realm":this.realm}).then(function(actions) {
             //save the list of action IDs so we can check for uniqueness
             _this._actionIds = actions.map(function(action) {
                 return action._id;
@@ -222,7 +222,7 @@ Polymer({
         }
         var action = this.convertUIToAction();
         action._id = actionId;
-        voyent.io.action.createAction({"realm":this.realm,"id":actionId,"action":action}).then(function() {
+        voyent.action.createAction({"realm":this.realm,"id":actionId,"action":action}).then(function() {
             _this._loadedAction = action;
             _this.getActions(); //refresh actions list
             _this._saveHandler(actionId);
@@ -247,7 +247,7 @@ Polymer({
         }
         else {
             var action = this.convertUIToAction();
-            voyent.io.action.updateAction({"realm":this.realm,"id":this._actionId,"action":action}).then(function() {
+            voyent.action.updateAction({"realm":this.realm,"id":this._actionId,"action":action}).then(function() {
                 _this.getActions(); //refresh actions list
                 _this._updateHandler(_this._actionId);
                 _this.fire('message-info', 'Successfully updated ' + _this._actionId + ' action');
@@ -264,7 +264,7 @@ Polymer({
      */
     deleteAction: function(id) {
         var _this = this;
-        voyent.io.action.deleteAction({"realm":this.realm,id:id}).then(function() {
+        voyent.action.deleteAction({"realm":this.realm,id:id}).then(function() {
             _this.resetEditor();
             _this.getActions(); //refresh actions list
             _this._deleteHandler(id);
@@ -745,7 +745,7 @@ Polymer({
      */
     _deleteAndSaveAction: function() {
         var _this = this;
-        voyent.io.action.deleteAction({"realm":this.realm,id:this._loadedAction._id}).then(function() {
+        voyent.action.deleteAction({"realm":this.realm,id:this._loadedAction._id}).then(function() {
             _this._deleteHandler(_this._loadedAction._id);
             _this._loadedAction._id = _this._actionId;
             _this.saveAction();
@@ -1366,7 +1366,7 @@ Polymer({
 
     _getHandlers: function() {
         var _this = this;
-        voyent.io.eventhub.findHandlers({"realm":this.realm}).then(function(handlers) {
+        voyent.eventhub.findHandlers({"realm":this.realm}).then(function(handlers) {
             var handlerMap = {};
             if (handlers) {
                 handlers.forEach(function (handler) {
@@ -1404,7 +1404,7 @@ Polymer({
         if (this._handlers[id]) {
             func = 'updateHandler';
         }
-        voyent.io.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
+        voyent.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
         }).catch(function(error) {
             _this.fire('message-error', "Error in saveHandler: " + error);
             console.error('Error in saveHandler:',error);
@@ -1419,7 +1419,7 @@ Polymer({
         if (!this._handlers[id]) {
             func = 'createHandler';
         }
-        voyent.io.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
+        voyent.eventhub[func]({"realm":this.realm,"id":id,"handler":handler}).then(function(uri) {
         }).catch(function(error) {
             _this.fire('message-error', "Error in updateHandler: " + error);
             console.error('Error in updateHandler:',error);
@@ -1432,7 +1432,7 @@ Polymer({
         if (!this._handlers[id]) {
             return;
         }
-        voyent.io.eventhub.deleteHandler({"realm":this.realm,"id":id}).then(function() {
+        voyent.eventhub.deleteHandler({"realm":this.realm,"id":id}).then(function() {
         }).catch(function(error) {
             _this.fire('message-error', "Error in deleteHandler: " + error);
             console.error('Error in deleteHandler:',error);

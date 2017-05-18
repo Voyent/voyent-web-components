@@ -126,7 +126,7 @@
   </template>
   <script>
   function refreshDocumentsList(){
-    voyent.io.docs.findDocuments().then(function(results){
+    voyent.docs.findDocuments().then(function(results){
       document.querySelector('#demo').documents = results;
     });
   }
@@ -135,7 +135,7 @@
     document.querySelector('#authProvider').addEventListener('onAfterLogin', function(){
       refreshDocumentsList();
     }, false);
-    if( voyent.io.auth.isLoggedIn()){
+    if( voyent.auth.isLoggedIn()){
       refreshDocumentsList();
     }
   },1000);

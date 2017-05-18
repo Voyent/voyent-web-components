@@ -23,7 +23,7 @@
             username: {
                 notify: true,
                 type: String,
-                value: function(){ return voyent.io.auth.getLastKnownUsername();}
+                value: function(){ return voyent.auth.getLastKnownUsername();}
             },
             /**
              * Password input
@@ -143,7 +143,7 @@
             realm: {
                 notify: true,
                 type: String,
-                value: function(){ return voyent.io.auth.getLastKnownRealm(); }
+                value: function(){ return voyent.auth.getLastKnownRealm(); }
             },
             /**
              * Account used for services
@@ -151,7 +151,7 @@
             account: {
                 notify: true,
                 type: String,
-                value: function(){ return voyent.io.auth.getLastKnownAccount(); }
+                value: function(){ return voyent.auth.getLastKnownAccount(); }
             },
             /**
              * Host used for services

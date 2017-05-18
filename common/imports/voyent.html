@@ -1,1 +1,7 @@
-<script src="../../../voyent.js/src/voyent.js"></script>
+<script src="../../../es6-promise/dist/es6-promise.min.js"></script>
+<script>
+	if( !("Promise" in window)){
+		window.Promise = ES6Promise.Promise;
+	}
+</script>
+<script src="../../../voyent.js/build/dist/voyent.js"></script>

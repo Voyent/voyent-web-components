@@ -6,13 +6,13 @@
     behaviors: [VoyentCommonPropertiesBehavior],
 
     ready: function(){
-      var loggedIn = voyent.io.auth.isLoggedIn();
+      var loggedIn = voyent.auth.isLoggedIn();
       console.log('voyent-auth-provider.loggedIn: ' + loggedIn);
       this.loggedIn = loggedIn;
       if( loggedIn){
         this.setupTimeRemainingInterval();
         /* check connect settings */
-        var connectSettings = voyent.io.auth.getConnectSettings();
+        var connectSettings = voyent.auth.getConnectSettings();
         if( !connectSettings ){
           connectSettings = {};
         }
@@ -30,15 +30,15 @@
         if( !this.admin ){
           connectSettings.realm = this.realm;
         }
-        voyent.io.auth.connect(connectSettings);
+        voyent.auth.connect(connectSettings);
       }
     },
 
     setupTimeRemainingInterval: function(){
       var _this = this;
-      this.timeRemaining = voyent.io.auth.getTimeRemainingBeforeExpiry();
+      this.timeRemaining = voyent.auth.getTimeRemainingBeforeExpiry();
       this.timeRemainingBeforeExpiryInterval = setInterval(function(){
-        var remaining = voyent.io.auth.getTimeRemainingBeforeExpiry();
+        var remaining = voyent.auth.getTimeRemainingBeforeExpiry();
         if( !remaining ){
           clearInterval(_this.timeRemainingBeforeExpiryInterval);
         }
@@ -62,7 +62,7 @@
       username: {
         notify: true,
         value: function(){
-          return voyent.io.auth.getLastKnownUsername();
+          return voyent.auth.getLastKnownUsername();
         }
       },
 
@@ -154,7 +154,7 @@
     /**
      * Attempts to authenticate. If the username, password and admin flag are not passed in, the bound component values will be used. 
      * After the login is successful, the onAfterLogin event is then fired.
-     * @return {Promise} A promise with the response from voyent.io.auth.connect()
+     * @return {Promise} A promise with the response from voyent.auth.connect()
      */
     login: function(username, password, admin){
       this.set('error', '');
@@ -201,14 +201,14 @@
 
       function onAfterConnect(authResponse){
         _this.authResponse = authResponse;
-        voyent.io.setCurrentRealm(_this.realm);
-        _this.accessToken = voyent.io.auth.getLastAccessToken();
+        voyent.setCurrentRealm(_this.realm);
+        _this.accessToken = voyent.auth.getLastAccessToken();
         _this.loggedIn = true;
         _this.fire('onAfterLogin');
         _this.setupTimeRemainingInterval();
       }
 
-      return voyent.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
+      return voyent.auth.connect(params).then(function(authResponse){ //jshint ignore:line
         onAfterConnect(authResponse);
       }).catch(function(error){
         _this.set('error', 'Login failed ' + (error.responseText || error.message));
@@ -216,7 +216,7 @@
         //if fallbackToAdmin try to login as admin
         if( !_this.admin && _this.fallbackToAdmin ){
           params.realm = 'admin';
-          return voyent.io.auth.connect(params).then(function(authResponse){ //jshint ignore:line
+          return voyent.auth.connect(params).then(function(authResponse){ //jshint ignore:line
             onAfterConnect(authResponse);
           });
         }
@@ -232,7 +232,7 @@
      * Log out the current user and clear all credential and authentication information.
      */
     logout: function(){
-      voyent.io.auth.disconnect();
+      voyent.auth.disconnect();
       this.loggedIn = false;
       this.accessToken = null;
       this.timeRemaining = 0;

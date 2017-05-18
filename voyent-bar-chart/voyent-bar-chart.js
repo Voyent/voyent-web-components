@@ -7,19 +7,19 @@ Polymer({
     properties: {
         /**
          * Required to authenticate with Voyent.
-         * @default voyent.io.auth.getLastAccessToken()
+         * @default voyent.auth.getLastAccessToken()
          */
-        accesstoken: { type: String, value: voyent.io.auth.getLastAccessToken() },
+        accesstoken: { type: String, value: voyent.auth.getLastAccessToken() },
         /**
          * Defines the Voyent account of the realm.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
-        account: { type: String, value: voyent.io.auth.getLastKnownAccount() },
+        account: { type: String, value: voyent.auth.getLastKnownAccount() },
         /**
          * Defines the Voyent realm to request data for.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
-        realm: { type: String, value: voyent.io.auth.getLastKnownRealm()},
+        realm: { type: String, value: voyent.auth.getLastKnownRealm()},
         /**
          * Defines whether the bar-chart displays horizontally
          * @default false
@@ -251,7 +251,7 @@ Polymer({
         }
 
         var _this = this;
-        voyent.io.event.findEvents({
+        voyent.event.findEvents({
             account: this.account,
             realm: this.realm,
             accessToken: this.accesstoken,

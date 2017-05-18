@@ -4,12 +4,12 @@ Polymer({
     properties: {
         /**
          * The Voyent account used for authentication.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
          * The Voyent realm to create the Alert Template in.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
         realm: { type: String },
         /**
@@ -42,10 +42,10 @@ Polymer({
         var _this = this;
         //Default to the last realm and account if one is not set.
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
 
         window.initializeLocationsMap = function () {
@@ -122,7 +122,7 @@ Polymer({
         for (var i=0; i<tracker.zones.features.length; i++) {
             delete tracker.zones.features[i].tmpProperties;
         }
-        voyent.io.locate[func]({
+        voyent.locate[func]({
             realm: this.realm,
             account: this.account,
             tracker: tracker,
@@ -155,7 +155,7 @@ Polymer({
      */
     loadAlertTemplate: function(alertTemplateId) {
         var _this = this;
-        voyent.io.locate.findTrackers({
+        voyent.locate.findTrackers({
             realm: this.realm,
             account: this.account,
             query: {"_id":alertTemplateId}

@@ -39,10 +39,10 @@ Voyent.QueryChainEditor = Polymer({
         this.loading = false;
         
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account || !this.realm) {
             return;
@@ -66,7 +66,7 @@ Voyent.QueryChainEditor = Polymer({
         this.notifyPath('_queryServices');
         
         var _this = this;
-        voyent.io.query.findQueries({
+        voyent.query.findQueries({
             account: this.account,
             realm: this.realm
         }).then(function(results) {
@@ -145,7 +145,7 @@ Voyent.QueryChainEditor = Polymer({
         this._transformers = [];
         
         var _this = this;
-        voyent.io.query.findTransformers({
+        voyent.query.findTransformers({
             account: this.account,
             realm: this.realm
         }).then(function(results) {
@@ -532,7 +532,7 @@ Voyent.QueryChainEditor = Polymer({
         
         if (deleteIndex >= 0) {
             var _this = this;
-            voyent.io.query.deleteQuery({
+            voyent.query.deleteQuery({
                 account: this.account,
                 realm: this.realm,
                 id: removeId
@@ -584,7 +584,7 @@ Voyent.QueryChainEditor = Polymer({
             if (executeId) {
                 _this.fire('message-info', "Exec: " + executeId);
                 
-                voyent.io.query.executeQuery({
+                voyent.query.executeQuery({
                     account: _this.account,
                     realm: _this.realm,
                     mode: _this._workflow.isChain ? "debug": null,
@@ -749,7 +749,7 @@ Voyent.QueryChainEditor = Polymer({
         if (updateIndex === -1) {
             // POST to the service with our new query chain
             var _this = this;
-            voyent.io.query.createQuery({
+            voyent.query.createQuery({
                 account: this.account,
                 realm: this.realm,
                 id: this._workflow._id,
@@ -771,7 +771,7 @@ Voyent.QueryChainEditor = Polymer({
         else {
             // Do a PUT via the update call
             var _this = this;
-            voyent.io.query.updateQuery({
+            voyent.query.updateQuery({
                 account: this.account,
                 realm: this.realm,
                 id: this._workflow._id,
@@ -802,7 +802,7 @@ Voyent.QueryChainEditor = Polymer({
     _saveWorkflowItem: function(workflowItem, callback) {
         var _this = this;
         if (this._isQuery(workflowItem.type)) {
-            voyent.io.query.createQuery({
+            voyent.query.createQuery({
                 account: this.account,
                 realm: this.realm,
                 id: workflowItem.item._id,
@@ -817,7 +817,7 @@ Voyent.QueryChainEditor = Polymer({
             });
         }
         else if (this._isTransformer(workflowItem.type)) {
-            voyent.io.query.createTransformer({
+            voyent.query.createTransformer({
                 account: this.account,
                 realm: this.realm,
                 id: workflowItem.item._id,
@@ -843,7 +843,7 @@ Voyent.QueryChainEditor = Polymer({
     _updateWorkflowItem: function(workflowItem, callback) {
         var _this = this;
         if (this._isQuery(workflowItem.type)) {
-            voyent.io.query.updateQuery({
+            voyent.query.updateQuery({
                 account: this.account,
                 realm: this.realm,
                 id: workflowItem.item._id,
@@ -856,7 +856,7 @@ Voyent.QueryChainEditor = Polymer({
             });
         }
         else if (this._isTransformer(workflowItem.type)) {
-            voyent.io.query.updateTransformer({
+            voyent.query.updateTransformer({
                 account: this.account,
                 realm: this.realm,
                 id: workflowItem.item._id,
@@ -896,7 +896,7 @@ Voyent.QueryChainEditor = Polymer({
         if (deleteIndex >= 0) {
             var _this = this;
             if (this._isQuery(type)) {
-                voyent.io.query.deleteQuery({
+                voyent.query.deleteQuery({
                     account: this.account,
                     realm: this.realm,
                     id: removeId
@@ -908,7 +908,7 @@ Voyent.QueryChainEditor = Polymer({
                 });
             }
             else if (this._isTransformer(type)) {
-                voyent.io.query.deleteTransformer({
+                voyent.query.deleteTransformer({
                     account: this.account,
                     realm: this.realm,
                     id: removeId

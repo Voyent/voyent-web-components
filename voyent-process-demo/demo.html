@@ -86,7 +86,7 @@
         var host = document.getElementById('host').value;
         loginCall = true;
 
-        voyent.io.auth.connect({
+        voyent.auth.connect({
             account: account,
             realm: realm,
             username: username,
@@ -100,13 +100,13 @@
     function setCredentialsOnComponent(){
         var elem = document.getElementById('processDemo');
 
-        var account = voyent.io.auth.getLastKnownAccount();
+        var account = voyent.auth.getLastKnownAccount();
         if( account ){
             elem.setAttribute('account', account);
             document.getElementById('account').value = account;
         }
 
-        var realm = voyent.io.auth.getLastKnownRealm();
+        var realm = voyent.auth.getLastKnownRealm();
         if( realm ){
             elem.setAttribute('realm', realm);
             document.getElementById('realm').value = realm;

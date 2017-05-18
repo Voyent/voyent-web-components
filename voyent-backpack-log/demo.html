@@ -70,7 +70,7 @@
 		var username = document.getElementById('username').value;
 		var password = document.getElementById('password').value;
 
-		voyent.io.auth.connect({
+		voyent.auth.connect({
 			account: account,
 			realm: realm,
 			username: username,
@@ -80,7 +80,7 @@
 			setCredentialsOnComponent();
 		})['catch'](function(){
 			//try to login as admin
-			voyent.io.auth.connect({
+			voyent.auth.connect({
 				account: account,
 				realm: 'admin',
 				username: username,
@@ -96,13 +96,13 @@
 	function setCredentialsOnComponent() {
 		var elem = document.getElementById('backpackLog');
 
-		var account = voyent.io.auth.getLastKnownAccount();
+		var account = voyent.auth.getLastKnownAccount();
 		if( account ){
 			elem.setAttribute('account', account);
 			document.getElementById('account').value = account;
 		}
 
-		var realm = voyent.io.auth.getLastKnownRealm();
+		var realm = voyent.auth.getLastKnownRealm();
 		if( realm ){
 			elem.setAttribute('realm', realm);
 			document.getElementById('realm').value = realm;

@@ -96,7 +96,7 @@ Voyent.LocationVector = Polymer({
      */
     playSimulation: function() {
         var _this = this;
-        if (!voyent.io.auth.isLoggedIn() || !Polymer.dom(this).parentNode.account || !Polymer.dom(this).parentNode.realm) {
+        if (!voyent.auth.isLoggedIn() || !Polymer.dom(this).parentNode.account || !Polymer.dom(this).parentNode.realm) {
             return;
         }
         if (!this._path) {
@@ -131,7 +131,7 @@ Voyent.LocationVector = Polymer({
                     }
                 }
             };
-            voyent.io.locate.updateTrackerLocation({realm:Polymer.dom(this).parentNode.realm,location:location}).then(function(data) {
+            voyent.locate.updateTrackerLocation({realm:Polymer.dom(this).parentNode.realm,location:location}).then(function(data) {
                 //set location object
                 _this._location = location;
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow

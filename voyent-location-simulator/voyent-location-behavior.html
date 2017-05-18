@@ -1,5 +1,5 @@
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../common/imports/voyent-io.html">
+<link rel="import" href="../common/imports/voyent.html">
 
 <script>
     var Voyent = Voyent || {};
@@ -111,7 +111,7 @@
             }
             var path = this._path;
             this._location.location.geometry.coordinates = [path[i].lng(),path[i].lat()]; //get the next location
-            voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
+            voyent.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:path[i].lat(),lng:path[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
@@ -154,7 +154,7 @@
             }
             var route = this._path;
             this._location.location.geometry.coordinates = [route[i].lng(),route[i].lat()]; //get the previous location
-            voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
+            voyent.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function() {
                 _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 _this._marker.setPosition({lat:route[i].lat(),lng:route[i].lng()}); //move the marker to the new location
                 if (_this.tracker) {
@@ -190,7 +190,7 @@
             else {
                 func = 'updateLocation';
             }
-            voyent.io.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
+            voyent.locate[func]({realm:Polymer.dom(this).parentNode.realm,location:this._location}).then(function(data) {
                 if (!_this._location) {
                     return; //the simulation has been cleaned up
                 }
@@ -272,7 +272,7 @@
                 else {
                     func = 'updateLocation';
                 }
-                voyent.io.locate[func]({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
+                voyent.locate[func]({realm:Polymer.dom(_this).parentNode.realm,location:_this._location}).then(function(data) {
                     if (!_this._location) {
                         return; //the simulation has been cleaned up
                     }
@@ -296,7 +296,7 @@
                 if (location.username && location.username.length > 0) {
                     location.demoUsername = location.username; //(NTFY-301)
                 }
-                voyent.io.locate.updateLocation({location: location}).then(function(data) {
+                voyent.locate.updateLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue changing location of user "' + location.username + '":' + error);
@@ -349,7 +349,7 @@
                 _this._updateTrackerInstanceLocation(instanceKey,latLng);
 
                 location.location.properties.updateType = 'manual'; //incident demo
-                voyent.io.locate.updateTrackerLocation({location: location}).then(function(data) {
+                voyent.locate.updateTrackerLocation({location: location}).then(function(data) {
                     location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue changing location of tracker "' + location.location.properties.zoneNamespace + '":' + error);

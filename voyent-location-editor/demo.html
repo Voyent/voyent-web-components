@@ -75,7 +75,7 @@
         var username = document.getElementById('username').value;
         var password = document.getElementById('password').value;
 
-        voyent.io.auth.connect({
+        voyent.auth.connect({
             account: account,
             realm: realm,
             username: username,
@@ -86,7 +86,7 @@
             document.getElementById('voyentMap').refreshMap();
         })['catch'](function(){
             //try to login as admin
-            voyent.io.auth.connect({
+            voyent.auth.connect({
                 account: account,
                 realm: 'admin',
                 username: username,
@@ -102,22 +102,22 @@
     function setCredentialsOnComponent(){
         var elem = document.getElementById('voyentMap');
 
-        var account = voyent.io.auth.getLastKnownAccount();
+        var account = voyent.auth.getLastKnownAccount();
         if( account ){
             elem.setAttribute('account', account);
             document.getElementById('account').value = account;
         }
 
-        var realm = voyent.io.auth.getLastKnownRealm();
+        var realm = voyent.auth.getLastKnownRealm();
         if( realm ){
             elem.setAttribute('realm', realm);
             document.getElementById('realm').value = realm;
         }
 
-        var token = voyent.io.auth.getLastAccessToken();
+        var token = voyent.auth.getLastAccessToken();
         if( token ){
             elem.setAttribute('accesstoken', token);
-            document.getElementById('username').value = voyent.io.auth.getLastKnownUsername();
+            document.getElementById('username').value = voyent.auth.getLastKnownUsername();
         }
     }
     window.addEventListener('WebComponentsReady', function() {

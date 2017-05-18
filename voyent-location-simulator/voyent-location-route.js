@@ -111,7 +111,7 @@ Voyent.LocationRoute = Polymer({
      */
     playSimulation: function() {
         var _this = this;
-        if (!voyent.io.auth.isLoggedIn() || !Polymer.dom(this).parentNode.account || !Polymer.dom(this).parentNode.realm) {
+        if (!voyent.auth.isLoggedIn() || !Polymer.dom(this).parentNode.account || !Polymer.dom(this).parentNode.realm) {
             return;
         }
         if (!this._path) { //if no route then it's a new simulation
@@ -156,9 +156,9 @@ Voyent.LocationRoute = Polymer({
                     //Start by POSTing the first coordinate to the Location Service
                     _this._index = 0;
                     var location = { "location" : { "geometry" : { "type" : "Point", "coordinates" : [route[_this._index].lng(),route[_this._index].lat()] } } };
-                    location.username = _this.user || voyent.io.auth.getLastKnownUsername();
-                    location.demoUsername = _this.user || voyent.io.auth.getLastKnownUsername(); //(NTFY-301)
-                    voyent.io.locate.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
+                    location.username = _this.user || voyent.auth.getLastKnownUsername();
+                    location.demoUsername = _this.user || voyent.auth.getLastKnownUsername(); //(NTFY-301)
+                    voyent.locate.updateLocation({realm:Polymer.dom(_this).parentNode.realm,location:location}).then(function(data) {
                         //set location object
                         _this._location = location;
                         _this._location.lastUpdated = new Date().toISOString(); //won't match server value exactly but useful for displaying in infoWindow

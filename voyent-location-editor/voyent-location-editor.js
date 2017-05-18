@@ -141,10 +141,10 @@ Polymer({
                 _loc._makeMap(_loc.lat, _loc.lng);
             }
         };
-        _loc.accesstoken = voyent.io.auth.getLastAccessToken();
-        _loc.realm = voyent.io.auth.getLastKnownRealm();
-        _loc.account = voyent.io.auth.getLastKnownAccount();
-        _loc.host = voyent.io.auth.getLastKnownHost();
+        _loc.accesstoken = voyent.auth.getLastAccessToken();
+        _loc.realm = voyent.auth.getLastKnownRealm();
+        _loc.account = voyent.auth.getLastKnownAccount();
+        _loc.host = voyent.auth.getLastKnownHost();
 
         if (!('google' in window) || !('maps' in window.google)) {
             var script = document.createElement('script');
@@ -212,13 +212,13 @@ Polymer({
         }
 
         var promises = [];
-        promises.push(voyent.io.locate.findRegions({realm: _loc.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function (regions) {
+        promises.push(voyent.locate.findRegions({realm: _loc.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function (regions) {
             _loc.regionsTemp = regions;
         }));
-        promises.push(voyent.io.locate.getAllPOIs({realm: _loc.realm}).then(function (pois) {
+        promises.push(voyent.locate.getAllPOIs({realm: _loc.realm}).then(function (pois) {
             _loc.poisTemp = pois;
         }));
-        promises.push(voyent.io.locate.getAllTrackers({realm: _loc.realm}).then(function (trackers) {
+        promises.push(voyent.locate.getAllTrackers({realm: _loc.realm}).then(function (trackers) {
             //don't show "child" tracker templates
             trackers = trackers.filter(function(tracker) {
                 return !tracker.properties || !tracker.properties.parentTrackerId;
@@ -491,13 +491,13 @@ Polymer({
         _loc._bounds = new google.maps.LatLngBounds();
 
         var promises = [];
-        promises.push(voyent.io.locate.findRegions({realm: _loc.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function (regions) {
+        promises.push(voyent.locate.findRegions({realm: _loc.realm,query:{"location.properties.trackerId":{"$exists":false}}}).then(function (regions) {
             _loc.regionsTemp = regions;
         }));
-        promises.push(voyent.io.locate.getAllPOIs({realm: _loc.realm}).then(function (pois) {
+        promises.push(voyent.locate.getAllPOIs({realm: _loc.realm}).then(function (pois) {
             _loc.poisTemp = pois;
         }));
-        promises.push(voyent.io.locate.getAllTrackers({realm: _loc.realm}).then(function (trackers) {
+        promises.push(voyent.locate.getAllTrackers({realm: _loc.realm}).then(function (trackers) {
             //don't show "child" tracker templates
             trackers = trackers.filter(function(tracker) {
                 return !tracker.properties || !tracker.properties.parentTrackerId;
@@ -735,7 +735,7 @@ Polymer({
     //Overlay will be deleted from the map if post fails.
     postRegion: function (location, geoJSON, shape, isUpdate) {
         if (isUpdate) {
-            voyent.io.locate.updateRegion({
+            voyent.locate.updateRegion({
                 realm: _loc.realm,
                 region: geoJSON,
                 id:geoJSON._id
@@ -746,7 +746,7 @@ Polymer({
             });
         }
         else {
-            voyent.io.locate.createRegion({
+            voyent.locate.createRegion({
                 realm: _loc.realm,
                 region: geoJSON
             }).then(function (uri) {
@@ -760,7 +760,7 @@ Polymer({
 
     postTracker: function (location, geoJSON, shape, isUpdate) {
         if (isUpdate) {
-            voyent.io.locate.updateTracker({
+            voyent.locate.updateTracker({
                 realm: _loc.realm,
                 tracker: geoJSON,
                 id:geoJSON._id
@@ -772,7 +772,7 @@ Polymer({
         }
         else {
             _loc.istracker = false;
-            voyent.io.locate.createTracker({
+            voyent.locate.createTracker({
                 realm: _loc.realm,
                 tracker: geoJSON
             }).then(function (uri) {
@@ -915,7 +915,7 @@ Polymer({
     //Identical as postRegion above using the POI apis
     postPOI: function (location, geoJSON, shape, isUpdate) {
         if (isUpdate) {
-            voyent.io.locate.updatePOI({
+            voyent.locate.updatePOI({
                 realm: _loc.realm,
                 poi: geoJSON,
                 id:geoJSON._id
@@ -926,7 +926,7 @@ Polymer({
             });
         }
         else {
-            voyent.io.locate.createPOI({
+            voyent.locate.createPOI({
                 realm: _loc.realm,
                 poi: geoJSON
             }).then(function (uri) {
@@ -2763,7 +2763,7 @@ Polymer({
      * @param geoJSON
      */
     deleteRegion: function (location, geoJSON) {
-        voyent.io.locate.deleteRegion({
+        voyent.locate.deleteRegion({
             realm: _loc.realm,
             id: geoJSON._id
         }).then(function(){
@@ -2775,7 +2775,7 @@ Polymer({
 
     deleteTracker:function(location,geoJSON){
 
-         voyent.io.locate.deleteTracker({
+         voyent.locate.deleteTracker({
             realm: _loc.realm,
             id: geoJSON._id
         }).then(function(){
@@ -2792,7 +2792,7 @@ Polymer({
      */
     deletePOI: function (location, geoJSON) {
         var _this = this;
-        voyent.io.locate.deletePOI({
+        voyent.locate.deletePOI({
             realm:_loc.realm,
             id: geoJSON._id
         }).then(function () {

@@ -4,12 +4,12 @@ Polymer({
     properties: {
         /**
          * Defines the Voyent account of the realm.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
          * Defines the Voyent realm to build actions for.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
         realm: { type: String },
         inline: { type: Boolean, value: false, notify: true },
@@ -55,10 +55,10 @@ Polymer({
      */
 	ready: function() {
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
         
         if (this.inline === false) {
@@ -257,7 +257,7 @@ Polymer({
         // Grab our saved actions, and once that is done make a call to get our debug logs from the service
         this._loading = true;
         var _this = this;
-        voyent.io.action.findActions({"realm":this.realm}).then(function(actions) {
+        voyent.action.findActions({"realm":this.realm}).then(function(actions) {
             _this._savedActions = actions.length > 0 ? actions : null;
             
             // If we have a filterAction set, we will parse the saved list to just that
@@ -283,7 +283,7 @@ Polymer({
      */
     _getDebugLogsCall: function() {
         var _this = this;
-        voyent.io.admin.getDebugLogs({
+        voyent.admin.getDebugLogs({
             account: this.account,
             query: this.query,
             options: this.options,

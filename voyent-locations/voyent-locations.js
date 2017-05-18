@@ -4,12 +4,12 @@ Polymer({
     properties: {
         /**
          * Defines the Voyent account of the realm.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
          * Defines the Voyent realm to request location data for.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
         realm: { type: String, observer: '_realmChanged' },
         /**
@@ -42,10 +42,10 @@ Polymer({
 	 */
 	ready: function() {
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
         var _this = this;
 		//initialize google maps
@@ -58,7 +58,7 @@ Polymer({
 			_this._map = new google.maps.Map(_this.$.map, mapOptions);
 			_this._bounds = new google.maps.LatLngBounds();
 
-			if (voyent.io.auth.isLoggedIn()) {
+			if (voyent.auth.isLoggedIn()) {
 				_this.refreshMap();
 			}
             //make sure the map is sized correctly for the view
@@ -91,17 +91,17 @@ Polymer({
         this._bounds = new google.maps.LatLngBounds();
         var promises = [];
         if( this.showuserlocations ){
-            promises.push(voyent.io.locate.findLocations({realm:_this.realm}).then(function(locationUpdates) {
+            promises.push(voyent.locate.findLocations({realm:_this.realm}).then(function(locationUpdates) {
                 _this._updateLocations(locationUpdates);
             }));
         }
         if( this.showregions ){
-            promises.push(voyent.io.locate.getAllRegions({realm:_this.realm}).then(function(regions) {
+            promises.push(voyent.locate.getAllRegions({realm:_this.realm}).then(function(regions) {
                 _this._updateRegions(regions);
             }));
         }
         if( this.showpois ){
-            promises.push(voyent.io.locate.getAllPOIs({realm:_this.realm}).then(function(pois) {
+            promises.push(voyent.locate.getAllPOIs({realm:_this.realm}).then(function(pois) {
                 _this._updatePOIs(pois);
             }));
         }

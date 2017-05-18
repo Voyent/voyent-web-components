@@ -5,12 +5,12 @@ Polymer({
     properties: {
         /**
          * Defines the Voyent account of the realm.
-         * @default voyent.io.auth.getLastKnownAccount()
+         * @default voyent.auth.getLastKnownAccount()
          */
         account: { type: String },
         /**
          * Defines the Voyent realm to request location data for.
-         * @default voyent.io.auth.getLastKnownRealm()
+         * @default voyent.auth.getLastKnownRealm()
          */
         realm: { type: String},
         /**
@@ -56,13 +56,13 @@ Polymer({
 
     ready: function() {
         if (!this.realm) {
-            this.realm = voyent.io.auth.getLastKnownRealm();
+            this.realm = voyent.auth.getLastKnownRealm();
         }
         if (!this.account) {
-            this.account = voyent.io.auth.getLastKnownAccount();
+            this.account = voyent.auth.getLastKnownAccount();
         }
         if (!this.username){
-            this.username = voyent.io.auth.getLastKnownUsername();
+            this.username = voyent.auth.getLastKnownUsername();
         }
         var solicitURLData = poly.getURLParameter('solicit');
         if(solicitURLData !== null){
@@ -114,7 +114,7 @@ Polymer({
           params.event.data = {'result': e.model.item.value};
           params.event.data.pass = params.event.pass;
           delete params.event.pass;
-          voyent.io.event.createCustomEvent(params);
+          voyent.event.createCustomEvent(params);
         }
     },
 
