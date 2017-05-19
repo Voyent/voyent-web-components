@@ -17,11 +17,11 @@ Polymer({
          * of the parent container. If a height cannot be found then a default minimum of 500 will be used.
          */
         height: Number,
-        /**
+        /*/!**
          * The width of the google map to be created, as an integer. If left empty we will default to the width of the
          * parent container.
-         */
-        width: Number,
+         *!/
+        width: Number,*/
         /**
          * Enable a percent of the full page height to automatically fill with the map. To disable use a value of -1.
          * Height = "h*autoheight" so 0.8 corresponds to 80% of the page height. 1.2 would be 120%, etc.
@@ -35,7 +35,7 @@ Polymer({
      */
 
     observers: [
-        '_featuresChanged(_trackerData.tracker.zones.features.length)'
+        '_featuresChanged(_alertTemplateData.alertTemplate.zones.features.length)'
     ],
 
     ready: function() {
@@ -82,7 +82,7 @@ Polymer({
             });
             //Initialize some vars
             _this._selected = _this._editing = _this._addingNew = false;
-            _this._trackerData = null;
+            _this._alertTemplateData = null;
             _this._readOnlyProperties = ['Editable','Color','Opacity'];
             //Initialize our custom OverlayView class.
             _this._initializeProximityZoneOverlayView();
@@ -111,26 +111,26 @@ Polymer({
 
     /**
      * Saves or updates the current Alert Template.
-     * @private
      */
-    saveTracker: function () {
+    saveAlertTemplate: function () {
         var _this = this;
-        var func = !this._trackerData.tracker._id ? 'createTracker' : 'updateTracker';
+        var func = !this._alertTemplateData.isPersisted ? 'createTracker' : 'updateTracker';
         //Clone the object and remove the tmpProperties we use in the template.
-        var tracker = JSON.parse(JSON.stringify(this._trackerData.tracker));
-        delete tracker.tmpProperties;
-        for (var i=0; i<tracker.zones.features.length; i++) {
-            delete tracker.zones.features[i].tmpProperties;
+        var alertTemplate = JSON.parse(JSON.stringify(this._alertTemplateData.alertTemplate));
+        delete alertTemplate.tmpProperties;
+        for (var i=0; i<alertTemplate.zones.features.length; i++) {
+            delete alertTemplate.zones.features[i].tmpProperties;
         }
         voyent.locate[func]({
             realm: this.realm,
             account: this.account,
-            tracker: tracker,
-            id: tracker._id //Not valid if 'createTracker' but no harm in passing it anyway.
+            tracker: alertTemplate,
+            id: alertTemplate._id //Not valid if 'createTracker' but no harm in passing it anyway.
         }).then(function (uri) {
             if (func === 'createTracker') {
                 //Grab the generated ID from the return URI and setup change listeners
-                _this.set('_trackerData.tracker._id',uri ? uri.split('/').pop() : _this._trackerData.tracker._id);
+                _this.set('_alertTemplateData.alertTemplate._id',uri ? uri.split('/').pop() : _this._alertTemplateData.alertTemplate._id);
+                _this._alertTemplateData.isPersisted = true;
                 _this.fire('message-info', 'Alert Template successfully created.');
             }
             else {
@@ -139,9 +139,9 @@ Polymer({
         }).catch(function (error) {
             if (func === 'createTracker') {
                 //If the initial creation fails then remove it from the map.
-                _this._trackerData.marker.setMap(null);
-                for (var i = 0; i < _this._trackerData.circles.length; i++){
-                    _this._trackerData.circles[i].setMap(null);
+                _this._alertTemplateData.marker.setMap(null);
+                for (var i = 0; i < _this._alertTemplateData.circles.length; i++){
+                    _this._alertTemplateData.circles[i].setMap(null);
                 }
             }
             _this.fire('message-error', 'Issue saving Alert Template ' + error);
@@ -150,23 +150,66 @@ Polymer({
     },
 
     /**
-     * Loads an Alert Template into the editor based on the passed id.
-     * @param alertTemplateId
+     * Removes the current Alert Template.
      */
-    loadAlertTemplate: function(alertTemplateId) {
+    removeAlertTemplate: function() {
+        var _this = this;
+        var confirm = window.confirm("Are you sure you want to delete '" + this._alertTemplateData.alertTemplate.label + "'? This cannot be undone!");
+        if (!confirm) {
+            return;
+        }
+        //Delete from DB if it's saved.
+        if (this._alertTemplateData.isPersisted) {
+            voyent.locate.deleteTracker({
+                realm: this.realm,
+                account: this.account,
+                id: this._alertTemplateData.alertTemplate._id
+            }).then(function () {
+                resetMapState();
+            }).catch(function (error) {
+                _this.fire('message-error', 'Issue deleting Alert Template ' + error);
+                console.error('Issue deleting Alert Template', error);
+            });
+        }
+        else { //Otherwise just clear map.
+            resetMapState();
+        }
+
+        function resetMapState() {
+            //Remove the marker, circles and zoneOverlays from the map.
+            _this._alertTemplateData.marker.setMap(null);
+            for (var i=0; i<_this._alertTemplateData.circles.length; i++) {
+                _this._alertTemplateData.circles[i].setMap(null);
+                _this._alertTemplateData.zoneOverlays[i].setMap(null);
+            }
+            //Wipe all references to the alertTemplate and re-enable drawing mode.
+            _this._alertTemplateData = null;
+            _this._drawingManager.setOptions({
+                "drawingControlOptions":{
+                    "drawingModes":['marker'],
+                    "position":google.maps.ControlPosition.TOP_RIGHT}
+            });
+        }
+    },
+
+    /**
+     * Loads an Alert Template into the editor based on the passed id.
+     * @param id
+     */
+    loadAlertTemplate: function(id) {
         var _this = this;
         voyent.locate.findTrackers({
             realm: this.realm,
             account: this.account,
-            query: {"_id":alertTemplateId}
+            query: {"_id":id}
         }).then(function (results) {
             if (!results || !results.length) {
-                _this.fire('message-error', 'Tracker not found');
+                _this.fire('message-error', 'Alert Template not found');
                 return;
             }
             _this._drawAlertTemplate(results[0]);
         }).catch(function (error) {
-            _this.fire('message-error', 'Error loading or drawing saved tracker: ' + error);
+            _this.fire('message-error', 'Error loading or drawing saved Alert Template: ' + error);
         });
     },
 
@@ -174,31 +217,31 @@ Polymer({
      * Toggles renaming mode for an Alert Template.
      * @private
      */
-    _toggleTrackerRenaming: function() {
+    _toggleAlertTemplateRenaming: function() {
         var _this = this;
-        var renaming = !this.get('_trackerData.tracker.tmpProperties.renaming');
+        var renaming = !this.get('_alertTemplateData.alertTemplate.tmpProperties.renaming');
         if (renaming) {
             //Set the input value to the current zoneId.
-            this.set('_trackerData.tracker.tmpProperties.newName',this.get('_trackerData.tracker.label'));
+            this.set('_alertTemplateData.alertTemplate.tmpProperties.newName',this.get('_alertTemplateData.alertTemplate.label'));
             //Focus on the input.
             setTimeout(function() {
-                _this.querySelector('#tracker').focus();
+                _this.querySelector('#alertTemplate').focus();
             },0);
         }
         //Toggle renaming mode.
-        this.set('_trackerData.tracker.tmpProperties.renaming',renaming);
+        this.set('_alertTemplateData.alertTemplate.tmpProperties.renaming',renaming);
     },
 
     /**
      * Confirms the renaming of an Alert Template.
      * @private
      */
-    _renameTracker: function() {
+    _renameAlertTemplate: function() {
         //Set the new label and reset the editing mode input state.
-        this.set('_trackerData.tracker.label',this.get('_trackerData.tracker.tmpProperties.newName'));
-        this.set('_trackerData.tracker.tmpProperties.newName','');
+        this.set('_alertTemplateData.alertTemplate.label',this.get('_alertTemplateData.alertTemplate.tmpProperties.newName'));
+        this.set('_alertTemplateData.alertTemplate.tmpProperties.newName','');
         //Toggle renaming mode.
-        this._toggleTrackerRenaming();
+        this._toggleAlertTemplateRenaming();
     },
 
     /**
@@ -206,39 +249,15 @@ Polymer({
      * @param e
      * @private
      */
-    _renameTrackerViaKeydown: function(e) {
+    _renameAlertTemplateViaKeydown: function(e) {
         //Prevent the event from bubbling up the DOM tree
         e.stopPropagation();
         if (e.which === 13) { //Enter
-            this._renameTracker();
+            this._renameAlertTemplate();
         }
         else if (e.which === 27) { //Esc
-            this._toggleTrackerRenaming();
+            this._toggleAlertTemplateRenaming();
         }
-    },
-
-    /**
-     * Removes the current tracker from the database.
-     * @private
-     */
-    _removeTracker: function() {
-        var confirm = window.confirm("Are you sure you want to delete '" + this._trackerData.tracker.label + "'? This cannot be undone!");
-        if (!confirm) {
-            return;
-        }
-        //Remove the marker, circles and zoneOverlays from the map.
-        this._trackerData.marker.setMap(null);
-        for (var i=0; i<this._trackerData.circles.length; i++) {
-            this._trackerData.circles[i].setMap(null);
-            this._trackerData.zoneOverlays[i].setMap(null);
-        }
-        //Wipe all references to the tracker and re-enable drawing mode.
-        this._trackerData = null;
-        this._drawingManager.setOptions({
-            "drawingControlOptions":{
-                "drawingModes":['marker'],
-                "position":google.maps.ControlPosition.TOP_RIGHT}
-        });
     },
 
     /**
@@ -250,14 +269,14 @@ Polymer({
     _toggleAccordion: function(eOrI) {
         //This function will either be passed an event (from the ui) or a direct index (from the JS).
         var index = eOrI.model ? eOrI.model.get('index') : eOrI;
-        for (var i=0; i<this._trackerData.tracker.zones.features.length; i++) {
+        for (var i=0; i<this._alertTemplateData.alertTemplate.zones.features.length; i++) {
             //Hide the accordions and remove the selected styling.
-            this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.visible',false);
-            this._trackerData.circles[i].setOptions({"strokeWeight":0});
+            this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.visible',false);
+            this._alertTemplateData.circles[i].setOptions({"strokeWeight":0});
         }
         //Show the accordion contents for the selected zone and add the selected styling.
-        this.set('_trackerData.tracker.zones.features.'+index+'.tmpProperties.visible',true);
-        this._trackerData.circles[index].setOptions({"strokeWeight":3});
+        this.set('_alertTemplateData.alertTemplate.zones.features.'+index+'.tmpProperties.visible',true);
+        this._alertTemplateData.circles[index].setOptions({"strokeWeight":3});
     },
 
     /**
@@ -268,12 +287,12 @@ Polymer({
         var smallestIndex = 50, //50 because the highest index ever is 49
             largestRadius = 0; //0 because every zone will be bigger
         //Get the size of largest circle and our smallest zIndex so we can determine what values to set for the new one
-        for (var i=0; i<this._trackerData.circles.length; i++) {
-            if (this._trackerData.tracker.zones.features[i].properties.googleMaps.radius >= largestRadius) {
-                largestRadius = this._trackerData.tracker.zones.features[i].properties.googleMaps.radius;
+        for (var i=0; i<this._alertTemplateData.circles.length; i++) {
+            if (this._alertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.radius >= largestRadius) {
+                largestRadius = this._alertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.radius;
             }
-            if (this._trackerData.tracker.zones.features[i].properties.googleMaps.zIndex <= smallestIndex){
-                smallestIndex = this._trackerData.tracker.zones.features[i].properties.googleMaps.zIndex;
+            if (this._alertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.zIndex <= smallestIndex){
+                smallestIndex = this._alertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.zIndex;
             }
         }
         //Set the new zone radius as 50% larger than the current largest zone.
@@ -287,20 +306,20 @@ Polymer({
         props.zIndex = smallestIndex;
         //Create the google maps circle and bind it to the marker.
         var newCircle = new google.maps.Circle(props);
-        newCircle.bindTo('center', this._trackerData.marker, 'position');
+        newCircle.bindTo('center', this._alertTemplateData.marker, 'position');
 
         //Build the geoJSON structure for the proximity zone.
         var newCircleJSON = this._getZoneJSON();
-        newCircleJSON.properties.zoneId = 'Zone_' + (this._trackerData.tracker.zones.features.length + 1);
+        newCircleJSON.properties.zoneId = 'Zone_' + (this._alertTemplateData.alertTemplate.zones.features.length + 1);
         //Update our lists.
-        this.push('_trackerData.tracker.zones.features',newCircleJSON);
-        this.push('_trackerData.circles',newCircle);
+        this.push('_alertTemplateData.alertTemplate.zones.features',newCircleJSON);
+        this.push('_alertTemplateData.circles',newCircle);
         //Add the change listeners to the new circle.
         this._setupChangeListeners();
         //Update the JSON to include the new circle.
         this._updateAlertTemplateJSON();
         //Draw the Proximity Zone label overlay and save a reference to it.
-        this.push('_trackerData.zoneOverlays',new this._ProximityZoneOverlay(this._trackerData.tracker.zones.features.length-1));
+        this.push('_alertTemplateData.zoneOverlays',new this._ProximityZoneOverlay(this._alertTemplateData.alertTemplate.zones.features.length-1));
     },
 
     /**
@@ -310,14 +329,14 @@ Polymer({
     _removeProximityZone: function(e) {
         //Get the index of the proximity zone that is to be removed.
         var i = e.model.get('index');
-        //Remove the zone from the tracker JSON.
-        this.splice('_trackerData.tracker.zones.features',i,1);
+        //Remove the zone from the alertTemplate JSON.
+        this.splice('_alertTemplateData.alertTemplate.zones.features',i,1);
         //Remove the circle from the map and the reference to it.
-        this._trackerData.circles[i].setMap(null);
-        this.splice('_trackerData.circles',i,1);
+        this._alertTemplateData.circles[i].setMap(null);
+        this.splice('_alertTemplateData.circles',i,1);
         //Remove the overlay.
-        this._trackerData.zoneOverlays[i].setMap(null);
-        this.splice('_trackerData.zoneOverlays',i,1);
+        this._alertTemplateData.zoneOverlays[i].setMap(null);
+        this.splice('_alertTemplateData.zoneOverlays',i,1);
     },
 
     /**
@@ -329,11 +348,11 @@ Polymer({
         var _this = this;
         //This function will either be passed an event (from the ui) or a direct index (from the JS).
         var i = eOrI.model ? eOrI.model.get('index') : eOrI;
-        var renaming = !this.get('_trackerData.tracker.zones.features.'+i+'.tmpProperties.renaming');
+        var renaming = !this.get('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.renaming');
         if (renaming) {
             //Set the input value to the current zoneId.
-            this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.newName',
-                     this._trackerData.tracker.zones.features[i].properties.zoneId);
+            this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName',
+                     this._alertTemplateData.alertTemplate.zones.features[i].properties.zoneId);
             //Focus on the input.
             setTimeout(function() {
                 _this.querySelector('#zone-'+i).focus();
@@ -341,10 +360,10 @@ Polymer({
         }
         else {
             //Always reset the input value so it updates each time editing mode is entered
-            this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.newName','');
+            this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName','');
         }
         //Toggle renaming mode.
-        this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.renaming',renaming);
+        this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.renaming',renaming);
     },
 
     /**
@@ -355,9 +374,9 @@ Polymer({
     _renameProximityZone: function(e) {
         var i = e.model.get('index');
         //Set the new zoneId and reset the editing mode input state.
-        this.set('_trackerData.tracker.zones.features.'+i+'.properties.zoneId',
-                 this.get('_trackerData.tracker.zones.features.'+i+'.tmpProperties.newName'));
-        this.set('_trackerData.tracker.zones.features.'+i+'.tmpProperties.newName','');
+        this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.properties.zoneId',
+                 this.get('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName'));
+        this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName','');
         //Toggle renaming mode.
         this._toggleProximityZoneRenaming(i);
         //Redraw the overlay since the content changed.
@@ -389,7 +408,7 @@ Polymer({
         this._editing = !this._editing;
         var index = e.model.get('index');
         if (this._editing) { //We are entering edit mode.
-            var properties = this._trackerData.tracker.zones.features[index].properties;
+            var properties = this._alertTemplateData.alertTemplate.zones.features[index].properties;
             switch (this._selected) {
                 //Copy the current state of each of the properties into our editing mode inputs.
                 case 'Editable':
@@ -467,25 +486,25 @@ Polymer({
         var _this = this;
         var index = e.model.get('index');
         //Clone properties and re-set it so the computed binding _toArray updates.
-        var properties = JSON.parse(JSON.stringify(this._trackerData.tracker.zones.features[index].properties));
+        var properties = JSON.parse(JSON.stringify(this._alertTemplateData.alertTemplate.zones.features[index].properties));
         switch (this._selected) {
             //Copy the new property value from our editing mode inputs to the JSON. We don't bind directly in case we need to revert.
             case 'Editable':
                 properties['Editable'] = this._editableVal.toLowerCase() === 'true'; //Convert string from UI to boolean
                 //Set the Editable state on the circle.
-                this._trackerData.circles[index].setEditable(properties.Editable);
+                this._alertTemplateData.circles[index].setEditable(properties.Editable);
                 this.set('_editableVal',null);
                 break;
             case 'Color':
                 properties['Color'] = this._colorVal;
                 //Set the Color on the circle.
-                this._trackerData.circles[index].setOptions({"fillColor":'#'+properties.Color});
+                this._alertTemplateData.circles[index].setOptions({"fillColor":'#'+properties.Color});
                 this.set('_colorVal',null);
                 break;
             case 'Opacity':
                 properties['Opacity'] = this._opacityVal;
                 //Set the Opacity on the circle.
-                this._trackerData.circles[index].setOptions({"fillOpacity":properties.Opacity});
+                this._alertTemplateData.circles[index].setOptions({"fillOpacity":properties.Opacity});
                 this.set('_opacityVal',null);
                 break;
             default:
@@ -504,7 +523,7 @@ Polymer({
                     },0);
                 }
         }
-        this.set('_trackerData.tracker.zones.features.'+index+'.properties',properties);
+        this.set('_alertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
         //Toggle editing mode.
         this._togglePropertyEditing(e);
     },
@@ -556,9 +575,9 @@ Polymer({
             this._readOnlyProperties.indexOf(this._customPropKey) === -1) {
             var index = e.model.get('index');
             //Clone properties and re-set it so the computed binding _toArray updates.
-            var properties = JSON.parse(JSON.stringify(this._trackerData.tracker.zones.features[index].properties));
+            var properties = JSON.parse(JSON.stringify(this._alertTemplateData.alertTemplate.zones.features[index].properties));
             properties[this._customPropKey] = this._customPropVal;
-            this.set('_trackerData.tracker.zones.features.'+index+'.properties',properties);
+            this.set('_alertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
             //Reset the new property input values.
             this._customPropKey = this._customPropVal = null;
             //Toggle new property mode.
@@ -589,9 +608,9 @@ Polymer({
     _removeSelectedProperty: function(e) {
         var index = e.model.get('index');
         //Clone properties and re-set it so the computed binding _toArray updates.
-        var properties = JSON.parse(JSON.stringify(this._trackerData.tracker.zones.features[index].properties));
+        var properties = JSON.parse(JSON.stringify(this._alertTemplateData.alertTemplate.zones.features[index].properties));
         delete properties[this._selected];
-        this.set('_trackerData.tracker.zones.features.'+index+'.properties',properties);
+        this.set('_alertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
         //Toggle property editing since this function is only available during editing mode.
         this._togglePropertyEditing(e);
     },
@@ -602,19 +621,19 @@ Polymer({
      * @private
      */
     _drawAlertTemplate: function(alertTemplate) {
-        //Create the marker and build the trackerData.
+        //Create the marker and build the alertTemplateData.
         var marker = new google.maps.Marker({
             position: new google.maps.LatLng(alertTemplate.anchor.geometry.coordinates[1],alertTemplate.anchor.geometry.coordinates[0]),
             map: this._map,
             draggable: true,
             zIndex: 50
         });
-        this._trackerData = {"tracker":alertTemplate,"marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[]};
+        this._alertTemplateData = {"alertTemplate":alertTemplate,"marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":true};
 
         //Generate the circles and bind them to the marker.
         var zones = alertTemplate.zones.features, bounds = new google.maps.LatLngBounds(), highestLats = [], circle, properties;
         for (var i=0; i<zones.length; i++) {
-            //Set the properties of the circle based on the tracker JSON.
+            //Set the properties of the circle based on the alertTemplate JSON.
             properties = this._getCircleProperties();
             properties.radius = zones[i].properties.googleMaps.radius;
             properties.fillColor = '#'+ zones[i].properties.Color;
@@ -623,13 +642,13 @@ Polymer({
             //Create the circle and bind it.
             circle = new google.maps.Circle(properties);
             circle.bindTo('center', marker, 'position');
-            this._trackerData.circles.push(circle);
+            this._alertTemplateData.circles.push(circle);
             //Determine where to draw the Proximity Zone label overlay and draw it.
-            //NOTE - We push to this array and set it instead of pushing directly to _trackerData.highestLats because
-            //pushing directly to _trackerData.highestLats only pushes the first item for an unknown reason.
+            //NOTE - We push to this array and set it instead of pushing directly to _alertTemplateData.highestLats because
+            //pushing directly to _alertTemplateData.highestLats only pushes the first item for an unknown reason.
             highestLats.push(this._determineHighestLat(zones[i].geometry.coordinates[0]));
-            this.set('_trackerData.highestLats',highestLats);
-            this._trackerData.zoneOverlays.push(new this._ProximityZoneOverlay(i));
+            this.set('_alertTemplateData.highestLats',highestLats);
+            this._alertTemplateData.zoneOverlays.push(new this._ProximityZoneOverlay(i));
             //Update our bounds object so we can pan the map later.
             bounds.union(circle.getBounds());
         }
@@ -654,17 +673,17 @@ Polymer({
      */
     _redrawZoneOverlay: function(i) {
         if (typeof i !== 'undefined') {
-            this._trackerData.zoneOverlays[i].draw();
+            this._alertTemplateData.zoneOverlays[i].draw();
         }
         else {
-            for (i=0; i<this._trackerData.zoneOverlays.length; i++) {
-                this._trackerData.zoneOverlays[i].draw();
+            for (i=0; i<this._alertTemplateData.zoneOverlays.length; i++) {
+                this._alertTemplateData.zoneOverlays[i].draw();
             }
         }
     },
 
     /**
-     * Determine the map size to use. This will leverage this.height and this.width if available. Otherwise the parent
+     * Determine the map size to use. This will leverage this.height if available. Otherwise the parent
      * container size will be used. If this.autoheight is specified than it will override this.height.
      */
     _calcMapSize: function() {
@@ -699,31 +718,31 @@ Polymer({
     },
 
     /**
-     * Syncs the tracker JSON with the current state of the map entities.
+     * Syncs the alertTemplate JSON with the current state of the map entities.
      * @private
      */
     _updateAlertTemplateJSON: function () {
-        //Sync the marker coordinates with the tracker anchor in case the tracker position has moved.
-        this._trackerData.tracker.anchor.geometry.coordinates = [this._trackerData.marker.getPosition().lng(),this._trackerData.marker.getPosition().lat()];
-        var features = this._trackerData.tracker.zones.features;
+        //Sync the marker coordinates with the alertTemplate anchor in case the alertTemplate position has moved.
+        this._alertTemplateData.alertTemplate.anchor.geometry.coordinates = [this._alertTemplateData.marker.getPosition().lng(),this._alertTemplateData.marker.getPosition().lat()];
+        var features = this._alertTemplateData.alertTemplate.zones.features;
         var N = 50; //The number of coordinates the circle approximation will have.
         var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
         //Use the following two vars to calculate and store the northern most point of a Proximity
         //Zone circle. This is used to calculate where to render the Proximity Zone overlay label.
         var highestLat = -100;
-        this._trackerData.highestLats = [];
+        this._alertTemplateData.highestLats = [];
         for (var i=0; i<features.length; i++) {
-            //Sync the tracker zone properties with the zone drawn on the map.
-            features[i].properties.googleMaps.radius = this._trackerData.circles[i].getRadius();
-            features[i].properties.googleMaps.center = [this._trackerData.circles[i].getCenter().lat(),this._trackerData.circles[i].getCenter().lng()];
-            features[i].properties.Color = this._trackerData.circles[i].get('fillColor').substring(1); //remove the '#'
-            features[i].properties.googleMaps.zIndex = this._trackerData.circles[i].get('zIndex');
+            //Sync the alertTemplate zone properties with the zone drawn on the map.
+            features[i].properties.googleMaps.radius = this._alertTemplateData.circles[i].getRadius();
+            features[i].properties.googleMaps.center = [this._alertTemplateData.circles[i].getCenter().lat(),this._alertTemplateData.circles[i].getCenter().lng()];
+            features[i].properties.Color = this._alertTemplateData.circles[i].get('fillColor').substring(1); //remove the '#'
+            features[i].properties.googleMaps.zIndex = this._alertTemplateData.circles[i].get('zIndex');
             //Reset the coordinates array since we'll recalculate them below.
             features[i].geometry.coordinates = [[]];
             for (var j=0; j<N; j++) {
                 //Calculate and save the next coordinate.
-                var latLng = google.maps.geometry.spherical.computeOffset(this._trackerData.circles[i].getCenter(),
-                                                                          this._trackerData.circles[i].getRadius(),
+                var latLng = google.maps.geometry.spherical.computeOffset(this._alertTemplateData.circles[i].getCenter(),
+                                                                          this._alertTemplateData.circles[i].getRadius(),
                                                                           degreeStep * j);
                 features[i].geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
                 //Look for the northern most point of the circle.
@@ -735,7 +754,7 @@ Polymer({
             //first one to the last one to complete the circle.
             features[i].geometry.coordinates[0].push(features[i].geometry.coordinates[0][0]);
             //Save the highest known latitude.
-            this._trackerData.highestLats.push(highestLat);
+            this._alertTemplateData.highestLats.push(highestLat);
         }
     },
 
@@ -748,7 +767,7 @@ Polymer({
      */
     _determineHighestLat: function(coordinates) {
         var highestLat = -100;
-        this._trackerData.highestLats = [];
+        this._alertTemplateData.highestLats = [];
         for (var i=0; i<coordinates.length; i++) {
             if (coordinates[i][1] > highestLat) {
                 highestLat = coordinates[i][1];
@@ -766,19 +785,19 @@ Polymer({
         var shape;
         google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
             shape = oce.overlay;
-            if (oce.type === 'marker') { //Marker is actually a circle tracker
+            if (oce.type === 'marker') { //Marker is actually a circle alertTemplate
                 //Create the new google maps circle and bind the circle (zone) to the marker (anchor).
                 var newCircle = new google.maps.Circle(_this._getCircleProperties());
                 newCircle.bindTo('center', oce.overlay, 'position');
-                //Build the JSON structure for the tracker template.
-                var tracker = _this._getTrackerJSON();
-                tracker.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
+                //Build the JSON structure for the alertTemplate template.
+                var alertTemplate = _this._getAlertTemplateJSON();
+                alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
                 //Store the various pieces together so we can reference them later.
-                _this._trackerData = {"tracker":tracker,"marker":shape,"circles":[newCircle],"zoneOverlays":[],"highestLats":[]};
+                _this._alertTemplateData = {"alertTemplate":alertTemplate,"marker":shape,"circles":[newCircle],"zoneOverlays":[],"highestLats":[],"isPersisted":false};
                 //Determine and set the coordinates for the circle.
                 _this._updateAlertTemplateJSON();
                 //Draw the Proximity Zone label overlay and save a reference to it.
-                _this.push('_trackerData.zoneOverlays',new _this._ProximityZoneOverlay(0));
+                _this.push('_alertTemplateData.zoneOverlays',new _this._ProximityZoneOverlay(0));
                 //Disable further Alert Template creations - only allowed one at a time.
                 _this._drawingManager.setOptions({
                     "drawingControlOptions":{
@@ -812,31 +831,31 @@ Polymer({
      */
     _setupChangeListeners: function() {
         var _this = this;
-        if (this._trackerData.marker) {
+        if (this._alertTemplateData.marker) {
             //Clear any previously added listeners (since we call this function again for newly added zones).
-            google.maps.event.clearInstanceListeners(this._trackerData.marker);
+            google.maps.event.clearInstanceListeners(this._alertTemplateData.marker);
             //Add drag listener to marker.
-            google.maps.event.addListener(this._trackerData.marker, 'dragend', function (event) {
+            google.maps.event.addListener(this._alertTemplateData.marker, 'dragend', function (event) {
                 //Update the JSON since the position changed.
                 _this._updateAlertTemplateJSON();
                 //Adjust the position of the Proximity Zone labels since all of their positions changed.
                 _this._redrawZoneOverlay();
             });
         }
-        if (this._trackerData.circles) {
-            for (var i=0; i<this._trackerData.circles.length; i++) {
+        if (this._alertTemplateData.circles) {
+            for (var i=0; i<this._alertTemplateData.circles.length; i++) {
                 (function(i) {
                     //Clear any previously added listeners (since we call this function again for newly added zones).
-                    google.maps.event.clearInstanceListeners(_this._trackerData.circles[i]);
+                    google.maps.event.clearInstanceListeners(_this._alertTemplateData.circles[i]);
                     //Add resize listener to circles.
-                    google.maps.event.addListener(_this._trackerData.circles[i], 'radius_changed', function (event) {
+                    google.maps.event.addListener(_this._alertTemplateData.circles[i], 'radius_changed', function (event) {
                         //Update the JSON since the size of a zone changed.
                         _this._updateAlertTemplateJSON();
                         //Adjust the position of the Proximity Zone label since the radius changed.
                         _this._redrawZoneOverlay(i);
                     });
                     //Add click listener to circles.
-                    google.maps.event.addListener(_this._trackerData.circles[i], 'click', function (event) {
+                    google.maps.event.addListener(_this._alertTemplateData.circles[i], 'click', function (event) {
                         _this._toggleAccordion(i);
                     });
                 }(i))
@@ -876,12 +895,12 @@ Polymer({
         //Handles visually displaying the overlay on the map. Called when the object is first displayed
         //and again whenever we want to redraw the overlay, like when the positon changes.
         this._ProximityZoneOverlay.prototype.draw = function () {
-            var properties = _outer._trackerData.tracker.zones.features[this.i].properties;
+            var properties = _outer._alertTemplateData.alertTemplate.zones.features[this.i].properties;
 
             //Retrieve the north-center coordinates of this overlay and convert them to pixel coordinates.
             var nc = this.getProjection().fromLatLngToDivPixel(
-                new google.maps.LatLng(_outer._trackerData.highestLats[this.i],
-                _outer._trackerData.circles[this.i].getCenter().lng())
+                new google.maps.LatLng(_outer._alertTemplateData.highestLats[this.i],
+                _outer._alertTemplateData.circles[this.i].getCenter().lng())
             );
             //Set the div content.
             this.div.innerHTML = properties.zoneId;
@@ -1041,11 +1060,11 @@ Polymer({
     },
 
     /**
-     * Returns the default JSON structure of a tracker template.
+     * Returns the default JSON structure of an Alert Template.
      * @returns {{anchor: {type: string, geometry: {type: string, coordinates: Array}, properties: {Editable: string}}, zones: {type: string, features: [*]}}}
      * @private
      */
-    _getTrackerJSON: function() {
+    _getAlertTemplateJSON: function() {
         return {
             "anchor": {
                 "type": "Feature",
@@ -1065,7 +1084,7 @@ Polymer({
                 ]
             },
             "label":"Unnamed",
-            //These properties are used by the view and will be removed before saving the tracker.
+            //These properties are used by the view and will be removed before saving the alertTemplate.
             "tmpProperties": {
                 "renaming":false,
                 "newName":''
@@ -1097,7 +1116,7 @@ Polymer({
                 "zoneId": "Zone_1",
                 "Opacity": 0.30
             },
-            //These properties are used by the view and will be removed before saving the tracker.
+            //These properties are used by the view and will be removed before saving the alertTemplate.
             "tmpProperties": {
                 "renaming": false,
                 "newName":'',

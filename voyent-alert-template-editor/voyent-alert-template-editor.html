@@ -9,6 +9,7 @@
 <link rel="import" href="../../iron-icon/iron-icon.html">
 <link rel="import" href="../../iron-icons/iron-icons.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../paper-button/paper-button.html">
 
 <!--
 Displays a map-based tool for creating new Alert Templates.
@@ -25,22 +26,37 @@ Example:
 <dom-module id="voyent-alert-template-editor">
     <template>
         <style is="custom-style" type="text/css">
-            #map,
-            #propertiesPanel {
-                height: var(--height-var);
-                border: 2px inset rgba(0,0,0,0.5);
-                margin-bottom:10px;
-            }
             #map {
+                height: var(--height-var);
+                margin-bottom:10px;
                 border-radius: 15px 0 0 15px;
                 z-index: 0;
             }
+            #map,
             #propertiesPanel {
+                border: 2px inset rgba(0,0,0,0.5);
+            }
+            #propertiesPanel {
+                height: calc(var(--height-var) - 45px);
+                border-bottom:none;
+            }
+            #propertiesPanel,
+            #crudPanel {
                 width: 200px;
                 float: right;
+                clear: right;
                 border-left: none;
                 overflow-y: scroll;
                 background-color: white;
+                position:relative;
+            }
+            #crudPanel {
+                height:45px;
+                text-align:center;
+                overflow: hidden;
+                border-right:2px inset rgba(0,0,0,0.5);
+                border-bottom:2px inset rgba(0,0,0,0.5);
+                margin-bottom:10px;
             }
             .accordion {
                 text-align: left;
@@ -185,9 +201,17 @@ Example:
                 padding: 0;
                 width: 20px;
                 height: 20px;
+                z-index: 30;
             }
             paper-icon-button[disabled] {
                 color: #d3d1d1;
+            }
+            paper-button {
+                text-transform: capitalize;
+                font-size:11px;
+            }
+            #crudPanel paper-button {
+                margin-top:7px;
             }
             paper-input {
                 --paper-input-container-input: {
@@ -226,7 +250,7 @@ Example:
                 display:inline-block;
             }
             .title {
-                width:125px;
+                width:150px;
                 word-wrap:break-word;
             }
             .title.zone {
@@ -236,32 +260,44 @@ Example:
             .title-bttns {
                 width:45px;
             }
+            .alert-template-title > .title-bttns {
+                width:20px;
+            }
             .delete-button {
                 text-align:center;
+            }
+            .icon-div {
+                width:16px;
+                height:16px;
+                overflow:hidden;
+                position:relative;
+                display:inline-block;
+            }
+            .icon {
+                position:absolute;
+                top:-176px;
             }
         </style>
             <div id="container">
                 <div id="propertiesPanel">
-                    <template is="dom-if" if="[[_trackerData.tracker]]">
-                        <content select="propertiesTop"></content>
+                    <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
                         <div>
-                            <template is="dom-if" if="[[!_trackerData.tracker.tmpProperties.renaming]]">
+                            <template is="dom-if" if="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
                                 <div class="alert-template-title">
                                     <div class="title">
-                                        [[_trackerData.tracker.label]]
+                                        [[_alertTemplateData.alertTemplate.label]]
                                     </div>
                                     <div class="title-bttns">
-                                        <paper-icon-button raised icon="create" on-click="_toggleTrackerRenaming"></paper-icon-button>
-                                        <paper-icon-button raised icon="delete" on-click="_removeTracker"></paper-icon-button>
+                                        <paper-icon-button raised icon="create" on-click="_toggleAlertTemplateRenaming"></paper-icon-button>
                                     </div>
                                 </div>
                             </template>
-                            <template is="dom-if" if="[[_trackerData.tracker.tmpProperties.renaming]]">
-                                <paper-input id="tracker" tabindex="1"
+                            <template is="dom-if" if="[[_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                                <paper-input id="alertTemplate" tabindex="1"
                                              label="Alert Template"
                                              placeholder="New Value"
-                                             on-keydown="_renameTrackerViaKeydown"
-                                             value="{{_trackerData.tracker.tmpProperties.newName::input}}">
+                                             on-keydown="_renameAlertTemplateViaKeydown"
+                                             value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}">
                                 </paper-input>
                             </template>
                         </div>
@@ -272,7 +308,7 @@ Example:
                             </div>
                         </div>
                         <section class="accordion">
-                            <template is="dom-repeat" items="[[_trackerData.tracker.zones.features]]" as="zone">
+                            <template is="dom-repeat" items="[[_alertTemplateData.alertTemplate.zones.features]]" as="zone">
                                 <div>
                                     <input id$="ac-[[index]]" name="accordion" type="radio"
                                            on-click="_toggleAccordion" checked="{{zone.tmpProperties.visible::change}}"/>
@@ -420,12 +456,22 @@ Example:
                             </template>
                         </section>
                     </template>
-                    <template is="dom-if" if="[[!_trackerData.tracker]]">
+                    <template is="dom-if" if="[[!_alertTemplateData.alertTemplate]]">
                         <div class="alert-template-title">New Alert Template</div>
                         <div class="alert-template-desc">
-                            Activate the marker icon from the toolbar in the
+                            Activate the
+                            <div class="icon-div">
+                                <img class="icon" src="img/drawing.png">
+                            </div>
+                            icon from the toolbar in the
                             top-right corner and click a location on the map.
                         </div>
+                    </template>
+                </div>
+                <div id="crudPanel">
+                    <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
+                        <paper-button raised on-click="saveAlertTemplate">Save</paper-button>
+                        <paper-button raised on-click="removeAlertTemplate">Clear</paper-button>
                     </template>
                 </div>
                 <div id="map"></div>
