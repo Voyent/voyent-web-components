@@ -77,7 +77,7 @@
             realm: realm,
             username: username,
             password: password,
-            host:'dev.voyent.cloud'
+            host:'latest.voyent.cloud'
         }).then(function(){
             setCredentialsOnComponent();
         })['catch'](function(){
@@ -87,7 +87,7 @@
                 realm: 'admin',
                 username: username,
                 password: password,
-                host:'dev.voyent.cloud'
+                host:'latest.voyent.cloud'
             }).then(function(){
                 setCredentialsOnComponent();
                 document.getElementById('alertTemplateEditor').setAttribute('realm', realm);

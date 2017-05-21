@@ -17,11 +17,11 @@ Polymer({
          * of the parent container. If a height cannot be found then a default minimum of 500 will be used.
          */
         height: Number,
-        /*/!**
+        /**
          * The width of the google map to be created, as an integer. If left empty we will default to the width of the
-         * parent container.
-         *!/
-        width: Number,*/
+         * parent container minus the width of the side panel.
+         */
+        width: Number,
         /**
          * Enable a percent of the full page height to automatically fill with the map. To disable use a value of -1.
          * Height = "h*autoheight" so 0.8 corresponds to 80% of the page height. 1.2 would be 120%, etc.
@@ -683,12 +683,12 @@ Polymer({
     },
 
     /**
-     * Determine the map size to use. This will leverage this.height if available. Otherwise the parent
+     * Determine the map size to use. This will leverage this.height and this.width if available. Otherwise the parent
      * container size will be used. If this.autoheight is specified than it will override this.height.
      */
     _calcMapSize: function() {
         var height = this.height;
-        // If we have a valid autoheight specified we override with that
+        //If we have a valid autoheight specified we override with that
         if (this.autoheight && this.autoheight !== null && this.autoheight > 0) {
             var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
 
@@ -697,24 +697,27 @@ Polymer({
             }
         }
         else {
-            // If we don't have a height try the parent
+            //If we don't have a height try the parent
             if (height == null) {
                 height = this.$$('#container').clientHeight;
             }
-            // If we still don't have a valid height default to a minimum
+            //If we still don't have a valid height default to a minimum
             if (height < 50) {
                 height = 500;
             }
         }
-        // Apply the height variable, which will be used for the map
         this.customStyle['--height-var'] = height + 'px';
-        this.updateStyles();
 
-        //TODO - The styling needs to be adjusted for the width to work properly
-        // If the width is specified then set it otherwise the map will just take up the space of the parent
-        /*if (this.width && this.width !== null && this.width > 0) {
-            this.$$('#map').style.width = this.width + 'px';
-        }*/
+        //If the width is specified then set it
+        if (this.width && this.width !== null && this.width > 0) {
+            this.customStyle['--width-var'] = this.width + 'px';
+        }
+        else { //Otherwise the map will take up as much space as possible (-4px for map borders)
+            this.customStyle['--width-var'] = (this.querySelector('#container').offsetWidth -
+                                               this.querySelector('#sidePanel').offsetWidth - 4) + 'px';
+        }
+        //Apply the styles
+        this.updateStyles();
     },
 
     /**
