@@ -687,37 +687,41 @@ Polymer({
      * container size will be used. If this.autoheight is specified than it will override this.height.
      */
     _calcMapSize: function() {
-        var height = this.height;
-        //If we have a valid autoheight specified we override with that
-        if (this.autoheight && this.autoheight !== null && this.autoheight > 0) {
-            var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        var _this = this;
+        //Do this async so the container has time to load and properly calculate it's size.
+        setTimeout(function() {
+            var height = _this.height;
+            //If we have a valid autoheight specified we override with that
+            if (_this.autoheight && _this.autoheight !== null && _this.autoheight > 0) {
+                var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
 
-            if (h) {
-                height = Math.round(h * this.autoheight);
+                if (h) {
+                    height = Math.round(h * _this.autoheight);
+                }
             }
-        }
-        else {
-            //If we don't have a height try the parent
-            if (height == null) {
-                height = this.$$('#container').clientHeight;
+            else {
+                //If we don't have a height try the parent
+                if (height == null) {
+                    height = _this.$$('#container').clientHeight;
+                }
+                //If we still don't have a valid height default to a minimum
+                if (height < 50) {
+                    height = 500;
+                }
             }
-            //If we still don't have a valid height default to a minimum
-            if (height < 50) {
-                height = 500;
-            }
-        }
-        this.customStyle['--height-var'] = height + 'px';
+            _this.customStyle['--height-var'] = height + 'px';
 
-        //If the width is specified then set it
-        if (this.width && this.width !== null && this.width > 0) {
-            this.customStyle['--width-var'] = this.width + 'px';
-        }
-        else { //Otherwise the map will take up as much space as possible (-4px for map borders)
-            this.customStyle['--width-var'] = (this.querySelector('#container').offsetWidth -
-                                               this.querySelector('#sidePanel').offsetWidth - 4) + 'px';
-        }
-        //Apply the styles
-        this.updateStyles();
+            //If the width is specified then set it
+            if (_this.width && _this.width !== null && _this.width > 0) {
+                _this.customStyle['--width-var'] = _this.width + 'px';
+            }
+            else { //Otherwise the map will take up as much space as possible (-4px for map borders)
+                _this.customStyle['--width-var'] = (_this.querySelector('#container').offsetWidth -
+                                                   _this.querySelector('#sidePanel').offsetWidth - 4) + 'px';
+            }
+            //Apply the styles
+            _this.updateStyles();
+        },0);
     },
 
     /**
