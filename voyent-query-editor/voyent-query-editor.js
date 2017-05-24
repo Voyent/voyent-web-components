@@ -430,6 +430,12 @@ Voyent.QueryEditor = Polymer({
      * Completely destroy and reinitialize the editor.
      */
     reloadEditor: function() {
+        //This may be called before the dependencies and required attributes are available.
+        if ((!('jQuery' in window && $.fn.queryBuilder)) ||
+            !voyent.io.auth.isLoggedIn() ||
+            !this.realm || !this.account) {
+            return;
+        }
         this._redetermineFields = true;
         this._queryService({});
     },
