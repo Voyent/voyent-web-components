@@ -521,7 +521,9 @@ Polymer({
                 _this._updateTrackerInstances(results);
             }
         }).catch(function(error) {
-            if (error.status === 404) {
+            var res = JSON.parse(error.response);
+            if (res.status === 404 ||
+                (res.status === 500 && res.code == 'contextNotFound')) {
                 _this._createAggregate(query);
             }
         })
