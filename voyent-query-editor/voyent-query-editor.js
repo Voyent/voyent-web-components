@@ -214,6 +214,7 @@ Voyent.QueryEditor = Polymer({
                 setTimeout(initialize,10);
                 return;
             }
+            _this._dependenciesLoaded = true;
             if (!_this.realm) {
                 _this.realm = voyent.io.auth.getLastKnownRealm();
             }
@@ -235,6 +236,7 @@ Voyent.QueryEditor = Polymer({
      * Execute the current query.
      */
     runQuery: function() {
+        if (!this._dependenciesLoaded) { return; }
         var query = $(this.$.queryBuilder).queryBuilder('getMongo');
         if (Object.keys(query).length !== 0) {
             this._setCurrentquery(query);
@@ -250,6 +252,7 @@ Voyent.QueryEditor = Polymer({
      * @param description - Optional query description
      */
     saveQuery: function(id,description) {
+        if (!this._dependenciesLoaded) { return; }
         var query = this._buildQuery(id,description,false);
         if (query !== null) {
             this._createQuery(query);
@@ -260,6 +263,7 @@ Voyent.QueryEditor = Polymer({
      *  Similar to `saveQuery` but this function will prompt for the query id and does not provide a way to set the description.
      */
     saveQueryWithPrompt: function() {
+        if (!this._dependenciesLoaded) { return; }
         if (!this.validateQuery()) { return; }
         var queryId;
         if (!this.activeQuery) {
@@ -280,6 +284,7 @@ Voyent.QueryEditor = Polymer({
      * @param description - Optional query description, if not provided then the existing value, if any, will be cloned
      */
     cloneQuery: function(id,description) {
+        if (!this._dependenciesLoaded) { return; }
         if (!this.activeQuery) {
             this.fire('message-error', 'Unable to clone query: no query loaded');
             console.error('Unable to clone query: no query loaded');
@@ -295,6 +300,7 @@ Voyent.QueryEditor = Polymer({
      * Similar to `cloneQuery` but this function will prompt for the query id and does not provide a way to set description and services.
      */
     cloneQueryWithPrompt: function() {
+        if (!this._dependenciesLoaded) { return; }
         if (!this.activeQuery) {
             this.fire('message-error', 'Unable to clone query: no query loaded');
             console.error('Unable to clone query: no query loaded');
@@ -316,6 +322,7 @@ Voyent.QueryEditor = Polymer({
      * Deletes the currently active query.
      */
     deleteQuery: function() {
+        if (!this._dependenciesLoaded) { return; }
         if (!this.activeQuery || !this.activeQuery._id) {
             this.fire('message-error', 'Unable to clone query: no query loaded');
             console.error('Unable to clone query: no query loaded');
@@ -328,6 +335,7 @@ Voyent.QueryEditor = Polymer({
      * Clears the query editor and restores the `fields` and `options` attributes to their original values.
      */
     resetEditor: function() {
+        if (!this._dependenciesLoaded) { return; }
         var editor = $(this.$.queryBuilder);
         if (!editor || !editor.queryBuilder) {
             return;
@@ -345,6 +353,7 @@ Voyent.QueryEditor = Polymer({
      * Retrieves a list of all the queries in the current realm.
      */
     fetchQueryList: function() {
+        if (!this._dependenciesLoaded) { return; }
         var _this = this;
         voyent.io.query.findQueries({
             account:this.account,
@@ -375,6 +384,7 @@ Voyent.QueryEditor = Polymer({
      * @param query - The query in object form.
      */
     setEditorFromMongo: function(query) {
+        if (!this._dependenciesLoaded) { return; }
         //since the format of queries has changed over time we have these
         //checks in here to be sure we can load queries of all formats.
         //This is also a away to convert old queries since if the query is
@@ -430,12 +440,7 @@ Voyent.QueryEditor = Polymer({
      * Completely destroy and reinitialize the editor.
      */
     reloadEditor: function() {
-        //This may be called before the dependencies and required attributes are available.
-        if ((!('jQuery' in window && $.fn.queryBuilder)) ||
-            !voyent.io.auth.isLoggedIn() ||
-            !this.realm || !this.account) {
-            return;
-        }
+        if (!this._dependenciesLoaded) { return; }
         this._redetermineFields = true;
         this._queryService({});
     },
@@ -445,6 +450,7 @@ Voyent.QueryEditor = Polymer({
      * @return {boolean} Indicates if the query is valid.
      */
     validateQuery: function() {
+        if (!this._dependenciesLoaded) { return false; }
         var query = $(this.$.queryBuilder).queryBuilder('getMongo');
         if (Object.keys(query).length > 0) {
             this._setCurrentquery(query);
