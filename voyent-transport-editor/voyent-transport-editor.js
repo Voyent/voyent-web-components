@@ -424,6 +424,9 @@ Polymer({
             if (typeof _this._emailTemplates !== 'undefined' && _this._emailTemplates !== null && _this._emailTemplates.length > 0) {
                 _this.set('_hasEmailTemplates', true);
             }
+        }).catch(function(error) {
+            console.error("No email templates were found, proceeding");
+            _this.set('_hasEmailTemplates', false);
         });
 	},
 	

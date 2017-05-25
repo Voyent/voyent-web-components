@@ -872,6 +872,12 @@ Polymer({
                     //Add click listener to circles.
                     google.maps.event.addListener(_this._alertTemplateData.circles[i], 'click', function (event) {
                         _this._toggleAccordion(i);
+                        
+                        // Fire an event for anyone interested
+                        _this.fire('voyent-alert-template-click', {
+                            'alertTemplate': _this._alertTemplateData.alertTemplate,
+                            'selectedZone': i
+                        });
                     });
                 }(i))
             }
