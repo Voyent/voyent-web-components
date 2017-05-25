@@ -165,30 +165,14 @@ Polymer({
                 account: this.account,
                 id: this._alertTemplateData.alertTemplate._id
             }).then(function () {
-                resetMapState();
+                _this.clearMap();
             }).catch(function (error) {
                 _this.fire('message-error', 'Issue deleting Alert Template ' + error);
                 console.error('Issue deleting Alert Template', error);
             });
         }
         else { //Otherwise just clear map.
-            resetMapState();
-        }
-
-        function resetMapState() {
-            //Remove the marker, circles and zoneOverlays from the map.
-            _this._alertTemplateData.marker.setMap(null);
-            for (var i=0; i<_this._alertTemplateData.circles.length; i++) {
-                _this._alertTemplateData.circles[i].setMap(null);
-                _this._alertTemplateData.zoneOverlays[i].setMap(null);
-            }
-            //Wipe all references to the alertTemplate and re-enable drawing mode.
-            _this._alertTemplateData = null;
-            _this._drawingManager.setOptions({
-                "drawingControlOptions":{
-                    "drawingModes":['marker'],
-                    "position":google.maps.ControlPosition.TOP_RIGHT}
-            });
+            this.clearMap();
         }
     },
 
@@ -207,9 +191,33 @@ Polymer({
                 _this.fire('message-error', 'Alert Template not found');
                 return;
             }
+            //Clear the map of any loaded Alert Template before drawing.
+            if (_this._alertTemplateData) {
+                _this.clearMap();
+            }
+            //Draw the new Alert Template.
             _this._drawAlertTemplate(results[0]);
         }).catch(function (error) {
             _this.fire('message-error', 'Error loading or drawing saved Alert Template: ' + error);
+        });
+    },
+
+    /**
+     * Clears the map of all drawn entities.
+     */
+    clearMap: function() {
+        //Remove the marker, circles and zoneOverlays from the map.
+        this._alertTemplateData.marker.setMap(null);
+        for (var i=0; i<this._alertTemplateData.circles.length; i++) {
+            this._alertTemplateData.circles[i].setMap(null);
+            this._alertTemplateData.zoneOverlays[i].setMap(null);
+        }
+        //Wipe all references to the alertTemplate and re-enable drawing mode.
+        this._alertTemplateData = null;
+        this._drawingManager.setOptions({
+            "drawingControlOptions":{
+                "drawingModes":['marker'],
+                "position":google.maps.ControlPosition.TOP_RIGHT}
         });
     },
 
