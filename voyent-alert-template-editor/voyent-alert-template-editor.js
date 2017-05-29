@@ -637,10 +637,14 @@ Polymer({
             zIndex: 50
         });
         this._alertTemplateData = {"alertTemplate":alertTemplate,"marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":true};
+        //Add the tmpProperties to the Alert Template (used by the view).
+        alertTemplate.tmpProperties = this._getAlertTemplateTmpProperties();
 
         //Generate the circles and bind them to the marker.
         var zones = alertTemplate.zones.features, bounds = new google.maps.LatLngBounds(), highestLats = [], circle, properties;
         for (var i=0; i<zones.length; i++) {
+            //Add the tmpProperties to the Zone (used by the view).
+            zones[i].tmpProperties = this._getZoneTmpProperties();
             //Set the properties of the circle based on the alertTemplate JSON.
             properties = this._getCircleProperties();
             properties.radius = zones[i].properties.googleMaps.radius;
@@ -1106,10 +1110,19 @@ Polymer({
             },
             "label":"Unnamed",
             //These properties are used by the view and will be removed before saving the alertTemplate.
-            "tmpProperties": {
-                "renaming":false,
-                "newName":''
-            }
+            "tmpProperties": this._getAlertTemplateTmpProperties()
+        }
+    },
+
+    /**
+     * Returns temporary Alert Template properties used by the view.
+     * @returns {{renaming: boolean, newName: string}}
+     * @private
+     */
+    _getAlertTemplateTmpProperties: function() {
+        return {
+            "renaming":false,
+            "newName":''
         }
     },
 
@@ -1138,12 +1151,21 @@ Polymer({
                 "Opacity": 0.30
             },
             //These properties are used by the view and will be removed before saving the alertTemplate.
-            "tmpProperties": {
-                "renaming": false,
-                "newName":'',
-                "visible":false
-            }
+            "tmpProperties": this._getZoneTmpProperties()
         };
+    },
+
+    /**
+     * Returns temporary Alert Template Zone properties used by the view.
+     * @returns {{renaming: boolean, newName: string, visible: boolean}}
+     * @private
+     */
+    _getZoneTmpProperties: function() {
+        return {
+            "renaming": false,
+            "newName":'',
+            "visible":false
+        }
     },
 
     /**
