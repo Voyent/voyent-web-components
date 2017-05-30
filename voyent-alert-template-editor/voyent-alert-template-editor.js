@@ -108,6 +108,26 @@ Polymer({
             google.maps.event.trigger(this._map, 'resize');
         }
     },
+    
+    /**
+     * Set an optional message template on a per zone basis
+     * This will be saved along with the rest of the alert template, and is used for notifications
+     * The data for the message template will likely come from the voyent-transport-editor
+     * The specific JSON location to save is as a property of the zone, so zones.features[x].properties.messageTemplate
+     */
+    setMessageTemplate: function(messageTemplate, zoneId) {
+        // Ensure we have valid template data, zones, and features
+        if (zoneId && this._alertTemplateData && this._alertTemplateData.alertTemplate && this._alertTemplateData.alertTemplate.zones &&
+            this._alertTemplateData.alertTemplate.zones.features && this._alertTemplateData.alertTemplate.zones.features.length > 0) {
+            // Loop through the zones and look for a match against the passed zone ID
+            for (var i = 0; i < this._alertTemplateData.alertTemplate.zones.features.length; i++) {
+                if (zoneId == this._alertTemplateData.alertTemplate.zones.features[i].properties.zoneId) {
+                    this._alertTemplateData.alertTemplate.zones.features[i].properties.messageTemplate = messageTemplate;
+                    break;
+                }
+            }
+        }
+    },
 
     /**
      * Saves or updates the current Alert Template.
@@ -121,6 +141,7 @@ Polymer({
         for (var i=0; i<alertTemplate.zones.features.length; i++) {
             delete alertTemplate.zones.features[i].tmpProperties;
         }
+        
         voyent.locate[func]({
             realm: this.realm,
             account: this.account,
