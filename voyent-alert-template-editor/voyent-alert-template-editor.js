@@ -1011,7 +1011,8 @@ Polymer({
                 continue;
             }
             if (key !== 'googleMaps' &&
-                key !== 'zoneId') {
+                key !== 'zoneId' &&
+                key !== 'messageTemplate') {
                 array.push({"key":key,"value":obj[key]});
             }
         }
