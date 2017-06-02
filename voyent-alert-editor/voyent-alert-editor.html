@@ -1,0 +1,352 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/imports/voyent.html">
+<link rel="import" href="../common/voyent-alert-styles.html">
+<link rel="import" href="../common/voyent-alert-behaviour.html">
+<link rel="import" href="../common/imports/jscolor.html">
+<link rel="import" href="../../iron-selector/iron-selector.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-slider/paper-slider.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../iron-icon/iron-icon.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+
+<!--
+Displays a map-based tool for creating new Alert Templates.
+
+Example:
+
+    <voyent-alert-editor account="myAccount"
+                                  realm="myRealm"
+                                  height="500">
+    </voyent-alert-editor>
+
+@demo demo.html
+-->
+<dom-module id="voyent-alert-editor">
+    <template>
+        <style include="voyent-alert-styles" is="custom-style">
+            .icon-div {
+                display:inline-block;
+            }
+
+            .alert-desc {
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            .customMapBttnWrap {
+                line-height: 0;
+                padding-top:3px;
+            }
+            .customMapBttn {
+                direction: ltr;
+                overflow: hidden;
+                text-align: left;
+                position: relative;
+                color: #565656;
+                -webkit-user-select: none;
+                padding: 4px;
+                border-bottom-right-radius: 2px;
+                border-top-right-radius: 2px;
+                -webkit-background-clip: padding-box;
+                -webkit-box-shadow: rgba(0, 0, 0, 0.298039) 0 1px 4px -1px;
+                box-shadow: rgba(0, 0, 0, 0.298039) 0 1px 4px -1px;
+                background-color: #FFF;
+                background-clip: padding-box;
+                left: 5px;
+                top: 2px;
+            }
+            .customMapBttn:hover {
+                background-color: #EBEBEB;
+            }
+            .customMapBttn.selected {
+                background-color: #c5c5c5;
+            }
+            .customMapBttn > span {
+                display: inline-block;
+            }
+            .customMapBttnImg {
+                width: 16px;
+                height: 16px;
+                overflow: hidden;
+                position: relative;
+            }
+            .customMapBttnImg > img {
+                display: inline;
+            }
+
+            .alertTemplates .item {
+                height:35px;
+                padding:6px 0 6px 10px;
+                border-bottom:1px solid #ccc;
+                cursor:pointer;
+            }
+            .alertTemplates .item:hover {
+                background:rgb(235,235,235);
+            }
+            .alertTemplates .imgDiv,
+            .alertTemplates .nameDiv {
+                display: inline-block;
+                vertical-align: middle;
+                cursor: pointer;
+            }
+            .alertTemplates .imgDiv {
+                width: 35px;
+            }
+            .alertTemplates .nameDiv {
+                width: 133px;
+                font-size:12px;
+                line-height: 12px;
+                overflow:hidden;
+            }
+        </style>
+        <div id="container">
+            <div id="map"></div><div id="sidePanel">
+                <div id="propertiesPanel">
+                    <template is="dom-if" if="[[_alertBttnSelected]]">
+                        <div class="alertTemplates">
+                            <div class="alert-desc">
+                                Select an Alert Template to create a new Alert for or press ESC to cancel.
+                            </div>
+                            <template is="dom-repeat" items="{{_alertTemplates}}">
+                                <div class="item" on-click="_selectAlertTemplate" data-id$="{{item._id}}" data-label$="{{item.label}}">
+                                    <div class="imgDiv" data-id$="{{item._id}}" data-label$="{{item.label}}">
+                                        <img src="[[pathtoimages]]/img/alert_marker.png" data-id$="{{item._id}}" data-label$="{{item.label}}"/>
+                                    </div>
+                                    <div class="nameDiv" data-id$="{{item._id}}" data-label$="{{item.label}}">{{_getAlertTemplateName(item)}}</div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <template is="dom-if" if="[[!_alertBttnSelected]]">
+                        <template is="dom-if" if="[[!_activatingAlert]]">
+                            <!-- TODO - The section below is common between components -->
+                            <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
+                                <div>
+                                    <template is="dom-if" if="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                                        <div class="alert-template-title">
+                                            <div class="title">
+                                                [[_alertTemplateData.alertTemplate.label]]
+                                            </div>
+                                            <div class="title-bttns">
+                                                <paper-icon-button raised icon="create" on-click="_toggleAlertTemplateRenaming"></paper-icon-button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template is="dom-if" if="[[_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                                        <paper-input id="alertTemplate" tabindex="1"
+                                                     label="Alert Template"
+                                                     placeholder="New Value"
+                                                     on-keydown="_renameAlertTemplateViaKeydown"
+                                                     value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}">
+                                        </paper-input>
+                                    </template>
+                                </div>
+                                <div>
+                                    <div class="alert-zones-label">
+                                        Proximity Zones
+                                        <paper-icon-button class="float-right" icon="add" on-click="_addProximityZone"></paper-icon-button>
+                                    </div>
+                                </div>
+                                <section class="accordion">
+                                    <template is="dom-repeat" items="[[_alertTemplateData.alertTemplate.zones.features]]" as="zone">
+                                        <div>
+                                            <input id$="ac-[[index]]" name="accordion" type="radio"
+                                                   on-click="_toggleAccordion" checked="{{zone.tmpProperties.visible::change}}"/>
+                                            <label for$="ac-[[index]]">
+                                                <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
+                                                    <template is="dom-if" if="[[zone.tmpProperties.visible]]">
+                                                        <paper-icon-button icon="expand-more"></paper-icon-button>
+                                                    </template>
+                                                    <template is="dom-if" if="[[!zone.tmpProperties.visible]]">
+                                                        <paper-icon-button icon="expand-less"></paper-icon-button>
+                                                    </template>
+                                                    <div class="title zone">
+                                                        [[zone.properties.zoneId]]
+                                                    </div>
+                                                    <div class="title-bttns">
+                                                        <paper-icon-button icon="create" data-index$="[[index]]"
+                                                                           on-click="_toggleProximityZoneRenaming">
+                                                        </paper-icon-button>
+                                                        <paper-icon-button icon="delete" on-click="_removeProximityZone"
+                                                                           disabled="[[_hasOneZone]]" data-index$="[[index]]" >
+                                                        </paper-icon-button>
+                                                    </div>
+                                                </template>
+                                                <template is="dom-if" if="[[zone.tmpProperties.renaming]]">
+                                                    <paper-input id$="zone-[[index]]" tabindex="1"
+                                                                 label="Zone"
+                                                                 placeholder="New Value"
+                                                                 on-keydown="_renameProximityZoneViaKeydown"
+                                                                 data-index$="[[index]]"
+                                                                 value="{{zone.tmpProperties.newName::input}}">
+                                                    </paper-input>
+                                                </template>
+                                            </label>
+                                            <article>
+                                                <template is="dom-if" if="[[!_editing]]">
+                                                    <template is="dom-if" if="[[!_addingNew]]">
+                                                        <div class="tableWrap">
+                                                            <div class="table">
+                                                                <div class="propertyCol tableHeader">
+                                                                    <div on-click="_sortByProperty" class="clickable"
+                                                                         title="Click to sort by property">
+                                                                        Property
+                                                                    </div>
+                                                                </div>
+                                                                <div class="valueCol tableHeader">
+                                                                    <div on-click="_sortByValue" class="clickable"
+                                                                         title="Click to sort by property value">
+                                                                        Value
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <iron-selector selected="{{_selected}}"
+                                                                           attr-for-selected="data-property"
+                                                                           on-iron-activate="_onIronActivate">
+                                                                <template id$="propertyRepeat-[[index]]" is="dom-repeat" as="property"
+                                                                          items="[[_toArray(zone.properties)]]" sort="_sortProperties">
+                                                                    <div class="table clickable" data-property$="[[property.key]]">
+                                                                        <div class="propertyCol">
+                                                                            [[property.key]]
+                                                                        </div>
+                                                                        <div class="valueCol">
+                                                                            [[property.value]]
+                                                                        </div>
+                                                                    </div>
+                                                                </template>
+                                                            </iron-selector>
+                                                            <div class="table">
+                                                                <div class="addCol">
+                                                                    <paper-icon-button icon="add"
+                                                                                       on-click="_toggleAddingNewProperty">
+                                                                    </paper-icon-button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </template>
+
+                                                <template is="dom-if" if="[[_addingNew]]">
+                                                    <paper-input id$="new-[[index]]"
+                                                                 required label="Name" value="{{_customPropKey}}"
+                                                                 data-index$="[[index]]" tabindex="1"
+                                                                 on-keydown="_saveNewPropertyViaKeydown"
+                                                                 placeholder="The property name"></paper-input>
+                                                    <paper-input required label="Value" value="{{_customPropVal}}"
+                                                                 data-index$="[[index]]" tabindex="2"
+                                                                 on-keydown="_saveNewPropertyViaKeydown"
+                                                                 placeholder="The property value"></paper-input>
+                                                </template>
+
+                                                <template is="dom-if" if="[[_editing]]">
+                                                    <template is="dom-if" if="{{_selectedEquals('Editable',_selected)}}">
+                                                        <paper-dropdown-menu id$="editable-[[index]]"
+                                                                             tabindex="1"
+                                                                             label="Editable"
+                                                                             data-index$="[[index]]"
+                                                                             on-keydown="_editPropertyViaKeydown"
+                                                                             value="{{_editableVal}}">
+                                                            <iron-selector class="dropdown-content"
+                                                                           selected="{{_editableVal}}"
+                                                                           attr-for-selected="name">
+                                                                <paper-item name="true">true</paper-item>
+                                                                <paper-item name="false">false</paper-item>
+                                                            </iron-selector>
+                                                        </paper-dropdown-menu>
+                                                    </template>
+
+                                                    <template is="dom-if" if="{{_selectedEquals('Color',_selected)}}">
+                                                        <div class="jscolor-wrapper">
+                                                            <input id$="jsColor-[[index]]" class="jscolor"
+                                                                   tabindex="1"
+                                                                   data-index$="[[index]]"
+                                                                   on-keydown="_editPropertyViaKeydown"
+                                                                   value="{{_colorVal::change}}">
+                                                        </div>
+                                                    </template>
+
+                                                    <template is="dom-if" if="{{_selectedEquals('Opacity',_selected)}}">
+                                                        <paper-slider id$="opacity-[[index]]" min=0 max=1
+                                                                      step=0.05 pin snaps tabindex="1"
+                                                                      on-keydown="_editPropertyViaKeydown"
+                                                                      data-index$="[[index]]" value="{{_opacityVal}}">
+                                                        </paper-slider>
+                                                    </template>
+
+                                                    <template is="dom-if" if="{{_selectedEquals('Other',_selected)}}">
+                                                        <paper-input id$="custom-[[index]]"
+                                                                     required label="Name" value="{{_customPropKey}}"
+                                                                     data-index$="[[index]]" tabindex="1"
+                                                                     on-keydown="_editPropertyViaKeydown"
+                                                                     placeholder="The property name"></paper-input>
+                                                        <paper-input required label="Value" value="{{_customPropVal}}"
+                                                                     data-index$="[[index]]" tabindex="2"
+                                                                     on-keydown="_editPropertyViaKeydown"
+                                                                     placeholder="The property value"></paper-input>
+                                                        <div class="delete-button">
+                                                            <paper-icon-button icon="delete" tabindex="3"
+                                                                               on-click="_removeSelectedProperty"
+                                                                               data-index$="[[index]]">
+                                                            </paper-icon-button>
+                                                        </div>
+                                                    </template>
+                                                </template>
+                                            </article>
+                                        </div>
+                                    </template>
+                                </section>
+                            </template>
+                        </template>
+                        <template is="dom-if" if="[[_activatingAlert]]">
+                            <div class="alert-template-title">Confirm New Alert</div>
+                            <div class="alert-template-desc">
+                                <div>Start: Now</div><br/>
+                                <div>Stop: Never!</div><br/>
+                                <div>If created now, this alert would generate ? notifications. Please confirm that you would like to create this Alert.</div>
+                            </div>
+                        </template>
+                        <template is="dom-if" if="[[!_alertTemplateData.alertTemplate]]">
+                            <div class="alert-template-title">New Alert</div>
+                            <div class="alert-template-desc">
+                                Activate the
+                                <div class="icon-div">
+                                    <img class="icon" src="img/alert_bttn.png">
+                                </div>
+                                icon from the toolbar in the
+                                top-right corner and follow the menu.
+                            </div>
+                        </template>
+                    </template>
+                </div>
+                <div id="crudPanel">
+                    <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
+                        <template is="dom-if" if="[[!_activatingAlert]]">
+                            <paper-button raised on-click="_goBack">Back</paper-button>
+                            <paper-button raised on-click="_toggleActivatingAlert">Activate Now!</paper-button>
+                        </template>
+                        <template is="dom-if" if="[[_activatingAlert]]">
+                            <paper-button raised on-click="_goBack">Back</paper-button>
+                            <paper-button raised on-click="_activateAlert">Confirm</paper-button>
+                            <paper-button raised on-click="_cancel">Cancel</paper-button>
+                        </template>
+                    </template>
+                </div>
+            </div></div>
+        </div>
+        <div id="alertBttn" class="customMapBttnWrap" hidden>
+            <div class="customMapBttn" title="Create a new Alert">
+                <span>
+                    <div class="customMapBttnImg">
+                        <img data-type="tracker" src="img/alert_bttn.png">
+                    </div>
+                </span>
+            </div>
+        </div>
+    </template>
+</dom-module>
+
+<script src="voyent-alert-editor.js"></script>
