@@ -270,6 +270,7 @@
                 zones[i].tmpProperties = this._getZoneTmpProperties();
                 //Set the properties of the circle based on the alertTemplate JSON.
                 properties = this._getCircleProperties();
+                properties.editable = zones[i].properties.Editable;
                 properties.radius = zones[i].properties.googleMaps.radius;
                 properties.fillColor = '#'+ zones[i].properties.Color;
                 properties.fillOpacity = zones[i].properties.Opacity;
@@ -748,6 +749,7 @@
                 highestLat = -100;
                 //Sync the alertTemplate zone properties with the zones drawn on the map (if available).
                 if (this._alertTemplateData.circles.length) {
+                    features[i].properties.Editable = this._alertTemplateData.circles[i].getEditable();
                     features[i].properties.googleMaps.radius = this._alertTemplateData.circles[i].getRadius();
                     features[i].properties.googleMaps.center = [this._alertTemplateData.circles[i].getCenter().lat(),this._alertTemplateData.circles[i].getCenter().lng()];
                     features[i].properties.Color = this._alertTemplateData.circles[i].get('fillColor').substring(1); //remove the '#'
