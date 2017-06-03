@@ -184,6 +184,9 @@ Polymer({
         };
         voyent.locate.updateTrackerLocation({location: location}).then(function(data) {
             _this._alertTemplateData.alertInstance = location;
+            _this.fire('message-info', 'New Alert Activated!');
+            _this._activatingAlert = false;
+            _this._alertActivated = true;
         }).catch(function (error) {
             _this.fire('message-error', 'Issue creating new Alert: ' + location.location.properties.zoneNamespace);
             console.error('Issue creating new Alert: ' + location.location.properties.zoneNamespace, error);
@@ -210,8 +213,14 @@ Polymer({
      * @private
      */
     _cancel: function(e) {
-        this.removeAlertTemplate();
-        this._addAlertButton();
+        if (this._alertBttnSelected) {
+            this._deSelectAlertBttn();
+        }
+        else {
+            this.removeAlertTemplate();
+            this._addAlertButton();
+            this._activatingAlert = false;
+        }
     },
 
     /**

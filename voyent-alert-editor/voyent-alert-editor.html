@@ -123,182 +123,184 @@ Example:
                     </template>
                     <template is="dom-if" if="[[!_alertBttnSelected]]">
                         <template is="dom-if" if="[[!_activatingAlert]]">
-                            <!-- TODO - The section below is common between components -->
-                            <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
-                                <div>
-                                    <template is="dom-if" if="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
-                                        <div class="alert-template-title">
-                                            <div class="title">
-                                                [[_alertTemplateData.alertTemplate.label]]
+                            <template is="dom-if" if="[[!_alertActivated]]">
+                                <!-- TODO - The section below is common between components -->
+                                <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
+                                    <div>
+                                        <template is="dom-if" if="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                                            <div class="alert-template-title">
+                                                <div class="title">
+                                                    [[_alertTemplateData.alertTemplate.label]]
+                                                </div>
+                                                <div class="title-bttns">
+                                                    <paper-icon-button raised icon="create" on-click="_toggleAlertTemplateRenaming"></paper-icon-button>
+                                                </div>
                                             </div>
-                                            <div class="title-bttns">
-                                                <paper-icon-button raised icon="create" on-click="_toggleAlertTemplateRenaming"></paper-icon-button>
-                                            </div>
-                                        </div>
-                                    </template>
-                                    <template is="dom-if" if="[[_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
-                                        <paper-input id="alertTemplate" tabindex="1"
-                                                     label="Alert Template"
-                                                     placeholder="New Value"
-                                                     on-keydown="_renameAlertTemplateViaKeydown"
-                                                     value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}">
-                                        </paper-input>
-                                    </template>
-                                </div>
-                                <div>
-                                    <div class="alert-zones-label">
-                                        Proximity Zones
-                                        <paper-icon-button class="float-right" icon="add" on-click="_addProximityZone"></paper-icon-button>
+                                        </template>
+                                        <template is="dom-if" if="[[_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                                            <paper-input id="alertTemplate" tabindex="1"
+                                                         label="Alert Template"
+                                                         placeholder="New Value"
+                                                         on-keydown="_renameAlertTemplateViaKeydown"
+                                                         value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}">
+                                            </paper-input>
+                                        </template>
                                     </div>
-                                </div>
-                                <section class="accordion">
-                                    <template is="dom-repeat" items="[[_alertTemplateData.alertTemplate.zones.features]]" as="zone">
-                                        <div>
-                                            <input id$="ac-[[index]]" name="accordion" type="radio"
-                                                   on-click="_toggleAccordion" checked="{{zone.tmpProperties.visible::change}}"/>
-                                            <label for$="ac-[[index]]">
-                                                <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
-                                                    <template is="dom-if" if="[[zone.tmpProperties.visible]]">
-                                                        <paper-icon-button icon="expand-more"></paper-icon-button>
-                                                    </template>
-                                                    <template is="dom-if" if="[[!zone.tmpProperties.visible]]">
-                                                        <paper-icon-button icon="expand-less"></paper-icon-button>
-                                                    </template>
-                                                    <div class="title zone">
-                                                        [[zone.properties.zoneId]]
-                                                    </div>
-                                                    <div class="title-bttns">
-                                                        <paper-icon-button icon="create" data-index$="[[index]]"
-                                                                           on-click="_toggleProximityZoneRenaming">
-                                                        </paper-icon-button>
-                                                        <paper-icon-button icon="delete" on-click="_removeProximityZone"
-                                                                           disabled="[[_hasOneZone]]" data-index$="[[index]]" >
-                                                        </paper-icon-button>
-                                                    </div>
-                                                </template>
-                                                <template is="dom-if" if="[[zone.tmpProperties.renaming]]">
-                                                    <paper-input id$="zone-[[index]]" tabindex="1"
-                                                                 label="Zone"
-                                                                 placeholder="New Value"
-                                                                 on-keydown="_renameProximityZoneViaKeydown"
-                                                                 data-index$="[[index]]"
-                                                                 value="{{zone.tmpProperties.newName::input}}">
-                                                    </paper-input>
-                                                </template>
-                                            </label>
-                                            <article>
-                                                <template is="dom-if" if="[[!_editing]]">
-                                                    <template is="dom-if" if="[[!_addingNew]]">
-                                                        <div class="tableWrap">
-                                                            <div class="table">
-                                                                <div class="propertyCol tableHeader">
-                                                                    <div on-click="_sortByProperty" class="clickable"
-                                                                         title="Click to sort by property">
-                                                                        Property
-                                                                    </div>
-                                                                </div>
-                                                                <div class="valueCol tableHeader">
-                                                                    <div on-click="_sortByValue" class="clickable"
-                                                                         title="Click to sort by property value">
-                                                                        Value
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <iron-selector selected="{{_selected}}"
-                                                                           attr-for-selected="data-property"
-                                                                           on-iron-activate="_onIronActivate">
-                                                                <template id$="propertyRepeat-[[index]]" is="dom-repeat" as="property"
-                                                                          items="[[_toArray(zone.properties)]]" sort="_sortProperties">
-                                                                    <div class="table clickable" data-property$="[[property.key]]">
-                                                                        <div class="propertyCol">
-                                                                            [[property.key]]
-                                                                        </div>
-                                                                        <div class="valueCol">
-                                                                            [[property.value]]
-                                                                        </div>
-                                                                    </div>
-                                                                </template>
-                                                            </iron-selector>
-                                                            <div class="table">
-                                                                <div class="addCol">
-                                                                    <paper-icon-button icon="add"
-                                                                                       on-click="_toggleAddingNewProperty">
-                                                                    </paper-icon-button>
-                                                                </div>
-                                                            </div>
+                                    <div>
+                                        <div class="alert-zones-label">
+                                            Proximity Zones
+                                            <paper-icon-button class="float-right" icon="add" on-click="_addProximityZone"></paper-icon-button>
+                                        </div>
+                                    </div>
+                                    <section class="accordion">
+                                        <template is="dom-repeat" items="[[_alertTemplateData.alertTemplate.zones.features]]" as="zone">
+                                            <div>
+                                                <input id$="ac-[[index]]" name="accordion" type="radio"
+                                                       on-click="_toggleAccordion" checked="{{zone.tmpProperties.visible::change}}"/>
+                                                <label for$="ac-[[index]]">
+                                                    <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
+                                                        <template is="dom-if" if="[[zone.tmpProperties.visible]]">
+                                                            <paper-icon-button icon="expand-more"></paper-icon-button>
+                                                        </template>
+                                                        <template is="dom-if" if="[[!zone.tmpProperties.visible]]">
+                                                            <paper-icon-button icon="expand-less"></paper-icon-button>
+                                                        </template>
+                                                        <div class="title zone">
+                                                            [[zone.properties.zoneId]]
                                                         </div>
-                                                    </template>
-                                                </template>
-
-                                                <template is="dom-if" if="[[_addingNew]]">
-                                                    <paper-input id$="new-[[index]]"
-                                                                 required label="Name" value="{{_customPropKey}}"
-                                                                 data-index$="[[index]]" tabindex="1"
-                                                                 on-keydown="_saveNewPropertyViaKeydown"
-                                                                 placeholder="The property name"></paper-input>
-                                                    <paper-input required label="Value" value="{{_customPropVal}}"
-                                                                 data-index$="[[index]]" tabindex="2"
-                                                                 on-keydown="_saveNewPropertyViaKeydown"
-                                                                 placeholder="The property value"></paper-input>
-                                                </template>
-
-                                                <template is="dom-if" if="[[_editing]]">
-                                                    <template is="dom-if" if="{{_selectedEquals('Editable',_selected)}}">
-                                                        <paper-dropdown-menu id$="editable-[[index]]"
-                                                                             tabindex="1"
-                                                                             label="Editable"
-                                                                             data-index$="[[index]]"
-                                                                             on-keydown="_editPropertyViaKeydown"
-                                                                             value="{{_editableVal}}">
-                                                            <iron-selector class="dropdown-content"
-                                                                           selected="{{_editableVal}}"
-                                                                           attr-for-selected="name">
-                                                                <paper-item name="true">true</paper-item>
-                                                                <paper-item name="false">false</paper-item>
-                                                            </iron-selector>
-                                                        </paper-dropdown-menu>
-                                                    </template>
-
-                                                    <template is="dom-if" if="{{_selectedEquals('Color',_selected)}}">
-                                                        <div class="jscolor-wrapper">
-                                                            <input id$="jsColor-[[index]]" class="jscolor"
-                                                                   tabindex="1"
-                                                                   data-index$="[[index]]"
-                                                                   on-keydown="_editPropertyViaKeydown"
-                                                                   value="{{_colorVal::change}}">
-                                                        </div>
-                                                    </template>
-
-                                                    <template is="dom-if" if="{{_selectedEquals('Opacity',_selected)}}">
-                                                        <paper-slider id$="opacity-[[index]]" min=0 max=1
-                                                                      step=0.05 pin snaps tabindex="1"
-                                                                      on-keydown="_editPropertyViaKeydown"
-                                                                      data-index$="[[index]]" value="{{_opacityVal}}">
-                                                        </paper-slider>
-                                                    </template>
-
-                                                    <template is="dom-if" if="{{_selectedEquals('Other',_selected)}}">
-                                                        <paper-input id$="custom-[[index]]"
-                                                                     required label="Name" value="{{_customPropKey}}"
-                                                                     data-index$="[[index]]" tabindex="1"
-                                                                     on-keydown="_editPropertyViaKeydown"
-                                                                     placeholder="The property name"></paper-input>
-                                                        <paper-input required label="Value" value="{{_customPropVal}}"
-                                                                     data-index$="[[index]]" tabindex="2"
-                                                                     on-keydown="_editPropertyViaKeydown"
-                                                                     placeholder="The property value"></paper-input>
-                                                        <div class="delete-button">
-                                                            <paper-icon-button icon="delete" tabindex="3"
-                                                                               on-click="_removeSelectedProperty"
-                                                                               data-index$="[[index]]">
+                                                        <div class="title-bttns">
+                                                            <paper-icon-button icon="create" data-index$="[[index]]"
+                                                                               on-click="_toggleProximityZoneRenaming">
+                                                            </paper-icon-button>
+                                                            <paper-icon-button icon="delete" on-click="_removeProximityZone"
+                                                                               disabled="[[_hasOneZone]]" data-index$="[[index]]" >
                                                             </paper-icon-button>
                                                         </div>
                                                     </template>
-                                                </template>
-                                            </article>
-                                        </div>
-                                    </template>
-                                </section>
+                                                    <template is="dom-if" if="[[zone.tmpProperties.renaming]]">
+                                                        <paper-input id$="zone-[[index]]" tabindex="1"
+                                                                     label="Zone"
+                                                                     placeholder="New Value"
+                                                                     on-keydown="_renameProximityZoneViaKeydown"
+                                                                     data-index$="[[index]]"
+                                                                     value="{{zone.tmpProperties.newName::input}}">
+                                                        </paper-input>
+                                                    </template>
+                                                </label>
+                                                <article>
+                                                    <template is="dom-if" if="[[!_editing]]">
+                                                        <template is="dom-if" if="[[!_addingNew]]">
+                                                            <div class="tableWrap">
+                                                                <div class="table">
+                                                                    <div class="propertyCol tableHeader">
+                                                                        <div on-click="_sortByProperty" class="clickable"
+                                                                             title="Click to sort by property">
+                                                                            Property
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="valueCol tableHeader">
+                                                                        <div on-click="_sortByValue" class="clickable"
+                                                                             title="Click to sort by property value">
+                                                                            Value
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <iron-selector selected="{{_selected}}"
+                                                                               attr-for-selected="data-property"
+                                                                               on-iron-activate="_onIronActivate">
+                                                                    <template id$="propertyRepeat-[[index]]" is="dom-repeat" as="property"
+                                                                              items="[[_toArray(zone.properties)]]" sort="_sortProperties">
+                                                                        <div class="table clickable" data-property$="[[property.key]]">
+                                                                            <div class="propertyCol">
+                                                                                [[property.key]]
+                                                                            </div>
+                                                                            <div class="valueCol">
+                                                                                [[property.value]]
+                                                                            </div>
+                                                                        </div>
+                                                                    </template>
+                                                                </iron-selector>
+                                                                <div class="table">
+                                                                    <div class="addCol">
+                                                                        <paper-icon-button icon="add"
+                                                                                           on-click="_toggleAddingNewProperty">
+                                                                        </paper-icon-button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    </template>
+
+                                                    <template is="dom-if" if="[[_addingNew]]">
+                                                        <paper-input id$="new-[[index]]"
+                                                                     required label="Name" value="{{_customPropKey}}"
+                                                                     data-index$="[[index]]" tabindex="1"
+                                                                     on-keydown="_saveNewPropertyViaKeydown"
+                                                                     placeholder="The property name"></paper-input>
+                                                        <paper-input required label="Value" value="{{_customPropVal}}"
+                                                                     data-index$="[[index]]" tabindex="2"
+                                                                     on-keydown="_saveNewPropertyViaKeydown"
+                                                                     placeholder="The property value"></paper-input>
+                                                    </template>
+
+                                                    <template is="dom-if" if="[[_editing]]">
+                                                        <template is="dom-if" if="{{_selectedEquals('Editable',_selected)}}">
+                                                            <paper-dropdown-menu id$="editable-[[index]]"
+                                                                                 tabindex="1"
+                                                                                 label="Editable"
+                                                                                 data-index$="[[index]]"
+                                                                                 on-keydown="_editPropertyViaKeydown"
+                                                                                 value="{{_editableVal}}">
+                                                                <iron-selector class="dropdown-content"
+                                                                               selected="{{_editableVal}}"
+                                                                               attr-for-selected="name">
+                                                                    <paper-item name="true">true</paper-item>
+                                                                    <paper-item name="false">false</paper-item>
+                                                                </iron-selector>
+                                                            </paper-dropdown-menu>
+                                                        </template>
+
+                                                        <template is="dom-if" if="{{_selectedEquals('Color',_selected)}}">
+                                                            <div class="jscolor-wrapper">
+                                                                <input id$="jsColor-[[index]]" class="jscolor"
+                                                                       tabindex="1"
+                                                                       data-index$="[[index]]"
+                                                                       on-keydown="_editPropertyViaKeydown"
+                                                                       value="{{_colorVal::change}}">
+                                                            </div>
+                                                        </template>
+
+                                                        <template is="dom-if" if="{{_selectedEquals('Opacity',_selected)}}">
+                                                            <paper-slider id$="opacity-[[index]]" min=0 max=1
+                                                                          step=0.05 pin snaps tabindex="1"
+                                                                          on-keydown="_editPropertyViaKeydown"
+                                                                          data-index$="[[index]]" value="{{_opacityVal}}">
+                                                            </paper-slider>
+                                                        </template>
+
+                                                        <template is="dom-if" if="{{_selectedEquals('Other',_selected)}}">
+                                                            <paper-input id$="custom-[[index]]"
+                                                                         required label="Name" value="{{_customPropKey}}"
+                                                                         data-index$="[[index]]" tabindex="1"
+                                                                         on-keydown="_editPropertyViaKeydown"
+                                                                         placeholder="The property name"></paper-input>
+                                                            <paper-input required label="Value" value="{{_customPropVal}}"
+                                                                         data-index$="[[index]]" tabindex="2"
+                                                                         on-keydown="_editPropertyViaKeydown"
+                                                                         placeholder="The property value"></paper-input>
+                                                            <div class="delete-button">
+                                                                <paper-icon-button icon="delete" tabindex="3"
+                                                                                   on-click="_removeSelectedProperty"
+                                                                                   data-index$="[[index]]">
+                                                                </paper-icon-button>
+                                                            </div>
+                                                        </template>
+                                                    </template>
+                                                </article>
+                                            </div>
+                                        </template>
+                                    </section>
+                                </template>
                             </template>
                         </template>
                         <template is="dom-if" if="[[_activatingAlert]]">
@@ -308,6 +310,11 @@ Example:
                                 <div>Stop: Never!</div><br/>
                                 <div>If created now, this alert would generate ? notifications. Please confirm that you would like to create this Alert.</div>
                             </div>
+                        </template>
+                        <template is="dom-if" if="[[!_activatingAlert]]">
+                            <template is="dom-if" if="[[_alertActivated]]">
+                                <div class="alert-template-title">Alert Activated!</div>
+                            </template>
                         </template>
                         <template is="dom-if" if="[[!_alertTemplateData.alertTemplate]]">
                             <div class="alert-template-title">New Alert</div>
@@ -325,14 +332,22 @@ Example:
                 <div id="crudPanel">
                     <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
                         <template is="dom-if" if="[[!_activatingAlert]]">
-                            <paper-button raised on-click="_goBack">Back</paper-button>
-                            <paper-button raised on-click="_toggleActivatingAlert">Activate Now!</paper-button>
+                            <template is="dom-if" if="[[_alertActivated]]">
+                                <paper-button raised on-click="clearMap">Clear</paper-button>
+                            </template>
+                            <template is="dom-if" if="[[!_alertActivated]]">
+                                <paper-button raised on-click="_goBack">Back</paper-button>
+                                <paper-button raised on-click="_toggleActivatingAlert">Activate Now!</paper-button>
+                            </template>
                         </template>
                         <template is="dom-if" if="[[_activatingAlert]]">
                             <paper-button raised on-click="_goBack">Back</paper-button>
                             <paper-button raised on-click="_activateAlert">Confirm</paper-button>
                             <paper-button raised on-click="_cancel">Cancel</paper-button>
                         </template>
+                    </template>
+                    <template is="dom-if" if="[[_alertBttnSelected]]">
+                        <paper-button raised on-click="_cancel">Cancel</paper-button>
                     </template>
                 </div>
             </div></div>

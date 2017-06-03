@@ -91,7 +91,8 @@
                 _this._initializeProximityZoneOverlayView();
                 if (_this.nodeName === 'VOYENT-ALERT-EDITOR') {
                     //Initialize some more vars
-                    _this._alertBttnAdded = _this._alertBttnSelected = _this._activatingAlert = false;
+                    _this._alertBttnAdded = _this._alertBttnSelected =
+                    _this._activatingAlert = _this._alertActivated = false;
                     _this._alertTemplates = null;
                     //Add listener to native map button.
                     _this._addListenerToStopDrawingBttn();
@@ -167,9 +168,11 @@
                     //Grab the generated ID from the return URI and setup change listeners
                     _this.set('_alertTemplateData.alertTemplate._id',uri ? uri.split('/').pop() : _this._alertTemplateData.alertTemplate._id);
                     _this._alertTemplateData.isPersisted = true;
-                    _this.fire('message-info', 'Alert Template successfully created.');
+                    if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                        _this.fire('message-info', 'Alert Template successfully created.');
+                    }
                 }
-                else {
+                else if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                     _this.fire('message-info', 'Alert Template successfully updated.');
                 }
             }).catch(function (error) {
@@ -233,6 +236,7 @@
             }
             else { //VOYENT-ALERT-EDITOR
                 this._addAlertButton();
+                this._alertActivated = false;
             }
         },
 
