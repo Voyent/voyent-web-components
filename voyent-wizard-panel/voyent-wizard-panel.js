@@ -166,13 +166,17 @@ Polymer({
     
     /**
      * Go to next real page, increment the step number.
+     *
+     *@param ignoreValidators true to skip any validation
      */
-    next: function() {
+    next: function(ignoreValidators) {
         // Check for any attached validators
         var valid = true;
-        if (this.validators[this.selected]) {
-            // Call the underlying validation function, and pass in the parent "this"
-            valid = this.validators[this.selected].fn.call(this.validators[this.selected].parent);
+        if (typeof ignoreValidators === 'undefined' || ignoreValidators !== true) {
+            if (this.validators[this.selected]) {
+                // Call the underlying validation function, and pass in the parent "this"
+                valid = this.validators[this.selected].fn.call(this.validators[this.selected].parent);
+            }
         }
         
         // Only continue processing if we're valid
