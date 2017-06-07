@@ -63,26 +63,23 @@ Internal component used to display the properties panel inside Voyent Alert comp
                 background: rgba(255, 255, 255, 0.5);
                 margin-top: -1px;
                 overflow: hidden;
-                height: 0;
+                max-height: 0;
                 position: relative;
                 z-index: 40;
-                -webkit-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
-                -moz-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
-                -o-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
-                -ms-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
-                transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+                -webkit-transition: max-height 0.3s ease-in-out, box-shadow 0.6s linear;
+                -moz-transition: max-height 0.3s ease-in-out, box-shadow 0.6s linear;
+                -o-transition: max-height 0.3s ease-in-out, box-shadow 0.6s linear;
+                -ms-transition: max-height 0.3s ease-in-out, box-shadow 0.6s linear;
+                transition: max-height 0.3s ease-in-out, box-shadow 0.6s linear;
             }
             .accordion .body.active {
-                height: 155px;
-                -webkit-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
-                -moz-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
-                -o-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
-                -ms-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
-                transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+                max-height: 500px;
+                -webkit-transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
+                -moz-transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
+                -o-transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
+                -ms-transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
+                transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
                 box-shadow: 0px 0px 0px 1px rgba(155,155,155,0.3);
-            }
-            .accordion .body.active.editing {
-                height: 100%;
             }
             iron-selector > div:nth-of-type(odd) {
                 background-color: #ededed;
@@ -173,7 +170,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                 display:inline-block;
             }
             .title {
-                width:150px;
+                width:149px;
                 word-wrap:break-word;
             }
             .title.zone {
@@ -217,7 +214,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
             </div>
             <div class="accordion">
                 <template is="dom-repeat" items="[[_alertTemplateData.alertTemplate.zones.features]]" as="zone">
-                    <div class$="{{_getAccordionHeaderClass(zone.tmpProperties.visible)}}" on-click="_toggleAccordion">
+                    <div class$="{{_getAccordionClasses('header',zone.tmpProperties.visible)}}" on-click="_toggleAccordion">
                         <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
                             <template is="dom-if" if="[[zone.tmpProperties.visible]]">
                                 <paper-icon-button icon="expand-more"></paper-icon-button>
@@ -247,7 +244,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                             </paper-input>
                         </template>
                     </div>
-                    <div class$="{{_getAccordionBodyClass(zone.tmpProperties.visible,_editing)}}">
+                    <div class$="{{_getAccordionClasses('body',zone.tmpProperties.visible)}}">
                         <template is="dom-if" if="[[!_editing]]">
                             <template is="dom-if" if="[[!_addingNew]]">
                                 <div class="tableWrap">

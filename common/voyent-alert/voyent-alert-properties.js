@@ -519,26 +519,13 @@ Polymer({
     },
 
     /**
-     * Returns the style classes for the accordion header element.
+     * Returns the style classes for the accordion header and body elements.
+     * @param section
      * @param active
      * @returns {string}
      * @private
      */
-    _getAccordionHeaderClass: function(active) {
-        return active ? 'header active' : 'header';
-    },
-
-    /**
-     * Returns the style classes for the accordion body element.
-     * @param active
-     * @param editing
-     * @returns {string}
-     * @private
-     */
-    _getAccordionBodyClass: function(active,editing) {
-        var clss = 'body';
-        clss = active ? (clss+' active') : clss;
-        clss = editing ? (clss+' editing') : clss;
-        return clss;
+    _getAccordionClasses: function(section,active) {
+        return active ? (section+' active') : section;
     }
 });
