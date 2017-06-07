@@ -11,6 +11,33 @@ Polymer({
         this._addListenerToStopDrawingBttn();
     },
 
+    /**
+     * Removes the current Alert Template.
+     */
+    removeAlertTemplate: function() {
+        var confirm = window.confirm("Are you sure you want to delete '" + this._alertTemplateData.alertTemplate.label + "'? This cannot be undone!");
+        if (!confirm) {
+            return;
+        }
+        var _this = this;
+        //Delete from DB if it's saved.
+        if (this._alertTemplateData.isPersisted) {
+            voyent.locate.deleteTracker({
+                realm: this.realm,
+                account: this.account,
+                id: this._alertTemplateData.alertTemplate._id
+            }).then(function () {
+                _this.clearMap();
+            }).catch(function (error) {
+                _this.fire('message-error', 'Issue deleting Alert Template ' + error);
+                console.error('Issue deleting Alert Template', error);
+            });
+        }
+        else { //Otherwise just clear map.
+            this.clearMap();
+        }
+    },
+
     //******************PRIVATE API******************
 
     /**

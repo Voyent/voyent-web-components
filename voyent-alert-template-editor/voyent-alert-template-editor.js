@@ -88,6 +88,31 @@ Polymer({
     },
 
     /**
+     * Revert the editor to it's state when the Alert Template was originally loaded or clears an unsaved Alert Template.
+     */
+    _cancelChanges: function() {
+        var confirm = false;
+        if (this._alertTemplateData.isPersisted) {
+            confirm = window.confirm('Are you sure you want to revert all unsaved changes for "' +
+                      this._alertTemplateData.alertTemplate.label + '"? This action cannot be undone.');
+            if (!confirm) { return }
+            //Clear the map and revert the loaded Alert Template to the value saved in the DB.
+            var original = this._alertTemplateData.persistedAlertTemplate;
+            this.clearMap();
+            this._drawAlertTemplate(original);
+        }
+        else {
+            confirm = window.confirm('Are you sure you want to cancel creating "' +
+            this._alertTemplateData.alertTemplate.label + '"? This action cannot be undone.');
+            if (!confirm) { return }
+            //Simply clear the map since there is no Alert Template saved.
+            this.clearMap();
+        }
+        //Fire an event for anyone interested.
+        this.fire('voyent-alert-template-cancel',{});
+    },
+
+    /**
      * Draws the passed polygon region on the map.
      * @param region
      * @private

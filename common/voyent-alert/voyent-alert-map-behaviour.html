@@ -141,6 +141,10 @@
                 else if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                     _this.fire('message-info', 'Alert Template successfully updated.');
                 }
+                //Update our local copy of the persisted Alert Template.
+                _this._alertTemplateData.persistedAlertTemplate = JSON.parse(JSON.stringify(alertTemplate));
+                //Fire an event for anyone interested.
+                _this.fire('voyent-alert-template-saved',{});
             }).catch(function (error) {
                 if (func === 'createTracker') {
                     //If the initial creation fails then remove it from the map.
@@ -152,33 +156,6 @@
                 _this.fire('message-error', 'Issue saving Alert Template ' + error.responseText || error.message);
                 console.error('Issue saving Alert Template', error.responseText || error.message);
             });
-        },
-
-        /**
-         * Removes the current Alert Template.
-         */
-        removeAlertTemplate: function() {
-            var confirm = window.confirm("Are you sure you want to delete '" + this._alertTemplateData.alertTemplate.label + "'? This cannot be undone!");
-            if (!confirm) {
-                return;
-            }
-            var _this = this;
-            //Delete from DB if it's saved.
-            if (this._alertTemplateData.isPersisted) {
-                voyent.locate.deleteTracker({
-                    realm: this.realm,
-                    account: this.account,
-                    id: this._alertTemplateData.alertTemplate._id
-                }).then(function () {
-                    _this.clearMap();
-                }).catch(function (error) {
-                    _this.fire('message-error', 'Issue deleting Alert Template ' + error);
-                    console.error('Issue deleting Alert Template', error);
-                });
-            }
-            else { //Otherwise just clear map.
-                this.clearMap();
-            }
         },
 
         /**
@@ -227,7 +204,9 @@
                 icon: this.nodeName === 'VOYENT-ALERT-EDITOR' ? this.pathtoimages+'/img/alert_marker.png' : null
             });
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                this._alertTemplateData = {"alertTemplate":alertTemplate,"marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":true};
+                this._alertTemplateData = {"alertTemplate":alertTemplate,
+                    "persistedAlertTemplate":JSON.parse(JSON.stringify(alertTemplate)),
+                    "marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":true};
             }
             else { //VOYENT-ALERT-EDITOR
                 this._alertTemplateData.marker = marker;

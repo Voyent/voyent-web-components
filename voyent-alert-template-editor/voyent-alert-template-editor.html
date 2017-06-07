@@ -49,9 +49,8 @@ Example:
                     </div>
                     <div id="crudPanel">
                         <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
-                            <paper-button raised on-click="saveAlertTemplate">Save</paper-button>
-                            <paper-button raised on-click="clearMap">Clear</paper-button>
-                            <paper-button raised on-click="removeAlertTemplate">Remove</paper-button>
+                            <paper-button raised on-click="saveAlertTemplate">Done</paper-button>
+                            <paper-button raised on-click="_cancelChanges">Cancel</paper-button>
                         </template>
                     </div>
                 </div>
