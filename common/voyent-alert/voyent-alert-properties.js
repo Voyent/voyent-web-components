@@ -516,5 +516,29 @@ Polymer({
         setTimeout(function() {
             _this._selected = selected;
         },0);
+    },
+
+    /**
+     * Returns the style classes for the accordion header element.
+     * @param active
+     * @returns {string}
+     * @private
+     */
+    _getAccordionHeaderClass: function(active) {
+        return active ? 'header active' : 'header';
+    },
+
+    /**
+     * Returns the style classes for the accordion body element.
+     * @param active
+     * @param editing
+     * @returns {string}
+     * @private
+     */
+    _getAccordionBodyClass: function(active,editing) {
+        var clss = 'body';
+        clss = active ? (clss+' active') : clss;
+        clss = editing ? (clss+' editing') : clss;
+        return clss;
     }
 });
