@@ -1,0 +1,389 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../imports/voyent.html">
+<link rel="import" href="../../../../../Downloads/voyent-alert-behaviour.html">
+<link rel="import" href="../imports/jscolor.html">
+<link rel="import" href="../../../iron-selector/iron-selector.html">
+<link rel="import" href="../../../paper-input/paper-input.html">
+<link rel="import" href="../../../paper-slider/paper-slider.html">
+<link rel="import" href="../../../paper-item/paper-item.html">
+<link rel="import" href="../../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../../iron-icon/iron-icon.html">
+<link rel="import" href="../../../iron-icons/iron-icons.html">
+<link rel="import" href="../../../paper-icon-button/paper-icon-button.html">
+<!--
+Internal component used to display the properties panel inside Voyent Alert components.
+
+@demo demo.html
+-->
+<dom-module id="voyent-alert-properties">
+    <template>
+        <style include="voyent-alert-styles" is="custom-style">
+            .accordion {
+                text-align: left;
+            }
+            .accordion label {
+                padding: 5px;
+                position: relative;
+                z-index: 20;
+                display: block;
+                min-height: 20px;
+                cursor: pointer;
+                color: #777;
+                text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
+                font-size: 16px;
+                background: #ffffff;
+                background: -moz-linear-gradient(top, #ffffff 1%, #eaeaea 100%);
+                background: -webkit-gradient(linear, left top, left bottom, color-stop(1%,#ffffff), color-stop(100%,#eaeaea));
+                background: -webkit-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
+                background: -o-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
+                background: -ms-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
+                background: linear-gradient(top, #ffffff 1%,#eaeaea 100%);
+                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#eaeaea',GradientType=0 );
+                box-shadow:
+                        0px 0px 0px 1px rgba(155,155,155,0.3),
+                        1px 0px 0px 0px rgba(255,255,255,0.9) inset,
+                        0px 2px 2px rgba(0,0,0,0.1);
+            }
+            .accordion label:hover {
+                background: #fff;
+            }
+            .accordion input:checked + label,
+            .accordion input:checked + label:hover {
+                background: #c6e1ec;
+                color: black;
+                text-shadow: 0px 1px 1px rgba(255,255,255, 0.6);
+                box-shadow:
+                        0px 0px 0px 1px rgba(155,155,155,0.3),
+                        0px 2px 2px rgba(0,0,0,0.1);
+                word-wrap: break-word;
+            }
+            .accordion label:hover:after,
+            .accordion input:checked + label:hover:after {
+                content: '';
+                position: absolute;
+                width: 24px;
+                height: 24px;
+                right: 13px;
+                top: 7px;
+            }
+            .accordion input[type=radio] {
+                display: none;
+            }
+            .accordion article {
+                background: rgba(255, 255, 255, 0.5);
+                margin-top: -1px;
+                overflow: hidden;
+                height: 0px;
+                position: relative;
+                z-index: 40;
+                -webkit-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+                -moz-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+                -o-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+                -ms-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+                transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+            }
+            .accordion article p {
+                font-style: italic;
+                color: #777;
+                line-height: 23px;
+                font-size: 13px;
+                padding: 20px;
+                text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
+            }
+            .accordion input:checked ~ article {
+                -webkit-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+                -moz-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+                -o-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+                -ms-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+                transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+                box-shadow: 0px 0px 0px 1px rgba(155,155,155,0.3);
+            }
+            .accordion input:checked ~ article {
+                height: 100%;
+            }
+            iron-selector > div:nth-of-type(odd) {
+                background-color: #ededed;
+            }
+            iron-selector, iron-selector > * {
+                padding: 0;
+            }
+            .tableWrap {
+                width: 100%;
+                min-height: 50px;
+                margin: auto;
+            }
+            .table {
+                width: 100%;
+                display: table;
+            }
+            .tableHeader {
+                background-color: #dddddd;
+                font-weight: bold;
+                text-align: center;
+                font-size: 15px;
+            }
+            .propertyCol,
+            .valueCol,
+            .addCol {
+                display: table-cell;
+                width: 50%;
+                padding: 8px;
+                font-size: 13px;
+                text-align: center;
+            }
+            .addCol {
+                width:100%;
+                padding: 0;
+                height:31px;
+                vertical-align:middle;
+            }
+            .addCol > paper-icon-button {
+                padding:0;
+                width:19px;
+                height:19px;
+            }
+            .clickable,
+            paper-icon-button {
+                cursor: pointer;
+            }
+            paper-slider {
+                width:100%;
+                padding-top:20px;
+            }
+            paper-input-container {
+                padding:0;
+            }
+            paper-input,
+            paper-dropdown-menu {
+                margin: 0 5px 0 5px;
+            }
+            paper-icon-button {
+                padding: 0;
+                width: 20px;
+                height: 20px;
+                z-index: 30;
+            }
+            paper-icon-button[disabled] {
+                color: #d3d1d1;
+            }
+            paper-input {
+                --paper-input-container-input: {
+                    font-size:13px;
+                };
+            }
+            .jscolor-wrapper {
+                margin: 5px 11px 5px 5px;
+            }
+            .jscolor {
+                width:100%;
+            }
+
+            .alert-zones-label {
+                font-size: 15px;
+                font-weight: bold;
+                margin: 10px 0 10px 0;
+            }
+
+            .float-right {
+                float: right;
+            }
+            .title,
+            .title-bttns {
+                display:inline-block;
+            }
+            .title {
+                width:150px;
+                word-wrap:break-word;
+            }
+            .title.zone {
+                width:101px;
+                font-size:14px;
+            }
+            .title-bttns {
+                width:45px;
+            }
+            .delete-button {
+                text-align:center;
+            }
+        </style>
+
+        <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
+            <div>
+                <template is="dom-if" if="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                    <div class="alert-template-title">
+                        <div class="title">
+                            [[_alertTemplateData.alertTemplate.label]]
+                        </div>
+                        <div class="title-bttns">
+                            <paper-icon-button raised icon="create" on-click="_toggleAlertTemplateRenaming"></paper-icon-button>
+                        </div>
+                    </div>
+                </template>
+                <template is="dom-if" if="[[_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                    <paper-input id="alertTemplate" tabindex="1"
+                                 label="Alert Template"
+                                 placeholder="New Value"
+                                 on-keydown="_renameAlertTemplateViaKeydown"
+                                 value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}">
+                    </paper-input>
+                </template>
+            </div>
+            <div>
+                <div class="alert-zones-label">
+                    Proximity Zones
+                    <paper-icon-button class="float-right" icon="add" on-click="_addProximityZone"></paper-icon-button>
+                </div>
+            </div>
+            <section class="accordion">
+                <template is="dom-repeat" items="[[_alertTemplateData.alertTemplate.zones.features]]" as="zone">
+                    <div>
+                        <input id$="ac-[[index]]" name="accordion" type="radio"
+                               on-click="_toggleAccordion" checked="{{zone.tmpProperties.visible::change}}"/>
+                        <label for$="ac-[[index]]">
+                            <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
+                                <template is="dom-if" if="[[zone.tmpProperties.visible]]">
+                                    <paper-icon-button icon="expand-more"></paper-icon-button>
+                                </template>
+                                <template is="dom-if" if="[[!zone.tmpProperties.visible]]">
+                                    <paper-icon-button icon="expand-less"></paper-icon-button>
+                                </template>
+                                <div class="title zone">
+                                    [[zone.properties.zoneId]]
+                                </div>
+                                <div class="title-bttns">
+                                    <paper-icon-button icon="create" data-index$="[[index]]"
+                                                       on-click="_toggleProximityZoneRenaming">
+                                    </paper-icon-button>
+                                    <paper-icon-button icon="delete" on-click="_removeProximityZone"
+                                                       disabled="[[_hasOneZone]]" data-index$="[[index]]" >
+                                    </paper-icon-button>
+                                </div>
+                            </template>
+                            <template is="dom-if" if="[[zone.tmpProperties.renaming]]">
+                                <paper-input id$="zone-[[index]]" tabindex="1"
+                                             label="Zone"
+                                             placeholder="New Value"
+                                             on-keydown="_renameProximityZoneViaKeydown"
+                                             data-index$="[[index]]"
+                                             value="{{zone.tmpProperties.newName::input}}">
+                                </paper-input>
+                            </template>
+                        </label>
+                        <article>
+                            <template is="dom-if" if="[[!_editing]]">
+                                <template is="dom-if" if="[[!_addingNew]]">
+                                    <div class="tableWrap">
+                                        <div class="table">
+                                            <div class="propertyCol tableHeader">
+                                                <div on-click="_sortByProperty" class="clickable"
+                                                     title="Click to sort by property">
+                                                    Property
+                                                </div>
+                                            </div>
+                                            <div class="valueCol tableHeader">
+                                                <div on-click="_sortByValue" class="clickable"
+                                                     title="Click to sort by property value">
+                                                    Value
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <iron-selector selected="{{_selected}}"
+                                                       attr-for-selected="data-property"
+                                                       on-iron-activate="_onIronActivate">
+                                            <template id$="propertyRepeat-[[index]]" is="dom-repeat" as="property"
+                                                      items="[[_toArray(zone.properties)]]" sort="_sortProperties">
+                                                <div class="table clickable" data-property$="[[property.key]]">
+                                                    <div class="propertyCol">
+                                                        [[property.key]]
+                                                    </div>
+                                                    <div class="valueCol">
+                                                        [[property.value]]
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </iron-selector>
+                                        <div class="table">
+                                            <div class="addCol">
+                                                <paper-icon-button icon="add"
+                                                                   on-click="_toggleAddingNewProperty">
+                                                </paper-icon-button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </template>
+
+                            <template is="dom-if" if="[[_addingNew]]">
+                                <paper-input id$="new-[[index]]"
+                                             required label="Name" value="{{_customPropKey}}"
+                                             data-index$="[[index]]" tabindex="1"
+                                             on-keydown="_saveNewPropertyViaKeydown"
+                                             placeholder="The property name"></paper-input>
+                                <paper-input required label="Value" value="{{_customPropVal}}"
+                                             data-index$="[[index]]" tabindex="2"
+                                             on-keydown="_saveNewPropertyViaKeydown"
+                                             placeholder="The property value"></paper-input>
+                            </template>
+
+                            <template is="dom-if" if="[[_editing]]">
+                                <template is="dom-if" if="{{_selectedEquals('Editable',_selected)}}">
+                                    <paper-dropdown-menu id$="editable-[[index]]"
+                                                         tabindex="1"
+                                                         label="Editable"
+                                                         data-index$="[[index]]"
+                                                         on-keydown="_editPropertyViaKeydown"
+                                                         value="{{_editableVal}}">
+                                        <iron-selector class="dropdown-content"
+                                                       selected="{{_editableVal}}"
+                                                       attr-for-selected="name">
+                                            <paper-item name="true">true</paper-item>
+                                            <paper-item name="false">false</paper-item>
+                                        </iron-selector>
+                                    </paper-dropdown-menu>
+                                </template>
+
+                                <template is="dom-if" if="{{_selectedEquals('Color',_selected)}}">
+                                    <div class="jscolor-wrapper">
+                                        <input id$="jsColor-[[index]]" class="jscolor"
+                                               tabindex="1"
+                                               data-index$="[[index]]"
+                                               on-keydown="_editPropertyViaKeydown"
+                                               value="{{_colorVal::change}}">
+                                    </div>
+                                </template>
+
+                                <template is="dom-if" if="{{_selectedEquals('Opacity',_selected)}}">
+                                    <paper-slider id$="opacity-[[index]]" min=0 max=1
+                                                  step=0.05 pin snaps tabindex="1"
+                                                  on-keydown="_editPropertyViaKeydown"
+                                                  data-index$="[[index]]" value="{{_opacityVal}}">
+                                    </paper-slider>
+                                </template>
+
+                                <template is="dom-if" if="{{_selectedEquals('Other',_selected)}}">
+                                    <paper-input id$="custom-[[index]]"
+                                                 required label="Name" value="{{_customPropKey}}"
+                                                 data-index$="[[index]]" tabindex="1"
+                                                 on-keydown="_editPropertyViaKeydown"
+                                                 placeholder="The property name"></paper-input>
+                                    <paper-input required label="Value" value="{{_customPropVal}}"
+                                                 data-index$="[[index]]" tabindex="2"
+                                                 on-keydown="_editPropertyViaKeydown"
+                                                 placeholder="The property value"></paper-input>
+                                    <div class="delete-button">
+                                        <paper-icon-button icon="delete" tabindex="3"
+                                                           on-click="_removeSelectedProperty"
+                                                           data-index$="[[index]]">
+                                        </paper-icon-button>
+                                    </div>
+                                </template>
+                            </template>
+                        </article>
+                    </div>
+                </template>
+            </section>
+        </template>
+    </template>
+</dom-module>
+
+<script src="voyent-alert-properties.js"></script>

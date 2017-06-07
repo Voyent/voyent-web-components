@@ -1,6 +1,6 @@
 Polymer({
     is: 'voyent-alert-template-editor',
-    behaviors: [Voyent.AlertBehaviour],
+    behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
     /**
      * Loads an Alert Template into the editor based on the passed id.
@@ -46,6 +46,78 @@ Polymer({
                 }
             }
         }
+    },
+
+    //******************PRIVATE API******************
+
+    /**
+     * Finish initializing after login.
+     * @private
+     */
+    _onAfterLogin: function() {
+        //Only enable the marker when we are logged in.
+        this._drawingManager.setOptions({
+            "drawingControlOptions":{
+                "drawingModes":['marker'],
+                "position":google.maps.ControlPosition.TOP_RIGHT}
+        });
+        //Fetch the regions for the realm so we can populate the map with the current region.
+        this._fetchRegions();
+    },
+
+    /**
+     * Retrieves all the regions for the realm.
+     * @returns {*}
+     * @private
+     */
+    _fetchRegions: function() {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            voyent.locate.getAllRegions({realm:_this.realm,account:_this.account}).then(function (regions) {
+                //Filter out the Alert regions and we should only be left with the static area Region.
+                _this._drawRegion(regions.filter(function(region) {
+                   return !region.location.properties || !region.location.properties.trackerId;
+                })[0]);
+                resolve();
+            }).catch(function (error) {
+                _this.fire('message-error', 'Issue fetching or drawing Region ' + error.responseText || error.message || error);
+                console.error('Issue fetching or drawing Region', error.responseText || error.message || error);
+                reject(error);
+            });
+        });
+    },
+
+    /**
+     * Draws the passed polygon region on the map.
+     * @param region
+     * @private
+     */
+    _drawRegion: function(region) {
+        if (!region || !region.location || !region.location.geometry || !region.location.geometry.coordinates) {
+            return;
+        }
+        var bounds = new google.maps.LatLngBounds(),
+        coords = region.location.geometry.coordinates,
+        googlePoint, paths = [], path = [];
+        //Generate the ordered sequence of coordinates that completes the Polygon shape.
+        for (var j = 0; j < coords.length; j++) {
+            for (var k = 0; k < coords[j].length; k++) {
+                googlePoint = new google.maps.LatLng(coords[j][k][1], coords[j][k][0]);
+                path.push(googlePoint);
+                //Extend our bounds object so we can pan the map later.
+                bounds.extend(googlePoint);
+            }
+            paths.push(path);
+        }
+        //Draw the Polygon.
+        new google.maps.Polygon({
+            'paths': paths,
+            'map': this._map,
+            'editable': false
+        });
+        //Zoom on the newly drawn Region.
+        this._map.fitBounds(bounds);
+        this._map.panToBounds(bounds);
     },
 
     /**
@@ -95,5 +167,35 @@ Polymer({
                 }
             }
         });
+    },
+
+    /**
+     * Returns the default JSON structure of an Alert Template.
+     * @returns {{anchor: {type: string, geometry: {type: string, coordinates: Array}, properties: {Editable: string}}, zones: {type: string, features: [*]}}}
+     * @private
+     */
+    _getAlertTemplateJSON: function() {
+        return {
+            "anchor": {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": []
+                },
+                "properties": {
+                    "Editable": true,
+                    "zIndex":50 //50 for the anchor and the zones will go from 49 down.
+                }
+            },
+            "zones": {
+                "type": "FeatureCollection",
+                "features": [
+                    this._getZoneJSON()
+                ]
+            },
+            "label":"Unnamed",
+            //These properties are used by the view and will be removed before saving the alertTemplate.
+            "tmpProperties": this._getAlertTemplateTmpProperties()
+        }
     }
 });

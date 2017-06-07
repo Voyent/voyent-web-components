@@ -1,32 +1,120 @@
 Polymer({
     is: 'voyent-alert-editor',
-    behaviors: [Voyent.AlertBehaviour],
+    behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
-    properties: {
-        /**
-         * The relative path to the `images` resource directory. This may be
-         * necessary when using the component as part of a custom build.
-         */
-        pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' },
+    ready: function() {
+        //Initialize some vars
+        this._alertBttnAdded = this._alertBttnSelected =
+        this._activatingAlert = this._alertActivated = false;
+        this._alertTemplates = null;
+        //Add listener to native map button.
+        this._addListenerToStopDrawingBttn();
+    },
+
+    //******************PRIVATE API******************
+
+    /**
+     * Finish initializing after login.
+     * @private
+     */
+    _onAfterLogin: function() {
+        var _this = this;
+
+        //Fetch...
+        var promises = [];
+        //..the Alert Templates...
+        promises.push(this._fetchAlertTemplates());
+        //...the last locations of all Alerts...
+        promises.push(this._executeAggregate(this._lastAlertLocations));
+        //...and the last locations for all Users.
+        promises.push(this._executeAggregate(this._lastUserLocations));
+        Promise.all(promises).then(function() {
+
+        }).catch(function(error) {
+            _this.fire('message-error', 'Issue initializing Alert Editor ' + error.responseText || error.message || error);
+            console.error('Issue initializing Alert Editor', error.responseText || error.message || error);
+        });
     },
 
     /**
      * Fetches the list of Alert Templates for the realm.
+     * @returns {*}
+     * @private
      */
     _fetchAlertTemplates: function() {
         var _this = this;
-        voyent.locate.getAllTrackers({realm:this.realm,account:this.account}).then(function(templates) {
-            _this._alertTemplates = templates.filter(function(alertTemplate) {
-                //Don't show child Alert Templates.
-                return !alertTemplate.properties || !alertTemplate.properties.parentTrackerId;
+        return new Promise(function (resolve, reject) {
+            voyent.locate.getAllTrackers({realm:_this.realm,account:_this.account}).then(function(templates) {
+                _this._alertTemplates = templates.filter(function(alertTemplate) {
+                    //Don't show child Alert Templates.
+                    return !alertTemplate.properties || !alertTemplate.properties.parentTrackerId;
+                });
+                _this._addAlertButton();
+                resolve();
+            }).catch(function (error) {
+                reject(error);
             });
-            console.log('_fetchAlertTemplates',_this._alertTemplates,'actual:',templates.length);
-            _this._addAlertButton();
-        }).catch(function (error) {
-            _this.fire('message-error', 'Issue fetching Alert Templates ' + error.responseText || error.message);
-            console.error('Issue fetching Alert Templates', error.responseText || error.message);
-        })
+        });
     },
+
+    /**
+     * Executes aggregate queries for getting last user and tracker locations.
+     * @param query
+     * @private
+     */
+    _executeAggregate: function(query) {
+        var _this = this;
+        var id = query._id;
+        return new Promise(function (resolve, reject) {
+            voyent.query.executeQuery({realm:_this.realm,id:id}).then(function(results) {
+                if (id === '_getLastUserLocations') {
+
+                }
+                else {
+
+                }
+                resolve();
+            }).catch(function(error) {
+                var res = JSON.parse(error.response);
+                if (res.status === 404 ||
+                    (res.status === 500 && res.code == 'contextNotFound')) {
+                    _this._createAggregate(query).then(function() {
+                        resolve();
+                    }).catch(function(error){reject(error);});
+                }
+            });
+
+        });
+    },
+
+    /**
+     * Creates aggregate queries for getting last user and tracker locations.
+     * @param query
+     * @private
+     */
+    _createAggregate: function(query) {
+        var _this = this;
+        var id = query._id;
+        return new Promise(function (resolve, reject) {
+            voyent.query.createQuery({realm:_this.realm,id:id,query:query}).then(function() {
+                _this._executeAggregate(query).then(function() {
+                    resolve();
+                }).catch(function(error){reject(error);});
+            }).catch(function(error) {
+                reject(error);
+            });
+        });
+    },
+
+    /**
+     * Aggregate query for getting the last locations of all Users.
+     */
+    _lastUserLocations: {"_id":"_getLastUserLocations","query":[{"$match":{"_data.location.properties.trackerId":{"$exists":false}}},{"$sort":{"_data.lastUpdated":-1}},{"$group":{"_id":"$_data.username","username":{"$first":"$_data.username"},"location":{"$first":"$_data.location"},"lastUpdated":{"$first":"$_data.lastUpdated"}}},{"$project":{"_id":0,"location":1,"username":1,"lastUpdated":1}}],"properties":{"title":"Find Last User Locations","service":"locate","collection":"locations","type":"aggregate"}},
+
+    /**
+     * Aggregate query for getting the last locations of all Alerts.
+     */
+    _lastAlertLocations: {"_id":"_getLastAlertLocations","query":[{"$match":{"_data.location.properties.trackerId":{"$exists":true}}},{"$sort":{"_data.lastUpdated":-1}},{"$group":{"_id":"$_data.username","location":{"$first":"$_data.location"},"lastUpdated":{"$first":"$_data.lastUpdated"}}},{"$project":{"_id":0,"location":1,"username":1,"lastUpdated":1}}],"properties":{"title":"Find Last Tracker Locations","service":"locate","collection":"locations","type":"aggregate"}},
 
     /**
      * Handles adding button for creating Alerts.
@@ -236,19 +324,5 @@ Polymer({
                 _this._deSelectAlertBttn();
             }
         });
-    },
-
-    /**
-     * Validates the new attribute value and fires the `pathtoimagesChanged` event.
-     * @param newVal
-     * @param oldVal
-     * @private
-     */
-    _pathtoimagesChanged: function(newVal, oldVal) {
-        if (newVal.charAt[newVal.length-1] === '/') {
-            this.path = newVal.slice(0,-1);
-            return;
-        }
-        this.fire('pathtoimagesChanged',{'path':newVal});
     }
 });

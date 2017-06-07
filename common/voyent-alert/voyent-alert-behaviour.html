@@ -1,0 +1,300 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../imports/voyent.html">
+<link rel="import" href="./voyent-alert-styles.html">
+
+<script>
+    var Voyent = Voyent || {};
+    /**
+     * Provides common functionality required by all `voyent-alert-*` components.
+     *
+     * @polymerBehavior AlertBehaviour
+     */
+    Voyent.AlertBehaviour = {
+
+        properties: {
+            /**
+             * The google map object that we'll share between components.
+             */
+            _map: { type: Object, value: null, notify: true, observer: '_mapChanged'}
+        },
+
+        ready: function() {
+            this._alertTemplateData = null;
+        },
+
+        /**
+         * Initialize google map listeners for moving, resizing and clicking of Alert Templates.
+         * @private
+         */
+        _setupChangeListeners: function() {
+            var _this = this;
+            if (this._alertTemplateData.marker) {
+                //Clear any previously added listeners (since we call this function again for newly added zones).
+                google.maps.event.clearInstanceListeners(this._alertTemplateData.marker);
+                //Add drag listener to marker.
+                google.maps.event.addListener(this._alertTemplateData.marker, 'dragend', function (event) {
+                    //Update the JSON since the position changed.
+                    _this._updateAlertTemplateJSON();
+                    //Adjust the position of the Proximity Zone labels since all of their positions changed.
+                    _this._redrawZoneOverlay();
+                });
+            }
+            if (this._alertTemplateData.circles) {
+                for (var i=0; i<this._alertTemplateData.circles.length; i++) {
+                    (function(i) {
+                        //Clear any previously added listeners (since we call this function again for newly added zones).
+                        google.maps.event.clearInstanceListeners(_this._alertTemplateData.circles[i]);
+                        //Add resize listener to circles.
+                        google.maps.event.addListener(_this._alertTemplateData.circles[i], 'radius_changed', function (event) {
+                            //Update the JSON since the size of a zone changed.
+                            _this._updateAlertTemplateJSON();
+                            //Adjust the position of the Proximity Zone label since the radius changed.
+                            _this._redrawZoneOverlay(i);
+                        });
+                        //Add click listener to circles.
+                        google.maps.event.addListener(_this._alertTemplateData.circles[i], 'click', function (event) {
+                            _this._toggleAccordion(i);
+
+                            // Fire an event for anyone interested
+                            _this.fire('voyent-alert-template-click', {
+                                'alertTemplate': _this._alertTemplateData.alertTemplate,
+                                'selectedZone': i
+                            });
+                        });
+                    }(i))
+                }
+            }
+        },
+
+        /**
+         * Syncs the alertTemplate JSON with the current state of the map entities.
+         * @private
+         */
+        _updateAlertTemplateJSON: function () {
+            //Sync the marker coordinates (if available) with the alertTemplate
+            //anchor in case the alertTemplate position has moved.
+            if (this._alertTemplateData.marker) {
+                this._alertTemplateData.alertTemplate.anchor.geometry.coordinates = [this._alertTemplateData.marker.getPosition().lng(),this._alertTemplateData.marker.getPosition().lat()];
+            }
+            var features = this._alertTemplateData.alertTemplate.zones.features;
+            var N = 50; //The number of coordinates the circle approximation will have.
+            var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
+            //Use the following two vars to calculate and store the northern most point of a Proximity
+            //Zone circle. This is used to calculate where to render the Proximity Zone overlay label.
+            var highestLat;
+            this._alertTemplateData.highestLats = [];
+            for (var i=0; i<features.length; i++) {
+                highestLat = -100;
+                //Sync the alertTemplate zone properties with the zones drawn on the map (if available).
+                if (this._alertTemplateData.circles.length) {
+                    features[i].properties.Editable = this._alertTemplateData.circles[i].getEditable();
+                    features[i].properties.googleMaps.radius = this._alertTemplateData.circles[i].getRadius();
+                    features[i].properties.googleMaps.center = [this._alertTemplateData.circles[i].getCenter().lat(),this._alertTemplateData.circles[i].getCenter().lng()];
+                    features[i].properties.Color = this._alertTemplateData.circles[i].get('fillColor').substring(1); //remove the '#'
+                    features[i].properties.googleMaps.zIndex = this._alertTemplateData.circles[i].get('zIndex');
+                }
+                //Reset the coordinates array since we'll recalculate them below.
+                features[i].geometry.coordinates = [[]];
+                for (var j=0; j<N; j++) {
+                    //Calculate and save the next coordinate.'
+                    var latLng = google.maps.geometry.spherical.computeOffset(
+                        new google.maps.LatLng(features[i].properties.googleMaps.center[0],features[i].properties.googleMaps.center[1]),
+                        features[i].properties.googleMaps.radius,
+                        degreeStep * j);
+                    features[i].geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
+                    //Look for the northern most point of the circle.
+                    if (latLng.lat() > highestLat) {
+                        highestLat = latLng.lat();
+                    }
+                }
+                //In addition to N coordinates we also need to copy the
+                //first one to the last one to complete the circle.
+                features[i].geometry.coordinates[0].push(features[i].geometry.coordinates[0][0]);
+                //Save the highest known latitude.
+                this._alertTemplateData.highestLats.push(highestLat);
+            }
+        },
+
+        /**
+         * Toggles the accordion panels. This is used to toggle the accordion
+         * for both accordion pane and proximity zone clicks.
+         * @param eOrI
+         * @private
+         */
+        _toggleAccordion: function(eOrI) {
+            //This function will either be passed an event (from the ui) or a direct index (from the JS).
+            var index = eOrI.model ? eOrI.model.get('index') : eOrI;
+            for (var i=0; i<this._alertTemplateData.alertTemplate.zones.features.length; i++) {
+                //Hide the accordions and remove the selected styling.
+                this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.visible',false);
+                this._alertTemplateData.circles[i].setOptions({"strokeWeight":0});
+            }
+            //Show the accordion contents for the selected zone and add the selected styling.
+            this.set('_alertTemplateData.alertTemplate.zones.features.'+index+'.tmpProperties.visible',true);
+            this._alertTemplateData.circles[index].setOptions({"strokeWeight":3});
+        },
+
+        /**
+         * Redraws a specific Proximity Zone overlay based on the passed index or redraws them all if no index is available.
+         * @param i
+         * @private
+         */
+        _redrawZoneOverlay: function(i) {
+            if (typeof i !== 'undefined') {
+                this._alertTemplateData.zoneOverlays[i].draw();
+            }
+            else {
+                for (i=0; i<this._alertTemplateData.zoneOverlays.length; i++) {
+                    this._alertTemplateData.zoneOverlays[i].draw();
+                }
+            }
+        },
+
+        /**
+         * Our simple implementation of Google's OverlayView Class. Used to display Proximity Zone labels on the map.
+         * @private
+         */
+        _initializeProximityZoneOverlayView: function() {
+            var _outer = this;
+
+            //Constructor
+            this._ProximityZoneOverlay = function(i) {
+                //Set the index of this Proximity Zone which we'll use later.
+                this.i = i;
+                //Set the map for this overlay.
+                this.setMap(_outer._map);
+            };
+
+            //Set the custom overlay object's prototype to a new instance of OverlayView.
+            this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
+
+            //Called automatically when the map is ready for the overlay to be attached.
+            this._ProximityZoneOverlay.prototype.onAdd = function () {
+                //Begin to setup the div.
+                this.div = document.createElement('div');
+                this.div.style.borderStyle = 'none';
+                this.div.style.borderWidth = '0px';
+                this.div.style.position = 'absolute';
+                // Add the element to the "overlayLayer" pane.
+                this.getPanes().overlayLayer.appendChild(this.div);
+            };
+
+            //Handles visually displaying the overlay on the map. Called when the object is first displayed
+            //and again whenever we want to redraw the overlay, like when the positon changes.
+            this._ProximityZoneOverlay.prototype.draw = function () {
+                var properties = _outer._alertTemplateData.alertTemplate.zones.features[this.i].properties;
+
+                //Retrieve the north-center coordinates of this overlay and convert them to pixel coordinates.
+                var nc = this.getProjection().fromLatLngToDivPixel(
+                    new google.maps.LatLng(_outer._alertTemplateData.highestLats[this.i],
+                        _outer._alertTemplateData.circles[this.i].getCenter().lng())
+                );
+                //Set the div content.
+                this.div.innerHTML = properties.zoneId;
+                //Center the label above the zone.
+                this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
+                this.div.style.top = nc.y-20 + 'px';
+                //Configure the styling.
+                this.div.style.backgroundColor = '#'+properties.Color;
+                this.div.style.color = this.returnColorBasedOnBackground(properties.Color);
+                this.div.style.padding = '5px';
+                this.div.style.fontSize = '8px';
+                this.div.style.zIndex = 10000;
+                this.div.style.opacity = 0.8;
+                this.div.style.borderRadius = '25px';
+            };
+
+            //Cleans up the overlay whenever the overlays map property is set to null.
+            this._ProximityZoneOverlay.prototype.onRemove = function () {
+                this.div.parentNode.removeChild(this.div);
+                this.div = null;
+            };
+
+            //Returns #000 or #FFF depending on the passed HEX value.
+            this._ProximityZoneOverlay.prototype.returnColorBasedOnBackground = function(hex) {
+                //Convert 3 digits to 6.
+                if (hex.length === 3) {
+                    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                }
+                //Just return black if we receive an invalid colour.
+                if (hex.length !== 6) {
+                    return '#000';
+                }
+                //Calculate
+                var r = parseInt(hex.slice(0, 2), 16),
+                    g = parseInt(hex.slice(2, 4), 16),
+                    b = parseInt(hex.slice(4, 6), 16);
+                return (r * 0.299 + g * 0.587 + b * 0.114) > 186
+                    ? '#000'
+                    : '#FFF';
+            };
+        },
+
+        /**
+         * All components need a reference to the the OverlayView class so once the map is set we'll initialize it.
+         */
+        _mapChanged: function(map) {
+            if (map) {
+                //Initialize our custom OverlayView class.
+                this._initializeProximityZoneOverlayView();
+            }
+        },
+
+        /**
+         * Returns the default JSON structure of a Proximity Zone.
+         * @returns {{type: string, geometry: {type: string, coordinates: [*]}, properties: {googleMaps: {shape: string, radius: number, zIndex: number}, Editable: string, Color: string}}}
+         * @private
+         */
+        _getZoneJSON: function() {
+            return {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[]]
+                },
+                "properties": {
+                    "googleMaps": {
+                        "shape": "circle",
+                        "center": [],
+                        "radius": 500,
+                        "zIndex": 49 //49 for the first zone and -1 for each following zone
+                    },
+                    "Editable": true,
+                    "Color": "000000",
+                    "zoneId": "Zone_1",
+                    "Opacity": 0.30
+                },
+                //These properties are used by the view and will be removed before saving the alertTemplate.
+                "tmpProperties": this._getZoneTmpProperties()
+            };
+        },
+
+        /**
+         * Returns temporary Alert Template Zone properties used by the view.
+         * @returns {{renaming: boolean, newName: string, visible: boolean}}
+         * @private
+         */
+        _getZoneTmpProperties: function() {
+            return {
+                "renaming": false,
+                "newName":'',
+                "visible":false
+            }
+        },
+
+        /**
+         * Returns the default properties for building a google maps circle, the entity that represents a Proximity Zone.
+         * @returns {{editable: boolean, draggable: boolean, radius: number, fillColor: string, strokeWeight: number, zIndex: number, map: (*|google.maps.Map|null)}}
+         * @private
+         */
+        _getCircleProperties: function() {
+            return {
+                editable: true, draggable: false,
+                radius: 500, fillColor: '#000000',
+                fillOpacity: 0.30,
+                strokeWeight:0, zIndex: 49,
+                map: this._map
+            };
+        }
+    };
+</script>

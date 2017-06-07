@@ -1,0 +1,63 @@
+<dom-module id="voyent-alert-styles">
+    <template>
+        <style>
+            #container {
+                height: var(--height-var);
+                width:100%;
+            }
+            #map {
+                width: var(--width-var);
+                border-radius: 15px 0 0 15px;
+                z-index: 0;
+            }
+            #map, #sidePanel {
+                height: 100%;
+                display:inline-block;
+                border: 2px inset rgba(0,0,0,0.5);
+                vertical-align: top;
+            }
+            #sidePanel {
+                width: 202px;
+                border-left:none;
+            }
+            #propertiesPanel {
+                height: calc(var(--height-var) - 45px);
+            }
+            #propertiesPanel,
+            #crudPanel {
+                width: 200px;
+                overflow-y: scroll;
+                background-color: white;
+                position:relative;
+            }
+            #crudPanel {
+                height:45px;
+                text-align:center;
+                overflow: hidden;
+            }
+            #crudPanel paper-button {
+                margin-top:7px;
+            }
+            .alert-template-title,
+            .alert-zones-label,
+            .alert-template-desc {
+                padding: 0 5px 0 5px;
+            }
+            .alert-template-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin: 10px 0 20px 0;
+            }
+            .alert-template-title > .title-bttns {
+                width:20px;
+            }
+            .alert-template-desc {
+                font-size:13px;
+            }
+            paper-button {
+                text-transform: capitalize;
+                font-size:11px;
+            }
+        </style>
+    </template>
+</dom-module>
