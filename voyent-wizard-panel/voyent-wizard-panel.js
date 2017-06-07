@@ -95,6 +95,11 @@ Polymer({
             notify: true,
             reflectToAttribute: true
         },
+        style: {
+            type: String,
+            notify: true,
+            reflectToAttribute: true
+        },
         /**
          * Disable the Enter key automatically submitting the Next button
          * By default this is enabled, but will only work if nexthidden and nextdisabled are false
