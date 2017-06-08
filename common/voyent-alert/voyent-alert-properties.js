@@ -43,7 +43,7 @@ Polymer({
      * @private
      */
     _renameAlertTemplateViaKeydown: function(e) {
-        //Prevent the event from bubbling up the DOM tree
+        //Prevent the event from bubbling.
         e.stopPropagation();
         if (e.which === 13) { //Enter
             this._renameAlertTemplate();
@@ -71,6 +71,8 @@ Polymer({
      * @private
      */
     _toggleProximityZoneRenaming: function(eOrI) {
+        //Prevent the event from bubbling.
+        if (eOrI.stopPropagation) { eOrI.stopPropagation(); }
         var _this = this;
         //This function will either be passed an event (from the ui) or a direct index (from the JS).
         var i = eOrI.model ? eOrI.model.get('index') : eOrI;
@@ -98,7 +100,8 @@ Polymer({
      * @private
      */
     _renameProximityZoneViaKeydown: function(e) {
-        //Prevent the event from bubbling up the DOM tree.
+        //Prevent the event from bubbling.
+        e.stopPropagation();
         if (e.which === 13) { //Enter
             this._renameProximityZone(e);
         }
@@ -172,16 +175,22 @@ Polymer({
      * @private
      */
     _removeProximityZone: function(e) {
+        //Prevent the event from bubbling.
+        e.stopPropagation();
         //Get the index of the proximity zone that is to be removed.
         var i = e.model.get('index');
         //Remove the zone from the alertTemplate JSON.
         this.splice('_alertTemplateData.alertTemplate.zones.features',i,1);
-        //Remove the circle from the map and the reference to it.
+        //Remove the circle and zone overlay from the map.
         this._alertTemplateData.circles[i].setMap(null);
-        this.splice('_alertTemplateData.circles',i,1);
-        //Remove the overlay.
         this._alertTemplateData.zoneOverlays[i].setMap(null);
+        this.splice('_alertTemplateData.circles',i,1);
         this.splice('_alertTemplateData.zoneOverlays',i,1);
+        this.splice('_alertTemplateData.highestLats',i,1);
+        //Keep the overlay class index in sync.
+        for (i=0; i<this._alertTemplateData.zoneOverlays.length; i++) {
+            this._alertTemplateData.zoneOverlays[i].setIndex(i);
+        }
     },
 
     /**
@@ -210,6 +219,7 @@ Polymer({
      * @private
      */
     _saveNewPropertyViaKeydown: function(e) {
+        //Prevent the event from bubbling.
         e.stopPropagation();
         if (e.which === 13) { //Enter
             this._saveNewProperty(e);
@@ -325,7 +335,7 @@ Polymer({
      * @private
      */
     _editPropertyViaKeydown: function(e) {
-        //Prevent the event from bubbling up the DOM tree
+        //Prevent the event from bubbling.
         e.stopPropagation();
         if (e.which === 13) { //Enter
             this._editProperty(e);
