@@ -131,15 +131,24 @@ Example:
                             </template>
                         </template>
                         <template is="dom-if" if="[[!_alertTemplateData.alertTemplate]]">
-                            <div class="alert-template-title">New Alert</div>
-                            <div class="alert-template-desc">
-                                Activate the
-                                <div class="icon-div">
-                                    <img class="icon" src="img/alert_bttn.png">
+                            <template is="dom-if" if="[[_alertTemplates.length]]">
+                                <div class="alert-template-title">New Alert</div>
+                                <div class="alert-template-desc">
+                                    Activate the
+                                    <div class="icon-div">
+                                        <img class="icon" src="img/alert_bttn.png">
+                                    </div>
+                                    icon from the toolbar in the
+                                    top-right corner and follow the menu.
                                 </div>
-                                icon from the toolbar in the
-                                top-right corner and follow the menu.
-                            </div>
+                            </template>
+                            <template is="dom-if" if="[[!_alertTemplates.length]]">
+                                <div class="alert-template-title">New Alert</div>
+                                <div class="alert-template-desc">
+                                    There are no Alert Templates to create a new Alert for.
+                                    Please create an Alert Template first.
+                                </div>
+                            </template>
                         </template>
                     </template>
                 </div>

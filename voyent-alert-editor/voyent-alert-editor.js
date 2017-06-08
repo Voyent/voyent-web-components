@@ -46,7 +46,6 @@ Polymer({
      */
     _onAfterLogin: function() {
         var _this = this;
-
         //Fetch...
         var promises = [];
         //..the Alert Templates...
@@ -56,7 +55,7 @@ Polymer({
         //...and the last locations for all Users.
         promises.push(this._executeAggregate(this._lastUserLocations));
         Promise.all(promises).then(function() {
-
+            _this._addAlertButton(); //Add the Alert creation.
         }).catch(function(error) {
             _this.fire('message-error', 'Issue initializing Alert Editor ' + error.responseText || error.message || error);
             console.error('Issue initializing Alert Editor', error.responseText || error.message || error);
@@ -76,7 +75,6 @@ Polymer({
                     //Don't show child Alert Templates.
                     return !alertTemplate.properties || !alertTemplate.properties.parentTrackerId;
                 });
-                _this._addAlertButton();
                 resolve();
             }).catch(function (error) {
                 reject(error);
