@@ -202,7 +202,8 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                  label="Alert Template"
                                  placeholder="New Value"
                                  on-keydown="_renameAlertTemplateViaKeydown"
-                                 value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}">
+                                 value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}"
+                                 disabled$="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
                     </paper-input>
                 </template>
             </div>
@@ -240,7 +241,8 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                          placeholder="New Value"
                                          on-keydown="_renameProximityZoneViaKeydown"
                                          data-index$="[[index]]"
-                                         value="{{zone.tmpProperties.newName::input}}">
+                                         value="{{zone.tmpProperties.newName::input}}"
+                                         disabled$="[[!zone.tmpProperties.renaming]]">>
                             </paper-input>
                         </template>
                     </div>
@@ -293,11 +295,13 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                          required label="Name" value="{{_customPropKey}}"
                                          data-index$="[[index]]" tabindex="1"
                                          on-keydown="_saveNewPropertyViaKeydown"
-                                         placeholder="The property name"></paper-input>
+                                         placeholder="The property name"
+                                         disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                             <paper-input required label="Value" value="{{_customPropVal}}"
                                          data-index$="[[index]]" tabindex="2"
                                          on-keydown="_saveNewPropertyViaKeydown"
-                                         placeholder="The property value"></paper-input>
+                                         placeholder="The property value"
+                                         disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                         </template>
 
                         <template is="dom-if" if="[[_editing]]">
@@ -340,11 +344,13 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                              required label="Name" value="{{_customPropKey}}"
                                              data-index$="[[index]]" tabindex="1"
                                              on-keydown="_editPropertyViaKeydown"
-                                             placeholder="The property name"></paper-input>
+                                             placeholder="The property name"
+                                             disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                                 <paper-input required label="Value" value="{{_customPropVal}}"
                                              data-index$="[[index]]" tabindex="2"
                                              on-keydown="_editPropertyViaKeydown"
-                                             placeholder="The property value"></paper-input>
+                                             placeholder="The property value"
+                                             disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                                 <div class="delete-button">
                                     <paper-icon-button icon="delete" tabindex="3"
                                                        on-click="_removeSelectedProperty"
