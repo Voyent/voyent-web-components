@@ -121,8 +121,8 @@ Polymer({
         if (!region || !region.location || !region.location.geometry || !region.location.geometry.coordinates) {
             return;
         }
-        var bounds = new google.maps.LatLngBounds(),
-        coords = region.location.geometry.coordinates,
+        this._regionBounds = new google.maps.LatLngBounds();
+        var coords = region.location.geometry.coordinates,
         googlePoint, paths = [], path = [];
         //Generate the ordered sequence of coordinates that completes the Polygon shape.
         for (var j = 0; j < coords.length; j++) {
@@ -130,7 +130,7 @@ Polymer({
                 googlePoint = new google.maps.LatLng(coords[j][k][1], coords[j][k][0]);
                 path.push(googlePoint);
                 //Extend our bounds object so we can pan the map later.
-                bounds.extend(googlePoint);
+                this._regionBounds.extend(googlePoint);
             }
             paths.push(path);
         }
@@ -141,8 +141,8 @@ Polymer({
             'editable': false
         });
         //Zoom on the newly drawn Region.
-        this._map.fitBounds(bounds);
-        this._map.panToBounds(bounds);
+        this._map.fitBounds(this._regionBounds);
+        this._map.panToBounds(this._regionBounds);
     },
 
     /**

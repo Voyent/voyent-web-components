@@ -162,7 +162,12 @@
          * Clears the map of all drawn entities.
          */
         clearMap: function() {
-            //Map already clear.
+            //Always re-zoom the bounds on the area's region if available.
+            if (this._regionBounds) {
+                this._map.fitBounds(this._regionBounds);
+                this._map.panToBounds(this._regionBounds);
+            }
+            //Map already clear, nothing else to do.
             if (!this._alertTemplateData) {
                 return;
             }
