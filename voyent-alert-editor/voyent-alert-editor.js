@@ -46,16 +46,15 @@ Polymer({
      */
     _onAfterLogin: function() {
         var _this = this;
-        //Fetch...
+        //Fetch the Alert Templates and the last locations of all Alerts
         var promises = [];
-        //..the Alert Templates...
         promises.push(this._fetchAlertTemplates());
-        //...the last locations of all Alerts...
         promises.push(this._executeAggregate(this._lastAlertLocations));
-        //...and the last locations for all Users.
-        promises.push(this._executeAggregate(this._lastUserLocations));
         Promise.all(promises).then(function() {
-            _this._addAlertButton(); //Add the Alert creation.
+            //Add the Alert button.
+            _this._addAlertButton();
+            //Convert the Alert locations into map entities.
+            _this._processAlertLocations();
         }).catch(function(error) {
             _this.fire('message-error', 'Issue initializing Alert Editor ' + error.responseText || error.message || error);
             console.error('Issue initializing Alert Editor', error.responseText || error.message || error);
@@ -71,15 +70,36 @@ Polymer({
         var _this = this;
         return new Promise(function (resolve, reject) {
             voyent.locate.getAllTrackers({realm:_this.realm,account:_this.account}).then(function(templates) {
+                //Maintain a list of parent templates.
                 _this._alertTemplates = templates.filter(function(alertTemplate) {
-                    //Don't show child Alert Templates.
                     return !alertTemplate.properties || !alertTemplate.properties.parentTrackerId;
                 });
+                //Maintain an id-mapped object of all templates, including child templates.
+                _this._alertTemplatesMap = templates.reduce(function(map,obj) {
+                    map[obj._id] = obj;
+                    return map;
+                },{});
                 resolve();
             }).catch(function (error) {
                 reject(error);
             });
         });
+    },
+
+    /**
+     * Combines the Alert location data with Alert template data to produce a map entity.
+     * @private
+     */
+    _processAlertLocations: function() {
+        for (var i=0; i<this._alertLocations.length; i++) {
+            var trackerId = this._alertLocations[i].location.properties ?
+                this._alertLocations[i].location.properties.trackerId : null;
+            if (!trackerId || !this._alertTemplatesMap[trackerId]) {
+                return;
+            }
+            var alert = JSON.parse(JSON.stringify(this._alertTemplatesMap[trackerId]));
+            alert.anchor.geometry.coordinates = this._alertLocations[i].location.geometry.coordinates;
+        }
     },
 
     /**
@@ -92,12 +112,7 @@ Polymer({
         var id = query._id;
         return new Promise(function (resolve, reject) {
             voyent.query.executeQuery({realm:_this.realm,id:id}).then(function(results) {
-                if (id === '_getLastUserLocations') {
-
-                }
-                else {
-
-                }
+                _this._alertLocations = results;
                 resolve();
             }).catch(function(error) {
                 var res = JSON.parse(error.response);
@@ -130,11 +145,6 @@ Polymer({
             });
         });
     },
-
-    /**
-     * Aggregate query for getting the last locations of all Users.
-     */
-    _lastUserLocations: {"_id":"_getLastUserLocations","query":[{"$match":{"_data.location.properties.trackerId":{"$exists":false}}},{"$sort":{"_data.lastUpdated":-1}},{"$group":{"_id":"$_data.username","username":{"$first":"$_data.username"},"location":{"$first":"$_data.location"},"lastUpdated":{"$first":"$_data.lastUpdated"}}},{"$project":{"_id":0,"location":1,"username":1,"lastUpdated":1}}],"properties":{"title":"Find Last User Locations","service":"locate","collection":"locations","type":"aggregate"}},
 
     /**
      * Aggregate query for getting the last locations of all Alerts.

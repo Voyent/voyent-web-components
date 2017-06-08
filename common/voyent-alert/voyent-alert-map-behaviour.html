@@ -208,12 +208,13 @@
                 zIndex: 50,
                 icon: this.nodeName === 'VOYENT-ALERT-EDITOR' ? this.pathtoimages+'/img/alert_marker.png' : null
             });
-            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+            if (!this._alertTemplateData) {
                 this._alertTemplateData = {"alertTemplate":alertTemplate,
                     "persistedAlertTemplate":JSON.parse(JSON.stringify(alertTemplate)),
                     "marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":true};
             }
-            else { //VOYENT-ALERT-EDITOR
+            else {
+                //Alert template data already initialized as a child template.
                 this._alertTemplateData.marker = marker;
             }
             //Add the tmpProperties to the Alert Template (used by the view).
