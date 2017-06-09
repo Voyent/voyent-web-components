@@ -188,7 +188,8 @@
                 authProvider.setAttribute("realm",_this.realm);
             }
             if(_this.showaccountinput){
-                authProvider.setAttribute("account",_this.account)
+                // Pre-process our account to a form understandable by the login
+                authProvider.setAttribute("account", this._getSafeDatabaseName(_this.account));
             }
             if(_this.showhostinput){
                 authProvider.setAttribute("host",_this.host)
@@ -201,6 +202,13 @@
                 _this.$$('#loginSpinner').active = false;
             });
             e.preventDefault();
+        },
+        
+        _getSafeDatabaseName: function(accountName) {
+            if (accountName && accountName.trim().length > 0) {
+                return accountName.split(' ').join('_').replace(/[\\\/\.\"]/g, '').substring(0, 63).toLowerCase();
+            }
+            return accountName;
         },
 
         /**
