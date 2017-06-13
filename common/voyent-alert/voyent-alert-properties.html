@@ -171,6 +171,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
             .title,
             .title-bttns {
                 display:inline-block;
+                cursor:pointer;
             }
             .title {
                 width:100%;
@@ -294,11 +295,13 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                          required label="Name" value="{{_customPropKey}}"
                                          data-index$="[[index]]" tabindex="1"
                                          on-keydown="_saveNewPropertyViaKeydown"
+                                         on-blur="_saveNewPropertyViaBlur"
                                          placeholder="The property name"
                                          disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                             <paper-input required label="Value" value="{{_customPropVal}}"
                                          data-index$="[[index]]" tabindex="2"
                                          on-keydown="_saveNewPropertyViaKeydown"
+                                         on-blur="_saveNewPropertyViaBlur"
                                          placeholder="The property value"
                                          disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                         </template>
@@ -310,6 +313,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                                      label="Editable"
                                                      data-index$="[[index]]"
                                                      on-keydown="_editPropertyViaKeydown"
+                                                     on-value-changed="_editPropertyOnChange"
                                                      value="{{_editableVal}}">
                                     <iron-selector class="dropdown-content"
                                                    selected="{{_editableVal}}"
@@ -326,6 +330,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                            tabindex="1"
                                            data-index$="[[index]]"
                                            on-keydown="_editPropertyViaKeydown"
+                                           on-blur="_editPropertyViaBlur"
                                            value="{{_colorVal::change}}">
                                 </div>
                             </template>
@@ -334,6 +339,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                 <paper-slider id$="opacity-[[index]]" min=0 max=1
                                               step=0.05 pin snaps tabindex="1"
                                               on-keydown="_editPropertyViaKeydown"
+                                              on-blur="_editPropertyViaBlur"
                                               data-index$="[[index]]" value="{{_opacityVal}}">
                                 </paper-slider>
                             </template>
@@ -343,11 +349,13 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                              required label="Name" value="{{_customPropKey}}"
                                              data-index$="[[index]]" tabindex="1"
                                              on-keydown="_editPropertyViaKeydown"
+                                             on-blur="_editPropertyViaBlur"
                                              placeholder="The property name"
                                              disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                                 <paper-input required label="Value" value="{{_customPropVal}}"
                                              data-index$="[[index]]" tabindex="2"
                                              on-keydown="_editPropertyViaKeydown"
+                                             on-blur="_editPropertyViaBlur"
                                              placeholder="The property value"
                                              disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                                 <div class="delete-button">

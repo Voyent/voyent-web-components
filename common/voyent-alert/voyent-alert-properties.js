@@ -30,9 +30,6 @@ Polymer({
             this.set('_alertTemplateData.alertTemplate.tmpProperties.newName',this.get('_alertTemplateData.alertTemplate.label'));
             //Focus on the input.
             setTimeout(function() {
-                //The blur event fires whenever calling focus() on paper-inputs so
-                //we'll use a flag to ignore the first blur event that is fired.
-                _this._justFocused = true;
                 _this.querySelector('#alertTemplate').focus();
             },0);
         }
@@ -62,14 +59,18 @@ Polymer({
      * @private
      */
     _renameAlertTemplateViaBlur: function(e) {
-        //A blur event is being fired every time we try to focus on the input so we check a flag so we can
-        //ignore the first invalid blur event. Additionally we'll check if we are renaming because if we are not then
-        //it means that focus was removed via the Enter or Esc key press and not just a regular blur.
-        if (this._justFocused || !this._alertTemplateData.alertTemplate.tmpProperties.renaming) {
-            this._justFocused = false;
-            return;
-        }
-        this._renameAlertTemplate();
+        var _this = this;
+        //Always execute this function async so we can correctly determine the activeElement.
+        setTimeout(function() {
+            //Check if we are focused on an iron-input because if we are it means focus is still on the input so we
+            //won't exit editing mode. Additionally we'll check if we are in editing mode because if we are not
+            //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
+            if (document.activeElement.getAttribute('is') === 'iron-input' ||
+                !_this._alertTemplateData.alertTemplate.tmpProperties.renaming) {
+                return;
+            }
+            _this._renameAlertTemplate();
+        },0);
     },
 
     /**
@@ -102,9 +103,6 @@ Polymer({
                 this._alertTemplateData.alertTemplate.zones.features[i].properties.zoneId);
             //Focus on the input.
             setTimeout(function() {
-                //The blur event fires whenever calling focus() on paper-inputs so
-                //we'll use a flag to ignore the first blur event that is fired.
-                _this._justFocused = true;
                 _this.querySelector('#zone-'+i).focus();
             },0);
         }
@@ -138,15 +136,18 @@ Polymer({
      * @private
      */
     _renameProximityZoneViaBlur: function(e) {
-        //A blur event is being fired every time we try to focus on the input so we check a flag so we can
-        //ignore the first invalid blur event. Additionally we'll check if we are renaming because if we are not then
-        //it means that focus was removed via the Enter or Esc key press and not just a regular blur.
-        if (this._justFocused ||
-            !this._alertTemplateData.alertTemplate.zones.features[e.model.get('index')].tmpProperties.renaming) {
-            this._justFocused = false;
-            return;
-        }
-        this._renameProximityZone(e);
+        var _this = this;
+        //Always execute this function async so we can correctly determine the activeElement.
+        setTimeout(function() {
+            //Check if we are focused on an iron-input because if we are it means focus is still on the input so we
+            //won't exit editing mode. Additionally we'll check if we are in editing mode because if we are not
+            //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
+            if (document.activeElement.getAttribute('is') === 'iron-input' ||
+                !_this._alertTemplateData.alertTemplate.zones.features[e.model.get('index')].tmpProperties.renaming) {
+                return;
+            }
+            _this._renameProximityZone(e);
+        },0);
     },
 
     /**
@@ -269,6 +270,27 @@ Polymer({
     },
 
     /**
+     * Confirms changes made to new properties when losing focus on the editing area.
+     * @param e
+     * @private
+     */
+    _saveNewPropertyViaBlur: function(e) {
+        var _this = this;
+        //Always execute this function async so we can correctly determine the activeElement.
+        setTimeout(function() {
+            //Check if we are focused on an iron-input because if we are it means focus is still on one of the new
+            //property fields so we won't exit editing mode. This allows them to tab between the two fields to make
+            //edits as much as they want. Additionally we'll check if we are in editing mode because if we are not
+            //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
+            if (document.activeElement.getAttribute('is') === 'iron-input' || !_this._addingNew) {
+                return;
+            }
+            _this._saveNewProperty(e);
+
+        },0);
+    },
+
+    /**
      * Saves a new custom property.
      * @param e
      * @private
@@ -361,9 +383,12 @@ Polymer({
                     var colorPicker = this.querySelector('#jsColor-'+index);
                     if (colorPicker) {
                         colorPicker.jscolor.hide();
+                        if (colorPicker.jscolor.toHEXString().slice(1) ===
+                            this._alertTemplateData.alertTemplate.zones.features[index].properties.Color) {
+                            //Redraw the overlay since the colour changed.
+                            this._redrawZoneOverlay(index);
+                        }
                     }
-                    //Redraw the overlay since the colour changed.
-                    this._redrawZoneOverlay(index);
             }
         }
     },
@@ -382,6 +407,40 @@ Polymer({
         else if (e.which === 27) { //Esc
             this._togglePropertyEditing(e);
         }
+    },
+
+    /**
+     * Confirms changes made to existing properties when losing focus on the editing area.
+     * @param e
+     * @private
+     */
+    _editPropertyViaBlur: function(e) {
+        var _this = this;
+        //Always execute this function async so we can correctly determine the activeElement.
+        setTimeout(function() {
+            //Check if we are focused on an iron-input or the delete button when editing custom properties because if we
+            //are it means focus is still in the editing area so we won't exit editing mode. This allows them to tab
+            //between the fields freely. Additionally we'll check if we are in editing mode because if we are not then
+            //it means that focus was removed via the Enter or Esc key press and not just a regular blur.
+            if ((_this._readOnlyProperties.indexOf(_this.selected) === -1 &&
+                (document.activeElement.getAttribute('is') === 'iron-input') ||
+                document.activeElement.getAttribute('icon') === 'delete') || !_this._editing) {
+                return;
+            }
+            _this._editProperty(e);
+        },0);
+    },
+
+    /**
+     * Confirms changes made to the Editable property whenever the value of the dropdown changes.
+     * @param e
+     * @private
+     */
+    _editPropertyOnChange: function(e) {
+        var newVal = e.detail.value;
+        var currentVal = this._alertTemplateData.circles[e.model.get('index')].getEditable() ? 'true' : 'false';
+        if (newVal === '' || newVal === currentVal) { return; }
+        this._editProperty(e);
     },
 
     /**
