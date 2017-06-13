@@ -30,6 +30,9 @@ Polymer({
             this.set('_alertTemplateData.alertTemplate.tmpProperties.newName',this.get('_alertTemplateData.alertTemplate.label'));
             //Focus on the input.
             setTimeout(function() {
+                //The blur event fires whenever calling focus() on paper-inputs so
+                //we'll use a flag to ignore the first blur event that is fired.
+                _this._justFocused = true;
                 _this.querySelector('#alertTemplate').focus();
             },0);
         }
@@ -51,6 +54,22 @@ Polymer({
         else if (e.which === 27) { //Esc
             this._toggleAlertTemplateRenaming();
         }
+    },
+
+    /**
+     * Confirms changes made to the Alert Template name when losing focus on the input.
+     * @param e
+     * @private
+     */
+    _renameAlertTemplateViaBlur: function(e) {
+        //A blur event is being fired every time we try to focus on the input so we check a flag so we can
+        //ignore the first invalid blur event. Additionally we'll check if we are renaming because if we are not then
+        //it means that focus was removed via the Enter or Esc key press and not just a regular blur.
+        if (this._justFocused || !this._alertTemplateData.alertTemplate.tmpProperties.renaming) {
+            this._justFocused = false;
+            return;
+        }
+        this._renameAlertTemplate();
     },
 
     /**
@@ -83,6 +102,9 @@ Polymer({
                 this._alertTemplateData.alertTemplate.zones.features[i].properties.zoneId);
             //Focus on the input.
             setTimeout(function() {
+                //The blur event fires whenever calling focus() on paper-inputs so
+                //we'll use a flag to ignore the first blur event that is fired.
+                _this._justFocused = true;
                 _this.querySelector('#zone-'+i).focus();
             },0);
         }
@@ -108,6 +130,23 @@ Polymer({
         else if (e.which === 27) { //Esc
             this._toggleProximityZoneRenaming(e);
         }
+    },
+
+    /**
+     * Confirms changes made to the Proximity Zone name when losing focus on the input.
+     * @param e
+     * @private
+     */
+    _renameProximityZoneViaBlur: function(e) {
+        //A blur event is being fired every time we try to focus on the input so we check a flag so we can
+        //ignore the first invalid blur event. Additionally we'll check if we are renaming because if we are not then
+        //it means that focus was removed via the Enter or Esc key press and not just a regular blur.
+        if (this._justFocused ||
+            !this._alertTemplateData.alertTemplate.zones.features[e.model.get('index')].tmpProperties.renaming) {
+            this._justFocused = false;
+            return;
+        }
+        this._renameProximityZone(e);
     },
 
     /**
@@ -537,5 +576,25 @@ Polymer({
      */
     _getAccordionClasses: function(section,active) {
         return active ? (section+' active') : section;
+    },
+
+    /**
+     * Returns the style classes for the accordion zone label.
+     * @param visible
+     * @returns {string}
+     * @private
+     */
+    _getZoneTitleClasses: function(visible) {
+        return visible ? 'title zone visible' : 'title zone';
+    },
+
+    /**
+     * Returns the arrow icon to use for each accordion.
+     * @param visible
+     * @returns {string}
+     * @private
+     */
+    _getArrowIcon: function(visible) {
+        return visible ? 'expand-more' : 'expand-less';
     }
 });

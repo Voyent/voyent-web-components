@@ -111,6 +111,9 @@ Internal component used to display the properties panel inside Voyent Alert comp
                 font-size: 13px;
                 text-align: center;
             }
+            .propertyCol {
+                padding: 8px 8px 8px 29px;
+            }
             .addCol {
                 width:100%;
                 padding: 0;
@@ -170,15 +173,18 @@ Internal component used to display the properties panel inside Voyent Alert comp
                 display:inline-block;
             }
             .title {
-                width:149px;
+                width:100%;
                 word-wrap:break-word;
             }
             .title.zone {
-                width:101px;
+                width: 149px;
                 font-size:14px;
             }
+            .title.zone.visible {
+                width:125px;
+            }
             .title-bttns {
-                width:45px;
+                width:20px;
             }
             .delete-button {
                 text-align:center;
@@ -189,11 +195,8 @@ Internal component used to display the properties panel inside Voyent Alert comp
             <div>
                 <template is="dom-if" if="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
                     <div class="alert-template-title">
-                        <div class="title">
+                        <div class="title" on-click="_toggleAlertTemplateRenaming">
                             [[_alertTemplateData.alertTemplate.label]]
-                        </div>
-                        <div class="title-bttns">
-                            <paper-icon-button raised icon="create" on-click="_toggleAlertTemplateRenaming"></paper-icon-button>
                         </div>
                     </div>
                 </template>
@@ -202,6 +205,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                  label="Alert Template"
                                  placeholder="New Value"
                                  on-keydown="_renameAlertTemplateViaKeydown"
+                                 on-blur="_renameAlertTemplateViaBlur"
                                  value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}"
                                  disabled$="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
                     </paper-input>
@@ -215,21 +219,15 @@ Internal component used to display the properties panel inside Voyent Alert comp
             </div>
             <div class="accordion">
                 <template is="dom-repeat" items="[[_alertTemplateData.alertTemplate.zones.features]]" as="zone">
-                    <div class$="{{_getAccordionClasses('header',zone.tmpProperties.visible)}}" on-click="_toggleAccordion">
+                    <div class$="{{_getAccordionClasses('header',zone.tmpProperties.visible)}}">
                         <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
-                            <template is="dom-if" if="[[zone.tmpProperties.visible]]">
-                                <paper-icon-button icon="expand-more"></paper-icon-button>
-                            </template>
-                            <template is="dom-if" if="[[!zone.tmpProperties.visible]]">
-                                <paper-icon-button icon="expand-less"></paper-icon-button>
-                            </template>
-                            <div class="title zone">
+                            <paper-icon-button icon="{{_getArrowIcon(zone.tmpProperties.visible)}}"
+                                               on-click="_toggleAccordion"></paper-icon-button>
+                            <div class="title zone" class$="{{_getZoneTitleClasses(zone.tmpProperties.visible)}}"
+                                 data-index$="[[index]]" on-click="_toggleProximityZoneRenaming">
                                 [[zone.properties.zoneId]]
                             </div>
-                            <div class="title-bttns">
-                                <paper-icon-button icon="create" data-index$="[[index]]"
-                                                   on-click="_toggleProximityZoneRenaming">
-                                </paper-icon-button>
+                            <div class="title-bttns" hidden="[[!zone.tmpProperties.visible]]">
                                 <paper-icon-button icon="delete" on-click="_removeProximityZone"
                                                    disabled="[[_hasOneZone]]" data-index$="[[index]]" >
                                 </paper-icon-button>
@@ -240,6 +238,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                          label="Zone"
                                          placeholder="New Value"
                                          on-keydown="_renameProximityZoneViaKeydown"
+                                         on-blur="_renameProximityZoneViaBlur"
                                          data-index$="[[index]]"
                                          value="{{zone.tmpProperties.newName::input}}"
                                          disabled$="[[!zone.tmpProperties.renaming]]">>
