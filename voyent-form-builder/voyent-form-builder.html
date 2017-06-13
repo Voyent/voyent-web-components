@@ -64,37 +64,61 @@
                left: 2%;
                opacity: 0;
            }
+           
+           .editWrap {
+               border: 2px inset #FFF845;
+               margin: -2px;
+           }
         </style>
         
         <div id="dropDelete"
              ondragover="allowDrop(event)" on-drop="dropToDelete" class="dropDelete">
             <iron-icon icon="delete" class="trashIcon"></iron-icon>Delete
         </div>
-        <paper-button raised on-click="addElement">Add Form Element</paper-button>
+        <paper-button raised on-click="clickAddElement">Add Form Element</paper-button>
         <br/>
         <i>You can drag and drop the <iron-icon icon="pan-tool"></iron-icon> icon to change order or remove elements.</i>
         
         <div id="mainForm" class="formWrap" ondragover="allowDrop(event)" on-drop="dropToReorder">
             <!-- Unfortunate table needed to align anything with a paper-input -->
             <table width="100%">
-                <template is="dom-repeat" items="{{value.form}}">
+                <template id="formElements" is="dom-repeat" items="{{value.form}}">
+                    <template is="dom-if" if="{{!isEqual(item.index, editIndex)}}">
+                        <tr height="45px">
+                            <td width="15%">
+                                <span class="dragSpan" draggable="true" ondragstart="drag(event)" data-item$="{{item}}"
+                                      title="Drag to change order or remove">
+                                    <iron-icon icon="pan-tool" class="dragSpan"
+                                               title="Drag to change order or remove"></iron-icon>
+                                </span>
+                                <iron-icon on-click="clickEditElement" icon="create" title="Edit this form element"
+                                           style="cursor: pointer;"
+                                           data-item$="{{item}}"></iron-icon>
+                            </td>
+                            <td width="85%">
+                                <voyent-form-field value="{{item}}"></voyent-form-field>
+                            </td>
+                        </tr>
+                    </template>
+                    <template is="dom-if" if="{{isEqual(item.index, editIndex)}}">
+                        <tr height="45px">
+                            <td width="15%">&nbsp;</td>
+                            <td width="85%">
+                                <div class="editWrap">
+                                    <voyent-form-field id="toAddField" value="{{toAdd}}"></voyent-form-field>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </template>
+                <template is="dom-if" if="{{isEqual(editIndex)}}">
                     <tr height="45px">
-                        <td>
-                            <span class="dragSpan" draggable="true" ondragstart="drag(event)" data-item$="{{item}}">
-                                <iron-icon icon="pan-tool" class="dragSpan"></iron-icon>
-                            </span>
-                        </td>
-                        <td>
-                            <voyent-form-field value="{{item}}"></voyent-form-field>
+                        <td width="15%">&nbsp;</td>
+                        <td width="85%">
+                            <voyent-form-field id="toAddField" value="{{toAdd}}"></voyent-form-field>
                         </td>
                     </tr>
                 </template>
-                <tr height="45px">
-                    <td width="10%">&nbsp;</td>
-                    <td width="90%">
-                        <voyent-form-field id="toAddField" value="{{toAdd}}"></voyent-form-field>
-                    </td>
-                </tr>
             </table>
         </div>
         
@@ -137,9 +161,9 @@
             </paper-dialog-scrollable>
             
             <center>
-                <paper-button raised on-click="addCancel">Cancel</paper-button>
-                <paper-button raised on-click="addReset">Reset</paper-button>
-                <paper-button raised on-click="addConfirm">Confirm Add</paper-button>
+                <paper-button raised on-click="clickAddCancel">Cancel</paper-button>
+                <paper-button raised on-click="clickAddReset">Reset</paper-button>
+                <paper-button raised on-click="clickAddConfirm">Confirm Add</paper-button>
             </center>
         </paper-dialog>
     </template>

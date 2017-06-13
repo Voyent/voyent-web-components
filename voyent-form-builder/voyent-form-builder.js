@@ -10,6 +10,7 @@ Polymer({
 
     properties: {
         toAdd: { type: Object, notify: true },
+        editIndex: { type: String },
         value: { type: Object, observer: '_valueChanged', reflectToAttribute: true, notify: true },
     },
     
@@ -30,21 +31,73 @@ Polymer({
 	updateIndexes: function() {
 	    if (this.value && this.value.form && this.value.form.length > 0) {
 	        for (var i = 0; i < this.value.form.length; i++) {
-	            this.value.form[i].index = "index" + i;
+	            this.set('value.form.' + i + '.index', "index" + i);
 	        }
+	        
+	        // Force update the page level loop
+	        // This ensures the underlying item in data-item is updated
+	        this.notifyPath('value');
+	        this.notifyPath('value.form');
+	        this.querySelector('#formElements').render();
 	    }
 	},
 	
-	addElement: function() {
+	clickAddElement: function() {
 	    this.addReset();
 	    
 	    this._openAddDialog();
 	},
 	
-	addCancel: function() {
+	clickEditElement: function(e) {
+        if (e && e.target && e.target.dataset) {
+            var item = e.target.dataset.item;
+            
+            if (item) {
+                this.set('toAdd', JSON.parse(item));
+                this.set('editIndex', this.toAdd.index);
+                
+                this._openAddDialog();
+            }
+        }
+	},
+	
+	clickAddCancel: function() {
 	    // Reset our form and close the dialog
 	    this.addClear();
 	    this._closeAddDialog();
+	},
+	
+	clickAddReset: function() {
+	    // Don't clear our instance, just reset the necessary variables
+	    // Specifically we don't reset the underlying index, nor the type
+	    this.set('toAdd.title', null);
+	    this.set('toAdd.description', null);
+	    this.set('toAdd.minlength', null);
+	    this.set('toAdd.maxlength', null);
+	    this.set('toAdd.required', false);
+	    this.notifyPath('toAdd');
+	},
+	
+	clickAddConfirm: function() {
+	    // Determine if we're editing or creating new
+	    if (this.editIndex) {
+            // Get the item that matches what we're editing, and change it in the list
+            for (var i = 0; i < this.value.form.length; i++) {
+                if (this.editIndex == this.value.form[i].index) {
+                    this.set('value.form.' + i, JSON.parse(JSON.stringify(this.toAdd)));
+                    break;
+                }
+            }
+	    }
+	    else {
+            // TODO Validate and add the new element
+            // Add a clone to our form details
+            this.push('value.form', JSON.parse(JSON.stringify(this.toAdd)));
+            this.updateIndexes();
+        }
+        
+        this.addClear();
+        this._closeAddDialog();
 	},
 	
 	addClear: function() {
@@ -53,7 +106,7 @@ Polymer({
 	},
 	
 	addReset: function() {
-	    this.toAdd = {
+	    this.set('toAdd', {
             index: null,
 	        title: null,
             type: ElementType.INPUTANY,
@@ -61,19 +114,10 @@ Polymer({
             minlength: null,
             maxlength: null,
             required: false
-	    };
+	    });
+	    this.set('editIndex', null);
 	    
 	    // TODO Reset the data backing the add form
-	},
-	
-	addConfirm: function() {
-	    // TODO Validate and add the new element
-	    // Add a clone to our form details
-	    this.push('value.form', JSON.parse(JSON.stringify(this.toAdd)));
-	    this.updateIndexes();
-	    
-	    this.addClear();
-	    this._closeAddDialog();
 	},
 	
     dropToDelete: function(e) {
