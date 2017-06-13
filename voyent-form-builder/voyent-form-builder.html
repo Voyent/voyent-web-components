@@ -1,0 +1,162 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/imports/voyent.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-dialog/paper-dialog.html">
+<link rel="import" href="../../paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../voyent-message/voyent-message.html">
+<link rel="import" href="./voyent-form-field.html">
+
+<dom-module id="voyent-form-builder">
+    <template>
+        <style type="text/css">
+            .formWrap {
+                transition: border 0.5s ease-in;
+                width: 50%;
+                padding: 10px;
+                border: 2px inset transparent;
+            }
+            
+            .dialogArrow {
+                border-style: solid;
+                border-width: 50px 90px 50px 0;
+                border-color: transparent rgb(248,248,248) transparent transparent;
+                position: fixed;
+                display: none;
+                filter: drop-shadow(0 0 10px rgba(0,0,0,0.35));
+            }
+            
+            .dialog {
+                margin: 0;
+                right: 2%;
+            }
+            
+            .shortIn {
+                margin-right: 5px;
+                float: left;
+            }
+            
+            .trashIcon {
+                width: 75px;
+                height: 75px;
+                color: #DD0000;
+            }
+            
+           .dragSpan {
+               cursor: grab;
+               cursor: -moz-grab;
+               cursor: -webkit-grab;
+           }
+           
+           .dropDelete {
+               transition: opacity 0.5s ease-in;
+               border: 2px inset #888888;
+               padding: 10px;
+               height: 100px;
+               width: 100px;
+               text-align: center;
+               vertical-align: middle;
+               position: fixed;
+               left: 2%;
+               opacity: 0;
+           }
+        </style>
+        
+        <div id="dropDelete"
+             ondragover="allowDrop(event)" on-drop="dropToDelete" class="dropDelete">
+            <iron-icon icon="delete" class="trashIcon"></iron-icon>Delete
+        </div>
+        <paper-button raised on-click="addElement">Add Form Element</paper-button>
+        <br/>
+        <i>You can drag and drop the <iron-icon icon="pan-tool"></iron-icon> icon to change order or remove elements.</i>
+        
+        <div id="mainForm" class="formWrap" ondragover="allowDrop(event)" on-drop="dropToReorder">
+            <!-- Unfortunate table needed to align anything with a paper-input -->
+            <table width="100%">
+                <template is="dom-repeat" items="{{value.form}}">
+                    <tr height="45px">
+                        <td>
+                            <span class="dragSpan" draggable="true" ondragstart="drag(event)" data-item$="{{item}}">
+                                <iron-icon icon="pan-tool" class="dragSpan"></iron-icon>
+                            </span>
+                        </td>
+                        <td>
+                            <voyent-form-field value="{{item}}"></voyent-form-field>
+                        </td>
+                    </tr>
+                </template>
+                <tr height="45px">
+                    <td width="10%">&nbsp;</td>
+                    <td width="90%">
+                        <voyent-form-field id="toAddField" value="{{toAdd}}"></voyent-form-field>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <div id="arrow" class="dialogArrow"></div>
+        <paper-dialog id="addDialog" class="dialog" no-cancel-on-outside-click>
+            <h2>Form Element</h2>
+            
+            <paper-dialog-scrollable>
+                <fieldset>
+                    <legend>Type</legend>
+                    <paper-radio-group selected="{{toAdd.type}}">
+                      <paper-radio-button name="inputAny"><paper-input disabled value="Any" size="8"></paper-input></paper-radio-button>
+                      <paper-radio-button name="inputLetters"><paper-input disabled value="Letters" size="8"></paper-input></paper-radio-button>
+                      <paper-radio-button name="inputNum"><paper-input disabled value="Numbers" size="8"></paper-input></paper-radio-button>
+                      <paper-radio-button name="checkbox"><paper-checkbox checked disabled></paper-checkbox></paper-radio-button>
+                    </paper-radio-group>
+                </fieldset>
+                <br/>
+                <fieldset>
+                    <legend>Details</legend>
+                    <paper-input label="Title" autofocus value="{{toAdd.title}}"></paper-input>
+                    
+                    <template is="dom-if" if="{{!isEqual(toAdd.type, 'checkbox')}}">
+                        <paper-input label="Description" value="{{toAdd.description}}"></paper-input>
+                    </template>
+                </fieldset>
+                <br/>
+                <template is="dom-if" if="{{!isEqual(toAdd.type, 'checkbox')}}">
+                    <fieldset>
+                        <legend>Length Restrictions</legend>
+                        <paper-input label="Min" size="5" class="shortIn" value="{{toAdd.minlength}}"></paper-input>
+                        <paper-input label="Max" size="5" class="shortIn" value="{{toAdd.maxlength}}"></paper-input>
+                    </fieldset>
+                    <br/>
+                </template>
+                <fieldset>
+                    <legend>Required?</legend>
+                    <paper-checkbox checked="{{toAdd.required}}">Will the user have to fill this field</paper-checkbox>
+                </fieldset>
+            </paper-dialog-scrollable>
+            
+            <center>
+                <paper-button raised on-click="addCancel">Cancel</paper-button>
+                <paper-button raised on-click="addReset">Reset</paper-button>
+                <paper-button raised on-click="addConfirm">Confirm Add</paper-button>
+            </center>
+        </paper-dialog>
+    </template>
+    
+    <script>
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+    
+    function drag(ev) {
+        if (ev && ev.srcElement && ev.srcElement.dataset && ev.srcElement.dataset.item) {
+            ev.dataTransfer.setData("item", ev.srcElement.dataset.item);
+            document.getElementById('mainForm').style.borderColor = "#888888";
+            document.getElementById('dropDelete').style.opacity = 1;
+        }
+    }
+    </script>
+</dom-module>
+
+<script src="voyent-form-builder.js"></script>

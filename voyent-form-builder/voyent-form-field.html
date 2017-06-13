@@ -1,0 +1,41 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/imports/voyent.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../voyent-message/voyent-message.html">
+
+<dom-module id="voyent-form-field">
+    <template>
+        <style type="text/css">
+        </style>
+        
+        <template is="dom-if" if="{{isEqual(value.type, 'inputAny')}}">
+            <paper-input minlength="{{value.minlength}}" maxlength="{{value.maxlength}}"
+                         placeholder="{{value.description}}"
+                         label="{{value.title}}"
+                         required="{{value.required}}"></paper-input>
+        </template>
+        <template is="dom-if" if="{{isEqual(value.type, 'inputLetters')}}">
+            <!-- TODO Mask to only allow letter input -->
+            <paper-input minlength="{{value.minlength}}" maxlength="{{value.maxlength}}"
+                         placeholder="{{value.description}}"
+                         label="{{value.title}}"
+                         required="{{value.required}}"></paper-input>
+        </template>
+        <template is="dom-if" if="{{isEqual(value.type, 'inputNum')}}">
+            <!-- TODO Mask to only allow number input -->
+            <paper-input minlength="{{value.minlength}}" maxlength="{{value.maxlength}}"
+                         placeholder="{{value.description}}"
+                         label="{{value.title}}"
+                         required="{{value.required}}"></paper-input>
+        </template>
+        <template is="dom-if" if="{{isEqual(value.type, 'checkbox')}}">
+            <paper-checkbox required="{{value.required}}">{{value.title}}</paper-checkbox>
+        </template>
+        
+    </template>
+</dom-module>
+
+<script src="voyent-form-field.js"></script>
