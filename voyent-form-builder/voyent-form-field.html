@@ -36,6 +36,9 @@
         <template is="dom-if" if="{{isEqual(value.type, 'checkbox')}}">
             <paper-checkbox required="{{value.required}}">{{value.title}}</paper-checkbox>
         </template>
+        <template is="dom-if" if="{{isEqual(value.type, 'text')}}">
+            {{value.title}}
+        </template>
         
     </template>
 </dom-module>

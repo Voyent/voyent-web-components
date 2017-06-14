@@ -47,6 +47,17 @@
                 color: #DD0000;
             }
             
+            .smallIcon {
+                cursor: pointer;
+                width: 17px;
+                height: 17px;
+            }
+            
+            .iconPanel {
+                /* Icon width+3 multiplied by the number of icons per row */
+                width: calc((17px + 3px) * 3);
+            }
+            
            .dragSpan {
                cursor: grab;
                cursor: -moz-grab;
@@ -81,28 +92,31 @@
         </div>
         <paper-button raised on-click="clickAddElement">Add Form Element</paper-button>
         <br/>
-        <i>You can drag and drop the <iron-icon icon="pan-tool"></iron-icon> icon to change order or remove elements.</i>
+        <i>You can drag and drop the <iron-icon icon="pan-tool" class="smallIcon" style="cursor: default;"></iron-icon> icon to change order or remove elements.</i>
         
         <div id="mainForm" class="formWrap" ondragover="allowDrop(event)" on-drop="dropToReorder">
             <!-- Unfortunate table needed to align anything with a paper-input -->
-            <table width="100%">
+            <table width="100%" cellpadding="0" cellspacing="0">
                 <template id="formElements" is="dom-repeat" items="{{value.form}}">
                     <template is="dom-if" if="{{!isEqual(item.index, editIndex)}}">
                         <tr height="45px" id$="element{{item.index}}">
-                            <td width="120px">
+                            <td class="iconPanel">
                                 <span class="dragSpan" draggable="true" ondragstart="drag(event)" data-item$="{{item}}"
                                       title="Drag to change order or remove">
-                                    <iron-icon icon="pan-tool" class="dragSpan"
+                                    <iron-icon icon="pan-tool" class="smallIcon dragSpan"
                                                title="Drag to change order or remove"></iron-icon>
                                 </span>
+                                <iron-icon on-click="clickEditElement" icon="create" title="Edit this form element"
+                                           class="smallIcon"
+                                           data-item$="{{item}}"></iron-icon>
+                                <iron-icon on-click="clickDeleteElement" icon="delete" title="Delete this form element"
+                                           class="smallIcon"
+                                           data-item$="{{item}}"></iron-icon>
                                 <iron-icon on-click="clickMoveUp" icon="arrow-upward" title="Move form element up"
-                                           style="cursor: pointer;"
+                                           class="smallIcon"
                                            data-item$="{{item}}"></iron-icon>
                                 <iron-icon on-click="clickMoveDown" icon="arrow-downward" title="Move form element down"
-                                           style="cursor: pointer;"
-                                           data-item$="{{item}}"></iron-icon>
-                                <iron-icon on-click="clickEditElement" icon="create" title="Edit this form element"
-                                           style="cursor: pointer;"
+                                           class="smallIcon"
                                            data-item$="{{item}}"></iron-icon>
                             </td>
                             <td>
@@ -112,7 +126,7 @@
                     </template>
                     <template is="dom-if" if="{{isEqual(item.index, editIndex)}}">
                         <tr height="45px">
-                            <td width="120px">&nbsp;</td>
+                            <td class="iconPanel">&nbsp;</td>
                             <td>
                                 <div class="editWrap">
                                     <voyent-form-field id="toAddField" value="{{toAdd}}"></voyent-form-field>
@@ -123,7 +137,7 @@
                 </template>
                 <template is="dom-if" if="{{isEqual(editIndex)}}">
                     <tr height="45px">
-                        <td width="120px">&nbsp;</td>
+                        <td class="iconPanel">&nbsp;</td>
                         <td>
                             <voyent-form-field id="toAddField" value="{{toAdd}}"></voyent-form-field>
                         </td>
@@ -144,6 +158,7 @@
                       <paper-radio-button name="inputLetters"><paper-input disabled value="Letters" size="8"></paper-input></paper-radio-button>
                       <paper-radio-button name="inputNum"><paper-input disabled value="Numbers" size="8"></paper-input></paper-radio-button>
                       <paper-radio-button name="checkbox"><paper-checkbox checked disabled></paper-checkbox></paper-radio-button>
+                      <paper-radio-button name="text">Text</paper-radio-button>
                     </paper-radio-group>
                 </fieldset>
                 <br/>
@@ -152,22 +167,26 @@
                     <paper-input label="Title" autofocus value="{{toAdd.title}}"></paper-input>
                     
                     <template is="dom-if" if="{{!isEqual(toAdd.type, 'checkbox')}}">
+                    <template is="dom-if" if="{{!isEqual(toAdd.type, 'text')}}">
                         <paper-input label="Description" value="{{toAdd.description}}"></paper-input>
+                    </template>
                     </template>
                 </fieldset>
                 <br/>
                 <template is="dom-if" if="{{!isEqual(toAdd.type, 'checkbox')}}">
+                <template is="dom-if" if="{{!isEqual(toAdd.type, 'text')}}">
                     <fieldset>
                         <legend>Length Restrictions</legend>
                         <paper-input label="Min" size="5" class="shortIn" value="{{toAdd.minlength}}"></paper-input>
                         <paper-input label="Max" size="5" class="shortIn" value="{{toAdd.maxlength}}"></paper-input>
                     </fieldset>
                     <br/>
-                </template>
                 <fieldset>
                     <legend>Required?</legend>
                     <paper-checkbox checked="{{toAdd.required}}">Will the user have to fill this field</paper-checkbox>
                 </fieldset>
+                </template>
+                </template>
             </paper-dialog-scrollable>
             
             <center>

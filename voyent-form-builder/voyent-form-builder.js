@@ -2,7 +2,8 @@ var ElementType = {
     INPUTANY: "inputAny",
     INPUTLETTERS: "inputLetters",
     INPUTNUM: "inputNum",
-    CHECKBOX: "checkbox"
+    CHECKBOX: "checkbox",
+    TEXT: "text"
 };
 
 Polymer({
@@ -75,6 +76,26 @@ Polymer({
                 this.set('editIndex', this.toAdd.index);
                 
                 this._openAddDialog();
+            }
+        }
+	},
+	
+	clickDeleteElement: function(e) {
+        if (e && e.target && e.target.dataset) {
+            var item = e.target.dataset.item;
+            
+            if (item) {
+                this._deleteGeneric(JSON.parse(item));
+            }
+        }
+	},
+	
+	_deleteGeneric: function(item) {
+        for (var i = 0; i < this.value.form.length; i++) {
+            if (item.index === this.value.form[i].index) {
+                this.splice('value.form', i, 1);
+                this.updateIndexes();
+                break;
             }
         }
 	},
@@ -177,14 +198,7 @@ Polymer({
             var item = e.dataTransfer.getData("item");
             
             if (item) {
-                item = JSON.parse(item);
-                for (var i = 0; i < this.value.form.length; i++) {
-                    if (item.index === this.value.form[i].index) {
-                        this.splice('value.form', i, 1);
-                        this.updateIndexes();
-                        break;
-                    }
-                }
+                this._deleteGeneric(JSON.parse(item));
             }
         }
         
