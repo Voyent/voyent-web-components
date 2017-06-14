@@ -8,6 +8,7 @@
 <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../../iron-a11y-keys/iron-a11y-keys.html">
 <link rel="import" href="../voyent-message/voyent-message.html">
 <link rel="import" href="./voyent-form-field.html">
 
@@ -71,6 +72,9 @@
            }
         </style>
         
+        <iron-a11y-keys id="a11y" keys="enter"
+                        on-keys-pressed="onEnterKey"></iron-a11y-keys>
+        
         <div id="dropDelete"
              ondragover="allowDrop(event)" on-drop="dropToDelete" class="dropDelete">
             <iron-icon icon="delete" class="trashIcon"></iron-icon>Delete
@@ -84,26 +88,32 @@
             <table width="100%">
                 <template id="formElements" is="dom-repeat" items="{{value.form}}">
                     <template is="dom-if" if="{{!isEqual(item.index, editIndex)}}">
-                        <tr height="45px">
-                            <td width="15%">
+                        <tr height="45px" id$="element{{item.index}}">
+                            <td width="120px">
                                 <span class="dragSpan" draggable="true" ondragstart="drag(event)" data-item$="{{item}}"
                                       title="Drag to change order or remove">
                                     <iron-icon icon="pan-tool" class="dragSpan"
                                                title="Drag to change order or remove"></iron-icon>
                                 </span>
+                                <iron-icon on-click="clickMoveUp" icon="arrow-upward" title="Move form element up"
+                                           style="cursor: pointer;"
+                                           data-item$="{{item}}"></iron-icon>
+                                <iron-icon on-click="clickMoveDown" icon="arrow-downward" title="Move form element down"
+                                           style="cursor: pointer;"
+                                           data-item$="{{item}}"></iron-icon>
                                 <iron-icon on-click="clickEditElement" icon="create" title="Edit this form element"
                                            style="cursor: pointer;"
                                            data-item$="{{item}}"></iron-icon>
                             </td>
-                            <td width="85%">
+                            <td>
                                 <voyent-form-field value="{{item}}"></voyent-form-field>
                             </td>
                         </tr>
                     </template>
                     <template is="dom-if" if="{{isEqual(item.index, editIndex)}}">
                         <tr height="45px">
-                            <td width="15%">&nbsp;</td>
-                            <td width="85%">
+                            <td width="120px">&nbsp;</td>
+                            <td>
                                 <div class="editWrap">
                                     <voyent-form-field id="toAddField" value="{{toAdd}}"></voyent-form-field>
                                 </div>
@@ -113,8 +123,8 @@
                 </template>
                 <template is="dom-if" if="{{isEqual(editIndex)}}">
                     <tr height="45px">
-                        <td width="15%">&nbsp;</td>
-                        <td width="85%">
+                        <td width="120px">&nbsp;</td>
+                        <td>
                             <voyent-form-field id="toAddField" value="{{toAdd}}"></voyent-form-field>
                         </td>
                     </tr>
@@ -123,7 +133,7 @@
         </div>
         
         <div id="arrow" class="dialogArrow"></div>
-        <paper-dialog id="addDialog" class="dialog" no-cancel-on-outside-click>
+        <paper-dialog id="addDialog" class="dialog" no-cancel-on-outside-click no-cancel-on-esc-key>
             <h2>Form Element</h2>
             
             <paper-dialog-scrollable>
@@ -163,7 +173,7 @@
             <center>
                 <paper-button raised on-click="clickAddCancel">Cancel</paper-button>
                 <paper-button raised on-click="clickAddReset">Reset</paper-button>
-                <paper-button raised on-click="clickAddConfirm">Confirm Add</paper-button>
+                <paper-button raised on-click="clickAddConfirm" id="confirmButton">Confirm Add</paper-button>
             </center>
         </paper-dialog>
     </template>

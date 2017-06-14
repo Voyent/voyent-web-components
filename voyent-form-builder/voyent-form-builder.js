@@ -12,6 +12,10 @@ Polymer({
         toAdd: { type: Object, notify: true },
         editIndex: { type: String },
         value: { type: Object, observer: '_valueChanged', reflectToAttribute: true, notify: true },
+        /**
+         * Disable the Enter key automatically submitting the form element dialog
+         */
+        disableenterkey: { type: Boolean, value: false },
     },
     
     /**
@@ -42,6 +46,20 @@ Polymer({
 	    }
 	},
 	
+    onEnterKey: function() {
+        if (!this.disableenterkey) {
+            // Only bother if our dialog exists and is actually shown
+            var addDialog = this.querySelector('#addDialog');
+            if (addDialog && addDialog.style.display !== 'none') {
+                // Grab our button and sim click it
+                var confirmButton = this.querySelector('#confirmButton');
+                if (confirmButton) {
+                    confirmButton.click();
+                }
+            }
+        }
+    },
+	
 	clickAddElement: function() {
 	    this.addReset();
 	    
@@ -57,6 +75,40 @@ Polymer({
                 this.set('editIndex', this.toAdd.index);
                 
                 this._openAddDialog();
+            }
+        }
+	},
+	
+	clickMoveUp: function(e) {
+	    this._moveGeneric(e, -1);
+	},
+	
+	clickMoveDown: function(e) {
+	    this._moveGeneric(e, 1);
+	},
+	
+	_moveGeneric: function(e, indexChange) {
+        // Only bother dropping to reorder if we actually have multiple elements
+        if (this.value.form.length < 2) {
+            this._clearDropAreas();
+            return;
+        }
+	    
+        if (e && e.target && e.target.dataset) {
+            var item = e.target.dataset.item;
+            
+            if (item) {
+                item = JSON.parse(item);
+                
+                // Check our item index
+                // Determine if we are trying an invalid move, like up when already at the top
+                var itemIndex = new Number(item.index.substring('index'.length));
+                var desiredIndex = (itemIndex + indexChange);
+                if (desiredIndex >= 0 && desiredIndex < this.value.form.length) {
+                    this.splice('value.form', itemIndex, 1);
+                    this.splice('value.form', desiredIndex, 0, item);
+                    this.updateIndexes();
+                }
             }
         }
 	},
@@ -140,15 +192,82 @@ Polymer({
     },
     
     dropToReorder: function(e) {
+        // Only bother dropping to reorder if we actually have multiple elements
+        if (this.value.form.length < 2) {
+            this._clearDropAreas();
+            return;
+        }
+        
         if (e && e.dataTransfer) {
             var item = e.dataTransfer.getData("item");
             
             if (item) {
-                // TODO Figure out where the item was dropped in relation to the list, and reorder
+                // JSONify
+                item = JSON.parse(item);
+                
+                // Figure out the absolute Y position of where we dropped, including scrollbars
+                var compareTop = this._calculateScrollbarPos(e.target.parentNode);
+                var dropY = e.clientY + compareTop;
+                
+                // Loop through our other elements, check their Y position, and determine where we should move
+                var insertIndex;
+                var currentElement;
+                for (var i = 0; i < this.value.form.length; i++) {
+                    currentElement = this.querySelector('#elementindex' + i);
+                    if (currentElement) {
+                        var currentElementPos = currentElement.getBoundingClientRect().top + compareTop;
+                        if (dropY > currentElementPos) {
+                            insertIndex = currentElement.id.substring('elementindex'.length);
+                        }
+                        else {
+                            if (i === 0) {
+                                insertIndex = 0;
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                // If we have an insertIndex then move the element
+                if (typeof insertIndex !== 'undefined' && insertIndex < this.value.form.length) {
+                    // Check if our actual position has changed
+                    var ourIndex = item.index.substring('index'.length);
+                    if (insertIndex != ourIndex) {
+                        this.splice('value.form', ourIndex, 1);
+                        this.splice('value.form', insertIndex, 0, item);
+                        this.updateIndexes();
+                    }
+                }
             }
         }
         
         this._clearDropAreas();
+    },
+    
+    /**
+     * Return the current vertical position of the scroll bar.
+     * @param parent
+     * @returns {number}
+     * @private
+     */
+    _calculateScrollbarPos: function(parent) {
+        // Normally we can just use the document "scrollTop" (via a few browser compatible ways)
+        // But there is a chance our component will be used inside a scrollable container
+        // In that case we need to get the scrollTop of any valid parent container
+        // So basically if we can't get the scrollTop a normal way, we reverse traverse the
+        // parent nodes until we find a valid scrollTop, or hit the top of the document (when parentNode = null)
+        var position = (document.documentElement.scrollTop || document.body.scrollTop);
+        if (position <= 0) {
+            var currentNode = parent;
+            while (currentNode !== null) {
+                if (currentNode.scrollTop > 0) {
+                    position = currentNode.scrollTop;
+                    break;
+                }
+                currentNode = currentNode.parentNode;
+            }
+        }
+        return position;
     },
 	
 	_openAddDialog: function() {
