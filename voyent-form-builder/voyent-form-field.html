@@ -15,7 +15,8 @@
             <paper-input minlength="{{value.minlength}}" maxlength="{{value.maxlength}}"
                          placeholder="{{value.description}}"
                          label="{{value.title}}"
-                         required="{{value.required}}"></paper-input>
+                         required="{{value.required}}"
+                         value="{{value.value}}"></paper-input>
         </template>
         <template is="dom-if" if="{{isEqual(value.type, 'inputLetters')}}">
             <!-- TODO Mask to only allow letter input -->
@@ -23,7 +24,8 @@
                          placeholder="{{value.description}}"
                          label="{{value.title}}"
                          auto-validate allowed-pattern="[a-zA-Z]"
-                         required="{{value.required}}"></paper-input>
+                         required="{{value.required}}"
+                         value="{{value.value}}"></paper-input>
         </template>
         <template is="dom-if" if="{{isEqual(value.type, 'inputNum')}}">
             <!-- TODO Mask to only allow number input -->
@@ -31,10 +33,11 @@
                          placeholder="{{value.description}}"
                          label="{{value.title}}"
                          type="number"
-                         required="{{value.required}}"></paper-input>
+                         required="{{value.required}}"
+                         value="{{value.value}}"></paper-input>
         </template>
         <template is="dom-if" if="{{isEqual(value.type, 'checkbox')}}">
-            <paper-checkbox required="{{value.required}}">{{value.title}}</paper-checkbox>
+            <paper-checkbox required="{{value.required}}" checked="{{value.value}}">{{value.title}}</paper-checkbox>
         </template>
         <template is="dom-if" if="{{isEqual(value.type, 'text')}}">
             {{value.title}}
