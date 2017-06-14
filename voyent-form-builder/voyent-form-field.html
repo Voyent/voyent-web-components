@@ -19,7 +19,6 @@
                          value="{{value.value}}"></paper-input>
         </template>
         <template is="dom-if" if="{{isEqual(value.type, 'inputLetters')}}">
-            <!-- TODO Mask to only allow letter input -->
             <paper-input minlength="{{value.minlength}}" maxlength="{{value.maxlength}}"
                          placeholder="{{value.description}}"
                          label="{{value.title}}"
@@ -28,7 +27,6 @@
                          value="{{value.value}}"></paper-input>
         </template>
         <template is="dom-if" if="{{isEqual(value.type, 'inputNum')}}">
-            <!-- TODO Mask to only allow number input -->
             <paper-input minlength="{{value.minlength}}" maxlength="{{value.maxlength}}"
                          placeholder="{{value.description}}"
                          label="{{value.title}}"

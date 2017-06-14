@@ -72,8 +72,7 @@
                width: 100px;
                text-align: center;
                vertical-align: middle;
-               position: fixed;
-               left: 2%;
+               float: right;
                opacity: 0;
            }
            
@@ -86,11 +85,11 @@
         <iron-a11y-keys id="a11y" keys="enter"
                         on-keys-pressed="onEnterKey"></iron-a11y-keys>
         
+        <paper-button raised on-click="clickAddElement">Add Form Element</paper-button>
         <div id="dropDelete"
              ondragover="allowDrop(event)" on-drop="dropToDelete" class="dropDelete">
             <iron-icon icon="delete" class="trashIcon"></iron-icon>Delete
         </div>
-        <paper-button raised on-click="clickAddElement">Add Form Element</paper-button>
         <br/>
         <i>You can drag and drop the <iron-icon icon="pan-tool" class="smallIcon" style="cursor: default;"></iron-icon> icon to change order or remove elements.</i>
         

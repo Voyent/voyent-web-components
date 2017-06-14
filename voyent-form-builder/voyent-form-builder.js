@@ -12,7 +12,7 @@ Polymer({
     properties: {
         toAdd: { type: Object, notify: true },
         editIndex: { type: String },
-        value: { type: Object, observer: '_valueChanged', reflectToAttribute: true, notify: true },
+        value: { type: Object, reflectToAttribute: true, notify: true },
         /**
          * Disable the Enter key automatically submitting the form element dialog
          */
@@ -163,7 +163,7 @@ Polymer({
             }
 	    }
 	    else {
-            // TODO Validate and add the new element
+            // TODO Validate before adding the new element
             // Add a clone to our form details
             this.push('value.form', JSON.parse(JSON.stringify(this.toAdd)));
             this.updateIndexes();
@@ -189,8 +189,6 @@ Polymer({
             required: false
 	    });
 	    this.set('editIndex', null);
-	    
-	    // TODO Reset the data backing the add form
 	},
 	
     dropToDelete: function(e) {
@@ -331,10 +329,6 @@ Polymer({
 	    // May seem like magic numbers, but the 45 here is half the height, and the left positioning is width-1
         arrow.style.top = parseInt(computedStyle.top) + (parseInt(computedStyle.height)/2) - 45 + "px";
         arrow.style.left = parseInt(computedStyle.left) - 89 + "px";
-	},
-	
-	_valueChanged: function(e) {
-	    // TODO Something here
 	},
 	
     isEqual: function(a, b) {
