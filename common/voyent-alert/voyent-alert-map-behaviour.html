@@ -118,6 +118,9 @@
          * @param alertTemplateData - Optional
          */
         saveAlertTemplate: function (alertTemplateData) {
+            //Use this flag to avoid race conditions if the user mashes the "Activate Now" and "Back" buttons.
+            if (this._savingAlert) { return; }
+            this._savingAlert = true;
             if (this._loadedAlertTemplateData) {
                 alertTemplateData = this._loadedAlertTemplateData;
             }
@@ -136,6 +139,7 @@
                 tracker: alertTemplate,
                 id: alertTemplate._id //Not valid if 'createTracker' but no harm in passing it anyway.
             }).then(function (uri) {
+                _this._savingAlert = false;
                 if (func === 'createTracker') {
                     //Grab the generated ID from the return URI and setup change listeners
                     _this.set('_loadedAlertTemplateData.alertTemplate._id',uri ? uri.split('/').pop() : alertTemplateData.alertTemplate._id);
@@ -152,6 +156,7 @@
                 //Fire an event for anyone interested.
                 _this.fire('voyent-alert-template-saved',{});
             }).catch(function (error) {
+                _this._savingAlert = false;
                 if (func === 'createTracker') {
                     //If the initial creation fails then remove it from the map.
                     alertTemplateData.marker.setMap(null);
