@@ -316,7 +316,7 @@
             }
             //Set the alertTemplateData or alerts array depending on what we are drawing
             if (alertLocation) {
-                this._alerts.push(alertTemplateData);
+                this.push('_alerts',alertTemplateData);
                 //Update the template coordinates to correctly calculate the positions of the labels.
                 this._updateAlertTemplateJSON(alertTemplateData);
                 //Add the change listeners to the marker and circles.

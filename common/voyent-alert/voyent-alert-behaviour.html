@@ -160,9 +160,8 @@
                 //Always update our stored instance location.
                 _this.set('_loadedAlertTemplateData.alertInstance',location);
                 if (activatingAlert) {
-                    //Update our list of Alerts and o.
-                    _this._alerts.push(alertTemplateData);
-                    //Keep the overlay alert index in sync.
+                    //Update our list of Alerts and keep the overlay alert index in sync.
+                    _this.push('_alerts',alertTemplateData);
                     for (var i = 0; i < alertTemplateData.zoneOverlays.length; i++) {
                         alertTemplateData.zoneOverlays[i].setAlertIndex(_this._alerts.length - 1);
                     }
