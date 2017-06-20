@@ -6,11 +6,15 @@ Polymer({
         /**
          * Contains references to all necessary data associated with maintaining an Alert Template on the map.
          */
-        _alertTemplateData: { type: Object, value: null, notify: true }
+        _loadedAlertTemplateData: { type: Object, value: null, notify: true },
+        /**
+         * Contains the list of alert template instance data.
+         */
+        _alerts: { type: Array, value: null, notify: true }
     },
 
     observers: [
-        '_featuresChanged(_alertTemplateData.alertTemplate.zones.features.length)'
+        '_featuresChanged(_loadedAlertTemplateData.alertTemplate.zones.features.length)'
     ],
 
     ready: function() {
@@ -24,17 +28,17 @@ Polymer({
      */
     _toggleAlertTemplateRenaming: function() {
         var _this = this;
-        var renaming = !this.get('_alertTemplateData.alertTemplate.tmpProperties.renaming');
+        var renaming = !this.get('_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming');
         if (renaming) {
             //Set the input value to the current zoneId.
-            this.set('_alertTemplateData.alertTemplate.tmpProperties.newName',this.get('_alertTemplateData.alertTemplate.label'));
+            this.set('_loadedAlertTemplateData.alertTemplate.tmpProperties.newName',this.get('_loadedAlertTemplateData.alertTemplate.label'));
             //Focus on the input.
             setTimeout(function() {
                 _this.querySelector('#alertTemplate').focus();
             },0);
         }
         //Toggle renaming mode.
-        this.set('_alertTemplateData.alertTemplate.tmpProperties.renaming',renaming);
+        this.set('_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming',renaming);
     },
 
     /**
@@ -66,7 +70,7 @@ Polymer({
             //won't exit editing mode. Additionally we'll check if we are in editing mode because if we are not
             //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
             if (document.activeElement.getAttribute('is') === 'iron-input' ||
-                !_this._alertTemplateData.alertTemplate.tmpProperties.renaming) {
+                !_this._loadedAlertTemplateData.alertTemplate.tmpProperties.renaming) {
                 return;
             }
             _this._renameAlertTemplate();
@@ -79,8 +83,8 @@ Polymer({
      */
     _renameAlertTemplate: function() {
         //Set the new label and reset the editing mode input state.
-        this.set('_alertTemplateData.alertTemplate.label',this.get('_alertTemplateData.alertTemplate.tmpProperties.newName'));
-        this.set('_alertTemplateData.alertTemplate.tmpProperties.newName','');
+        this.set('_loadedAlertTemplateData.alertTemplate.label',this.get('_loadedAlertTemplateData.alertTemplate.tmpProperties.newName'));
+        this.set('_loadedAlertTemplateData.alertTemplate.tmpProperties.newName','');
         //Toggle renaming mode.
         this._toggleAlertTemplateRenaming();
     },
@@ -96,11 +100,11 @@ Polymer({
         var _this = this;
         //This function will either be passed an event (from the ui) or a direct index (from the JS).
         var i = eOrI.model ? eOrI.model.get('index') : eOrI;
-        var renaming = !this.get('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.renaming');
+        var renaming = !this.get('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.renaming');
         if (renaming) {
             //Set the input value to the current zoneId.
-            this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName',
-                this._alertTemplateData.alertTemplate.zones.features[i].properties.zoneId);
+            this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName',
+                this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.zoneId);
             //Focus on the input.
             setTimeout(function() {
                 _this.querySelector('#zone-'+i).focus();
@@ -108,10 +112,10 @@ Polymer({
         }
         else {
             //Always reset the input value so it updates each time editing mode is entered
-            this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName','');
+            this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName','');
         }
         //Toggle renaming mode.
-        this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.renaming',renaming);
+        this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.renaming',renaming);
     },
 
     /**
@@ -143,7 +147,7 @@ Polymer({
             //won't exit editing mode. Additionally we'll check if we are in editing mode because if we are not
             //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
             if (document.activeElement.getAttribute('is') === 'iron-input' ||
-                !_this._alertTemplateData.alertTemplate.zones.features[e.model.get('index')].tmpProperties.renaming) {
+                !_this._loadedAlertTemplateData.alertTemplate.zones.features[e.model.get('index')].tmpProperties.renaming) {
                 return;
             }
             _this._renameProximityZone(e);
@@ -158,13 +162,13 @@ Polymer({
     _renameProximityZone: function(e) {
         var i = e.model.get('index');
         //Set the new zoneId and reset the editing mode input state.
-        this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.properties.zoneId',
-            this.get('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName'));
-        this.set('_alertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName','');
+        this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.properties.zoneId',
+            this.get('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName'));
+        this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName','');
         //Toggle renaming mode.
         this._toggleProximityZoneRenaming(i);
         //Redraw the overlay since the content changed.
-        this._redrawZoneOverlay(i);
+        this._redrawZoneOverlay(this._loadedAlertTemplateData,i);
     },
 
     /**
@@ -175,12 +179,12 @@ Polymer({
         var smallestIndex = 50, //50 because the highest index ever is 49
             largestRadius = 0; //0 because every zone will be bigger
         //Get the size of largest circle and our smallest zIndex so we can determine what values to set for the new one
-        for (var i=0; i<this._alertTemplateData.circles.length; i++) {
-            if (this._alertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.radius >= largestRadius) {
-                largestRadius = this._alertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.radius;
+        for (var i=0; i<this._loadedAlertTemplateData.circles.length; i++) {
+            if (this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.radius >= largestRadius) {
+                largestRadius = this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.radius;
             }
-            if (this._alertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.zIndex <= smallestIndex){
-                smallestIndex = this._alertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.zIndex;
+            if (this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.zIndex <= smallestIndex){
+                smallestIndex = this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.zIndex;
             }
         }
         //Set the new zone radius as 50% larger than the current largest zone.
@@ -194,20 +198,19 @@ Polymer({
         props.zIndex = smallestIndex;
         //Create the google maps circle and bind it to the marker.
         var newCircle = new google.maps.Circle(props);
-        newCircle.bindTo('center', this._alertTemplateData.marker, 'position');
+        newCircle.bindTo('center', this._loadedAlertTemplateData.marker, 'position');
 
         //Build the geoJSON structure for the proximity zone.
         var newCircleJSON = this._getZoneJSON();
-        newCircleJSON.properties.zoneId = 'Zone_' + (this._alertTemplateData.alertTemplate.zones.features.length + 1);
-        //Update our lists.
-        this.push('_alertTemplateData.alertTemplate.zones.features',newCircleJSON);
-        this.push('_alertTemplateData.circles',newCircle);
-        //Add the change listeners to the new circle.
-        this._setupChangeListeners();
-        //Update the JSON to include the new circle.
+        newCircleJSON.properties.zoneId = 'Zone_' + (this._loadedAlertTemplateData.alertTemplate.zones.features.length + 1);
+        //Sync our lists.
+        this.push('_loadedAlertTemplateData.alertTemplate.zones.features',newCircleJSON);
+        this.push('_loadedAlertTemplateData.circles',newCircle);
+        //Add the change listeners to the new circle and update the JSON.
+        this._setupChangeListeners(this._alerts ? this._alerts.indexOf(this._loadedAlertTemplateData) : -1);
         this._updateAlertTemplateJSON();
         //Draw the Proximity Zone label overlay and save a reference to it.
-        this.push('_alertTemplateData.zoneOverlays',new this._ProximityZoneOverlay(this._alertTemplateData.alertTemplate.zones.features.length-1));
+        this.push('_loadedAlertTemplateData.zoneOverlays',new this._ProximityZoneOverlay(this._loadedAlertTemplateData.alertTemplate.zones.features.length-1,null));
     },
 
     /**
@@ -220,16 +223,16 @@ Polymer({
         //Get the index of the proximity zone that is to be removed.
         var i = e.model.get('index');
         //Remove the zone from the alertTemplate JSON.
-        this.splice('_alertTemplateData.alertTemplate.zones.features',i,1);
+        this.splice('_loadedAlertTemplateData.alertTemplate.zones.features',i,1);
         //Remove the circle and zone overlay from the map.
-        this._alertTemplateData.circles[i].setMap(null);
-        this._alertTemplateData.zoneOverlays[i].setMap(null);
-        this.splice('_alertTemplateData.circles',i,1);
-        this.splice('_alertTemplateData.zoneOverlays',i,1);
-        this.splice('_alertTemplateData.highestLats',i,1);
-        //Keep the overlay class index in sync.
-        for (i=0; i<this._alertTemplateData.zoneOverlays.length; i++) {
-            this._alertTemplateData.zoneOverlays[i].setIndex(i);
+        this._loadedAlertTemplateData.circles[i].setMap(null);
+        this._loadedAlertTemplateData.zoneOverlays[i].setMap(null);
+        this.splice('_loadedAlertTemplateData.circles',i,1);
+        this.splice('_loadedAlertTemplateData.zoneOverlays',i,1);
+        this.splice('_loadedAlertTemplateData.highestLats',i,1);
+        //Keep the overlay zone index in sync.
+        for (i=0; i<this._loadedAlertTemplateData.zoneOverlays.length; i++) {
+            this._loadedAlertTemplateData.zoneOverlays[i].setZoneIndex(i);
         }
     },
 
@@ -301,9 +304,9 @@ Polymer({
             this._readOnlyProperties.indexOf(this._customPropKey) === -1) {
             var index = e.model.get('index');
             //Clone properties and re-set it so the computed binding _toArray updates.
-            var properties = JSON.parse(JSON.stringify(this._alertTemplateData.alertTemplate.zones.features[index].properties));
+            var properties = JSON.parse(JSON.stringify(this._loadedAlertTemplateData.alertTemplate.zones.features[index].properties));
             properties[this._customPropKey] = this._customPropVal;
-            this.set('_alertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
+            this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
             //Reset the new property input values.
             this._customPropKey = this._customPropVal = null;
             //Toggle new property mode.
@@ -321,7 +324,7 @@ Polymer({
         this._editing = !this._editing;
         var index = e.model.get('index');
         if (this._editing) { //We are entering edit mode.
-            var properties = this._alertTemplateData.alertTemplate.zones.features[index].properties;
+            var properties = this._loadedAlertTemplateData.alertTemplate.zones.features[index].properties;
             switch (this._selected) {
                 //Copy the current state of each of the properties into our editing mode inputs.
                 case 'Editable':
@@ -384,9 +387,9 @@ Polymer({
                     if (colorPicker) {
                         colorPicker.jscolor.hide();
                         if (colorPicker.jscolor.toHEXString().slice(1) ===
-                            this._alertTemplateData.alertTemplate.zones.features[index].properties.Color) {
+                            this._loadedAlertTemplateData.alertTemplate.zones.features[index].properties.Color) {
                             //Redraw the overlay since the colour changed.
-                            this._redrawZoneOverlay(index);
+                            this._redrawZoneOverlay(this._loadedAlertTemplateData,index);
                         }
                     }
             }
@@ -438,7 +441,7 @@ Polymer({
      */
     _editPropertyOnChange: function(e) {
         var newVal = e.detail.value;
-        var currentVal = this._alertTemplateData.circles[e.model.get('index')].getEditable() ? 'true' : 'false';
+        var currentVal = this._loadedAlertTemplateData.circles[e.model.get('index')].getEditable() ? 'true' : 'false';
         if (newVal === '' || newVal === currentVal) { return; }
         this._editProperty(e);
     },
@@ -452,25 +455,25 @@ Polymer({
         var _this = this;
         var index = e.model.get('index');
         //Clone properties and re-set it so the computed binding _toArray updates.
-        var properties = JSON.parse(JSON.stringify(this._alertTemplateData.alertTemplate.zones.features[index].properties));
+        var properties = JSON.parse(JSON.stringify(this._loadedAlertTemplateData.alertTemplate.zones.features[index].properties));
         switch (this._selected) {
             //Copy the new property value from our editing mode inputs to the JSON. We don't bind directly in case we need to revert.
             case 'Editable':
                 properties['Editable'] = this._editableVal.toLowerCase() === 'true'; //Convert string from UI to boolean
                 //Set the Editable state on the circle.
-                this._alertTemplateData.circles[index].setEditable(properties.Editable);
+                this._loadedAlertTemplateData.circles[index].setEditable(properties.Editable);
                 this.set('_editableVal',null);
                 break;
             case 'Color':
                 properties['Color'] = this._colorVal;
                 //Set the Color on the circle.
-                this._alertTemplateData.circles[index].setOptions({"fillColor":'#'+properties.Color});
+                this._loadedAlertTemplateData.circles[index].setOptions({"fillColor":'#'+properties.Color});
                 this.set('_colorVal',null);
                 break;
             case 'Opacity':
                 properties['Opacity'] = this._opacityVal;
                 //Set the Opacity on the circle.
-                this._alertTemplateData.circles[index].setOptions({"fillOpacity":properties.Opacity});
+                this._loadedAlertTemplateData.circles[index].setOptions({"fillOpacity":properties.Opacity});
                 this.set('_opacityVal',null);
                 break;
             default:
@@ -489,7 +492,7 @@ Polymer({
                     },0);
                 }
         }
-        this.set('_alertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
+        this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
         //Toggle editing mode.
         this._togglePropertyEditing(e);
     },
@@ -502,9 +505,9 @@ Polymer({
     _removeSelectedProperty: function(e) {
         var index = e.model.get('index');
         //Clone properties and re-set it so the computed binding _toArray updates.
-        var properties = JSON.parse(JSON.stringify(this._alertTemplateData.alertTemplate.zones.features[index].properties));
+        var properties = JSON.parse(JSON.stringify(this._loadedAlertTemplateData.alertTemplate.zones.features[index].properties));
         delete properties[this._selected];
-        this.set('_alertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
+        this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+index+'.properties',properties);
         //Toggle property editing since this function is only available during editing mode.
         this._togglePropertyEditing(e);
     },

@@ -192,23 +192,23 @@ Internal component used to display the properties panel inside Voyent Alert comp
             }
         </style>
 
-        <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
+        <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
             <div>
-                <template is="dom-if" if="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                <template is="dom-if" if="[[!_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming]]">
                     <div class="alert-template-title">
                         <div class="title" on-click="_toggleAlertTemplateRenaming">
-                            [[_alertTemplateData.alertTemplate.label]]
+                            [[_loadedAlertTemplateData.alertTemplate.label]]
                         </div>
                     </div>
                 </template>
-                <template is="dom-if" if="[[_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming]]">
                     <paper-input id="alertTemplate" tabindex="1"
                                  label="Alert Template"
                                  placeholder="New Value"
                                  on-keydown="_renameAlertTemplateViaKeydown"
                                  on-blur="_renameAlertTemplateViaBlur"
-                                 value="{{_alertTemplateData.alertTemplate.tmpProperties.newName::input}}"
-                                 disabled$="[[!_alertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                                 value="{{_loadedAlertTemplateData.alertTemplate.tmpProperties.newName::input}}"
+                                 disabled$="[[!_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming]]">
                     </paper-input>
                 </template>
             </div>
@@ -219,7 +219,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                 </div>
             </div>
             <div class="accordion">
-                <template is="dom-repeat" items="[[_alertTemplateData.alertTemplate.zones.features]]" as="zone">
+                <template is="dom-repeat" items="[[_loadedAlertTemplateData.alertTemplate.zones.features]]" as="zone">
                     <div class$="{{_getAccordionClasses('header',zone.tmpProperties.visible)}}">
                         <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
                             <paper-icon-button icon="{{_getArrowIcon(zone.tmpProperties.visible)}}"

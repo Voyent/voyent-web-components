@@ -78,6 +78,7 @@
                     markerOptions: {draggable:true, 'zIndex':50}
                 });
                 _this._setupDrawingListeners();
+                _this._isLoggedIn = false; //Toggle for side panel.
                 //More initialization for each component after login.
                 if (voyent.auth.isLoggedIn()) {
                     _this._onAfterLogin();
@@ -114,12 +115,17 @@
 
         /**
          * Saves or updates the current Alert Template.
+         * @param alertTemplateData - Optional
          */
-        saveAlertTemplate: function () {
+        saveAlertTemplate: function (alertTemplateData) {
+            if (this._loadedAlertTemplateData) {
+                alertTemplateData = this._loadedAlertTemplateData;
+            }
+            if (!alertTemplateData) { return; }
             var _this = this;
-            var func = !this._alertTemplateData.isPersisted ? 'createTracker' : 'updateTracker';
+            var func = !alertTemplateData.isPersisted ? 'createTracker' : 'updateTracker';
             //Clone the object and remove the tmpProperties we use in the template.
-            var alertTemplate = JSON.parse(JSON.stringify(this._alertTemplateData.alertTemplate));
+            var alertTemplate = JSON.parse(JSON.stringify(alertTemplateData.alertTemplate));
             delete alertTemplate.tmpProperties;
             for (var i=0; i<alertTemplate.zones.features.length; i++) {
                 delete alertTemplate.zones.features[i].tmpProperties;
@@ -132,8 +138,8 @@
             }).then(function (uri) {
                 if (func === 'createTracker') {
                     //Grab the generated ID from the return URI and setup change listeners
-                    _this.set('_alertTemplateData.alertTemplate._id',uri ? uri.split('/').pop() : _this._alertTemplateData.alertTemplate._id);
-                    _this._alertTemplateData.isPersisted = true;
+                    _this.set('_loadedAlertTemplateData.alertTemplate._id',uri ? uri.split('/').pop() : alertTemplateData.alertTemplate._id);
+                    alertTemplateData.isPersisted = true;
                     if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                         _this.fire('message-info', 'Alert Template successfully created.');
                     }
@@ -142,15 +148,15 @@
                     _this.fire('message-info', 'Alert Template successfully updated.');
                 }
                 //Update our local copy of the persisted Alert Template.
-                _this._alertTemplateData.persistedAlertTemplate = JSON.parse(JSON.stringify(alertTemplate));
+                alertTemplateData.persistedAlertTemplate = JSON.parse(JSON.stringify(alertTemplate));
                 //Fire an event for anyone interested.
                 _this.fire('voyent-alert-template-saved',{});
             }).catch(function (error) {
                 if (func === 'createTracker') {
                     //If the initial creation fails then remove it from the map.
-                    _this._alertTemplateData.marker.setMap(null);
-                    for (var i = 0; i < _this._alertTemplateData.circles.length; i++){
-                        _this._alertTemplateData.circles[i].setMap(null);
+                    alertTemplateData.marker.setMap(null);
+                    for (var i = 0; i < alertTemplateData.circles.length; i++){
+                        alertTemplateData.circles[i].setMap(null);
                     }
                 }
                 _this.fire('message-error', 'Issue saving Alert Template ' + error.responseText || error.message);
@@ -168,17 +174,17 @@
                 this._map.panToBounds(this._regionBounds);
             }
             //Map already clear, nothing else to do.
-            if (!this._alertTemplateData) {
+            if (!this._loadedAlertTemplateData) {
                 return;
             }
             //Remove the marker, circles and zoneOverlays from the map.
-            this._alertTemplateData.marker.setMap(null);
-            for (var i=0; i<this._alertTemplateData.circles.length; i++) {
-                this._alertTemplateData.circles[i].setMap(null);
-                this._alertTemplateData.zoneOverlays[i].setMap(null);
+            this._loadedAlertTemplateData.marker.setMap(null);
+            for (var i=0; i<this._loadedAlertTemplateData.circles.length; i++) {
+                this._loadedAlertTemplateData.circles[i].setMap(null);
+                this._loadedAlertTemplateData.zoneOverlays[i].setMap(null);
             }
             //Wipe all references to the alertTemplate and re-enable drawing mode.
-            this._alertTemplateData = null;
+            this._loadedAlertTemplateData = null;
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                 this._drawingManager.setOptions({
                     "drawingControlOptions":{
@@ -188,18 +194,77 @@
             }
             else { //VOYENT-ALERT-EDITOR
                 this._addAlertButton();
-                this._alertActivated = false;
             }
         },
 
         //******************PRIVATE API******************
 
         /**
-         * Draws the passed Alert Template on the map and sets up the properties panel.
-         * @param alertTemplate
+         * Retrieves all the regions for the realm.
+         * @returns {*}
          * @private
          */
-        _drawAlertTemplate: function(alertTemplate) {
+        _fetchRegions: function() {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                voyent.locate.getAllRegions({realm:_this.realm,account:_this.account}).then(function (regions) {
+                    //Filter out the Alert regions and we should only be left with the static area Region.
+                    _this._drawRegion(regions.filter(function(region) {
+                        return !region.location.properties || !region.location.properties.trackerId;
+                    })[0]);
+                    resolve();
+                }).catch(function (error) {
+                    _this.fire('message-error', 'Issue fetching or drawing Region ' + error.responseText || error.message || error);
+                    console.error('Issue fetching or drawing Region', error.responseText || error.message || error);
+                    reject(error);
+                });
+            });
+        },
+
+        /**
+         * Draws the passed polygon region on the map.
+         * @param region
+         * @private
+         */
+        _drawRegion: function(region) {
+            if (!region || !region.location || !region.location.geometry || !region.location.geometry.coordinates) {
+                return;
+            }
+            this._regionBounds = new google.maps.LatLngBounds();
+            var coords = region.location.geometry.coordinates,
+                googlePoint, paths = [], path = [];
+            //Generate the ordered sequence of coordinates that completes the Polygon shape.
+            for (var j = 0; j < coords.length; j++) {
+                for (var k = 0; k < coords[j].length; k++) {
+                    googlePoint = new google.maps.LatLng(coords[j][k][1], coords[j][k][0]);
+                    path.push(googlePoint);
+                    //Extend our bounds object so we can pan the map later.
+                    this._regionBounds.extend(googlePoint);
+                }
+                paths.push(path);
+            }
+            //Draw the Polygon.
+            var polygon = new google.maps.Polygon({
+                'paths': paths,
+                'map': this._map,
+                'editable': false,
+                'clickable': false //Necessary to get the Alert cursor to display correctly.
+            });
+            //Zoom on the newly drawn Region.
+            this._map.fitBounds(this._regionBounds);
+            this._map.panToBounds(this._regionBounds);
+            //Save a reference to the region JSON and map polygon for later.
+            this._areaRegion = {"region":region,"polygon":polygon};
+        },
+
+        /**
+         * Draws the passed Alert or Alert Template on the map and sets up the properties panel or Alert list.
+         * @param alertTemplate
+         * @param alertLocation - If an Alert then this is the location data associated with it.
+         * @private
+         */
+        _drawAlertEntity: function(alertTemplate,alertLocation) {
+            var alertTemplateData = null;
             //Create the marker and build the alertTemplateData.
             var marker = new google.maps.Marker({
                 position: new google.maps.LatLng(alertTemplate.anchor.geometry.coordinates[1],alertTemplate.anchor.geometry.coordinates[0]),
@@ -208,26 +273,35 @@
                 zIndex: 50,
                 icon: this.nodeName === 'VOYENT-ALERT-EDITOR' ? this.pathtoimages+'/img/alert_marker.png' : null
             });
-            if (!this._alertTemplateData) {
-                this._alertTemplateData = {"alertTemplate":alertTemplate,
+            //This is triggered from alert-template-editor when drawing templates or from alert-editor when drawing Alerts.
+            if (!this._loadedAlertTemplateData || alertLocation) {
+                alertTemplateData = {"alertTemplate":alertTemplate,
                     "persistedAlertTemplate":JSON.parse(JSON.stringify(alertTemplate)),
                     "marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":true};
+                if (alertLocation) { alertTemplateData.alertInstance = alertLocation; }
+                //Load immediately since it's a template.
+                else { this._loadedAlertTemplateData = alertTemplateData; }
             }
+            //This will be triggered from alert-editor when drawing child templates only
             else {
-                //Alert template data already initialized as a child template.
-                this._alertTemplateData.marker = marker;
+                //Alert template data already initialized as a child template so just set the marker.
+                alertTemplateData = this._loadedAlertTemplateData;
+                alertTemplateData.marker = marker;
             }
+
             //Add the tmpProperties to the Alert Template (used by the view).
-            alertTemplate.tmpProperties = this._getAlertTemplateTmpProperties();
+            alertTemplateData.alertTemplate.tmpProperties = this._getAlertTemplateTmpProperties();
 
             //Generate the circles and bind them to the marker.
-            var zones = alertTemplate.zones.features, bounds = new google.maps.LatLngBounds(), highestLats = [], circle, properties;
+            var zones = alertTemplateData.alertTemplate.zones.features,circle, properties;
+            alertTemplateData.highestLats = [];
             for (var i=0; i<zones.length; i++) {
                 //Add the tmpProperties to the Zone (used by the view).
                 zones[i].tmpProperties = this._getZoneTmpProperties();
                 //Set the properties of the circle based on the alertTemplate JSON.
                 properties = this._getCircleProperties();
-                properties.editable = zones[i].properties.Editable;
+                //Don't allow editing Alert zone sizes unless the Alert is active.
+                properties.editable = alertLocation ? false : zones[i].properties.Editable;
                 properties.radius = zones[i].properties.googleMaps.radius;
                 properties.fillColor = '#'+ zones[i].properties.Color;
                 properties.fillOpacity = zones[i].properties.Opacity;
@@ -235,22 +309,23 @@
                 //Create the circle and bind it.
                 circle = new google.maps.Circle(properties);
                 circle.bindTo('center', marker, 'position');
-                this._alertTemplateData.circles.push(circle);
+                alertTemplateData.circles.push(circle);
                 //Determine where to draw the Proximity Zone label overlay and draw it.
-                //NOTE - We push to this array and set it instead of pushing directly to _alertTemplateData.highestLats because
-                //pushing directly to _alertTemplateData.highestLats only pushes the first item for an unknown reason.
-                highestLats.push(this._determineHighestLat(zones[i].geometry.coordinates[0]));
-                this.set('_alertTemplateData.highestLats',highestLats);
-                this._alertTemplateData.zoneOverlays.push(new this._ProximityZoneOverlay(i));
-                //Update our bounds object so we can pan the map later.
-                bounds.union(circle.getBounds());
+                alertTemplateData.highestLats.push(this._determineHighestLat(zones[i].geometry.coordinates[0]));
+                alertTemplateData.zoneOverlays.push(new this._ProximityZoneOverlay(i,alertLocation?this._alerts.length:null));
             }
-
-            //Focus the map on the loaded template.
-            this._map.fitBounds(bounds);
-            this._map.panToBounds(bounds);
-            //Add the change listeners to the marker and circles.
-            this._setupChangeListeners();
+            //Set the alertTemplateData or alerts array depending on what we are drawing
+            if (alertLocation) {
+                this._alerts.push(alertTemplateData);
+                //Update the template coordinates to correctly calculate the positions of the labels.
+                this._updateAlertTemplateJSON(alertTemplateData);
+                //Add the change listeners to the marker and circles.
+                this._setupChangeListeners(this._alerts.length-1);
+            }
+            else {
+                //Add the change listeners to the marker and circles.
+                this._setupChangeListeners();
+            }
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                 //Disable further Alert Template creations - only allowed one at a time.
                 this._drawingManager.setOptions({
@@ -260,10 +335,11 @@
                 });
             }
             else { //VOYENT-ALERT-EDITOR
-                //Disable further Alert creations - only allowed one at a time.
-                var alertBttn = this.querySelector('#alertBttn');
-                alertBttn.parentNode.removeChild(alertBttn);
-                this._alertBttnAdded = false;
+                if (!alertLocation) {
+                    //Disable further Alert creations - only allowed one at a time.
+                    var alertBttn = this.querySelector('#alertBttn');
+                    alertBttn.parentNode.removeChild(alertBttn);
+                }
             }
         },
 
@@ -276,7 +352,6 @@
          */
         _determineHighestLat: function(coordinates) {
             var highestLat = -100;
-            this._alertTemplateData.highestLats = [];
             for (var i=0; i<coordinates.length; i++) {
                 if (coordinates[i][1] > highestLat) {
                     highestLat = coordinates[i][1];

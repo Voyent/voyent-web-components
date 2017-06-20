@@ -4,49 +4,16 @@ Polymer({
 
     ready: function() {
         //Initialize some vars
-        this._alertBttnAdded = this._alertBttnSelected =
-        this._activatingAlert = this._alertActivated = false;
-        this._alertTemplates = null;
-        //Add listener to native map button.
-        this._addListenerToStopDrawingBttn();
+        this._creatingNew = this._activatingAlert = false;
+        this._parentTemplates = this._alerts = this._selectedAlertTemplateId = null;
     },
 
     /**
-     * Removes the current Alert Template.
+     * Loads the latest Alert Templates, Alerts and User Location.
      */
-    removeAlertTemplate: function() {
-        var confirm = window.confirm("Are you sure you want to delete '" + this._alertTemplateData.alertTemplate.label + "'? This cannot be undone!");
-        if (!confirm) {
-            return;
-        }
+    refreshMap: function() {
         var _this = this;
-        //Delete from DB if it's saved.
-        if (this._alertTemplateData.isPersisted) {
-            voyent.locate.deleteTracker({
-                realm: this.realm,
-                account: this.account,
-                id: this._alertTemplateData.alertTemplate._id
-            }).then(function () {
-                _this.clearMap();
-            }).catch(function (error) {
-                _this.fire('message-error', 'Issue deleting Alert Template ' + error);
-                console.error('Issue deleting Alert Template', error);
-            });
-        }
-        else { //Otherwise just clear map.
-            this.clearMap();
-        }
-    },
-
-    //******************PRIVATE API******************
-
-    /**
-     * Finish initializing after login.
-     * @private
-     */
-    _onAfterLogin: function() {
-        var _this = this;
-        //Fetch the Alert Templates and the last locations of all Alerts
+        //Fetch the Alert Templates and the last locations of all Alerts.
         var promises = [];
         promises.push(this._fetchAlertTemplates());
         promises.push(this._executeAggregate(this._lastAlertLocations));
@@ -59,6 +26,49 @@ Polymer({
             _this.fire('message-error', 'Issue initializing Alert Editor ' + error.responseText || error.message || error);
             console.error('Issue initializing Alert Editor', error.responseText || error.message || error);
         });
+        this._fetchCurrentUsersLocation();
+    },
+
+    /**
+     * Removes the current Alert Template, returns a boolean indicating the selection of the confirm dialog.
+      * @returns {boolean}
+     */
+    removeAlertTemplate: function() {
+        var confirm = window.confirm("Are you sure you want to delete '" + this._loadedAlertTemplateData.alertTemplate.label + "'? This cannot be undone!");
+        if (!confirm) {
+            return false;
+        }
+        var _this = this;
+        //Delete from DB if it's saved.
+        if (this._loadedAlertTemplateData.isPersisted) {
+            voyent.locate.deleteTracker({
+                realm: this.realm,
+                account: this.account,
+                id: this._loadedAlertTemplateData.alertTemplate._id
+            }).catch(function (error) {
+                _this.fire('message-error', 'Issue deleting Alert Template ' + error);
+                console.error('Issue deleting Alert Template', error);
+            });
+        }
+        //Clear the map immediately.
+        _this.clearMap();
+        return true;
+    },
+
+    //******************PRIVATE API******************
+
+    /**
+     * Finish initializing after login.
+     * @private
+     */
+    _onAfterLogin: function() {
+        this._isLoggedIn = true; //Toggle for side panel.
+        //Add listener to native map button.
+        this._addListenerToStopDrawingBttn();
+        //Load the template data.
+        this.refreshMap();
+        //Fetch the realm region.
+        this._fetchRegions();
     },
 
     /**
@@ -71,11 +81,11 @@ Polymer({
         return new Promise(function (resolve, reject) {
             voyent.locate.getAllTrackers({realm:_this.realm,account:_this.account}).then(function(templates) {
                 //Maintain a list of parent templates.
-                _this._alertTemplates = templates.filter(function(alertTemplate) {
+                _this._parentTemplates = templates.filter(function(alertTemplate) {
                     return !alertTemplate.properties || !alertTemplate.properties.parentTrackerId;
                 });
                 //Maintain an id-mapped object of all templates, including child templates.
-                _this._alertTemplatesMap = templates.reduce(function(map,obj) {
+                _this._parentTemplatesMap = templates.reduce(function(map,obj) {
                     map[obj._id] = obj;
                     return map;
                 },{});
@@ -91,14 +101,18 @@ Polymer({
      * @private
      */
     _processAlertLocations: function() {
+        //Always initialize the array.
+        this._alerts = [];
+        //Draw the Alerts if we can find a matching Alert Template.
         for (var i=0; i<this._alertLocations.length; i++) {
             var trackerId = this._alertLocations[i].location.properties ?
                 this._alertLocations[i].location.properties.trackerId : null;
-            if (!trackerId || !this._alertTemplatesMap[trackerId]) {
-                return;
+            if (!trackerId || !this._parentTemplatesMap[trackerId]) {
+                continue;
             }
-            var alert = JSON.parse(JSON.stringify(this._alertTemplatesMap[trackerId]));
+            var alert = JSON.parse(JSON.stringify(this._parentTemplatesMap[trackerId]));
             alert.anchor.geometry.coordinates = this._alertLocations[i].location.geometry.coordinates;
+            this._drawAlertEntity(alert,this._alertLocations[i]);
         }
     },
 
@@ -123,7 +137,6 @@ Polymer({
                     }).catch(function(error){reject(error);});
                 }
             });
-
         });
     },
 
@@ -156,17 +169,19 @@ Polymer({
      * @private
      */
     _addAlertButton: function() {
-        if (!this._alertBttnAdded && this._alertTemplates && this._alertTemplates.length) {
+        if (!this.querySelector('#alertBttn:not([hidden])') && this._parentTemplates && this._parentTemplates.length) {
             var _this = this;
             var alertBttn = this.$.alertBttn.cloneNode(true);
-            alertBttn.onclick = this._selectAlertBttn.bind(this);
+            alertBttn.onclick = function() {
+                if (!_this._creatingNew) { _this._toggleCreatingAlert(); }
+                else { _this._cancel(); }
+            };
             this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(alertBttn);
-            //delay so that the button isn't shown on
-            //the page before being moved into the map
+            //Delay so that the button isn't shown on
+            //the page before being moved into the map.
             setTimeout(function () {
                 alertBttn.hidden = false;
-                _this._alertBttnAdded = true;
-            }, 100);
+            },100);
         }
     },
 
@@ -184,38 +199,95 @@ Polymer({
                 setTimeout(waitForButton,500);
                 return;
             }
-            bttn.onclick = _this._deSelectAlertBttn.bind(_this);
+            bttn.onclick = _this._cancel.bind(_this);
         }
     },
 
     /**
-     * Actives the Alert Button in the top right corner. Fired on-click.
-     * @param e
+     * Fetches the most recent location for the current user.
      * @private
      */
-    _selectAlertBttn:function(e) {
-        //Change the button state and styling to selected.
-        this._alertBttnSelected = !this._alertBttnSelected;
-        this.toggleClass("selected", this._alertBttnSelected, this.querySelector('.customMapBttn'));
-
+    _fetchCurrentUsersLocation: function() {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            //Only get the most recent location.
+            voyent.locate.findLocations({realm:_this.realm,account:_this.account,
+                query:{"location.properties.trackerId":{"$exists":true},
+                       "username":voyent.auth.getLastKnownUsername()},
+                options:{"sort":{"lastUpdated":-1},"limit":1}}).then(function(location) {
+                    _this._drawUser(location[0]);
+                resolve();
+            }).catch(function(error) {
+                _this.fire('message-error', 'Issue getting User Location ' + error.responseText || error.message || error);
+                console.error('Issue getting User Location', error.responseText || error.message || error);
+                reject(error);
+            });
+        });
     },
 
     /**
-     * Deactives the Alert Button in the top right corner. Fired on-click of "stop drawing" button or when pressing esc.
-     * @param e
+     * Draws the user's location on the map based on the passed location data.
+     * @param location
      * @private
      */
-    _deSelectAlertBttn: function(e) {
-        //Change the button state and styling to de-selected.
-        this._alertBttnSelected = false;
-        this.toggleClass("selected", this._alertBttnSelected, this.querySelector('.customMapBttn'));
-        //Revert the cursor state, clear the temporary click listener and reset the selected Alert Template id.
-        if (this._selectedAlertTemplateId) {
-            //Reset the cursor.
-            this._map.setOptions({draggableCursor:''});
-            //Remove this click-listener and clear the selected Alert Template id.
-            google.maps.event.clearListeners(this._map,'click');
-            this._selectedAlertTemplateId = null;
+    _drawUser: function(location) {
+        if (!location) { return; }
+        var coordinates = location.location.geometry.coordinates;
+        //Set the label of the user marker to the first letter of the username.
+        var label = "?";
+        if (location.username && location.username.length > 0) {
+            label = location.username.substring(0, 1).toLowerCase();
+        }
+        new google.maps.Marker({
+            position: new google.maps.LatLng(coordinates[1],coordinates[0]),
+            map: this._map,
+            draggable: false,
+            icon: this.pathtoimages+'/img/user_marker.png',
+            label: {
+                text: label,
+                color: "white"
+            }
+        });
+    },
+
+    /**
+     * Toggles creation mode for new Alerts.
+     * @private
+     */
+    _toggleCreatingAlert: function() {
+        //Change the button state and styling.
+        this._creatingNew = !this._creatingNew;
+        this.toggleClass("selected", this._creatingNew, this.querySelector('.customMapBttn'));
+        if (this._creatingNew) {
+            //Hide the existing Alerts when creating new.
+            this._toggleActiveAlerts(false);
+        }
+        else {
+            //Revert the cursor state, clear the temporary click listener and clear the selected Alert Template id.
+            if (this._selectedAlertTemplateId) {
+                this._map.setOptions({draggableCursor:''});
+                google.maps.event.clearListeners(this._map,'click');
+                google.maps.event.clearListeners(this._areaRegion.polygon,'click');
+                this._selectedAlertTemplateId = null;
+            }
+        }
+    },
+
+    /**
+     * Toggles the visible state of the active Alerts on the map.
+     * @param visible
+     * @private
+     */
+    _toggleActiveAlerts: function(visible) {
+        var value = visible ? this._map : null;
+        for (var i=0; i<this._alerts.length; i++) {
+            //Hide the marker.
+            this._alerts[i].marker.setMap(value);
+            for (var j=0; j<this._alerts[i].circles.length; j++) {
+                //Hide the zones and their labels.
+                this._alerts[i].circles[j].setMap(value);
+                this._alerts[i].zoneOverlays[j].setMap(value);
+            }
         }
     },
 
@@ -229,7 +301,7 @@ Polymer({
     },
 
     /**
-     * Fired when an Alert Template is selected.
+     * Fired when an Alert Template is selected when creating a new Alert.
      * @private
      */
     _selectAlertTemplate: function(e) {
@@ -238,11 +310,11 @@ Polymer({
         this._selectedAlertTemplateId = e.target.getAttribute('data-id');
         //Change the cursor to the icon of the Alert Template (17.5/35 offset so the click registers in the correct position)
         this._map.setOptions({draggableCursor:'url('+this.pathtoimages+'/img/alert_marker.png) 17.5 35, crosshair'});
-
-        google.maps.event.addListener(this._map,'click',function(e) {
-            //Create a new child Alert Template to be linked one-to-one with the Alert.
-            _this._createChildTemplate(_this._selectedAlertTemplateId,e.latLng);
-        })
+        //Add click listeners to the map and area region so we can drop the new Alert wherever they click.
+        google.maps.event.addListener(this._map,'click',createChildTemplate);
+        google.maps.event.addListener(this._areaRegion.polygon,'click',createChildTemplate);
+        //Create a new child Alert Template to be linked one-to-one with the Alert.
+        function createChildTemplate(e) { _this._createChildTemplate(_this._selectedAlertTemplateId,e.latLng); }
     },
 
     /**
@@ -253,7 +325,7 @@ Polymer({
      */
     _createChildTemplate: function(parentAlertTemplateId,latLng) {
         //Find and clone the Alert Template that we will build the child template from.
-        var childTemplate = JSON.parse(JSON.stringify(this._alertTemplates.filter(function(alertTemplate) {
+        var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
             return alertTemplate._id === parentAlertTemplateId;
         })[0]));
         //Update the coordinates for the anchor point and zone centers.
@@ -268,12 +340,12 @@ Polymer({
         childTemplate.properties.parentTrackerId = childTemplate._id;
         childTemplate._id = parentAlertTemplateId+'.'+new Date().getTime();
         //Now that we have updated center coordinates we need to update the coordinates for all the zones.
-        this._alertTemplateData = {"alertTemplate":childTemplate,"marker":null,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":false};
+        this._loadedAlertTemplateData = {"alertTemplate":childTemplate,"marker":null,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":false};
         this._updateAlertTemplateJSON();
         //Draw the new Alert Template.
-        this._drawAlertTemplate(this._alertTemplateData.alertTemplate);
-        //De-activate the Alert button.
-        this._deSelectAlertBttn();
+        this._drawAlertEntity(this._loadedAlertTemplateData.alertTemplate);
+        //Toggle the creation mode.
+        this._toggleCreatingAlert();
     },
 
     /**
@@ -282,68 +354,54 @@ Polymer({
      * @private
      */
     _toggleActivatingAlert: function(e) {
-        //In case there were changes, update the child Alert Template.
-        this.saveAlertTemplate();
-        //Enable "Confirm New Alert" Mode.
-        this._activatingAlert = true;
-    },
-
-    /**
-     * Activates the current Alert.
-     * @param e
-     * @private
-     */
-    _activateAlert: function(e) {
-        var _this = this;
-        //Create the new Alert location.
-        var location = {
-            "location": {
-                "geometry": { "type" : "Point", "coordinates" : this._alertTemplateData.alertTemplate.anchor.geometry.coordinates },
-                "properties": {
-                    "trackerId": this._alertTemplateData.alertTemplate._id,
-                    "zoneNamespace": new Date().getTime()
-                }
-            }
-        };
-        voyent.locate.updateTrackerLocation({location: location}).then(function(data) {
-            _this._alertTemplateData.alertInstance = location;
-            _this.fire('message-info', 'New Alert Activated!');
-            _this._activatingAlert = false;
-            _this._alertActivated = true;
-        }).catch(function (error) {
-            _this.fire('message-error', 'Issue creating new Alert: ' + location.location.properties.zoneNamespace);
-            console.error('Issue creating new Alert: ' + location.location.properties.zoneNamespace, error);
-        });
+        this._activatingAlert = !this._activatingAlert;
+        if (this._activatingAlert) {
+            //In case there were changes, update the child Alert Template.
+            this.saveAlertTemplate();
+        }
     },
 
     /**
      * Handles all back functionality in the editor.
-     * @param e
      * @private
      */
-    _goBack: function(e) {
-        if (this._activatingAlert) {
-            this._activatingAlert = false;
+    _goBack: function() {
+        //An Alert Instance is currently loaded so just de-select it.
+        if (this._loadedAlertTemplateData.alertInstance) {
+            //Toggle the accordion, make the zones un-editable and wipe the loaded Alert.
+            this._toggleAccordion(-1);
+            this._toggleEditableZones(false);
+            this._loadedAlertTemplateData = null;
         }
         else {
-            this.removeAlertTemplate();
+            //They are currently activating so just go back one step.
+            if (this._activatingAlert) {
+                this._toggleActivatingAlert();
+            }
+            else { //They are cancelling the creation so remove the template.
+                if (this.removeAlertTemplate()) {
+                    this._toggleActiveAlerts(true);
+                }
+
+            }
         }
     },
 
     /**
      * Cancels the entire Alert creation process and deletes and child Alert Templates that may have been created.
-     * @param e
      * @private
      */
-    _cancel: function(e) {
-        if (this._alertBttnSelected) {
-            this._deSelectAlertBttn();
+    _cancel: function() {
+        if (this._creatingNew) {
+            this._toggleCreatingAlert();
         }
-        else {
-            this.removeAlertTemplate();
-            this._addAlertButton();
-            this._activatingAlert = false;
+        else if (this._activatingAlert) {
+            if (this.removeAlertTemplate()) {
+                this._toggleActivatingAlert();
+            }
+            else { return; }
         }
+        this._toggleActiveAlerts(true);
     },
 
     /**
@@ -352,12 +410,24 @@ Polymer({
      */
     _setupDrawingListeners: function() {
         var _this = this;
-        //If the escape key is pressed then stop drawing
-        //and cancel any polygons currently being drawn.
+        //If the escape key is pressed then stop.
         window.addEventListener('keydown',function (event) {
-            if (event.which === 27) {
-                _this._deSelectAlertBttn();
+            if (event.which === 27 && _this._creatingNew) {
+                _this._cancel();
             }
         });
+    },
+
+    /**
+     * Returns the style classes for the list of Alert Template items.
+     * @param thisTemplate
+     * @param selectedTemplate
+     * @private
+     */
+    _getTemplateClass: function(thisTemplate,selectedTemplate) {
+        if (selectedTemplate && thisTemplate === selectedTemplate) {
+            return 'item selected';
+        }
+        return 'item';
     }
 });

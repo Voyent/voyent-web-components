@@ -34,21 +34,27 @@ Example:
             <div id="container">
                 <div id="map"></div><div id="sidePanel">
                     <div id="propertiesPanel">
-                        <voyent-alert-properties _alert-template-data="{{_alertTemplateData}}" _map="{{_map}}"></voyent-alert-properties>
-                        <template is="dom-if" if="[[!_alertTemplateData.alertTemplate]]">
-                            <div class="alert-template-title">New Alert Template</div>
-                            <div class="alert-template-desc">
-                                Activate the
-                                <div class="icon-div">
-                                    <img class="icon" src="img/drawing.png">
+                        <template is="dom-if" if="[[_isLoggedIn]]">
+                            <voyent-alert-properties _loaded-alert-template-data="{{_loadedAlertTemplateData}}" _map="{{_map}}"></voyent-alert-properties>
+                            <template is="dom-if" if="[[!_loadedAlertTemplateData.alertTemplate]]">
+                                <div class="alert-template-title">New Alert Template</div>
+                                <div class="alert-template-desc">
+                                    Activate the
+                                    <div class="icon-div">
+                                        <img class="icon" src="img/drawing.png">
+                                    </div>
+                                    icon from the toolbar in the
+                                    top-right corner and click a location on the map.
                                 </div>
-                                icon from the toolbar in the
-                                top-right corner and click a location on the map.
-                            </div>
+                            </template>
+                        </template>
+                        <template is="dom-if" if="[[!_isLoggedIn]]">
+                            <div class="alert-template-title">Invalid Credentials</div>
+                            <div class="alert-template-desc">Please login to active this panel.</div>
                         </template>
                     </div>
                     <div id="crudPanel">
-                        <template is="dom-if" if="[[_alertTemplateData.alertTemplate]]">
+                        <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
                             <paper-button raised on-click="_cancelChanges">Cancel</paper-button>
                             <paper-button raised on-click="saveAlertTemplate">Save</paper-button>
                         </template>
