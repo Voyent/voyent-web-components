@@ -8,6 +8,8 @@ Polymer({
         this._parentTemplates = this._alerts = this._selectedAlertTemplateId = null;
     },
 
+    observers: ['_alertsSpliced(_alerts.splices)'],
+
     /**
      * Loads the latest Alert Templates, Alerts and User Location.
      */
@@ -351,6 +353,27 @@ Polymer({
     },
 
     /**
+     * Removes the currently active Alert.
+     * @private
+     */
+    _removeAlert: function() {
+        var _this = this;
+        var confirm = window.confirm("Are you sure you want to delete '" + this._loadedAlertTemplateData.alertTemplate.label + "'? This cannot be undone!");
+        if (!confirm) { return; }
+        //Just delete the Alert, the location service will handle deleting the associated child template.
+        var properties = this._loadedAlertTemplateData.alertInstance.location.properties;
+        voyent.locate.deleteTrackerInstance({account:this.account,realm:this.realm,
+            id:properties.trackerId,zoneNamespace:properties.zoneNamespace}).then(function() {
+                //Update our list of alerts and delete it from the map.
+                _this.splice('_alerts',_this._alerts.indexOf(_this._loadedAlertTemplateData),1);
+                _this.clearMap();
+        }).catch(function(error) {
+            _this.fire('message-error', 'Issue deleting Alert: ' + error.responseText || error.message || error);
+            console.error('Issue deleting Alert:',error.responseText || error.message || error);
+        });
+    },
+
+    /**
      * Toggles activation mode for the Alert.
      * @param e
      * @private
@@ -431,5 +454,18 @@ Polymer({
             return 'item selected';
         }
         return 'item';
+    },
+
+    /**
+     * Keep our zone overlays in sync after making changes to our Alerts.
+     * @private
+     */
+    _alertsSpliced: function() {
+        if (!this._alerts) { return; }
+        for (var i=0; i<this._alerts.length; i++) {
+            for (var j=0; j<this._alerts[i].zoneOverlays.length; j++) {
+                this._alerts[i].zoneOverlays[j].setAlertIndex(i);
+            }
+        }
     }
 });
