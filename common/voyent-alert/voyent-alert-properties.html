@@ -362,7 +362,10 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                 <div class="delete-button">
                                     <paper-icon-button icon="delete" tabindex="3"
                                                        on-click="_removeSelectedProperty"
-                                                       data-index$="[[index]]">
+                                                       data-index$="[[index]]"
+                                                       on-blur="_editPropertyViaBlur"
+                                                       disabled="[[!zone.tmpProperties.visible]]"
+                                                       data-is-property-delete>
                                     </paper-icon-button>
                                 </div>
                             </template>

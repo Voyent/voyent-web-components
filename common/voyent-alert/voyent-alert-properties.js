@@ -426,7 +426,7 @@ Polymer({
             //it means that focus was removed via the Enter or Esc key press and not just a regular blur.
             if ((_this._readOnlyProperties.indexOf(_this.selected) === -1 &&
                 (document.activeElement.getAttribute('is') === 'iron-input') ||
-                document.activeElement.getAttribute('icon') === 'delete') || !_this._editing) {
+                document.activeElement.hasAttribute('data-is-property-delete')) || !_this._editing) {
                 return;
             }
             _this._editProperty(e);
