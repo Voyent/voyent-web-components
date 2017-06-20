@@ -313,10 +313,11 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                                      label="Editable"
                                                      data-index$="[[index]]"
                                                      on-keydown="_editPropertyViaKeydown"
-                                                     on-value-changed="_editPropertyOnChange"
-                                                     value="{{_editableVal}}">
+                                                     value="{{_editableVal}}"
+                                                     disabled$="[[!zone.tmpProperties.visible]]">
                                     <iron-selector class="dropdown-content"
                                                    selected="{{_editableVal}}"
+                                                   on-iron-activate="_editPropertyOnActivate"
                                                    attr-for-selected="name">
                                         <paper-item name="true">true</paper-item>
                                         <paper-item name="false">false</paper-item>

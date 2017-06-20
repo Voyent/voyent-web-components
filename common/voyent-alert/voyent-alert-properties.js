@@ -289,7 +289,6 @@ Polymer({
                 return;
             }
             _this._saveNewProperty(e);
-
         },0);
     },
 
@@ -435,15 +434,17 @@ Polymer({
     },
 
     /**
-     * Confirms changes made to the Editable property whenever the value of the dropdown changes.
-     * @param e
+     * Confirms changes made to the Editable property whenever the value of the dropdown value changes.
      * @private
      */
-    _editPropertyOnChange: function(e) {
-        var newVal = e.detail.value;
-        var currentVal = this._loadedAlertTemplateData.circles[e.model.get('index')].getEditable() ? 'true' : 'false';
-        if (newVal === '' || newVal === currentVal) { return; }
-        this._editProperty(e);
+    _editPropertyOnActivate: function(e) {
+        var _this = this;
+        //Do this async since iron-activate fires before this._selected changes.
+        setTimeout(function() {
+            var currentVal = _this._loadedAlertTemplateData.circles[e.model.get('index')].getEditable() ? 'true' : 'false';
+            if (_this._editableVal === currentVal) { return; }
+            _this._editProperty(e);
+        },0);
     },
 
     /**
