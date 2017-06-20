@@ -13,6 +13,8 @@ Polymer({
      */
     refreshMap: function() {
         var _this = this;
+        //First reset the map.
+        _this.clearMap();
         //Fetch the Alert Templates and the last locations of all Alerts.
         var promises = [];
         promises.push(this._fetchAlertTemplates());

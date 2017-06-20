@@ -178,18 +178,18 @@
                 this._map.fitBounds(this._regionBounds);
                 this._map.panToBounds(this._regionBounds);
             }
-            //Map already clear, nothing else to do.
-            if (!this._loadedAlertTemplateData) {
-                return;
+            //Clear loaded Alert Template.
+            if (this._loadedAlertTemplateData) {
+                deleteAlertEntity(this._loadedAlertTemplateData);
+                this._loadedAlertTemplateData = null;
             }
-            //Remove the marker, circles and zoneOverlays from the map.
-            this._loadedAlertTemplateData.marker.setMap(null);
-            for (var i=0; i<this._loadedAlertTemplateData.circles.length; i++) {
-                this._loadedAlertTemplateData.circles[i].setMap(null);
-                this._loadedAlertTemplateData.zoneOverlays[i].setMap(null);
+            //Clear all Alerts.
+            if (this._alerts) {
+                for (var i=0; i<this._alerts.length; i++) {
+                    deleteAlertEntity(this._alerts[i]);
+                }
             }
-            //Wipe all references to the alertTemplate and re-enable drawing mode.
-            this._loadedAlertTemplateData = null;
+            //Re-draw the buttons.
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                 this._drawingManager.setOptions({
                     "drawingControlOptions":{
@@ -197,8 +197,16 @@
                         "position":google.maps.ControlPosition.TOP_RIGHT}
                 });
             }
-            else { //VOYENT-ALERT-EDITOR
+            else {
                 this._addAlertButton();
+            }
+            function deleteAlertEntity(alertTemplateData) {
+                //Remove the marker, circles and zoneOverlays from the map.
+                alertTemplateData.marker.setMap(null);
+                for (var i=0; i<alertTemplateData.circles.length; i++) {
+                    alertTemplateData.circles[i].setMap(null);
+                    alertTemplateData.zoneOverlays[i].setMap(null);
+                }
             }
         },
 
