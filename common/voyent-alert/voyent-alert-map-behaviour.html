@@ -171,8 +171,9 @@
 
         /**
          * Clears the map of all drawn entities.
+         * @param clearAlerts
          */
-        clearMap: function() {
+        clearMap: function(clearAlerts) {
             //Always re-zoom the bounds on the area's region if available.
             if (this._regionBounds) {
                 this._map.fitBounds(this._regionBounds);
@@ -184,7 +185,7 @@
                 this._loadedAlertTemplateData = null;
             }
             //Clear all Alerts.
-            if (this._alerts) {
+            if (clearAlerts && this._alerts) {
                 for (var i=0; i<this._alerts.length; i++) {
                     deleteAlertEntity(this._alerts[i]);
                 }
