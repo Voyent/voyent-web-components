@@ -444,6 +444,10 @@
             }
             //Clear the map entirely.
             this.clearMap(true);
+            //Refresh the map with the latest data.
+            if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+                this.refreshMap();
+            }
         },
 
         /**
