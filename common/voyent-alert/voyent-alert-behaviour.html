@@ -175,7 +175,8 @@
          */
         _toggleEditableZones: function(editable) {
             for (var i=0; i<this._loadedAlertTemplateData.circles.length; i++) {
-                this._loadedAlertTemplateData.circles[i].setEditable(editable ? this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.Editable : false);
+                this._loadedAlertTemplateData.circles[i].setEditable(editable ?
+                this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.Editable : false);
             }
         },
 
@@ -205,7 +206,11 @@
                 highestLat = -100;
                 //Sync the alertTemplate zone properties with the zones drawn on the map (if available).
                 if (alertTemplateData.circles.length) {
-                    features[i].properties.Editable = alertTemplateData.circles[i].getEditable();
+                    //Only update this if the template is loaded since we make
+                    //all Alerts un-editable when they aren't active.
+                    if (this._loadedAlertTemplateData === alertTemplateData) {
+                        features[i].properties.Editable = alertTemplateData.circles[i].getEditable();
+                    }
                     features[i].properties.googleMaps.radius = alertTemplateData.circles[i].getRadius();
                     features[i].properties.googleMaps.center = [alertTemplateData.circles[i].getCenter().lat(),alertTemplateData.circles[i].getCenter().lng()];
                     features[i].properties.Color = alertTemplateData.circles[i].get('fillColor').substring(1); //Remove the '#'.
