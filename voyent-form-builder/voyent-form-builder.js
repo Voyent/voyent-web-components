@@ -10,6 +10,8 @@ Polymer({
 	is: "voyent-form-builder",
 
     properties: {
+        readonly: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        debug: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
         toAdd: { type: Object, notify: true },
         editIndex: { type: String },
         value: { type: Object, reflectToAttribute: true, notify: true },
@@ -58,6 +60,13 @@ Polymer({
                     confirmButton.click();
                 }
             }
+        }
+    },
+    
+    clickDebug: function() {
+        if (this.value) {
+            console.log("Value:", this.value);
+            console.log(JSON.stringify(this.value, null, 4));
         }
     },
 	
