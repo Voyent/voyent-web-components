@@ -80,18 +80,29 @@
                border: 2px inset #FFF845;
                margin: -2px;
            }
+           
+           .shortHeight {
+               padding: 0.4em 0.57em;
+           }
+           
+           .descWrap {
+               font-style: italic;
+               margin-top: 10px;
+           }
         </style>
         
         <iron-a11y-keys id="a11y" keys="enter"
                         on-keys-pressed="onEnterKey"></iron-a11y-keys>
         
-        <paper-button raised on-click="clickAddElement">Add Form Element</paper-button>
+        <paper-button raised on-click="clickAddElement" class="shortHeight">Add Form Element</paper-button>
         <div id="dropDelete"
              ondragover="allowDrop(event)" on-drop="dropToDelete" class="dropDelete">
             <iron-icon icon="delete" class="trashIcon"></iron-icon>Delete
         </div>
         <br/>
-        <i>You can drag and drop the <iron-icon icon="pan-tool" class="smallIcon" style="cursor: default;"></iron-icon> icon to change order or remove elements.</i>
+        <div class="descWrap">
+            You can drag and drop the <iron-icon icon="pan-tool" class="smallIcon" style="cursor: default;"></iron-icon> icon to change order or remove elements.
+        </div>
         
         <div id="mainForm" class="formWrap" ondragover="allowDrop(event)" on-drop="dropToReorder">
             <!-- Unfortunate table needed to align anything with a paper-input -->
@@ -147,15 +158,22 @@
         
         <div id="arrow" class="dialogArrow"></div>
         <paper-dialog id="addDialog" class="dialog" no-cancel-on-outside-click no-cancel-on-esc-key>
-            <h2>Form Element</h2>
+            <h2>
+                <template is="dom-if" if="{{isEqual(editIndex)}}">
+                    Add Form Element
+                </template>
+                <template is="dom-if" if="{{!isEqual(editIndex)}}">
+                    Edit Form Element
+                </template>
+            </h2>
             
             <paper-dialog-scrollable>
                 <fieldset>
                     <legend>Type</legend>
                     <paper-radio-group selected="{{toAdd.type}}">
                       <paper-radio-button name="inputAny"><paper-input disabled value="Any" size="8"></paper-input></paper-radio-button>
-                      <paper-radio-button name="inputLetters"><paper-input disabled value="Letters" size="8"></paper-input></paper-radio-button>
-                      <paper-radio-button name="inputNum"><paper-input disabled value="Numbers" size="8"></paper-input></paper-radio-button>
+                      <paper-radio-button name="inputLetters"><paper-input disabled value="Letters Only" size="8"></paper-input></paper-radio-button>
+                      <paper-radio-button name="inputNum"><paper-input disabled value="Numbers Only" size="8"></paper-input></paper-radio-button>
                       <paper-radio-button name="checkbox"><paper-checkbox checked disabled></paper-checkbox></paper-radio-button>
                       <paper-radio-button name="text">Text</paper-radio-button>
                     </paper-radio-group>
@@ -190,8 +208,14 @@
             
             <center>
                 <paper-button raised on-click="clickAddCancel">Cancel</paper-button>
-                <paper-button raised on-click="clickAddReset">Reset</paper-button>
-                <paper-button raised on-click="clickAddConfirm" id="confirmButton">Confirm Add</paper-button>
+                <paper-button raised on-click="clickAddConfirm" id="confirmButton">
+                    <template is="dom-if" if="{{isEqual(editIndex)}}">
+                        Add Form Element
+                    </template>
+                    <template is="dom-if" if="{{!isEqual(editIndex)}}">
+                        Confirm Changes
+                    </template>
+                </paper-button>
             </center>
         </paper-dialog>
     </template>

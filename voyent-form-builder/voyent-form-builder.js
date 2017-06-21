@@ -140,17 +140,6 @@ Polymer({
 	    this._closeAddDialog();
 	},
 	
-	clickAddReset: function() {
-	    // Don't clear our instance, just reset the necessary variables
-	    // Specifically we don't reset the underlying index, nor the type
-	    this.set('toAdd.title', null);
-	    this.set('toAdd.description', null);
-	    this.set('toAdd.minlength', null);
-	    this.set('toAdd.maxlength', null);
-	    this.set('toAdd.required', false);
-	    this.notifyPath('toAdd');
-	},
-	
 	clickAddConfirm: function() {
 	    // Determine if we're editing or creating new
 	    if (this.editIndex) {
