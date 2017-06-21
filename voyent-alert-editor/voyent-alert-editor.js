@@ -20,8 +20,6 @@ Polymer({
         promises.push(this._fetchAlertTemplates());
         promises.push(this._executeAggregate(this._lastAlertLocations));
         Promise.all(promises).then(function() {
-            //Add the Alert button.
-            _this._addAlertButton();
             //Convert the Alert locations into map entities.
             _this._processAlertLocations();
         }).catch(function(error) {
@@ -103,6 +101,8 @@ Polymer({
      * @private
      */
     _processAlertLocations: function() {
+        //Always initialize the array.
+        this.set('_alerts',[]);
         //Draw the Alerts if we can find a matching Alert Template.
         for (var i=0; i<this._alertLocations.length; i++) {
             var trackerId = this._alertLocations[i].location.properties ?

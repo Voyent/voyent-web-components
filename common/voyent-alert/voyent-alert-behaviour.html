@@ -143,8 +143,7 @@
          */
         _updateAlertLocation: function(alertTemplateData) {
             var _this = this, coordinates, zoneNamespace;
-            var activatingAlert = this._activatingAlert;
-            if (activatingAlert) {
+            if (this._activatingAlert) {
                 //We don't have existing Alert data yet so base the location
                 //off the template position an set a new zoneNamespace.
                 alertTemplateData = this._loadedAlertTemplateData;
@@ -174,7 +173,7 @@
             voyent.locate.updateTrackerLocation({location: location}).then(function(data) {
                 //Always update our stored instance location.
                 _this.set('_loadedAlertTemplateData.alertInstance',location);
-                if (activatingAlert) {
+                if (_this._activatingAlert) {
                     //Update our list of Alerts and keep the overlay alert index in sync.
                     _this.push('_alerts',alertTemplateData);
                     //Restore the create button.
