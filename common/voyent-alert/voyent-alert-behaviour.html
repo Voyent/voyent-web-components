@@ -24,102 +24,97 @@
 
         /**
          * Initialize google map listeners for moving, resizing and clicking of Alert Templates.
-         * @param alertIndex - Optional.
+         * @param alertTemplateData
          * @private
          */
-        _setupChangeListeners: function(alertIndex) {
+        _setupChangeListeners: function(alertTemplateData) {
             var _this = this;
-            (function(alertIndex) {
-                var alertTemplateData = typeof alertIndex !== 'undefined' && alertIndex !== -1 ?
-                    _this._alerts[alertIndex] : _this._loadedAlertTemplateData;
-
-                if (alertTemplateData.marker) {
-                    //Clear any previously added listeners (since we call this function again for newly added zones).
-                    google.maps.event.clearInstanceListeners(alertTemplateData.marker);
-                    //Add drag listener to marker.
-                    google.maps.event.addListener(alertTemplateData.marker, 'dragend', function () {
-                        //Update the template coordinates (always required to maintain label positions).
-                        _this._updateAlertTemplateJSON(alertTemplateData);
-                        if (alertTemplateData.alertInstance) {
-                            //Update the Alert's location.
-                            _this._updateAlertLocation(alertTemplateData);
-                        }
-                        //Adjust the position of the Proximity Zone labels since all of
-                        //their positions changed. We pass in the necessary alertTemplateData
-                        //since it's possible they dragged an Alert without it being active.
-                        _this._redrawZoneOverlay(alertTemplateData);
-                    });
-                    //Add click listener to marker.
-                    google.maps.event.addListener(alertTemplateData.marker, 'click', function () {
-                        //If we have a currently loaded Alert Template or Alert...
-                        if (_this._loadedAlertTemplateData) {
-                            //If they click the marker for the currently active Alert Template or Alert
-                            //marker then toggle then de-select the zones and close the accordion.
-                            if (_this._loadedAlertTemplateData === alertTemplateData) {
-                                _this._toggleAccordion(-1);
-                            }
-                            //If they clicked on an Alert that is not currently active then disable
-                            //edits and toggle the accordion for the previously selected Alert zones.
-                            if (_this._loadedAlertTemplateData !== alertTemplateData) {
-                                _this._toggleAccordion(-1);
-                                _this._toggleEditableZones(false);
-                            }
-                        }
-                        //Regardless of if an Alert was previously loaded, if a new Alert
-                        //was clicked load it and set the editable state of the zones.
-                        if (_this._loadedAlertTemplateData !== alertTemplateData) {
-                            _this._loadedAlertTemplateData = alertTemplateData;
-                            _this._toggleEditableZones(true);
-                        }
-                    });
-                }
-                if (alertTemplateData.circles) {
-                    for (var i=0; i<alertTemplateData.circles.length; i++) {
-                        var circle = alertTemplateData.circles[i];
-                        (function(circle){
-                            //Clear any previously added listeners (since we call this function again for newly added zones).
-                            google.maps.event.clearInstanceListeners(circle);
-                            //Add resize listener to circles.
-                            google.maps.event.addListener(circle, 'radius_changed', function () {
-                                //Update the JSON since the size of a zone changed.
-                                _this._updateAlertTemplateJSON(alertTemplateData);
-                                //Adjust the position of the Proximity Zone label since the radius changed.
-                                _this._redrawZoneOverlay(alertTemplateData,alertTemplateData.circles.indexOf(circle));
-                            });
-                            //Add click listener to circles.
-                            google.maps.event.addListener(circle, 'click', function () {
-                                var circleIndex = alertTemplateData.circles.indexOf(circle);
-                                //If we have a currently loaded Alert Template or Alert...
-                                if (_this._loadedAlertTemplateData) {
-                                    //If they click a zone for the currently active
-                                    //Alert Template or Alert then toggle the accordion.
-                                    if (_this._loadedAlertTemplateData === alertTemplateData) {
-                                        _this._toggleAccordion(circleIndex);
-                                    }
-                                    //If they clicked on an Alert that is not currently active then disable
-                                    //edits to the previously selected Alert zones and toggle the accordion.
-                                    if (_this._loadedAlertTemplateData !== alertTemplateData) {
-                                        _this._toggleAccordion(-1);
-                                        _this._toggleEditableZones(false);
-                                    }
-                                }
-                                //Regardless of if an Alert was previously loaded, if a new Alert was clicked
-                                //load it, toggle the accordion amd set the editable state of the zones.
-                                if (_this._loadedAlertTemplateData !== alertTemplateData) {
-                                    _this._loadedAlertTemplateData = alertTemplateData;
-                                    _this._toggleAccordion(circleIndex);
-                                    _this._toggleEditableZones(true);
-                                }
-                                // Fire an event for anyone interested
-                                _this.fire('voyent-alert-template-click', {
-                                    'alertTemplate': alertTemplateData.alertTemplate,
-                                    'selectedZone': circleIndex
-                                });
-                            });
-                        })(circle);
+            if (alertTemplateData.marker) {
+                //Clear any previously added listeners (since we call this function again for newly added zones).
+                google.maps.event.clearInstanceListeners(alertTemplateData.marker);
+                //Add drag listener to marker.
+                google.maps.event.addListener(alertTemplateData.marker, 'dragend', function () {
+                    //Update the template coordinates (always required to maintain label positions).
+                    _this._updateAlertTemplateJSON(alertTemplateData);
+                    if (alertTemplateData.alertInstance) {
+                        //Update the Alert's location.
+                        _this._updateAlertLocation(alertTemplateData);
                     }
+                    //Adjust the position of the Proximity Zone labels since all of
+                    //their positions changed. We pass in the necessary alertTemplateData
+                    //since it's possible they dragged an Alert without it being active.
+                    _this._redrawZoneOverlay(alertTemplateData);
+                });
+                //Add click listener to marker.
+                google.maps.event.addListener(alertTemplateData.marker, 'click', function () {
+                    //If we have a currently loaded Alert Template or Alert...
+                    if (_this._loadedAlertTemplateData) {
+                        //If they click the marker for the currently active Alert Template or Alert
+                        //marker then toggle then de-select the zones and close the accordion.
+                        if (_this._loadedAlertTemplateData === alertTemplateData) {
+                            _this._toggleAccordion(-1);
+                        }
+                        //If they clicked on an Alert that is not currently active then disable
+                        //edits and toggle the accordion for the previously selected Alert zones.
+                        if (_this._loadedAlertTemplateData !== alertTemplateData) {
+                            _this._toggleAccordion(-1);
+                            _this._toggleEditableZones(false);
+                        }
+                    }
+                    //Regardless of if an Alert was previously loaded, if a new Alert
+                    //was clicked load it and set the editable state of the zones.
+                    if (_this._loadedAlertTemplateData !== alertTemplateData) {
+                        _this._loadedAlertTemplateData = alertTemplateData;
+                        _this._toggleEditableZones(true);
+                    }
+                });
+            }
+            if (alertTemplateData.circles) {
+                for (var i=0; i<alertTemplateData.circles.length; i++) {
+                    var circle = alertTemplateData.circles[i];
+                    (function(circle){
+                        //Clear any previously added listeners (since we call this function again for newly added zones).
+                        google.maps.event.clearInstanceListeners(circle);
+                        //Add resize listener to circles.
+                        google.maps.event.addListener(circle, 'radius_changed', function () {
+                            //Update the JSON since the size of a zone changed.
+                            _this._updateAlertTemplateJSON(alertTemplateData);
+                            //Adjust the position of the Proximity Zone label since the radius changed.
+                            _this._redrawZoneOverlay(alertTemplateData,alertTemplateData.circles.indexOf(circle));
+                        });
+                        //Add click listener to circles.
+                        google.maps.event.addListener(circle, 'click', function () {
+                            var circleIndex = alertTemplateData.circles.indexOf(circle);
+                            //If we have a currently loaded Alert Template or Alert...
+                            if (_this._loadedAlertTemplateData) {
+                                //If they click a zone for the currently active
+                                //Alert Template or Alert then toggle the accordion.
+                                if (_this._loadedAlertTemplateData === alertTemplateData) {
+                                    _this._toggleAccordion(circleIndex);
+                                }
+                                //If they clicked on an Alert that is not currently active then disable
+                                //edits to the previously selected Alert zones and toggle the accordion.
+                                if (_this._loadedAlertTemplateData !== alertTemplateData) {
+                                    _this._toggleAccordion(-1);
+                                    _this._toggleEditableZones(false);
+                                }
+                            }
+                            //Regardless of if an Alert was previously loaded, if a new Alert was clicked
+                            //load it, toggle the accordion amd set the editable state of the zones.
+                            if (_this._loadedAlertTemplateData !== alertTemplateData) {
+                                _this._loadedAlertTemplateData = alertTemplateData;
+                                _this._toggleAccordion(circleIndex);
+                                _this._toggleEditableZones(true);
+                            }
+                            // Fire an event for anyone interested
+                            _this.fire('voyent-alert-template-click', {
+                                'alertTemplate': alertTemplateData.alertTemplate,
+                                'selectedZone': circleIndex
+                            });
+                        });
+                    })(circle);
                 }
-            })(alertIndex);
+            }
         },
         /**
          * Updates the current Alert Location using the passed data or the current Alert Template data.
@@ -162,9 +157,6 @@
                 if (activatingAlert) {
                     //Update our list of Alerts and keep the overlay alert index in sync.
                     _this.push('_alerts',alertTemplateData);
-                    for (var i = 0; i < alertTemplateData.zoneOverlays.length; i++) {
-                        alertTemplateData.zoneOverlays[i].setAlertIndex(_this._alerts.length - 1);
-                    }
                     //Restore the create button.
                     _this._addAlertButton();
                     _this.fire('message-info', 'New Alert Activated!');
@@ -292,12 +284,10 @@
             var _outer = this;
 
             //Constructor
-            this._ProximityZoneOverlay = function(zoneIndex,alertIndex) {
-                //Set the index of this Proximity Zone which we'll use later.
+            this._ProximityZoneOverlay = function(alertTemplateData,zoneIndex) {
+                //Link this Proximity Zone overlay with the passed alertTemplateData and our map object.
+                this.alertTemplateData = alertTemplateData;
                 this.zoneIndex = zoneIndex;
-                //Set the index of the Alerts array (only applicable to alert-editor).
-                this.alertIndex = alertIndex;
-                //Set the map for this overlay.
                 this.setMap(_outer._map);
             };
 
@@ -318,14 +308,12 @@
             //Handles visually displaying the overlay on the map. Called when the object is first displayed
             //and again whenever we want to redraw the overlay, like when the positon changes.
             this._ProximityZoneOverlay.prototype.draw = function () {
-                var alertTemplateData = typeof this.alertIndex !== 'undefined' && this.alertIndex !== null ?
-                    _outer._alerts[this.alertIndex] : _outer._loadedAlertTemplateData;
-                var properties = alertTemplateData.alertTemplate.zones.features[this.zoneIndex].properties;
+                var properties = this.alertTemplateData.alertTemplate.zones.features[this.zoneIndex].properties;
 
                 //Retrieve the north-center coordinates of this overlay and convert them to pixel coordinates.
                 var nc = this.getProjection().fromLatLngToDivPixel(
-                    new google.maps.LatLng(alertTemplateData.highestLats[this.zoneIndex],
-                        alertTemplateData.circles[this.zoneIndex].getCenter().lng())
+                    new google.maps.LatLng(this.alertTemplateData.highestLats[this.zoneIndex],
+                    this.alertTemplateData.circles[this.zoneIndex].getCenter().lng())
                 );
                 //Set the div content.
                 this.div.innerHTML = properties.zoneId;
@@ -371,10 +359,6 @@
             this._ProximityZoneOverlay.prototype.setZoneIndex = function(zoneIndex) {
                 this.zoneIndex = zoneIndex;
             };
-
-            this._ProximityZoneOverlay.prototype.setAlertIndex = function(alertIndex) {
-                this.alertIndex = alertIndex;
-            }
         },
 
         /**

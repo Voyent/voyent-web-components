@@ -112,7 +112,7 @@ Polymer({
                 //Determine and set the coordinates for the circle.
                 _this._updateAlertTemplateJSON();
                 //Draw the Proximity Zone label overlay and save a reference to it.
-                _this.push('_loadedAlertTemplateData.zoneOverlays',new _this._ProximityZoneOverlay(0,null));
+                _this.push('_loadedAlertTemplateData.zoneOverlays',new _this._ProximityZoneOverlay(_this._loadedAlertTemplateData,0));
                 //Disable further Alert Template creations - only allowed one at a time.
                 _this._drawingManager.setOptions({
                     "drawingControlOptions":{
@@ -120,7 +120,7 @@ Polymer({
                         "position":google.maps.ControlPosition.TOP_RIGHT}
                 });
                 //Add the change listeners to the marker and circles.
-                _this._setupChangeListeners();
+                _this._setupChangeListeners(_this._loadedAlertTemplateData);
             }
             //Exit drawing mode.
             _this._drawingManager.setDrawingMode(null);

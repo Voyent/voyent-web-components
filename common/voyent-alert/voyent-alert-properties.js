@@ -207,10 +207,10 @@ Polymer({
         this.push('_loadedAlertTemplateData.alertTemplate.zones.features',newCircleJSON);
         this.push('_loadedAlertTemplateData.circles',newCircle);
         //Add the change listeners to the new circle and update the JSON.
-        this._setupChangeListeners(this._alerts ? this._alerts.indexOf(this._loadedAlertTemplateData) : -1);
+        this._setupChangeListeners(this._loadedAlertTemplateData);
         this._updateAlertTemplateJSON();
         //Draw the Proximity Zone label overlay and save a reference to it.
-        this.push('_loadedAlertTemplateData.zoneOverlays',new this._ProximityZoneOverlay(this._loadedAlertTemplateData.alertTemplate.zones.features.length-1,null));
+        this.push('_loadedAlertTemplateData.zoneOverlays',new this._ProximityZoneOverlay(this._loadedAlertTemplateData,this._loadedAlertTemplateData.alertTemplate.zones.features.length-1));
     },
 
     /**

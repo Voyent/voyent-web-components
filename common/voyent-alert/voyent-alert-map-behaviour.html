@@ -170,7 +170,7 @@
         },
 
         /**
-         * Clears the map of the loaded Alert and conditionally also the Alerts.
+         * Clears the map of the loaded Alert and conditionally also the drawn Alerts.
          * @param clearAlerts
          */
         clearMap: function(clearAlerts) {
@@ -326,20 +326,16 @@
                 alertTemplateData.circles.push(circle);
                 //Determine where to draw the Proximity Zone label overlay and draw it.
                 alertTemplateData.highestLats.push(this._determineHighestLat(zones[i].geometry.coordinates[0]));
-                alertTemplateData.zoneOverlays.push(new this._ProximityZoneOverlay(i,alertLocation?this._alerts.length:null));
+                alertTemplateData.zoneOverlays.push(new this._ProximityZoneOverlay(alertTemplateData,i));
             }
             //Set the alertTemplateData or alerts array depending on what we are drawing
             if (alertLocation) {
                 this.push('_alerts',alertTemplateData);
                 //Update the template coordinates to correctly calculate the positions of the labels.
                 this._updateAlertTemplateJSON(alertTemplateData);
-                //Add the change listeners to the marker and circles.
-                this._setupChangeListeners(this._alerts.length-1);
             }
-            else {
-                //Add the change listeners to the marker and circles.
-                this._setupChangeListeners();
-            }
+            //Add the change listeners to the marker and circles.
+            this._setupChangeListeners(alertTemplateData);
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                 //Disable further Alert Template creations - only allowed one at a time.
                 this._drawingManager.setOptions({

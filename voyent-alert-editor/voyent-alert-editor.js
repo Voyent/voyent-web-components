@@ -8,8 +8,6 @@ Polymer({
         this._parentTemplates = this._alerts = this._selectedAlertTemplateId = null;
     },
 
-    observers: ['_alertsSpliced(_alerts.splices)'],
-
     /**
      * Loads the latest Alert Templates, Alerts and User Location.
      */
@@ -454,18 +452,5 @@ Polymer({
             return 'item selected';
         }
         return 'item';
-    },
-
-    /**
-     * Keep our zone overlays in sync after making changes to our Alerts.
-     * @private
-     */
-    _alertsSpliced: function() {
-        if (!this._alerts) { return; }
-        for (var i=0; i<this._alerts.length; i++) {
-            for (var j=0; j<this._alerts[i].zoneOverlays.length; j++) {
-                this._alerts[i].zoneOverlays[j].setAlertIndex(i);
-            }
-        }
     }
 });
