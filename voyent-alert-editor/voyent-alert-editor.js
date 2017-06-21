@@ -103,8 +103,6 @@ Polymer({
      * @private
      */
     _processAlertLocations: function() {
-        //Always initialize the array.
-        this.set('_alerts',[]);
         //Draw the Alerts if we can find a matching Alert Template.
         for (var i=0; i<this._alertLocations.length; i++) {
             var trackerId = this._alertLocations[i].location.properties ?

@@ -20,7 +20,7 @@
              * The Voyent realm to create the Alert Template in.
              * @default voyent.auth.getLastKnownRealm()
              */
-            realm: { type: String },
+            realm: { type: String, observer: '_realmChanged' },
             /**
              * The height of the google map to be created, as an integer. If left empty we will default to the height
              * of the parent container. If a height cannot be found then a default minimum of 500 will be used.
@@ -78,6 +78,7 @@
                     markerOptions: {draggable:true, 'zIndex':50}
                 });
                 _this._setupDrawingListeners();
+                _this._regionMapping = {}; //Map of region data so we can toggle between them.
                 _this._isLoggedIn = false; //Toggle for side panel.
                 //More initialization for each component after login.
                 if (voyent.auth.isLoggedIn()) {
@@ -175,9 +176,9 @@
          */
         clearMap: function(clearAlerts) {
             //Always re-zoom the bounds on the area's region if available.
-            if (this._regionBounds) {
-                this._map.fitBounds(this._regionBounds);
-                this._map.panToBounds(this._regionBounds);
+            if (this._areaRegion && this._areaRegion.bounds) {
+                this._map.fitBounds(this._areaRegion.bounds);
+                this._map.panToBounds(this._areaRegion.bounds);
             }
             //Clear loaded Alert Template.
             if (this._loadedAlertTemplateData) {
@@ -189,6 +190,7 @@
                 for (var i=0; i<this._alerts.length; i++) {
                     deleteAlertEntity(this._alerts[i]);
                 }
+                this.set('_alerts',[]);
             }
             //Re-draw the buttons.
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
@@ -244,7 +246,7 @@
             if (!region || !region.location || !region.location.geometry || !region.location.geometry.coordinates) {
                 return;
             }
-            this._regionBounds = new google.maps.LatLngBounds();
+            var bounds = new google.maps.LatLngBounds();
             var coords = region.location.geometry.coordinates,
                 googlePoint, paths = [], path = [];
             //Generate the ordered sequence of coordinates that completes the Polygon shape.
@@ -253,7 +255,7 @@
                     googlePoint = new google.maps.LatLng(coords[j][k][1], coords[j][k][0]);
                     path.push(googlePoint);
                     //Extend our bounds object so we can pan the map later.
-                    this._regionBounds.extend(googlePoint);
+                    bounds.extend(googlePoint);
                 }
                 paths.push(path);
             }
@@ -265,10 +267,11 @@
                 'clickable': false //Necessary to get the Alert cursor to display correctly.
             });
             //Zoom on the newly drawn Region.
-            this._map.fitBounds(this._regionBounds);
-            this._map.panToBounds(this._regionBounds);
+            this._map.fitBounds(bounds);
+            this._map.panToBounds(bounds);
             //Save a reference to the region JSON and map polygon for later.
-            this._areaRegion = {"region":region,"polygon":polygon};
+            this._areaRegion = {"region":region,"polygon":polygon,"bounds":bounds};
+            this._regionMapping[this.realm] = this._areaRegion;
         },
 
         /**
@@ -410,6 +413,33 @@
                 //Apply the styles
                 _this.updateStyles();
             },0);
+        },
+
+        /**
+         * Manages component state between realm changes.
+         * @param newRealm
+         * @private
+         */
+        _realmChanged: function(newRealm) {
+            //Only proceed if we have a valid realm and the map is initialized.
+            if (!newRealm || !this._map) { return; }
+            //First clear the current region from the map.
+            if (this._areaRegion && this._areaRegion.polygon) {
+                this._areaRegion.polygon.setMap(null);
+                this._areaRegion = null;
+            }
+            //Check if we have the realm region cached otherwise fetch it.
+            var areaRegion = this._regionMapping && this._regionMapping[newRealm] ?
+                this._regionMapping[newRealm] : null;
+            if (areaRegion && areaRegion.polygon) {
+                areaRegion.polygon.setMap(this._map);
+                this._areaRegion = areaRegion;
+            }
+            else {
+                this._fetchRegions();
+            }
+            //Clear the map entirely.
+            this.clearMap(true);
         },
 
         /**
