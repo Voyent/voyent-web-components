@@ -9,24 +9,28 @@ Polymer({
     },
 
     /**
-     * Loads the latest Alert Templates, Alerts and User Location.
+     * Fetches the latest Alert Templates for the realm.
+     * @returns {*}
+     * @private
      */
-    refreshMap: function() {
+    fetchAlertTemplates: function() {
         var _this = this;
-        //First reset the map.
-        _this.clearMap(true);
-        //Fetch the Alert Templates and the last locations of all Alerts.
-        var promises = [];
-        promises.push(this._fetchAlertTemplates());
-        promises.push(this._executeAggregate(this._lastAlertLocations));
-        Promise.all(promises).then(function() {
-            //Convert the Alert locations into map entities.
-            _this._processAlertLocations();
-        }).catch(function(error) {
-            _this.fire('message-error', 'Issue initializing Alert Editor ' + error.responseText || error.message || error);
-            console.error('Issue initializing Alert Editor', error.responseText || error.message || error);
+        return new Promise(function (resolve, reject) {
+            voyent.locate.getAllTrackers({realm:_this.realm,account:_this.account}).then(function(templates) {
+                //Maintain a list of parent templates.
+                _this._parentTemplates = templates.filter(function(alertTemplate) {
+                    return !alertTemplate.properties || !alertTemplate.properties.parentTrackerId;
+                });
+                //Maintain an id-mapped object of all templates, including child templates.
+                _this._parentTemplatesMap = templates.reduce(function(map,obj) {
+                    map[obj._id] = obj;
+                    return map;
+                },{});
+                resolve();
+            }).catch(function (error) {
+                reject(error);
+            });
         });
-        this._fetchCurrentUsersLocation();
     },
 
     /**
@@ -62,38 +66,25 @@ Polymer({
      * @private
      */
     _onAfterLogin: function() {
+        var _this = this;
         this._isLoggedIn = true; //Toggle for side panel.
-        //Add listener to native map button.
+        //Add listener to native map button for cancelling creation.
         this._addListenerToStopDrawingBttn();
-        //Load the template data.
-        this.refreshMap();
+        //Fetch the Alert Templates and the last locations of all Alerts.
+        var promises = [];
+        promises.push(this.fetchAlertTemplates());
+        promises.push(this._executeAggregate(this._lastAlertLocations));
+        Promise.all(promises).then(function() {
+            //Convert the Alert locations into map entities.
+            _this._processAlertLocations();
+        }).catch(function(error) {
+            _this.fire('message-error', 'Issue initializing Alert Editor ' + error.responseText || error.message || error);
+            console.error('Issue initializing Alert Editor', error.responseText || error.message || error);
+        });
+        //Fetch the user's last known location.
+        this._fetchCurrentUsersLocation();
         //Fetch the realm region.
         this._fetchRegions();
-    },
-
-    /**
-     * Fetches the list of Alert Templates for the realm.
-     * @returns {*}
-     * @private
-     */
-    _fetchAlertTemplates: function() {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            voyent.locate.getAllTrackers({realm:_this.realm,account:_this.account}).then(function(templates) {
-                //Maintain a list of parent templates.
-                _this._parentTemplates = templates.filter(function(alertTemplate) {
-                    return !alertTemplate.properties || !alertTemplate.properties.parentTrackerId;
-                });
-                //Maintain an id-mapped object of all templates, including child templates.
-                _this._parentTemplatesMap = templates.reduce(function(map,obj) {
-                    map[obj._id] = obj;
-                    return map;
-                },{});
-                resolve();
-            }).catch(function (error) {
-                reject(error);
-            });
-        });
     },
 
     /**

@@ -105,12 +105,16 @@
         },
 
         /**
-         * Re-calculates the map size and fires the Google Map resize event.
+         * Re-calculates the map size, fires the Google Map resize event and pans the map.
          */
         resizeMap: function() {
             if (('google' in window) && this._map) {
                 this._calcMapSize();
                 google.maps.event.trigger(this._map, 'resize');
+                if (this._areaRegion && this._areaRegion.bounds) {
+                    this._map.fitBounds(this._areaRegion.bounds);
+                    this._map.panToBounds(this._areaRegion.bounds);
+                }
             }
         },
 
