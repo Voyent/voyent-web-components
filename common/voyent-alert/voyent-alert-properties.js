@@ -28,10 +28,10 @@ Polymer({
      */
     _toggleAlertTemplateRenaming: function() {
         var _this = this;
-        var renaming = !this.get('_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming');
+        var renaming = !this._loadedAlertTemplateData.alertTemplate.tmpProperties.renaming;
         if (renaming) {
             //Set the input value to the current zoneId.
-            this.set('_loadedAlertTemplateData.alertTemplate.tmpProperties.newName',this.get('_loadedAlertTemplateData.alertTemplate.label'));
+            this.set('_loadedAlertTemplateData.alertTemplate.tmpProperties.newName',this._loadedAlertTemplateData.alertTemplate.label);
             //Focus on the input.
             setTimeout(function() {
                 _this.querySelector('#alertTemplate').focus();
@@ -82,8 +82,9 @@ Polymer({
      * @private
      */
     _renameAlertTemplate: function() {
+        if (!this._loadedAlertTemplateData.alertTemplate.tmpProperties.newName) { return; }
         //Set the new label and reset the editing mode input state.
-        this.set('_loadedAlertTemplateData.alertTemplate.label',this.get('_loadedAlertTemplateData.alertTemplate.tmpProperties.newName'));
+        this.set('_loadedAlertTemplateData.alertTemplate.label',this._loadedAlertTemplateData.alertTemplate.tmpProperties.newName);
         this.set('_loadedAlertTemplateData.alertTemplate.tmpProperties.newName','');
         //Toggle renaming mode.
         this._toggleAlertTemplateRenaming();
@@ -100,7 +101,7 @@ Polymer({
         var _this = this;
         //This function will either be passed an event (from the ui) or a direct index (from the JS).
         var i = eOrI.model ? eOrI.model.get('index') : eOrI;
-        var renaming = !this.get('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.renaming');
+        var renaming = !this._loadedAlertTemplateData.alertTemplate.zones.features[i].tmpProperties.renaming;
         if (renaming) {
             //Set the input value to the current zoneId.
             this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName',
@@ -161,9 +162,10 @@ Polymer({
      */
     _renameProximityZone: function(e) {
         var i = e.model.get('index');
+        if (!this._loadedAlertTemplateData.alertTemplate.zones.features[i].tmpProperties.newName) { return; }
         //Set the new zoneId and reset the editing mode input state.
         this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.properties.zoneId',
-            this.get('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName'));
+                 this._loadedAlertTemplateData.alertTemplate.zones.features[i].tmpProperties.newName);
         this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName','');
         //Toggle renaming mode.
         this._toggleProximityZoneRenaming(i);
@@ -339,7 +341,7 @@ Polymer({
                         setTimeout(function(){waitForJSColor();},10);
                         return;
                     }
-                    colorPicker.jscolor.fromString(_this.get('_colorVal'));
+                    colorPicker.jscolor.fromString(_this._colorVal);
                     //Focus on the input and display the color picker.
                     setTimeout(function() {
                         colorPicker.focus();
@@ -462,6 +464,7 @@ Polymer({
                 this.set('_editableVal',null);
                 break;
             case 'Color':
+                if (!this._colorVal) { return; }
                 properties['Color'] = this._colorVal;
                 //Set the Color on the circle.
                 zone.tmpProperties.circle.setOptions({"fillColor":'#'+properties.Color});
@@ -475,9 +478,7 @@ Polymer({
                 break;
             default:
                 //Block the user from creating a property with one of the standard keys.
-                if (this._readOnlyProperties.indexOf(this._customPropKey) !== -1) {
-                    return;
-                }
+                if (this._readOnlyProperties.indexOf(this._customPropKey) !== -1) { return; }
                 properties[this._customPropKey] = this._customPropVal;
                 //If the selected property key changed delete the old one and update the table selection.
                 if (this._selected !== this._customPropKey) {

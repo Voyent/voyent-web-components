@@ -101,11 +101,20 @@ Polymer({
         google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
             shape = oce.overlay;
             if (oce.type === 'marker') { //Marker is actually a circle alertTemplate
+                //Prompt the Alert Template name immediately.
+                var templateName = promptForLabel();
+                if (!templateName) {
+                    //Cancelled so delete the marker and disable drawing mode.
+                    oce.overlay.setMap(null);
+                    _this._drawingManager.setDrawingMode(null);
+                    return;
+                }
                 //Create the new google maps circle and bind the circle (zone) to the marker (anchor).
                 var newCircle = new google.maps.Circle(_this._getCircleProperties());
                 newCircle.bindTo('center', oce.overlay, 'position');
                 //Build the JSON structure for the alertTemplate template.
                 var alertTemplate = _this._getAlertTemplateJSON();
+                alertTemplate.label = templateName;
                 alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
                 alertTemplate.zones.features[0].tmpProperties.circle = newCircle;
                 //Store the various pieces together so we can reference them later.
@@ -139,6 +148,16 @@ Polymer({
                 }
             }
         });
+        /**
+         * Handles displaying the Alert Template label prompt. Returns the entered value.
+         * @returns {*}
+         */
+        function promptForLabel() {
+            var templateName = window.prompt("Please enter the Alert Template name",'');
+            if (templateName === null) { return null; } //Cancelled.
+            else if (templateName.trim() === '') { return promptForLabel(); } //Empty name, dialog again.
+            return templateName;
+        }
     },
 
     /**
