@@ -179,12 +179,13 @@ Polymer({
         var smallestIndex = 50, //50 because the highest index ever is 49
             largestRadius = 0; //0 because every zone will be bigger
         //Get the size of largest circle and our smallest zIndex so we can determine what values to set for the new one
-        for (var i=0; i<this._loadedAlertTemplateData.circles.length; i++) {
-            if (this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.radius >= largestRadius) {
-                largestRadius = this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.radius;
+        var zones = this._loadedAlertTemplateData.alertTemplate.zones.features;
+        for (var i=0; i<zones.length; i++) {
+            if (zones[i].properties.googleMaps.radius >= largestRadius) {
+                largestRadius = zones[i].properties.googleMaps.radius;
             }
-            if (this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.zIndex <= smallestIndex){
-                smallestIndex = this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.googleMaps.zIndex;
+            if (zones[i].properties.googleMaps.zIndex <= smallestIndex){
+                smallestIndex = zones[i].properties.googleMaps.zIndex;
             }
         }
         //Set the new zone radius as 50% larger than the current largest zone.
@@ -203,14 +204,14 @@ Polymer({
         //Build the geoJSON structure for the proximity zone.
         var newCircleJSON = this._getZoneJSON();
         newCircleJSON.properties.zoneId = 'Zone_' + (this._loadedAlertTemplateData.alertTemplate.zones.features.length + 1);
+        newCircleJSON.tmpProperties.circle = newCircle;
         //Sync our lists.
         this.push('_loadedAlertTemplateData.alertTemplate.zones.features',newCircleJSON);
-        this.push('_loadedAlertTemplateData.circles',newCircle);
         //Add the change listeners to the new circle and update the JSON.
         this._setupChangeListeners(this._loadedAlertTemplateData);
         this._updateAlertTemplateJSON();
         //Draw the Proximity Zone label overlay and save a reference to it.
-        this.push('_loadedAlertTemplateData.zoneOverlays',new this._ProximityZoneOverlay(this._loadedAlertTemplateData,this._loadedAlertTemplateData.alertTemplate.zones.features.length-1));
+        newCircleJSON.tmpProperties.zoneOverlay = new this._ProximityZoneOverlay(newCircleJSON);
     },
 
     /**
@@ -222,18 +223,12 @@ Polymer({
         e.stopPropagation();
         //Get the index of the proximity zone that is to be removed.
         var i = e.model.get('index');
+        var zone = this._loadedAlertTemplateData.alertTemplate.zones.features[i];
+        //Remove the circle and zone overlay from the map.
+        zone.tmpProperties.circle.setMap(null);
+        zone.tmpProperties.zoneOverlay.setMap(null);
         //Remove the zone from the alertTemplate JSON.
         this.splice('_loadedAlertTemplateData.alertTemplate.zones.features',i,1);
-        //Remove the circle and zone overlay from the map.
-        this._loadedAlertTemplateData.circles[i].setMap(null);
-        this._loadedAlertTemplateData.zoneOverlays[i].setMap(null);
-        this.splice('_loadedAlertTemplateData.circles',i,1);
-        this.splice('_loadedAlertTemplateData.zoneOverlays',i,1);
-        this.splice('_loadedAlertTemplateData.highestLats',i,1);
-        //Keep the overlay zone index in sync.
-        for (i=0; i<this._loadedAlertTemplateData.zoneOverlays.length; i++) {
-            this._loadedAlertTemplateData.zoneOverlays[i].setZoneIndex(i);
-        }
     },
 
     /**
@@ -441,7 +436,7 @@ Polymer({
         var _this = this;
         //Do this async since iron-activate fires before this._selected changes.
         setTimeout(function() {
-            var currentVal = _this._loadedAlertTemplateData.circles[e.model.get('index')].getEditable() ? 'true' : 'false';
+            var currentVal = _this._loadedAlertTemplateData.alertTemplate.zones.features[e.model.get('index')].tmpProperties.circle.getEditable() ? 'true' : 'false';
             if (_this._editableVal === currentVal) { return; }
             _this._editProperty(e);
         },0);
@@ -456,25 +451,26 @@ Polymer({
         var _this = this;
         var index = e.model.get('index');
         //Clone properties and re-set it so the computed binding _toArray updates.
-        var properties = JSON.parse(JSON.stringify(this._loadedAlertTemplateData.alertTemplate.zones.features[index].properties));
+        var zone = this._loadedAlertTemplateData.alertTemplate.zones.features[index];
+        var properties = JSON.parse(JSON.stringify(zone.properties));
         switch (this._selected) {
             //Copy the new property value from our editing mode inputs to the JSON. We don't bind directly in case we need to revert.
             case 'Editable':
                 properties['Editable'] = this._editableVal.toLowerCase() === 'true'; //Convert string from UI to boolean
                 //Set the Editable state on the circle.
-                this._loadedAlertTemplateData.circles[index].setEditable(properties.Editable);
+                zone.tmpProperties.circle.setEditable(properties.Editable);
                 this.set('_editableVal',null);
                 break;
             case 'Color':
                 properties['Color'] = this._colorVal;
                 //Set the Color on the circle.
-                this._loadedAlertTemplateData.circles[index].setOptions({"fillColor":'#'+properties.Color});
+                zone.tmpProperties.circle.setOptions({"fillColor":'#'+properties.Color});
                 this.set('_colorVal',null);
                 break;
             case 'Opacity':
                 properties['Opacity'] = this._opacityVal;
                 //Set the Opacity on the circle.
-                this._loadedAlertTemplateData.circles[index].setOptions({"fillOpacity":properties.Opacity});
+                zone.tmpProperties.circle.setOptions({"fillOpacity":properties.Opacity});
                 this.set('_opacityVal',null);
                 break;
             default:
@@ -604,7 +600,7 @@ Polymer({
      * @returns {number}
      * @private
      */
-    _sortProperties: function(a, b) {
+    _sortProperties: function(a,b) {
         if (!this._sortType) {
             this._sortType = 'key';
         }

@@ -107,12 +107,13 @@ Polymer({
                 //Build the JSON structure for the alertTemplate template.
                 var alertTemplate = _this._getAlertTemplateJSON();
                 alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
+                alertTemplate.zones.features[0].tmpProperties.circle = newCircle;
                 //Store the various pieces together so we can reference them later.
-                _this._loadedAlertTemplateData = {"alertTemplate":alertTemplate,"marker":shape,"circles":[newCircle],"zoneOverlays":[],"highestLats":[],"isPersisted":false};
+                _this._loadedAlertTemplateData = {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false};
                 //Determine and set the coordinates for the circle.
                 _this._updateAlertTemplateJSON();
                 //Draw the Proximity Zone label overlay and save a reference to it.
-                _this.push('_loadedAlertTemplateData.zoneOverlays',new _this._ProximityZoneOverlay(_this._loadedAlertTemplateData,0));
+                alertTemplate.zones.features[0].tmpProperties.zoneOverlay = new _this._ProximityZoneOverlay(alertTemplate.zones.features[0]);
                 //Disable further Alert Template creations - only allowed one at a time.
                 _this._drawingManager.setOptions({
                     "drawingControlOptions":{

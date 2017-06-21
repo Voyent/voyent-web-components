@@ -219,7 +219,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                 </div>
             </div>
             <div class="accordion">
-                <template is="dom-repeat" items="[[_loadedAlertTemplateData.alertTemplate.zones.features]]" as="zone">
+                <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlertTemplateData.alertTemplate.zones.features]]" as="zone">
                     <div class$="{{_getAccordionClasses('header',zone.tmpProperties.visible)}}">
                         <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
                             <paper-icon-button icon="{{_getArrowIcon(zone.tmpProperties.visible)}}"

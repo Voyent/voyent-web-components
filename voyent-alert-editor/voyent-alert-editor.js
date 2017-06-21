@@ -284,10 +284,10 @@ Polymer({
         for (var i=0; i<this._alerts.length; i++) {
             //Hide the marker.
             this._alerts[i].marker.setMap(value);
-            for (var j=0; j<this._alerts[i].circles.length; j++) {
+            for (var j=0; j<this._alerts[i].alertTemplate.zones.features.length; j++) {
                 //Hide the zones and their labels.
-                this._alerts[i].circles[j].setMap(value);
-                this._alerts[i].zoneOverlays[j].setMap(value);
+                this._alerts[i].alertTemplate.zones.features[j].tmpProperties.circle.setMap(value);
+                this._alerts[i].alertTemplate.zones.features[j].tmpProperties.zoneOverlay.setMap(value);
             }
         }
     },
@@ -341,7 +341,7 @@ Polymer({
         childTemplate.properties.parentTrackerId = childTemplate._id;
         childTemplate._id = parentAlertTemplateId+'.'+new Date().getTime();
         //Now that we have updated center coordinates we need to update the coordinates for all the zones.
-        this._loadedAlertTemplateData = {"alertTemplate":childTemplate,"marker":null,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":false};
+        this._loadedAlertTemplateData = {"alertTemplate":childTemplate,"marker":null,"isPersisted":false};
         this._updateAlertTemplateJSON();
         //Draw the new Alert Template.
         this._drawAlertEntity(this._loadedAlertTemplateData.alertTemplate);

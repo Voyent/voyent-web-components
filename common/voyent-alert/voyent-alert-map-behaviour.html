@@ -120,35 +120,32 @@
 
         /**
          * Saves or updates the current Alert Template.
-         * @param alertTemplateData - Optional
          */
-        saveAlertTemplate: function (alertTemplateData) {
+        saveAlertTemplate: function () {
             //Use this flag to avoid race conditions if the user mashes the "Activate Now" and "Back" buttons.
-            if (this._savingAlert) { return; }
-            this._savingAlert = true;
-            if (this._loadedAlertTemplateData) {
-                alertTemplateData = this._loadedAlertTemplateData;
-            }
-            if (!alertTemplateData) { return; }
+            if (this._savingAlert) { return; } this._savingAlert = true;
             var _this = this;
-            var func = !alertTemplateData.isPersisted ? 'createTracker' : 'updateTracker';
-            //Clone the object and remove the tmpProperties we use in the template.
-            var alertTemplate = JSON.parse(JSON.stringify(alertTemplateData.alertTemplate));
-            delete alertTemplate.tmpProperties;
+            var func = !this._loadedAlertTemplateData.isPersisted ? 'createTracker' : 'updateTracker';
+            var alertTemplate = this._loadedAlertTemplateData.alertTemplate, zoneTmpProperties = [];
+            //Save the tmpProperties before deleting them from the array,
+            //we can't parse first because they contain invalid JSON.
             for (var i=0; i<alertTemplate.zones.features.length; i++) {
+                zoneTmpProperties.push(alertTemplate.zones.features[i].tmpProperties);
                 delete alertTemplate.zones.features[i].tmpProperties;
             }
+            var newTemplate = JSON.parse(JSON.stringify(this._loadedAlertTemplateData.alertTemplate));
+            delete newTemplate.tmpProperties;
             voyent.locate[func]({
                 realm: this.realm,
                 account: this.account,
-                tracker: alertTemplate,
-                id: alertTemplate._id //Not valid if 'createTracker' but no harm in passing it anyway.
+                tracker: newTemplate,
+                id: newTemplate._id //Not valid if 'createTracker' but no harm in passing it anyway.
             }).then(function (uri) {
                 _this._savingAlert = false;
                 if (func === 'createTracker') {
                     //Grab the generated ID from the return URI and setup change listeners
-                    _this.set('_loadedAlertTemplateData.alertTemplate._id',uri ? uri.split('/').pop() : alertTemplateData.alertTemplate._id);
-                    alertTemplateData.isPersisted = true;
+                    _this.set('_loadedAlertTemplateData.alertTemplate._id',uri.split('/').pop());
+                    _this._loadedAlertTemplateData.isPersisted = true;
                     if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                         _this.fire('message-info', 'Alert Template successfully created.');
                     }
@@ -156,21 +153,17 @@
                 else if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                     _this.fire('message-info', 'Alert Template successfully updated.');
                 }
-                //Update our local copy of the persisted Alert Template.
-                alertTemplateData.persistedAlertTemplate = JSON.parse(JSON.stringify(alertTemplate));
+                //Update our local copy of the persisted Alert Template in case we need to revert later.
+                _this._loadedAlertTemplateData.persistedAlertTemplate =
+                JSON.parse(JSON.stringify(_this._loadedAlertTemplateData.alertTemplate));
+                //Restore the tmpProperties for each of the zones.
+                var zones = _this._loadedAlertTemplateData.persistedAlertTemplate.zones.features;
+                for (var i=0; i<_this._loadedAlertTemplateData.persistedAlertTemplate.zones.features.length; i++) {
+                    _this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties',zoneTmpProperties[i]);
+                    _this.set('_loadedAlertTemplateData.persistedAlertTemplate.zones.features.'+i+'.tmpProperties',zoneTmpProperties[i]);
+                }
                 //Fire an event for anyone interested.
                 _this.fire('voyent-alert-template-saved',{});
-            }).catch(function (error) {
-                _this._savingAlert = false;
-                if (func === 'createTracker') {
-                    //If the initial creation fails then remove it from the map.
-                    alertTemplateData.marker.setMap(null);
-                    for (var i = 0; i < alertTemplateData.circles.length; i++){
-                        alertTemplateData.circles[i].setMap(null);
-                    }
-                }
-                _this.fire('message-error', 'Issue saving Alert Template ' + error.responseText || error.message);
-                console.error('Issue saving Alert Template', error.responseText || error.message);
             });
         },
 
@@ -210,9 +203,10 @@
             function deleteAlertEntity(alertTemplateData) {
                 //Remove the marker, circles and zoneOverlays from the map.
                 alertTemplateData.marker.setMap(null);
-                for (var i=0; i<alertTemplateData.circles.length; i++) {
-                    alertTemplateData.circles[i].setMap(null);
-                    alertTemplateData.zoneOverlays[i].setMap(null);
+                var zones = alertTemplateData.alertTemplate.zones.features;
+                for (var i=0; i<zones.length; i++) {
+                    zones[i].tmpProperties.circle.setMap(null);
+                    zones[i].tmpProperties.zoneOverlay.setMap(null);
                 }
             }
         },
@@ -298,7 +292,7 @@
             if (!this._loadedAlertTemplateData || alertLocation) {
                 alertTemplateData = {"alertTemplate":alertTemplate,
                     "persistedAlertTemplate":JSON.parse(JSON.stringify(alertTemplate)),
-                    "marker":marker,"circles":[],"zoneOverlays":[],"highestLats":[],"isPersisted":true};
+                    "marker":marker,"isPersisted":true};
                 if (alertLocation) { alertTemplateData.alertInstance = alertLocation; }
                 //Load immediately since it's a template.
                 else { this._loadedAlertTemplateData = alertTemplateData; }
@@ -309,16 +303,17 @@
                 alertTemplateData = this._loadedAlertTemplateData;
                 alertTemplateData.marker = marker;
             }
-
             //Add the tmpProperties to the Alert Template (used by the view).
-            alertTemplateData.alertTemplate.tmpProperties = this._getAlertTemplateTmpProperties();
-
+            if (!alertTemplateData.alertTemplate.tmpProperties) {
+                alertTemplateData.alertTemplate.tmpProperties = this._getAlertTemplateTmpProperties();
+            }
             //Generate the circles and bind them to the marker.
             var zones = alertTemplateData.alertTemplate.zones.features,circle, properties;
-            alertTemplateData.highestLats = [];
             for (var i=0; i<zones.length; i++) {
                 //Add the tmpProperties to the Zone (used by the view).
-                zones[i].tmpProperties = this._getZoneTmpProperties();
+                if (!zones[i].tmpProperties) {
+                    zones[i].tmpProperties = this._getZoneTmpProperties();
+                }
                 //Set the properties of the circle based on the alertTemplate JSON.
                 properties = this._getCircleProperties();
                 //Don't allow editing Alert zone sizes unless the Alert is active.
@@ -330,10 +325,10 @@
                 //Create the circle and bind it.
                 circle = new google.maps.Circle(properties);
                 circle.bindTo('center', marker, 'position');
-                alertTemplateData.circles.push(circle);
+                zones[i].tmpProperties.circle = circle;
                 //Determine where to draw the Proximity Zone label overlay and draw it.
-                alertTemplateData.highestLats.push(this._determineHighestLat(zones[i].geometry.coordinates[0]));
-                alertTemplateData.zoneOverlays.push(new this._ProximityZoneOverlay(alertTemplateData,i));
+                zones[i].tmpProperties.highestLat = this._determineHighestLat(zones[i].geometry.coordinates[0]);
+                zones[i].tmpProperties.zoneOverlay = new this._ProximityZoneOverlay(zones[i]);
             }
             //Set the alertTemplateData or alerts array depending on what we are drawing
             if (alertLocation) {
