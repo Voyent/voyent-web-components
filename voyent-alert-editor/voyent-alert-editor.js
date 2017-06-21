@@ -75,6 +75,8 @@ Polymer({
         promises.push(this.fetchAlertTemplates());
         promises.push(this._executeAggregate(this._lastAlertLocations));
         Promise.all(promises).then(function() {
+            //Add the Alert button.
+            _this._addAlertButton();
             //Convert the Alert locations into map entities.
             _this._processAlertLocations();
         }).catch(function(error) {
