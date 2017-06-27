@@ -329,6 +329,10 @@ Polymer({
      * @private
      */
     _createChildTemplate: function(parentAlertTemplateId,latLng) {
+        if (!google.maps.geometry.poly.containsLocation(latLng, this._areaRegion.polygon)) {
+            this.fire('message-info','The Alert center must be inside your region.');
+            return;
+        }
         //Find and clone the Alert Template that we will build the child template from.
         var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
             return alertTemplate._id === parentAlertTemplateId;

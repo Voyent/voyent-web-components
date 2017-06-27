@@ -35,23 +35,31 @@
                 //Clear any previously added listeners (since we call this function again for newly added zones).
                 google.maps.event.clearInstanceListeners(alertTemplateData.marker);
                 //Handle dragging by the marker.
-                google.maps.event.addListener(alertTemplateData.marker, "dragstart", function () {
-                    //The center_changed listener will fire continuously when dragging
-                    //the marker so we'll use this flag to ignore those events.
+                google.maps.event.addListener(alertTemplateData.marker,'dragstart',function() {
+                    //The proximity zone center_changed listener will fire continuously when
+                    //dragging the marker so we'll use this flag to ignore those events.
                     _this._ignoreCenterChanges = true;
                 });
-                google.maps.event.addListener(alertTemplateData.marker, 'dragend', function () {
+                google.maps.event.addListener(alertTemplateData.marker,'dragend',function() {
                     alertEntityMoved(alertTemplateData);
                     _this._ignoreCenterChanges = false;
                 });
                 //Add click listener to marker.
-                google.maps.event.addListener(alertTemplateData.marker, 'click', function () {
+                google.maps.event.addListener(alertTemplateData.marker,'click',function() {
                     //Toggle all the accordions closed.
                     if (_this._loadedAlertTemplateData) {
                         _this._toggleAccordion(-1);
                     }
                     //Load the clicked template data in case it's a different template.
                     _this._loadedAlertTemplateData = alertTemplateData;
+                });
+                //Prevent the Alert entity from being dragged outside of the region.
+                google.maps.event.addListener(alertTemplateData.marker,'drag',function(e) {
+                    if (!google.maps.geometry.poly.containsLocation(e.latLng,_this._areaRegion.polygon)) {
+                        alertTemplateData.marker.setPosition(_this._previousDragPosition);
+                        return;
+                    }
+                    _this._previousDragPosition = e.latLng;
                 });
             }
             var zones = alertTemplateData.alertTemplate.zones.features;
@@ -61,13 +69,13 @@
                     google.maps.event.clearInstanceListeners(zone.tmpProperties.circle);
                     //Handles updating the position of an Alert entity when
                     //dragging by the inner-most circle's drag point.
-                    google.maps.event.addListener(zone.tmpProperties.circle, "center_changed", function() {
+                    google.maps.event.addListener(zone.tmpProperties.circle,'center_changed',function() {
                         //Ignore when dragging by marker and only proceed for one zone.
                         if (_this._ignoreCenterChanges || alertTemplateData.alertTemplate.zones.features.indexOf(zone) !== 0) { return; }
                         alertEntityMoved(alertTemplateData);
                     });
                     //Add resize listener to circle.
-                    google.maps.event.addListener(zone.tmpProperties.circle, 'radius_changed', function () {
+                    google.maps.event.addListener(zone.tmpProperties.circle,'radius_changed',function() {
                         //Update the JSON since the size of a zone changed.
                         _this._updateAlertTemplateJSON(alertTemplateData);
                         //Adjust the position of the Proximity Zone label since the radius changed.
@@ -76,7 +84,7 @@
                         _this._sortZonesBySize();
                     });
                     //Add click listener to circle.
-                    google.maps.event.addListener(zone.tmpProperties.circle, 'click', function () {
+                    google.maps.event.addListener(zone.tmpProperties.circle,'click',function() {
                         var zoneIndex = alertTemplateData.alertTemplate.zones.features.indexOf(zone);
                         //If we have a currently loaded Alert Template or Alert...
                         if (_this._loadedAlertTemplateData) {

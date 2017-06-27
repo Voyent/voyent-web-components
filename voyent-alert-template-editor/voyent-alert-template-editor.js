@@ -101,6 +101,11 @@ Polymer({
         google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
             shape = oce.overlay;
             if (oce.type === 'marker') { //Marker is actually a circle alertTemplate
+                if (!google.maps.geometry.poly.containsLocation(shape.getPosition(), _this._areaRegion.polygon)) {
+                    _this.fire('message-info','The Alert Template center must be inside your region.');
+                    oce.overlay.setMap(null);
+                    return;
+                }
                 //Prompt the Alert Template name immediately.
                 var templateName = promptForLabel();
                 if (!templateName) {
