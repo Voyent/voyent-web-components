@@ -88,9 +88,7 @@
                     _this._onAfterLogin();
                 });
                 //Make sure the map is sized correctly when the window size changes.
-                google.maps.event.addListener(window, 'resize', function () {
-                    _this.resizeMap();
-                });
+                window.addEventListener('resize', function() { _this.resizeMap(); });
             };
             if (!('google' in window) || !('maps' in window.google)) {
                 var script = document.createElement('script');
@@ -109,12 +107,16 @@
          */
         resizeMap: function() {
             if (('google' in window) && this._map) {
+                var _this = this;
                 this._calcMapSize();
-                google.maps.event.trigger(this._map, 'resize');
-                if (this._areaRegion && this._areaRegion.bounds) {
-                    this._map.fitBounds(this._areaRegion.bounds);
-                    this._map.panToBounds(this._areaRegion.bounds);
-                }
+                //Async so the new dimensions have time to render.
+                setTimeout(function() {
+                    google.maps.event.trigger(_this._map, 'resize');
+                    if (_this._areaRegion && _this._areaRegion.bounds) {
+                        _this._map.fitBounds(_this._areaRegion.bounds);
+                        _this._map.panToBounds(_this._areaRegion.bounds);
+                    }
+                },0);
             }
         },
 
