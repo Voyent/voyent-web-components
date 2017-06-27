@@ -316,8 +316,6 @@
                 }
                 //Set the properties of the circle based on the alertTemplate JSON.
                 properties = this._getCircleProperties();
-                //Don't allow editing Alert zone sizes unless the Alert is active.
-                properties.editable = alertLocation ? false : zones[i].properties.Editable;
                 properties.radius = zones[i].properties.googleMaps.radius;
                 properties.fillColor = '#'+ zones[i].properties.Color;
                 properties.fillOpacity = zones[i].properties.Opacity;
@@ -330,7 +328,7 @@
                 zones[i].tmpProperties.highestLat = this._determineHighestLat(zones[i].geometry.coordinates[0]);
                 zones[i].tmpProperties.zoneOverlay = new this._ProximityZoneOverlay(zones[i]);
             }
-            //Set the alertTemplateData or alerts array depending on what we are drawing
+            //Set the alerts array if adding a new alert.
             if (alertLocation) {
                 this.push('_alerts',alertTemplateData);
                 //Update the template coordinates to correctly calculate the positions of the labels.

@@ -46,26 +46,12 @@
                 });
                 //Add click listener to marker.
                 google.maps.event.addListener(alertTemplateData.marker, 'click', function () {
-                    //If we have a currently loaded Alert Template or Alert...
+                    //Toggle all the accordions closed.
                     if (_this._loadedAlertTemplateData) {
-                        //If they click the marker for the currently active Alert Template or Alert
-                        //marker then toggle then de-select the zones and close the accordion.
-                        if (_this._loadedAlertTemplateData === alertTemplateData) {
-                            _this._toggleAccordion(-1);
-                        }
-                        //If they clicked on an Alert that is not currently active then disable
-                        //edits and toggle the accordion for the previously selected Alert zones.
-                        if (_this._loadedAlertTemplateData !== alertTemplateData) {
-                            _this._toggleAccordion(-1);
-                            _this._toggleEditableZones(false);
-                        }
+                        _this._toggleAccordion(-1);
                     }
-                    //Regardless of if an Alert was previously loaded, if a new Alert
-                    //was clicked load it and set the editable state of the zones.
-                    if (_this._loadedAlertTemplateData !== alertTemplateData) {
-                        _this._loadedAlertTemplateData = alertTemplateData;
-                        _this._toggleEditableZones(true);
-                    }
+                    //Load the clicked template data in case it's a different template.
+                    _this._loadedAlertTemplateData = alertTemplateData;
                 });
             }
             var zones = alertTemplateData.alertTemplate.zones.features;
@@ -99,19 +85,17 @@
                             if (_this._loadedAlertTemplateData === alertTemplateData) {
                                 _this._toggleAccordion(zoneIndex);
                             }
-                            //If they clicked on an Alert that is not currently active then disable
-                            //edits to the previously selected Alert zones and toggle the accordion.
-                            if (_this._loadedAlertTemplateData !== alertTemplateData) {
+                            else {
+                                //Toggle the accordion for the previously selected Alert Template.
                                 _this._toggleAccordion(-1);
-                                _this._toggleEditableZones(false);
+                                //Load the new one and toggle the selected zone.
+                                _this._loadedAlertTemplateData = alertTemplateData;
+                                _this._toggleAccordion(zoneIndex);
                             }
                         }
-                        //Regardless of if an Alert was previously loaded, if a new Alert was clicked
-                        //load it, toggle the accordion amd set the editable state of the zones.
-                        if (_this._loadedAlertTemplateData !== alertTemplateData) {
+                        else { //If we have no loaded data then always load the template and toggle the selected zone.
                             _this._loadedAlertTemplateData = alertTemplateData;
                             _this._toggleAccordion(zoneIndex);
-                            _this._toggleEditableZones(true);
                         }
                         // Fire an event for anyone interested
                         _this.fire('voyent-alert-template-click', {
@@ -122,7 +106,7 @@
                 })(zones[i]);
             }
             /**
-             * Handles drags by
+             * Handles drags by the anchor or the inner-most zone's drag point.
              * @param alertTemplateData
              */
             function alertEntityMoved(alertTemplateData) {
@@ -190,20 +174,7 @@
         },
 
         /**
-         * Toggles the editable state of the currently active Alert Template or Alert zones.
-         * If true we will set the Editable value to what is saved in the Alert Template.
-         * @param editable
-         * @private
-         */
-        _toggleEditableZones: function(editable) {
-            var zones = this._loadedAlertTemplateData.alertTemplate.zones.features;
-            for (var i=0; i<zones.length; i++) {
-                zones[i].tmpProperties.circle.setEditable(editable ? zones[i].properties.Editable : false);
-            }
-        },
-
-        /**
-         * Syncs the alertTemplate JSON with the current state of the map entities.
+         * Syncs the Alert Template JSON with the current state of the map entities.
          * @param alertTemplateData
          * @private
          */
@@ -220,26 +191,16 @@
             var features = alertTemplateData.alertTemplate.zones.features;
             var N = 50; //The number of coordinates the circle approximation will have.
             var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
-            //Use the following two vars to calculate and store the northern most point of a Proximity
-            //Zone circle. This is used to calculate where to render the Proximity Zone overlay label.
             for (var i=0; i<features.length; i++) {
-                if (!features[i].tmpProperties) {
-                    features[i].tmpProperties = this._getZoneTmpProperties();
-                }
+                if (!features[i].tmpProperties) { features[i].tmpProperties = this._getZoneTmpProperties(); }
                 features[i].tmpProperties.highestLat = -100;
                 //Sync the alertTemplate zone properties with the zones drawn on the map (if available).
                 if (features[i].tmpProperties.circle) {
-                    //Only update this if the template is loaded since we make
-                    //all Alerts un-editable when they aren't active.
-                    if (this._loadedAlertTemplateData === alertTemplateData) {
-                        features[i].properties.Editable = features[i].tmpProperties.circle.getEditable();
-                    }
                     features[i].properties.googleMaps.radius = features[i].tmpProperties.circle.getRadius();
                     features[i].properties.googleMaps.center = [features[i].tmpProperties.circle.getCenter().lat(),features[i].tmpProperties.circle.getCenter().lng()];
                     features[i].properties.Color = features[i].tmpProperties.circle.get('fillColor').substring(1); //Remove the '#'.
                     features[i].properties.googleMaps.zIndex = features[i].tmpProperties.circle.get('zIndex');
                 }
-                //Reset the coordinates array since we'll recalculate them below.
                 features[i].geometry.coordinates = [[]];
                 for (var j=0; j<N; j++) {
                     //Calculate and save the next coordinate.'
@@ -248,7 +209,8 @@
                         features[i].properties.googleMaps.radius,
                         degreeStep * j);
                     features[i].geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
-                    //Look for the northern most point of the circle.
+                    //Look for the northern most point of the circle so we know
+                    //where to render the Proximity Zone overlay label.
                     if (latLng.lat() > features[i].tmpProperties.highestLat) {
                         features[i].tmpProperties.highestLat = latLng.lat();
                     }
@@ -272,17 +234,19 @@
             if (index !== -1 && this._loadedAlertTemplateData.alertTemplate.zones.features[index].tmpProperties.visible) {
                 index = -1;
             }
-            //Hide the accordions and remove the selected styling.
+            //Hide the accordions, remove the selected styling and editable zones.
             var zones = this._loadedAlertTemplateData.alertTemplate.zones.features;
             for (var i=0; i<zones.length; i++) {
                 this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.visible',false);
                 zones[i].tmpProperties.circle.setOptions({"strokeWeight":0});
+                zones[i].tmpProperties.circle.setEditable(false);
             }
-            //Show the accordion contents for the selected zone and add the selected
-            //styling. If the index is -1 then we'll de-toggle all Accordion panes.
+            //Show the accordion contents for the selected zone, add the selected styling and set
+            //the editable value. If the index is -1 then we'll de-toggle all Accordion panes.
             if (index !== -1) {
                 this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+index+'.tmpProperties.visible',true);
                 zones[index].tmpProperties.circle.setOptions({"strokeWeight":3});
+                zones[index].tmpProperties.circle.setEditable(zones[index].properties.Editable);
             }
         },
 
@@ -380,7 +344,11 @@
             };
         },
 
-        _sortZonesBySize: function(zones) {
+        /**
+         * Sorts the Proximity Zones based on their radius.
+         * @private
+         */
+        _sortZonesBySize: function() {
             var _this = this;
             //Async so the template updates properly.
             setTimeout(function() {
@@ -491,7 +459,7 @@
          */
         _getCircleProperties: function() {
             return {
-                editable: true, draggable: false,
+                editable: false, draggable: false,
                 radius: 500, fillColor: '#000000',
                 fillOpacity: 0.30,
                 strokeWeight:0, zIndex: 49,

@@ -260,7 +260,11 @@ Polymer({
         this._creatingNew = !this._creatingNew;
         this.toggleClass("selected", this._creatingNew, this.querySelector('.customMapBttn'));
         if (this._creatingNew) {
-            //Hide the existing Alerts when creating new.
+            //De-activate any loaded Alerts.
+            if (this._loadedAlertTemplateData) {
+                this._toggleAccordion(-1);
+                this._loadedAlertTemplateData = null;
+            }
             this._toggleActiveAlerts(false);
         }
         else {
@@ -392,7 +396,6 @@ Polymer({
         if (this._loadedAlertTemplateData.alertInstance) {
             //Toggle the accordion, make the zones un-editable and wipe the loaded Alert.
             this._toggleAccordion(-1);
-            this._toggleEditableZones(false);
             this._loadedAlertTemplateData = null;
         }
         else {
