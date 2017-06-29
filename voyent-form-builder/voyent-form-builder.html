@@ -96,6 +96,8 @@
         
         <template is="dom-if" if="{{!readonly}}">
             <paper-button raised on-click="clickAddElement" class="shortHeight">Add Form Element</paper-button>
+            <paper-button raised on-click="clickSaveForm" class="shortHeight">Save Form</paper-button>
+            <paper-button raised on-click="clickDeleteForm" class="shortHeight">Delete Form</paper-button>
             <template is="dom-if" if="{{debug}}">
                 <paper-button raised on-click="clickDebug" class="shortHeight">Debug</paper-button>
             </template>

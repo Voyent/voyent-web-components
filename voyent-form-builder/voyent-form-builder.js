@@ -11,6 +11,8 @@ Polymer({
 
     properties: {
         readonly: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        formDocId: { type: String, value: "main", reflectToAttribute: true, notify: true },
+        formDocCol: { type: String, value: "forms", reflectToAttribute: true, notify: true },
         debug: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
         toAdd: { type: Object, notify: true },
         editIndex: { type: String },
@@ -32,7 +34,25 @@ Polymer({
 	    });
 	    
 	    this.addClear();
-	    this.value = { "form": [] };
+	    
+	    // Default our form value as needed
+	    if (typeof this.value === 'undefined' || this.value === null || !this.value) {
+	        this.value = { "form": [] };
+	    }
+	    
+	    // Then attempt to retrieve any saved form if we're editing
+	    if (!this.readonly) {
+            var _this = this;
+            voyent.docs.getDocument({
+                "collection": this.formDocCol,
+                "id": this.formDocId
+            }).then(function(res) {
+                _this.set('existingDoc', true);
+                _this.set('value', res);
+            }).catch(function(error) {
+                console.log("No existing form found, continuing...");
+            });
+        }
 	},
 	
 	updateIndexes: function() {
@@ -67,6 +87,68 @@ Polymer({
         if (this.value) {
             console.log("Value:", this.value);
             console.log(JSON.stringify(this.value, null, 4));
+        }
+    },
+    
+    clickSaveForm: function() {
+        // Check if we have an existing form, in which case we update
+        var _this = this;
+        if (typeof this.existingDoc !== 'undefined' && this.existingDoc) {
+            voyent.docs.updateDocument({
+                "collection": this.formDocCol,
+                "id": this.formDocId,
+                "document": this.value
+            }).then(function(res) {
+                _this.fire('message-info', 'Successfully saved form data');
+            }).catch(function(error) {
+                _this.fire('message-error', 'Failed to save form data');
+                console.error(error);
+            });
+        }
+        // Otherwise create a new form
+        else {
+            voyent.docs.createDocument({
+                "collection": this.formDocCol,
+                "id": this.formDocId,
+                "document": this.value
+            }).then(function(res) {
+                _this.fire('message-info', 'Successfully saved form data');
+                _this.set('existingDoc', true);
+            }).catch(function(error) {
+                _this.fire('message-error', 'Failed to save form data');
+                console.error(error);
+            });
+        }
+    },
+    
+    clickDeleteForm: function() {
+        // Confirm with the user that we want to delete the form
+        var confirm = window.confirm('Are you sure you want to delete the form?');
+        if (!confirm) {
+            return;
+        }
+        
+        // If we have saved the form then delete it in the service
+        if (typeof this.existingDoc !== 'undefined' && this.existingDoc) {
+            var _this = this;
+            voyent.docs.deleteDocument({
+                "collection": this.formDocCol,
+                "id": this.formDocId
+            }).then(function(res) {
+                _this.fire('message-info', 'Successfully deleted form data');
+                _this.set('existingDoc', false);
+                
+                // Reset our view
+                _this.set('value', { "form": [] });
+            }).catch(function(error) {
+                _this.fire('message-info', 'Failed to delete form data');
+                console.error(error);
+            });
+        }
+        // Otherwise just reset the view and notify
+        else {
+            this.set('value', { "form": [] });
+            this.fire('message-info', 'Successfully deleted form data'); 
         }
     },
 	
