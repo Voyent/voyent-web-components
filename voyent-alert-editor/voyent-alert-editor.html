@@ -3,6 +3,7 @@
 <link rel="import" href="../common/voyent-alert/voyent-alert-map-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-properties.html">
+<link rel="import" href="../../paper-dialog/paper-dialog.html">
 
 <!--
 Displays a map-based tool for creating new Alert Templates.
@@ -183,25 +184,25 @@ Example:
                         <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
                             <template is="dom-if" if="[[!_loadedAlertTemplateData.alertInstance]]">
                                 <template is="dom-if" if="[[!_activatingAlert]]">
-                                    <paper-button raised on-click="_goBack">Back</paper-button>
-                                    <paper-button raised on-click="_toggleActivatingAlert">Activate Now!</paper-button>
+                                    <paper-button raised title="Back" on-click="_goBack">Back</paper-button>
+                                    <paper-button raised title="Activate Now!" on-click="_toggleActivatingAlert">Activate Now!</paper-button>
                                 </template>
                                 <template is="dom-if" if="[[_activatingAlert]]">
-                                    <paper-button raised on-click="_goBack">Back</paper-button>
-                                    <paper-button raised on-click="_cancel">Cancel</paper-button>
-                                    <paper-button raised on-click="_updateAlertLocation">Confirm</paper-button>
+                                    <paper-button raised title="Back" on-click="_goBack">Back</paper-button>
+                                    <paper-button raised title="Cancel" on-click="_cancel">Cancel</paper-button>
+                                    <paper-button raised title="Confirm" on-click="_updateAlertLocation">Confirm</paper-button>
                                 </template>
                             </template>
                             <template is="dom-if" if="[[_loadedAlertTemplateData.alertInstance]]">
                                 <template is="dom-if" if="[[!_creatingNew]]">
-                                    <paper-button raised on-click="_goBack">Back</paper-button>
-                                    <paper-button raised on-click="saveAlertTemplate">Save</paper-button>
-                                    <paper-button raised on-click="_removeAlert">Remove</paper-button>
+                                    <paper-button raised title="Back" on-click="_goBack">Back</paper-button>
+                                    <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
+                                    <paper-button raised title="Remove" on-click="_promptForRemovalFromTemplate">Remove</paper-button>
                                 </template>
                             </template>
                         </template>
                         <template is="dom-if" if="[[_creatingNew]]">
-                             <paper-button raised on-click="_cancel">Cancel</paper-button>
+                             <paper-button raised title="Cancel" on-click="_cancel">Cancel</paper-button>
                          </template>
                      </template>
                 </div>
@@ -216,6 +217,18 @@ Example:
                 </span>
             </div>
         </div>
+        <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
+            <div>
+                <p>{{_dialogMessage}}</p>
+                <template is="dom-if" if="[[_showDialogInput]]">
+                    <paper-input autofocus no-label-float on-keyup="_dialogKeyUp" value="{{_dialogInput}}"></paper-input>
+                </template>
+                <div class="dialog-bttns">
+                    <paper-button raised title="Cancel" on-click="_closeDialog">Cancel</paper-button>
+                    <paper-button raised title="Confirm" on-click="_confirmDialog">Confirm</paper-button>
+                </div>
+            </div>
+        </paper-dialog>
     </template>
 </dom-module>
 

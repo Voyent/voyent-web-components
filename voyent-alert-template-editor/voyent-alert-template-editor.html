@@ -3,6 +3,7 @@
 <link rel="import" href="../common/voyent-alert/voyent-alert-map-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-properties.html">
+<link rel="import" href="../../paper-dialog/paper-dialog.html">
 
 <!--
 Displays a map-based tool for creating new Alert Templates.
@@ -55,13 +56,25 @@ Example:
                     </div>
                     <div id="crudPanel">
                         <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
-                            <paper-button raised on-click="_cancelChanges">Cancel</paper-button>
-                            <paper-button raised on-click="saveAlertTemplate">Save</paper-button>
+                            <paper-button raised title="Cancel" on-click="_promptForCancel">Cancel</paper-button>
+                            <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
                         </template>
                     </div>
                 </div>
             </div>
         </div>
+        <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
+            <div>
+                <p>{{_dialogMessage}}</p>
+                <template is="dom-if" if="[[_showDialogInput]]">
+                    <paper-input autofocus no-label-float on-keyup="_dialogKeyUp" value="{{_dialogInput}}"></paper-input>
+                </template>
+                <div class="dialog-bttns">
+                    <paper-button raised title="Cancel" on-click="_closeDialog">Cancel</paper-button>
+                    <paper-button raised title="Confirm" on-click="_confirmDialog">Confirm</paper-button>
+                </div>
+            </div>
+        </paper-dialog>
     </template>
 </dom-module>
 

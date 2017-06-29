@@ -18,8 +18,6 @@ Polymer({
         promises.push(this.fetchAlertTemplates());
         promises.push(this._executeAggregate(this._lastAlertLocations));
         Promise.all(promises).then(function() {
-            //Add the Alert button.
-            _this._addAlertButton();
             //Convert the Alert locations into map entities.
             _this._processAlertLocations();
         }).catch(function(error) {
@@ -44,41 +42,22 @@ Polymer({
                     return !alertTemplate.properties || !alertTemplate.properties.parentTrackerId;
                 });
                 //Maintain an id-mapped object of all templates, including child templates.
-                _this._parentTemplatesMap = templates.reduce(function(map,obj) {
+                _this._templatesMap = templates.reduce(function(map,obj) {
                     map[obj._id] = obj;
                     return map;
                 },{});
+                //Handle adding and removing the button for creating new Alerts depending on whether we have templates.
+                if (_this._parentTemplates.length) {
+                    _this._addAlertButton();
+                }
+                else {
+                    _this._removeAlertButton();
+                }
                 resolve();
             }).catch(function (error) {
                 reject(error);
             });
         });
-    },
-
-    /**
-     * Removes the current Alert Template, returns a boolean indicating the selection of the confirm dialog.
-      * @returns {boolean}
-     */
-    removeAlertTemplate: function() {
-        var confirm = window.confirm("Are you sure you want to delete '" + this._loadedAlertTemplateData.alertTemplate.label + "'? This cannot be undone!");
-        if (!confirm) {
-            return false;
-        }
-        var _this = this;
-        //Delete from DB if it's saved.
-        if (this._loadedAlertTemplateData.isPersisted) {
-            voyent.locate.deleteTracker({
-                realm: this.realm,
-                account: this.account,
-                id: this._loadedAlertTemplateData.alertTemplate._id
-            }).catch(function (error) {
-                _this.fire('message-error', 'Issue deleting Alert Template ' + error);
-                console.error('Issue deleting Alert Template', error);
-            });
-        }
-        //Clear the map immediately.
-        _this.clearMap();
-        return true;
     },
 
     //******************PRIVATE API******************
@@ -108,10 +87,10 @@ Polymer({
         for (var i=0; i<this._alertLocations.length; i++) {
             var trackerId = this._alertLocations[i].location.properties ?
                 this._alertLocations[i].location.properties.trackerId : null;
-            if (!trackerId || !this._parentTemplatesMap[trackerId]) {
+            if (!trackerId || !this._templatesMap[trackerId]) {
                 continue;
             }
-            var alert = JSON.parse(JSON.stringify(this._parentTemplatesMap[trackerId]));
+            var alert = JSON.parse(JSON.stringify(this._templatesMap[trackerId]));
             alert.anchor.geometry.coordinates = this._alertLocations[i].location.geometry.coordinates;
             this._drawAlertEntity(alert,this._alertLocations[i]);
         }
@@ -166,7 +145,7 @@ Polymer({
     _lastAlertLocations: {"_id":"_getLastAlertLocations","query":[{"$match":{"_data.location.properties.trackerId":{"$exists":true}}},{"$sort":{"_data.lastUpdated":-1}},{"$group":{"_id":"$_data.username","location":{"$first":"$_data.location"},"lastUpdated":{"$first":"$_data.lastUpdated"}}},{"$project":{"_id":0,"location":1,"username":1,"lastUpdated":1}}],"properties":{"title":"Find Last Tracker Locations","service":"locate","collection":"locations","type":"aggregate"}},
 
     /**
-     * Handles adding button for creating Alerts.
+     * Handles adding the button for creating new Alerts.
      * @private
      */
     _addAlertButton: function() {
@@ -358,13 +337,43 @@ Polymer({
     },
 
     /**
+     *
+     * @private
+     */
+    _removeAlertEntity: function() {
+        if (!this._loadedAlertTemplateData) { return; }
+        if (this._loadedAlertTemplateData.alertInstance) { this._removeAlert(); }
+        else { this._removeAlertTemplate(); }
+    },
+
+    /**
+     * Removes the current Alert Template.
+     * @returns {boolean}
+     */
+    _removeAlertTemplate: function() {
+        var _this = this;
+        //Delete from DB if it's saved.
+        if (this._loadedAlertTemplateData.isPersisted) {
+            voyent.locate.deleteTracker({
+                realm: this.realm,
+                account: this.account,
+                id: this._loadedAlertTemplateData.alertTemplate._id
+            }).catch(function (error) {
+                _this.fire('message-error', 'Issue deleting Alert Template ' + error);
+                console.error('Issue deleting Alert Template', error);
+            });
+        }
+        //Clear the map immediately.
+        _this.clearMap();
+        return true;
+    },
+
+    /**
      * Removes the currently active Alert.
      * @private
      */
     _removeAlert: function() {
         var _this = this;
-        var confirm = window.confirm("Are you sure you want to delete '" + this._loadedAlertTemplateData.alertTemplate.label + "'? This cannot be undone!");
-        if (!confirm) { return; }
         //Just delete the Alert, the location service will handle deleting the associated child template.
         var properties = this._loadedAlertTemplateData.alertInstance.location.properties;
         voyent.locate.deleteTrackerInstance({account:this.account,realm:this.realm,
@@ -408,10 +417,10 @@ Polymer({
                 this._toggleActivatingAlert();
             }
             else { //They are cancelling the creation so remove the template.
-                if (this.removeAlertTemplate()) {
+                this._promptForRemoval(function() {
+                    this._removeAlertTemplate();
                     this._toggleActiveAlerts(true);
-                }
-
+                });
             }
         }
     },
@@ -423,14 +432,32 @@ Polymer({
     _cancel: function() {
         if (this._creatingNew) {
             this._toggleCreatingAlert();
+            this._toggleActiveAlerts(true);
         }
         else if (this._activatingAlert) {
-            if (this.removeAlertTemplate()) {
+            this._promptForRemoval(function() {
+                this._removeAlertTemplate();
                 this._toggleActivatingAlert();
-            }
-            else { return; }
+                this._toggleActiveAlerts(true);
+            });
         }
-        this._toggleActiveAlerts(true);
+    },
+
+    /**
+     * Wrapper for promptForRemoval so we can pass parameters.
+     * @private
+     */
+    _promptForRemovalFromTemplate: function() {
+        this._promptForRemoval('_removeAlertEntity');
+    },
+
+    /**
+     * Opens a confirmation prompt for removing an Alert.
+     * @private
+     */
+    _promptForRemoval: function(func) {
+        var msg = 'Are you sure you want to delete ' + this._loadedAlertTemplateData.alertTemplate.label + '? This cannot be undone!';
+        this._openDialog(msg,null,func||'_removeAlertEntity');
     },
 
     /**

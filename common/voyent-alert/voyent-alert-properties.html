@@ -215,21 +215,21 @@ Internal component used to display the properties panel inside Voyent Alert comp
             <div>
                 <div class="alert-zones-label">
                     Proximity Zones
-                    <paper-icon-button class="float-right" icon="add" on-click="_addProximityZone"></paper-icon-button>
+                    <paper-icon-button title="Add New" class="float-right" icon="add" on-click="_addProximityZone"></paper-icon-button>
                 </div>
             </div>
             <div class="accordion">
                 <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlertTemplateData.alertTemplate.zones.features]]" as="zone">
                     <div class$="{{_getAccordionClasses('header',zone.tmpProperties.visible)}}">
                         <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
-                            <paper-icon-button icon="{{_getArrowIcon(zone.tmpProperties.visible)}}"
+                            <paper-icon-button title="Toggle Zone" icon="{{_getArrowIcon(zone.tmpProperties.visible)}}"
                                                on-click="_toggleAccordion"></paper-icon-button>
                             <div class="title zone" class$="{{_getZoneTitleClasses(zone.tmpProperties.visible)}}"
                                  data-index$="[[index]]" on-click="_toggleProximityZoneRenaming">
                                 [[zone.properties.zoneId]]
                             </div>
                             <div class="title-bttns" hidden="[[!zone.tmpProperties.visible]]">
-                                <paper-icon-button icon="delete" on-click="_removeProximityZone"
+                                <paper-icon-button title="Remove Zone" icon="delete" on-click="_removeProximityZone"
                                                    disabled="[[_hasOneZone]]" data-index$="[[index]]" >
                                 </paper-icon-button>
                             </div>
@@ -281,7 +281,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                     </iron-selector>
                                     <div class="table">
                                         <div class="addCol">
-                                            <paper-icon-button icon="add"
+                                            <paper-icon-button title="Add New Property" icon="add"
                                                                on-click="_toggleAddingNewProperty">
                                             </paper-icon-button>
                                         </div>
@@ -360,7 +360,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                              placeholder="The property value"
                                              disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
                                 <div class="delete-button">
-                                    <paper-icon-button icon="delete" tabindex="3"
+                                    <paper-icon-button title="Remove Property" icon="delete" tabindex="3"
                                                        on-click="_removeSelectedProperty"
                                                        data-index$="[[index]]"
                                                        on-blur="_editPropertyViaBlur"

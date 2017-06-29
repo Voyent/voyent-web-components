@@ -67,23 +67,33 @@ Polymer({
     },
 
     /**
+     * Opens a confirmation prompt for cancelling Alert Template creation or edits.
+     * @private
+     */
+    _promptForCancel: function() {
+        var msg;
+        if (this._loadedAlertTemplateData.isPersisted) {
+            msg = 'Are you sure you want to revert all unsaved changes for "' +
+                this._loadedAlertTemplateData.alertTemplate.label + '"? This action cannot be undone.';
+        }
+        else {
+            msg = 'Are you sure you want to cancel creating ' +
+                this._loadedAlertTemplateData.alertTemplate.label + '? This action cannot be undone.';
+        }
+        this._openDialog(msg,null,'_cancelChanges');
+    },
+
+    /**
      * Revert the editor to it's state when the Alert Template was originally loaded or clears an unsaved Alert Template.
      */
     _cancelChanges: function() {
-        var confirm = false;
         if (this._loadedAlertTemplateData.isPersisted) {
-            confirm = window.confirm('Are you sure you want to revert all unsaved changes for "' +
-                      this._loadedAlertTemplateData.alertTemplate.label + '"? This action cannot be undone.');
-            if (!confirm) { return; }
             //Clear the map and revert the loaded Alert Template to latest persisted value.
             var original = this._loadedAlertTemplateData.persistedAlertTemplate;
             this.clearMap();
             this._drawAlertEntity(original);
         }
         else {
-            confirm = window.confirm('Are you sure you want to cancel creating "' +
-            this._loadedAlertTemplateData.alertTemplate.label + '"? This action cannot be undone.');
-            if (!confirm) { return; }
             //Simply clear the map since there is no Alert Template saved.
             this.clearMap();
         }
@@ -106,36 +116,33 @@ Polymer({
                     oce.overlay.setMap(null);
                     return;
                 }
-                //Prompt the Alert Template name immediately.
-                var templateName = promptForLabel();
-                if (!templateName) {
-                    //Cancelled so delete the marker and disable drawing mode.
-                    oce.overlay.setMap(null);
-                    _this._drawingManager.setDrawingMode(null);
-                    return;
-                }
-                //Create the new google maps circle and bind the circle (zone) to the marker (anchor).
-                var newCircle = new google.maps.Circle(_this._getCircleProperties());
-                newCircle.bindTo('center', oce.overlay, 'position');
-                //Build the JSON structure for the alertTemplate template.
-                var alertTemplate = _this._getAlertTemplateJSON();
-                alertTemplate.label = templateName;
-                alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
-                alertTemplate.zones.features[0].tmpProperties.circle = newCircle;
-                //Store the various pieces together so we can reference them later.
-                _this._loadedAlertTemplateData = {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false};
-                //Determine and set the coordinates for the circle.
-                _this._updateAlertTemplateJSON();
-                //Draw the Proximity Zone label overlay and save a reference to it.
-                alertTemplate.zones.features[0].tmpProperties.zoneOverlay = new _this._ProximityZoneOverlay(alertTemplate.zones.features[0]);
-                //Disable further Alert Template creations - only allowed one at a time.
-                _this._drawingManager.setOptions({
-                    "drawingControlOptions":{
-                        "drawingModes":[],
-                        "position":google.maps.ControlPosition.TOP_RIGHT}
+                //Only draw the marker anchor once they confirm the Alert Template name.
+                oce.overlay.setMap(null);
+                _this._openDialog('Please enter the Alert Template name','',function() {
+                    oce.overlay.setMap(_this._map);
+                    //Create the new google maps circle and bind the circle (zone) to the marker (anchor).
+                    var newCircle = new google.maps.Circle(_this._getCircleProperties());
+                    newCircle.bindTo('center', oce.overlay, 'position');
+                    //Build the JSON structure for the alertTemplate template.
+                    var alertTemplate = _this._getAlertTemplateJSON();
+                    alertTemplate.label = _this._dialogInput;
+                    alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
+                    alertTemplate.zones.features[0].tmpProperties.circle = newCircle;
+                    //Store the various pieces together so we can reference them later.
+                    _this._loadedAlertTemplateData = {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false};
+                    //Determine and set the coordinates for the circle.
+                    _this._updateAlertTemplateJSON();
+                    //Draw the Proximity Zone label overlay and save a reference to it.
+                    alertTemplate.zones.features[0].tmpProperties.zoneOverlay = new _this._ProximityZoneOverlay(alertTemplate.zones.features[0]);
+                    //Disable further Alert Template creations - only allowed one at a time.
+                    _this._drawingManager.setOptions({
+                        "drawingControlOptions":{
+                            "drawingModes":[],
+                            "position":google.maps.ControlPosition.TOP_RIGHT}
+                    });
+                    //Add the change listeners to the marker and circles.
+                    _this._setupChangeListeners(_this._loadedAlertTemplateData);
                 });
-                //Add the change listeners to the marker and circles.
-                _this._setupChangeListeners(_this._loadedAlertTemplateData);
             }
             //Exit drawing mode.
             _this._drawingManager.setDrawingMode(null);
@@ -153,16 +160,6 @@ Polymer({
                 }
             }
         });
-        /**
-         * Handles displaying the Alert Template label prompt. Returns the entered value.
-         * @returns {*}
-         */
-        function promptForLabel() {
-            var templateName = window.prompt("Please enter the Alert Template name",'');
-            if (templateName === null) { return null; } //Cancelled.
-            else if (templateName.trim() === '') { return promptForLabel(); } //Empty name, dialog again.
-            return templateName;
-        }
     },
 
     /**
