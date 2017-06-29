@@ -39,6 +39,9 @@ Polymer({
         window.addEventListener('message-info',  function(e) {
             _this._handleMessage(e, 'info');
         });
+        
+        // Clear our queue on ready
+        this.messages = [];
     },
     
     /**
