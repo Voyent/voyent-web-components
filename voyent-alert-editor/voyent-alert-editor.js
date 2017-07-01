@@ -337,13 +337,18 @@ Polymer({
     },
 
     /**
-     *
+     * Removes the current Alert instance and it's associated template.
      * @private
      */
     _removeAlertEntity: function() {
         if (!this._loadedAlertTemplateData) { return; }
         if (this._loadedAlertTemplateData.alertInstance) { this._removeAlert(); }
         else { this._removeAlertTemplate(); }
+        //Fire an event indicating that no zone is loaded (-1).
+        this.fire('voyent-zone-toggled', {
+            'alertTemplate': null,
+            'selectedZoneIndex': -1
+        });
     },
 
     /**
@@ -420,6 +425,11 @@ Polymer({
                 this._promptForRemoval(function() {
                     this._removeAlertTemplate();
                     this._toggleActiveAlerts(true);
+                    //Fire an event indicating that no zone is loaded (-1).
+                    this.fire('voyent-zone-toggled', {
+                        'alertTemplate': null,
+                        'selectedZoneIndex': -1
+                    });
                 });
             }
         }
@@ -439,25 +449,31 @@ Polymer({
                 this._removeAlertTemplate();
                 this._toggleActivatingAlert();
                 this._toggleActiveAlerts(true);
+                //Fire an event indicating that no zone is loaded (-1).
+                this.fire('voyent-zone-toggled', {
+                    'alertTemplate': null,
+                    'selectedZoneIndex': -1
+                });
             });
         }
     },
 
     /**
-     * Wrapper for promptForRemoval so we can pass parameters.
+     * Wrapper for promptForRemoval so we can pass specific parameters from the template.
      * @private
      */
-    _promptForRemovalFromTemplate: function() {
+    _promptForRemovalWrp: function() {
         this._promptForRemoval('_removeAlertEntity');
     },
 
     /**
      * Opens a confirmation prompt for removing an Alert.
+     * @param func
      * @private
      */
     _promptForRemoval: function(func) {
         var msg = 'Are you sure you want to delete ' + this._loadedAlertTemplateData.alertTemplate.label + '? This cannot be undone!';
-        this._openDialog(msg,null,func||'_removeAlertEntity');
+        this._openDialog(msg,null,func);
     },
 
     /**

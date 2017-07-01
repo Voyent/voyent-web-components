@@ -252,7 +252,7 @@
                 zones[index].tmpProperties.circle.setEditable(zones[index].properties.Editable);
             }
             //Fire an event indicating which zone was loaded (-1 means no zone is loaded).
-            this.fire('voyent-alert-zone-loaded', {
+            this.fire('voyent-zone-toggled', {
                 'alertTemplate': this._loadedAlertTemplateData.alertTemplate,
                 'selectedZoneIndex': index
             });
@@ -373,7 +373,7 @@
                         break;
                     }
                 }
-                _this.fire('voyent-alert-zone-loaded', {
+                _this.fire('voyent-zone-toggled', {
                     'alertTemplate': _this._loadedAlertTemplateData.alertTemplate,
                     'selectedZoneIndex': selectedZoneIndex
                 });
