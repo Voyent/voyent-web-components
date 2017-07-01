@@ -28,21 +28,6 @@ Polymer({
         });
     },
 
-    /**
-     * Set an optional message template on a per zone basis.
-     * This will be saved along with the rest of the alert template, and is used for notifications.
-     * The data for the message template will likely come from the voyent-transport-editor.
-     * The specific JSON location to save is as a property of the zone, so zones.features[x].properties.messageTemplate.
-     * @param messageTemplate
-     * @param zoneIndex
-     */
-    setMessageTemplate: function(messageTemplate, zoneIndex) {
-        // Ensure we have valid template data, zones, and features
-        if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
-            this._loadedAlertTemplateData.alertTemplate.zones.features[zoneIndex].properties.messageTemplate = messageTemplate;
-        }
-    },
-
     //******************PRIVATE API******************
 
     /**
