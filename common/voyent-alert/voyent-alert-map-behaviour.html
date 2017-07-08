@@ -5,7 +5,7 @@
 <script>
     var Voyent = Voyent || {};
     /**
-     * Provides common map-related functionality required by `voyent-alert-template-editor` and `voyent-alert-editor` components.
+     * Provides common functionality required by map-based `voyent-alert-*` components.
      *
      * @polymerBehavior AlertMapBehaviour
      */
@@ -68,16 +68,18 @@
                 });
                 //Calculate the map size.
                 _this._calcMapSize();
-                //Setup ui and listeners for adding new alert templates.
-                _this._drawingManager = new google.maps.drawing.DrawingManager({
-                    map:_this._map,
-                    drawingControlOptions: {
-                        position: google.maps.ControlPosition.TOP_RIGHT,
-                        drawingModes: []
-                    },
-                    markerOptions: {draggable:true, 'zIndex':50}
-                });
-                _this._setupDrawingListeners();
+                if (_this.nodeName !== 'VOYENT-ALERT-VIEW') {
+                    //Setup ui and listeners for adding new alert templates.
+                    _this._drawingManager = new google.maps.drawing.DrawingManager({
+                        map:_this._map,
+                        drawingControlOptions: {
+                            position: google.maps.ControlPosition.TOP_RIGHT,
+                            drawingModes: []
+                        },
+                        markerOptions: {draggable:true, 'zIndex':50}
+                    });
+                    _this._setupDrawingListeners();
+                }
                 _this._regionMapping = {}; //Map of region data so we can toggle between them.
                 _this._isLoggedIn = false; //Toggle for side panel.
                 //More initialization for each component after login.
@@ -199,7 +201,7 @@
                         "position":google.maps.ControlPosition.TOP_RIGHT}
                 });
             }
-            else {
+            else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 this._addAlertButton();
             }
             function deleteAlertEntity(alertTemplateData) {
@@ -247,6 +249,89 @@
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching or drawing Region ' + error.responseText || error.message || error);
                     console.error('Issue fetching or drawing Region', error.responseText || error.message || error);
+                    reject(error);
+                });
+            });
+        },
+
+        /**
+         * Draws a user marker on the map based on the passed location data.
+         * @param location
+         * @private
+         */
+        _drawUser: function(location) {
+            if (!location) { return; }
+            var coordinates = location.location.geometry.coordinates;
+            //Set the label of the user marker to the first letter of the username.
+            var label = "?";
+            if (location.username && location.username.length > 0) {
+                label = location.username.substring(0, 1).toLowerCase();
+            }
+            //Check if we already have a user location drawn on the map.
+            if (this._userData) { //Update the existing instance.
+                this._userData.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
+                this._userData.location = location;
+            }
+            else { //Draw the user and store the data for later use.
+                this._userData = {"location":location,"marker":new google.maps.Marker({
+                    position: new google.maps.LatLng(coordinates[1],coordinates[0]),
+                    map: this._map,
+                    draggable: false,
+                    icon: this.pathtoimages+'/img/user_marker.png',
+                    label: {
+                        text: label,
+                        color: "white"
+                    }
+                })};
+            }
+        },
+
+        /**
+         * Fetches the most recent User or Alert location depending on whether we are passed a trackerId.
+         * @param trackerId
+         * @private
+         */
+        _fetchLocationRecord: function(trackerId) {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                //Build the query.
+                var query = {};
+                if (trackerId && typeof trackerId === 'string') {
+                    query = {"location.properties.trackerId":trackerId};
+                }
+                else {
+                    query["location.properties.trackerId"] = {"$exists":false};
+                    query.username = voyent.auth.getLastKnownUsername();
+                }
+                //Only get the last location.
+                voyent.locate.findLocations({realm:_this.realm,account:_this.account,query:query,
+                options:{"sort":{"lastUpdated":-1},"limit":1}}).then(function(location) {
+                    if (trackerId) {
+                        processAlertLocation();
+                        function processAlertLocation() {
+                            //We make the call that fetches the currentTemplate in parallel for performance but this
+                            //can cause a race condition so we'll wait for the value to be set before continuing.
+                            if (!_this._currentTemplate) {
+                                setTimeout(processAlertLocation,10);
+                                return;
+                            }
+                            //First clear the map of any previously drawn entities.
+                            _this.clearMap(true);
+                            //Draw the Alert.
+                            var alert = JSON.parse(JSON.stringify(_this._currentTemplate));
+                            alert.anchor.geometry.coordinates = location[0].location.geometry.coordinates;
+                            _this._drawAlertEntity(alert, location[0]);
+                            resolve(location[0]);
+                        }
+                    }
+                    else {
+                        //Draw the user.
+                        _this._drawUser(location[0]);
+                        resolve(location[0]);
+                    }
+                }).catch(function(error) {
+                    _this.fire('message-error', 'Issue getting User Location ' + error.responseText || error.message || error);
+                    console.error('Issue getting User Location', error.responseText || error.message || error);
                     reject(error);
                 });
             });
@@ -301,7 +386,7 @@
             var marker = new google.maps.Marker({
                 position: new google.maps.LatLng(alertTemplate.anchor.geometry.coordinates[1],alertTemplate.anchor.geometry.coordinates[0]),
                 map: this._map,
-                draggable: true,
+                draggable: this.nodeName !== 'VOYENT-ALERT-VIEW',
                 zIndex: 50,
                 icon: this.nodeName === 'VOYENT-ALERT-EDITOR' ? this.pathtoimages+'/img/alert_marker.png' : null
             });
@@ -351,8 +436,9 @@
                 //Update the template coordinates to correctly calculate the positions of the labels.
                 this._updateAlertTemplateJSON(alertTemplateData);
             }
-            //Add the change listeners to the marker and circles.
-            this._setupChangeListeners(alertTemplateData);
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+                this._setupMapListeners(alertTemplateData);
+            }
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                 //Disable further Alert Template creations - only allowed one at a time.
                 this._drawingManager.setOptions({
@@ -361,11 +447,9 @@
                         "position":google.maps.ControlPosition.TOP_RIGHT}
                 });
             }
-            else { //VOYENT-ALERT-EDITOR
-                if (!alertLocation) {
-                    //Disable further Alert creations - only allowed one at a time.
-                    this._removeAlertButton();
-                }
+            else if (this.nodeName === 'VOYENT-ALERT-EDITOR' && !alertLocation) {
+                //Disable further Alert creations - only allowed one at a time.
+                this._removeAlertButton();
             }
         },
 
@@ -406,7 +490,7 @@
                 }
                 else {
                     //If we don't have a height try the parent
-                    if (height == null) {
+                    if (height === null) {
                         height = _this.$$('#container').clientHeight;
                     }
                     //If we still don't have a valid height default to a minimum
@@ -420,9 +504,16 @@
                 if (_this.width && _this.width !== null && _this.width > 0) {
                     _this.customStyle['--width-var'] = _this.width + 'px';
                 }
-                else { //Otherwise the map will take up as much space as possible (-4px for map borders)
-                    _this.customStyle['--width-var'] = (_this.querySelector('#container').offsetWidth -
-                        _this.querySelector('#sidePanel').offsetWidth - 4) + 'px';
+                else { //Otherwise the map will take up as much space as possible.
+                    if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                        _this.customStyle['--width-var'] = _this.querySelector('#container').offsetWidth + 'px';
+                    }
+                    else {
+                        //-4px for map borders.
+                        _this.customStyle['--width-var'] = (_this.querySelector('#container').offsetWidth -
+                            _this.querySelector('#sidePanel').offsetWidth - 4) + 'px';
+                    }
+
                 }
                 //Apply the styles
                 _this.updateStyles();

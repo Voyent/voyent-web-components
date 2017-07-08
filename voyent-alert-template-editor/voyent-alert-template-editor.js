@@ -120,8 +120,8 @@ Polymer({
                             "drawingModes":[],
                             "position":google.maps.ControlPosition.TOP_RIGHT}
                     });
-                    //Add the change listeners to the marker and circles.
-                    _this._setupChangeListeners(_this._loadedAlertTemplateData);
+                    //Add the listeners to the marker and circles.
+                    _this._setupMapListeners(_this._loadedAlertTemplateData);
                 });
             }
             //Exit drawing mode.

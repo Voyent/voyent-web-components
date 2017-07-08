@@ -1,0 +1,30 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/imports/voyent.html">
+<link rel="import" href="../common/voyent-alert/voyent-alert-map-behaviour.html">
+<link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
+<link rel="import" href="../common/voyent-alert/voyent-alert-styles.html">
+
+<!--
+Displays a map-based read-only view for displaying Alert and User data.
+
+Example:
+
+    <voyent-alert-view account="myAccount"
+                       realm="myRealm"
+                       height="500">
+    </voyent-alert-view>
+
+@demo demo.html
+-->
+<dom-module id="voyent-alert-view">
+    <template>
+        <style include="voyent-alert-styles" is="custom-style">
+
+        </style>
+        <div id="container">
+            <div id="map"></div>
+        </div>
+    </template>
+</dom-module>
+
+<script src="voyent-alert-view.js"></script>

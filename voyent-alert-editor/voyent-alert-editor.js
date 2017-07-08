@@ -25,7 +25,7 @@ Polymer({
             console.error('Issue initializing Alert Editor', error.responseText || error.message || error);
         });
         //Fetch the user's last known location.
-        this._fetchCurrentUsersLocation();
+        this._fetchLocationRecord();
     },
 
     /**
@@ -181,53 +181,6 @@ Polymer({
             }
             bttn.onclick = _this._cancel.bind(_this);
         }
-    },
-
-    /**
-     * Fetches the most recent location for the current user.
-     * @private
-     */
-    _fetchCurrentUsersLocation: function() {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            //Only get the most recent location.
-            voyent.locate.findLocations({realm:_this.realm,account:_this.account,
-                query:{"location.properties.trackerId":{"$exists":true},
-                       "username":voyent.auth.getLastKnownUsername()},
-                options:{"sort":{"lastUpdated":-1},"limit":1}}).then(function(location) {
-                    _this._drawUser(location[0]);
-                resolve();
-            }).catch(function(error) {
-                _this.fire('message-error', 'Issue getting User Location ' + error.responseText || error.message || error);
-                console.error('Issue getting User Location', error.responseText || error.message || error);
-                reject(error);
-            });
-        });
-    },
-
-    /**
-     * Draws the user's location on the map based on the passed location data.
-     * @param location
-     * @private
-     */
-    _drawUser: function(location) {
-        if (!location) { return; }
-        var coordinates = location.location.geometry.coordinates;
-        //Set the label of the user marker to the first letter of the username.
-        var label = "?";
-        if (location.username && location.username.length > 0) {
-            label = location.username.substring(0, 1).toLowerCase();
-        }
-        new google.maps.Marker({
-            position: new google.maps.LatLng(coordinates[1],coordinates[0]),
-            map: this._map,
-            draggable: false,
-            icon: this.pathtoimages+'/img/user_marker.png',
-            label: {
-                text: label,
-                color: "white"
-            }
-        });
     },
 
     /**

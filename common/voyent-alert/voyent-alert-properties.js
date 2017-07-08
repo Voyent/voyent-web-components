@@ -209,8 +209,8 @@ Polymer({
         newCircleJSON.tmpProperties.circle = newCircle;
         //Sync our lists.
         this.push('_loadedAlertTemplateData.alertTemplate.zones.features',newCircleJSON);
-        //Add the change listeners to the new circle and update the JSON.
-        this._setupChangeListeners(this._loadedAlertTemplateData);
+        //Add the listeners to the new circle and update the JSON.
+        this._setupMapListeners(this._loadedAlertTemplateData);
         this._updateAlertTemplateJSON();
         //Draw the Proximity Zone label overlay and save a reference to it.
         newCircleJSON.tmpProperties.zoneOverlay = new this._ProximityZoneOverlay(newCircleJSON);
