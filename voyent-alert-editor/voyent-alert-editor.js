@@ -21,8 +21,7 @@ Polymer({
             //Convert the Alert locations into map entities.
             _this._processAlertLocations();
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue initializing Alert Editor ' + error.responseText || error.message || error);
-            console.error('Issue initializing Alert Editor', error.responseText || error.message || error);
+            _this.fire('message-error', 'Issue initializing Alert Editor: ' + (error.responseText || error.message || error));
         });
         //Fetch the user's last known location.
         this._fetchLocationRecord();
@@ -317,8 +316,7 @@ Polymer({
                 account: this.account,
                 id: this._loadedAlertTemplateData.alertTemplate._id
             }).catch(function (error) {
-                _this.fire('message-error', 'Issue deleting Alert Template ' + error);
-                console.error('Issue deleting Alert Template', error);
+                _this.fire('message-error', 'Issue deleting Alert Template: ' + (error.responseText || error.message || error));
             });
         }
         //Clear the map immediately.
@@ -340,8 +338,7 @@ Polymer({
                 _this.splice('_alerts',_this._alerts.indexOf(_this._loadedAlertTemplateData),1);
                 _this.clearMap();
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue deleting Alert: ' + error.responseText || error.message || error);
-            console.error('Issue deleting Alert:',error.responseText || error.message || error);
+            _this.fire('message-error', 'Issue deleting Alert: ' + (error.responseText || error.message || error));
         });
     },
 

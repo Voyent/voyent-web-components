@@ -12,7 +12,7 @@ Polymer({
         var _this = this;
         var promises = [];
         promises.push(this._fetchAlertTemplate(templateId));
-        promises.push(this.refreshAlertLocation(templateId));
+        promises.push(this._fetchLocationRecord(templateId));
         Promise.all(promises).then(function() {
             //Fit and pan the map to show the alert and current user.
             var bounds = new google.maps.LatLngBounds();
@@ -26,35 +26,41 @@ Polymer({
             if (_this._userData) { bounds.extend(_this._userData.marker); }
             _this._map.fitBounds(bounds);
             _this._map.panToBounds(bounds);
+            _this._templateId = _this._alerts[0].alertTemplate._id;
         }).catch(function(error) {
-            _this.fire('message-error', 'Issue refreshing the view: ' + error.responseText || error.message || error);
-            console.error('Issue refreshing the view:', error.responseText || error.message || error);
+            _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
         });
         //Fetch the user's last known location.
-        this.refreshUserLocation();
+        this._fetchLocationRecord();
+        //Reset the templateId as we'll reset it later when we're ready.
+        this._templateId = null;
     },
 
     /**
-     * Fetches the last known location of the current user and refreshes their position on the map.
+     * Fetches the latest location of the current user and refreshes their position on the map.
      */
     refreshUserLocation: function() {
         return this._fetchLocationRecord();
     },
 
     /**
-     * Fetches the last known location of the alert associated with
-     * the passed templateId and refreshes the position on the map.
-     * @param templateId
+     * Fetches the latest location of the currently loaded Alert and refreshes the position on the map.
      */
-    refreshAlertLocation: function(templateId) {
-        return this._fetchLocationRecord(templateId);
+    refreshAlertLocation: function() {
+        if (!this._templateId) { return; }
+        return this._fetchLocationRecord(this._templateId);
     },
 
     //******************PRIVATE API******************
 
+    /**
+     * Finish initializing after login.
+     * @private
+     */
     _onAfterLogin: function() {
         //Similar to the alert-editor, we'll use the alerts array.
         this._alerts = [];
+        this._templateId = null;
     },
 
     /**
@@ -70,13 +76,14 @@ Polymer({
                 query: {"_id":id}
             }).then(function (results) {
                 if (!results || !results.length) {
-                    _this.fire('message-error', 'Alert Template not found');
+                    _this.fire('message-error', 'Alert Template not found.');
+                    reject('Alert Template not found.');
                     return;
                 }
                 _this._currentTemplate = results[0];
                 resolve(results[0]);
             }).catch(function (error) {
-                _this.fire('message-error', 'Error loading or drawing saved Alert Template: ' + error);
+                _this.fire('message-error', 'Error fetching saved Alert Template: ' + (error.responseText || error.message || error));
                 reject(error);
             });
         });

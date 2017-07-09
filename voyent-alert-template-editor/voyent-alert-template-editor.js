@@ -24,7 +24,7 @@ Polymer({
             //Draw the new Alert Template.
             _this._drawAlertEntity(results[0]);
         }).catch(function (error) {
-            _this.fire('message-error', 'Error loading or drawing saved Alert Template: ' + error);
+            _this.fire('message-error', 'Error loading or drawing saved Alert Template: ' + (error.responseText || error.message || error));
         });
     },
 

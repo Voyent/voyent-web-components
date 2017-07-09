@@ -247,8 +247,7 @@
                     })[0]);
                     resolve();
                 }).catch(function (error) {
-                    _this.fire('message-error', 'Issue fetching or drawing Region ' + error.responseText || error.message || error);
-                    console.error('Issue fetching or drawing Region', error.responseText || error.message || error);
+                    _this.fire('message-error', 'Issue fetching or drawing Region: ' + (error.responseText || error.message || error));
                     reject(error);
                 });
             });
@@ -309,6 +308,7 @@
                     if (trackerId) {
                         processAlertLocation();
                         function processAlertLocation() {
+                            if (!location || !location[0]) { resolve(); return; }
                             //We make the call that fetches the currentTemplate in parallel for performance but this
                             //can cause a race condition so we'll wait for the value to be set before continuing.
                             if (!_this._currentTemplate) {
@@ -330,8 +330,7 @@
                         resolve(location[0]);
                     }
                 }).catch(function(error) {
-                    _this.fire('message-error', 'Issue getting User Location ' + error.responseText || error.message || error);
-                    console.error('Issue getting User Location', error.responseText || error.message || error);
+                    _this.fire('message-error', 'Issue getting User Location: ' + (error.responseText || error.message || error));
                     reject(error);
                 });
             });
@@ -625,27 +624,30 @@
          * @private
          */
         _realmChanged: function(newRealm) {
-            //Only proceed if we have a valid realm and the map is initialized.
-            if (!newRealm || !this._map) { return; }
-            //First clear the current region from the map.
-            if (this._areaRegion && this._areaRegion.polygon) {
-                this._areaRegion.polygon.setMap(null);
-                this._areaRegion = null;
-            }
-            //Check if we have the realm region cached otherwise fetch it.
-            var areaRegion = this._regionMapping && this._regionMapping[newRealm] ?
-                this._regionMapping[newRealm] : null;
-            if (areaRegion && areaRegion.polygon) {
-                areaRegion.polygon.setMap(this._map);
-                this._areaRegion = areaRegion;
-            }
-            else {
-                this._fetchRegions();
+            //We don't render the region on the map for the alert view.
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+                //Only proceed if we have a valid realm and the map is initialized.
+                if (!newRealm || !this._map) { return; }
+                //First clear the current region from the map.
+                if (this._areaRegion && this._areaRegion.polygon) {
+                    this._areaRegion.polygon.setMap(null);
+                    this._areaRegion = null;
+                }
+                //Check if we have the realm region cached otherwise fetch it.
+                var areaRegion = this._regionMapping && this._regionMapping[newRealm] ?
+                    this._regionMapping[newRealm] : null;
+                if (areaRegion && areaRegion.polygon) {
+                    areaRegion.polygon.setMap(this._map);
+                    this._areaRegion = areaRegion;
+                }
+                else {
+                    this._fetchRegions();
+                }
             }
             //Clear the map entirely.
             this.clearMap(true);
-            //Refresh the map with the latest data.
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+                //Refresh the map with the latest data.
                 this.refreshMap();
             }
         },
