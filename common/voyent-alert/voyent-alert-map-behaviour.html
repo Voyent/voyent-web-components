@@ -53,7 +53,7 @@
                 this.account = voyent.auth.getLastKnownAccount();
             }
             window.initializeLocationsMap = function () {
-                _this._map = new google.maps.Map(_this.$.map, {
+                var mapOptions = {
                     zoom: 10,
                     center: new google.maps.LatLng(51.08427,-114.13062),
                     streetViewControl: false,
@@ -65,7 +65,15 @@
                         style: google.maps.ZoomControlStyle.LARGE,
                         position: google.maps.ControlPosition.LEFT_CENTER
                     }
-                });
+                };
+                //Alert view map is readonly.
+                if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                    mapOptions.mapTypeControl = false;
+                    mapOptions.scrollwheel = false;
+                    mapOptions.zoomControl = false;
+                    mapOptions.draggable = false;
+                }
+                _this._map = new google.maps.Map(_this.$.map,mapOptions);
                 //Calculate the map size.
                 _this._calcMapSize();
                 if (_this.nodeName !== 'VOYENT-ALERT-VIEW') {

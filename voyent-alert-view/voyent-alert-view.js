@@ -14,18 +14,8 @@ Polymer({
         promises.push(this._fetchAlertTemplate(templateId));
         promises.push(this._fetchLocationRecord(templateId));
         Promise.all(promises).then(function() {
-            //Fit and pan the map to show the alert and current user.
-            var bounds = new google.maps.LatLngBounds();
-            if (_this._alerts && _this._alerts.length) {
-                var zones = _this._alerts[0].alertTemplate.zones.features;
-                 for (var i=0; i<zones.length; i++) {
-                     bounds.extend(zones[i].tmpProperties.circle.getBounds().getNorthEast());
-                     bounds.extend(zones[i].tmpProperties.circle.getBounds().getSouthWest());
-                }
-            }
-            if (_this._userData) { bounds.extend(_this._userData.marker); }
-            _this._map.fitBounds(bounds);
-            _this._map.panToBounds(bounds);
+            _this._adjustBounds();
+            //Set the templateId so we can refresh the alert location later.
             _this._templateId = _this._alerts[0].alertTemplate._id;
         }).catch(function(error) {
             _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
@@ -40,7 +30,7 @@ Polymer({
      * Fetches the latest location of the current user and refreshes their position on the map.
      */
     refreshUserLocation: function() {
-        return this._fetchLocationRecord();
+        this._fetchLocationRecord().then(this._adjustBounds.bind(this));
     },
 
     /**
@@ -48,7 +38,7 @@ Polymer({
      */
     refreshAlertLocation: function() {
         if (!this._templateId) { return; }
-        return this._fetchLocationRecord(this._templateId);
+        this._fetchLocationRecord(this._templateId).then(this._adjustBounds.bind(this));
     },
 
     //******************PRIVATE API******************
@@ -87,5 +77,24 @@ Polymer({
                 reject(error);
             });
         });
+    },
+
+    /**
+     * Adjust the bounds of the map so the alert and user are in view.
+     * @private
+     */
+    _adjustBounds: function() {
+        //Fit and pan the map to show the alert and current user.
+        var bounds = new google.maps.LatLngBounds();
+        if (this._alerts && this._alerts.length) {
+            var zones = this._alerts[0].alertTemplate.zones.features;
+            for (var i=0; i<zones.length; i++) {
+                bounds.extend(zones[i].tmpProperties.circle.getBounds().getNorthEast());
+                bounds.extend(zones[i].tmpProperties.circle.getBounds().getSouthWest());
+            }
+        }
+        if (this._userData) { bounds.extend(this._userData.marker.getPosition()); }
+        this._map.fitBounds(bounds);
+        this._map.panToBounds(bounds);
     }
 });
