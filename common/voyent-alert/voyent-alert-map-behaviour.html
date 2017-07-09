@@ -68,10 +68,9 @@
                 };
                 //Alert view map is readonly.
                 if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
-                    mapOptions.mapTypeControl = false;
-                    mapOptions.scrollwheel = false;
-                    mapOptions.zoomControl = false;
-                    mapOptions.draggable = false;
+                    mapOptions.mapTypeControl =  mapOptions.scrollwheel =
+                    mapOptions.zoomControl =  mapOptions.draggable = false;
+                    mapOptions.disableDoubleClickZoom = true;
                 }
                 _this._map = new google.maps.Map(_this.$.map,mapOptions);
                 //Calculate the map size.

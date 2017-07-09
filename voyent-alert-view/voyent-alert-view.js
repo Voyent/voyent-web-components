@@ -15,7 +15,6 @@ Polymer({
         promises.push(this._fetchLocationRecord(templateId));
         Promise.all(promises).then(function() {
             _this._adjustBounds();
-            //Set the templateId so we can refresh the alert location later.
             _this._templateId = _this._alerts[0].alertTemplate._id;
         }).catch(function(error) {
             _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
@@ -50,6 +49,7 @@ Polymer({
     _onAfterLogin: function() {
         //Similar to the alert-editor, we'll use the alerts array.
         this._alerts = [];
+        //TemplateId will be used to refresh the alert location.
         this._templateId = null;
     },
 
@@ -84,7 +84,6 @@ Polymer({
      * @private
      */
     _adjustBounds: function() {
-        //Fit and pan the map to show the alert and current user.
         var bounds = new google.maps.LatLngBounds();
         if (this._alerts && this._alerts.length) {
             var zones = this._alerts[0].alertTemplate.zones.features;
