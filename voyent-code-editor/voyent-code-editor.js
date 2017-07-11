@@ -119,6 +119,11 @@ Voyent.CodeEditor = Polymer({
         if (this.theme && this.theme.trim().length > 0) {
             this.editor.setTheme('ace/theme/' + this.theme);
         }
+        // Set our editor value safely
+        this._setEditorValue();
+    },
+    
+    _setEditorValue: function() {
         if (this.value) {
             // If our value is an object try to stringify
             // Mainly because we would sometimes get console errors on initialization with this.value = Object {}
@@ -267,7 +272,7 @@ Voyent.CodeEditor = Polymer({
                 this.value = '';
                 return;
             }
-            this.editor.setValue(newVal,1);
+            this._setEditorValue();
         }
     }
 });
