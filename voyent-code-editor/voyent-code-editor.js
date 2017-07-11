@@ -120,6 +120,14 @@ Voyent.CodeEditor = Polymer({
             this.editor.setTheme('ace/theme/' + this.theme);
         }
         if (this.value) {
+            // If our value is an object try to stringify
+            // Mainly because we would sometimes get console errors on initialization with this.value = Object {}
+            if (typeof this.value !== 'string') {
+                try{
+                    this.value = JSON.stringify(this.value);
+                }catch(ignored) { }
+            }
+            
             this.editor.setValue(this.value,1);
         }
     },
