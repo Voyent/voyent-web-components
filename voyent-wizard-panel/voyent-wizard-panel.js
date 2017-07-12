@@ -192,7 +192,9 @@ Polymer({
             this.selected = this.getNextReal() ;
             this.step++;
             this.fire('voyent-wizard-panel-next', { selected: this.selected });
+            return true;
         }
+        return false;
     },
     
     /**
