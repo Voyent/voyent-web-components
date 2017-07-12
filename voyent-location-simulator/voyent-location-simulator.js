@@ -744,21 +744,23 @@ Polymer({
                     //set default icon to fallback to in case we don't find an icon
                     trackers[i].properties.icon = 'incident_marker.png';
                     //search the message templates for an icon and save the first one that is found
-                    if (trackerData[trackerId] && trackerData[trackerId][zone]) {
-                        if (trackerData[trackerId][zone].global &&
-                            trackerData[trackerId][zone].global.icon) {
-                            trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].global.icon);
-                            break;
-                        }
-                        else if (trackerData[trackerId][zone].increase &&
-                                 trackerData[trackerId][zone].increase.icon) {
-                            trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].increase.icon);
-                            break;
-                        }
-                        else if (trackerData[trackerId][zone].decrease &&
-                                 trackerData[trackerId][zone].decrease.icon) {
-                            trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].decrease.icon);
-                            break;
+                    if (trackerData) {
+                        if (trackerData[trackerId] && trackerData[trackerId][zone]) {
+                            if (trackerData[trackerId][zone].global &&
+                                trackerData[trackerId][zone].global.icon) {
+                                trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].global.icon);
+                                break;
+                            }
+                            else if (trackerData[trackerId][zone].increase &&
+                                     trackerData[trackerId][zone].increase.icon) {
+                                trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].increase.icon);
+                                break;
+                            }
+                            else if (trackerData[trackerId][zone].decrease &&
+                                     trackerData[trackerId][zone].decrease.icon) {
+                                trackers[i].properties.icon = _parseIconURL(trackerData[trackerId][zone].decrease.icon);
+                                break;
+                            }
                         }
                     }
                 }
