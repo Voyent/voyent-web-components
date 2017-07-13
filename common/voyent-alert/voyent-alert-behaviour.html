@@ -160,6 +160,10 @@
                     }
                 }
             };
+            //Indicate when it's the first location for this alert.
+            if (activatingAlert) {
+                location.location.properties.vras = {"isNewAlert":true};
+            }
             voyent.locate.updateTrackerLocation({location: location}).then(function(data) {
                 //Always update our stored instance location.
                 _this.set('_loadedAlertTemplateData.alertInstance',location);
