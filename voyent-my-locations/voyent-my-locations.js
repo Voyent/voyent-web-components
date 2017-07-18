@@ -81,7 +81,6 @@ Polymer({
             this._locations[locations[i]._id] = {"location":locations[i], "marker":marker};
             this._setupMapListeners(this._locations[locations[i]._id]);
         }
-        console.log('_locations',Object.keys(this._locations).length);
     },
 
     /**
@@ -94,12 +93,9 @@ Polymer({
         //delete it so in these cases make sure we don't bother updating it.
         for (var i=this._locationsToUpdate.length-1; i>=0; i--) {
             if (this._locationsToDelete.indexOf(this._locationsToUpdate[i]) > -1) {
-                console.log('Location was deleted after editing, splicing...');
                 this.splice('_locationsToUpdate',i,1);
             }
         }
-        console.log('_locationsToUpdate',this._locationsToUpdate.length);
-        console.log('_locationsToDelete',this._locationsToDelete.length);
         //Save and delete the locations that we're marker respectively.
         this._saveLocations();
         this._removeLocations();
