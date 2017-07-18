@@ -39,6 +39,41 @@ Example:
                 margin: 0;
                 padding: 15px;
             }
+            .custom-control {
+                background-color: #FFF;
+                cursor: pointer;
+                text-align: center;
+                margin: 10px;
+            }
+            .control-button {
+                float:left;
+                direction: ltr;
+                overflow: hidden;
+                text-align: center;
+                position: relative;
+                color: #191919;
+                font-family: Roboto, Arial, sans-serif;
+                user-select: none;
+                font-size: 11px;
+                background-color: #FFF;
+                padding: 8px;
+                -webkit-background-clip: padding-box;
+                background-clip: padding-box;
+                box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+            }
+            .control-button.left {
+                border-bottom-left-radius: 2px;
+                border-top-left-radius: 2px;
+            }
+            .control-button.right {
+                border-bottom-right-radius: 2px;
+                border-top-right-radius: 2px;
+                border-left: 0px;
+            }
+            .control-button:hover {
+                background-color: #EBEBEB;
+                color: #000;
+            }
         </style>
         <div id="container">
             <div id="map"></div>
@@ -67,6 +102,14 @@ Example:
                 <paper-icon-button tabindex="4" title="Remove Location" icon="delete"
                                    on-click="_flagLocationForRemoval">
                 </paper-icon-button>
+            </div>
+        </div>
+        <div id="customControl" class="custom-control" hidden>
+            <div class="control-button left" title="Save Changes" on-click="_saveChanges">
+                Save
+            </div>
+            <div class="control-button right" title="Revert Changes" on-click="_cancelChanges">
+                Cancel
             </div>
         </div>
         <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">

@@ -23,6 +23,8 @@ Polymer({
      */
     _onAfterLogin: function () {
         var _this = this;
+        //Add the buttons to the map.
+        this._addCustomControl();
         //Only enable the marker when we are logged in.
         this._drawingManager.setOptions({
             "drawingControlOptions":{
@@ -217,6 +219,17 @@ Polymer({
             _this._infoWindow.open(_this._map,locationData.marker);
             _this._infoWindow.setContent(_this.$.infoWindow);
         },0);
+    },
+
+    /**
+     * Adds the map control that contains the save and cancel buttons.
+     * @private
+     */
+    _addCustomControl: function() {
+        if (this._customControlAdded) { return; }
+        this.$.customControl.removeAttribute('hidden');
+        this._map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(this.$.customControl);
+        this._customControlAdded = true;
     },
 
     /**
