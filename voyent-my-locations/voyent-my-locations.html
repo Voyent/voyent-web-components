@@ -1,0 +1,96 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../common/imports/voyent.html">
+<link rel="import" href="../common/voyent-alert/voyent-alert-map-behaviour.html">
+<link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
+<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../iron-selector/iron-selector.html">
+<link rel="import" href="../../paper-item/paper-item.html">
+<link rel="import" href="../../iron-icon/iron-icon.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+
+<!--
+Displays a map-based tool to allow users to create and edit locations of interest.
+
+Example:
+
+    <voyent-my-locations account="myAccount"
+                       realm="myRealm"
+                       height="500">
+    </voyent-my-locations>
+
+@demo demo.html
+-->
+<dom-module id="voyent-my-locations">
+    <template>
+        <style include="voyent-alert-styles" is="custom-style">
+            .delete-bttn {
+                text-align: center;
+                padding-left: 23px;
+            }
+            .delete-bttn > paper-icon-button {
+                width: 38px;
+                height: 38px;
+            }
+            .no-margin {
+                margin: 0;
+            }
+            .dialog-bttns {
+                margin: 0;
+                padding: 15px;
+            }
+        </style>
+        <div id="container">
+            <div id="map"></div>
+        </div>
+        <div id="infoWindow" hidden>
+            <paper-input id="label"
+                         tabindex="1"
+                         label="Label"
+                         placeholder="New Label"
+                         on-change="_flagLocationForUpdating"
+                         value="{{_loadedLocationData.location.location.properties.vras.label::input}}">
+            </paper-input>
+            <paper-dropdown-menu id="type"
+                                 tabindex="2"
+                                 label="Type">
+                <iron-selector selected="{{_loadedLocationData.location.location.properties.vras.type}}"
+                               attr-for-selected="name"
+                               class="dropdown-content"
+                               on-iron-activate="_flagLocationForUpdating">
+                    <template is="dom-repeat" items="[[_locationTypes]]">
+                        <paper-item name="{{item}}">{{_returnTypeLabel(item)}}</paper-item>
+                    </template>
+                </iron-selector>
+            </paper-dropdown-menu>
+            <div class="delete-bttn">
+                <paper-icon-button tabindex="4" title="Remove Location" icon="delete"
+                                   on-click="_flagLocationForRemoval">
+                </paper-icon-button>
+            </div>
+        </div>
+        <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
+            <p>{{_dialogMessage}}</p>
+            <paper-input class="no-margin" autofocus no-label-float tabindex="1" label="Label"
+                         on-keyup="_dialogKeyUp" value="{{_locationLabel}}"></paper-input>
+            <paper-dropdown-menu tabindex="2"
+                                 label="Type"
+                                 on-keyup="_dialogKeyUp"
+                                 class="no-margin">
+                <iron-selector selected="{{_locationType}}"
+                               attr-for-selected="name"
+                               class="dropdown-content">
+                    <template is="dom-repeat" items="[[_locationTypes]]">
+                        <paper-item name="{{item}}">{{_returnTypeLabel(item)}}</paper-item>
+                    </template>
+                </iron-selector>
+            </paper-dropdown-menu>
+            <div class="dialog-bttns">
+                <paper-button raised tabindex="3" title="Cancel" on-click="_closeDialog">Cancel</paper-button>
+                <paper-button raised tabindex="4" title="Confirm" on-click="_confirmCustomDialog">Confirm</paper-button>
+            </div>
+        </paper-dialog>
+    </template>
+</dom-module>
+
+<script src="voyent-my-locations.js"></script>

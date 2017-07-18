@@ -240,14 +240,15 @@
         //******************PRIVATE API******************
 
         /**
-         * Retrieves all the regions for the realm.
+         * Fetches the region boundary for the realm.
          * @returns {*}
          * @private
          */
-        _fetchRegions: function() {
+        _fetchRealmRegion: function() {
             var _this = this;
             return new Promise(function (resolve, reject) {
-                voyent.locate.getAllRegions({realm:_this.realm,account:_this.account}).then(function (regions) {
+                voyent.locate.findRegions({realm:_this.realm,account:_this.account,
+                                             options:{"sort":{"time":-1},"limit":1}}).then(function (regions) {
                     //Filter out the Alert regions and we should only be left with the static area Region.
                     _this._drawRegion(regions.filter(function(region) {
                         return !region.location.properties || !region.location.properties.trackerId;
@@ -511,13 +512,14 @@
                     _this.customStyle['--width-var'] = _this.width + 'px';
                 }
                 else { //Otherwise the map will take up as much space as possible.
-                    if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
-                        _this.customStyle['--width-var'] = _this.querySelector('#container').offsetWidth + 'px';
-                    }
-                    else {
+                    if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' ||
+                        _this.nodeName === 'VOYENT-ALERT-EDITOR') {
                         //-4px for map borders.
                         _this.customStyle['--width-var'] = (_this.querySelector('#container').offsetWidth -
                             _this.querySelector('#sidePanel').offsetWidth - 4) + 'px';
+                    }
+                    else {
+                        _this.customStyle['--width-var'] = _this.querySelector('#container').offsetWidth + 'px';
                     }
 
                 }
@@ -556,12 +558,26 @@
                 dialog.open();
                 //If there's no input rendered in the dialog then focus on the dialog so
                 //we can capture the user's key presses. The input will focus automatically.
-                if (!this._showDialogInput) {
+                if (!this._showDialogInput && !this._customProperties) {
                     setTimeout(function() {
                         dialog.focus();
                     },200);
                 }
             }
+        },
+
+        /**
+         * Opens the dialog and displays the custom set of fields defined
+         * in the template instead of just the usual message and input.
+         * @param message
+         * @param customProperties
+         * @param confirmFunc
+         * @param cancelFunc
+         * @private
+         */
+        _openCustomDialog: function(message,customProperties,confirmFunc,cancelFunc) {
+            this._customProperties = customProperties;
+            this._openDialog(message,null,confirmFunc,cancelFunc);
         },
 
         /**
@@ -584,6 +600,20 @@
         },
 
         /**
+         * Handles dialog custom input validation and then regular dialog operations.
+         * @private
+         */
+        _confirmCustomDialog: function() {
+            //Validate the custom inputs.
+            for (var i=0; i<this._customProperties.length; i++) {
+                if (!this[this._customProperties[i]]) {
+                    return;
+                }
+            }
+            this._confirmDialog();
+        },
+
+        /**
          * Handles closing the dialog and calling the cancel function if available.
          * @param confirmed
          * @private
@@ -595,8 +625,14 @@
                 if (typeof this._dialogCancelFunc === 'string') { this[this._dialogCancelFunc](); }
                 else { this._dialogCancelFunc(); }
             }
-            this._dialogMessage = this._dialogInput = this._showDialogInput =
-            this._dialogConfirmFunc = this._dialogCancelFunc = null;
+            //If we have customProperties then we want to clear the properties they reference as well.
+            if (this._customProperties) {
+                for (var i=0; i<this._customProperties.length; i++) {
+                    this[this._customProperties[i]] = null;
+                }
+            }
+            this._dialogMessage = this._dialogInput = this._showDialogInput = this._dialogConfirmFunc =
+            this._dialogCancelFunc = this._customProperties = null;
             this.querySelector('#modalDialog').close();
         },
 
@@ -607,7 +643,7 @@
          */
         _dialogKeyUp: function(e) {
             if (e.keyCode === 13) { //Enter
-                this._confirmDialog();
+                this._customProperties ? this._confirmCustomDialog() : this._confirmDialog();
             }
             else if (e.keyCode === 27) { //Escape
                 this._closeDialog();
@@ -648,7 +684,7 @@
                     this._areaRegion = areaRegion;
                 }
                 else {
-                    this._fetchRegions();
+                    this._fetchRealmRegion();
                 }
             }
             //Clear the map entirely.

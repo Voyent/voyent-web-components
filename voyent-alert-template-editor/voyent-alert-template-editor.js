@@ -43,7 +43,7 @@ Polymer({
                 "position":google.maps.ControlPosition.TOP_RIGHT}
         });
         //Fetch the regions for the realm so we can populate the map with the current region.
-        this._fetchRegions();
+        this._fetchRealmRegion();
     },
 
     /**

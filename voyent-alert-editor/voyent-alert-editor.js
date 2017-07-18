@@ -72,7 +72,7 @@ Polymer({
         //Fetch the Alert Templates, the last Alert locations and the last user location.
         this.refreshMap();
         //Fetch the realm region.
-        this._fetchRegions();
+        this._fetchRealmRegion();
     },
 
     /**

@@ -432,6 +432,7 @@ Polymer({
 
     /**
      * Confirms changes made to the Editable property whenever the value of the dropdown value changes.
+     * @param e
      * @private
      */
     _editPropertyOnActivate: function(e) {
