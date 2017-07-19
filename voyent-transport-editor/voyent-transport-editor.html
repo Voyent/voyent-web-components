@@ -78,6 +78,7 @@ Displays a transport editor that can build message templates for various technol
                             <input id="messageSubject" type="text" placeholder="Subject"
                                    value="{{_tool.subject.global::input}}"
                                    ondrop="drop(event)"
+                                   disabled="{{disabled}}"
                                    on-focus="_updateLastFocus"></input>
                         </div>
                         
@@ -86,6 +87,7 @@ Displays a transport editor that can build message templates for various technol
                             <textarea id="messageDetails" style="height: 80%;"
                                       value="{{_tool.details.global::input}}"
                                       ondrop="drop(event)"
+                                      disabled="{{disabled}}"
                                       on-focus="_updateLastFocus"></textarea>
                         </div>
                     </td>

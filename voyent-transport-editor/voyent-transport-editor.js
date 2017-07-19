@@ -19,6 +19,11 @@ Polymer({
          */
         simple: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
         /**
+         * Disabled the fields and functionality of this component
+         * Functions only for 'simple' at the moment
+         */
+        disabled: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
+        /**
          * Backing for the message elements list
          * Used with simple view only (simple=true)
          */
@@ -351,6 +356,11 @@ Polymer({
      * Used with simple view only (simple=true)
      */
 	_clickedListChanged: function() {
+        // If we're disabled then do nothing
+        if (this.disabled) {
+            return;
+        }
+	    
         // Default to details if none is found or stored
         if (!this.lastFocus) {
             this.lastFocus = "messageDetails";
