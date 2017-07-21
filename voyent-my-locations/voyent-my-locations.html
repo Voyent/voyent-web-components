@@ -74,6 +74,19 @@ Example:
                 background-color: #EBEBEB;
                 color: #000;
             }
+            .customMapBttnImg > img {
+                position:absolute;
+                top:-176px;
+            }
+            .dialog-inline {
+                display: inline-block;
+            }
+            .dialog-block {
+                display:block;
+            }
+            #autoComplete {
+                padding-top: 15px;
+            }
         </style>
         <div id="container">
             <div id="map"></div>
@@ -94,7 +107,7 @@ Example:
                                class="dropdown-content"
                                on-iron-activate="_flagLocationForUpdating">
                     <template is="dom-repeat" items="[[_locationTypes]]">
-                        <paper-item name="{{item}}">{{_returnTypeLabel(item)}}</paper-item>
+                        <paper-item name="{{item}}">{{_returnLocTypeLabel(item)}}</paper-item>
                     </template>
                 </iron-selector>
             </paper-dropdown-menu>
@@ -102,6 +115,15 @@ Example:
                 <paper-icon-button tabindex="4" title="Remove Location" icon="delete"
                                    on-click="_flagLocationForRemoval">
                 </paper-icon-button>
+            </div>
+        </div>
+        <div id="locationBttn" class="customMapBttnWrap" hidden>
+            <div class="customMapBttn" title="Create a new Location">
+                <span>
+                    <div class="customMapBttnImg">
+                        <img data-type="tracker" src="img/drawing.png">
+                    </div>
+                </span>
             </div>
         </div>
         <div id="customControl" class="custom-control" hidden>
@@ -113,10 +135,26 @@ Example:
             </div>
         </div>
         <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
-            <p>{{_dialogMessage}}</p>
-            <paper-input class="no-margin" autofocus no-label-float tabindex="1" label="Label"
+            <p>Location Details</p>
+            <paper-dropdown-menu tabindex="1"
+                                 label="Creation Type"
+                                 on-keyup="_dialogKeyUp"
+                                 class="dialog-block no-margin">
+                <iron-selector selected="{{_creationType}}"
+                               attr-for-selected="name"
+                               class="dropdown-content">
+                        <template is="dom-repeat" items="[[_creationTypes]]">
+                        <paper-item name="{{item}}">{{_returnCreateTypeLabel(item)}}</paper-item>
+                    </template>
+                </iron-selector>
+            </paper-dropdown-menu>
+            <template is="dom-if" if="{{_isAddress(_creationType)}}">
+                <paper-input id="autoComplete" class="no-margin" no-label-float tabindex="2"
+                             on-keyup="_dialogKeyUp"></paper-input>
+            </template>
+            <paper-input class="dialog-inline no-margin" autofocus no-label-float tabindex="3" label="Label"
                          on-keyup="_dialogKeyUp" value="{{_locationLabel}}"></paper-input>
-            <paper-dropdown-menu tabindex="2"
+            <paper-dropdown-menu tabindex="4"
                                  label="Type"
                                  on-keyup="_dialogKeyUp"
                                  class="no-margin">
@@ -124,13 +162,13 @@ Example:
                                attr-for-selected="name"
                                class="dropdown-content">
                     <template is="dom-repeat" items="[[_locationTypes]]">
-                        <paper-item name="{{item}}">{{_returnTypeLabel(item)}}</paper-item>
+                        <paper-item name="{{item}}">{{_returnLocTypeLabel(item)}}</paper-item>
                     </template>
                 </iron-selector>
             </paper-dropdown-menu>
             <div class="dialog-bttns">
-                <paper-button raised tabindex="3" title="Cancel" on-click="_closeDialog">Cancel</paper-button>
-                <paper-button raised tabindex="4" title="Confirm" on-click="_confirmCustomDialog">Confirm</paper-button>
+                <paper-button raised tabindex="5" title="Cancel" on-click="_closeDialog">Cancel</paper-button>
+                <paper-button raised tabindex="6" title="Confirm" on-click="_confirmDialog">Confirm</paper-button>
             </div>
         </paper-dialog>
     </template>

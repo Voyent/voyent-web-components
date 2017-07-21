@@ -3,8 +3,10 @@ Polymer({
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
     ready: function() {
-        //Type options for drop-down menus
+        //Type options for drop-down menus.
         this._locationTypes = ['home','business','school','other'];
+        this._creationTypes = ['pindrop','address'];
+        this._creationType = 'pindrop';
         //An _id mapped container of all locations.
         this._locations = {};
         //The location that is currently active in the editor (infoWindow is displayed).
@@ -28,7 +30,7 @@ Polymer({
         //Only enable the marker when we are logged in.
         this._drawingManager.setOptions({
             "drawingControlOptions":{
-                "drawingModes":['marker'],
+                "drawingModes":[],
                 "position":google.maps.ControlPosition.TOP_RIGHT}
         });
         //Initialize infoWindow object for later.
@@ -36,6 +38,8 @@ Polymer({
         //Fetch the realm region and the previously created locations.
         this._fetchRealmRegion();
         this._fetchLocations();
+        //Add "create new location" button.
+        this._addLocationButton();
         //Close the infoWindow when clicking on the map.
         google.maps.event.addListener(this._map, "click", function() {
             _this._infoWindow.close();
@@ -79,7 +83,38 @@ Polymer({
                 draggable: true
             });
             this._locations[locations[i]._id] = {"location":locations[i], "marker":marker};
-            this._setupMapListeners(this._locations[locations[i]._id]);
+            this._setupLocationListeners(this._locations[locations[i]._id]);
+        }
+    },
+
+    /**
+     * Handles adding the button for creating new locations.
+     * @private
+     */
+    _addLocationButton: function() {
+        if (!this.querySelector('#locationBttn:not([hidden])')) {
+            var _this = this;
+            var locationBttn = this.$.locationBttn.cloneNode(true);
+            locationBttn.onclick = function() {
+                _this._openDialog(function () {
+                    if (_this._creationType === 'pindrop') {
+                        _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+                    }
+                    else {
+                        _this._createLocation(new google.maps.Marker({
+                            position: _this._placeCoordinates,
+                            map: _this._map,
+                            draggable: true
+                        }));
+                    }
+                });
+            };
+            this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(locationBttn);
+            //Delay so that the button isn't shown on
+            //the page before being moved into the map.
+            setTimeout(function () {
+                locationBttn.hidden = false;
+            },100);
         }
     },
 
@@ -228,6 +263,55 @@ Polymer({
         this._customControlAdded = true;
     },
 
+    //The dialog functions below override the functions in the behaviour.
+
+    /**
+     * Opens the dialog for creating a new location.
+     * @param confirmFunc
+     * @param cancelFunc
+     * @private
+     */
+    _openDialog: function(confirmFunc,cancelFunc) {
+        this._dialogConfirmFunc = confirmFunc;
+        this._dialogCancelFunc = cancelFunc;
+        var dialog = this.querySelector('#modalDialog');
+        if (dialog) { dialog.open(); }
+    },
+
+    /**
+     * Handles dialog input validation and calling the confirmation function if available.
+     * @private
+     */
+    _confirmDialog: function() {
+        //Validate the dialog.
+        if (!this._creationType || !this._placeCoordinates || !this._locationType || !this._locationLabel.trim()) {
+            return;
+        }
+        //We allow for passing the confirm function directly or as a string.
+        if (this._dialogConfirmFunc) {
+            if (typeof this._dialogConfirmFunc === 'string') { this[this._dialogConfirmFunc](); }
+            else { this._dialogConfirmFunc(); }
+        }
+        //Close the dialog after.
+        this._closeDialog(true);
+    },
+
+    /**
+     * Handles closing the dialog and calling the cancel function if available.
+     * @param confirmed
+     * @private
+     */
+    _closeDialog: function(confirmed) {
+        //Only call the cancel function if this is triggered by a cancel.
+        //We allow passing the confirm function directly or as a string.
+        if (!confirmed && this._dialogCancelFunc) {
+            if (typeof this._dialogCancelFunc === 'string') { this[this._dialogCancelFunc](); }
+            else { this._dialogCancelFunc(); }
+        }
+        this._dialogConfirmFunc = this._dialogCancelFunc = null;
+        this.querySelector('#modalDialog').close();
+    },
+
     /**
      * Initialize the listeners for drawing a new location on the map.
      * @private
@@ -244,25 +328,10 @@ Polymer({
             }
             //Only draw the marker when they confirm the Location details.
             oce.overlay.setMap(null);
-            _this._openCustomDialog('Please enter the Location details', ['_locationLabel','_locationType'], function () {
-                //Display the marker, build the location record, add the required listeners and flag it for updating.
-                oce.overlay.setMap(_this._map);
-                var latLng = marker.getPosition();
-                var locationData = {"location":{
-                    "location": {
-                        "geometry": { "type" : "Point", "coordinates" : [latLng.lng(),latLng.lat()] },
-                        "properties": {
-                            "vras": {
-                                "label":_this._locationLabel,
-                                "type":_this._locationType
-                            }
-                        }
-                    }
-                },"marker":marker};
-                _this._locations[locationData.location._id] = locationData;
-                _this._setupMapListeners(locationData);
-                _this._locationsToUpdate.push(locationData);
-            });
+            //Display the marker.
+            oce.overlay.setMap(_this._map);
+            //Draw the location marker
+            _this._createLocation(oce.overlay);
             //Exit drawing mode.
             _this._drawingManager.setDrawingMode(null);
         });
@@ -277,11 +346,63 @@ Polymer({
     },
 
     /**
+     * Builds a location record from the passed marker.
+     * @param marker
+     * @private
+     */
+    _createLocation: function(marker) {
+        //Build the location record, add the required listeners and flag it for updating.
+        var latLng = marker.getPosition();
+        var locationData = {"location":{
+            "location": {
+                "geometry": { "type" : "Point", "coordinates" : [latLng.lng(),latLng.lat()] },
+                "properties": {
+                    "vras": {
+                        "label":this._locationLabel,
+                        "type":this._locationType
+                    }
+                }
+            }
+        },"marker":marker};
+        this._locations[locationData.location._id] = locationData;
+        this._locationsToUpdate.push(locationData);
+        this._setupLocationListeners(locationData);
+        //Display the infoWindow for the new location.
+        this._displayInfoWindow(locationData);
+        //Reset the dialog properties.
+        this._locationType = this._locationLabel = null;
+        this.$$('#autoComplete').value = '';
+
+    },
+
+    /**
+     * Initialize the places autoComplete.
+     * @private
+     */
+    _setupAutoComplete: function() {
+        if (this._autoComplete) { return; }
+        var _this = this, place;
+        this._autoComplete = new google.maps.places.Autocomplete(this.$$('#autoComplete'),
+                                                                {"bounds":this._areaRegion.bounds,"strictBounds":true});
+        google.maps.event.addListener(this._autoComplete, 'place_changed', function() {
+            place = _this._autoComplete.getPlace();
+            if (place && place.geometry && place.geometry.location) {
+                _this._placeCoordinates = place.geometry.location;
+                _this._locationLabel = place.name;
+            }
+            else {
+                this._placeCoordinates = null;
+                _this._locationLabel = null;
+            }
+        });
+    },
+
+    /**
      * Initialize google map listeners for moving and clicking on the locations.
      * @param locationData
      * @private
      */
-    _setupMapListeners: function(locationData) {
+    _setupLocationListeners: function(locationData) {
         var _this = this;
         //Prevent the Location from being dragged outside of the realm region.
         google.maps.event.addListener(locationData.marker,'drag',function(e) {
@@ -306,12 +427,39 @@ Polymer({
     },
 
     /**
+     * Returns whether the passed creationType is of the address type.
+     * @param creationType
+     * @private
+     */
+    _isAddress: function(creationType) {
+        var _this = this;
+        var isAddress = creationType === 'address';
+        //Make sure we initialize the autoComplete, async is required to allow it time to render.
+        if (isAddress) {
+            setTimeout(function() {
+                _this._setupAutoComplete();
+            },0);
+        }
+        return isAddress;
+    },
+
+    /**
      * Proper-case the passed type.
      * @param type
      * @returns {string}
      * @private
      */
-    _returnTypeLabel: function(type) {
+    _returnLocTypeLabel: function(type) {
         return type ? (type.charAt(0).toUpperCase() + type.slice(1)) : type;
+    },
+
+    /**
+     * Proper-case the passed type.
+     * @param type
+     * @returns {string}
+     * @private
+     */
+    _returnCreateTypeLabel: function(type) {
+        return type === 'pindrop' ? 'Pin Drop' : 'Address';
     }
 });

@@ -558,26 +558,12 @@
                 dialog.open();
                 //If there's no input rendered in the dialog then focus on the dialog so
                 //we can capture the user's key presses. The input will focus automatically.
-                if (!this._showDialogInput && !this._customProperties) {
+                if (!this._showDialogInput) {
                     setTimeout(function() {
                         dialog.focus();
                     },200);
                 }
             }
-        },
-
-        /**
-         * Opens the dialog and displays the custom set of fields defined
-         * in the template instead of just the usual message and input.
-         * @param message
-         * @param customProperties
-         * @param confirmFunc
-         * @param cancelFunc
-         * @private
-         */
-        _openCustomDialog: function(message,customProperties,confirmFunc,cancelFunc) {
-            this._customProperties = customProperties;
-            this._openDialog(message,null,confirmFunc,cancelFunc);
         },
 
         /**
@@ -600,20 +586,6 @@
         },
 
         /**
-         * Handles dialog custom input validation and then regular dialog operations.
-         * @private
-         */
-        _confirmCustomDialog: function() {
-            //Validate the custom inputs.
-            for (var i=0; i<this._customProperties.length; i++) {
-                if (!this[this._customProperties[i]]) {
-                    return;
-                }
-            }
-            this._confirmDialog();
-        },
-
-        /**
          * Handles closing the dialog and calling the cancel function if available.
          * @param confirmed
          * @private
@@ -625,14 +597,8 @@
                 if (typeof this._dialogCancelFunc === 'string') { this[this._dialogCancelFunc](); }
                 else { this._dialogCancelFunc(); }
             }
-            //If we have customProperties then we want to clear the properties they reference as well.
-            if (this._customProperties) {
-                for (var i=0; i<this._customProperties.length; i++) {
-                    this[this._customProperties[i]] = null;
-                }
-            }
-            this._dialogMessage = this._dialogInput = this._showDialogInput = this._dialogConfirmFunc =
-            this._dialogCancelFunc = this._customProperties = null;
+            this._dialogMessage = this._dialogInput = this._showDialogInput =
+                this._dialogConfirmFunc = this._dialogCancelFunc = null;
             this.querySelector('#modalDialog').close();
         },
 
