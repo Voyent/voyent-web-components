@@ -89,6 +89,9 @@ Polymer({
     },
     observers: [
         '_toolChanged(_tool.transport.browser, _tool.transport.cloud, _tool.transport.sms, _tool.transport.email,' +
+                      '_tool.cloud_notification_forced,' +
+                      '_tool.delayed.enabled, _tool.delayed.delay, _tool.delayed.duration,' +
+                      '_tool.silent.enabled, _tool.silent.commands,' +
                       '_tool.subject.specbrowser, _tool.subject.speccloud, _tool.subject.specsms, _tool.subject.specemail, _tool.subject.global, _tool.subject.browser, _tool.subject.cloud, _tool.subject.sms, _tool.subject.email,' +
                       '_tool.details.specbrowser, _tool.details.speccloud, _tool.details.specsms, _tool.details.specemail, _tool.details.global, _tool.details.browser, _tool.details.cloud, _tool.details.sms, _tool.details.email,' +
                       '_tool.url.specbrowser, _tool.url.speccloud, _tool.url.specsms, _tool.url.specemail, _tool.url.global, _tool.url.browser, _tool.url.cloud, _tool.url.sms, _tool.url.email,' +
@@ -153,18 +156,36 @@ Polymer({
 	        this._tool.payload = {};
 	    }
 	    
-	    // First add our global JSON (required fields here)
-	    toReturn.global = {
-	        "details": this._tool.details.global,
-	        "payload": this._tool.payload
-	    };
-	    
-	    // Also any any non-required fields
-	    this._getGlobalData(toReturn, "subject");
-	    this._getGlobalData(toReturn, "url");
-	    this._getGlobalData(toReturn, "icon");
-	    this._getGlobalData(toReturn, "priority");
-	    this._getGlobalData(toReturn, "expire_time");
+	    if (!this._tool.silent.enabled) {
+            // First add our global JSON (required fields here)
+            toReturn.global = {
+                "details": this._tool.details.global,
+                "payload": this._tool.payload
+            };
+            
+            // Also any any non-required fields
+            this._getGlobalData(toReturn, "subject");
+            this._getGlobalData(toReturn, "url");
+            this._getGlobalData(toReturn, "icon");
+            this._getGlobalData(toReturn, "priority");
+            this._getGlobalData(toReturn, "expire_time");
+        }
+        else {
+            toReturn.global = {
+                "silent": true
+            };
+            
+            if (this._tool.silent.commands) {
+                if (this._tool.silent.commands.includes(",")) {
+                    toReturn.global.commands = this._tool.silent.commands.split(",");
+                }
+                else {
+                    toReturn.global.commands = [
+                        this._tool.silent.commands
+                    ];
+                }
+            }
+        }
 	    
 	    // Then add any transport specific override data
 	    // Only necessary if we're not in simple view
@@ -186,8 +207,28 @@ Polymer({
                 toReturn.sms = this._getOverrideData("sms");
             }
             
-            // Finally stringify the result so the service level can use it properly
-            // We only stringify for non-simple requests, to be able to fit into action editor and other tools
+            // Add cloud notification forced as needed
+            if (this._tool.cloud_notification_forced) {
+                toReturn.cloud_notification_forced = true;
+            }
+            
+            // Add delayed if necessary
+            if (this._tool.delayed && this._tool.delayed.enabled) {
+                toReturn.delayed = {
+                    "delay": this._tool.delayed.delay,
+                    "duration": this._tool.delayed.duration
+                };
+            }
+        }
+        
+        // Use the newer wrapped style
+        toReturn = {
+            "push_configuration": toReturn
+        };
+        
+        // Finally stringify the result so the service level can use it properly
+        // We only stringify for non-simple requests, to be able to fit into action editor and other tools
+        if (!this.simple) {
             try{
                 toReturn = JSON.stringify(toReturn, null, 4);
             }catch(error) {
@@ -206,6 +247,11 @@ Polymer({
 	convertJSONToUI: function(json) {
 	    // First clear the state of our tool, or populate defaults as necessary
 	    this._setDefaultTool();
+	    
+	    // Strip the new push_configuration wrapper, if found
+	    if (json.push_configuration) {
+	        json = json.push_configuration;
+	    }
 	    
 	    // Update our global fields if possible
 	    if (this._isDefined(json['global'])) {
@@ -459,6 +505,16 @@ Polymer({
      */
     _setDefaultTool: function() {
         this.set('_tool', {
+            "cloud_notification_forced": false,
+            "delayed": {
+                "enabled": false,
+                "delay": 3000,
+                "duration": 0
+            },
+            "silent": {
+                "enabled": false,
+                "commands": ""
+            },
             "transport": {
                 "browser": this.allowBrowser ? this.defaultBrowser : false,
                 "cloud": this.allowCloud ? this.defaultCloud : false,

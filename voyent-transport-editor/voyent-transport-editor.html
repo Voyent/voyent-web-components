@@ -149,6 +149,14 @@ Displays a transport editor that can build message templates for various technol
             
             <template is="dom-if" if="{{!noTransports}}">
                 <div class="inputWrap">
+                    <label><input type="checkbox" checked="{{_tool.silent.enabled::change}}"/>Silent</label>
+                    <template is="dom-if" if="{{_tool.silent.enabled}}">
+                        <b>Commands:</b><input type="text" placeholder="Comma separated list of commands" value="{{_tool.silent.commands::input}}"/></td>
+                    </template>
+                </div>
+
+                <template is="dom-if" if="{{!_tool.silent.enabled}}">
+                <div class="inputWrap">
                     <b>Expiry Time</b>
                     <select value="{{_tool.expire_time.global::change}}">
                         <option value="30">30 minutes</option>
@@ -396,6 +404,27 @@ Displays a transport editor that can build message templates for various technol
                     </template>
                     </table>
                 </div>
+                </template>
+                
+                <div class="inputWrap">
+                    <label><input type="checkbox" checked="{{_tool.cloud_notification_forced::change}}"/>Cloud Notification Forced</label>
+                </div>
+                
+                <div class="inputWrap">
+                    <label><input type="checkbox" checked="{{_tool.delayed.enabled::change}}"/>Delayed</label>
+                    <template is="dom-if" if="{{_tool.delayed.enabled}}">
+                        <table class="overrideWrapGlobal">
+                            <tr>
+                                <td>Delay</td>
+                                <td><input type="number" value="{{_tool.delayed.delay::input}}"/></td>
+                            </tr>
+                            <tr>
+                                <td>Duration</td>
+                                <td><input type="number" value="{{_tool.delayed.duration::input}}"/></td>
+                            </tr>
+                        </table>
+                    </template>
+                </div>
                 
                 <template is="dom-if" if="{{_tool.transport.email}}">
                     <template is="dom-if" if="{{_hasEmailTemplates}}">
@@ -419,10 +448,12 @@ Displays a transport editor that can build message templates for various technol
                     </template>
                 </template>
                 
+                <template is="dom-if" if="{{!_tool.silent.enabled}}">
                 <div class="inputWrap">
                     <b>Payload</b>
                     <voyent-code-editor class="code-editor" value="{{_tool.payload}}" disablevalidation="[[disablevalidation]]"></voyent-code-editor>
                 </div>
+                </template>
             </template>
         </template>
             
