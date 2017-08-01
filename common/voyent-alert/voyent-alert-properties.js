@@ -336,10 +336,14 @@ Polymer({
                     //Also call the jscolor API so we are sure the input style updates properly.
                 function waitForJSColor() {
                     var colorPicker = _this.querySelector('#jsColor-'+index);
-                    //Wait till we have a reference to the colour picker.
-                    if (!colorPicker || !colorPicker.jscolor) {
+                    //Wait till we have a reference to the input.
+                    if (!colorPicker) {
                         setTimeout(function(){waitForJSColor();},10);
                         return;
+                    }
+                    //Setup the jscolor picker.
+                    if (!colorPicker.jscolor) {
+                        jscolor.installByClassName("jscolor");
                     }
                     colorPicker.jscolor.fromString(_this._colorVal);
                     //Focus on the input and display the color picker.
@@ -367,11 +371,6 @@ Polymer({
                         customInput.focus();
                     },0);
             }
-
-            //Setup the jscolor picker.
-            setTimeout(function() {
-                jscolor.installByClassName("jscolor");
-            },0);
         }
         else { //We are exiting editing mode.
             //Clear the editing mode inputs.
