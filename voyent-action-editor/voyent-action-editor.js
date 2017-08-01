@@ -531,8 +531,7 @@ Polymer({
                     properties[prop].value = '';
                 }
                 else  if (properties[prop].type === 'boolean') {
-                    //properties[prop].value = properties[prop].default ? properties[prop].default : false;
-                    properties[prop].value = false;
+                    properties[prop].value = !!properties[prop].default;
                 }
 
                 //group the required properties under required object
