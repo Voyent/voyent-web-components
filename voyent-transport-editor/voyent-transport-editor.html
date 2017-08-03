@@ -85,7 +85,7 @@ Displays a transport editor that can build message templates for various technol
                         <div class="inputWrap" style="height: 80%;">
                             <b>Message Details:</b>
                             <textarea id="messageDetails" style="height: 80%;"
-                                      value="{{_tool.details.global::input}}"
+                                      value="{{_tool.detail.global::input}}"
                                       ondrop="drop(event)"
                                       disabled="{{disabled}}"
                                       on-focus="_updateLastFocus"></textarea>
@@ -234,44 +234,44 @@ Displays a transport editor that can build message templates for various technol
                 
                 <div class="inputWrap">
                     <b>Details</b>
-                    <textarea value="{{_tool.details.global::input}}"></textarea>
+                    <textarea value="{{_tool.detail.global::input}}"></textarea>
                     <table class="overrideWrap">
                         <tr>
                             <td>Override:</td>
                             <td>
                                 <template is="dom-if" if="{{_tool.transport.browser}}">
-                                <label><input type="checkbox" checked="{{_tool.details.specbrowser::change}}"/>Browser</label>
+                                <label><input type="checkbox" checked="{{_tool.detail.specbrowser::change}}"/>Browser</label>
                                 </template><template is="dom-if" if="{{_tool.transport.cloud}}">
-                                <label><input type="checkbox" checked="{{_tool.details.speccloud::change}}"/>Cloud</label>
+                                <label><input type="checkbox" checked="{{_tool.detail.speccloud::change}}"/>Cloud</label>
                                 </template><template is="dom-if" if="{{_tool.transport.sms}}">
-                                <label><input type="checkbox" checked="{{_tool.details.specsms::change}}"/>SMS</label>
+                                <label><input type="checkbox" checked="{{_tool.detail.specsms::change}}"/>SMS</label>
                                 </template><template is="dom-if" if="{{_tool.transport.email}}">
-                                <label><input type="checkbox" checked="{{_tool.details.specemail::change}}"/>Email</label>
+                                <label><input type="checkbox" checked="{{_tool.detail.specemail::change}}"/>Email</label>
                                 </template>
                             </td>
                         </tr>
-                    <template is="dom-if" if="{{_tool.details.specbrowser}}">
+                    <template is="dom-if" if="{{_tool.detail.specbrowser}}">
                         <tr>
                             <td>Browser:</td>
-                            <td><input type="text" placeholder="Browser Details" value="{{_tool.details.browser::input}}"/></td>
+                            <td><input type="text" placeholder="Browser Details" value="{{_tool.detail.browser::input}}"/></td>
                         </tr>
                     </template>
-                    <template is="dom-if" if="{{_tool.details.speccloud}}">
+                    <template is="dom-if" if="{{_tool.detail.speccloud}}">
                         <tr>
                             <td>Cloud:</td>
-                            <td><input type="text" placeholder="Cloud Details" value="{{_tool.details.cloud::input}}"/></td>
+                            <td><input type="text" placeholder="Cloud Details" value="{{_tool.detail.cloud::input}}"/></td>
                         </tr>
                     </template>
-                    <template is="dom-if" if="{{_tool.details.specsms}}">
+                    <template is="dom-if" if="{{_tool.detail.specsms}}">
                         <tr>
                             <td>SMS:</td>
-                            <td><input type="text" placeholder="SMS Details" value="{{_tool.details.sms::input}}"/></td>
+                            <td><input type="text" placeholder="SMS Details" value="{{_tool.detail.sms::input}}"/></td>
                         </tr>
                     </template>
-                    <template is="dom-if" if="{{_tool.details.specemail}}">
+                    <template is="dom-if" if="{{_tool.detail.specemail}}">
                         <tr>
                             <td>Email:</td>
-                            <td><input type="text" placeholder="Email Details" value="{{_tool.details.email::input}}"/></td>
+                            <td><input type="text" placeholder="Email Details" value="{{_tool.detail.email::input}}"/></td>
                         </tr>
                     </template>
                     </table>

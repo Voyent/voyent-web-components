@@ -12,9 +12,9 @@ Polymer({
         disablevalidation: { type: Boolean, value: false },        
         /**
          * Show the simple/clean/basic view of this component
-         * The simple view contains a name (subject), body (details), and everything else is preset
+         * The simple view contains a name (subject), body (detail), and everything else is preset
          * There is also no ability to choose or override specific transports
-         * And a list of preset message elements (basically backpack variables) are defined and can be added to the body (details)
+         * And a list of preset message elements (basically backpack variables) are defined and can be added to the body (detail)
          * @default false
          */
         simple: { type: Boolean, value: false, reflectToAttribute: true, notify: true },
@@ -93,7 +93,7 @@ Polymer({
                       '_tool.delayed.enabled, _tool.delayed.delay, _tool.delayed.duration,' +
                       '_tool.silent.enabled, _tool.silent.commands,' +
                       '_tool.subject.specbrowser, _tool.subject.speccloud, _tool.subject.specsms, _tool.subject.specemail, _tool.subject.global, _tool.subject.browser, _tool.subject.cloud, _tool.subject.sms, _tool.subject.email,' +
-                      '_tool.details.specbrowser, _tool.details.speccloud, _tool.details.specsms, _tool.details.specemail, _tool.details.global, _tool.details.browser, _tool.details.cloud, _tool.details.sms, _tool.details.email,' +
+                      '_tool.detail.specbrowser, _tool.detail.speccloud, _tool.detail.specsms, _tool.detail.specemail, _tool.detail.global, _tool.detail.browser, _tool.detail.cloud, _tool.detail.sms, _tool.detail.email,' +
                       '_tool.url.specbrowser, _tool.url.speccloud, _tool.url.specsms, _tool.url.specemail, _tool.url.global, _tool.url.browser, _tool.url.cloud, _tool.url.sms, _tool.url.email,' +
                       '_tool.priority.specbrowser, _tool.priority.speccloud, _tool.priority.specsms, _tool.priority.specemail, _tool.priority.global, _tool.priority.browser, _tool.priority.cloud, _tool.priority.sms, _tool.priority.email,' +
                       '_tool.emailtemplate.email,' +
@@ -133,12 +133,12 @@ Polymer({
 	},
 
 	/**
-	 * Reset the state of our subject and details
+	 * Reset the state of our subject and detail
 	 * Used with simple view only (simple=true)
 	 */
 	resetSimple: function() {
 	    this.set("_tool.subject.global", "");
-	    this.set("_tool.details.global", "");
+	    this.set("_tool.detail.global", "");
 	},
 	
 	/**
@@ -159,7 +159,7 @@ Polymer({
 	    if (!this._tool.silent.enabled) {
             // First add our global JSON (required fields here)
             toReturn.global = {
-                "details": this._tool.details.global,
+                "detail": this._tool.detail.global,
                 "payload": this._tool.payload
             };
             
@@ -282,7 +282,7 @@ Polymer({
 	 * Function to set a transport chunk into our UI tooling, such as Browser
 	 * This will check if the desired transport is available in our passed JSON,
 	 *  and if so will toggle our checkbox and try to populate:
-	 *  subject, details, url, priority
+	 *  subject, detail, url, priority
 	 * @param json
 	 * @param transport
 	 */
@@ -292,7 +292,7 @@ Polymer({
 	            this.set('_tool.transport.' + transport, true);
 	        }
 	        this._setFieldFromJSON(json, transport, 'subject');
-	        this._setFieldFromJSON(json, transport, 'details');
+	        this._setFieldFromJSON(json, transport, 'detail');
 	        this._setFieldFromJSON(json, transport, 'url');
 	        this._setFieldFromJSON(json, transport, 'priority');
 	    }
@@ -334,7 +334,7 @@ Polymer({
 	/**
 	 * Function to generate override data JSON for the passed transport
 	 * This will pull data from our internal UI controls and populate (if available):
-	 *  subject, details, url, priority
+	 *  subject, detail, url, priority
 	 * @param transport
 	 */
 	_getOverrideData: function(transport) {
@@ -343,8 +343,8 @@ Polymer({
 	    if (this._hasField("subject", transport)) {
 	        toReturn.subject = this._getField("subject", transport);
 	    }
-	    if (this._hasField("details", transport)) {
-	        toReturn.details = this._getField("details", transport);
+	    if (this._hasField("detail", transport)) {
+	        toReturn.detail = this._getField("detail", transport);
 	    }
 	    if (this._hasField("url", transport)) {
 	        toReturn.url = this._getField("url", transport);
@@ -360,7 +360,7 @@ Polymer({
 	 * Function to return the value of a single field from our UI controls
 	 * This will determine if the user requested we use the generic global value or a specific override value
 	 * Basically look at the "specTransport" flag and return data for either "global" or "transport"
-	 * @param field such as "details" or "url"
+	 * @param field such as "detail" or "url"
 	 * @param transport such as "browser" or "cloud"
 	 */
 	_getField: function(field, transport) {
@@ -369,7 +369,7 @@ Polymer({
 	
 	/**
 	 * Function to determine if we have a valid (defined, not null) value for the desired field/transport combo
-	 * @param field such as "details" or "url"
+	 * @param field such as "detail" or "url"
 	 * @param transport such as "browser" or "cloud"
 	 * @return true/false
 	 */
@@ -407,7 +407,7 @@ Polymer({
             return;
         }
 	    
-        // Default to details if none is found or stored
+        // Default to detail if none is found or stored
         if (!this.lastFocus) {
             this.lastFocus = "messageDetails";
         }
@@ -434,7 +434,7 @@ Polymer({
                 this.set('value.global.subject', area.value);
             }
             else if (area.id === 'messageDetails') {
-                this.set('value.global.details', area.value);
+                this.set('value.global.detail', area.value);
             }
 	        
 	        // Reset the selection of our list so we can re-select the same element as needed
@@ -532,7 +532,7 @@ Polymer({
                 "sms": null,
                 "email": null
             },
-            "details": {
+            "detail": {
                 "specbrowser": false,
                 "speccloud": false,
                 "specsms": false,
