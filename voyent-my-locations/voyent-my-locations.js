@@ -284,7 +284,9 @@ Polymer({
      */
     _confirmDialog: function() {
         //Validate the dialog.
-        if (!this._creationType || !this._placeCoordinates || !this._locationType || !this._locationLabel.trim()) {
+        if (!this._creationType || (this._creationType === 'address' && !this._placeCoordinates) ||
+            !this._locationLabel || !this._locationLabel.trim() || !this._locationType) {
+            this.fire('message-error', 'Please complete all fields.');
             return;
         }
         //We allow for passing the confirm function directly or as a string.
@@ -371,8 +373,34 @@ Polymer({
         this._displayInfoWindow(locationData);
         //Reset the dialog properties.
         this._locationType = this._locationLabel = null;
-        this.$$('#autoComplete').value = '';
+        var autocomplete = this.$$('#autoComplete');
+        if (autocomplete) {
+            autocomplete.value = '';
+        }
+    },
 
+    /**
+     * Try and determine the location type based on the place types that Google provides.
+     * @param types
+     * @returns {*}
+     * @private
+     */
+    _determineLocationType: function(types) {
+        //Places type categories provided by Google.
+        var placesHome=["street_address","postal_code"],
+            placesBusiness=["accounting","airport","amusement_park","aquarium","art_gallery","atm","bakery","bank","bar","beauty_salon","bicycle_store","book_store","bowling_alley","cafe","campground","car_dealer","car_rental","car_repair","car_wash","casino","clothing_store","convenience_store","dentist","department_store","electrician","electronics_store","florist","furniture_store","gas_station","gym","hair_care","hardware_store","home_goods_store","insurance_agency","jewelry_store","laundry","lawyer","liquor_store","locksmith","lodging","meal_delivery","meal_takeaway","movie_rental","movie_theater","moving_company","night_club","painter","parking","pet_store","pharmacy","physiotherapist","plumber","post_office","real_estate_agency","restaurant","roofing_contractor","rv_park","shoe_store","shopping_mall","spa","stadium","storage","store","taxi_stand","travel_agency","veterinary_care","zoo"],
+            placesSchool=["school","university"];
+
+        var hc = bc = sc = 0;
+        for (var i=0; i<types.length; i++) {
+            placesHome.indexOf(types[i]) > -1 ? hc++ : hc;
+            placesBusiness.indexOf(types[i]) > -1 ? bc++ : bc;
+            placesSchool.indexOf(types[i]) > -1 ? sc++ : sc;
+        }
+        if (hc > bc && hc > sc) { return 'home'; }
+        else if (bc > hc && bc > sc) { return 'business'; }
+        else if (sc > hc && sc > bc) { return 'school'; }
+        return 'other';
     },
 
     /**
@@ -389,9 +417,10 @@ Polymer({
             if (place && place.geometry && place.geometry.location) {
                 _this._placeCoordinates = place.geometry.location;
                 _this._locationLabel = place.name;
+                _this._locationType = _this._determineLocationType(place.types);
             }
-            else {
-                this._placeCoordinates = null;
+            else if (!place || Object.keys(place).length === 1) {
+                _this._placeCoordinates = null;
                 _this._locationLabel = null;
             }
         });
