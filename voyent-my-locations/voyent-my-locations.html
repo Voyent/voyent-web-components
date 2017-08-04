@@ -150,7 +150,7 @@ Example:
             </paper-dropdown-menu>
             <template is="dom-if" if="{{_isAddress(_creationType)}}">
                 <paper-input id="autoComplete" class="no-margin" no-label-float tabindex="2"
-                             on-keyup="_dialogKeyUp"></paper-input>
+                             on-keyup="_dialogKeyUp" placeholder="Enter a location"></paper-input>
             </template>
             <paper-input class="dialog-inline no-margin" autofocus no-label-float tabindex="3" label="Label"
                          on-keyup="_dialogKeyUp" value="{{_locationLabel}}"></paper-input>

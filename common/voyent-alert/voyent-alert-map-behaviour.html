@@ -345,18 +345,32 @@
         },
 
         /**
-         * Fetches existing fixed location records.
+         * Fetches existing fixed location records, groups them by uid and keeps only the latest.
          * @returns {*}
          * @private
          */
         _fetchMyLocations: function() {
             var _this = this;
+            var locs = {};
             return new Promise(function (resolve, reject) {
                 var query = {"location.properties.trackerId":{"$exists":false},
-                    "location.properties.vras.label":{"$exists":true},
-                    "location.properties.vras.type":{"$exists":true}};
-                voyent.locate.findLocations({realm:_this.realm,account:_this.account,query:query}).then(function(locations) {
-                    resolve(locations);
+                             "location.properties.vras.label":{"$exists":true},
+                             "location.properties.vras.type":{"$exists":true},
+                             "location.properties.vras.uid":{"$exists":true}};
+                var fields = {"_id":0,"username":0};
+                voyent.locate.findLocations({realm:_this.realm,account:_this.account,
+                                             query:query,fields:fields}).then(function(locations) {
+                    for (var i=0; i<locations.length; i++) {
+                        if (!locs[locations[i].location.properties.vras.uid]) {
+                            locs[locations[i].location.properties.vras.uid] = locations[i];
+                        }
+                        else if (locs[locations[i].location.properties.vras.uid].lastUpdated <
+                                 locations[i].lastUpdated) {
+                            locs[locations[i].location.properties.vras.uid] = locations[i];
+                        }
+                    }
+                    //Convert the mapping back to an array and return it.
+                    resolve(Object.keys(locs).map(function(key){return locs[key]}));
                 }).catch(function (error) {
                     reject(error);
                 });

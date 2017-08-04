@@ -7,7 +7,7 @@ Polymer({
         this._locationTypes = ['home','business','school','other'];
         this._creationTypes = ['pindrop','address'];
         this._creationType = 'pindrop';
-        //An _id mapped container of all locations.
+        //A uid mapped container of all locations.
         this._locations = {};
         //The location that is currently active in the editor (infoWindow is displayed).
         this._loadedLocationData = null;
@@ -52,7 +52,7 @@ Polymer({
      */
     _fetchLocations: function() {
         var _this = this;
-        this._fetchMyLocations().then(function (locations) {
+        this._fetchMyLocations().then(function(locations) {
             //Clear the map of any previously drawn entities and draw the new locations.
             _this._clearMap();
             _this._drawLocations(locations);
@@ -73,8 +73,8 @@ Polymer({
                 map: this._map,
                 draggable: true
             });
-            this._locations[locations[i]._id] = {"location":locations[i], "marker":marker};
-            this._setupLocationListeners(this._locations[locations[i]._id]);
+            this._locations[locations[i].location.properties.vras.uid] = {"location":locations[i], "marker":marker};
+            this._setupLocationListeners(this._locations[locations[i].location.properties.vras.uid]);
         }
     },
 
@@ -152,17 +152,13 @@ Polymer({
      * @private
      */
     _saveLocations: function() {
-        var _this = this, locationData, func;
+        var _this = this, locationData;
         //Loop backwards since we're splicing.
         for (var i=this._locationsToUpdate.length-1; i>=0; i--) {
             locationData = this._locationsToUpdate[i];
             (function(locationData) {
-                func = locationData.location._id ? 'updateFixedLocation' : 'updateLocation';
-                voyent.locate[func]({account:_this.account,realm:_this.realm,id:locationData.location._id,
-                                     location:locationData.location}).then(function(res) {
-                    if (!locationData.location._id) {
-                        locationData.location._id = res.uri.split("/").pop();
-                    }
+                voyent.locate.updateLocation({account:_this.account,realm:_this.realm,
+                                              location:locationData.location}).then(function() {
                     //Don't use i to splice because it may change as we splice out other locations.
                     _this.splice('_locationsToUpdate',_this._locationsToUpdate.indexOf(locationData),1);
                 }).catch(function (error) {
@@ -187,8 +183,9 @@ Polymer({
         for (var i=this._locationsToDelete.length-1; i>=0; i--) {
             locationData = this._locationsToDelete[i];
             (function(locationData) {
-                voyent.locate.deleteLocation({account:_this.account,realm:_this.realm,id:
-                                              locationData.location._id}).then(function() {
+                var query = {"location.properties.vras.uid":locationData.location.location.properties.vras.uid};
+                voyent.locate.deleteLocations({account:_this.account,realm:_this.realm,
+                                               query:query}).then(function() {
                 //Don't use i to splice because it may change as we splice out other locations.
                 _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(locationData),1);
                 }).catch(function (error) {
@@ -198,7 +195,7 @@ Polymer({
                                ' : ' + (error.responseText || error.message || error));
                     //It wasn't deleted so re-add it to the map.
                     locationData.marker.setMap(_this._map);
-                    _this._locations[locationData.location._id] = locationData;
+                    _this._locations[locationData.location.location.properties.vras.uid] = locationData;
                     _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(locationData),1);
                 });
             })(locationData)
@@ -224,7 +221,7 @@ Polymer({
         this._infoWindow.close();
         this._loadedLocationData.marker.setMap(null);
         this._locationsToDelete.push(this._loadedLocationData);
-        delete this._locations[this._loadedLocationData.location._id];
+        delete this._locations[this._loadedLocationData.location.location.properties.vras.uid];
         this._loadedLocationData = null;
     },
 
@@ -352,12 +349,14 @@ Polymer({
                 "properties": {
                     "vras": {
                         "label":this._locationLabel,
-                        "type":this._locationType
+                        "type":this._locationType,
+                        //Generate a number using the timestamp and a random number in the hundred thousands.
+                        "uid":new Date().getTime()+'-'+Math.floor(Math.random()*(900000)+100000)
                     }
                 }
             }
         },"marker":marker};
-        this._locations[locationData.location._id] = locationData;
+        this._locations[locationData.location.location.properties.vras.uid] = locationData;
         this._locationsToUpdate.push(locationData);
         this._setupLocationListeners(locationData);
         //Display the infoWindow for the new location.
@@ -401,7 +400,7 @@ Polymer({
     _setupAutoComplete: function() {
         if (this._autoComplete) { return; }
         var _this = this, place;
-        this._autoComplete = new google.maps.places.Autocomplete(this.$$('#autoComplete'),
+        this._autoComplete = new google.maps.places.Autocomplete(this.$$('#autoComplete').querySelector('input'),
                                                                 {"bounds":this._areaRegion.bounds,"strictBounds":true});
         google.maps.event.addListener(this._autoComplete, 'place_changed', function() {
             place = _this._autoComplete.getPlace();
