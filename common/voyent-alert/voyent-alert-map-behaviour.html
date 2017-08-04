@@ -345,6 +345,25 @@
         },
 
         /**
+         * Fetches existing fixed location records.
+         * @returns {*}
+         * @private
+         */
+        _fetchMyLocations: function() {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                var query = {"location.properties.trackerId":{"$exists":false},
+                    "location.properties.vras.label":{"$exists":true},
+                    "location.properties.vras.type":{"$exists":true}};
+                voyent.locate.findLocations({realm:_this.realm,account:_this.account,query:query}).then(function(locations) {
+                    resolve(locations);
+                }).catch(function (error) {
+                    reject(error);
+                });
+            });
+        },
+
+        /**
          * Draws the passed polygon region on the map.
          * @param region
          * @private

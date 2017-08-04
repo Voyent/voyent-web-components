@@ -47,24 +47,15 @@ Polymer({
     },
 
     /**
-     * Fetches the existing fixed location records.
-     * @returns {*}
+     * Fetches existing fixed location records.
      * @private
      */
     _fetchLocations: function() {
         var _this = this;
-        return new Promise(function (resolve, reject) {
-            var query = {"location.properties.trackerId":{"$exists":false},
-                         "location.properties.vras.label":{"$exists":true},
-                         "location.properties.vras.type":{"$exists":true}};
-            voyent.locate.findLocations({realm:_this.realm,account:_this.account,query:query}).then(function(locations) {
-                //Clear the map of any previously drawn entities and draw the new locations.
-                _this._clearMap();
-                _this._drawLocations(locations);
-                resolve();
-            }).catch(function (error) {
-                reject(error);
-            });
+        this._fetchMyLocations().then(function (locations) {
+            //Clear the map of any previously drawn entities and draw the new locations.
+            _this._clearMap();
+            _this._drawLocations(locations);
         });
     },
 
