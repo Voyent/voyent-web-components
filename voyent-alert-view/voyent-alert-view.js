@@ -8,36 +8,44 @@ Polymer({
      * @param templateId
      */
     updateView: function(templateId) {
-        if (!templateId || typeof templateId !== 'string') { return; }
         var _this = this;
-        var promises = [];
-        promises.push(this._fetchAlertTemplate(templateId));
-        promises.push(this._fetchLocationRecord(templateId));
-        Promise.all(promises).then(function() {
-            _this._adjustBounds();
-            _this._templateId = _this._alerts[0].alertTemplate._id;
-        }).catch(function(error) {
-            _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
+        this._mapIsReady().then(function() {
+            if (!templateId || typeof templateId !== 'string') { return; }
+            var promises = [];
+            promises.push(_this._fetchAlertTemplate(templateId));
+            promises.push(_this._fetchLocationRecord(templateId));
+            Promise.all(promises).then(function() {
+                _this._adjustBounds();
+                _this._templateId = _this._alerts[0].alertTemplate._id;
+            }).catch(function(error) {
+                _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
+            });
+            //Fetch the user's last known location.
+            _this._fetchLocationRecord();
+            //Reset the templateId as we'll reset it later when we're ready.
+            _this._templateId = null;
         });
-        //Fetch the user's last known location.
-        this._fetchLocationRecord();
-        //Reset the templateId as we'll reset it later when we're ready.
-        this._templateId = null;
     },
 
     /**
      * Fetches the latest location of the current user and refreshes their position on the map.
      */
     refreshUserLocation: function() {
-        this._fetchLocationRecord().then(this._adjustBounds.bind(this));
+        var _this = this;
+        this._mapIsReady().then(function() {
+            _this._fetchLocationRecord().then(_this._adjustBounds.bind(_this));
+        });
     },
 
     /**
      * Fetches the latest location of the currently loaded Alert and refreshes the position on the map.
      */
     refreshAlertLocation: function() {
-        if (!this._templateId) { return; }
-        this._fetchLocationRecord(this._templateId).then(this._adjustBounds.bind(this));
+        var _this = this;
+        this._mapIsReady().then(function() {
+            if (!_this._templateId) { return; }
+            _this._fetchLocationRecord(_this._templateId).then(_this._adjustBounds.bind(_this));
+        });
     },
 
     //******************PRIVATE API******************

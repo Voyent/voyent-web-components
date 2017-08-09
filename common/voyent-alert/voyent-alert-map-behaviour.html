@@ -115,9 +115,9 @@
          * Re-calculates the map size, fires the Google Map resize event and pans the map.
          */
         resizeMap: function() {
-            if (('google' in window) && this._map) {
-                var _this = this;
-                this._calcMapSize();
+            var _this = this;
+            this._mapIsReady().then(function() {
+                _this._calcMapSize();
                 //Async so the new dimensions have time to render.
                 setTimeout(function() {
                     google.maps.event.trigger(_this._map, 'resize');
@@ -126,7 +126,7 @@
                         _this._map.panToBounds(_this._areaRegion.bounds);
                     }
                 },0);
-            }
+            });
         },
 
         /**
@@ -658,6 +658,31 @@
             if (e.target.withBackdrop) {
                 e.target.parentNode.insertBefore(e.target.backdropElement, e.target);
             }
+        },
+
+        /**
+         * A promise that when resolved indicates that google maps is ready. Can be used in public facing functions
+         * to avoid race conditions where the function tries to execute map related calls before the map is ready.
+         * @returns {*}
+         * @private
+         */
+        _mapIsReady: function() {
+            var _this = this;
+            return new Promise(function (resolve,reject) {
+                if (this._map) {
+                    resolve();
+                }
+                else {
+                    waitForMap();
+                    function waitForMap() {
+                        if (!_this._map) {
+                            setTimeout(function(){waitForMap();},100);
+                            return;
+                        }
+                        resolve();
+                    }
+                }
+            });
         },
 
         /**
