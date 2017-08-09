@@ -200,6 +200,11 @@
                 }
                 this.set('_alerts',[]);
             }
+            //Clear the user marker.
+            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this._userData) {
+                this._userData.marker.setMap(null);
+                this._userData = null;
+            }
             //Re-draw the buttons.
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                 this._drawingManager.setOptions({
