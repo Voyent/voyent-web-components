@@ -334,24 +334,24 @@ Polymer({
                 case 'Color':
                     this.set('_colorVal',properties['Color']);
                     //Also call the jscolor API so we are sure the input style updates properly.
-                function waitForJSColor() {
-                    var colorPicker = _this.querySelector('#jsColor-'+index);
-                    //Wait till we have a reference to the input.
-                    if (!colorPicker) {
-                        setTimeout(function(){waitForJSColor();},10);
-                        return;
+                    function waitForJSColor() {
+                        var colorPicker = _this.querySelector('#jsColor-'+index);
+                        //Wait till we have a reference to the input.
+                        if (!colorPicker) {
+                            setTimeout(function(){waitForJSColor();},50);
+                            return;
+                        }
+                        //Setup the jscolor picker.
+                        if (!colorPicker.jscolor) {
+                            jscolor.installByClassName("jscolor");
+                        }
+                        colorPicker.jscolor.fromString(_this._colorVal);
+                        //Focus on the input and display the color picker.
+                        setTimeout(function() {
+                            colorPicker.focus();
+                            colorPicker.jscolor.show();
+                        },0);
                     }
-                    //Setup the jscolor picker.
-                    if (!colorPicker.jscolor) {
-                        jscolor.installByClassName("jscolor");
-                    }
-                    colorPicker.jscolor.fromString(_this._colorVal);
-                    //Focus on the input and display the color picker.
-                    setTimeout(function() {
-                        colorPicker.focus();
-                        colorPicker.jscolor.show();
-                    },0);
-                }
                     waitForJSColor();
                     break;
                 case 'Opacity':
