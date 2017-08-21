@@ -10,7 +10,11 @@ Polymer({
         /**
          * Contains the list of alert template instance data.
          */
-        _alerts: { type: Array, value: null, notify: true }
+        _alerts: { type: Array, value: null, notify: true },
+        /**
+         * Contains references to data associated with the realm region boundary.
+         */
+        _areaRegion: { type: Array, value: null, notify: true }
     },
 
     observers: [

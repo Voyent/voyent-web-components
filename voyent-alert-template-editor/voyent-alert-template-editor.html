@@ -36,7 +36,9 @@ Example:
                 <div id="map"></div><div id="sidePanel">
                     <div id="propertiesPanel">
                         <template is="dom-if" if="[[_isLoggedIn]]">
-                            <voyent-alert-properties _loaded-alert-template-data="{{_loadedAlertTemplateData}}" _map="{{_map}}"></voyent-alert-properties>
+                            <voyent-alert-properties _loaded-alert-template-data="{{_loadedAlertTemplateData}}"
+                                                     _map="{{_map}}"
+                                                     _area-region="{{_areaRegion}}"></voyent-alert-properties>
                             <template is="dom-if" if="[[!_loadedAlertTemplateData.alertTemplate]]">
                                 <div class="alert-template-title">New Alert Template</div>
                                 <div class="alert-template-desc">
