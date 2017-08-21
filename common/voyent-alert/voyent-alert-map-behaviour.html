@@ -57,6 +57,7 @@
                     zoom: 10,
                     center: new google.maps.LatLng(51.08427,-114.13062),
                     streetViewControl: false,
+                    fullscreenControl: false,
                     mapTypeControlOptions: {
                         style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
                         position: google.maps.ControlPosition.LEFT_TOP
@@ -207,7 +208,7 @@
             }
             //Re-draw the buttons.
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                this._addMarkerButton();
+                this._addMarkerButton(this._markerButtonListener.bind(this));
             }
             else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 this._addAlertButton();
@@ -560,10 +561,10 @@
 
         /**
          * Handles adding the button for creating new alert templates or my locations.
-         * @param onclick - The function that will be called when the button is clicked.
+         * @param listener - The function that will be called when the button is clicked.
          * @private
          */
-        _addMarkerButton: function(onclick) {
+        _addMarkerButton: function(listener) {
             //We have an additional _drawingMarkerButton flag to prevent race conditions
             //when onAfterLogin and clearMap are called at nearly identical times.
             var _this = this;
@@ -571,7 +572,7 @@
                 !this.querySelector('#markerBttn:not([hidden])')) {
                 this._drawingMarkerButton = true;
                 var markerBttn = this.$.markerBttn.cloneNode(true);
-                markerBttn.onclick = onclick;
+                markerBttn.onclick = listener;
                 this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(markerBttn);
                 //Delay so that the button isn't shown on
                 //the page before being moved into the map.

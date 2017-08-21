@@ -38,11 +38,7 @@ Polymer({
         var _this = this;
         this._isLoggedIn = true; //Toggle for side panel.
         //Add "create new location" button.
-        this._addMarkerButton(function() {
-            _this._openDialog('Please enter the Alert Template name','',function() {
-                _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
-            });
-        });
+        this._addMarkerButton(this._markerButtonListener.bind(this));
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
     },
@@ -131,6 +127,17 @@ Polymer({
                     }
                 }
             }
+        });
+    },
+
+    /**
+     * The listener to fire when the marker button is clicked.
+     * @private
+     */
+    _markerButtonListener: function() {
+        var _this = this;
+        this._openDialog('Please enter the Alert Template name','',function() {
+            _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
         });
     },
 
