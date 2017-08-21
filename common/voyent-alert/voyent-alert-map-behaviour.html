@@ -59,7 +59,7 @@
                     streetViewControl: false,
                     mapTypeControlOptions: {
                         style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                        position: google.maps.ControlPosition.RIGHT_TOP
+                        position: google.maps.ControlPosition.LEFT_TOP
                     },
                     zoomControlOptions: {
                         style: google.maps.ZoomControlStyle.LARGE,
@@ -207,11 +207,7 @@
             }
             //Re-draw the buttons.
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                this._drawingManager.setOptions({
-                    "drawingControlOptions":{
-                        "drawingModes":['marker'],
-                        "position":google.maps.ControlPosition.TOP_RIGHT}
-                });
+                this._addMarkerButton();
             }
             else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 this._addAlertButton();
@@ -483,18 +479,14 @@
             }
             if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
                 this._setupMapListeners(alertTemplateData);
-            }
-            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                //Disable further Alert Template creations - only allowed one at a time.
-                this._drawingManager.setOptions({
-                    "drawingControlOptions":{
-                        "drawingModes":[],
-                        "position":google.maps.ControlPosition.TOP_RIGHT}
-                });
-            }
-            else if (this.nodeName === 'VOYENT-ALERT-EDITOR' && !alertLocation) {
-                //Disable further Alert creations - only allowed one at a time.
-                this._removeAlertButton();
+                if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                    //Disable further Alert Template creations - only allowed one at a time.
+                    this._removeMarkerButton();
+                }
+                else if (this.nodeName === 'VOYENT-ALERT-EDITOR' && !alertLocation) {
+                    //Disable further Alert creations - only allowed one at a time.
+                    this._removeAlertButton();
+                }
             }
         },
 
@@ -567,6 +559,39 @@
         },
 
         /**
+         * Handles adding the button for creating new alert templates or my locations.
+         * @param onclick - The function that will be called when the button is clicked.
+         * @private
+         */
+        _addMarkerButton: function(onclick) {
+            //We have an additional _drawingMarkerButton flag to prevent race conditions
+            //when onAfterLogin and clearMap are called at nearly identical times.
+            var _this = this;
+            if (!this._drawingMarkerButton &&
+                !this.querySelector('#markerBttn:not([hidden])')) {
+                this._drawingMarkerButton = true;
+                var markerBttn = this.$.markerBttn.cloneNode(true);
+                markerBttn.onclick = onclick;
+                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(markerBttn);
+                //Delay so that the button isn't shown on
+                //the page before being moved into the map.
+                setTimeout(function () {
+                    markerBttn.hidden = false;
+                    _this._drawingMarkerButton = false;
+                },100);
+            }
+        },
+
+        /**
+         * Handles removing the button for creating new alert templates or my locations.
+         * @private
+         */
+        _removeMarkerButton: function() {
+            var markerBttn = this.querySelector('#markerBttn');
+            if (markerBttn) { markerBttn.parentNode.removeChild(markerBttn); }
+        },
+
+        /**
          * Handles removing the button for creating new Alerts.
          * @private
          */
@@ -586,9 +611,7 @@
         _openDialog: function(message,input,confirmFunc,cancelFunc) {
             this._dialogMessage = message;
             this._dialogInput = input;
-            if (this._dialogInput !== null) {
-                this._showDialogInput = true;
-            }
+            this._showDialogInput = this._dialogInput !== null;
             this._dialogConfirmFunc = confirmFunc;
             this._dialogCancelFunc = cancelFunc;
             var dialog = this.querySelector('#modalDialog');
@@ -635,8 +658,6 @@
                 if (typeof this._dialogCancelFunc === 'string') { this[this._dialogCancelFunc](); }
                 else { this._dialogCancelFunc(); }
             }
-            this._dialogMessage = this._dialogInput = this._showDialogInput =
-                this._dialogConfirmFunc = this._dialogCancelFunc = null;
             this.querySelector('#modalDialog').close();
         },
 

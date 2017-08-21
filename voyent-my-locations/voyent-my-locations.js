@@ -39,7 +39,20 @@ Polymer({
         this._fetchRealmRegion();
         this._fetchLocations();
         //Add "create new location" button.
-        this._addLocationButton();
+        this._addMarkerButton(function() {
+            _this._openDialog(function () {
+                if (_this._creationType === 'pindrop') {
+                    _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+                }
+                else {
+                    _this._createLocation(new google.maps.Marker({
+                        position: _this._placeCoordinates,
+                        map: _this._map,
+                        draggable: true
+                    }));
+                }
+            });
+        });
         //Close the infoWindow when clicking on the map.
         google.maps.event.addListener(this._map, "click", function() {
             _this._infoWindow.close();
@@ -75,37 +88,6 @@ Polymer({
             });
             this._locations[locations[i].location.properties.vras.uid] = {"location":locations[i], "marker":marker};
             this._setupLocationListeners(this._locations[locations[i].location.properties.vras.uid]);
-        }
-    },
-
-    /**
-     * Handles adding the button for creating new locations.
-     * @private
-     */
-    _addLocationButton: function() {
-        if (!this.querySelector('#locationBttn:not([hidden])')) {
-            var _this = this;
-            var locationBttn = this.$.locationBttn.cloneNode(true);
-            locationBttn.onclick = function() {
-                _this._openDialog(function () {
-                    if (_this._creationType === 'pindrop') {
-                        _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
-                    }
-                    else {
-                        _this._createLocation(new google.maps.Marker({
-                            position: _this._placeCoordinates,
-                            map: _this._map,
-                            draggable: true
-                        }));
-                    }
-                });
-            };
-            this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(locationBttn);
-            //Delay so that the button isn't shown on
-            //the page before being moved into the map.
-            setTimeout(function () {
-                locationBttn.hidden = false;
-            },100);
         }
     },
 

@@ -32,38 +32,47 @@ Example:
                 top:-176px;
             }
         </style>
-            <div id="container">
-                <div id="map"></div><div id="sidePanel">
-                    <div id="propertiesPanel">
-                        <template is="dom-if" if="[[_isLoggedIn]]">
-                            <voyent-alert-properties _loaded-alert-template-data="{{_loadedAlertTemplateData}}"
-                                                     _map="{{_map}}"
-                                                     _area-region="{{_areaRegion}}"></voyent-alert-properties>
-                            <template is="dom-if" if="[[!_loadedAlertTemplateData.alertTemplate]]">
-                                <div class="alert-template-title">New Alert Template</div>
-                                <div class="alert-template-desc">
-                                    Activate the
-                                    <div class="icon-div">
-                                        <img class="icon" src="../common/voyent-alert/img/drawing.png">
-                                    </div>
-                                    icon from the toolbar in the
-                                    top-right corner and click a location inside your region.
+        <div id="container">
+            <div id="map"></div><div id="sidePanel">
+                <div id="propertiesPanel">
+                    <template is="dom-if" if="[[_isLoggedIn]]">
+                        <voyent-alert-properties _loaded-alert-template-data="{{_loadedAlertTemplateData}}"
+                                                 _map="{{_map}}"
+                                                 _area-region="{{_areaRegion}}"></voyent-alert-properties>
+                        <template is="dom-if" if="[[!_loadedAlertTemplateData.alertTemplate]]">
+                            <div class="alert-template-title">New Alert Template</div>
+                            <div class="alert-template-desc">
+                                Activate the
+                                <div class="icon-div">
+                                    <img class="icon" src="../common/voyent-alert/img/drawing.png">
                                 </div>
-                            </template>
+                                icon from the toolbar in the
+                                top-right corner and click a location inside your region.
+                            </div>
                         </template>
-                        <template is="dom-if" if="[[!_isLoggedIn]]">
-                            <div class="alert-template-title">Invalid Credentials</div>
-                            <div class="alert-template-desc">Please login to active this panel.</div>
-                        </template>
-                    </div>
-                    <div id="crudPanel">
-                        <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
-                            <paper-button raised title="Cancel" on-click="_promptForCancel">Cancel</paper-button>
-                            <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
-                        </template>
-                    </div>
+                    </template>
+                    <template is="dom-if" if="[[!_isLoggedIn]]">
+                        <div class="alert-template-title">Invalid Credentials</div>
+                        <div class="alert-template-desc">Please login to active this panel.</div>
+                    </template>
+                </div>
+                <div id="crudPanel">
+                    <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
+                        <paper-button raised title="Cancel" on-click="_promptForCancel">Cancel</paper-button>
+                        <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
+                    </template>
                 </div>
             </div>
+        </div>
+        <div id="markerBttn" class="customMapBttnWrap" hidden>
+            <div class="customMapBttn" title="Create a new Alert Template">
+                <span>
+                    <div class="customMapBttnImg">
+                        <img src="../common/voyent-alert/img/drawing.png">
+                    </div>
+                </span>
+            </div>
+        </div>
         </div>
         <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
             <div>

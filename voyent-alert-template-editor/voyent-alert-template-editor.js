@@ -35,12 +35,13 @@ Polymer({
      * @private
      */
     _onAfterLogin: function() {
+        var _this = this;
         this._isLoggedIn = true; //Toggle for side panel.
-        //Only enable the marker when we are logged in.
-        this._drawingManager.setOptions({
-            "drawingControlOptions":{
-                "drawingModes":['marker'],
-                "position":google.maps.ControlPosition.TOP_RIGHT}
+        //Add "create new location" button.
+        this._addMarkerButton(function() {
+            _this._openDialog('Please enter the Alert Template name','',function() {
+                _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+            });
         });
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
@@ -96,33 +97,24 @@ Polymer({
                     oce.overlay.setMap(null);
                     return;
                 }
-                //Only draw the marker anchor once they confirm the Alert Template name.
-                oce.overlay.setMap(null);
-                _this._openDialog('Please enter the Alert Template name','',function() {
-                    oce.overlay.setMap(_this._map);
-                    //Create the new google maps circle and bind the circle (zone) to the marker (anchor).
-                    var newCircle = new google.maps.Circle(_this._getCircleProperties());
-                    newCircle.bindTo('center', oce.overlay, 'position');
-                    //Build the JSON structure for the alertTemplate template.
-                    var alertTemplate = _this._getAlertTemplateJSON();
-                    alertTemplate.label = _this._dialogInput;
-                    alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
-                    alertTemplate.zones.features[0].tmpProperties.circle = newCircle;
-                    //Store the various pieces together so we can reference them later.
-                    _this._loadedAlertTemplateData = {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false};
-                    //Determine and set the coordinates for the circle.
-                    _this._updateAlertTemplateJSON();
-                    //Draw the Proximity Zone label overlay and save a reference to it.
-                    alertTemplate.zones.features[0].tmpProperties.zoneOverlay = new _this._ProximityZoneOverlay(alertTemplate.zones.features[0]);
-                    //Disable further Alert Template creations - only allowed one at a time.
-                    _this._drawingManager.setOptions({
-                        "drawingControlOptions":{
-                            "drawingModes":[],
-                            "position":google.maps.ControlPosition.TOP_RIGHT}
-                    });
-                    //Add the listeners to the marker and circles.
-                    _this._setupMapListeners(_this._loadedAlertTemplateData);
-                });
+                //Create the new google maps circle and bind the circle (zone) to the marker (anchor).
+                var newCircle = new google.maps.Circle(_this._getCircleProperties());
+                newCircle.bindTo('center', oce.overlay, 'position');
+                //Build the JSON structure for the alertTemplate template.
+                var alertTemplate = _this._getAlertTemplateJSON();
+                alertTemplate.label = _this._dialogInput;
+                alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
+                alertTemplate.zones.features[0].tmpProperties.circle = newCircle;
+                //Store the various pieces together so we can reference them later.
+                _this._loadedAlertTemplateData = {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false};
+                //Determine and set the coordinates for the circle.
+                _this._updateAlertTemplateJSON();
+                //Draw the Proximity Zone label overlay and save a reference to it.
+                alertTemplate.zones.features[0].tmpProperties.zoneOverlay = new _this._ProximityZoneOverlay(alertTemplate.zones.features[0]);
+                //Disable further Alert Template creations - only allowed one at a time.
+                _this._removeMarkerButton();
+                //Add the listeners to the marker and circles.
+                _this._setupMapListeners(_this._loadedAlertTemplateData);
             }
             //Exit drawing mode.
             _this._drawingManager.setDrawingMode(null);
