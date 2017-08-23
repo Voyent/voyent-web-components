@@ -10,7 +10,10 @@ Polymer({
     updateView: function(templateId) {
         var _this = this;
         this._mapIsReady().then(function() {
-            if (!templateId || typeof templateId !== 'string') { return; }
+            if (!templateId || typeof templateId !== 'string') {
+                _this.fire('message-error','Unable to load template, id not provided.');
+                return;
+            }
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
