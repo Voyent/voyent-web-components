@@ -366,7 +366,8 @@
                 var query = {"location.properties.trackerId":{"$exists":false},
                              "location.properties.vras.label":{"$exists":true},
                              "location.properties.vras.type":{"$exists":true},
-                             "location.properties.vras.uid":{"$exists":true}};
+                             "location.properties.vras.uid":{"$exists":true},
+                             "username":voyent.auth.getLastKnownUsername()};
                 var fields = {"_id":0,"username":0};
                 voyent.locate.findLocations({realm:_this.realm,account:_this.account,
                                              query:query,fields:fields}).then(function(locations) {
