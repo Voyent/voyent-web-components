@@ -107,7 +107,8 @@ Polymer({
 	    this.triggeredFromTool = false;
 	    
 	    this._hasEmailTemplates = false;
-	    this._emailTemplates = this._loadEmailTemplates();
+	    //Commenting this out since we don't use it atm.
+	    // this._emailTemplates = this._loadEmailTemplates();
 	    this.messageElements = this._setDefaultMessageElements();
 	    
 	    // Log if we don't have any transports available
