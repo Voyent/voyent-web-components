@@ -270,6 +270,7 @@
          */
         _drawUser: function(location) {
             if (!location) { return; }
+            var _this = this;
             var coordinates = location.location.geometry.coordinates;
             //Set the label of the user marker to the first letter of the username.
             var label = "?";
@@ -281,17 +282,21 @@
                 this._userData.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
                 this._userData.location = location;
             }
-            else { //Draw the user and store the data for later use.
-                this._userData = {"location":location,"marker":new google.maps.Marker({
-                    position: new google.maps.LatLng(coordinates[1],coordinates[0]),
-                    map: this._map,
-                    draggable: false,
-                    icon: this.pathtoimages+'/img/user_marker.png',
-                    label: {
-                        text: label,
-                        color: "white"
-                    }
-                })};
+            else {
+                //Draw the user and store the data for later use. Do these async because when this
+                //function is called immediately after map load sometimes the marker won't render.
+                setTimeout(function() {
+                    _this._userData = {"location":location,"marker":new google.maps.Marker({
+                        position: new google.maps.LatLng(coordinates[1],coordinates[0]),
+                        map: _this._map,
+                        draggable: false,
+                        icon: _this.pathtoimages+'/img/user_marker.png',
+                        label: {
+                            text: label,
+                            color: "white"
+                        }
+                    })};
+                },500);
             }
         },
 
@@ -309,7 +314,10 @@
                     query = {"location.properties.trackerId":trackerId};
                 }
                 else {
-                    query["location.properties.trackerId"] = {"$exists":false};
+                    query = {
+                        "location.properties.trackerId": {"$exists":false},
+                        "location.properties.vras.uid": {"$exists":false}
+                    };
                     query.username = voyent.auth.getLastKnownUsername();
                 }
                 //Only get the last location.

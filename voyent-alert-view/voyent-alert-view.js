@@ -22,7 +22,7 @@ Polymer({
             });
             //Fetch the user's last known location.
             _this._fetchLocationRecord();
-            //Reset the templateId as we'll reset it later when we're ready.
+            //Reset the templateId as we'll re-set it later when we're ready.
             _this._templateId = null;
         });
     },
