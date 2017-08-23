@@ -3,6 +3,7 @@ Polymer({
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
     ready: function() {
+        var _this = this;
         //Type options for drop-down menus.
         this._locationTypes = ['home','business','school','other'];
         this._creationTypes = ['pindrop','address'];
@@ -15,6 +16,15 @@ Polymer({
         //to flag locations that require a db call once they hit save.
         this._locationsToUpdate = [];
         this._locationsToDelete = [];
+        //Do some initialization that depends on the map being ready.
+        this._mapIsReady().then(function() {
+            //Initialize infoWindow object for later.
+            _this._infoWindow = new google.maps.InfoWindow();
+            //Close the infoWindow when clicking on the map.
+            google.maps.event.addListener(_this._map, "click", function() {
+                _this._infoWindow.close();
+            });
+        });
     },
 
     //******************PRIVATE API******************
@@ -27,14 +37,6 @@ Polymer({
         var _this = this;
         //Add the buttons to the map.
         this._addCustomControl();
-        //Only enable the marker when we are logged in.
-        this._drawingManager.setOptions({
-            "drawingControlOptions":{
-                "drawingModes":[],
-                "position":google.maps.ControlPosition.TOP_RIGHT}
-        });
-        //Initialize infoWindow object for later.
-        this._infoWindow = new google.maps.InfoWindow();
         //Fetch the realm region and the previously created locations.
         this._fetchRealmRegion();
         this._fetchLocations();
@@ -52,10 +54,6 @@ Polymer({
                     }));
                 }
             });
-        });
-        //Close the infoWindow when clicking on the map.
-        google.maps.event.addListener(this._map, "click", function() {
-            _this._infoWindow.close();
         });
     },
 

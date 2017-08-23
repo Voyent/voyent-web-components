@@ -77,7 +77,7 @@
                 //Calculate the map size.
                 _this._calcMapSize();
                 if (_this.nodeName !== 'VOYENT-ALERT-VIEW') {
-                    //Setup ui and listeners for adding new alert templates.
+                    //Setup ui and listeners for adding new marker based entities.
                     _this._drawingManager = new google.maps.drawing.DrawingManager({
                         map:_this._map,
                         drawingControlOptions: {
@@ -90,14 +90,20 @@
                 }
                 _this._regionMapping = {}; //Map of region data so we can toggle between them.
                 _this._isLoggedIn = false; //Toggle for side panel.
-                //More initialization for each component after login.
+                //Custom initialization for each component after login.
                 if (voyent.auth.isLoggedIn()) {
                     _this._onAfterLogin();
                 }
-                window.addEventListener('voyent-login-succeeded',function() {
-                    _this._onAfterLogin();
-                });
-                //Make sure the map is sized correctly when the window size changes.
+                else {
+                    //We only want to do this on initial login and not access_token refreshes so we'll
+                    //save a reference to the listener so we can remove it the first time it fires.
+                    var onAfterLoginListener = function() {
+                        _this._onAfterLogin();
+                        window.removeEventListener('voyent-login-succeeded',onAfterLoginListener);
+                    }.bind(_this);
+                    window.addEventListener('voyent-login-succeeded',onAfterLoginListener);
+                }
+                //Make sure the map is always sized correctly when the window size changes.
                 window.addEventListener('resize', function() { _this.resizeMap(); });
             };
             if (!('google' in window) || !('maps' in window.google)) {
@@ -410,13 +416,21 @@
                 }
                 paths.push(path);
             }
-            //Draw the Polygon.
-            var polygon = new google.maps.Polygon({
-                'paths': paths,
-                'map': this._map,
-                'editable': false,
-                'clickable': false //Necessary to get the Alert cursor to display correctly.
-            });
+            var polygon;
+            //If we have an existing polygon then just modify it.
+            if (this._areaRegion && this._areaRegion.polygon) {
+                polygon = this._areaRegion.polygon;
+                polygon.setPaths(paths);
+            }
+            else {
+                //Create the polygon object.
+                polygon = new google.maps.Polygon({
+                    'paths': paths,
+                    'map': this._map,
+                    'editable': false,
+                    'clickable': false //Necessary to get the Alert cursor to display correctly.
+                });
+            }
             //Zoom on the newly drawn Region.
             this._map.fitBounds(bounds);
             this._map.panToBounds(bounds);

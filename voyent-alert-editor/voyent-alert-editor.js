@@ -6,6 +6,8 @@ Polymer({
         //Initialize some vars
         this._creatingNew = this._activatingAlert = false;
         this._parentTemplates = this._alerts = this._selectedAlertTemplateId = null;
+        //Add listener to native map button for cancelling creation.
+        this._addListenerToStopDrawingBttn();
     },
 
     /**
@@ -67,9 +69,7 @@ Polymer({
      */
     _onAfterLogin: function() {
         this._isLoggedIn = true; //Toggle for side panel.
-        //Add listener to native map button for cancelling creation.
-        this._addListenerToStopDrawingBttn();
-        //Fetch the Alert Templates, the last Alert locations and the last user location.
+        //Fetch the alert templates, the last alert locations and the last user location.
         this.refreshMap();
         //Fetch the realm region.
         this._fetchRealmRegion();
@@ -80,18 +80,31 @@ Polymer({
      * @private
      */
     _processAlertLocations: function() {
+        //First clear any existing alerts.
+        if (this._alerts) {
+            var zones;
+            for (var i=0; i<this._alerts.length; i++) {
+                //Clear the marker.
+                this._alerts[i].marker.setMap(null);
+                //Clear the zones
+                zones = this._alerts[i].alertTemplate.zones.features;
+                for (var j=0; j<zones.length; j++) {
+                    zones[j].tmpProperties.circle.setMap(null);
+                }
+            }
+        }
         //Always initialize the array.
         this.set('_alerts',[]);
         //Draw the Alerts if we can find a matching Alert Template.
-        for (var i=0; i<this._alertLocations.length; i++) {
-            var trackerId = this._alertLocations[i].location.properties ?
-                this._alertLocations[i].location.properties.trackerId : null;
+        for (var k=0; k<this._alertLocations.length; k++) {
+            var trackerId = this._alertLocations[k].location.properties ?
+                this._alertLocations[k].location.properties.trackerId : null;
             if (!trackerId || !this._templatesMap[trackerId]) {
                 continue;
             }
             var alert = JSON.parse(JSON.stringify(this._templatesMap[trackerId]));
-            alert.anchor.geometry.coordinates = this._alertLocations[i].location.geometry.coordinates;
-            this._drawAlertEntity(alert,this._alertLocations[i]);
+            alert.anchor.geometry.coordinates = this._alertLocations[k].location.geometry.coordinates;
+            this._drawAlertEntity(alert,this._alertLocations[k]);
         }
     },
 

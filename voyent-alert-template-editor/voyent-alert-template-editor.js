@@ -35,7 +35,6 @@ Polymer({
      * @private
      */
     _onAfterLogin: function() {
-        var _this = this;
         this._isLoggedIn = true; //Toggle for side panel.
         //Add "create new location" button.
         this._addMarkerButton(this._markerButtonListener.bind(this));
