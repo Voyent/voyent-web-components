@@ -588,22 +588,24 @@
          * @private
          */
         _addMarkerButton: function(listener) {
-            //We have an additional _drawingMarkerButton flag to prevent race conditions
-            //when onAfterLogin and clearMap are called at nearly identical times.
             var _this = this;
-            if (!this._drawingMarkerButton &&
-                !this.querySelector('#markerBttn:not([hidden])')) {
-                this._drawingMarkerButton = true;
-                var markerBttn = this.$.markerBttn.cloneNode(true);
-                markerBttn.onclick = listener;
-                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(markerBttn);
-                //Delay so that the button isn't shown on
-                //the page before being moved into the map.
-                setTimeout(function () {
-                    markerBttn.hidden = false;
-                    _this._drawingMarkerButton = false;
-                },100);
-            }
+            this._mapIsReady().then(function() {
+                //We have an additional _drawingMarkerButton flag to prevent race conditions
+                //when onAfterLogin and clearMap are called at nearly identical times.
+                if (!_this._drawingMarkerButton &&
+                    !_this.querySelector('#markerBttn:not([hidden])')) {
+                    _this._drawingMarkerButton = true;
+                    var markerBttn = _this.$.markerBttn.cloneNode(true);
+                    markerBttn.onclick = listener;
+                    _this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(markerBttn);
+                    //Delay so that the button isn't shown on
+                    //the page before being moved into the map.
+                    setTimeout(function () {
+                        markerBttn.hidden = false;
+                        _this._drawingMarkerButton = false;
+                    },100);
+                }
+            });
         },
 
         /**
