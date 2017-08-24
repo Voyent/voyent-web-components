@@ -322,7 +322,9 @@
                 else {
                     query = {
                         "location.properties.trackerId": {"$exists":false},
-                        "location.properties.vras.uid": {"$exists":false}
+                        "location.properties.vras.label":{"$exists":false},
+                        "location.properties.vras.type":{"$exists":false},
+                        "location.properties.vras.uid":{"$exists":false}
                     };
                     query.username = voyent.auth.getLastKnownUsername();
                 }
@@ -332,7 +334,7 @@
                     if (trackerId) {
                         processAlertLocation();
                         function processAlertLocation() {
-                            if (!location || !location[0]) { resolve(); return; }
+                            if (!location || !location[0]) { return resolve(); }
                             //We make the call that fetches the currentTemplate in parallel for performance but this
                             //can cause a race condition so we'll wait for the value to be set before continuing.
                             if (!_this._currentTemplate) {
@@ -412,6 +414,9 @@
                     draggable: true
                 });
                 this._locations[locations[i].location.properties.vras.uid] = {"location":locations[i], "marker":marker};
+                //Create the zone overlay label and assign it to the location object.
+                this._locations[locations[i].location.properties.vras.uid].locOverlay =
+                new this._LocationOverlay(this._locations[locations[i].location.properties.vras.uid]);
                 if (this.nodeName === 'VOYENT-MY-LOCATIONS') {
                     this._setupLocationListeners(this._locations[locations[i].location.properties.vras.uid]);
                 }
@@ -426,6 +431,7 @@
             for (var location in this._locations) {
                 if (!this._locations.hasOwnProperty(location)) { continue; }
                 this._locations[location].marker.setMap(null);
+                this._locations[location].locOverlay.setMap(null);
             }
             this._locations = {};
         },
@@ -486,7 +492,7 @@
             //Create the marker and build the alertTemplateData.
             var marker = new google.maps.Marker({
                 position: new google.maps.LatLng(alertTemplate.anchor.geometry.coordinates[1],alertTemplate.anchor.geometry.coordinates[0]),
-                map: this._map,
+                map: this.nodeName === 'VOYENT-ALERT-VIEW' ? null : this._map, //Don't display marker for alert detail view.
                 draggable: this.nodeName !== 'VOYENT-ALERT-VIEW',
                 zIndex: 50,
                 icon: this.nodeName === 'VOYENT-ALERT-EDITOR' ? this.pathtoimages+'/img/alert_marker.png' : null

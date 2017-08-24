@@ -16,15 +16,8 @@ Polymer({
         //to flag locations that require a db call once they hit save.
         this._locationsToUpdate = [];
         this._locationsToDelete = [];
-        //Do some initialization that depends on the map being ready.
-        this._mapIsReady().then(function() {
-            //Initialize infoWindow object for later.
-            _this._infoWindow = new google.maps.InfoWindow();
-            //Close the infoWindow when clicking on the map.
-            google.maps.event.addListener(_this._map, "click", function() {
-                _this._infoWindow.close();
-            });
-        });
+        //Setup the infoWindow.
+        this._setupInfoWindow();
     },
 
     //******************PRIVATE API******************
@@ -155,10 +148,39 @@ Polymer({
      */
     _flagLocationForRemoval: function() {
         this._infoWindow.close();
+        this._infoWindowOpen = false;
         this._loadedLocationData.marker.setMap(null);
         this._locationsToDelete.push(this._loadedLocationData);
         delete this._locations[this._loadedLocationData.location.location.properties.vras.uid];
+        this._loadedLocationData.locOverlay.setMap(null);
         this._loadedLocationData = null;
+    },
+
+    /**
+     * Initializes the infoWindow object and sets up associated listeners.
+     * @private
+     */
+    _setupInfoWindow: function() {
+        var _this = this;
+        this._mapIsReady().then(function() {
+            //Initialize infoWindow object for later.
+            _this._infoWindow = new google.maps.InfoWindow();
+            //Close the infoWindow and re-display the previously hidden overlay when clicking on the map.
+            google.maps.event.addListener(_this._map, "click", function() {
+                _this._infoWindow.close();
+                _this._infoWindowOpen = false;
+                if (_this._loadedLocationData) {
+                    _this._loadedLocationData.locOverlay.displayAndDraw();
+                }
+            });
+            //When clicking the close button on the infoWindow redisplay the overlay.
+            google.maps.event.addListener(_this._infoWindow,'closeclick',function() {
+                _this._infoWindowOpen = false;
+                if (_this._loadedLocationData) {
+                    _this._loadedLocationData.locOverlay.displayAndDraw();
+                }
+            });
+        });
     },
 
     /**
@@ -168,11 +190,23 @@ Polymer({
      */
     _displayInfoWindow: function(locationData) {
         var _this = this;
+        //If the desired infoWindow is already opened then bail.
+        if (this._infoWindowOpen &&
+            locationData === this._loadedLocationData) {
+            return;
+        }
         setTimeout(function() {
+            //Re-display any previously hidden location overlay.
+            if (_this._loadedLocationData) {
+                _this._loadedLocationData.locOverlay.displayAndDraw();
+            }
             _this._loadedLocationData = locationData;
             _this.$.infoWindow.removeAttribute('hidden');
             _this._infoWindow.open(_this._map,locationData.marker);
+            _this._infoWindowOpen = true;
             _this._infoWindow.setContent(_this.$.infoWindow);
+            //Hide the current location's overlay.
+            _this._loadedLocationData.locOverlay.hide();
         },0);
     },
 
@@ -292,11 +326,12 @@ Polymer({
                 }
             }
         },"marker":marker};
+        //
+        //Create the zone overlay label and assign it to the location object.
+        locationData.locOverlay = new this._LocationOverlay(locationData);
         this._locations[locationData.location.location.properties.vras.uid] = locationData;
         this._locationsToUpdate.push(locationData);
         this._setupLocationListeners(locationData);
-        //Display the infoWindow for the new location.
-        this._displayInfoWindow(locationData);
         //Reset the dialog properties.
         this._locationType = this._locationLabel = null;
         var autocomplete = this.$$('#autoComplete');
@@ -366,6 +401,8 @@ Polymer({
                 return;
             }
             _this._previousDragPosition = e.latLng;
+            //Continuously re-draw the overlay as the location is dragged.
+            locationData.locOverlay.draw();
         });
         //Update the coordinates on the location record and flag the location for updating after it's dragged.
         google.maps.event.addListener(locationData.marker,'dragend',function() {
