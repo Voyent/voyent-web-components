@@ -400,9 +400,9 @@
                 //Create the location marker and build our "locationData" object.
                 var marker = new google.maps.Marker({
                     position: new google.maps.LatLng(locations[i].location.geometry.coordinates[1],
-                        locations[i].location.geometry.coordinates[0]),
+                              locations[i].location.geometry.coordinates[0]),
                     map: this._map,
-                    draggable: true
+                    draggable: this.nodeName === 'VOYENT-MY-LOCATIONS'
                 });
                 this._locations[locations[i].location.properties.vras.uid] = {"location":locations[i], "marker":marker};
                 //Create the zone overlay label and assign it to the location object.
