@@ -278,11 +278,6 @@
             if (!location) { return; }
             var _this = this;
             var coordinates = location.location.geometry.coordinates;
-            //Set the label of the user marker to the first letter of the username.
-            var label = "?";
-            if (location.username && location.username.length > 0) {
-                label = location.username.substring(0, 1).toLowerCase();
-            }
             //Check if we already have a user location drawn on the map.
             if (this._userData) { //Update the existing instance.
                 this._userData.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
@@ -296,11 +291,7 @@
                         position: new google.maps.LatLng(coordinates[1],coordinates[0]),
                         map: _this._map,
                         draggable: false,
-                        icon: _this.pathtoimages+'/img/user_marker.png',
-                        label: {
-                            text: label,
-                            color: "white"
-                        }
+                        icon: _this.pathtoimages+'/img/user_marker.png'
                     })};
                 },500);
             }
