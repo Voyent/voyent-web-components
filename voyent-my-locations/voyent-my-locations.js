@@ -39,7 +39,7 @@ Polymer({
         this._addCustomControl();
         //Fetch the realm region and the previously created locations.
         this._fetchRealmRegion();
-        this._fetchLocations();
+        this._fetchMyLocations();
         //Add "create new location" button.
         this._addMarkerButton(function() {
             _this._openDialog(function () {
@@ -55,38 +55,6 @@ Polymer({
                 }
             });
         });
-    },
-
-    /**
-     * Fetches existing fixed location records.
-     * @private
-     */
-    _fetchLocations: function() {
-        var _this = this;
-        this._fetchMyLocations().then(function(locations) {
-            //Clear the map of any previously drawn entities and draw the new locations.
-            _this._clearMap();
-            _this._drawLocations(locations);
-        });
-    },
-
-    /**
-     * Draws the passed locations on the map.
-     * @param locations
-     * @private
-     */
-    _drawLocations: function(locations) {
-        for (var i=0; i<locations.length; i++) {
-            //Create the location marker and build our "locationData" object.
-            var marker = new google.maps.Marker({
-                position: new google.maps.LatLng(locations[i].location.geometry.coordinates[1],
-                                                 locations[i].location.geometry.coordinates[0]),
-                map: this._map,
-                draggable: true
-            });
-            this._locations[locations[i].location.properties.vras.uid] = {"location":locations[i], "marker":marker};
-            this._setupLocationListeners(this._locations[locations[i].location.properties.vras.uid]);
-        }
     },
 
     /**
@@ -112,19 +80,7 @@ Polymer({
      * @private
      */
     _cancelChanges: function() {
-        this._fetchLocations();
-    },
-
-    /**
-     * Clears the map of all drawn locations.
-     * @private
-     */
-    _clearMap: function() {
-        for (var location in this._locations) {
-            if (!this._locations.hasOwnProperty(location)) { continue; }
-            this._locations[location].marker.setMap(null);
-        }
-        this._locations = {};
+        this._fetchMyLocations();
     },
 
     /**

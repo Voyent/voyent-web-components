@@ -23,8 +23,9 @@ Polymer({
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
-            //Fetch the user's last known location.
+            //Fetch the location records.
             _this._fetchLocationRecord();
+            _this._fetchMyLocations();
             //Reset the templateId as we'll re-set it later when we're ready.
             _this._templateId = null;
         });

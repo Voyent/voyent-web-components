@@ -386,12 +386,48 @@
                             locs[locations[i].location.properties.vras.uid] = locations[i];
                         }
                     }
-                    //Convert the mapping back to an array and return it.
-                    resolve(Object.keys(locs).map(function(key){return locs[key]}));
+                    //First clear the map.
+                    _this._clearMyLocations();
+                    //Convert the mapping back to an array and draw them.
+                    _this._drawMyLocations(Object.keys(locs).map(function(key){return locs[key]}));
+                    resolve();
                 }).catch(function (error) {
                     reject(error);
                 });
             });
+        },
+
+        /**
+         * Draws the passed locations on the map.
+         * @param locations
+         * @private
+         */
+        _drawMyLocations: function(locations) {
+            for (var i=0; i<locations.length; i++) {
+                //Create the location marker and build our "locationData" object.
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(locations[i].location.geometry.coordinates[1],
+                        locations[i].location.geometry.coordinates[0]),
+                    map: this._map,
+                    draggable: true
+                });
+                this._locations[locations[i].location.properties.vras.uid] = {"location":locations[i], "marker":marker};
+                if (this.nodeName === 'VOYENT-MY-LOCATIONS') {
+                    this._setupLocationListeners(this._locations[locations[i].location.properties.vras.uid]);
+                }
+            }
+        },
+
+        /**
+         * Clears the map of all drawn locations.
+         * @private
+         */
+        _clearMyLocations: function() {
+            for (var location in this._locations) {
+                if (!this._locations.hasOwnProperty(location)) { continue; }
+                this._locations[location].marker.setMap(null);
+            }
+            this._locations = {};
         },
 
         /**
