@@ -161,7 +161,18 @@ Polymer({
      * @private
      */
     _addAlertButton: function() {
-        if (!this.querySelector('#alertBttn:not([hidden])') && this._parentTemplates && this._parentTemplates.length) {
+        //Only add the button if...
+        //...the button isn't already rendered
+        //...we have parent templates to build the alert from
+        //...we aren't creating or activating a new alert
+        //...we don't have a template loaded OR we have a template loaded but the alert instance isn't yet created
+        if (!this.querySelector('#alertBttn:not([hidden])') && this._parentTemplates && this._parentTemplates.length &&
+            !this._creatingNew && !this._activatingAlert &&
+                (!this._loadedAlertTemplateData ||
+                    (this._loadedAlertTemplateData && this._loadedAlertTemplateData.alertTemplate &&
+                     this._loadedAlertTemplateData.alertInstance)
+                )
+            ) {
             var _this = this;
             var alertBttn = this.$.alertBttn.cloneNode(true);
             alertBttn.onclick = function() {

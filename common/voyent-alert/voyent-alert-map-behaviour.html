@@ -171,14 +171,10 @@
                 else if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                     _this.fire('message-info', 'Alert Template successfully updated.');
                 }
-                //Update our local copy of the persisted Alert Template in case we need to revert later.
-                _this._loadedAlertTemplateData.persistedAlertTemplate =
-                JSON.parse(JSON.stringify(_this._loadedAlertTemplateData.alertTemplate));
                 //Restore the tmpProperties for each of the zones.
-                var zones = _this._loadedAlertTemplateData.persistedAlertTemplate.zones.features;
-                for (var i=0; i<_this._loadedAlertTemplateData.persistedAlertTemplate.zones.features.length; i++) {
+                var zones = _this._loadedAlertTemplateData.alertTemplate.zones.features;
+                for (var i=0; i<_this._loadedAlertTemplateData.alertTemplate.zones.features.length; i++) {
                     _this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties',zoneTmpProperties[i]);
-                    _this.set('_loadedAlertTemplateData.persistedAlertTemplate.zones.features.'+i+'.tmpProperties',zoneTmpProperties[i]);
                 }
                 //Fire an event for anyone interested.
                 _this.fire('voyent-alert-template-saved',{});
@@ -188,8 +184,9 @@
         /**
          * Clears the map of the loaded Alert and conditionally also the drawn Alerts.
          * @param clearAlerts
+         * @param skipBttnDraw
          */
-        clearMap: function(clearAlerts) {
+        clearMap: function(clearAlerts,skipBttnDraw) {
             //Always re-zoom the bounds on the area's region if available.
             if (this._areaRegion && this._areaRegion.bounds) {
                 this._map.fitBounds(this._areaRegion.bounds);
@@ -213,10 +210,11 @@
                 this._userData = null;
             }
             //Re-draw the buttons.
-            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                this._addMarkerButton(this._markerButtonListener.bind(this));
+            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !skipBttnDraw) {
+                this._addCircleButton(this._circleButtonListener.bind(this));
+                this._addPolygonButton(this._polygonButtonListener.bind(this));
             }
-            else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+            else if (this.nodeName === 'VOYENT-ALERT-EDITOR' && !skipBttnDraw) {
                 this._addAlertButton();
             }
             function deleteAlertEntity(alertTemplateData) {
@@ -490,9 +488,7 @@
             });
             //This is triggered from alert-template-editor when drawing templates or from alert-editor when drawing Alerts.
             if (!this._loadedAlertTemplateData || alertLocation) {
-                alertTemplateData = {"alertTemplate":alertTemplate,
-                    "persistedAlertTemplate":JSON.parse(JSON.stringify(alertTemplate)),
-                    "marker":marker,"isPersisted":true};
+                alertTemplateData = {"alertTemplate":alertTemplate,"marker":marker,"isPersisted":true};
                 if (alertLocation) { alertTemplateData.alertInstance = alertLocation; }
                 //Load immediately since it's a template.
                 else { this._loadedAlertTemplateData = alertTemplateData; }
@@ -538,7 +534,7 @@
                 this._setupMapListeners(alertTemplateData);
                 if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                     //Disable further Alert Template creations - only allowed one at a time.
-                    this._removeMarkerButton();
+                    this._removeAlertTemplateButtons();
                 }
                 else if (this.nodeName === 'VOYENT-ALERT-EDITOR' && !alertLocation) {
                     //Disable further Alert creations - only allowed one at a time.
@@ -616,38 +612,68 @@
         },
 
         /**
-         * Handles adding the button for creating new alert templates or my locations.
-         * @param listener - The function that will be called when the button is clicked.
+         * Handles adding the button for creating new locations.
+         * @param listener
          * @private
          */
         _addMarkerButton: function(listener) {
+            this._addDrawButton('markerBttn',listener);
+        },
+
+        /**
+         * Handles adding the button for creating new circle alert templates.
+         * @param listener
+         * @private
+         */
+        _addCircleButton: function(listener) {
+            this._addDrawButton('circleBttn',listener);
+        },
+
+        /**
+         * Handles adding the button for creating new polygonal alert templates.
+         * @param listener
+         * @private
+         */
+        _addPolygonButton: function(listener) {
+            this._addDrawButton('polygonBttn',listener);
+        },
+
+        /**
+         * Handles adding drawing buttons.
+         * @param id - The id of the button to create.
+         * @param listener - The click listener.
+         * @private
+         */
+        _addDrawButton: function(id,listener) {
             var _this = this;
             this._mapIsReady().then(function() {
-                //We have an additional _drawingMarkerButton flag to prevent race conditions
-                //when onAfterLogin and clearMap are called at nearly identical times.
-                if (!_this._drawingMarkerButton &&
-                    !_this.querySelector('#markerBttn:not([hidden])')) {
-                    _this._drawingMarkerButton = true;
-                    var markerBttn = _this.$.markerBttn.cloneNode(true);
-                    markerBttn.onclick = listener;
-                    _this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(markerBttn);
+                //We have an additional flag to prevent race conditions when
+                //onAfterLogin and clearMap are called at nearly identical times.
+                if (!_this['_drawing'+id] &&
+                    !_this.querySelector('#'+id+':not([hidden])')) {
+                    _this['_drawing'+id] = true;
+                    var bttn = _this.$[id].cloneNode(true);
+                    bttn.onclick = listener;
+                    _this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(bttn);
                     //Delay so that the button isn't shown on
                     //the page before being moved into the map.
                     setTimeout(function () {
-                        markerBttn.hidden = false;
-                        _this._drawingMarkerButton = false;
+                        bttn.hidden = false;
+                        _this['_drawing'+id] = false;
                     },100);
                 }
             });
         },
 
         /**
-         * Handles removing the button for creating new alert templates or my locations.
+         * Handles removing buttons for creating new alert templates.
          * @private
          */
-        _removeMarkerButton: function() {
-            var markerBttn = this.querySelector('#markerBttn');
-            if (markerBttn) { markerBttn.parentNode.removeChild(markerBttn); }
+        _removeAlertTemplateButtons: function() {
+            var circleBttn = this.querySelector('#circleBttn');
+            if (circleBttn) { circleBttn.parentNode.removeChild(circleBttn); }
+            var polygonBttn = this.querySelector('#polygonBttn');
+            if (polygonBttn) { polygonBttn.parentNode.removeChild(polygonBttn); }
         },
 
         /**
@@ -670,7 +696,7 @@
         _openDialog: function(message,input,confirmFunc,cancelFunc) {
             this._dialogMessage = message;
             this._dialogInput = input;
-            this._showDialogInput = this._dialogInput !== null;
+            this._showDialogInput = (typeof input !== 'undefined' && input !== null);
             this._dialogConfirmFunc = confirmFunc;
             this._dialogCancelFunc = cancelFunc;
             var dialog = this.querySelector('#modalDialog');

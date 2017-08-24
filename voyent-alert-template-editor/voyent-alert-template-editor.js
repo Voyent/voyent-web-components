@@ -7,6 +7,7 @@ Polymer({
      * @param id
      */
     loadAlertTemplate: function(id) {
+        this._loadingAlertTemplate = true;
         var _this = this;
         voyent.locate.findTrackers({
             realm: this.realm,
@@ -17,12 +18,15 @@ Polymer({
                 _this.fire('message-error', 'Alert Template not found');
                 return;
             }
-            //Clear the map of any loaded Alert Template before drawing.
+            //Clear the map of any loaded Alert Template before drawing. Specify that we want to skip the button
+            //draw because we will remove the buttons after drawing the new alert template. Without this we
+            //intermittently encounter a bug where the buttons are displayed after loading the template.
             if (_this._loadedAlertTemplateData) {
-                _this.clearMap();
+                _this.clearMap(false,true);
             }
             //Draw the new Alert Template.
             _this._drawAlertEntity(results[0]);
+            _this._loadingAlertTemplate = false;
         }).catch(function (error) {
             _this.fire('message-error', 'Error loading or drawing saved Alert Template: ' + (error.responseText || error.message || error));
         });
@@ -36,8 +40,13 @@ Polymer({
      */
     _onAfterLogin: function() {
         this._isLoggedIn = true; //Toggle for side panel.
-        //Add "create new location" button.
-        this._addMarkerButton(this._markerButtonListener.bind(this));
+        //If the component is first loaded by a call to loadAlertTemplate we want to skip adding
+        //the buttons since that call will remove them anyway. Without this we intermittently
+        //encounter a bug where the buttons are displayed after loading the template.
+        if (!this._loadingAlertTemplate) {
+            this._addCircleButton(this._circleButtonListener.bind(this));
+            this._addPolygonButton(this._polygonButtonListener.bind(this));
+        }
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
     },
@@ -63,17 +72,8 @@ Polymer({
      * Revert the editor to it's state when the Alert Template was originally loaded or clears an unsaved Alert Template.
      */
     _cancelChanges: function() {
-        if (this._loadedAlertTemplateData.isPersisted) {
-            //Clear the map and revert the loaded Alert Template to latest persisted value.
-            var original = this._loadedAlertTemplateData.persistedAlertTemplate;
-            this.clearMap();
-            this._drawAlertEntity(original);
-        }
-        else {
-            //Simply clear the map since there is no Alert Template saved.
-            this.clearMap();
-        }
-        //Fire an event for anyone interested.
+        //Clear the map and fire an event indicating we cancelled.
+        this.clearMap();
         this.fire('voyent-alert-template-cancel',{});
     },
 
@@ -107,7 +107,7 @@ Polymer({
                 //Draw the Proximity Zone label overlay and save a reference to it.
                 alertTemplate.zones.features[0].tmpProperties.zoneOverlay = new _this._ProximityZoneOverlay(alertTemplate.zones.features[0]);
                 //Disable further Alert Template creations - only allowed one at a time.
-                _this._removeMarkerButton();
+                _this._removeAlertTemplateButtons();
                 //Add the listeners to the marker and circles.
                 _this._setupMapListeners(_this._loadedAlertTemplateData);
             }
@@ -133,11 +133,19 @@ Polymer({
      * The listener to fire when the marker button is clicked.
      * @private
      */
-    _markerButtonListener: function() {
+    _circleButtonListener: function() {
         var _this = this;
         this._openDialog('Please enter the Alert Template name','',function() {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
         });
+    },
+
+    /**
+     * The listener to fire when the polygon button is clicked.
+     * @private
+     */
+    _polygonButtonListener: function() {
+        this._openDialog('Whoops, this button is not hooked up yet!');
     },
 
     /**
