@@ -2,6 +2,10 @@ Polymer({
     is: 'voyent-toggle-panel',
 
     properties: {
+        animations: {
+            type: String,
+            value: "true"
+        },
         visible: {
             type: Boolean,
             value: false

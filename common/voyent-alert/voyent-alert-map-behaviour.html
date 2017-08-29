@@ -597,9 +597,9 @@
                 else { //Otherwise the map will take up as much space as possible.
                     if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' ||
                         _this.nodeName === 'VOYENT-ALERT-EDITOR') {
-                        //-4px for map borders.
+                        //-20px for map borders and padding
                         _this.customStyle['--width-var'] = (_this.querySelector('#container').offsetWidth -
-                            _this.querySelector('#sidePanel').offsetWidth - 4) + 'px';
+                            _this.querySelector('#sidePanel').offsetWidth - 20) + 'px';
                     }
                     else {
                         _this.customStyle['--width-var'] = _this.querySelector('#container').offsetWidth + 'px';
