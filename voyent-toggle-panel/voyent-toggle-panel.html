@@ -32,8 +32,11 @@ Example:
                 transition: none !important; /* Disable animations until we are loaded */
             }
             
-            .panelHeadertrue, .panelHeaderfalse {
+            .panelHeaderToggleabletrue {
                 cursor: pointer;
+            }
+            
+            .panelHeadertrue, .panelHeaderfalse {
                 background-color: #EEEEEE;
                 background: -moz-linear-gradient(top, var(--app-primary-color, #2488A9) 0%, #EEEEEE 100%);
                 background: -webkit-linear-gradient(top, var(--app-primary-color, #2488A9) 0%, #EEEEEE 100%);
@@ -113,7 +116,7 @@ Example:
         </style>
         
         <div class$="wrapper wrapperLoaded[[visible]] wrapperLoaded[[animations]]">
-            <div on-click="toggle" class$="panelHeader[[expanded]]">
+            <div on-click="toggle" class$="panelHeader[[expanded]] panelHeaderToggleable[[toggleable]]">
                 <content select="arrow">
                     <div class$="arrow[[expanded]]"></div>
                 </content>

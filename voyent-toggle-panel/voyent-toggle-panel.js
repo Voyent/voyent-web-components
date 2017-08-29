@@ -2,20 +2,32 @@ Polymer({
     is: 'voyent-toggle-panel',
 
     properties: {
-        animations: {
-            type: String,
-            value: "true"
-        },
         visible: {
             type: Boolean,
             value: false
         },
+        animations: {
+            type: String,
+            value: "true",
+            reflectToAttribute: true,
+            notify: true
+        },
+        toggleable: {
+            type: String,
+            value: "true",
+            reflectToAttribute: true,
+            notify: true
+        },
         expanded: {
             type: Boolean,
-            value: false
+            value: false,
+            reflectToAttribute: true,
+            notify: true
         },
         header: {
-            type: String
+            type: String,
+            reflectToAttribute: true,
+            notify: true
         },
     },
     
@@ -27,6 +39,8 @@ Polymer({
     },
     
     toggle: function(e) {
-        this.set('expanded', !this.expanded);
+        if (this.toggleable && "true" === this.toggleable) {
+            this.set('expanded', !this.expanded);
+        }
     },
 });
