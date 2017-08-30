@@ -25,7 +25,7 @@
         observers: ['_zonesUpdated(_loadedAlertTemplateData.alertTemplate.zones.features.splices)'],
 
         /**
-         * Initialize google map listeners for moving, resizing and clicking of Alert Templates.
+         * Initialize google map listeners for moving, resizing and clicking of alert templates.
          * @param alertTemplateData
          * @private
          */
@@ -41,8 +41,11 @@
                     _this._ignoreCenterChanges = true;
                 });
                 google.maps.event.addListener(alertTemplateData.marker,'dragend',function() {
-                    alertEntityMoved(alertTemplateData);
                     _this._ignoreCenterChanges = false;
+                    //Update the Alert's location.
+                    if (alertTemplateData.alertInstance) {
+                        _this._updateAlertLocation(alertTemplateData);
+                    }
                 });
                 //Add click listener to marker.
                 google.maps.event.addListener(alertTemplateData.marker,'click',function() {
@@ -53,13 +56,9 @@
                     //Load the clicked template data in case it's a different template.
                     _this._loadedAlertTemplateData = alertTemplateData;
                 });
-                //Prevent the Alert entity from being dragged outside of the region.
-                google.maps.event.addListener(alertTemplateData.marker,'drag',function(e) {
-                    if (!google.maps.geometry.poly.containsLocation(e.latLng,_this._areaRegion.polygon)) {
-                        alertTemplateData.marker.setPosition(_this._previousDragPosition);
-                        return;
-                    }
-                    _this._previousDragPosition = e.latLng;
+                //Continuously re-draw the overlay as the template is dragged.
+                google.maps.event.addListener(alertTemplateData.marker,'drag',function() {
+                    alertEntityMoved(alertTemplateData);
                 });
             }
             var zones = alertTemplateData.alertTemplate.zones.features;
@@ -73,13 +72,14 @@
                         //Ignore when dragging by marker and only proceed for one zone.
                         if (_this._ignoreCenterChanges || alertTemplateData.alertTemplate.zones.features.indexOf(zone) !== 0) { return; }
                         alertEntityMoved(alertTemplateData);
+                        //Update the Alert's location.
+                        if (alertTemplateData.alertInstance) {
+                            _this._updateAlertLocation(alertTemplateData);
+                        }
                     });
                     //Add resize listener to circle.
                     google.maps.event.addListener(zone.tmpProperties.circle,'radius_changed',function() {
-                        //Update the JSON since the size of a zone changed.
-                        _this._updateAlertTemplateJSON(alertTemplateData);
-                        //Adjust the position of the Proximity Zone label since the radius changed.
-                        _this._redrawZoneOverlay(alertTemplateData,alertTemplateData.alertTemplate.zones.features.indexOf(zone));
+                        alertEntityMoved(alertTemplateData,alertTemplateData.alertTemplate.zones.features.indexOf(zone));
                         //Sort the zones list.
                         _this._sortZonesBySize();
                     });
@@ -111,18 +111,12 @@
             /**
              * Handles drags by the anchor or the inner-most zone's drag point.
              * @param alertTemplateData
+             * @param index
              */
-            function alertEntityMoved(alertTemplateData) {
-                //Update the template coordinates (always required to maintain label positions).
+            function alertEntityMoved(alertTemplateData,index) {
+                //Update the template coordinates and then the label's position.
                 _this._updateAlertTemplateJSON(alertTemplateData);
-                if (alertTemplateData.alertInstance) {
-                    //Update the Alert's location.
-                    _this._updateAlertLocation(alertTemplateData);
-                }
-                //Adjust the position of the Proximity Zone labels since all of
-                //their positions changed. We pass in the necessary alertTemplateData
-                //since it's possible they dragged an Alert without it being active.
-                _this._redrawZoneOverlay(alertTemplateData);
+                _this._redrawZoneOverlay(alertTemplateData,index);
             }
         },
 
@@ -179,15 +173,13 @@
         },
 
         /**
-         * Syncs the Alert Template JSON with the current state of the map entities.
+         * Syncs the alert template JSON with the current state of the map entities.
          * @param alertTemplateData
          * @private
          */
         _updateAlertTemplateJSON: function (alertTemplateData) {
-            if (!alertTemplateData) {
-                alertTemplateData = this._loadedAlertTemplateData;
-            }
             if (!alertTemplateData) { return; }
+            var coords;
             //Sync the marker coordinates (if available) with the alertTemplate
             //anchor in case the alertTemplate position has moved.
             if (alertTemplateData.marker) {
@@ -206,14 +198,14 @@
                     features[i].properties.Color = features[i].tmpProperties.circle.get('fillColor').substring(1); //Remove the '#'.
                     features[i].properties.googleMaps.zIndex = features[i].tmpProperties.circle.get('zIndex');
                 }
-                features[i].geometry.coordinates = [[]];
+                coords = features[i].geometry.coordinates[0] = [];
                 for (var j=0; j<N; j++) {
                     //Calculate and save the next coordinate.'
                     var latLng = google.maps.geometry.spherical.computeOffset(
                         new google.maps.LatLng(features[i].properties.googleMaps.center[0],features[i].properties.googleMaps.center[1]),
                         features[i].properties.googleMaps.radius,
                         degreeStep * j);
-                    features[i].geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
+                    coords.push([latLng.lng(), latLng.lat()]);
                     //Look for the northern most point of the circle so we know
                     //where to render the Proximity Zone overlay label.
                     if (latLng.lat() > features[i].tmpProperties.highestLat) {
@@ -222,7 +214,7 @@
                 }
                 //In addition to N coordinates we also need to copy the
                 //first one to the last one to complete the circle.
-                features[i].geometry.coordinates[0].push(features[i].geometry.coordinates[0][0]);
+                coords.push(coords[0]);
             }
         },
 

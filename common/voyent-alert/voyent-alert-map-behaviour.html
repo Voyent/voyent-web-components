@@ -125,7 +125,7 @@
             var _this = this;
             this._mapIsReady().then(function() {
                 _this._calcMapSize();
-                //Async so the new dimensions have time to render.
+                //Async so the new dimensions render first.
                 setTimeout(function() {
                     google.maps.event.trigger(_this._map, 'resize');
                     if (_this._areaRegion && _this._areaRegion.bounds) {
@@ -320,32 +320,13 @@
                 //Only get the last location.
                 voyent.locate.findLocations({realm:_this.realm,account:_this.account,query:query,
                 options:{"sort":{"lastUpdated":-1},"limit":1}}).then(function(location) {
-                    if (trackerId) {
-                        processAlertLocation();
-                        function processAlertLocation() {
-                            if (!location || !location[0]) { return resolve(); }
-                            //We make the call that fetches the currentTemplate in parallel for performance but this
-                            //can cause a race condition so we'll wait for the value to be set before continuing.
-                            if (!_this._currentTemplate) {
-                                setTimeout(processAlertLocation,10);
-                                return;
-                            }
-                            //First clear the map of any previously drawn entities.
-                            _this.clearMap(true);
-                            //Draw the Alert.
-                            var alert = JSON.parse(JSON.stringify(_this._currentTemplate));
-                            alert.anchor.geometry.coordinates = location[0].location.geometry.coordinates;
-                            _this._drawAlertEntity(alert, location[0]);
-                            resolve(location[0]);
-                        }
-                    }
-                    else {
-                        //Draw the user.
+                    if (!location || !location[0]) { return reject('Location record not found.'); }
+                    //We always want to draw the user record so do this before resolving.
+                    if (!trackerId) {
                         _this._drawUser(location[0]);
-                        resolve(location[0]);
                     }
+                    resolve(location[0]);
                 }).catch(function(error) {
-                    _this.fire('message-error', 'Issue getting User Location: ' + (error.responseText || error.message || error));
                     reject(error);
                 });
             });
@@ -383,6 +364,7 @@
                     _this._drawMyLocations(Object.keys(locs).map(function(key){return locs[key]}));
                     resolve();
                 }).catch(function (error) {
+                    _this.fire('message-error', 'Issue fetching location records: ' + (error.responseText || error.message || error));
                     reject(error);
                 });
             });
@@ -426,7 +408,8 @@
         },
 
         /**
-         * Draws the passed polygon region on the map.
+         * Draws the passed region on the map as an invisible polygon. We'll use the polygon
+         * for setting the map bounds or favouring autocomplete results to it's area.
          * @param region
          * @private
          */
@@ -454,12 +437,11 @@
                 polygon.setPaths(paths);
             }
             else {
-                //Create the polygon object.
+                //Create the invisible polygon object.
                 polygon = new google.maps.Polygon({
                     'paths': paths,
                     'map': this._map,
-                    'editable': false,
-                    'clickable': false //Necessary to get the Alert cursor to display correctly.
+                    'visible': false
                 });
             }
             //Zoom on the newly drawn Region.

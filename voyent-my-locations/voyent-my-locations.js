@@ -3,7 +3,6 @@ Polymer({
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
     ready: function() {
-        var _this = this;
         //Type options for drop-down menus.
         this._locationTypes = ['home','business','school','other'];
         this._creationTypes = ['pindrop','address'];
@@ -18,6 +17,8 @@ Polymer({
         this._locationsToDelete = [];
         //Setup the infoWindow.
         this._setupInfoWindow();
+        //Set the button state to disabled by default
+        this._buttonsEnabled = false;
     },
 
     //******************PRIVATE API******************
@@ -56,6 +57,8 @@ Polymer({
      * @private
      */
     _saveChanges: function() {
+        if (!this._buttonsEnabled) { return; }
+        var _this = this;
         //It's possible that the user edited a location and then later decided to
         //delete it so in these cases make sure we don't bother updating it.
         for (var i=this._locationsToUpdate.length-1; i>=0; i--) {
@@ -63,9 +66,17 @@ Polymer({
                 this.splice('_locationsToUpdate',i,1);
             }
         }
-        //Save and delete the locations that we're marker respectively.
-        this._saveLocations();
-        this._removeLocations();
+        //Save and delete the locations. Once all operations are done display a message indicating the results.
+        var promises = [];
+        promises.push(this._saveLocations());
+        promises.push(this._removeLocations());
+        Promise.all(promises).then(function(results) {
+            _this.fire('message-info',_this._getSavedMessage(results[0],results[1]));
+            //Disable the buttons as long as we didn't have any POST failures.
+            if (!results[0].failures) {
+                _this._buttonsEnabled = false;
+            }
+        });
     },
 
     /**
@@ -73,62 +84,85 @@ Polymer({
      * @private
      */
     _cancelChanges: function() {
-        this._fetchMyLocations();
+        if (!this._buttonsEnabled) { return; }
+        var _this = this;
+        this._fetchMyLocations().then(function() {
+            _this._buttonsEnabled = false;
+            _this.fire('message-info','Successfully reverted all changes.');
+        });
     },
 
     /**
      * Saves all locations that have been modified since component load or last save.
+     * @returns {Promise}
      * @private
      */
     _saveLocations: function() {
         var _this = this, locationData;
-        //Loop backwards since we're splicing.
-        for (var i=this._locationsToUpdate.length-1; i>=0; i--) {
-            locationData = this._locationsToUpdate[i];
-            (function(locationData) {
-                voyent.locate.updateLocation({account:_this.account,realm:_this.realm,
-                                              location:locationData.location}).then(function() {
-                    //Don't use i to splice because it may change as we splice out other locations.
-                    _this.splice('_locationsToUpdate',_this._locationsToUpdate.indexOf(locationData),1);
-                }).catch(function (error) {
-                    _this.fire('message-error', 'Issue saving location: ' +
-                                                locationData.location.location.properties.vras.label +
-                                                ' (' + locationData.location.location.properties.vras.type + ')' +
-                                                ' : ' + (error.responseText || error.message || error));
-                    //Don't splice the _locationsToUpdate array on failure so the
-                    //request will be attempted again the next time they save.
-                });
-            })(locationData)
-        }
+        return new Promise(function (resolve) {
+            var promises = [];
+            //Loop backwards since we're splicing.
+            for (var i=_this._locationsToUpdate.length-1; i>=0; i--) {
+                locationData = _this._locationsToUpdate[i];
+                (function(locationData) {
+                    promises.push(new Promise(function (resolveRequest) {
+                        voyent.locate.updateLocation({account:_this.account,realm:_this.realm,
+                                                      location:locationData.location}).then(function() {
+                            //Don't use i to splice because it may change as we splice out other locations.
+                            _this.splice('_locationsToUpdate',_this._locationsToUpdate.indexOf(locationData),1);
+                            resolveRequest(true);
+                        }).catch(function () {
+                            //Don't splice the _locationsToUpdate array on failure so the
+                            //request will be attempted again the next time they save.
+                            resolveRequest(false);
+                        });
+                    }));
+                })(locationData)
+            }
+            //Once all the update requests are complete return the results.
+            //We will resolve immediately if the promises array is empty.
+            Promise.all(promises).then(function(results) {
+                resolve(_this._processResults(results));
+            });
+        });
     },
 
     /**
      * Removes all locations that have been deleted since component load or last save.
+     * @returns {Promise}
      * @private
      */
     _removeLocations: function() {
         var _this = this, locationData;
-        //Loop backwards since we're splicing.
-        for (var i=this._locationsToDelete.length-1; i>=0; i--) {
-            locationData = this._locationsToDelete[i];
-            (function(locationData) {
-                var query = {"location.properties.vras.uid":locationData.location.location.properties.vras.uid};
-                voyent.locate.deleteLocations({account:_this.account,realm:_this.realm,
-                                               query:query}).then(function() {
-                //Don't use i to splice because it may change as we splice out other locations.
-                _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(locationData),1);
-                }).catch(function (error) {
-                    _this.fire('message-error', 'Issue deleting location: ' +
-                               locationData.location.location.properties.vras.label +
-                               ' (' + locationData.location.location.properties.vras.type + ')' +
-                               ' : ' + (error.responseText || error.message || error));
-                    //It wasn't deleted so re-add it to the map.
-                    locationData.marker.setMap(_this._map);
-                    _this._locations[locationData.location.location.properties.vras.uid] = locationData;
-                    _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(locationData),1);
-                });
-            })(locationData)
-        }
+        return new Promise(function (resolve) {
+            var promises = [];
+            //Loop backwards since we're splicing.
+            for (var i=_this._locationsToDelete.length-1; i>=0; i--) {
+                locationData = _this._locationsToDelete[i];
+                (function(locationData) {
+                    promises.push(new Promise(function (resolveRequest) {
+                        var query = {"location.properties.vras.uid":locationData.location.location.properties.vras.uid};
+                        voyent.locate.deleteLocations({account:_this.account,realm:_this.realm,
+                                                       query:query}).then(function() {
+                            //Don't use i to splice because it may change as we splice out other locations.
+                            _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(locationData),1);
+                            resolveRequest(true);
+                        }).catch(function () {
+                            //It wasn't deleted so re-add it to the map.
+                            locationData.marker.setMap(_this._map);
+                            _this._locations[locationData.location.location.properties.vras.uid] = locationData;
+                            _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(locationData),1);
+                            resolveRequest(false);
+                        });
+                    }));
+                })(locationData)
+            }
+            //Once all the update requests are complete return the results.
+            //We will resolve immediately if the promises array is empty.
+            Promise.all(promises).then(function(results) {
+                resolve(_this._processResults(results));
+            });
+        });
     },
 
     /**
@@ -139,6 +173,7 @@ Polymer({
         if (this._locationsToUpdate.indexOf(this._loadedLocationData) === -1) {
             this._locationsToUpdate.push(this._loadedLocationData);
         }
+        this._buttonsEnabled = true;
     },
 
     /**
@@ -154,6 +189,55 @@ Polymer({
         delete this._locations[this._loadedLocationData.location.location.properties.vras.uid];
         this._loadedLocationData.locOverlay.setMap(null);
         this._loadedLocationData = null;
+        this._buttonsEnabled = true;
+    },
+
+    /**
+     * Returns the message to be displayed after the changes are saved.
+     * @param saveResults
+     * @param removalResults
+     * @returns {string|*}
+     * @private
+     */
+    _getSavedMessage: function(saveResults,removalResults) {
+        var successMsg='', failureMsg='', locTxt;
+        if (saveResults.successes || removalResults.successes) {
+            if (saveResults.successes) {
+                locTxt = saveResults.successes > 1 ? ' locations' : ' location';
+                successMsg += 'Successfully updated ' + saveResults.successes + locTxt;
+            }
+            if (removalResults.successes) {
+                locTxt = removalResults.successes > 1 ? ' locations' : ' location';
+                successMsg += (successMsg ? ' and removed ' : 'Successfully removed ') + removalResults.successes + locTxt;
+            }
+            successMsg += '.';
+        }
+        if (saveResults.failures || removalResults.failures) {
+            if (saveResults.failures) {
+                locTxt = saveResults.failures > 1 ? ' locations' : ' location';
+                failureMsg += 'Failed to update ' + saveResults.failures + locTxt;
+            }
+            if (removalResults.failures) {
+                locTxt = removalResults.failures > 1 ? ' locations' : ' location';
+                failureMsg += (failureMsg ? ' and remove ' : 'Failed to remove ') + removalResults.failures + locTxt;
+            }
+            failureMsg += '.';
+        }
+        return successMsg + ' ' + failureMsg;
+    },
+
+    /**
+     *
+     * @param results
+     * @private
+     */
+    _processResults: function(results) {
+        var resultsObj = {"successes":0,"failures":0};
+        for (var i=0; i<results.length; i++) {
+            if (results[i]) { resultsObj.successes++; }
+            else { resultsObj.failures++; }
+        }
+        return resultsObj;
     },
 
     /**
@@ -254,6 +338,9 @@ Polymer({
         }
         //Close the dialog after.
         this._closeDialog(true);
+        if (this._creationType === 'address') {
+            this._buttonsEnabled = true;
+        }
     },
 
     /**
@@ -278,22 +365,11 @@ Polymer({
      */
     _setupDrawingListeners: function () {
         var _this = this;
-        var marker, position;
-        google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
-            marker = oce.overlay; position = marker.getPosition();
-            if (!google.maps.geometry.poly.containsLocation(position, _this._areaRegion.polygon)) {
-                _this.fire('message-info', 'The Location must be inside your region.');
-                oce.overlay.setMap(null);
-                return;
-            }
-            //Only draw the marker when they confirm the Location details.
-            oce.overlay.setMap(null);
-            //Display the marker.
-            oce.overlay.setMap(_this._map);
-            //Draw the location marker
-            _this._createLocation(oce.overlay);
-            //Exit drawing mode.
+        google.maps.event.addListener(this._drawingManager, 'markercomplete', function (marker) {
+            //Draw the location marker and exit drawing mode.
+            _this._createLocation(marker);
             _this._drawingManager.setDrawingMode(null);
+            _this._buttonsEnabled = true;
         });
         //When the escape key is pressed exit drawing mode.
         window.addEventListener('keydown', function (event) {
@@ -349,7 +425,19 @@ Polymer({
     _determineLocationType: function(types) {
         //Places type categories provided by Google.
         var placesHome=["street_address","postal_code"],
-            placesBusiness=["accounting","airport","amusement_park","aquarium","art_gallery","atm","bakery","bank","bar","beauty_salon","bicycle_store","book_store","bowling_alley","cafe","campground","car_dealer","car_rental","car_repair","car_wash","casino","clothing_store","convenience_store","dentist","department_store","electrician","electronics_store","florist","furniture_store","gas_station","gym","hair_care","hardware_store","home_goods_store","insurance_agency","jewelry_store","laundry","lawyer","liquor_store","locksmith","lodging","meal_delivery","meal_takeaway","movie_rental","movie_theater","moving_company","night_club","painter","parking","pet_store","pharmacy","physiotherapist","plumber","post_office","real_estate_agency","restaurant","roofing_contractor","rv_park","shoe_store","shopping_mall","spa","stadium","storage","store","taxi_stand","travel_agency","veterinary_care","zoo"],
+            placesBusiness=["accounting","airport","amusement_park","aquarium","art_gallery","atm",
+                            "bakery","bank","bar","beauty_salon","bicycle_store","book_store",
+                            "bowling_alley","cafe","campground","car_dealer","car_rental",
+                            "car_repair","car_wash","casino","clothing_store","convenience_store",
+                            "dentist","department_store","electrician","electronics_store","florist",
+                            "furniture_store","gas_station","gym","hair_care","hardware_store",
+                            "home_goods_store","insurance_agency","jewelry_store","laundry","lawyer",
+                            "liquor_store","locksmith","lodging","meal_delivery","meal_takeaway",
+                            "movie_rental","movie_theater","moving_company","night_club","painter",
+                            "parking","pet_store","pharmacy","physiotherapist","plumber","post_office",
+                            "real_estate_agency","restaurant","roofing_contractor","rv_park","shoe_store",
+                            "shopping_mall","spa","stadium","storage","store","taxi_stand","travel_agency",
+                            "veterinary_care","zoo"],
             placesSchool=["school","university"];
 
         var hc = bc = sc = 0;
@@ -372,7 +460,7 @@ Polymer({
         if (this._autoComplete) { return; }
         var _this = this, place;
         this._autoComplete = new google.maps.places.Autocomplete(this.$$('#autoComplete').querySelector('input'),
-                                                                {"bounds":this._areaRegion.bounds,"strictBounds":true});
+                                                                {"bounds":this._areaRegion.bounds,"strictBounds":false});
         google.maps.event.addListener(this._autoComplete, 'place_changed', function() {
             place = _this._autoComplete.getPlace();
             if (place && place.geometry && place.geometry.location) {
@@ -394,14 +482,8 @@ Polymer({
      */
     _setupLocationListeners: function(locationData) {
         var _this = this;
-        //Prevent the Location from being dragged outside of the realm region.
-        google.maps.event.addListener(locationData.marker,'drag',function(e) {
-            if (!google.maps.geometry.poly.containsLocation(e.latLng,_this._areaRegion.polygon)) {
-                locationData.marker.setPosition(_this._previousDragPosition);
-                return;
-            }
-            _this._previousDragPosition = e.latLng;
-            //Continuously re-draw the overlay as the location is dragged.
+        //Continuously re-draw the overlay as the location is dragged.
+        google.maps.event.addListener(locationData.marker,'drag',function() {
             locationData.locOverlay.draw();
         });
         //Update the coordinates on the location record and flag the location for updating after it's dragged.
@@ -411,6 +493,7 @@ Polymer({
             if (_this._locationsToUpdate.indexOf(locationData) === -1) {
                 _this._locationsToUpdate.push(locationData);
             }
+            _this._buttonsEnabled = true;
         });
         //Display infoWindow on location marker click.
         google.maps.event.addListener(locationData.marker,'click',function() {
@@ -453,5 +536,16 @@ Polymer({
      */
     _returnCreateTypeLabel: function(type) {
         return type === 'pindrop' ? 'Pin Drop' : 'Address';
+    },
+
+    /**
+     *
+     * @param position
+     * @param enabled
+     * @returns {string}
+     * @private
+     */
+    _getButtonClass: function(position,enabled) {
+        return 'control-button ' + position + ' ' + (enabled ? 'enabled' : 'disabled');
     }
 });

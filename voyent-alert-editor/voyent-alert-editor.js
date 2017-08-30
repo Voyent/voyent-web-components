@@ -26,7 +26,9 @@ Polymer({
             _this.fire('message-error', 'Issue initializing Alert Editor: ' + (error.responseText || error.message || error));
         });
         //Fetch the user's last known location.
-        this._fetchLocationRecord();
+        this._fetchLocationRecord().catch(function(error) {
+            _this.fire('message-error', 'Issue drawing user\'s location: ' + (error.responseText || error.message || error));
+        });
     },
 
     /**
@@ -227,7 +229,6 @@ Polymer({
             if (this._selectedAlertTemplateId) {
                 this._map.setOptions({draggableCursor:''});
                 google.maps.event.clearListeners(this._map,'click');
-                google.maps.event.clearListeners(this._areaRegion.polygon,'click');
                 this._selectedAlertTemplateId = null;
             }
         }
@@ -270,9 +271,8 @@ Polymer({
         this._selectedAlertTemplateId = e.target.getAttribute('data-id');
         //Change the cursor to the icon of the Alert Template (17.5/35 offset so the click registers in the correct position)
         this._map.setOptions({draggableCursor:'url('+this.pathtoimages+'/img/alert_marker.png) 17.5 35, crosshair'});
-        //Add click listeners to the map and area region so we can drop the new Alert wherever they click.
+        //Add click listeners to the map so we can drop the new Alert wherever they click.
         google.maps.event.addListener(this._map,'click',createChildTemplate);
-        google.maps.event.addListener(this._areaRegion.polygon,'click',createChildTemplate);
         //Create a new child Alert Template to be linked one-to-one with the Alert.
         function createChildTemplate(e) { _this._createChildTemplate(_this._selectedAlertTemplateId,e.latLng); }
     },
@@ -284,10 +284,6 @@ Polymer({
      * @private
      */
     _createChildTemplate: function(parentAlertTemplateId,latLng) {
-        if (!google.maps.geometry.poly.containsLocation(latLng, this._areaRegion.polygon)) {
-            this.fire('message-info','The Alert center must be inside your region.');
-            return;
-        }
         //Find and clone the Alert Template that we will build the child template from.
         var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
             return alertTemplate._id === parentAlertTemplateId;
@@ -305,7 +301,7 @@ Polymer({
         childTemplate._id = parentAlertTemplateId+'.'+new Date().getTime();
         //Now that we have updated center coordinates we need to update the coordinates for all the zones.
         this._loadedAlertTemplateData = {"alertTemplate":childTemplate,"marker":null,"isPersisted":false};
-        this._updateAlertTemplateJSON();
+        this._updateAlertTemplateJSON(this._loadedAlertTemplateData);
         //Draw the new Alert Template.
         this._drawAlertEntity(this._loadedAlertTemplateData.alertTemplate);
         //Toggle the creation mode.

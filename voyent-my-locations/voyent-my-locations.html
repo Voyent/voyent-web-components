@@ -41,7 +41,6 @@ Example:
             }
             .custom-control {
                 background-color: #FFF;
-                cursor: pointer;
                 text-align: center;
                 margin: 10px;
             }
@@ -51,7 +50,6 @@ Example:
                 overflow: hidden;
                 text-align: center;
                 position: relative;
-                color: #191919;
                 font-family: Roboto, Arial, sans-serif;
                 user-select: none;
                 font-size: 11px;
@@ -70,9 +68,17 @@ Example:
                 border-top-right-radius: 2px;
                 border-left: 0px;
             }
-            .control-button:hover {
+            .control-button.enabled {
+                cursor: pointer;
+                color: #191919;
+            }
+            .control-button.enabled:hover {
                 background-color: #EBEBEB;
                 color: #000;
+            }
+            .control-button.disabled {
+                cursor: default;
+                color: #D3D3D3;
             }
             .dialog-inline {
                 display: inline-block;
@@ -103,7 +109,7 @@ Example:
                                class="dropdown-content"
                                on-iron-activate="_flagLocationForUpdating">
                     <template is="dom-repeat" items="[[_locationTypes]]">
-                        <paper-item name="{{item}}">{{_returnLocTypeLabel(item)}}</paper-item>
+                        <paper-item name="[[item]]">[[_returnLocTypeLabel(item)]]</paper-item>
                     </template>
                 </iron-selector>
             </paper-dropdown-menu>
@@ -123,10 +129,10 @@ Example:
             </div>
         </div>
         <div id="customControl" class="custom-control" hidden>
-            <div class="control-button left" title="Save Changes" on-click="_saveChanges">
+            <div class$="[[_getButtonClass('left',_buttonsEnabled)]]" title="Save" on-click="_saveChanges">
                 Save
             </div>
-            <div class="control-button right" title="Revert Changes" on-click="_cancelChanges">
+            <div class$="[[_getButtonClass('right',_buttonsEnabled)]]" title="Revert" on-click="_cancelChanges">
                 Cancel
             </div>
         </div>
@@ -140,11 +146,11 @@ Example:
                                attr-for-selected="name"
                                class="dropdown-content">
                         <template is="dom-repeat" items="[[_creationTypes]]">
-                        <paper-item name="{{item}}">{{_returnCreateTypeLabel(item)}}</paper-item>
+                        <paper-item name="[[item]]">[[_returnCreateTypeLabel(item)]]</paper-item>
                     </template>
                 </iron-selector>
             </paper-dropdown-menu>
-            <template is="dom-if" if="{{_isAddress(_creationType)}}">
+            <template is="dom-if" if="[[_isAddress(_creationType)]]">
                 <paper-input id="autoComplete" class="no-margin" no-label-float tabindex="2"
                              on-keyup="_dialogKeyUp" placeholder="Enter a location"></paper-input>
             </template>
@@ -158,7 +164,7 @@ Example:
                                attr-for-selected="name"
                                class="dropdown-content">
                     <template is="dom-repeat" items="[[_locationTypes]]">
-                        <paper-item name="{{item}}">{{_returnLocTypeLabel(item)}}</paper-item>
+                        <paper-item name="[[item]]">[[_returnLocTypeLabel(item)]]</paper-item>
                     </template>
                 </iron-selector>
             </paper-dropdown-menu>

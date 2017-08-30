@@ -95,11 +95,6 @@ Polymer({
         google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
             shape = oce.overlay;
             if (oce.type === 'marker') { //Marker is actually a circle alertTemplate
-                if (!google.maps.geometry.poly.containsLocation(shape.getPosition(), _this._areaRegion.polygon)) {
-                    _this.fire('message-info','The Alert Template center must be inside your region.');
-                    oce.overlay.setMap(null);
-                    return;
-                }
                 //Create the new google maps circle and bind the circle (zone) to the marker (anchor).
                 var newCircle = new google.maps.Circle(_this._getCircleProperties());
                 newCircle.bindTo('center', oce.overlay, 'position');
@@ -111,7 +106,7 @@ Polymer({
                 //Store the various pieces together so we can reference them later.
                 _this.set('value', {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false});
                 //Determine and set the coordinates for the circle.
-                _this._updateAlertTemplateJSON();
+                _this._updateAlertTemplateJSON(_this._loadedAlertTemplateData);
                 //Draw the Proximity Zone label overlay and save a reference to it.
                 alertTemplate.zones.features[0].tmpProperties.zoneOverlay = new _this._ProximityZoneOverlay(alertTemplate.zones.features[0]);
                 //Disable further Alert Template creations - only allowed one at a time.

@@ -17,14 +17,22 @@ Polymer({
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
-            Promise.all(promises).then(function() {
+            Promise.all(promises).then(function(results) {
+                //Clear the map, set the alert location into the template and draw it.
+                _this.clearMap(true);
+                var alert = results[0];
+                alert.anchor.geometry.coordinates = results[1].location.geometry.coordinates;
+                _this._drawAlertEntity(alert, results[1]);
+                //Adjust the bounds and save the templateId for later.
                 _this._adjustBounds();
                 _this._templateId = _this._alerts[0].alertTemplate._id;
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
             //Fetch the location records.
-            _this._fetchLocationRecord();
+            _this._fetchLocationRecord().catch(function(error) {
+                _this.fire('message-error', 'Issue drawing user\'s location: ' + (error.responseText || error.message || error));
+            });
             _this._fetchMyLocations();
             //Reset the templateId as we'll re-set it later when we're ready.
             _this._templateId = null;
@@ -37,7 +45,10 @@ Polymer({
     refreshUserLocation: function() {
         var _this = this;
         this._mapIsReady().then(function() {
-            _this._fetchLocationRecord().then(_this._adjustBounds.bind(_this));
+            _this._fetchLocationRecord().then(_this._adjustBounds.bind(_this)).catch(function(error) {
+                _this.fire('message-error', 'Issue drawing user\'s location: ' +
+                                             (error.responseText || error.message || error));
+            });
         });
     },
 
@@ -45,10 +56,18 @@ Polymer({
      * Fetches the latest location of the currently loaded Alert and refreshes the position on the map.
      */
     refreshAlertLocation: function() {
-        var _this = this;
+        var _this = this, coordinates;
         this._mapIsReady().then(function() {
             if (!_this._templateId) { return; }
-            _this._fetchLocationRecord(_this._templateId).then(_this._adjustBounds.bind(_this));
+            _this._fetchLocationRecord(_this._templateId).then(function(location) {
+                //Just update the position of the template.
+                coordinates = location.location.geometry.coordinates;
+                _this._alerts[0].marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
+                _this._adjustBounds();
+            }).catch(function(error) {
+                _this.fire('message-error', 'Issue refreshing the alert\'s location: ' +
+                           (error.responseText || error.message || error));
+            });
         });
     },
 
@@ -79,10 +98,8 @@ Polymer({
             }).then(function (results) {
                 if (!results || !results.length) {
                     _this.fire('message-error', 'Alert Template not found.');
-                    reject('Alert Template not found.');
-                    return;
+                    return reject('Alert Template not found.');
                 }
-                _this._currentTemplate = results[0];
                 resolve(results[0]);
             }).catch(function (error) {
                 _this.fire('message-error', 'Error fetching saved Alert Template: ' + (error.responseText || error.message || error));
