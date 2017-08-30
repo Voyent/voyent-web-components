@@ -1,14 +1,6 @@
 Polymer({
     is: 'voyent-alert-template-editor',
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
-    
-    properties: {
-        value: {
-            type: Object,
-            reflectToAttribute: true,
-            notify: true
-        },
-    },
 
     /**
      * Loads an Alert Template into the editor using the passed id.
@@ -29,7 +21,7 @@ Polymer({
             //Clear the map of any loaded Alert Template before drawing. Specify that we want to skip the button
             //draw because we will remove the buttons after drawing the new alert template. Without this we
             //intermittently encounter a bug where the buttons are displayed after loading the template.
-            if (_this.value) {
+            if (_this._loadedAlertTemplateData) {
                 _this.clearMap(false,true);
             }
             //Draw the new Alert Template.
@@ -65,13 +57,13 @@ Polymer({
      */
     _promptForCancel: function() {
         var msg;
-        if (this.value.isPersisted) {
+        if (this._loadedAlertTemplateData.isPersisted) {
             msg = 'Are you sure you want to revert all unsaved changes for "' +
-                this.value.alertTemplate.label + '"? This action cannot be undone.';
+                this._loadedAlertTemplateData.alertTemplate.label + '"? This action cannot be undone.';
         }
         else {
             msg = 'Are you sure you want to cancel creating ' +
-                this.value.alertTemplate.label + '? This action cannot be undone.';
+                this._loadedAlertTemplateData.alertTemplate.label + '? This action cannot be undone.';
         }
         this._openDialog(msg,null,'_cancelChanges');
     },
@@ -104,7 +96,7 @@ Polymer({
                 alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
                 alertTemplate.zones.features[0].tmpProperties.circle = newCircle;
                 //Store the various pieces together so we can reference them later.
-                _this.set('value', {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false});
+                _this.set('_loadedAlertTemplateData', {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false});
                 //Determine and set the coordinates for the circle.
                 _this._updateAlertTemplateJSON(_this._loadedAlertTemplateData);
                 //Draw the Proximity Zone label overlay and save a reference to it.
@@ -112,7 +104,7 @@ Polymer({
                 //Disable further Alert Template creations - only allowed one at a time.
                 _this._removeAlertTemplateButtons();
                 //Add the listeners to the marker and circles.
-                _this._setupMapListeners(_this.value);
+                _this._setupMapListeners(_this._loadedAlertTemplateData);
             }
             //Exit drawing mode.
             _this._drawingManager.setDrawingMode(null);
