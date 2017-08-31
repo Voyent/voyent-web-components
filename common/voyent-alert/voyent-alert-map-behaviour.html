@@ -282,16 +282,12 @@
                 this._userData.location = location;
             }
             else {
-                //Draw the user and store the data for later use. Do these async because when this
-                //function is called immediately after map load sometimes the marker won't render.
-                setTimeout(function() {
-                    _this._userData = {"location":location,"marker":new google.maps.Marker({
-                        position: new google.maps.LatLng(coordinates[1],coordinates[0]),
-                        map: _this._map,
-                        draggable: false,
-                        icon: _this.pathtoimages+'/img/user_marker.png'
-                    })};
-                },500);
+                this._userData = {"location":location,"marker":new google.maps.Marker({
+                    position: new google.maps.LatLng(coordinates[1],coordinates[0]),
+                    map: _this._map,
+                    draggable: false,
+                    icon: _this.pathtoimages+'/img/user_marker.png'
+                })};
             }
         },
 
