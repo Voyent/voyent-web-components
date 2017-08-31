@@ -14,12 +14,15 @@ Polymer({
                 _this.fire('message-error','Unable to load template, id not provided.');
                 return;
             }
+            //Clear the map.
+            _this.clearMap(true);
+            //Fetch the alert and user locations.
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
+            promises.push(_this._fetchLocationRecord());
             Promise.all(promises).then(function(results) {
-                //Clear the map, set the alert location into the template and draw it.
-                _this.clearMap(true);
+                //Set the alert location into the template and draw it.
                 var alert = results[0];
                 alert.anchor.geometry.coordinates = results[1].location.geometry.coordinates;
                 _this._drawAlertEntity(alert, results[1]);
@@ -28,10 +31,6 @@ Polymer({
                 _this._templateId = _this._alerts[0].alertTemplate._id;
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
-            });
-            //Fetch the location records.
-            _this._fetchLocationRecord().catch(function(error) {
-                _this.fire('message-error', 'Issue drawing user\'s location: ' + (error.responseText || error.message || error));
             });
             _this._fetchMyLocations();
             //Reset the templateId as we'll re-set it later when we're ready.
