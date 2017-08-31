@@ -274,7 +274,6 @@
          */
         _drawUser: function(location) {
             if (!location) { return; }
-            var _this = this;
             var coordinates = location.location.geometry.coordinates;
             //Check if we already have a user location drawn on the map.
             if (this._userData) { //Update the existing instance.
@@ -284,9 +283,9 @@
             else {
                 this._userData = {"location":location,"marker":new google.maps.Marker({
                     position: new google.maps.LatLng(coordinates[1],coordinates[0]),
-                    map: _this._map,
+                    map: this._map,
                     draggable: false,
-                    icon: _this.pathtoimages+'/img/user_marker.png'
+                    icon: this.pathtoimages+'/img/user_marker.png'
                 })};
             }
         },
