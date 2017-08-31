@@ -25,10 +25,6 @@ Polymer({
         }).catch(function(error) {
             _this.fire('message-error', 'Issue initializing Alert Editor: ' + (error.responseText || error.message || error));
         });
-        //Fetch the user's last known location.
-        this._fetchLocationRecord().catch(function(error) {
-            _this.fire('message-error', 'Issue drawing user\'s location: ' + (error.responseText || error.message || error));
-        });
     },
 
     /**

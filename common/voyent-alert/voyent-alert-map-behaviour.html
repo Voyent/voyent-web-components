@@ -315,9 +315,13 @@
                 //Only get the last location.
                 voyent.locate.findLocations({realm:_this.realm,account:_this.account,query:query,
                 options:{"sort":{"lastUpdated":-1},"limit":1}}).then(function(location) {
-                    if (!location || !location[0]) { return reject('Location record not found.'); }
-                    //We always want to draw the user record so do this before resolving.
-                    if (!trackerId) {
+                    //Only error out for alerts.
+                    if (trackerId) {
+                        if ((!location || !location[0])) {
+                            return reject('Alert location not found.');
+                        }
+                    }
+                    else { //We always want to draw the user record so do this before resolving.
                         _this._drawUser(location[0]);
                     }
                     resolve(location[0]);
