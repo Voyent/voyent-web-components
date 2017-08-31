@@ -59,9 +59,11 @@ Polymer({
         this._mapIsReady().then(function() {
             if (!_this._templateId) { return; }
             _this._fetchLocationRecord(_this._templateId).then(function(location) {
-                //Just update the position of the template.
+                //Update the template coordinates, the label's position and adjust the bounds.
                 coordinates = location.location.geometry.coordinates;
                 _this._alerts[0].marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
+                _this._updateAlertTemplateJSON(_this._alerts[0]);
+                _this._redrawZoneOverlay(_this._alerts[0]);
                 _this._adjustBounds();
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the alert\'s location: ' +
