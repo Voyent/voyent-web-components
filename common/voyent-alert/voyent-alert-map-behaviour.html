@@ -291,17 +291,17 @@
         },
 
         /**
-         * Fetches the most recent User or Alert location depending on whether we are passed a trackerId.
-         * @param trackerId
+         * Fetches the most recent User or Alert location depending on whether we are passed a alertId.
+         * @param alertId
          * @private
          */
-        _fetchLocationRecord: function(trackerId) {
+        _fetchLocationRecord: function(alertId) {
             var _this = this;
             return new Promise(function (resolve, reject) {
                 //Build the query.
                 var query = {};
-                if (trackerId && typeof trackerId === 'string') {
-                    query = {"location.properties.trackerId":trackerId};
+                if (alertId && typeof alertId === 'string') {
+                    query = {"location.properties.trackerId":alertId};
                 }
                 else {
                     query = {
@@ -316,12 +316,16 @@
                 voyent.locate.findLocations({realm:_this.realm,account:_this.account,query:query,
                 options:{"sort":{"lastUpdated":-1},"limit":1}}).then(function(location) {
                     //Only error out for alerts.
-                    if (trackerId) {
+                    if (alertId) {
                         if ((!location || !location[0])) {
-                            return reject('Alert location not found.');
+                            return reject('Alert location cannot be found.');
                         }
                     }
-                    else { //We always want to draw the user record so do this before resolving.
+                    else {
+                        if ((!location || !location[0])) {
+                            _this.fire('message-info','User location cannot be found.');
+                            return resolve();
+                        }
                         _this._drawUser(location[0]);
                     }
                     resolve(location[0]);
