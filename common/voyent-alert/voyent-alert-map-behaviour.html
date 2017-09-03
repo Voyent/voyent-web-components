@@ -22,6 +22,12 @@
              */
             realm: { type: String, observer: '_realmChanged' },
             /**
+             * A boolean indicating whether the component should load the Google Maps API. When `false`
+             * it is expected that the API is included manually in the application.
+             * @default false
+             */
+            loadGoogleMaps: { type: Boolean, value: false },
+            /**
              * The height of the google map to be created, as an integer. If left empty we will default to the height
              * of the parent container. If a height cannot be found then a default minimum of 500 will be used.
              */
@@ -34,11 +40,13 @@
             /**
              * Enable a percent of the full page height to automatically fill with the map. To disable use a value of -1.
              * Height = "h*autoheight" so 0.8 corresponds to 80% of the page height. 1.2 would be 120%, etc.
+             * @default -1
              */
             autoheight: { type: Number, value: -1, notify: true },
             /**
              * The relative path to the `img` resource directory. This may be
              * necessary when using the component as part of a custom build.
+             * @default '.'
              */
             pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' }
         },
@@ -106,12 +114,21 @@
                 //Make sure the map is always sized correctly when the window size changes.
                 window.addEventListener('resize', function() { _this.resizeMap(); });
             };
-            if (!('google' in window) || !('maps' in window.google)) {
-                var script = document.createElement('script');
-                script.type = 'text/javascript';
-                script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3&' +
-                    'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-                this.$.container.appendChild(script);
+            if ((!('google' in window) || !('maps' in window.google))) {
+                if (this.loadGoogleMaps) {
+                    var script = document.createElement('script');
+                    script.type = 'text/javascript';
+                    script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3&' +
+                        'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+                    this.$.container.appendChild(script);
+                }
+                else {
+                    var msg = 'Error initializing ' + this.nodeName.toLowerCase() + ': The attribute `load-google-maps` ' +
+                              'is false but the Google Maps API cannot be found. Please load the component before ' +
+                              'loading the API or set the attribute to true.';
+                    this.fire('message-error',msg);
+                    console.error(msg);
+                }
             }
             else {
                 initializeLocationsMap();
