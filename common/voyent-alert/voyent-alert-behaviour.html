@@ -179,7 +179,6 @@
          */
         _updateAlertTemplateJSON: function (alertTemplateData) {
             if (!alertTemplateData) { return; }
-            var coords;
             //Sync the marker coordinates (if available) with the alertTemplate
             //anchor in case the alertTemplate position has moved.
             if (alertTemplateData.marker) {
@@ -198,14 +197,14 @@
                     features[i].properties.Color = features[i].tmpProperties.circle.get('fillColor').substring(1); //Remove the '#'.
                     features[i].properties.googleMaps.zIndex = features[i].tmpProperties.circle.get('zIndex');
                 }
-                coords = features[i].geometry.coordinates[0] = [];
+                features[i].geometry.coordinates = [[]];
                 for (var j=0; j<N; j++) {
                     //Calculate and save the next coordinate.'
                     var latLng = google.maps.geometry.spherical.computeOffset(
                         new google.maps.LatLng(features[i].properties.googleMaps.center[0],features[i].properties.googleMaps.center[1]),
                         features[i].properties.googleMaps.radius,
                         degreeStep * j);
-                    coords.push([latLng.lng(), latLng.lat()]);
+                    features[i].geometry.coordinates[0].push([latLng.lng(), latLng.lat()]);
                     //Look for the northern most point of the circle so we know
                     //where to render the Proximity Zone overlay label.
                     if (latLng.lat() > features[i].tmpProperties.highestLat) {
@@ -214,7 +213,7 @@
                 }
                 //In addition to N coordinates we also need to copy the
                 //first one to the last one to complete the circle.
-                coords.push(coords[0]);
+                features[i].geometry.coordinates[0].push(features[i].geometry.coordinates[0][0]);
             }
         },
 
