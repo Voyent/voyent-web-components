@@ -52,12 +52,14 @@ Example:
                         <div class="alert-template-desc">Please login to active this panel.</div>
                     </template>
                 </div>
-                <div id="crudPanel">
-                    <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
-                        <paper-button raised title="Cancel" on-click="_promptForCancel">Cancel</paper-button>
-                        <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
-                    </template>
-                </div>
+                    <div id="crudPanel">
+                        <template is="dom-if" if="[[!disableButtons]]">
+                            <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
+                                <paper-button raised title="Cancel" on-click="_promptForCancel">Cancel</paper-button>
+                                <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
+                            </template>
+                        </template>
+                    </div>
             </div>
         </div>
         <div id="circleBttn" class="customMapBttnWrap" hidden>

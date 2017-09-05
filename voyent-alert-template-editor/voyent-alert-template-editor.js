@@ -1,6 +1,11 @@
 Polymer({
     is: 'voyent-alert-template-editor',
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
+    
+    properties: {
+        disableButtons: { type: Boolean, value: false, notify: true },
+        _loadedAlertTemplateData: { type: Object, notify: true, reflectToAttribute: true },
+    },
 
     /**
      * Loads an Alert Template into the editor using the passed id.
