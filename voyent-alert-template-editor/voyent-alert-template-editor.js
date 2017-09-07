@@ -36,8 +36,8 @@ Polymer({
      */
 
     /**
-     * Fires when the selected alert zone changes. Includes an `id` property which identifies the zone and a `zone`
-     * property containing the assocaited data. If no zone is selected then both of these values will be null.
+     * Fires when the selected alert zone changes. Includes an `index` property in relation to the list, `id` property which identifies the zone and a `zone`
+     * property containing the assocaited data. If no zone is selected then these values will be null.
      * @event voyent-alert-zone-selected
      */
 
