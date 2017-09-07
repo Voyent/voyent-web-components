@@ -312,10 +312,9 @@ Polymer({
         if (!this._loadedAlertTemplateData) { return; }
         if (this._loadedAlertTemplateData.alertInstance) { this._removeAlert(); }
         else { this._removeAlertTemplate(); }
-        //Fire an event indicating that no zone is loaded (-1).
-        this.fire('voyent-zone-toggled', {
-            'alertTemplate': null,
-            'selectedZoneIndex': -1
+        this.fire('voyent-alert-zone-selected', {
+            'id': null,
+            'zone': null
         });
     },
 
@@ -391,10 +390,9 @@ Polymer({
                 this._promptForRemoval(function() {
                     this._removeAlertTemplate();
                     this._toggleActiveAlerts(true);
-                    //Fire an event indicating that no zone is loaded (-1).
-                    this.fire('voyent-zone-toggled', {
-                        'alertTemplate': null,
-                        'selectedZoneIndex': -1
+                    this.fire('voyent-alert-zone-selected', {
+                        'id': null,
+                        'zone': null
                     });
                 });
             }
@@ -415,10 +413,9 @@ Polymer({
                 this._removeAlertTemplate();
                 this._toggleActivatingAlert();
                 this._toggleActiveAlerts(true);
-                //Fire an event indicating that no zone is loaded (-1).
-                this.fire('voyent-zone-toggled', {
-                    'alertTemplate': null,
-                    'selectedZoneIndex': -1
+                this.fire('voyent-alert-zone-selected', {
+                    'id': null,
+                    'zone': null
                 });
             });
         }

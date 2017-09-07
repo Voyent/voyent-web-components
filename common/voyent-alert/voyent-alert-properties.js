@@ -89,6 +89,7 @@ Polymer({
         if (!this._loadedAlertTemplateData.alertTemplate.tmpProperties.newName) { return; }
         //Set the new label and reset the editing mode input state.
         this.set('_loadedAlertTemplateData.alertTemplate.label',this._loadedAlertTemplateData.alertTemplate.tmpProperties.newName);
+        this.fire('voyent-alert-template-label-changed',{"label":this._loadedAlertTemplateData.alertTemplate.label});
         this.set('_loadedAlertTemplateData.alertTemplate.tmpProperties.newName','');
         //Toggle renaming mode.
         this._toggleAlertTemplateRenaming();
@@ -170,6 +171,10 @@ Polymer({
         //Set the new zoneId and reset the editing mode input state.
         this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.properties.zoneId',
                  this._loadedAlertTemplateData.alertTemplate.zones.features[i].tmpProperties.newName);
+        this.fire('voyent-alert-zone-label-changed',{
+            "id":this._loadedAlertTemplateData.alertTemplate.zones.features[i].tmpProperties.uid,
+            "label":this._loadedAlertTemplateData.alertTemplate.zones.features[i].properties.zoneId
+        });
         this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties.newName','');
         //Toggle renaming mode.
         this._toggleProximityZoneRenaming(i);
@@ -218,6 +223,7 @@ Polymer({
         this._updateAlertTemplateJSON(this._loadedAlertTemplateData);
         //Draw the Proximity Zone label overlay and save a reference to it.
         newCircleJSON.tmpProperties.zoneOverlay = new this._ProximityZoneOverlay(newCircleJSON);
+        this.fire('voyent-alert-zone-added',{"id":newCircleJSON.tmpProperties.uid,"zone":newCircleJSON});
     },
 
     /**
@@ -235,6 +241,7 @@ Polymer({
         zone.tmpProperties.zoneOverlay.setMap(null);
         //Remove the zone from the alertTemplate JSON.
         this.splice('_loadedAlertTemplateData.alertTemplate.zones.features',i,1);
+        this.fire('voyent-alert-zone-removed',{"id":zone.tmpProperties.uid});
     },
 
     /**

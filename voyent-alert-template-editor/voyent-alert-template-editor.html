@@ -53,9 +53,9 @@ Example:
                     </template>
                 </div>
                     <div id="crudPanel">
-                        <template is="dom-if" if="[[!disableButtons]]">
+                        <template is="dom-if" if="[[!hideButtons]]">
                             <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
-                                <paper-button raised title="Cancel" on-click="_promptForCancel">Cancel</paper-button>
+                                <paper-button raised title="Cancel" on-click="cancel">Cancel</paper-button>
                                 <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
                             </template>
                         </template>

@@ -188,13 +188,11 @@
                 else if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                     _this.fire('message-info', 'Alert Template successfully updated.');
                 }
+                _this.fire('voyent-alert-template-saved',{});
                 //Restore the tmpProperties for each of the zones.
-                var zones = _this._loadedAlertTemplateData.alertTemplate.zones.features;
                 for (var i=0; i<_this._loadedAlertTemplateData.alertTemplate.zones.features.length; i++) {
                     _this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+i+'.tmpProperties',zoneTmpProperties[i]);
                 }
-                //Fire an event for anyone interested.
-                _this.fire('voyent-alert-template-saved',{});
             });
         },
 

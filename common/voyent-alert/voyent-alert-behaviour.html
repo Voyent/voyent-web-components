@@ -237,17 +237,18 @@
                 zones[i].tmpProperties.circle.setOptions({"strokeWeight":0});
                 zones[i].tmpProperties.circle.setEditable(false);
             }
-            //Show the accordion contents for the selected zone, add the selected styling and set
-            //the editable value. If the index is -1 then we'll de-toggle all Accordion panes.
-            if (index !== -1) {
+            //Show the accordion contents for the selected zone, add the selected styling and set the editable value.
+            if (index > -1) {
                 this.set('_loadedAlertTemplateData.alertTemplate.zones.features.'+index+'.tmpProperties.visible',true);
                 zones[index].tmpProperties.circle.setOptions({"strokeWeight":3});
                 zones[index].tmpProperties.circle.setEditable(zones[index].properties.Editable);
             }
-            //Fire an event indicating which zone was loaded (-1 means no zone is loaded).
-            this.fire('voyent-zone-toggled', {
-                'alertTemplate': this._loadedAlertTemplateData.alertTemplate,
-                'selectedZoneIndex': index
+            this.fire('voyent-alert-zone-selected', index > -1 ? {
+                'id': zones[index].tmpProperties.uid,
+                'zone': zones[index]
+            } : {
+                'id': null,
+                'zone': null
             });
         },
 
@@ -391,18 +392,6 @@
                 //Force the template-repeat to re-render.
                 var repeat = document.querySelector('#zones-repeat');
                 if (repeat) { repeat.render(); }
-                //The zoneIndex might have changed for the loaded zone so determine the index and re-fire the event.
-                var selectedZoneIndex = -1;
-                for (var i=0;i<_this._loadedAlertTemplateData.alertTemplate.zones.features.length; i++) {
-                    if (_this._loadedAlertTemplateData.alertTemplate.zones.features[i].tmpProperties.visible) {
-                        selectedZoneIndex = i;
-                        break;
-                    }
-                }
-                _this.fire('voyent-zone-toggled', {
-                    'alertTemplate': _this._loadedAlertTemplateData.alertTemplate,
-                    'selectedZoneIndex': selectedZoneIndex
-                });
                 //Update the z-indexes so we can always click the zones.
                 _this._adjustZIndexes();
             },0)
@@ -495,7 +484,8 @@
                 "visible":false,
                 "highestLat":-100,
                 "circle": null,
-                "zoneOverlay":null
+                "zoneOverlay":null,
+                "uid": this._generateUid()
             }
         },
 
@@ -512,6 +502,15 @@
                 strokeWeight:0, zIndex: 49,
                 map: this._map
             };
+        },
+
+        /**
+         * Generates a uid using the current time in ms and a random number in the hundred thousands.
+         * @returns {string}
+         * @private
+         */
+        _generateUid: function() {
+            return new Date().getTime()+'-'+Math.floor(Math.random()*(900000)+100000);
         }
     };
 </script>

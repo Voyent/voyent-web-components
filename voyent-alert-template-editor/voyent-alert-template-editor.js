@@ -1,11 +1,55 @@
 Polymer({
     is: 'voyent-alert-template-editor',
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
-    
+
+    /**
+     * Fires when the alert template is successfully saved. Does not include any data.
+     * @event voyent-alert-template-saved
+     */
+
+    /**
+     * Fires when the loaded alert template changes. Includes an `alertTemplate`
+     * property that contains the loaded template or null if none is loaded.
+     * @event voyent-alert-template-changed
+     */
+
+    /**
+     * Fires when the alert template label changes. Includes a `label` property that contains the new value.
+     * @event voyent-alert-template-label-changed
+     */
+
+    /**
+     * Fires when an alert zone label changes. Includes a `label` property that contains
+     * the new value and an `id` property that indicates which zone was modified.
+     * @event voyent-alert-zone-label-changed
+     */
+
+    /**
+     * Fires when a new alert zone is added to the template. Includes an `id` property
+     * which identifies the zone and a `zone` property that contains the associated data.
+     * @event voyent-alert-zone-added
+     */
+
+    /**
+     * Fired when an alert zone is removed from the template. Includes an `id` property which identifies the zone.
+     * @event voyent-alert-zone-removed
+     */
+
+    /**
+     * Fires when the selected alert zone changes. Includes an `id` property which identifies the zone and a `zone`
+     * property containing the assocaited data. If no zone is selected then both of these values will be null.
+     * @event voyent-alert-zone-selected
+     */
+
     properties: {
-        disableButtons: { type: Boolean, value: false, notify: true },
-        _loadedAlertTemplateData: { type: Object, notify: true, reflectToAttribute: true },
+        /**
+         * Indicate whether to to hide the embedded save and cancel buttons.
+         * @default false
+         */
+        hideButtons: { type: Boolean, value: false }
     },
+
+    observers: ['_loadedTemplateChanged(_loadedAlertTemplateData)'],
 
     /**
      * Loads an Alert Template into the editor using the passed id.
@@ -37,6 +81,23 @@ Polymer({
         });
     },
 
+    /**
+     * Opens a confirmation prompt for cancelling alert template creation or edits.
+     * @private
+     */
+    cancel: function() {
+        var msg;
+        if (this._loadedAlertTemplateData.isPersisted) {
+            msg = 'Are you sure you want to revert all unsaved changes for "' +
+                this._loadedAlertTemplateData.alertTemplate.label + '"? This action cannot be undone.';
+        }
+        else {
+            msg = 'Are you sure you want to cancel creating ' +
+                this._loadedAlertTemplateData.alertTemplate.label + '? This action cannot be undone.';
+        }
+        this._openDialog(msg,null,'_cancelChanges');
+    },
+
     //******************PRIVATE API******************
 
     /**
@@ -57,29 +118,11 @@ Polymer({
     },
 
     /**
-     * Opens a confirmation prompt for cancelling Alert Template creation or edits.
-     * @private
-     */
-    _promptForCancel: function() {
-        var msg;
-        if (this._loadedAlertTemplateData.isPersisted) {
-            msg = 'Are you sure you want to revert all unsaved changes for "' +
-                this._loadedAlertTemplateData.alertTemplate.label + '"? This action cannot be undone.';
-        }
-        else {
-            msg = 'Are you sure you want to cancel creating ' +
-                this._loadedAlertTemplateData.alertTemplate.label + '? This action cannot be undone.';
-        }
-        this._openDialog(msg,null,'_cancelChanges');
-    },
-
-    /**
      * Revert the editor to it's state when the Alert Template was originally loaded or clears an unsaved Alert Template.
      */
     _cancelChanges: function() {
         //Clear the map and fire an event indicating we cancelled.
         this.clearMap();
-        this.fire('voyent-alert-template-cancel',{});
     },
 
     /**
@@ -176,5 +219,16 @@ Polymer({
             //These properties are used by the view and will be removed before saving the alertTemplate.
             "tmpProperties": this._getAlertTemplateTmpProperties()
         }
+    },
+
+    /**
+     * Fires an event indicating that the loaded alert template has changed.
+     * @param data
+     * @private
+     */
+      _loadedTemplateChanged: function(data) {
+        this.fire('voyent-alert-template-changed',{
+            'alertTemplate': data && data.alertTemplate ? data.alertTemplate : null
+        });
     }
 });

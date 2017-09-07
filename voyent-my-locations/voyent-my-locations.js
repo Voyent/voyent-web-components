@@ -396,8 +396,7 @@ Polymer({
                     "vras": {
                         "label":this._locationLabel,
                         "type":this._locationType,
-                        //Generate a number using the timestamp and a random number in the hundred thousands.
-                        "uid":new Date().getTime()+'-'+Math.floor(Math.random()*(900000)+100000)
+                        "uid":this._generateUid()
                     }
                 }
             }
