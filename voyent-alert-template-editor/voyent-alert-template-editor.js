@@ -227,8 +227,13 @@ Polymer({
      * @private
      */
       _loadedTemplateChanged: function(data) {
-        this.fire('voyent-alert-template-changed',{
-            'alertTemplate': data && data.alertTemplate ? data.alertTemplate : null
-        });
+        // We fire the event in a setTimeout because the observer fires very early in the lifecycle
+        // Which means alert template may be partially initialized, such as not having tmpProperties applied yet
+        var _this = this;
+        setTimeout(function() {
+            _this.fire('voyent-alert-template-changed',{
+                'alertTemplate': data && data.alertTemplate ? data.alertTemplate : null
+            });
+        },0);
     }
 });
