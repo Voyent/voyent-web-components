@@ -244,9 +244,11 @@
                 zones[index].tmpProperties.circle.setEditable(zones[index].properties.Editable);
             }
             this.fire('voyent-alert-zone-selected', index > -1 ? {
+                'index': index,
                 'id': zones[index].tmpProperties.uid,
                 'zone': zones[index]
             } : {
+                'index': -1,
                 'id': null,
                 'zone': null
             });

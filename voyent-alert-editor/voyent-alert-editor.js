@@ -313,6 +313,7 @@ Polymer({
         if (this._loadedAlertTemplateData.alertInstance) { this._removeAlert(); }
         else { this._removeAlertTemplate(); }
         this.fire('voyent-alert-zone-selected', {
+            'index': -1,
             'id': null,
             'zone': null
         });
@@ -391,6 +392,7 @@ Polymer({
                     this._removeAlertTemplate();
                     this._toggleActiveAlerts(true);
                     this.fire('voyent-alert-zone-selected', {
+                        'index': -1,
                         'id': null,
                         'zone': null
                     });
@@ -414,6 +416,7 @@ Polymer({
                 this._toggleActivatingAlert();
                 this._toggleActiveAlerts(true);
                 this.fire('voyent-alert-zone-selected', {
+                    'index': -1,
                     'id': null,
                     'zone': null
                 });
