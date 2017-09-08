@@ -394,6 +394,19 @@
                 //Force the template-repeat to re-render.
                 var repeat = document.querySelector('#zones-repeat');
                 if (repeat) { repeat.render(); }
+                //The zoneIndex might have changed for the loaded zone so determine the index and re-fire the event.
+                var selectedZoneIndex = -1;
+                for (var i=0;i<_this._loadedAlertTemplateData.alertTemplate.zones.features.length; i++) {
+                    if (_this._loadedAlertTemplateData.alertTemplate.zones.features[i].tmpProperties.visible) {
+                        selectedZoneIndex = i;
+                        break;
+                    }
+                }
+                _this.fire('voyent-alert-zone-selected',{
+                        'index': selectedZoneIndex,
+                        'id': _this._loadedAlertTemplateData.alertTemplate.zones.features[selectedZoneIndex].tmpProperties.uid,
+                        'zone': _this._loadedAlertTemplateData.alertTemplate.zones.features[selectedZoneIndex]
+                });
                 //Update the z-indexes so we can always click the zones.
                 _this._adjustZIndexes();
             },0)
