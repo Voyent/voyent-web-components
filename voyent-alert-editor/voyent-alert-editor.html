@@ -6,7 +6,7 @@
 <link rel="import" href="../../paper-dialog/paper-dialog.html">
 
 <!--
-Displays a map-based tool for creating new Alert Templates.
+Displays a map-based tool for creating new alert templates.
 
 Example:
 
@@ -59,118 +59,87 @@ Example:
         <div id="container">
             <div id="map"></div><div id="sidePanel">
                 <div id="propertiesPanel">
-                    <template is="dom-if" if="[[_creatingNew]]">
-                        <div class="alertTemplates">
-                            <div class="alert-desc">
-                                Select an Alert Template to create a new Alert for or press ESC to cancel.
-                            </div>
-                            <template is="dom-repeat" items="{{_parentTemplates}}">
-                                <div class$="{{_getTemplateClass(item._id,_selectedAlertTemplateId)}}" on-click="_selectAlertTemplate" data-id$="{{item._id}}" data-label$="{{item.label}}">
-                                    <div class="imgDiv" data-id$="{{item._id}}" data-label$="{{item.label}}">
-                                        <img src="[[pathtoimages]]/img/alert_marker.png" data-id$="{{item._id}}" data-label$="{{item.label}}"/>
-                                    </div>
-                                    <div class="nameDiv" data-id$="{{item._id}}" data-label$="{{item.label}}">{{_getAlertTemplateName(item)}}</div>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                    <template is="dom-if" if="[[!_creatingNew]]">
-                        <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
-                            <template is="dom-if" if="[[_activatingAlert]]">
-                                <div class="alert-template-title">Confirm New Alert</div>
+                    <template is="dom-if" if="[[_isLoggedIn]]">
+                        <template is="dom-if" if="[[_showNewAlertPane]]">
+                            <div class="alert-template-title">New Alert</div>
+                            <template is="dom-if" if="[[_parentTemplates.length]]">
                                 <div class="alert-template-desc">
-                                    <div>Start: Now</div><br/>
-                                    <div>Stop: Never!</div><br/>
-                                    <div>If created now, this alert would generate ? notifications. Please confirm that you would like to create this Alert.</div>
+                                    Activate the
+                                    <div class="icon-div">
+                                        <img class="icon" src="../common/voyent-alert/img/alert_bttn.png">
+                                    </div>
+                                    icon from the toolbar in the top-right corner and follow the menu.
                                 </div>
                             </template>
-                            <template is="dom-if" if="[[!_activatingAlert]]">
-                                <voyent-alert-properties _loaded-alert-template-data="{{_loadedAlertTemplateData}}"
-                                                         _alerts="{{_alerts}}" _map="{{_map}}"
-                                                         _area-region="{{_areaRegion}}"></voyent-alert-properties>
+                            <template is="dom-if" if="[[!_parentTemplates.length]]">
+                                <div class="alert-template-desc">
+                                    There are no alert templates to create a new alert for.
+                                    Please create an alert template before using this editor.
+                                </div>
                             </template>
                         </template>
-                        <template is="dom-if" if="[[!_loadedAlertTemplateData.alertTemplate]]">
-                            <template is="dom-if" if="[[_parentTemplates]]">
-                                <template is="dom-if" if="[[_parentTemplates.length]]">
-                                    <template is="dom-if" if="[[_alerts]]">
-                                        <template is="dom-if" if="[[_alerts.length]]">
-                                            <div class="alerts">
-                                                <div class="alert-template-title">Active Alerts</div>
-                                                <div class="alert-desc">
-                                                    Click an Alert on the map to load it's properties or activate the
-                                                    <div class="icon-div">
-                                                        <img class="icon" src="../common/voyent-alert/img/alert_bttn.png">
-                                                    </div>
-                                                    icon from the toolbar in the top-right corner to create a new Alert.
-                                                </div>
-                                            </div>
-                                        </template>
-                                        <template is="dom-if" if="[[!_alerts.length]]">
-                                            <div class="alert-template-title">No Active Alerts</div>
-                                            <div class="alert-template-desc">
-                                                There are currently no Active Alerts. Activate the
-                                                <div class="icon-div">
-                                                    <img class="icon" src="../common/voyent-alert/img/alert_bttn.png">
-                                                </div>
-                                                icon from the toolbar in the top-right corner and follow the menu.
-                                            </div>
-                                        </template>
-                                    </template>
-                                </template>
-                                <template is="dom-if" if="[[!_parentTemplates.length]]">
-                                    <div class="alert-template-title">New Alert</div>
-                                    <div class="alert-template-desc">
-                                        There are no Alert Templates to create a new Alert for.
-                                        Please create an Alert Template before using this editor.
+                        <template is="dom-if" if="[[_showTemplateListPane]]">
+                            <div class="alertTemplates">
+                                <div class="alert-desc">
+                                    Select an alert template to create a new alert for or press ESC to cancel.
+                                </div>
+                                <template is="dom-repeat" items="{{_parentTemplates}}">
+                                    <div class$="{{_getTemplateClass(item._id,_selectedAlertTemplateId)}}"
+                                         on-click="_selectAlertTemplate" data-id$="{{item._id}}">
+                                        <div class="imgDiv" data-id$="{{item._id}}">
+                                            <img src="[[pathtoimages]]/img/alert_marker.png" data-id$="{{item._id}}"/>
+                                        </div>
+                                        <div class="nameDiv" data-id$="{{item._id}}">{{_getAlertTemplateName(item)}}</div>
                                     </div>
                                 </template>
-                            </template>
-                            <template is="dom-if" if="[[!_parentTemplates]]">
-                                <template is="dom-if" if="[[!_alerts]]">
-                                    <template is="dom-if" if="[[_isLoggedIn]]">
-                                        <div class="alert-template-title">Loading Active Alerts...</div>
-                                    </template>
-                                    <template is="dom-if" if="[[!_isLoggedIn]]">
-                                        <div class="alert-template-title">Invalid Credentials</div>
-                                        <div class="alert-template-desc">Please login to active this panel.</div>
-                                    </template>
-                                </template>
-                            </template>
+                            </div>
                         </template>
+                        <template is="dom-if" if="[[_showPropertiesPane]]">
+                            <voyent-alert-properties _loaded-alert-template="{{_loadedAlertTemplate}}"
+                                                     _map="{{_map}}" _area-region="{{_areaRegion}}">
+                            </voyent-alert-properties>
+                        </template>
+                            <template is="dom-if" if="[[_showConfirmingAlertPane]]">
+                            <div class="alert-template-title">Confirm New Alert</div>
+                            <div class="alert-template-desc">
+                                <div>Start: Now</div><br/>
+                                <div>Stop: Never!</div><br/>
+                                <div>
+                                    If created now, this alert would generate ? notifications.
+                                    Please confirm that you would like to create this alert.
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                    <template is="dom-if" if="[[!_isLoggedIn]]">
+                        <div class="alert-template-title">Invalid Credentials</div>
+                        <div class="alert-template-desc">Please login to active this panel.</div>
                     </template>
                 </div>
                 <div id="crudPanel">
-                    <template is="dom-if" if="[[_parentTemplates.length]]">
-                        <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
-                            <template is="dom-if" if="[[!_loadedAlertTemplateData.alertInstance]]">
-                                <template is="dom-if" if="[[!_activatingAlert]]">
-                                    <paper-button raised title="Back" on-click="_goBack">Back</paper-button>
-                                    <paper-button raised title="Activate Now!" on-click="_toggleActivatingAlert">Activate Now!</paper-button>
-                                </template>
-                                <template is="dom-if" if="[[_activatingAlert]]">
-                                    <paper-button raised title="Back" on-click="_goBack">Back</paper-button>
-                                    <paper-button raised title="Cancel" on-click="_cancel">Cancel</paper-button>
-                                    <paper-button raised title="Confirm" on-click="_updateAlertLocation">Confirm</paper-button>
-                                </template>
-                            </template>
-                            <template is="dom-if" if="[[_loadedAlertTemplateData.alertInstance]]">
-                                <template is="dom-if" if="[[!_creatingNew]]">
-                                    <paper-button raised title="Back" on-click="_goBack">Back</paper-button>
-                                    <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
-                                    <paper-button raised title="Remove" on-click="_promptForRemovalWrp">Remove</paper-button>
-                                </template>
-                            </template>
+                    <template is="dom-if" if="[[_showTemplateListPane]]">
+                        <paper-button raised title="Cancel" on-click="_backToNewAlertPane">Cancel</paper-button>
+                    </template>
+                    <template is="dom-if" if="[[_showPropertiesPane]]">
+                        <template is="dom-if" if="[[!_isActivated]]">
+                            <paper-button raised title="Back" on-click="_backToNewAlertPane">Back</paper-button>
+                            <paper-button raised title="Activate Now!" on-click="_proceedToActivatingPane">Activate Now!</paper-button>
                         </template>
-                        <template is="dom-if" if="[[_creatingNew]]">
-                             <paper-button raised title="Cancel" on-click="_cancel">Cancel</paper-button>
-                         </template>
-                     </template>
+                        <template is="dom-if" if="[[_isActivated]]">
+                            <paper-button raised title="Remove" on-click="_backToNewAlertPane">Remove</paper-button>
+                            <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
+                        </template>
+                    </template>
+                    <template is="dom-if" if="[[_showConfirmingAlertPane]]">
+                        <paper-button raised title="Back" on-click="_backToPropertiesPane">Back</paper-button>
+                        <paper-button raised title="Cancel" on-click="_backToNewAlertPane">Cancel</paper-button>
+                        <paper-button raised title="Confirm" on-click="_updateAlertLocation">Confirm</paper-button>
+                    </template>
                 </div>
             </div></div>
         </div>
         <div id="alertBttn" class="customMapBttnWrap" hidden>
-            <div class="customMapBttn" title="Create a new Alert">
+            <div class="customMapBttn" title="Create a new alert">
                 <span>
                     <div class="customMapBttnImg">
                         <img src="../common/voyent-alert/img/alert_bttn.png">

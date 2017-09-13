@@ -96,15 +96,15 @@ Example:
         <div id="infoWindow" hidden>
             <paper-input id="label"
                          tabindex="1"
-                         label="Label"
-                         placeholder="New Label"
+                         label="Name"
+                         placeholder="New Name"
                          on-change="_flagLocationForUpdating"
-                         value="{{_loadedLocationData.location.location.properties.vras.label::input}}">
+                         value="{{_loadedLocation.name::input}}">
             </paper-input>
             <paper-dropdown-menu id="type"
                                  tabindex="2"
                                  label="Type">
-                <iron-selector selected="{{_loadedLocationData.location.location.properties.vras.type}}"
+                <iron-selector selected="{{_loadedLocation.type}}"
                                attr-for-selected="name"
                                class="dropdown-content"
                                on-iron-activate="_flagLocationForUpdating">
@@ -155,7 +155,7 @@ Example:
                              on-keyup="_dialogKeyUp" placeholder="Enter a location"></paper-input>
             </template>
             <paper-input class="dialog-inline no-margin" autofocus no-label-float tabindex="3" label="Label"
-                         on-keyup="_dialogKeyUp" value="{{_locationLabel}}"></paper-input>
+                         on-keyup="_dialogKeyUp" value="{{_locationName}}"></paper-input>
             <paper-dropdown-menu tabindex="4"
                                  label="Type"
                                  on-keyup="_dialogKeyUp"

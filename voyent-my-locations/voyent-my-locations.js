@@ -7,10 +7,10 @@ Polymer({
         this._locationTypes = ['home','business','school','other'];
         this._creationTypes = ['pindrop','address'];
         this._creationType = 'pindrop';
-        //A uid mapped container of all locations.
-        this._locations = {};
+        //An array of UserLocations.
+        this._myLocations = [];
         //The location that is currently active in the editor (infoWindow is displayed).
-        this._loadedLocationData = null;
+        this._loadedLocation = null;
         //Since all changes are transient before they save we have these lists
         //to flag locations that require a db call once they hit save.
         this._locationsToUpdate = [];
@@ -98,18 +98,20 @@ Polymer({
      * @private
      */
     _saveLocations: function() {
-        var _this = this, locationData;
+        var _this = this, myLocation;
         return new Promise(function (resolve) {
             var promises = [];
             //Loop backwards since we're splicing.
             for (var i=_this._locationsToUpdate.length-1; i>=0; i--) {
-                locationData = _this._locationsToUpdate[i];
-                (function(locationData) {
+                myLocation = _this._locationsToUpdate[i];
+                //Make sure we have the latest JSON before saving it.
+                myLocation.updateJSON();
+                (function(myLocation) {
                     promises.push(new Promise(function (resolveRequest) {
                         voyent.locate.updateLocation({account:_this.account,realm:_this.realm,
-                                                      location:locationData.location}).then(function() {
+                                                      location:myLocation.json}).then(function() {
                             //Don't use i to splice because it may change as we splice out other locations.
-                            _this.splice('_locationsToUpdate',_this._locationsToUpdate.indexOf(locationData),1);
+                            _this.splice('_locationsToUpdate',_this._locationsToUpdate.indexOf(myLocation),1);
                             resolveRequest(true);
                         }).catch(function () {
                             //Don't splice the _locationsToUpdate array on failure so the
@@ -117,7 +119,7 @@ Polymer({
                             resolveRequest(false);
                         });
                     }));
-                })(locationData)
+                })(myLocation)
             }
             //Once all the update requests are complete return the results.
             //We will resolve immediately if the promises array is empty.
@@ -133,29 +135,29 @@ Polymer({
      * @private
      */
     _removeLocations: function() {
-        var _this = this, locationData;
+        var _this = this, myLocation;
         return new Promise(function (resolve) {
             var promises = [];
             //Loop backwards since we're splicing.
             for (var i=_this._locationsToDelete.length-1; i>=0; i--) {
-                locationData = _this._locationsToDelete[i];
-                (function(locationData) {
+                myLocation = _this._locationsToDelete[i];
+                (function(myLocation) {
                     promises.push(new Promise(function (resolveRequest) {
-                        var query = {"location.properties.vras.uid":locationData.location.location.properties.vras.uid};
+                        var query = {"location.properties.vras.id":myLocation.id};
                         voyent.locate.deleteLocations({account:_this.account,realm:_this.realm,
                                                        query:query}).then(function() {
                             //Don't use i to splice because it may change as we splice out other locations.
-                            _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(locationData),1);
+                            _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(myLocation),1);
                             resolveRequest(true);
                         }).catch(function () {
                             //It wasn't deleted so re-add it to the map.
-                            locationData.marker.setMap(_this._map);
-                            _this._locations[locationData.location.location.properties.vras.uid] = locationData;
-                            _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(locationData),1);
+                            myLocation.marker.setMap(_this._map);
+                            _this._myLocations.push(myLocation);
+                            _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(myLocation),1);
                             resolveRequest(false);
                         });
                     }));
-                })(locationData)
+                })(myLocation)
             }
             //Once all the update requests are complete return the results.
             //We will resolve immediately if the promises array is empty.
@@ -170,8 +172,8 @@ Polymer({
      * @private
      */
     _flagLocationForUpdating: function() {
-        if (this._locationsToUpdate.indexOf(this._loadedLocationData) === -1) {
-            this._locationsToUpdate.push(this._loadedLocationData);
+        if (this._locationsToUpdate.indexOf(this._loadedLocation) === -1) {
+            this._locationsToUpdate.push(this._loadedLocation);
         }
         this._buttonsEnabled = true;
     },
@@ -184,11 +186,10 @@ Polymer({
     _flagLocationForRemoval: function() {
         this._infoWindow.close();
         this._infoWindowOpen = false;
-        this._loadedLocationData.marker.setMap(null);
-        this._locationsToDelete.push(this._loadedLocationData);
-        delete this._locations[this._loadedLocationData.location.location.properties.vras.uid];
-        this._loadedLocationData.locOverlay.setMap(null);
-        this._loadedLocationData = null;
+        this._loadedLocation.removeFromMap();
+        this._locationsToDelete.push(this._loadedLocation);
+        this._myLocations.splice(this._myLocations.indexOf(this._loadedLocation));
+        this._loadedLocation = null;
         this._buttonsEnabled = true;
     },
 
@@ -203,25 +204,21 @@ Polymer({
         var successMsg='', failureMsg='', locTxt;
         if (saveResults.successes || removalResults.successes) {
             if (saveResults.successes) {
-                locTxt = saveResults.successes > 1 ? ' locations' : ' location';
-                successMsg += 'Successfully updated ' + saveResults.successes + locTxt;
+                successMsg += 'Successfully updated ' + saveResults.successes;
             }
             if (removalResults.successes) {
-                locTxt = removalResults.successes > 1 ? ' locations' : ' location';
-                successMsg += (successMsg ? ' and removed ' : 'Successfully removed ') + removalResults.successes + locTxt;
+                successMsg += (successMsg ? ' and removed ' : 'Successfully removed ') + removalResults.successes;
             }
-            successMsg += '.';
+            successMsg += saveResults.successes > 1 || removalResults.successes > 1 ? ' locations.' : ' location.';
         }
         if (saveResults.failures || removalResults.failures) {
             if (saveResults.failures) {
-                locTxt = saveResults.failures > 1 ? ' locations' : ' location';
-                failureMsg += 'Failed to update ' + saveResults.failures + locTxt;
+                failureMsg += 'Failed to update ' + saveResults.failures;
             }
             if (removalResults.failures) {
-                locTxt = removalResults.failures > 1 ? ' locations' : ' location';
                 failureMsg += (failureMsg ? ' and remove ' : 'Failed to remove ') + removalResults.failures + locTxt;
             }
-            failureMsg += '.';
+            failureMsg += saveResults.failures > 1 || removalResults.failures > 1 ? ' locations.' : ' location.';
         }
         return successMsg + ' ' + failureMsg;
     },
@@ -253,15 +250,15 @@ Polymer({
             google.maps.event.addListener(_this._map, "click", function() {
                 _this._infoWindow.close();
                 _this._infoWindowOpen = false;
-                if (_this._loadedLocationData) {
-                    _this._loadedLocationData.locOverlay.displayAndDraw();
+                if (_this._loadedLocation) {
+                    _this._loadedLocation.nameOverlay.displayAndDraw();
                 }
             });
             //When clicking the close button on the infoWindow redisplay the overlay.
             google.maps.event.addListener(_this._infoWindow,'closeclick',function() {
                 _this._infoWindowOpen = false;
-                if (_this._loadedLocationData) {
-                    _this._loadedLocationData.locOverlay.displayAndDraw();
+                if (_this._loadedLocation) {
+                    _this._loadedLocation.nameOverlay.displayAndDraw();
                 }
             });
         });
@@ -269,29 +266,32 @@ Polymer({
 
     /**
      * Displays an infoWindow that is triggered when clicking on the location markers.
-     * @param locationData
+     * @param myLocation
      * @private
      */
-    _displayInfoWindow: function(locationData) {
+    _toggleInfoWindow: function(myLocation) {
         var _this = this;
-        //If the desired infoWindow is already opened then bail.
-        if (this._infoWindowOpen &&
-            locationData === this._loadedLocationData) {
-            return;
+        //If the selected infoWindow is already opened then close it.
+        if (this._infoWindowOpen && myLocation === this._loadedLocation) {
+            this._infoWindow.close();
+            _this._loadedLocation.nameOverlay.displayAndDraw();
+            this._infoWindowOpen = false;
         }
-        setTimeout(function() {
-            //Re-display any previously hidden location overlay.
-            if (_this._loadedLocationData) {
-                _this._loadedLocationData.locOverlay.displayAndDraw();
-            }
-            _this._loadedLocationData = locationData;
-            _this.$.infoWindow.removeAttribute('hidden');
-            _this._infoWindow.open(_this._map,locationData.marker);
-            _this._infoWindowOpen = true;
-            _this._infoWindow.setContent(_this.$.infoWindow);
-            //Hide the current location's overlay.
-            _this._loadedLocationData.locOverlay.hide();
-        },0);
+        else {
+            setTimeout(function() {
+                //Re-display any previously hidden location overlay.
+                if (_this._loadedLocation) {
+                    _this._loadedLocation.nameOverlay.displayAndDraw();
+                }
+                _this._loadedLocation = myLocation;
+                _this.$.infoWindow.removeAttribute('hidden');
+                _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
+                _this._infoWindowOpen = true;
+                _this._infoWindow.setContent(_this.$.infoWindow);
+                //Hide the current location's overlay.
+                _this._loadedLocation.nameOverlay.hide();
+            },0);
+        }
     },
 
     /**
@@ -327,7 +327,7 @@ Polymer({
     _confirmDialog: function() {
         //Validate the dialog.
         if (!this._creationType || (this._creationType === 'address' && !this._placeCoordinates) ||
-            !this._locationLabel || !this._locationLabel.trim() || !this._locationType) {
+            !this._locationName || !this._locationName.trim() || !this._locationType) {
             this.fire('message-error', 'Please complete all fields.');
             return;
         }
@@ -387,28 +387,12 @@ Polymer({
      * @private
      */
     _createLocation: function(marker) {
-        //Build the location record, add the required listeners and flag it for updating.
-        var latLng = marker.getPosition();
-        var locationData = {"location":{
-            "location": {
-                "geometry": { "type" : "Point", "coordinates" : [latLng.lng(),latLng.lat()] },
-                "properties": {
-                    "vras": {
-                        "label":this._locationLabel,
-                        "type":this._locationType,
-                        "uid":this._generateUid()
-                    }
-                }
-            }
-        },"marker":marker};
-        //
-        //Create the zone overlay label and assign it to the location object.
-        locationData.locOverlay = new this._LocationOverlay(locationData);
-        this._locations[locationData.location.location.properties.vras.uid] = locationData;
-        this._locationsToUpdate.push(locationData);
-        this._setupLocationListeners(locationData);
+        //Build the new location.
+        var newLocation = new this._MyLocation(null,this._locationName,this._locationType,marker,null);
+        this._myLocations.push(newLocation);
+        this._locationsToUpdate.push(newLocation);
         //Reset the dialog properties.
-        this._locationType = this._locationLabel = null;
+        this._locationType = this._locationName = null;
         var autocomplete = this.$$('#autoComplete');
         if (autocomplete) {
             autocomplete.value = '';
@@ -464,39 +448,13 @@ Polymer({
             place = _this._autoComplete.getPlace();
             if (place && place.geometry && place.geometry.location) {
                 _this._placeCoordinates = place.geometry.location;
-                _this._locationLabel = place.name;
+                _this._locationName = place.name;
                 _this._locationType = _this._determineLocationType(place.types);
             }
             else if (!place || Object.keys(place).length === 1) {
                 _this._placeCoordinates = null;
-                _this._locationLabel = null;
+                _this._locationName = null;
             }
-        });
-    },
-
-    /**
-     * Initialize google map listeners for moving and clicking on the locations.
-     * @param locationData
-     * @private
-     */
-    _setupLocationListeners: function(locationData) {
-        var _this = this;
-        //Continuously re-draw the overlay as the location is dragged.
-        google.maps.event.addListener(locationData.marker,'drag',function() {
-            locationData.locOverlay.draw();
-        });
-        //Update the coordinates on the location record and flag the location for updating after it's dragged.
-        google.maps.event.addListener(locationData.marker,'dragend',function() {
-            var latLng = locationData.marker.getPosition();
-            locationData.location.location.geometry.coordinates = [latLng.lng(),latLng.lat()];
-            if (_this._locationsToUpdate.indexOf(locationData) === -1) {
-                _this._locationsToUpdate.push(locationData);
-            }
-            _this._buttonsEnabled = true;
-        });
-        //Display infoWindow on location marker click.
-        google.maps.event.addListener(locationData.marker,'click',function() {
-            _this._displayInfoWindow(locationData);
         });
     },
 

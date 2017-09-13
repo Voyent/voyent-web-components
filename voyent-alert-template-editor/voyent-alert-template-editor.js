@@ -14,14 +14,14 @@ Polymer({
      */
 
     /**
-     * Fires when the alert template label changes. Includes a `label` property that contains the new value.
-     * @event voyent-alert-template-label-changed
+     * Fires when the alert template name changes. Includes a `name` property that contains the new value.
+     * @event voyent-alert-template-name-changed
      */
 
     /**
-     * Fires when an alert zone label changes. Includes a `label` property that contains
+     * Fires when an alert zone name changes. Includes a `name` property that contains
      * the new value and an `id` property that indicates which zone was modified.
-     * @event voyent-alert-zone-label-changed
+     * @event voyent-alert-zone-name-changed
      */
 
     /**
@@ -36,8 +36,9 @@ Polymer({
      */
 
     /**
-     * Fires when the selected alert zone changes. Includes an `index` property in relation to the list, `id` property which identifies the zone and a `zone`
-     * property containing the assocaited data. If no zone is selected then these values will be null.
+     * Fires when the selected alert zone changes. Includes an `index` property in relation to the list, `id` property
+     * which identifies the zone and a `zone` property containing the associated data. If no zone is selected then the
+     * index value will be -1 and the other properties will be null.
      * @event voyent-alert-zone-selected
      */
 
@@ -49,35 +50,26 @@ Polymer({
         hideButtons: { type: Boolean, value: false }
     },
 
-    observers: ['_loadedTemplateChanged(_loadedAlertTemplateData)'],
+    observers: ['_loadedTemplateChanged(_loadedAlertTemplate)'],
 
     /**
-     * Loads an Alert Template into the editor using the passed id.
+     * Loads an alert template into the editor using the passed id.
      * @param id
      */
     loadAlertTemplate: function(id) {
         this._loadingAlertTemplate = true;
         var _this = this;
-        voyent.locate.findTrackers({
-            realm: this.realm,
-            account: this.account,
-            query: {"_id":id}
-        }).then(function (results) {
-            if (!results || !results.length) {
-                _this.fire('message-error', 'Alert Template not found');
-                return;
-            }
-            //Clear the map of any loaded Alert Template before drawing. Specify that we want to skip the button
+        this._fetchAlertTemplate(id).then(function(template) {
+            //Clear the map of any loaded alert template before drawing. Specify that we want to skip the button
             //draw because we will remove the buttons after drawing the new alert template. Without this we
             //intermittently encounter a bug where the buttons are displayed after loading the template.
-            if (_this._loadedAlertTemplateData) {
-                _this.clearMap(false,true);
+            if (_this._loadedAlertTemplate) {
+                _this.clearMap(true);
             }
-            //Draw the new Alert Template.
-            _this._drawAlertEntity(results[0]);
+            _this._drawAndLoadAlertTemplate(template);
             _this._loadingAlertTemplate = false;
         }).catch(function (error) {
-            _this.fire('message-error', 'Error loading or drawing saved Alert Template: ' + (error.responseText || error.message || error));
+            _this.fire('message-error', 'Error loading saved alert template: ' + (error.responseText || error.message || error));
         });
     },
 
@@ -87,13 +79,13 @@ Polymer({
      */
     cancel: function() {
         var msg;
-        if (this._loadedAlertTemplateData.isPersisted) {
+        if (this._loadedAlertTemplate.id) {
             msg = 'Are you sure you want to revert all unsaved changes for "' +
-                this._loadedAlertTemplateData.alertTemplate.label + '"? This action cannot be undone.';
+                this._loadedAlertTemplate.name + '"? This action cannot be undone.';
         }
         else {
             msg = 'Are you sure you want to cancel creating ' +
-                this._loadedAlertTemplateData.alertTemplate.label + '? This action cannot be undone.';
+                this._loadedAlertTemplate.name + '? This action cannot be undone.';
         }
         this._openDialog(msg,null,'_cancelChanges');
     },
@@ -118,7 +110,7 @@ Polymer({
     },
 
     /**
-     * Revert the editor to it's state when the Alert Template was originally loaded or clears an unsaved Alert Template.
+     * Revert the editor to it's state when the alert template was originally loaded or clears an unsaved alert template.
      */
     _cancelChanges: function() {
         //Clear the map and fire an event indicating we cancelled.
@@ -126,47 +118,47 @@ Polymer({
     },
 
     /**
-     * Initialize the listeners for drawing a new Alert Template on the map.
+     * Initialize the listeners for drawing a new alert template on the map.
      * @private
      */
     _setupDrawingListeners: function() {
-        var _this = this;
-        var shape;
+        var _this = this, zones;
         google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
-            shape = oce.overlay;
-            if (oce.type === 'marker') { //Marker is actually a circle alertTemplate
-                //Create the new google maps circle and bind the circle (zone) to the marker (anchor).
-                var newCircle = new google.maps.Circle(_this._getCircleProperties());
-                newCircle.bindTo('center', oce.overlay, 'position');
-                //Build the JSON structure for the alertTemplate template.
-                var alertTemplate = _this._getAlertTemplateJSON();
-                alertTemplate.label = _this._dialogInput;
-                alertTemplate.anchor.geometry.coordinates = [shape.getPosition().lng(),shape.getPosition().lat()];
-                alertTemplate.zones.features[0].tmpProperties.circle = newCircle;
-                //Store the various pieces together so we can reference them later.
-                _this.set('_loadedAlertTemplateData', {"alertTemplate":alertTemplate,"marker":shape,"isPersisted":false});
-                //Determine and set the coordinates for the circle.
-                _this._updateAlertTemplateJSON(_this._loadedAlertTemplateData);
-                //Draw the Proximity Zone label overlay and save a reference to it.
-                alertTemplate.zones.features[0].tmpProperties.zoneOverlay = new _this._ProximityZoneOverlay(alertTemplate.zones.features[0]);
-                //Disable further Alert Template creations - only allowed one at a time.
-                _this._removeAlertTemplateButtons();
-                //Add the listeners to the marker and circles.
-                _this._setupMapListeners(_this._loadedAlertTemplateData);
+            var marker = new google.maps.Marker({
+                map: _this._map, draggable: true, zIndex: 50
+            });
+            if (oce.type === 'circle') { //Circular template.
+                marker.setPosition(oce.overlay.getCenter());
+                zones = [new _this._CircularAlertZone(oce.overlay.getRadius())];
             }
+            else { //Polygonal template.
+                //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
+                if (_this._drawingCanceled) {
+                    oce.overlay.setMap(null);
+                    _this._drawingCanceled = false;
+                    return;
+                }
+                var paths = oce.overlay.getPaths();
+                marker.setPosition(_this._AlertTemplate.calculateCentroidUsingPaths(paths));
+                zones = [new _this._PolygonalAlertZone(paths)];
+            }
+            //To keep things simple we'll always use our custom classes for
+            //drawing the shapes so remove this google-drawn one from the map.
+            oce.overlay.setMap(null);
+            //Create our new template using the calculated marker and zones.
+            _this._loadedAlertTemplate = new _this._AlertTemplate(_this._dialogInput, marker, zones, null);
+            //Disable further alert template creations - only allowed one at a time.
+            _this._removeAlertTemplateButtons();
             //Exit drawing mode.
             _this._drawingManager.setDrawingMode(null);
         });
-        //If the escape key is pressed then stop drawing
-        //and cancel any polygons currently being drawn.
-        window.addEventListener('keydown',function (event) {
+        //When the escape key is pressed exit drawing mode.
+        window.addEventListener('keydown', function (event) {
             if (event.which === 27) {
+                //Flag so overlaycomplete listener won't be allowed to proceed after cancelling a polygon mid-draw.
+                _this._drawingCanceled = true;
                 if (_this._drawingManager.getDrawingMode() !== null) {
                     _this._drawingManager.setDrawingMode(null);
-                    if (shape) {
-                        shape.setMap(null);
-                        shape = null;
-                    }
                 }
             }
         });
@@ -178,8 +170,9 @@ Polymer({
      */
     _circleButtonListener: function() {
         var _this = this;
-        this._openDialog('Please enter the Alert Template name','',function() {
-            _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+        this._dialogInput = 'test';
+        this._openDialog('Please enter the alert template name','',function() {
+            _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
         });
     },
 
@@ -188,52 +181,21 @@ Polymer({
      * @private
      */
     _polygonButtonListener: function() {
-        this._openDialog('Whoops, this button is not hooked up yet!');
-    },
-
-    /**
-     * Returns the default JSON structure of an Alert Template.
-     * @returns {{anchor: {type: string, geometry: {type: string, coordinates: Array}, properties: {Editable: string}}, zones: {type: string, features: [*]}}}
-     * @private
-     */
-    _getAlertTemplateJSON: function() {
-        return {
-            "anchor": {
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": []
-                },
-                "properties": {
-                    "Editable": true,
-                    "zIndex":50 //50 for the anchor and the zones will go from 49 down.
-                }
-            },
-            "zones": {
-                "type": "FeatureCollection",
-                "features": [
-                    this._getZoneJSON()
-                ]
-            },
-            "label":"Unnamed",
-            //These properties are used by the view and will be removed before saving the alertTemplate.
-            "tmpProperties": this._getAlertTemplateTmpProperties()
-        }
+        var _this = this;
+        this._dialogInput = 'test';
+        this._openDialog('Please enter the alert template name','',function() {
+            _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+        });
     },
 
     /**
      * Fires an event indicating that the loaded alert template has changed.
-     * @param data
+     * @param alertTemplate
      * @private
      */
-      _loadedTemplateChanged: function(data) {
-        // We fire the event in a setTimeout because the observer fires very early in the lifecycle
-        // Which means alert template may be partially initialized, such as not having tmpProperties applied yet
-        var _this = this;
-        setTimeout(function() {
-            _this.fire('voyent-alert-template-changed',{
-                'alertTemplate': data && data.alertTemplate ? data.alertTemplate : null
-            });
-        },0);
+      _loadedTemplateChanged: function(alertTemplate) {
+        this.fire('voyent-alert-template-changed',{
+            'alertTemplate': alertTemplate || null
+        });
     }
 });

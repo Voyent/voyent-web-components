@@ -11,7 +11,7 @@
 <link rel="import" href="../../../iron-icons/iron-icons.html">
 <link rel="import" href="../../../paper-icon-button/paper-icon-button.html">
 <!--
-Internal component used to display the properties panel inside Voyent Alert components.
+Internal component used to display the properties panel inside Voyent alert components.
 
 @demo demo.html
 -->
@@ -181,7 +181,7 @@ Internal component used to display the properties panel inside Voyent Alert comp
                 width: 149px;
                 font-size:14px;
             }
-            .title.zone.visible {
+            .title.zone.active {
                 width:125px;
             }
             .title-bttns {
@@ -192,23 +192,23 @@ Internal component used to display the properties panel inside Voyent Alert comp
             }
         </style>
 
-        <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate]]">
+        <template is="dom-if" if="[[_loadedAlertTemplate]]">
             <div>
-                <template is="dom-if" if="[[!_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                <template is="dom-if" if="[[!_renamingTemplate]]">
                     <div class="alert-template-title">
                         <div class="title" on-click="_toggleAlertTemplateRenaming">
-                            [[_loadedAlertTemplateData.alertTemplate.label]]
+                            [[_loadedAlertTemplate.name]]
                         </div>
                     </div>
                 </template>
-                <template is="dom-if" if="[[_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                <template is="dom-if" if="[[_renamingTemplate]]">
                     <paper-input id="alertTemplate" tabindex="1"
                                  label="Alert Template"
                                  placeholder="New Value"
                                  on-keydown="_renameAlertTemplateViaKeydown"
                                  on-blur="_renameAlertTemplateViaBlur"
-                                 value="{{_loadedAlertTemplateData.alertTemplate.tmpProperties.newName::input}}"
-                                 disabled$="[[!_loadedAlertTemplateData.alertTemplate.tmpProperties.renaming]]">
+                                 value="{{_templateNameVal::input}}"
+                                 disabled$="[[!_renamingTemplate]]">
                     </paper-input>
                 </template>
             </div>
@@ -219,46 +219,46 @@ Internal component used to display the properties panel inside Voyent Alert comp
                 </div>
             </div>
             <div class="accordion">
-                <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlertTemplateData.alertTemplate.zones.features]]" as="zone">
-                    <div class$="{{_getAccordionClasses('header',zone.tmpProperties.visible)}}">
-                        <template is="dom-if" if="[[!zone.tmpProperties.renaming]]">
-                            <paper-icon-button title="Toggle Zone" icon="{{_getArrowIcon(zone.tmpProperties.visible)}}"
-                                               on-click="_toggleAccordion"></paper-icon-button>
-                            <div class="title zone" class$="{{_getZoneTitleClasses(zone.tmpProperties.visible)}}"
+                <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlertTemplate.zones]]" as="zone">
+                    <div class$="{{_getAccordionClasses('header',zone.active)}}">
+                        <template is="dom-if" if="[[!zone.renaming]]">
+                            <paper-icon-button title="Toggle Zone" icon="{{_getArrowIcon(zone.active)}}"
+                                               on-click="_toggleAccordion" data-index$="[[index]]"></paper-icon-button>
+                            <div class="title zone" class$="{{_getZoneTitleClasses(zone.active)}}"
                                  data-index$="[[index]]" on-click="_toggleProximityZoneRenaming">
-                                [[zone.properties.zoneId]]
+                                [[zone.name]]
                             </div>
-                            <div class="title-bttns" hidden="[[!zone.tmpProperties.visible]]">
+                            <div class="title-bttns" hidden="[[!zone.active]]">
                                 <paper-icon-button title="Remove Zone" icon="delete" on-click="_removeProximityZone"
                                                    disabled="[[_hasOneZone]]" data-index$="[[index]]" >
                                 </paper-icon-button>
                             </div>
                         </template>
-                        <template is="dom-if" if="[[zone.tmpProperties.renaming]]">
+                        <template is="dom-if" if="[[zone.renaming]]">
                             <paper-input id$="zone-[[index]]" tabindex="1"
                                          label="Zone"
                                          placeholder="New Value"
                                          on-keydown="_renameProximityZoneViaKeydown"
                                          on-blur="_renameProximityZoneViaBlur"
                                          data-index$="[[index]]"
-                                         value="{{zone.tmpProperties.newName::input}}"
-                                         disabled$="[[!zone.tmpProperties.renaming]]">>
+                                         value="{{_zoneNameVal::input}}"
+                                         disabled$="[[!zone.renaming]]">>
                             </paper-input>
                         </template>
                     </div>
-                    <div class$="{{_getAccordionClasses('body',zone.tmpProperties.visible)}}">
+                    <div class$="{{_getAccordionClasses('body',zone.active)}}">
                         <template is="dom-if" if="[[!_editing]]">
                             <template is="dom-if" if="[[!_addingNew]]">
                                 <div class="tableWrap">
                                     <div class="table">
                                         <div class="propertyCol tableHeader">
-                                            <div on-click="_sortByProperty" class="clickable"
+                                            <div data-index$="[[index]]"
                                                  title="Click to sort by property">
                                                 Property
                                             </div>
                                         </div>
                                         <div class="valueCol tableHeader">
-                                            <div on-click="_sortByValue" class="clickable"
+                                            <div data-index$="[[index]]"
                                                  title="Click to sort by property value">
                                                 Value
                                             </div>
@@ -267,57 +267,47 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                     <iron-selector selected="{{_selected}}"
                                                    attr-for-selected="data-property"
                                                    on-iron-activate="_onIronActivate">
-                                        <template id$="propertyRepeat-[[index]]" is="dom-repeat" as="property"
-                                                  items="[[_toArray(zone.properties)]]" sort="_sortProperties">
-                                            <div class="table clickable" data-property$="[[property.key]]">
-                                                <div class="propertyCol">
-                                                    [[property.key]]
-                                                </div>
-                                                <div class="valueCol">
-                                                    [[property.value]]
-                                                </div>
+                                        <div class="table clickable" data-property="opacity">
+                                            <div class="propertyCol">
+                                                Opacity
                                             </div>
-                                        </template>
-                                    </iron-selector>
-                                    <div class="table">
-                                        <div class="addCol">
-                                            <paper-icon-button title="Add New Property" icon="add"
-                                                               on-click="_toggleAddingNewProperty">
-                                            </paper-icon-button>
+                                            <div class="valueCol">
+                                                [[zone.opacity]]
+                                            </div>
                                         </div>
-                                    </div>
+                                        <div class="table clickable" data-property="editable">
+                                            <div class="propertyCol">
+                                                Editable
+                                            </div>
+                                            <div class="valueCol">
+                                                [[zone.editable]]
+                                            </div>
+                                        </div>
+                                        <div class="table clickable" data-property="colour">
+                                            <div class="propertyCol">
+                                                Colour
+                                            </div>
+                                            <div class="valueCol">
+                                                [[zone.colour]]
+                                            </div>
+                                        </div>
+                                    </iron-selector>
                                 </div>
                             </template>
                         </template>
-
-                        <template is="dom-if" if="[[_addingNew]]">
-                            <paper-input id$="new-[[index]]"
-                                         required label="Name" value="{{_customPropKey}}"
-                                         data-index$="[[index]]" tabindex="1"
-                                         on-keydown="_saveNewPropertyViaKeydown"
-                                         on-blur="_saveNewPropertyViaBlur"
-                                         placeholder="The property name"
-                                         disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
-                            <paper-input required label="Value" value="{{_customPropVal}}"
-                                         data-index$="[[index]]" tabindex="2"
-                                         on-keydown="_saveNewPropertyViaKeydown"
-                                         on-blur="_saveNewPropertyViaBlur"
-                                         placeholder="The property value"
-                                         disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
-                        </template>
-
                         <template is="dom-if" if="[[_editing]]">
-                            <template is="dom-if" if="{{_selectedEquals('Editable',_selected)}}">
+                            <template is="dom-if" if="{{_selectedEquals('editable',_selected)}}">
                                 <paper-dropdown-menu id$="editable-[[index]]"
                                                      tabindex="1"
                                                      label="Editable"
                                                      data-index$="[[index]]"
                                                      on-keydown="_editPropertyViaKeydown"
                                                      value="{{_editableVal}}"
-                                                     disabled$="[[!zone.tmpProperties.visible]]">
+                                                     disabled$="[[!zone.active]]">
                                     <iron-selector class="dropdown-content"
                                                    selected="{{_editableVal}}"
                                                    on-iron-activate="_editPropertyOnActivate"
+                                                   data-index$="[[index]]"
                                                    attr-for-selected="name">
                                         <paper-item name="true">true</paper-item>
                                         <paper-item name="false">false</paper-item>
@@ -325,49 +315,24 @@ Internal component used to display the properties panel inside Voyent Alert comp
                                 </paper-dropdown-menu>
                             </template>
 
-                            <template is="dom-if" if="{{_selectedEquals('Color',_selected)}}">
+                            <template is="dom-if" if="{{_selectedEquals('colour',_selected)}}">
                                 <div class="jscolor-wrapper">
                                     <input id$="jsColor-[[index]]" class="jscolor"
                                            tabindex="1"
                                            data-index$="[[index]]"
                                            on-keydown="_editPropertyViaKeydown"
                                            on-blur="_editPropertyViaBlur"
-                                           value="{{_colorVal::change}}">
+                                           value="{{_colourVal::change}}">
                                 </div>
                             </template>
 
-                            <template is="dom-if" if="{{_selectedEquals('Opacity',_selected)}}">
+                            <template is="dom-if" if="{{_selectedEquals('opacity',_selected)}}">
                                 <paper-slider id$="opacity-[[index]]" min=0 max=1
                                               step=0.05 pin snaps tabindex="1"
                                               on-keydown="_editPropertyViaKeydown"
                                               on-blur="_editPropertyViaBlur"
                                               data-index$="[[index]]" value="{{_opacityVal}}">
                                 </paper-slider>
-                            </template>
-
-                            <template is="dom-if" if="{{_selectedEquals('Other',_selected)}}">
-                                <paper-input id$="custom-[[index]]"
-                                             required label="Name" value="{{_customPropKey}}"
-                                             data-index$="[[index]]" tabindex="1"
-                                             on-keydown="_editPropertyViaKeydown"
-                                             on-blur="_editPropertyViaBlur"
-                                             placeholder="The property name"
-                                             disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
-                                <paper-input required label="Value" value="{{_customPropVal}}"
-                                             data-index$="[[index]]" tabindex="2"
-                                             on-keydown="_editPropertyViaKeydown"
-                                             on-blur="_editPropertyViaBlur"
-                                             placeholder="The property value"
-                                             disabled$="[[!zone.tmpProperties.visible]]"></paper-input>
-                                <div class="delete-button">
-                                    <paper-icon-button title="Remove Property" icon="delete" tabindex="3"
-                                                       on-click="_removeSelectedProperty"
-                                                       data-index$="[[index]]"
-                                                       on-blur="_editPropertyViaBlur"
-                                                       disabled="[[!zone.tmpProperties.visible]]"
-                                                       data-is-property-delete>
-                                    </paper-icon-button>
-                                </div>
                             </template>
                         </template>
                     </div>

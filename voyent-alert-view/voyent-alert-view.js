@@ -3,7 +3,7 @@ Polymer({
     behaviors: [Voyent.AlertMapBehaviour,Voyent.AlertBehaviour],
 
     /**
-     * Updates the view with the last location of the Alert associated
+     * Updates the view with the last location of the alert associated
      * with the templateId and refreshes the current user's location.
      * @param templateId
      */
@@ -15,20 +15,22 @@ Polymer({
                 return;
             }
             //Clear the map.
-            _this.clearMap(true);
+            _this.clearMap();
             //Fetch the alert and user locations.
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
             promises.push(_this._fetchLocationRecord());
             Promise.all(promises).then(function(results) {
-                //Set the alert location into the template and draw it.
-                var alert = results[0];
-                alert.anchor.geometry.coordinates = results[1].location.geometry.coordinates;
-                _this._drawAlertEntity(alert, results[1]);
+                //Build our LatLng object using the coordinates of the last location of the alert.
+                var latLng = new google.maps.LatLng(
+                    results[1].location.geometry.coordinates[1],
+                    results[1].location.geometry.coordinates[0]
+                );
+                _this._drawAndLoadAlertTemplate(results[0],latLng);
                 //Adjust the bounds and save the templateId for later.
                 _this._adjustBounds();
-                _this._templateId = _this._alerts[0].alertTemplate._id;
+                _this._templateId = _this._loadedAlertTemplate.id;
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
@@ -52,7 +54,7 @@ Polymer({
     },
 
     /**
-     * Fetches the latest location of the currently loaded Alert and refreshes the position on the map.
+     * Fetches the latest location of the currently loaded alert and refreshes the position on the map.
      */
     refreshAlertLocation: function() {
         var _this = this, coordinates;
@@ -61,9 +63,8 @@ Polymer({
             _this._fetchLocationRecord(_this._templateId).then(function(location) {
                 //Update the template coordinates, the label's position and adjust the bounds.
                 coordinates = location.location.geometry.coordinates;
-                _this._alerts[0].marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
-                _this._updateAlertTemplateJSON(_this._alerts[0]);
-                _this._redrawZoneOverlay(_this._alerts[0]);
+                _this._loadedAlertTemplate.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
+                _this._updateJSON();
                 _this._adjustBounds();
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the alert\'s location: ' +
@@ -79,34 +80,30 @@ Polymer({
      * @private
      */
     _onAfterLogin: function() {
-        //Similar to the alert-editor, we'll use the alerts array.
-        this._alerts = [];
-        //TemplateId will be used to refresh the alert location.
-        this._templateId = null;
+        this._loadedAlertTemplate = null;
+        this._myLocations = [];
     },
 
     /**
-     * Loads an Alert Template into the editor using the passed id.
-     * @param id
+     * Draws a user marker on the map based on the passed location data.
+     * @param location
+     * @private
      */
-    _fetchAlertTemplate: function(id) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            voyent.locate.findTrackers({
-                realm: this.realm,
-                account: this.account,
-                query: {"_id":id}
-            }).then(function (results) {
-                if (!results || !results.length) {
-                    _this.fire('message-error', 'Alert Template not found.');
-                    return reject('Alert Template not found.');
-                }
-                resolve(results[0]);
-            }).catch(function (error) {
-                _this.fire('message-error', 'Error fetching saved Alert Template: ' + (error.responseText || error.message || error));
-                reject(error);
+    _drawUser: function(location) {
+        if (!location) { return; }
+        var coordinates = location.location.geometry.coordinates;
+        //Check if we already have a user location drawn on the map.
+        if (this._userLocationMarker) { //Update the existing instance.
+            this._userLocationMarker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
+        }
+        else {
+            this._userLocationMarker = new google.maps.Marker({
+                position: new google.maps.LatLng(coordinates[1],coordinates[0]),
+                map: this._map,
+                draggable: false,
+                icon: this.pathtoimages+'/img/user_marker.png'
             });
-        });
+        }
     },
 
     /**
@@ -115,14 +112,14 @@ Polymer({
      */
     _adjustBounds: function() {
         var bounds = new google.maps.LatLngBounds();
-        if (this._alerts && this._alerts.length) {
-            var zones = this._alerts[0].alertTemplate.zones.features;
+        if (this._loadedAlertTemplate) {
+            var zones = this._loadedAlertTemplate.zones;
             for (var i=0; i<zones.length; i++) {
-                bounds.extend(zones[i].tmpProperties.circle.getBounds().getNorthEast());
-                bounds.extend(zones[i].tmpProperties.circle.getBounds().getSouthWest());
+                bounds.extend(zones[i].shapeOverlay.getBounds().getNorthEast());
+                bounds.extend(zones[i].shapeOverlay.getBounds().getSouthWest());
             }
         }
-        if (this._userData) { bounds.extend(this._userData.marker.getPosition()); }
+        if (this._userLocationMarker) { bounds.extend(this._userLocationMarker.getPosition()); }
         this._map.fitBounds(bounds);
         this._map.panToBounds(bounds);
     }
