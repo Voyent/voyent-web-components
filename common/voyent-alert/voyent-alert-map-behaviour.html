@@ -168,14 +168,11 @@
                 this._loadedAlertTemplate.punchOutShapes();
             }
             var requestOpts = {realm: this.realm, account: this.account, alertTemplate: this._loadedAlertTemplate.json};
-            var func;
-            //If we don't have an id set then the template wasn't saved yet.
+            var func = 'createAlertTemplate';
+            //If we have an id then the template was already saved.
             if (this._loadedAlertTemplate.id) {
                 func = 'updateAlertTemplate';
                 requestOpts.id = this._loadedAlertTemplate.id
-            }
-            else {
-                func = 'createAlertTemplate';
             }
             voyent.locate[func](requestOpts).then(function (uri) {
                 _this._savingAlertTemplate = false;
@@ -249,9 +246,10 @@
                 voyent.locate.findRegions({realm:_this.realm, account:_this.account,
                                            query:{"_id":_this.realm+"_region"}
                 }).then(function (regions) {
+                    if (!regions) { resolve(); }
                     //Filter out the alert regions and we should only be left with the static area Region.
                     _this._drawRegion(regions.filter(function(region) {
-                        return !region.location.properties || !region.location.properties.alertTemplateId;
+                        return !region.location.properties || !region.location.properties.alertId;
                     })[0]);
                     resolve();
                 }).catch(function (error) {
@@ -287,20 +285,20 @@
         },
 
         /**
-         * Fetches the most recent User or alert location depending on whether we are passed an alertTemplateId.
-         * @param alertTemplateId
+         * Fetches the most recent User or alert location depending on whether we are passed an alertId.
+         * @param alertId
          * @private
          */
-        _fetchLocationRecord: function(alertTemplateId) {
+        _fetchLocationRecord: function(alertId) {
             var _this = this;
             return new Promise(function (resolve, reject) {
                 var query = {};
-                if (alertTemplateId && typeof alertTemplateId === 'string') {
-                    query = {"location.properties.alertTemplateId":alertTemplateId};
+                if (alertId && typeof alertId === 'string') {
+                    query = {"location.properties.alertId":alertId};
                 }
                 else {
                     query = {
-                        "location.properties.alertTemplateId": {"$exists":false},
+                        "location.properties.alertId": {"$exists":false},
                         "location.properties.vras.name":{"$exists":false},
                         "location.properties.vras.type":{"$exists":false},
                         "location.properties.vras.id":{"$exists":false}
@@ -311,7 +309,7 @@
                 voyent.locate.findLocations({realm:_this.realm,account:_this.account,query:query,
                     options:{"sort":{"lastUpdated":-1},"limit":1}}).then(function(location) {
                     //Only error out for alerts.
-                    if (alertTemplateId) {
+                    if (alertId) {
                         if ((!location || !location[0])) {
                             return reject('Alert location cannot be found.');
                         }
@@ -339,7 +337,7 @@
             var _this = this;
             var locs = {};
             return new Promise(function (resolve, reject) {
-                var query = {"location.properties.alertTemplateId":{"$exists":false},
+                var query = {"location.properties.alertId":{"$exists":false},
                              "location.properties.vras.name":{"$exists":true},
                              "location.properties.vras.type":{"$exists":true},
                              "location.properties.vras.id":{"$exists":true},
@@ -483,7 +481,7 @@
                     );
                 }
             }
-            var parentId = templateJSON.properties.parentAlertTemplateId || null;
+            var parentId = templateJSON.properties.parentAlertId || null;
             this._loadedAlertTemplate = new this._AlertTemplate(
                 templateJSON.name, marker, zones, parentId
             );

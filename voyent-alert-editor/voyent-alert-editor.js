@@ -44,7 +44,7 @@ Polymer({
                 if (!templates) { return; }
                 //Maintain a list of parent templates.
                 _this._parentTemplates = templates.filter(function(alertTemplate) {
-                    return !alertTemplate.properties || !alertTemplate.properties.parentAlertTemplateId;
+                    return !alertTemplate.properties || !alertTemplate.properties.parentAlertId;
                 });
                 //Maintain an id-mapped object of all templates, including child templates.
                 _this._templatesMap = templates.reduce(function(map,obj) {
@@ -227,17 +227,17 @@ Polymer({
 
     /**
      *
-     * @param parentAlertTemplateId
+     * @param parentAlertId
      * @param latLng
      * @private
      */
-    _createChildTemplate: function(parentAlertTemplateId,latLng) {
+    _createChildTemplate: function(parentAlertId,latLng) {
         //Find and clone the alert template that we will build the child template from.
         var parentTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
-            return alertTemplate._id === parentAlertTemplateId;
+            return alertTemplate._id === parentAlertId;
         })[0]));
         this._drawAndLoadAlertTemplate(parentTemplate,latLng);
-        this._loadedAlertTemplate.setParentId(parentAlertTemplateId);
+        this._loadedAlertTemplate.setParentId(parentAlertId);
         //Toggle the creation mode.
         this._proceedToPropertiesPane();
     },

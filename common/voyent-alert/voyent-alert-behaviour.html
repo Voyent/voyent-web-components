@@ -36,14 +36,14 @@
                 "location": {
                     "geometry": { "type" : "Point", "coordinates" : [pos.lng(),pos.lat()] },
                     "properties": {
-                        "alertTemplateId": this._loadedAlertTemplate.id,
+                        "alertId": this._loadedAlertTemplate.id,
                         "vras": {
                             "isNewAlert": this._showConfirmingAlertPane
                         }
                     }
                 }
             };
-            voyent.locate.updateAlertLocation({location: location}).then(function() {
+            voyent.locate.updateAlertLocation({realm:this.realm,account:this.account,location: location}).then(function() {
                 if (_this._showConfirmingAlertPane) {
                     _this._proceedToPropertiesPane();
                     _this.fire('message-info', 'New alert activated!');
@@ -301,7 +301,7 @@
                 setParentId: function(parentId) {
                     this.parentId = parentId;
                     if (this.json) {
-                        this.json.properties.parentAlertTemplateId = parentId;
+                        this.json.properties.parentAlertId = parentId;
                     }
                     if (_outer._loadedAlertTemplate === this) {
                         _outer.set('_loadedAlertTemplate.parentId', parentId);
@@ -451,7 +451,7 @@
                     var zone, northernCoordinate, latLng, id, overlay, json = this.constructor.getJSONStructure();
                     json.name = this.name;
                     if (this.parentId) {
-                        json.properties.parentAlertTemplateId = this.parentId;
+                        json.properties.parentAlertId = this.parentId;
                     }
                     for (var i=0; i<this.zones.length; i++) {
                         zone = this.zones[i];
@@ -841,7 +841,7 @@
                  */
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":3});
+                        this.shapeOverlay.setOptions({"strokeWeight":2});
                         this.shapeOverlay.setEditable(this.editable);
                     }
                 },

@@ -170,7 +170,6 @@ Polymer({
      */
     _circleButtonListener: function() {
         var _this = this;
-        this._dialogInput = 'test';
         this._openDialog('Please enter the alert template name','',function() {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
         });
@@ -182,7 +181,6 @@ Polymer({
      */
     _polygonButtonListener: function() {
         var _this = this;
-        this._dialogInput = 'test';
         this._openDialog('Please enter the alert template name','',function() {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
         });
