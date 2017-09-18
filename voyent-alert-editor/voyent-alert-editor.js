@@ -22,6 +22,11 @@ Polymer({
         promises.push(this._fetchAlertTemplate(id));
         promises.push(this._fetchLocationRecord(id));
         Promise.all(promises).then(function(results) {
+            //Clear the map of any loaded alert template before drawing. Specify that we want to
+            //skip the button draw because we will remove the buttons after drawing the new alert.
+            if (_this._loadedAlertTemplate) {
+                _this.clearMap(true);
+            }
             var latLng = new google.maps.LatLng(
                 results[1].location.geometry.coordinates[1],
                 results[1].location.geometry.coordinates[0]

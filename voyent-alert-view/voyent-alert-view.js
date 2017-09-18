@@ -64,7 +64,7 @@ Polymer({
                 //Update the template coordinates, the label's position and adjust the bounds.
                 coordinates = location.location.geometry.coordinates;
                 _this._loadedAlertTemplate.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
-                _this._updateJSON();
+                _this.updateJSON();
                 _this._adjustBounds();
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the alert\'s location: ' +

@@ -163,6 +163,8 @@
             if (this._savingAlertTemplate) { return; }
             this._savingAlertTemplate = true;
             var _this = this, msg;
+            //First, make sure we have the most recent JSON ready.
+            this._loadedAlertTemplate.updateJSON();
             //For circular template we'll only punch out the zones once, when they save.
             if (this._loadedAlertTemplate.getZoneAt(0).getShape() === 'circle') {
                 this._loadedAlertTemplate.punchOutShapes();
@@ -176,19 +178,17 @@
             }
             voyent.locate[func](requestOpts).then(function (uri) {
                 _this._savingAlertTemplate = false;
-                if (func === 'createAlert') {
+                if (func === 'createAlertTemplate') {
                     //Grab the generated ID from the return URI and setup change listeners
                     _this._loadedAlertTemplate.setId(uri.split('/').pop());
-                    msg = _this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' ?
-                        'Alert template successfully created' :
-                        'Alert successfully created';
+                    msg = 'Alert template successfully created';
                 }
                 else {
-                    msg = _this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' ?
-                        'Alert template successfully updated' :
-                        'Alert successfully updated';
+                    msg = 'Alert template successfully updated';
                 }
-                _this.fire('message-info', msg);
+                if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                    _this.fire('message-info', msg);
+                }
                 _this.fire('voyent-alert-template-saved',{});
             });
         },
@@ -229,7 +229,7 @@
          */
         setMessageTemplate: function(messageTemplate, zoneIndex) {
             if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
-                this._loadedAlertTemplate.getZoneAt(zoneIndex).messageTemplate(messageTemplate);
+                this._loadedAlertTemplate.getZoneAt(zoneIndex).messageTemplate = messageTemplate;
             }
         },
 
@@ -311,12 +311,12 @@
                     //Only error out for alerts.
                     if (alertId) {
                         if ((!location || !location[0])) {
-                            return reject('Alert location cannot be found.');
+                            return reject('Alert location cannot be found');
                         }
                     }
                     else {
                         if ((!location || !location[0])) {
-                            _this.fire('message-info','User location cannot be found.');
+                            _this.fire('message-info','User location cannot be found');
                             return resolve();
                         }
                         _this._drawUser(location[0]);
@@ -463,13 +463,13 @@
                 icon: this.nodeName === 'VOYENT-ALERT-EDITOR' ? this.pathtoimages+'/img/alert_marker.png' : null,
                 visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
             });
-            var properties, zones = [];
+            var properties, zones = [], zIndex = 49;
             for (var i=0; i<templateJSON.geo.geometries.length; i++) {
                 properties = templateJSON.properties[templateJSON.geo.geometries[i].id];
                 if (properties.shape === 'circle') {
                     zones.push(new this._CircularAlertZone(
                         properties.radius, properties.name, properties.editable,
-                        properties.opacity, properties.colour, properties.zIndex
+                        properties.opacity, properties.colour, zIndex
                     ));
                 }
                 else {
@@ -477,14 +477,22 @@
                     zones.push(new this._PolygonalAlertZone(
                         this._AlertTemplate.calculatePathsUsingCoordinates(templateJSON.geo.geometries[i].coordinates),
                         properties.name, properties.editable, properties.opacity,
-                        properties.colour, properties.zIndex)
+                        properties.colour, zIndex)
                     );
                 }
+                zIndex--;
             }
             var parentId = templateJSON.properties.parentAlertId || null;
             this._loadedAlertTemplate = new this._AlertTemplate(
-                templateJSON.name, marker, zones, parentId
+                templateJSON._id, templateJSON.name, marker, zones, parentId
             );
+            //Disable further template or instance creations - only allowed one at a time.
+            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                this._removeAlertTemplateButtons();
+            }
+            else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+                this._removeAlertButton();
+            }
         },
 
         /**

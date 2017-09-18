@@ -48,8 +48,9 @@
                     _this._proceedToPropertiesPane();
                     _this.fire('message-info', 'New alert activated!');
                 }
-            }).catch(function () {
-                _this.fire('message-error', 'Issue creating new alert: ' + _this._loadedAlertTemplate.name);
+            }).catch(function (e) {
+                _this.fire('message-error', 'Issue creating ' + _this._loadedAlertTemplate.name +
+                                            ': ' + (e.responseText || e.message || e))
             });
         },
 
@@ -199,19 +200,20 @@
             };
             /**
              * A class that represents an alert template, both the drawn map entity and the json.
+             * @param id - The unique identifier.
              * @param name - The user-defined name.
              * @param marker - The associated map marker.
              * @param zones - A list of _AlertZone objects, the list of zones associated with the template.
              * @param parentId - The parent template id, only relevant for child templates.
              * @private
              */
-            this._AlertTemplate = function (name,marker,zones,parentId) {
-                this.setId(null);
+            this._AlertTemplate = function (id,name,marker,zones,parentId) {
+                this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
                 this.setMarker(marker || null);
                 this.setZones(zones && zones.length ? zones : []);
-                this._updateJSON();
+                this.updateJSON();
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -378,7 +380,7 @@
                     else {
                         this.zones.push(zone);
                     }
-                    this._updateJSON();
+                    this.updateJSON();
                     this._punchOutShape(this.zones.length-1);
                     this._processNewZone(zone);
                 },
@@ -396,56 +398,13 @@
                     else {
                         this.zones.splice(zoneIndex,1);
                     }
-                    this._updateJSON();
-                },
-                /**
-                 * Loops the zone coordinates in the JSON and triggers punching out the smaller
-                 * from the larger, starting from the largest and excluding the smallest.
-                 */
-                punchOutShapes: function() {
-                    for (var i=this.json.geo.geometries.length-1; i>0; i--) {
-                        this._punchOutShape(i);
-                    }
-                },
-                /**
-                 * Punches out the zone at the passed index with it's closest smallest zone.
-                 * @param index - The index of the zone to be punched out.
-                 * @private
-                 */
-                _punchOutShape: function(index) {
-                    //Return if the index of the smallest zone (0) is passed then don't proceed.
-                    if (!index) { return; }
-                    //Turf accepts polygon feature objects so pass these in and then
-                    //only pull out the coordinates from the new feature object.
-                    var doughnut = turf.difference({
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "Polygon",
-                                "coordinates": this.json.geo.geometries[index].coordinates
-                            }
-                        }, {
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "Polygon",
-                                "coordinates": this.json.geo.geometries[index-1].coordinates
-                            }
-                        }
-                    );
-                    var coordinates = doughnut.geometry.coordinates;
-                    if (this.zones[index].getShape() === 'polygon') {
-                        //Calculate and set the new punched out paths so the changes get reflected on the map immediately.
-                        var punchedOutPaths = this.constructor.calculatePathsUsingCoordinates(coordinates);
-                        this.zones[index].shapeOverlay.setPaths(punchedOutPaths);
-                    }
-                    //Replace the old json coordinates with our new punched out zone.
-                    this.json.geo.geometries[index].coordinates = coordinates;
+                    this.updateJSON();
                 },
                 /**
                  * Updates the JSON to reflect the current state of the template. Also updates
                  * the northernCoordinate which adjusts the position of the zone name overlays.
-                 * @private
                  */
-                _updateJSON: function () {
+                updateJSON: function () {
                     var N = 50; //The number of coordinates circular polygons will have.
                     var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
                     var zone, northernCoordinate, latLng, id, overlay, json = this.constructor.getJSONStructure();
@@ -463,8 +422,7 @@
                             "shape": zone.getShape(),
                             "editable": zone.editable,
                             "opacity": zone.opacity,
-                            "colour": zone.colour,
-                            "zIndex": zone.zIndex
+                            "colour": zone.colour
                         };
                         if (zone.messageTemplate) {
                             json.properties[id].messageTemplate = zone.messageTemplate;
@@ -512,6 +470,48 @@
                         json.geo.geometries[i].coordinates[0].push(json.geo.geometries[i].coordinates[0][0]);
                     }
                     this.json = json;
+                },
+                /**
+                 * Loops the zone coordinates in the JSON and triggers punching out the smaller
+                 * from the larger, starting from the largest and excluding the smallest.
+                 */
+                punchOutShapes: function() {
+                    for (var i=this.json.geo.geometries.length-1; i>0; i--) {
+                        this._punchOutShape(i);
+                    }
+                },
+                /**
+                 * Punches out the zone at the passed index with it's closest smallest zone.
+                 * @param index - The index of the zone to be punched out.
+                 * @private
+                 */
+                _punchOutShape: function(index) {
+                    //Return if the index of the smallest zone (0) is passed then don't proceed.
+                    if (!index) { return; }
+                    //Turf accepts polygon feature objects so pass these in and then
+                    //only pull out the coordinates from the new feature object.
+                    var doughnut = turf.difference({
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": this.json.geo.geometries[index].coordinates
+                            }
+                        }, {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": this.json.geo.geometries[index-1].coordinates
+                            }
+                        }
+                    );
+                    var coordinates = doughnut.geometry.coordinates;
+                    if (this.zones[index].getShape() === 'polygon') {
+                        //Calculate and set the new punched out paths so the changes get reflected on the map immediately.
+                        var punchedOutPaths = this.constructor.calculatePathsUsingCoordinates(coordinates);
+                        this.zones[index].shapeOverlay.setPaths(punchedOutPaths);
+                    }
+                    //Replace the old json coordinates with our new punched out zone.
+                    this.json.geo.geometries[index].coordinates = coordinates;
                 },
                 /**
                  * Updates the center of the zone to match the marker and sets up relevant listeners.
@@ -621,7 +621,7 @@
                     //Continuously re-draw the overlay as the template is dragged.
                     google.maps.event.addListener(marker, 'drag', function () {
                         _this._dragZonesWithMarker();
-                        _this._updateJSON();
+                        _this.updateJSON();
                     });
                 },
                 /**
@@ -671,7 +671,7 @@
                             for (var i=0; i<_this.zones.length; i++) {
                                 _this.zones[i].shapeOverlay.setCenter(this.getCenter());
                             }
-                            _this._updateJSON();
+                            _this.updateJSON();
                             _outer._ignoreCenterChangedEvent = false;
                             //Update the alert's location.
                             if (_this.parentId) {
@@ -680,7 +680,7 @@
                         });
                         //Add resize listener to circle.
                         google.maps.event.addListener(overlay, 'radius_changed', function () {
-                            _this._updateJSON();
+                            _this.updateJSON();
                             //Sort the zones list.
                             _outer._sortZonesBySize();
                         });
@@ -704,7 +704,7 @@
                  * @private
                  */
                 _polyAtListeners: function () {
-                    this._updateJSON();
+                    this.updateJSON();
                     //The area of the polygon may be smaller or
                     //larger than the other zones now so re-sort.
                     _outer._sortZonesBySize();

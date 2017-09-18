@@ -146,7 +146,7 @@ Polymer({
             //drawing the shapes so remove this google-drawn one from the map.
             oce.overlay.setMap(null);
             //Create our new template using the calculated marker and zones.
-            _this._loadedAlertTemplate = new _this._AlertTemplate(_this._dialogInput, marker, zones, null);
+            _this._loadedAlertTemplate = new _this._AlertTemplate(null, _this._dialogInput, marker, zones, null);
             //Disable further alert template creations - only allowed one at a time.
             _this._removeAlertTemplateButtons();
             //Exit drawing mode.
