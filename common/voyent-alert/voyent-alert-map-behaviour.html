@@ -190,6 +190,10 @@
                     _this.fire('message-info', msg);
                 }
                 _this.fire('voyent-alert-template-saved',{});
+            }).catch(function(e) {
+                msg = 'Issue saving alert ' + (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' ? 'template: ' : ': ');
+                _this.fire('message-error', msg + (e.responseText || e.message || e));
+                _this._savingAlertTemplate = false;
             });
         },
 
