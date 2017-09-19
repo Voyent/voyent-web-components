@@ -604,8 +604,8 @@
                     });
                     google.maps.event.addListener(marker, 'dragend', function () {
                         _outer._ignoreCenterChangedEvent = false;
-                        //Update the alert's location.
-                        if (_this.parentId) {
+                        //Update the alert's location if the alert is activated.
+                        if (_this.parentId && _outer._isActivated) {
                             _outer._updateAlertLocation();
                         }
                     });
