@@ -32,6 +32,9 @@ Polymer({
                 results[1].location.geometry.coordinates[0]
             );
             _this._drawAndLoadAlertTemplate(results[0],latLng);
+            //Toggle the correct pane.
+            _this._showPropertiesPane = _this._isActivated = true;
+            _this._showNewAlertPane = false;
         }).catch(function(error) {
             _this.fire('message-error', 'Issue loading saved alert: ' + (error.responseText || error.message || error));
         });
@@ -79,12 +82,19 @@ Polymer({
      */
     _onAfterLogin: function() {
         this._isLoggedIn = true; //Toggle for side panel.
-        //Fetch the alert templates, the last alert locations and the last user location.
         this.fetchAlertTemplates();
-        //Fetch the realm region.
         this._fetchRealmRegion();
-        //Enable the default pane.
+        this._enableDefaultPane();
+    },
+
+    /**
+     * Sets the side panel to the default view.
+     * @private
+     */
+    _enableDefaultPane: function() {
         this._showNewAlertPane = true;
+        this._showTemplateListPane = this._showPropertiesPane =
+            this._isActivated  = this._showConfirmingAlertPane = false;
     },
 
     /**
@@ -131,7 +141,7 @@ Polymer({
             this._promptForRemoval(function() {
                 if (this._showPropertiesPane) { this._showPropertiesPane = false; }
                 else if (this._showConfirmingAlertPane) { this._showConfirmingAlertPane = false; }
-                this._removeAlertTemplate();
+                this._removeAlert();
                 this.fire('voyent-alert-zone-selected', {
                     'index': -1,
                     'id': null,
@@ -237,11 +247,13 @@ Polymer({
      * @private
      */
     _createChildTemplate: function(parentAlertId,latLng) {
-        //Find and clone the alert template that we will build the child template from.
-        var parentTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
+        //Find and clone the parent template that we will create the child from.
+        var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
             return alertTemplate._id === parentAlertId;
         })[0]));
-        this._drawAndLoadAlertTemplate(parentTemplate,latLng);
+        //Remove the parent's id from the record as we'll generate a new one.
+        delete childTemplate._id;
+        this._drawAndLoadAlertTemplate(childTemplate,latLng);
         this._loadedAlertTemplate.setParentId(parentAlertId);
         //Toggle the creation mode.
         this._proceedToPropertiesPane();
@@ -265,6 +277,9 @@ Polymer({
                 _this.fire('message-error', 'Issue deleting alert template: ' + (error.responseText || error.message || error));
             });
         }
+        else {
+            _this._removeAlertTemplateFromMap();
+        }
     },
 
     /**
@@ -274,15 +289,20 @@ Polymer({
     _removeAlert: function() {
         var _this = this;
         //Just delete the alert, the location service will handle deleting the associated child template.
-        voyent.locate.deleteAlert({
-            account:this.account,
-            realm:this.realm,
-            id:this._loadedAlertTemplate.id
-        }).then(function() {
+        if (this._loadedAlertTemplate.id) {
+            voyent.locate.deleteAlert({
+                account:this.account,
+                realm:this.realm,
+                id:this._loadedAlertTemplate.id
+            }).then(function() {
+                _this._removeAlertTemplateFromMap();
+            }).catch(function(error) {
+                _this.fire('message-error', 'Issue deleting alert: ' + (error.responseText || error.message || error));
+            });
+        }
+        else {
             _this._removeAlertTemplateFromMap();
-        }).catch(function(error) {
-            _this.fire('message-error', 'Issue deleting alert: ' + (error.responseText || error.message || error));
-        });
+        }
     },
 
     /**

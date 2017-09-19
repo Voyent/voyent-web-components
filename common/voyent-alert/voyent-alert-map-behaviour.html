@@ -221,8 +221,11 @@
                 this._addCircleButton(this._circleButtonListener.bind(this));
                 this._addPolygonButton(this._polygonButtonListener.bind(this));
             }
-            else if (this.nodeName === 'VOYENT-ALERT-EDITOR' && !skipBttnDraw) {
-                this._addAlertButton(this._alertButtonListener.bind(this));
+            else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+                if (!skipBttnDraw) {
+                    this._addAlertButton(this._alertButtonListener.bind(this));
+                }
+                this._enableDefaultPane();
             }
         },
 
@@ -250,7 +253,7 @@
                 voyent.locate.findRegions({realm:_this.realm, account:_this.account,
                                            query:{"_id":_this.realm+"_region"}
                 }).then(function (regions) {
-                    if (!regions) { resolve(); }
+                    if (!regions) { return resolve(); }
                     //Filter out the alert regions and we should only be left with the static area Region.
                     _this._drawRegion(regions.filter(function(region) {
                         return !region.location.properties || !region.location.properties.alertId;
@@ -496,19 +499,6 @@
             }
             else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 this._removeAlertButton();
-            }
-        },
-
-        /**
-         * Removes the passed alert or alert template on the map.
-         * @private
-         */
-        _removeAlertEntity: function() {
-            if (this._loadedAlertTemplate.parentId) {
-                this._removeAlert();
-            }
-            else {
-                this._removeAlertTemplate();
             }
         },
 
