@@ -220,7 +220,7 @@
              * @param json - The full template json.
              * @static
              */
-            this._AlertTemplate.calculateCentroidUsingJSON = function(json) {
+            this._AlertTemplate.calculateCentroidFromJSON = function(json) {
                 var geometries = json.geo.geometries;
                 var coordinates, bounds = new google.maps.LatLngBounds();
                 for (var i=0; i<geometries.length; i++) {
@@ -236,7 +236,7 @@
              * @param paths - An array of arrays of LatLng objects that define the zone.
              * @static
              */
-            this._AlertTemplate.calculateCentroidUsingPaths = function(paths) {
+            this._AlertTemplate.calculateCentroidFromPaths = function(paths) {
                 var bounds = new google.maps.LatLngBounds();
                 for (var i=0; i<paths.length; i++) {
                     for (var j=0; j<paths.getAt(i).length; j++) {
@@ -250,10 +250,18 @@
              * @param coordinates
              * @static
              */
-            this._AlertTemplate.calculatePathsUsingCoordinates = function(coordinates) {
+            this._AlertTemplate.calculatePathsFromCoordinates = function(coordinates) {
                 var latLng, paths = [], path;
                 for (var i=0; i<coordinates.length; i++) {
                     path = [];
+                    //In GeoJSON we must complete the shape by duplicating the coordinate at index 0 at the last index
+                    //but Google Maps API states: "Paths are closed automatically; do not repeat the first vertex of
+                    //the path as the last vertex.". So we must remove the last index before converting to paths.
+                    //Just to be safe we'll check that it is fact the same coordinate.
+                    if (coordinates[i][0][0] === coordinates[i][coordinates[i].length-1][0] &&
+                        coordinates[i][0][1] === coordinates[i][coordinates[i].length-1][1]) {
+                        coordinates[i].splice(coordinates[i].length-1,1);
+                    }
                     for (var j=0; j<coordinates[i].length; j++) {
                         latLng = new google.maps.LatLng(coordinates[i][j][1],coordinates[i][j][0]);
                         path.push(latLng);
@@ -261,6 +269,31 @@
                     paths.push(path);
                 }
                 return paths;
+            };
+            /**
+             * Calculate the GeoJSON coordinates using the passed shape overlay paths.
+             * @param paths
+             * @param func - The function to be executed after the inner path has being modified.
+             * @static
+             */
+            this._AlertTemplate.calculateCoordinatesFromPaths = function(paths,func) {
+                var latLng, outer = [], inner;
+                for (var i=0; i<paths.length; i++) {
+                    inner = [];
+                    for (var j=0; j<paths.getAt(i).length; j++) {
+                        //Retrieve each coordinate from the shape and save it.
+                        latLng = paths.getAt(i).getAt(j);
+                        inner.push([latLng.lng(), latLng.lat()]);
+                        if (func) {
+                            func(latLng)
+                        }
+                    }
+                    //In GeoJSON we must copy the first coordinate to the last one
+                    //to complete the shape. Do this for each coordinate array.
+                    inner.push(inner[0]);
+                    outer.push(inner);
+                }
+                return outer;
             };
             /**
              * A static function that returns the default JSON structure.
@@ -405,6 +438,7 @@
                  * the northernCoordinate which adjusts the position of the zone name overlays.
                  */
                 updateJSON: function () {
+                    var _this = this;
                     var N = 50; //The number of coordinates circular polygons will have.
                     var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
                     var zone, northernCoordinate, latLng, id, overlay, json = this.constructor.getJSONStructure();
@@ -447,28 +481,20 @@
                                     northernCoordinate = [latLng.lng(), latLng.lat()];
                                 }
                             }
+                            //In GeoJSON we must copy the first coordinate to the last one to complete the shape.
+                            json.geo.geometries[i].coordinates[0].push(json.geo.geometries[i].coordinates[0][0]);
                         }
                         else {
-                            var paths = overlay.getPaths();
-                            var outer = [], inner;
-                            for (var k=0; k<paths.length; k++) {
-                                inner = [];
-                                for (var l=0; l<paths.getAt(k).length; l++) {
-                                    //Retrieve each coordinate from the shape and save it.
-                                    latLng = paths.getAt(k).getAt(l);
-                                    inner.push([latLng.lng(), latLng.lat()]);
-                                    //Look for the northern most point of the polygon so we know
-                                    //where to render the Proximity Zone overlay label.
-                                    if (latLng.lat() > northernCoordinate[1]) {
-                                        northernCoordinate = [latLng.lng(), latLng.lat()];
-                                    }
+                            var coordinates = _this.constructor.calculateCoordinatesFromPaths(overlay.getPaths(),function(latLng) {
+                                //Look for the northern most point of the polygon so we know
+                                //where to render the Proximity Zone overlay label.
+                                if (latLng.lat() > northernCoordinate[1]) {
+                                    northernCoordinate = [latLng.lng(), latLng.lat()];
                                 }
-                                outer.push(inner);
-                            }
+                            });
                         }
                         zone.setNorthernCoordinate(northernCoordinate);
-                        outer[0].push(outer[0][0]);  //Copy the first coordinate to the last one to complete the shape.
-                        json.geo.geometries[i].coordinates = outer;
+                        json.geo.geometries[i].coordinates = coordinates;
                     }
                     this.json = json;
                 },
@@ -509,7 +535,7 @@
                     var coordinates = doughnut.geometry.coordinates;
                     if (this.zones[index].getShape() === 'polygon') {
                         //Calculate and set the new punched out paths so the changes get reflected on the map immediately.
-                        var punchedOutPaths = this.constructor.calculatePathsUsingCoordinates(coordinates);
+                        var punchedOutPaths = this.constructor.calculatePathsFromCoordinates(coordinates);
                         this.zones[index].shapeOverlay.setPaths(punchedOutPaths);
                     }
                     //Replace the old json coordinates with our new punched out zone.
@@ -725,49 +751,63 @@
                  * @private
                  */
                 _polyAtListener: function (eventName,zone,pathIndex,vertexIndex) {
+                    var errorMsg = null;
+                    var zoneIndex = _outer._loadedAlertTemplate.getZoneIndex(zone);
                     if (_outer._loadedAlertTemplate.zones.length > 1) {
-                        var invalidEdit = false;
                         var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
-                        var zoneIndex = _outer._loadedAlertTemplate.getZoneIndex(zone);
                         var largestZone = _outer._loadedAlertTemplate.getLargestZone();
                         //Check that the vertex is within our zone boundary. This catches cases
                         //where they drag an inner zone vertex past the boundaries of the stack.
                         if (zoneIndex !== _outer._loadedAlertTemplate.getZoneIndex(largestZone)) {
                             if (!google.maps.geometry.poly.containsLocation(vertex,new google.maps.Polygon({
-                                    paths: [largestZone.shapeOverlay.getPaths().getAt(pathIndex)],
-                                    map: _outer._map,
-                                    visible: false
-                                }))) {
-                                invalidEdit = true;
+                                    paths: [largestZone.shapeOverlay.getPaths().getAt(pathIndex)]}))) {
+                                //errorMsg = 'The zone cannot extend past the boundaries of the stack';
+                                errorMsg = 'The zone cannot overlap other zones in the stack';
                              }
                         }
-                        if (!invalidEdit) {
-                            //Check if they dragged the vertex into one of the other zones. Touching borders is fine.
-                            for (var j=0; j<_outer._loadedAlertTemplate.zones.length; j++) {
-                                if (j === zoneIndex) { continue; }
+                        //Check if they dragged the vertex into one of the other zones. Touching borders is fine.
+                        if (!errorMsg) {
+                            for (var i=0; i<_outer._loadedAlertTemplate.zones.length; i++) {
+                                if (i === zoneIndex) { continue; }
                                 if (google.maps.geometry.poly.containsLocation(
-                                        vertex, _outer._loadedAlertTemplate.getZoneAt(j).shapeOverlay
+                                        vertex, _outer._loadedAlertTemplate.getZoneAt(i).shapeOverlay
                                     ) && !google.maps.geometry.poly.isLocationOnEdge(
-                                        vertex, _outer._loadedAlertTemplate.getZoneAt(j).shapeOverlay, 0.0001
+                                        vertex, _outer._loadedAlertTemplate.getZoneAt(i).shapeOverlay, 0.0001
                                     )) {
-                                    invalidEdit = true;
+                                    errorMsg = 'The zone cannot overlap other zones in the stack';
                                     break;
                                 }
                             }
                         }
-                        //Revert the position if there was a problem and provide them with a message.
-                        if (invalidEdit) {
-                            _outer.fire('message-error','The zone cannot overlap other zones in the stack');
-                            if (eventName === 'set_at') {
-                                _outer._revertedVertex = true;
-                                zone.shapeOverlay.getPaths().getAt(pathIndex).setAt(vertexIndex, _outer._previousVertexPosition);
+                    }
+                    //Check if the polygon intersects itself. To do this we will use the turf library but we
+                    //must first calculate the new zone coordinates so it can be interpreted by turf as GeoJSON.
+                    if (!errorMsg) {
+                        var newZoneCoordinates = this.constructor.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
+                        var kinks = turf.kinks({
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": newZoneCoordinates
                             }
-                            else { //insert_at
-                                zone.shapeOverlay.getPaths().getAt(pathIndex).removeAt(vertexIndex);
-                            }
-                            return;
+                        });
+                        if (kinks.features.length) {
+                            errorMsg = 'The zone cannot self-intersect';
                         }
                     }
+                    //Revert the position if there was a problem and display a message to the user.
+                    if (errorMsg) {
+                        if (eventName === 'set_at') {
+                            _outer._revertedVertex = true;
+                            zone.shapeOverlay.getPaths().getAt(pathIndex).setAt(vertexIndex, _outer._previousVertexPosition);
+                        }
+                        else { //insert_at
+                            zone.shapeOverlay.getPaths().getAt(pathIndex).removeAt(vertexIndex);
+                        }
+                        _outer.fire('message-error',errorMsg);
+                        return;
+                    }
+                    //Since there's no errors we'll sync our JSON with the latest changes.
                     this.updateJSON();
                 }
             };

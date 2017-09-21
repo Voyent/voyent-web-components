@@ -139,7 +139,7 @@ Polymer({
                     return;
                 }
                 var paths = oce.overlay.getPaths();
-                marker.setPosition(_this._AlertTemplate.calculateCentroidUsingPaths(paths));
+                marker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
                 zones = [new _this._PolygonalAlertZone(paths)];
             }
             //To keep things simple we'll always use our custom classes for

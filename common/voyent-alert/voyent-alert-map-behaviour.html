@@ -463,7 +463,7 @@
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
             var marker = new google.maps.Marker({
-                position: (latLngCentroid ? latLngCentroid : this._AlertTemplate.calculateCentroidUsingJSON(templateJSON)),
+                position: (latLngCentroid ? latLngCentroid : this._AlertTemplate.calculateCentroidFromJSON(templateJSON)),
                 map: this._map,
                 draggable: true,
                 zIndex: 50,
@@ -482,7 +482,7 @@
                 else {
                     //Generate the ordered sequence of coordinates that completes the Polygon shape.
                     zones.push(new this._PolygonalAlertZone(
-                        this._AlertTemplate.calculatePathsUsingCoordinates(templateJSON.geo.geometries[i].coordinates),
+                        this._AlertTemplate.calculatePathsFromCoordinates(templateJSON.geo.geometries[i].coordinates),
                         properties.name, properties.editable, properties.opacity,
                         properties.colour, zIndex)
                     );

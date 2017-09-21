@@ -197,7 +197,7 @@ Polymer({
         }
         else { //polygon
             var largestZonePaths = largestZone.shapeOverlay.getPaths(), distance, bearing, paths = [], path;
-            var centroid = this._AlertTemplate.calculateCentroidUsingPaths(largestZonePaths);
+            var centroid = this._AlertTemplate.calculateCentroidFromPaths(largestZonePaths);
             for (var i=0; i<largestZonePaths.length; i++) {
                 path=[];
                 for (var j=0; j<largestZonePaths.getAt(i).length; j++) {
