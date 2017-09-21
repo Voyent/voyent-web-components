@@ -450,24 +450,25 @@
                         }
                         else {
                             var paths = overlay.getPaths();
+                            var outer = [], inner;
                             for (var k=0; k<paths.length; k++) {
+                                inner = [];
                                 for (var l=0; l<paths.getAt(k).length; l++) {
                                     //Retrieve each coordinate from the shape and save it.
                                     latLng = paths.getAt(k).getAt(l);
-                                    json.geo.geometries[i].coordinates[0].push([
-                                        latLng.lng(), latLng.lat()
-                                    ]);
+                                    inner.push([latLng.lng(), latLng.lat()]);
                                     //Look for the northern most point of the polygon so we know
                                     //where to render the Proximity Zone overlay label.
                                     if (latLng.lat() > northernCoordinate[1]) {
                                         northernCoordinate = [latLng.lng(), latLng.lat()];
                                     }
                                 }
+                                outer.push(inner);
                             }
                         }
                         zone.setNorthernCoordinate(northernCoordinate);
-                        //Copy the first coordinate to the last one to complete the shape.
-                        json.geo.geometries[i].coordinates[0].push(json.geo.geometries[i].coordinates[0][0]);
+                        outer[0].push(outer[0][0]);  //Copy the first coordinate to the last one to complete the shape.
+                        json.geo.geometries[i].coordinates = outer;
                     }
                     this.json = json;
                 },
@@ -494,13 +495,14 @@
                             "type": "Feature",
                             "geometry": {
                                 "type": "Polygon",
-                                "coordinates": this.json.geo.geometries[index].coordinates
+                                //Use only the outer boundary of the shape when punching them out.
+                                "coordinates": [this.json.geo.geometries[index].coordinates[0]]
                             }
                         }, {
                             "type": "Feature",
                             "geometry": {
                                 "type": "Polygon",
-                                "coordinates": this.json.geo.geometries[index-1].coordinates
+                                "coordinates": [this.json.geo.geometries[index-1].coordinates[0]]
                             }
                         }
                     );
@@ -626,6 +628,7 @@
                 },
                 /**
                  * Initializes zone listeners.
+                 * @param zone
                  * @private
                  */
                 _setupZoneListeners: function (zone) {
@@ -659,9 +662,9 @@
                     if (zone.getShape() === 'circle') {
                         /*This listener is used for the special case of dragging by the center editable point of circular
                         zones. When the user drags by this center point we need to be sure to move the zones and marker
-                        to it's new position after dragging. However, this listener will fire after modifying the positions
+                        to their new position after dragging. However, this listener will fire after modifying the positions
                         of other zones so we will use a flag to ignore these events. Additionally, we use a flag to ignore
-                        when dragging by the marker because the event fires continiously then as well.*/
+                        when dragging by the marker because the event fires continuously then as well.*/
                         google.maps.event.addListener(overlay, 'center_changed', function () {
                             if (_outer._ignoreCenterChangedEvent) {
                                 return;
@@ -685,29 +688,87 @@
                             _outer._sortZonesBySize();
                         });
                     }
-                    else { //Handle editing polygonal zones.
+                    else {
+                        //Store the previous vertex position when clicking
+                        //on an existing vertex in case we need to revert.
+                        google.maps.event.addListener(overlay, 'mousedown', function(e) {
+                            if (typeof e.vertex !== 'undefined') {
+                                _outer._previousVertexPosition = e.latLng;
+                            }
+                        });
+                        //Handle polygon edits.
                         for (var i=0; i<overlay.getPaths().length; i++) {
-                            google.maps.event.addListener(overlay.getPaths().getAt(i), "insert_at", function () {
-                                _this._polyAtListeners();
-                            });
-                            google.maps.event.addListener(overlay.getPaths().getAt(i), "set_at", function () {
-                                _this._polyAtListeners();
-                            });
-                            google.maps.event.addListener(overlay.getPaths().getAt(i), "remove_at", function () {
-                                _this._polyAtListeners();
-                            });
+                            (function(pathIndex) {
+                                google.maps.event.addListener(overlay.getPaths().getAt(pathIndex), "insert_at", function (vertexIndex) {
+                                    //Async so the vertex gets inserted before we operate on it.
+                                    setTimeout(function() {
+                                        _this._polyAtListener('insert_at',zone,pathIndex,vertexIndex);
+                                    },0);
+                                });
+                                google.maps.event.addListener(overlay.getPaths().getAt(pathIndex), "set_at", function (vertexIndex) {
+                                    if (_outer._revertedVertex) {
+                                        _outer._revertedVertex = false;
+                                        return;
+                                    }
+                                    _this._polyAtListener('set_at',zone,pathIndex,vertexIndex);
+                                });
+                            })(i);
                         }
                     }
                 },
                 /**
-                 * Handles polygon edits.
+                 * Checks if the vertex change is valid when a polygonal zone is edited.
+                 * @param eventName - The name of the event that is calling this function. One of `insert_at` or `set_at`.
+                 * @param zone - The zone that the event fired on.
+                 * @param pathIndex - The path that the event fired on.
+                 * @param vertexIndex - The vertex that the event fired on.
                  * @private
                  */
-                _polyAtListeners: function () {
+                _polyAtListener: function (eventName,zone,pathIndex,vertexIndex) {
+                    if (_outer._loadedAlertTemplate.zones.length > 1) {
+                        var invalidMove = false;
+                        var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
+                        var zoneIndex = _outer._loadedAlertTemplate.getZoneIndex(zone);
+                        var largestZone = _outer._loadedAlertTemplate.getLargestZone();
+                        //Check that the vertex is within our zone boundary. This catches cases
+                        //where they drag an inner zone vertex past the boundaries of the stack.
+                        if (zoneIndex !== _outer._loadedAlertTemplate.getZoneIndex(largestZone)) {
+                            if (!google.maps.geometry.poly.containsLocation(vertex,new google.maps.Polygon({
+                                    paths: [largestZone.shapeOverlay.getPaths().getAt(pathIndex)],
+                                    map: _outer._map,
+                                    visible: false
+                                }))) {
+                                invalidMove = true;
+                             }
+                        }
+                        if (!invalidMove) {
+                            //Check if they dragged the vertex into one of the other zones. Touching borders is fine.
+                            for (var j=0; j<_outer._loadedAlertTemplate.zones.length; j++) {
+                                if (j === zoneIndex) { continue; }
+                                if (google.maps.geometry.poly.containsLocation(
+                                        vertex, _outer._loadedAlertTemplate.getZoneAt(j).shapeOverlay
+                                    ) && !google.maps.geometry.poly.isLocationOnEdge(
+                                        vertex, _outer._loadedAlertTemplate.getZoneAt(j).shapeOverlay, 0.0001
+                                    )) {
+                                    invalidMove = true;
+                                    break;
+                                }
+                            }
+                        }
+                        //Revert the position if there was a problem and provide them with a message.
+                        if (invalidMove) {
+                            _outer.fire('message-error','The zone cannot overlap other zones in the stack');
+                            if (eventName === 'set_at') {
+                                _outer._revertedVertex = true;
+                                zone.shapeOverlay.getPaths().getAt(pathIndex).setAt(vertexIndex, _outer._previousVertexPosition);
+                            }
+                            else if (eventName === 'insert_at') {
+                                zone.shapeOverlay.getPaths().getAt(pathIndex).removeAt(vertexIndex);
+                            }
+                            return;
+                        }
+                    }
                     this.updateJSON();
-                    //The area of the polygon may be smaller or
-                    //larger than the other zones now so re-sort.
-                    _outer._sortZonesBySize();
                 }
             };
             Object.seal(this._AlertTemplate);
