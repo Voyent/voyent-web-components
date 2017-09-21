@@ -214,6 +214,10 @@ Polymer({
             //When we add a new zone we don't want to include the full shape so we can punch
             //it out properly later so we'll just pass the outer shape via paths[0].
             newZone = new this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
+            //Re-adjust centroid after the new zone is added.
+            this._loadedAlertTemplate.marker.setPosition(
+                this._AlertTemplate.calculateCentroidFromPaths(newZone.shapeOverlay.getPaths())
+            );
         }
         this._loadedAlertTemplate.addZone(newZone);
         this.fire('voyent-alert-zone-added',{"id":newZone.id,"zone":newZone});
