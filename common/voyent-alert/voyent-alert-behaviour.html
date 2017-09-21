@@ -726,7 +726,7 @@
                  */
                 _polyAtListener: function (eventName,zone,pathIndex,vertexIndex) {
                     if (_outer._loadedAlertTemplate.zones.length > 1) {
-                        var invalidMove = false;
+                        var invalidEdit = false;
                         var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
                         var zoneIndex = _outer._loadedAlertTemplate.getZoneIndex(zone);
                         var largestZone = _outer._loadedAlertTemplate.getLargestZone();
@@ -738,10 +738,10 @@
                                     map: _outer._map,
                                     visible: false
                                 }))) {
-                                invalidMove = true;
+                                invalidEdit = true;
                              }
                         }
-                        if (!invalidMove) {
+                        if (!invalidEdit) {
                             //Check if they dragged the vertex into one of the other zones. Touching borders is fine.
                             for (var j=0; j<_outer._loadedAlertTemplate.zones.length; j++) {
                                 if (j === zoneIndex) { continue; }
@@ -750,19 +750,19 @@
                                     ) && !google.maps.geometry.poly.isLocationOnEdge(
                                         vertex, _outer._loadedAlertTemplate.getZoneAt(j).shapeOverlay, 0.0001
                                     )) {
-                                    invalidMove = true;
+                                    invalidEdit = true;
                                     break;
                                 }
                             }
                         }
                         //Revert the position if there was a problem and provide them with a message.
-                        if (invalidMove) {
+                        if (invalidEdit) {
                             _outer.fire('message-error','The zone cannot overlap other zones in the stack');
                             if (eventName === 'set_at') {
                                 _outer._revertedVertex = true;
                                 zone.shapeOverlay.getPaths().getAt(pathIndex).setAt(vertexIndex, _outer._previousVertexPosition);
                             }
-                            else if (eventName === 'insert_at') {
+                            else { //insert_at
                                 zone.shapeOverlay.getPaths().getAt(pathIndex).removeAt(vertexIndex);
                             }
                             return;
