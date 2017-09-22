@@ -765,48 +765,59 @@
                     var errorMsg = null;
                     var zoneIndex = _outer._loadedAlertTemplate.getZoneIndex(zone);
                     var largestZone = _outer._loadedAlertTemplate.getLargestZone();
-                    if (_outer._loadedAlertTemplate.zones.length > 1) {
-                        var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
-                        //Check that the outer-most zone is touching it's closest inner zone. This
-                        //catches the case where they drag a vertex on the outer-most zone to the
-                        //opposite side of the shape, detaching it from the stack.
-                        if (zoneIndex === _outer._loadedAlertTemplate.getZoneIndex(largestZone)) {
-                            if (_outer._loadedAlertTemplate.zones.length > 1) {
-                                var outerBoundaryPolygonCoordinates = this.constructor.calculateCoordinatesFromPaths(
-                                    zone.shapeOverlay.getPaths()
-                                );
-                                var intersects = turf.intersect({
-                                    "type": "Feature",
-                                    "geometry": {
-                                        "type": "Polygon",
-                                        //The zone isn't punched out yet which means the previous inner zone boundary
-                                        //will exist as a filled polygon so make sure we only select the edited zone.
-                                        "coordinates": [outerBoundaryPolygonCoordinates[0]]
-                                    }
-                                },
-                                {
-                                    "type": "Feature",
-                                    "geometry": {
-                                        "type": "Polygon",
-                                        "coordinates": this.constructor.calculateCoordinatesFromPaths(
-                                            _outer._loadedAlertTemplate.getZoneAt(zoneIndex-1).shapeOverlay.getPaths()
-                                        )
-                                    }
-                                });
-                                if (!intersects.geometry) {
-                                    errorMsg = 'The zone cannot be detached from the stack';
-                                }
-                            }
+                    //Check if the polygon intersects itself. To do this we will use the turf library but we
+                    //must first extract the new zone coordinates so they can be interpreted by turf as GeoJSON.
+                    var newZoneCoordinates = this.constructor.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
+                    var kinks = turf.kinks({
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": newZoneCoordinates
                         }
-                        else {
-                            //Check that the vertex is within our zone boundary. This catches cases
-                            //where they drag an inner zone vertex past the boundaries of the stack.
+                    });
+                    if (kinks.features.length) {
+                        errorMsg = 'The zone cannot self-intersect';
+                    }
+                    if (!errorMsg && _outer._loadedAlertTemplate.zones.length > 1) {
+                        var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
+                        //Check that the vertex is within our zone boundary. This catches cases
+                        //where they drag an inner zone vertex past the boundaries of the stack.
+                        if (zoneIndex !== _outer._loadedAlertTemplate.getZoneIndex(largestZone)) {
                             if (!google.maps.geometry.poly.containsLocation(vertex,new google.maps.Polygon({
                                     paths: [largestZone.shapeOverlay.getPaths().getAt(pathIndex)]}))) {
                                 errorMsg = 'The zone cannot overlap other zones in the stack';
                             }
                         }
-                        //Check if they dragged the vertex into one of the other zones. Touching borders is fine.
+                        else {
+                            //Check that the outer-most zone is touching it's closest inner zone. This
+                            //catches the case where they drag a vertex on the outer-most zone to the
+                            //opposite side of the shape, detaching it from the stack.
+                            var outerBoundaryPolygonCoordinates = this.constructor.calculateCoordinatesFromPaths(
+                                zone.shapeOverlay.getPaths()
+                            );
+                            var intersects = turf.intersect({
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "Polygon",
+                                    //The zone isn't punched out yet which means the previous inner zone boundary
+                                    //will exist as a filled polygon so make sure we only select the edited zone.
+                                    "coordinates": [outerBoundaryPolygonCoordinates[0]]
+                                }
+                            },
+                            {
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "Polygon",
+                                    "coordinates": this.constructor.calculateCoordinatesFromPaths(
+                                        _outer._loadedAlertTemplate.getZoneAt(zoneIndex-1).shapeOverlay.getPaths()
+                                    )
+                                }
+                            });
+                            if (!intersects.geometry) {
+                                errorMsg = 'The zone cannot be detached from the stack';
+                            }
+                        }
+                        //Check if they dragged the vertex into one of the other zones. Overlapping borders is fine.
                         if (!errorMsg) {
                             for (var i=0; i<_outer._loadedAlertTemplate.zones.length; i++) {
                                 if (i === zoneIndex) { continue; }
@@ -819,21 +830,6 @@
                                     break;
                                 }
                             }
-                        }
-                    }
-                    //Check if the polygon intersects itself. To do this we will use the turf library but we
-                    //must first extract the new zone coordinates so they can be interpreted by turf as GeoJSON.
-                    if (!errorMsg) {
-                        var newZoneCoordinates = this.constructor.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
-                        var kinks = turf.kinks({
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "Polygon",
-                                "coordinates": newZoneCoordinates
-                            }
-                        });
-                        if (kinks.features.length) {
-                            errorMsg = 'The zone cannot self-intersect';
                         }
                     }
                     //Revert the position if there was a problem and display a message to the user.
@@ -860,8 +856,8 @@
                         _outer._loadedAlertTemplate.getZoneAt(zoneIndex-1).setPaths(new google.maps.MVCArray(pathClone));
                     }
                     this.updateJSON();
-                    //Always re-punch out the shapes. This will catch cases like filling in gaps when the outer boundary of
-                    //an inner zone was pulled inwards or maintaining correct polygon state when translating the outer zone.
+                    //Always re-punch out the shapes. This will catch cases like filling
+                    //in gaps when the outer boundary of an inner zone is pulled inwards.
                     this.punchOutShapes();
                     //Recalculate the centroid and adjust the marker position.
                     _outer._loadedAlertTemplate.marker.setPosition(
