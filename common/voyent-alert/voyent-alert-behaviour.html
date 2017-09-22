@@ -469,7 +469,7 @@
                             "coordinates": [[]]
                         });
                         if (zone.getShape() === 'circle') {
-                            json.properties[id].radius = zone.radius;
+                            json.properties[id].radius = overlay.getRadius();
                             var center =  this.marker.getPosition();
                             for (var j=0; j<N; j++) {
                                 //Calculate and save the next coordinate.
