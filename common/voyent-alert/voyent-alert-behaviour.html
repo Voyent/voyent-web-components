@@ -256,13 +256,8 @@
                     path = [];
                     //In GeoJSON we must complete the shape by duplicating the coordinate at index 0 at the last index
                     //but Google Maps API states: "Paths are closed automatically; do not repeat the first vertex of
-                    //the path as the last vertex.". So we must remove the last index before converting to paths.
-                    //Just to be safe we'll check that it is fact the same coordinate.
-                    if (coordinates[i][0][0] === coordinates[i][coordinates[i].length-1][0] &&
-                        coordinates[i][0][1] === coordinates[i][coordinates[i].length-1][1]) {
-                        coordinates[i].splice(coordinates[i].length-1,1);
-                    }
-                    for (var j=0; j<coordinates[i].length; j++) {
+                    //the path as the last vertex.". So we'll exclude the last coordinate when converting to paths.
+                    for (var j=0; j<coordinates[i].length-1; j++) {
                         latLng = new google.maps.LatLng(coordinates[i][j][1],coordinates[i][j][0]);
                         path.push(latLng);
                     }
@@ -444,6 +439,7 @@
                     var N = 50; //The number of coordinates circular polygons will have.
                     var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
                     var zone, northernCoordinate, latLng, id, overlay, json = this.constructor.getJSONStructure();
+
                     json.name = this.name;
                     if (this.parentId) {
                         json.properties.parentAlertId = this.parentId;
@@ -538,7 +534,7 @@
                     if (this.zones[index].getShape() === 'polygon') {
                         //Calculate and set the new punched out paths so the changes get reflected on the map immediately.
                         var punchedOutPaths = this.constructor.calculatePathsFromCoordinates(coordinates);
-                        this.zones[index].shapeOverlay.setPaths(punchedOutPaths);
+                        this.zones[index].setPaths(punchedOutPaths);
                     }
                     //Replace the old json coordinates with our new punched out zone.
                     this.json.geo.geometries[index].coordinates = coordinates;
@@ -725,23 +721,36 @@
                             }
                         });
                         //Handle polygon edits.
-                        for (var i=0; i<overlay.getPaths().length; i++) {
-                            (function(pathIndex) {
-                                google.maps.event.addListener(overlay.getPaths().getAt(pathIndex), "insert_at", function (vertexIndex) {
-                                    //Async so the vertex gets inserted before we operate on it.
-                                    setTimeout(function() {
-                                        _this._polyAtListener('insert_at',zone,pathIndex,vertexIndex);
-                                    },0);
-                                });
-                                google.maps.event.addListener(overlay.getPaths().getAt(pathIndex), "set_at", function (vertexIndex) {
-                                    if (_outer._revertedVertex) {
-                                        _outer._revertedVertex = false;
-                                        return;
-                                    }
-                                    _this._polyAtListener('set_at',zone,pathIndex,vertexIndex);
-                                });
-                            })(i);
-                        }
+                        _this._setupPolygonPathListeners(zone);
+                    }
+                },
+                /**
+                 * Initializes polygon edit listeners. When that paths of the overlay change significantly, such as when
+                 * punching the shapes out, we may need to call this function again to re-initialize the listeners.
+                 * @param zone
+                 * @private
+                 */
+                _setupPolygonPathListeners: function(zone) {
+                    var _this = this;
+                    //Just to be sure we don't duplicate listeners we will always clear existing ones first.
+                    for (var i=0; i<zone.shapeOverlay.getPaths().length; i++) {
+                        (function(pathIndex) {
+                            google.maps.event.clearListeners(zone.shapeOverlay.getPaths().getAt(pathIndex),'insert_at');
+                            google.maps.event.addListener(zone.shapeOverlay.getPaths().getAt(pathIndex), 'insert_at', function (vertexIndex) {
+                                //Async so the vertex gets inserted before we operate on it.
+                                setTimeout(function() {
+                                    _this._polyAtListener('insert_at',zone,pathIndex,vertexIndex);
+                                },0);
+                            });
+                            google.maps.event.clearListeners(zone.shapeOverlay.getPaths().getAt(pathIndex),'set_at');
+                            google.maps.event.addListener(zone.shapeOverlay.getPaths().getAt(pathIndex), 'set_at', function (vertexIndex) {
+                                if (_outer._revertedVertex) {
+                                    _outer._revertedVertex = false;
+                                    return;
+                                }
+                                _this._polyAtListener('set_at',zone,pathIndex,vertexIndex);
+                            });
+                        })(i);
                     }
                 },
                 /**
@@ -755,9 +764,9 @@
                 _polyAtListener: function (eventName,zone,pathIndex,vertexIndex) {
                     var errorMsg = null;
                     var zoneIndex = _outer._loadedAlertTemplate.getZoneIndex(zone);
+                    var largestZone = _outer._loadedAlertTemplate.getLargestZone();
                     if (_outer._loadedAlertTemplate.zones.length > 1) {
                         var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
-                        var largestZone = _outer._loadedAlertTemplate.getLargestZone();
                         //Check that the vertex is within our zone boundary. This catches cases
                         //where they drag an inner zone vertex past the boundaries of the stack.
                         if (zoneIndex !== _outer._loadedAlertTemplate.getZoneIndex(largestZone)) {
@@ -783,7 +792,7 @@
                         }
                     }
                     //Check if the polygon intersects itself. To do this we will use the turf library but we
-                    //must first calculate the new zone coordinates so it can be interpreted by turf as GeoJSON.
+                    //must first extract the new zone coordinates so they can be interpreted by turf as GeoJSON.
                     if (!errorMsg) {
                         var newZoneCoordinates = this.constructor.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
                         var kinks = turf.kinks({
@@ -809,8 +818,22 @@
                         _outer.fire('message-error',errorMsg);
                         return;
                     }
-                    //Since there's no errors we'll sync our JSON with the latest changes and adjust the centroid position.
+                    if (pathIndex > 0) {
+                        //The inner boundary of a zone was was pulled inwards so we must adjust the shape inside of it to
+                        //fill the gap. To do this we will take the inner boundary of the adjusted shape and set it as
+                        //the outer boundary of the inner shape. We must clone the boundary array so the two overlays
+                        //will not be linked by reference.
+                        var pathClone = [];
+                        for (var j=0; j<zone.shapeOverlay.getPaths().getAt(pathIndex).length; j++) {
+                            pathClone.push(zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(j));
+                        }
+                        _outer._loadedAlertTemplate.getZoneAt(zoneIndex-1).setPaths(new google.maps.MVCArray(pathClone));
+                    }
                     this.updateJSON();
+                    //Always re-punch out the shapes. This will catch cases like filling in gaps when the outer boundary of
+                    //an inner zone was pulled inwards or maintaining correct polygon state when translating the outer zone.
+                    this.punchOutShapes();
+                    //Recalculate the centroid and adjust the marker position.
                     _outer._loadedAlertTemplate.marker.setPosition(
                         this.constructor.calculateCentroidFromPaths(_outer._loadedAlertTemplate.getLargestZone().shapeOverlay.getPaths())
                     );
@@ -947,7 +970,7 @@
                  */
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":2});
+                        this.shapeOverlay.setOptions({"strokeWeight":1.5});
                         this.shapeOverlay.setEditable(this.editable);
                     }
                 },
@@ -1041,6 +1064,10 @@
                 this.paths = paths;
                 if (this.shapeOverlay) {
                     this.shapeOverlay.setPaths(paths);
+                    //Re-initialize the polygon path listeners.
+                    if (_outer._loadedAlertTemplate) {
+                        _outer._loadedAlertTemplate._setupPolygonPathListeners(this);
+                    }
                 }
             };
             /**
