@@ -487,7 +487,8 @@
                             json.geo.geometries[i].coordinates[0].push(json.geo.geometries[i].coordinates[0][0]);
                         }
                         else {
-                            var coordinates = _this.constructor.calculateCoordinatesFromPaths(overlay.getPaths(),function(latLng) {
+                            json.geo.geometries[i].coordinates =
+                            _this.constructor.calculateCoordinatesFromPaths(overlay.getPaths(),function(latLng) {
                                 //Look for the northern most point of the polygon so we know
                                 //where to render the Proximity Zone overlay label.
                                 if (latLng.lat() > northernCoordinate[1]) {
@@ -496,7 +497,6 @@
                             });
                         }
                         zone.setNorthernCoordinate(northernCoordinate);
-                        json.geo.geometries[i].coordinates = coordinates;
                     }
                     this.json = json;
                 },
