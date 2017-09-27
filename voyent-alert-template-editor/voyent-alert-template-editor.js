@@ -184,10 +184,9 @@ Polymer({
      */
     _circleButtonListener: function() {
         var _this = this;
-        this._dialogInput = 'Circular Template';
-        //this._openDialog('Please enter the alert template name','',function() {
+        this._openDialog('Please enter the alert template name','',function() {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
-        //});
+        });
     },
 
     /**
@@ -196,10 +195,9 @@ Polymer({
      */
     _polygonButtonListener: function() {
         var _this = this;
-        this._dialogInput = 'Polygonal Template';
-        //this._openDialog('Please enter the alert template name','',function() {
+        this._openDialog('Please enter the alert template name','',function() {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-        //});
+        });
     },
 
     /**
