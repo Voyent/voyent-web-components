@@ -4,9 +4,10 @@ Polymer({
 
     properties: {
         /**
-         * The currently loaded _AlertTemplate object.
+         * Contains currently loaded _AlertTemplate object and the currently selected stack.
+         * eg. { template:_AlertTemplate, selectedStack:_AlertZoneStack }
          */
-        _loadedAlertTemplate: { type: Object, value: null, notify: true },
+        _loadedAlert: { type: Object, value: null, notify: true },
         /**
          * A container of data associated with the realm region boundary.
          */
@@ -19,7 +20,7 @@ Polymer({
     },
 
     observers: [
-        '_zonesUpdated(_loadedAlertTemplate.zones.length)'
+        '_zonesUpdated(_loadedAlert.selectedStack.zones.length)'
     ],
 
     ready: function() {
@@ -35,7 +36,7 @@ Polymer({
         this.set('_renamingTemplate',!this._renamingTemplate);
         if (this._renamingTemplate) {
             //Set the input to our current name value. We use a separate value for the input so we can easily revert.
-            this.set('_templateNameVal',this._loadedAlertTemplate.name);
+            this.set('_templateNameVal',this._loadedAlert.template.name);
             //Focus on the input.
             setTimeout(function() {
                 _this.querySelector('#alertTemplate').focus();
@@ -84,10 +85,10 @@ Polymer({
      * @private
      */
     _renameAlertTemplate: function() {
-        if (this._templateNameVal !== this._loadedAlertTemplate.name) {
-            this._loadedAlertTemplate.setName(this._templateNameVal);
+        if (this._templateNameVal !== this._loadedAlert.template.name) {
+            this._loadedAlert.template.setName(this._templateNameVal);
             this.set('_templateNameVal','');
-            this.fire('voyent-alert-template-name-changed', {"name": this._loadedAlertTemplate.name});
+            this.fire('voyent-alert-template-name-changed', {"name": this._loadedAlert.template.name});
         }
         //Toggle renaming mode.
         this._toggleAlertTemplateRenaming();
@@ -104,7 +105,7 @@ Polymer({
         var _this = this;
         //This function will either be passed an event (from the ui) or a direct index (from the JS).
         var i = eOrI.model ? eOrI.model.get('index') : eOrI;
-        var zone = this._loadedAlertTemplate.getZoneAt(i);
+        var zone = this._loadedAlert.selectedStack.getZoneAt(i);
         zone.setRenaming(!zone.renaming);
         if (zone.renaming) {
             //Set the input to our current name value. We use a separate value for the input so we can easily revert.
@@ -149,7 +150,7 @@ Polymer({
             //won't exit editing mode. Additionally we'll check if we are in editing mode because if we are not
             //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
             if (document.activeElement.getAttribute('is') === 'iron-input' ||
-                  !_this._loadedAlertTemplate.getZoneAt(e.model.get('index')).renaming) {
+                  !_this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')).renaming) {
                 return;
             }
             _this._renameProximityZone(e);
@@ -163,7 +164,7 @@ Polymer({
      */
     _renameProximityZone: function(e) {
         var i = e.model.get('index');
-        var zone = this._loadedAlertTemplate.getZoneAt(i);
+        var zone = this._loadedAlert.selectedStack.getZoneAt(i);
         if (this._zoneNameVal !== zone.name) {
             zone.setName(this._zoneNameVal);
             this.set('_zoneNameVal','');
@@ -186,13 +187,13 @@ Polymer({
         var newZone;
         //Set the new zone radius as 50% larger than the current largest zone
         //and de-increment the new zone zIndex so it sits behind the other zones.
-        var largestZone = this._loadedAlertTemplate.getLargestZone();
+        var largestZone = this._loadedAlert.selectedStack.getLargestZone();
         var zIndex = largestZone.zIndex - 1;
-        var name = 'Zone_' + (this._loadedAlertTemplate.zones.length + 1);
-        //Since we don't support mix and match zone types just check what
-        //the first one is to determine which kind we want to add.
-        if (this._loadedAlertTemplate.getZoneAt(0).getShape() === 'circle') {
-            var radius = largestZone.radius + largestZone.radius * 0.5;
+        var name = 'Zone_' + (this._loadedAlert.selectedStack.zones.length + 1);
+        //Since we don't support mix and match zone types within a stack just
+        //check what the first one is to determine which kind we want to add.
+        if (this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
+            var radius = largestZone.shapeOverlay.getRadius() + largestZone.shapeOverlay.getRadius() * 0.5;
             newZone = new this._CircularAlertZone(radius,name,null,null,null,zIndex);
         }
         else { //polygon
@@ -211,15 +212,13 @@ Polymer({
                 }
                 paths.push(path);
             }
-            //When we add a new zone we don't want to include the full shape so we can punch
-            //it out properly later so we'll just pass the outer shape via paths[0].
+            //When we add a new zone we don't want to include the full shape so we can
+            //punch it out properly later so just pass the filled outer shape via paths[0].
             newZone = new this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
-            //Re-adjust centroid after the new zone is added.
-            this._loadedAlertTemplate.marker.setPosition(
-                this._AlertTemplate.calculateCentroidFromPaths(newZone.shapeOverlay.getPaths())
-            );
         }
-        this._loadedAlertTemplate.addZone(newZone);
+        this._loadedAlert.selectedStack.addZone(newZone);
+        //Re-adjust the centroid for the template.
+        this._loadedAlert.template.updateJSONAndCentroid();
         this.fire('voyent-alert-zone-added',{"id":newZone.id,"zone":newZone});
     },
 
@@ -230,9 +229,9 @@ Polymer({
     _removeProximityZone: function(e) {
         //Prevent the event from bubbling.
         e.stopPropagation();
-        var zone = this._loadedAlertTemplate.getZoneAt(e.model.get('index'));
+        var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
         var id = zone.id;
-        this._loadedAlertTemplate.removeZone(zone);
+        this._loadedAlert.selectedStack.removeZone(zone);
         this.fire('voyent-alert-zone-removed',{"id":id});
     },
 
@@ -245,7 +244,7 @@ Polymer({
         var _this = this;
         this._editing = !this._editing;
         var index = e.model.get('index');
-        var zone = this._loadedAlertTemplate.getZoneAt(index);
+        var zone = this._loadedAlert.selectedStack.getZoneAt(index);
         if (this._editing) { //We are entering edit mode.
             switch (this._selected) {
                 //Copy the current state of each of the properties into our editing mode inputs.
@@ -349,7 +348,7 @@ Polymer({
         var _this = this;
         //Do this async since iron-activate fires before this._selected changes.
         setTimeout(function() {
-            var currentVal = _this._loadedAlertTemplate.getZoneAt(e.model.get('index')).editable ? 'true' : 'false';
+            var currentVal = _this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')).editable ? 'true' : 'false';
             if (_this._editableVal === currentVal) { return; }
             _this._editProperty(e);
         },0);
@@ -361,7 +360,7 @@ Polymer({
      * @private
      */
     _editProperty: function(e) {
-        var zone = this._loadedAlertTemplate.getZoneAt(e.model.get('index'));
+        var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
         switch (this._selected) {
             //Copy the new property value from our editing mode inputs to the JSON. We don't bind directly in case we need to revert.
             case 'editable':

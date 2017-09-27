@@ -30,7 +30,7 @@ Polymer({
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
                 //Adjust the bounds and save the templateId for later.
                 _this._adjustBounds();
-                _this._templateId = _this._loadedAlertTemplate.id;
+                _this._templateId = _this._loadedAlert.template.id;
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
@@ -62,8 +62,8 @@ Polymer({
             if (!_this._templateId) { return; }
             _this._fetchLocationRecord(_this._templateId).then(function(location) {
                 //Update the template coordinates, the label's position and adjust the bounds.
-                coordinates = location.location.geometry.coordinates;
-                _this._loadedAlertTemplate.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
+                coordinates = location.location.geometry.coordinates; //TODO - switch to helper function below
+                _this._loadedAlert.selectedStack.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
                 _this.updateJSON();
                 _this._adjustBounds();
             }).catch(function(error) {
@@ -80,7 +80,7 @@ Polymer({
      * @private
      */
     _onAfterLogin: function() {
-        this._loadedAlertTemplate = null;
+        this._loadedAlert = null;
         this._myLocations = [];
     },
 
@@ -112,8 +112,8 @@ Polymer({
      */
     _adjustBounds: function() {
         var bounds = new google.maps.LatLngBounds();
-        if (this._loadedAlertTemplate) {
-            var zones = this._loadedAlertTemplate.zones;
+        if (this._loadedAlert) {
+            var zones = this._loadedAlert.selectedStack.zones;
             for (var i=0; i<zones.length; i++) {
                 bounds.extend(zones[i].shapeOverlay.getBounds().getNorthEast());
                 bounds.extend(zones[i].shapeOverlay.getBounds().getSouthWest());

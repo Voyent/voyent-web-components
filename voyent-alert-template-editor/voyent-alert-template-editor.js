@@ -50,24 +50,22 @@ Polymer({
         hideButtons: { type: Boolean, value: false }
     },
 
-    observers: ['_loadedTemplateChanged(_loadedAlertTemplate)'],
+    observers: ['_loadedTemplateChanged(_loadedAlert.template)'],
 
     /**
      * Loads an alert template into the editor using the passed id.
      * @param id
      */
     loadAlertTemplate: function(id) {
-        this._loadingAlertTemplate = true;
         var _this = this;
         this._fetchAlertTemplate(id).then(function(template) {
             //Clear the map of any loaded alert template before drawing. Specify that we want to skip the button
             //draw because we will remove the buttons after drawing the new alert template. Without this we
             //intermittently encounter a bug where the buttons are displayed after loading the template.
-            if (_this._loadedAlertTemplate) {
+            if (_this._loadedAlert) {
                 _this.clearMap(true);
             }
             _this._drawAndLoadAlertTemplate(template);
-            _this._loadingAlertTemplate = false;
         }).catch(function (error) {
             _this.fire('message-error', 'Error loading saved alert template: ' + (error.responseText || error.message || error));
         });
@@ -79,15 +77,15 @@ Polymer({
      */
     cancel: function() {
         var msg;
-        if (this._loadedAlertTemplate.id) {
+        if (this._loadedAlert.template.id) {
             msg = 'Are you sure you want to revert all unsaved changes for "' +
-                this._loadedAlertTemplate.name + '"? This action cannot be undone.';
+                this._loadedAlert.template.name + '"? This action cannot be undone.';
         }
         else {
             msg = 'Are you sure you want to cancel creating ' +
-                this._loadedAlertTemplate.name + '? This action cannot be undone.';
+                this._loadedAlert.template.name + '? This action cannot be undone.';
         }
-        this._openDialog(msg,null,'_cancelChanges');
+        this._openDialog(msg,null,'clearMap');
     },
 
     //******************PRIVATE API******************
@@ -98,23 +96,10 @@ Polymer({
      */
     _onAfterLogin: function() {
         this._isLoggedIn = true; //Toggle for side panel.
-        //If the component is first loaded by a call to loadAlertTemplate we want to skip adding
-        //the buttons since that call will remove them anyway. Without this we intermittently
-        //encounter a bug where the buttons are displayed after loading the template.
-        if (!this._loadingAlertTemplate) {
-            this._addCircleButton(this._circleButtonListener.bind(this));
-            this._addPolygonButton(this._polygonButtonListener.bind(this));
-        }
+        this._addCircleButton(this._circleButtonListener.bind(this));
+        this._addPolygonButton(this._polygonButtonListener.bind(this));
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
-    },
-
-    /**
-     * Revert the editor to it's state when the alert template was originally loaded or clears an unsaved alert template.
-     */
-    _cancelChanges: function() {
-        //Clear the map and fire an event indicating we cancelled.
-        this.clearMap();
     },
 
     /**
@@ -122,14 +107,15 @@ Polymer({
      * @private
      */
     _setupDrawingListeners: function() {
-        var _this = this, zones;
+        var _this = this, zone;
         google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
-            var marker = new google.maps.Marker({
+            //Build our stack marker, the position will be added later.
+            var stackMarker = new google.maps.Marker({
                 map: _this._map, draggable: true, zIndex: 50
             });
             if (oce.type === 'circle') { //Circular template.
-                marker.setPosition(oce.overlay.getCenter());
-                zones = [new _this._CircularAlertZone(oce.overlay.getRadius())];
+                stackMarker.setPosition(oce.overlay.getCenter());
+                zone = new _this._CircularAlertZone(oce.overlay.getRadius());
             }
             else { //Polygonal template.
                 //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
@@ -139,16 +125,44 @@ Polymer({
                     return;
                 }
                 var paths = oce.overlay.getPaths();
-                marker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
-                zones = [new _this._PolygonalAlertZone(paths)];
+                stackMarker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
+                zone = new _this._PolygonalAlertZone(paths);
+            }
+            var zoneStack = new _this._AlertZoneStack(stackMarker, [zone]);
+            if (_this._loadedAlert) {
+                //Add the stack and select it.
+                _this._loadedAlert.template.addZoneStack(zoneStack);
+                //Toggle the accordion closed for the current stack and load the new one.
+                _this._toggleAccordion(-1);
+                _this.set('_loadedAlert.selectedStack',zoneStack);
+                //When we have only one stack we don't have a template marker, just the marker for the zone stack.
+                //So once we have two zone stacks we need to create the marker and if we have more than two (the
+                //marker exists already) then we'll update it's position.
+                if (_this._loadedAlert.template.zoneStacks.length === 2) {
+                    _this._loadedAlert.template.setMarker(new google.maps.Marker({
+                        position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
+                        draggable: true, zIndex: 50,
+                        map: _this._map,
+                        icon: _this.pathtoimages+'/img/alert_marker.png'
+                    }));
+                }
+                else if (_this._loadedAlert.template.zoneStacks.length > 2) {
+                    _this._loadedAlert.template.updateJSONAndCentroid();
+                }
+            }
+            else {
+                //Since we only have one stack we won't pass a marker to
+                //the template since the stack has it's own marker.
+                _this.set('_loadedAlert',{
+                    template: new _this._AlertTemplate(
+                        null, null, _this._dialogInput, null, [zoneStack]
+                    ),
+                    selectedStack: zoneStack
+                });
             }
             //To keep things simple we'll always use our custom classes for
-            //drawing the shapes so remove this google-drawn one from the map.
+            //drawing the shapes so remove the google-drawn shape from the map.
             oce.overlay.setMap(null);
-            //Create our new template using the calculated marker and zones.
-            _this._loadedAlertTemplate = new _this._AlertTemplate(null, _this._dialogInput, marker, zones, null);
-            //Disable further alert template creations - only allowed one at a time.
-            _this._removeAlertTemplateButtons();
             //Exit drawing mode.
             _this._drawingManager.setDrawingMode(null);
         });
@@ -170,9 +184,10 @@ Polymer({
      */
     _circleButtonListener: function() {
         var _this = this;
-        this._openDialog('Please enter the alert template name','',function() {
+        this._dialogInput = 'Circular Template';
+        //this._openDialog('Please enter the alert template name','',function() {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
-        });
+        //});
     },
 
     /**
@@ -181,9 +196,10 @@ Polymer({
      */
     _polygonButtonListener: function() {
         var _this = this;
-        this._openDialog('Please enter the alert template name','',function() {
+        this._dialogInput = 'Polygonal Template';
+        //this._openDialog('Please enter the alert template name','',function() {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-        });
+        //});
     },
 
     /**

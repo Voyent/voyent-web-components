@@ -51,6 +51,8 @@
             pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' }
         },
 
+        observers: ['_selectedStackChanged(_loadedAlert.selectedStack)'],
+
         ready: function() {
             var _this = this;
             //Default to the last realm and account if one is not set.
@@ -115,6 +117,13 @@
                 }
                 //Make sure the map is always sized correctly when the window size changes.
                 window.addEventListener('resize', function() { _this.resizeMap(); });
+                //Always de-select any loaded stack when clicking the map.
+                google.maps.event.addListener(_this._map, 'click', function() {
+                    if (_this._loadedAlert &&  _this._loadedAlert.selectedStack) {
+                        _this._loadedAlert.selectedStack.deactivateZoneOverlays();
+                        _this.set('_loadedAlert.selectedStack',null);
+                    }
+                });
             };
             if (!('google' in window) || !('maps' in window.google)) {
                 if (this.loadGoogleMaps) {
@@ -163,24 +172,20 @@
             if (this._savingAlertTemplate) { return; }
             this._savingAlertTemplate = true;
             var _this = this, msg;
-            //First, make sure we have the most recent JSON ready.
-            this._loadedAlertTemplate.updateJSON();
-            //For circular template we'll only punch out the zones once, when they save.
-            if (this._loadedAlertTemplate.getZoneAt(0).getShape() === 'circle') {
-                this._loadedAlertTemplate.punchOutShapes();
-            }
-            var requestOpts = {realm: this.realm, account: this.account, alertTemplate: this._loadedAlertTemplate.json};
+            //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
+            this._loadedAlert.template.updateJSON(true);
+            var requestOpts = {realm: this.realm, account: this.account, alertTemplate: this._loadedAlert.template.json};
             var func = 'createAlertTemplate';
             //If we have an id then the template was already saved.
-            if (this._loadedAlertTemplate.id) {
+            if (this._loadedAlert.template.id) {
                 func = 'updateAlertTemplate';
-                requestOpts.id = this._loadedAlertTemplate.id
+                requestOpts.id = this._loadedAlert.template.id
             }
             voyent.locate[func](requestOpts).then(function (uri) {
                 _this._savingAlertTemplate = false;
                 if (func === 'createAlertTemplate') {
                     //Grab the generated ID from the return URI and setup change listeners
-                    _this._loadedAlertTemplate.setId(uri.split('/').pop());
+                    _this._loadedAlert.template.setId(uri.split('/').pop());
                     msg = 'Alert template successfully created';
                 }
                 else {
@@ -188,6 +193,9 @@
                 }
                 if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                     _this.fire('message-info', msg);
+                }
+                else if (_this._loadedAlert.template.parentId) {
+                    _this._updateAlertLocation();
                 }
                 _this.fire('voyent-alert-template-saved',{});
             }).catch(function(e) {
@@ -208,7 +216,7 @@
                 this._map.panToBounds(this._areaRegion.bounds);
             }
             //Clear loaded alert template.
-            if (this._loadedAlertTemplate) {
+            if (this._loadedAlert) {
                 this._removeAlertTemplateFromMap();
             }
             //Clear the user marker.
@@ -236,7 +244,7 @@
          */
         setMessageTemplate: function(messageTemplate, zoneIndex) {
             if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
-                this._loadedAlertTemplate.getZoneAt(zoneIndex).messageTemplate = messageTemplate;
+                this._loadedAlert.selectedStack.getZoneAt(zoneIndex).messageTemplate = messageTemplate;
             }
         },
 
@@ -462,42 +470,77 @@
          * @private
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
-            var marker = new google.maps.Marker({
-                position: (latLngCentroid ? latLngCentroid : this._AlertTemplate.calculateCentroidFromJSON(templateJSON)),
-                map: this._map,
-                draggable: true,
-                zIndex: 50,
-                icon: this.nodeName === 'VOYENT-ALERT-EDITOR' ? this.pathtoimages+'/img/alert_marker.png' : null,
-                visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
-            });
-            var properties, zones = [], zIndex = 49;
-            for (var i=0; i<templateJSON.geo.geometries.length; i++) {
-                properties = templateJSON.properties[templateJSON.geo.geometries[i].id];
-                if (properties.shape === 'circle') {
-                    zones.push(new this._CircularAlertZone(
-                        properties.radius, properties.name, properties.editable,
-                        properties.opacity, properties.colour, zIndex
-                    ));
+            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker;
+            var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
+                stackGroups[item.stackId] = stackGroups[item.stackId] || [];
+                stackGroups[item.stackId].push(item);
+                return stackGroups;
+            },{});
+            for (var stackId in zoneStackGeometries) {
+                if (!zoneStackGeometries.hasOwnProperty(stackId)) { continue; }
+                zoneGeometries = zoneStackGeometries[stackId];
+                zones = [];
+                zIndex = 49;
+                for (var i=0; i<zoneGeometries.length; i++) {
+                    properties = templateJSON.properties[zoneGeometries[i].id];
+                    if (properties.shape === 'circle') {
+                        zones.push(new this._CircularAlertZone(
+                            properties.radius, properties.name, properties.editable,
+                            properties.opacity, properties.colour, zIndex
+                        ));
+                    }
+                    else {
+                        //Generate the ordered sequence of coordinates that completes the Polygon shape.
+                        zones.push(new this._PolygonalAlertZone(
+                            this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
+                            properties.name, properties.editable, properties.opacity,
+                            properties.colour, zIndex)
+                        );
+                    }
+                    zIndex--;
                 }
-                else {
-                    //Generate the ordered sequence of coordinates that completes the Polygon shape.
-                    zones.push(new this._PolygonalAlertZone(
-                        this._AlertTemplate.calculatePathsFromCoordinates(templateJSON.geo.geometries[i].coordinates),
-                        properties.name, properties.editable, properties.opacity,
-                        properties.colour, zIndex)
-                    );
-                }
-                zIndex--;
+                //Build the stack marker, calculate the position using by building JSON that represents only the stack.
+                stackMarker = new google.maps.Marker({
+                    position: this._AlertTemplate.calculateCentroidFromJSON({
+                        "geo": {
+                            "type": "GeometryCollection",
+                            "geometries": zoneGeometries
+                        }
+                    }),
+                    map: this._map, draggable: true, zIndex: 50,
+                    visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
+                });
+                zoneStacks.push(new this._AlertZoneStack(stackMarker, zones));
             }
             var parentId = templateJSON.properties.parentAlertId || null;
-            this._loadedAlertTemplate = new this._AlertTemplate(
-                templateJSON._id, templateJSON.name, marker, zones, parentId
-            );
-            //Disable further template or instance creations - only allowed one at a time.
-            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                this._removeAlertTemplateButtons();
+            //We only want to create a template marker if we have more than
+            //one stack, otherwise the stack marker will just be used.
+            var templateMarker;
+            if (zoneStacks.length > 1) {
+                templateMarker = new google.maps.Marker({
+                    position: (latLngCentroid ? latLngCentroid : this._AlertTemplate.calculateCentroidFromJSON(templateJSON)),
+                    map: this._map, draggable: true, zIndex: 50,
+                    icon: this.pathtoimages+'/img/alert_marker.png',
+                    visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
+                });
             }
-            else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+            this.set('_loadedAlert', {
+                template: new this._AlertTemplate(
+                    templateJSON._id, parentId, templateJSON.name, templateMarker, zoneStacks
+                ),
+                selectedStack: null
+            });
+            //If we were provided a centroid for the template then we need to move the centroid of the zones from the current
+            //position to the new one. To do this we will first calculate their current position based on the template and then
+            //move them to the new coordinate while maintaining the distance and bearing they were from the original position.
+            if (latLngCentroid) {
+                this._loadedAlert.template.calculateRelativeStackPositions(this._AlertTemplate.calculateCentroidFromJSON(templateJSON));
+                this._loadedAlert.template.moveStacksRelativeToPosition(latLngCentroid);
+                //Re-initialize the polygon path listeners for all stacks of polygonal zones.
+                this._loadedAlert.template.initializePolygonStackPathListeners();
+            }
+            //Disable further alert instance creations - only allowed one at a time.
+            if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 this._removeAlertButton();
             }
         },
@@ -506,20 +549,14 @@
          * Clears the map of overlays associated with the currently loaded alert template.
          */
         _removeAlertTemplateFromMap: function() {
-            //Remove the marker, circles and zoneOverlays from the map.
-            if (this._loadedAlertTemplate.marker) {
-                this._loadedAlertTemplate.marker.setMap(null);
-            }
-            var zones = this._loadedAlertTemplate.zones;
-            for (var i=0; i<zones.length; i++) {
-                zones[i].removeFromMap();
-            }
+            //Remove the entire template from the map.
+            this._loadedAlert.template.removeFromMap();
             this.fire('voyent-alert-zone-selected', {
                 'index': -1,
                 'id': null,
                 'zone': null
             });
-            this._loadedAlertTemplate = null;
+            this._loadedAlert = null;
         },
 
         /**
@@ -652,17 +689,6 @@
                     },100);
                 }
             });
-        },
-
-        /**
-         * Handles removing buttons for creating new alert templates.
-         * @private
-         */
-        _removeAlertTemplateButtons: function() {
-            var circleBttn = this.querySelector('#circleBttn');
-            if (circleBttn) { circleBttn.parentNode.removeChild(circleBttn); }
-            var polygonBttn = this.querySelector('#polygonBttn');
-            if (polygonBttn) { polygonBttn.parentNode.removeChild(polygonBttn); }
         },
 
         /**
@@ -830,6 +856,27 @@
                 return;
             }
             this.fire('pathtoimagesChanged',{'path':newPath});
+        },
+
+        /**
+         * Manages the stack marker icons.
+         * @param selectedStack
+         * @private
+         */
+        _selectedStackChanged: function(selectedStack) {
+            if (this._loadedAlert) {
+                if (this._loadedAlert.template.zoneStacks.length === 1) {
+                    this._loadedAlert.template.zoneStacks[0].marker.setIcon(this.pathtoimages+'/img/alert_marker.png');
+                }
+                else {
+                    for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
+                        this._loadedAlert.template.zoneStacks[i].marker.setIcon(null);
+                    }
+                    if (selectedStack) {
+                        selectedStack.marker.setIcon(this.pathtoimages+'/img/green-marker.png');
+                    }
+                }
+            }
         }
     };
 </script>

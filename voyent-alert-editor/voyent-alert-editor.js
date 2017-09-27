@@ -24,7 +24,7 @@ Polymer({
         Promise.all(promises).then(function(results) {
             //Clear the map of any loaded alert template before drawing. Specify that we want to
             //skip the button draw because we will remove the buttons after drawing the new alert.
-            if (_this._loadedAlertTemplate) {
+            if (_this._loadedAlert) {
                 _this.clearMap(true);
             }
             var latLng = new google.maps.LatLng(
@@ -170,9 +170,6 @@ Polymer({
     _proceedToActivatingPane: function() {
         this._showConfirmingAlertPane = true;
         this._showPropertiesPane = false;
-
-        //In case there were changes, update the child alert template.
-        this.saveAlertTemplate();
     },
 
     /**
@@ -254,7 +251,7 @@ Polymer({
         //Remove the parent's id from the record as we'll generate a new one.
         delete childTemplate._id;
         this._drawAndLoadAlertTemplate(childTemplate,latLng);
-        this._loadedAlertTemplate.setParentId(parentAlertId);
+        this._loadedAlert.template.setParentId(parentAlertId);
         //Toggle the creation mode.
         this._proceedToPropertiesPane();
     },
@@ -266,11 +263,11 @@ Polymer({
     _removeAlertTemplate: function() {
         var _this = this;
         //Delete from DB if it's saved.
-        if (this._loadedAlertTemplate.id) {
+        if (this._loadedAlert.template.id) {
             voyent.locate.deleteAlertTemplate({
                 realm: this.realm,
                 account: this.account,
-                id: this._loadedAlertTemplate.id
+                id: this._loadedAlert.template.id
             }).then(function() {
                 _this._removeAlertTemplateFromMap();
             }).catch(function (error) {
@@ -289,11 +286,11 @@ Polymer({
     _removeAlert: function() {
         var _this = this;
         //Just delete the alert, the location service will handle deleting the associated child template.
-        if (this._loadedAlertTemplate.id) {
+        if (this._loadedAlert.template.id) {
             voyent.locate.deleteAlert({
                 account:this.account,
                 realm:this.realm,
-                id:this._loadedAlertTemplate.id
+                id:this._loadedAlert.template.id
             }).then(function() {
                 _this._removeAlertTemplateFromMap();
             }).catch(function(error) {
@@ -311,7 +308,7 @@ Polymer({
      * @private
      */
     _promptForRemoval: function(func) {
-        var msg = 'Are you sure you want to delete ' + this._loadedAlertTemplate.name + '? This cannot be undone!';
+        var msg = 'Are you sure you want to delete ' + this._loadedAlert.template.name + '? This cannot be undone!';
         this._openDialog(msg,null,func);
     },
 

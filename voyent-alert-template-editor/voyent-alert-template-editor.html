@@ -36,14 +36,14 @@ Example:
             <div id="map"></div><div id="sidePanel">
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
-                        <voyent-alert-properties _loaded-alert-template="{{_loadedAlertTemplate}}"
+                        <voyent-alert-properties _loaded-alert="{{_loadedAlert}}"
                                                  _map="{{_map}}"
                                                  _area-region="{{_areaRegion}}"></voyent-alert-properties>
-                        <template is="dom-if" if="[[!_loadedAlertTemplate]]">
+                        <template is="dom-if" if="[[!_loadedAlert]]">
                             <div class="alert-template-title">New Alert Template</div>
                             <div class="alert-template-desc">
-                                Activate one of the icons from the toolbar in the
-                                top-right corner and click a location on the map.
+                                Activate one of the icons from the toolbar in the top-right corner
+                                and click a location on the map to begin drawing a new template.
                             </div>
                         </template>
                     </template>
@@ -54,7 +54,7 @@ Example:
                 </div>
                 <div id="crudPanel">
                     <template is="dom-if" if="[[!hideButtons]]">
-                        <template is="dom-if" if="[[_loadedAlertTemplate]]">
+                        <template is="dom-if" if="[[_loadedAlert]]">
                             <paper-button raised title="Cancel" on-click="cancel">Cancel</paper-button>
                             <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
                         </template>

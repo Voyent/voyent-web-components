@@ -20,10 +20,10 @@
         },
 
         ready: function() {
-            this._loadedAlertTemplate = null;
+            this._loadedAlert = null;
         },
 
-        observers: ['_zonesUpdated(_loadedAlertTemplate.zones.length)'],
+        observers: ['_zonesUpdated(_loadedAlert.selectedStack.zones.length)'],
 
         /**
          * Updates the current alert Location
@@ -31,12 +31,15 @@
          */
         _updateAlertLocation: function() {
             var _this = this;
-            var pos = this._loadedAlertTemplate.marker.getPosition();
+            //If we only have one zone stack then the template won't have a center marker.
+            var pos = this._loadedAlert.template.marker ?
+                      this._loadedAlert.template.marker.getPosition() :
+                      this._loadedAlert.template.zoneStacks[0].marker.getPosition();
             var location = {
                 "location": {
                     "geometry": { "type" : "Point", "coordinates" : [pos.lng(),pos.lat()] },
                     "properties": {
-                        "alertId": this._loadedAlertTemplate.id,
+                        "alertId": this._loadedAlert.template.id,
                         "vras": {
                             "isNewAlert": this._showConfirmingAlertPane
                         }
@@ -49,27 +52,29 @@
                     _this.fire('message-info', 'New alert activated!');
                 }
             }).catch(function (e) {
-                _this.fire('message-error', 'Issue creating ' + _this._loadedAlertTemplate.name +
+                _this.fire('message-error', 'Issue creating ' + _this._loadedAlert.template.name +
                                             ': ' + (e.responseText || e.message || e))
             });
         },
 
         /**
-         * Toggles the accordion panels. This is used to toggle the accordion
-         * for both accordion pane and proximity zone clicks.
+         * Toggles the accordion panes. This is used to toggle the accordion for both accordion pane and proximity
+         * zone clicks. In addition to toggling the panes this will also trigger styling updates to zones overlays.
+         * on the map.
          * @param eOrI
          * @private
          */
         _toggleAccordion: function(eOrI) {
+            if (!this._loadedAlert || !this._loadedAlert.selectedStack) { return; }
             //This function will either be passed an event (from the ui) or a direct index (from the JS).
             var index = eOrI.model ? eOrI.model.get('index') : eOrI;
             //If they toggle the currently toggled accordion pane then we'll close it.
-            if (index > -1 && this._loadedAlertTemplate.getZoneAt(index).active) {
+            if (index > -1 && this._loadedAlert.selectedStack.getZoneAt(index).active) {
                 index = -1;
             }
-            this._loadedAlertTemplate.deactivateZoneOverlays();
+            this._loadedAlert.selectedStack.deactivateZoneOverlays();
             if (index > -1) {
-                var zone = this._loadedAlertTemplate.getZoneAt(index);
+                var zone = this._loadedAlert.selectedStack.getZoneAt(index);
                 zone.setActive(true);
                 this.fire('voyent-alert-zone-selected', {
                     'index': index,
@@ -94,13 +99,13 @@
             var _this = this;
             //Async so the template updates properly.
             setTimeout(function() {
-                _this._loadedAlertTemplate.zones.sort(_this._sortZones);
+                _this._loadedAlert.selectedStack.zones.sort(_this._sortZones);
                 //Force the template-repeat to re-render.
                 var repeat = document.querySelector('#zones-repeat');
                 if (repeat) { repeat.render(); }
                 //The zoneIndex might have changed for the loaded zone so determine the index and re-fire the event.
                 var selectedZoneIndex = -1;
-                var zones = _this._loadedAlertTemplate.zones;
+                var zones = _this._loadedAlert.selectedStack.zones;
                 for (var i=0;i<zones.length; i++) {
                     if (zones[i].active) {
                         selectedZoneIndex = i;
@@ -109,9 +114,9 @@
                 }
                 if (selectedZoneIndex > -1) {
                     _this.fire('voyent-alert-zone-selected',{
-                            'index': selectedZoneIndex,
-                            'id': zones[selectedZoneIndex].id,
-                            'zone': zones[selectedZoneIndex]
+                        'index': selectedZoneIndex,
+                        'id': zones[selectedZoneIndex].id,
+                        'zone': zones[selectedZoneIndex]
                     });
                 }
                 //Update the z-indexes so we can always click the zones.
@@ -149,7 +154,7 @@
          * @private
          */
         _adjustZIndexes: function() {
-            var zIndex=49, zones = this._loadedAlertTemplate.zones;
+            var zIndex=49, zones = this._loadedAlert.selectedStack.zones;
             for (var i=0; i<zones.length; i++) {
                 zones[i].setZIndex(zIndex);
                 zIndex--;
@@ -157,7 +162,7 @@
         },
 
         /**
-         * Monitors changes to the features.zones or all.properties list for sorting purposes.
+         * Monitors changes to list of zones from the selected stack for sorting purposes.
          * @param length
          * @private
          */
@@ -175,12 +180,13 @@
         },
 
         /**
-         * Generates a uid using the current time in ms and a random number in the hundred thousands.
+         * Generates a uid using the current time in ms and a random number
+         * in the trillions (each are 13 characters separated by a dash).
          * @returns {string}
          * @private
          */
         _generateUid: function() {
-            return new Date().getTime()+'-'+Math.floor(Math.random()*(900000)+100000);
+            return new Date().getTime()+'-'+Math.floor(Math.random()*(9000000000000)+1000000000000);
         },
 
         /**
@@ -191,6 +197,8 @@
             var _outer = this;
             /**
              * Common code for inheriting a parent's prototype on the child's.
+             * @param child
+             * @param parent
              * @private
              */
             this._inheritPrototype = function(child,parent) {
@@ -201,19 +209,18 @@
             /**
              * A class that represents an alert template, both the drawn map entity and the json.
              * @param id - The unique identifier.
-             * @param name - The user-defined name.
-             * @param marker - The associated map marker.
-             * @param zones - A list of _AlertZone objects, the list of zones associated with the template.
              * @param parentId - The parent template id, only relevant for child templates.
+             * @param name - The user-defined name.
+             * @param marker - The associated map marker for the entire template, centered between the various stacks.
+             * @param zoneStacks - A list of _AlertZoneStack objects, the list of zone stacks belonging with the template.
              * @private
              */
-            this._AlertTemplate = function (id,name,marker,zones,parentId) {
+            this._AlertTemplate = function(id,parentId,name,marker,zoneStacks) {
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
                 this.setMarker(marker || null);
-                this.setZones(zones && zones.length ? zones : []);
-                this.updateJSON();
+                this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -319,8 +326,8 @@
                     if (this.json) {
                         this.json._id = id;
                     }
-                    if (_outer._loadedAlertTemplate === this) {
-                        _outer.set('_loadedAlertTemplate.id', id);
+                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
+                        _outer.set('_loadedAlert.template.id', id);
                     }
                 },
                 /**
@@ -330,11 +337,11 @@
                  */
                 setParentId: function(parentId) {
                     this.parentId = parentId;
-                    if (this.json) {
+                    if (this.json && this.json.properties) {
                         this.json.properties.parentAlertId = parentId;
                     }
-                    if (_outer._loadedAlertTemplate === this) {
-                        _outer.set('_loadedAlertTemplate.parentId', parentId);
+                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
+                        _outer.set('_loadedAlert.template.parentId', parentId);
                     }
                 },
                 /**
@@ -347,10 +354,198 @@
                     if (this.json) {
                         this.json.name = name;
                     }
-                    if (_outer._loadedAlertTemplate === this) {
-                        _outer.set('_loadedAlertTemplate.name', name);
+                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
+                        _outer.set('_loadedAlert.template.name', name);
                     }
                 },
+                /**
+                 * Sets the marker and sets up relevant listeners.
+                 * @param marker
+                 */
+                setMarker: function (marker) {
+                    //When we create a new AlertTemplate with only one stack we don't need a marker for
+                    //the template since the stack has it's own so always check if we were passed one.
+                    if (marker) {
+                        this.marker = marker;
+                        this._setupMarkerListeners();
+                    }
+                },
+                /**
+                 * Sets the zone stacks and triggers required processing.
+                 * @param zoneStacks
+                 */
+                setZoneStacks: function (zoneStacks) {
+                    this.zoneStacks = zoneStacks;
+                },
+                /**
+                 * Add the passed zone stack.
+                 * @param zoneStack
+                 */
+                addZoneStack: function (zoneStack) {
+                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
+                        _outer.push('_loadedAlert.template.zoneStacks',zoneStack);
+                    }
+                    else {
+                        this.zoneStacks.push(zoneStack);
+                    }
+                    //Update the JSON.
+                    this.updateJSON();
+                },
+                /**
+                 * Remove the passed zone stack.
+                 * @param zoneStack
+                 */
+                removeZoneStack: function (zoneStack) {
+                    for (var i=0; i<zoneStack.length; i++) {
+                        zoneStack[i].removeZone();
+                    }
+                    var zoneStackIndex = this.getZoneIndex(zoneStack);
+                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
+                        _outer.splice('_loadedAlert.template.zoneStacks',zoneStackIndex,1);
+                    }
+                    else {
+                        this.zoneStacks.splice(zoneStackIndex,1);
+                    }
+                },
+                /**
+                 * Triggers reinitialization of edit listeners for each polygonal zone stack.
+                 */
+                initializePolygonStackPathListeners: function() {
+                    for (var i=0; i<this.zoneStacks.length; i++) {
+                        if (this.zoneStacks[i].zones[0].getShape() === 'polygon') {
+                            this.zoneStacks[i].initializePolygonPathListeners();
+                        }
+                    }
+                },
+                /**
+                 * Updates the json to reflect the current state of the template. Since each stack of zones maintains
+                 * their own json we update their json and then simply merge the geometries and properties section from
+                 * each stack into one.
+                 * @param punchOutCircularStacks
+                 */
+                updateJSON: function (punchOutCircularStacks) {
+                    var json = this.constructor.getJSONStructure();
+                    //Add template-level properties.
+                    json.name = this.name;
+                    if (this.parentId) {
+                        json.properties.parentAlertId = this.parentId;
+                    }
+                    for (var i=0; i<this.zoneStacks.length; i++) {
+                        //First update the json for the stack.
+                        this.zoneStacks[i].updateJSON();
+                        //Merge the geometries arrays.
+                        json.geo.geometries = json.geo.geometries.concat(this.zoneStacks[i].json.geo.geometries);
+                        //Merge the properties objects.
+                        for (var zoneId in this.zoneStacks[i].json.properties) {
+                            if (this.zoneStacks[i].json.properties.hasOwnProperty(zoneId)) {
+                                json.properties[zoneId] = this.zoneStacks[i].json.properties[zoneId];
+                            }
+                        }
+                        //If it's a circular template then punch it out.
+                        if (punchOutCircularStacks &&
+                            this.zoneStacks[i].getZoneAt(0).getShape() === 'circle') {
+                            this.zoneStacks[i].punchOutShapes();
+                        }
+                    }
+                    this.json = json;
+                },
+                /**
+                 * Updates the position of the template marker by updating the json and calculating the centroid from that.
+                 * If this function is called in result of a stack change then the json for that stack should be updated first.
+                 */
+                updateJSONAndCentroid: function() {
+                    if (this.marker) {
+                        this.updateJSON();
+                        this.marker.setPosition(
+                            this.constructor.calculateCentroidFromJSON(this.json)
+                        );
+                    }
+                },
+                /**
+                 * Removes the template from the map.
+                 */
+                removeFromMap: function() {
+                    if (this.marker) {
+                        this.marker.setMap(null);
+                    }
+                    for (var i=0; i<this.zoneStacks.length; i++) {
+                        this.zoneStacks[i].removeFromMap();
+                    }
+                },
+                /**
+                 * Initializes marker listeners.
+                 * @private
+                 */
+                _setupMarkerListeners: function () {
+                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    var _this = this;
+                    //The proximity zone center_changed listener will fire continuously when
+                    //dragging the template marker so we'll add a flag to ignore those events.
+                    google.maps.event.addListener(this.marker, 'dragstart', function () {
+                        _outer._ignoreZoneCenterChangedEvent = true;
+                        _this.calculateRelativeStackPositions();
+                    });
+                    google.maps.event.addListener(this.marker, 'dragend', function () {
+                        _outer._ignoreZoneCenterChangedEvent = false;
+                        //Re-initialize the polygon path listeners for all stacks of polygonal zones.
+                        _this.initializePolygonStackPathListeners();
+                    });
+                    //Continuously re-draw the overlay as the template is dragged.
+                    google.maps.event.addListener(this.marker, 'drag', function () {
+                        _this.moveStacksRelativeToPosition();
+                        _this.updateJSON();
+                    });
+                    //Add click listener to marker.
+                    google.maps.event.addListener(this.marker, 'click', function () {
+                        //Toggle all the accordion panes closed and de-select all stacks.
+                        _outer._toggleAccordion(-1);
+                        _outer.set('_loadedAlert.selectedStack',null);
+                    });
+                },
+                /**
+                 * Calculates the current zone positions (distance and bearing)
+                 * in each stack relative to the passed location.
+                 * @param latLng - A LatLng object representing the position in
+                 *                 which the distance and bearing will be calculated.
+                 */
+                calculateRelativeStackPositions: function(latLng) {
+                    var position = latLng || this.marker.getPosition();
+                    for (var i=0; i<this.zoneStacks.length; i++) {
+                        this.zoneStacks[i].calculateRelativeZonePositions(position);
+                    }
+                },
+                /**
+                 * Moves zone stacks from their current location to the passed location, maintaining
+                 * the distance and bearing calculated by `calculateRelativeZonePositions`.
+                 * @param latLng - The LatLng object representing the position
+                 *                 in which the zones will be to.
+                 */
+                moveStacksRelativeToPosition: function (latLng) {
+                    var position = latLng || this.marker.getPosition();
+                    for (var i=0; i<this.zoneStacks.length; i++) {
+                        this.zoneStacks[i].moveZonesRelativeToPosition(position);
+                    }
+                }
+            };
+            Object.seal(this._AlertTemplate);
+
+            /**
+             * A class that represents an alert template proximity zone stack.
+             * @param marker - The associated map marker for the stack.
+             * @param zones - A list of _AlertZone objects, the list of zones belonging with the stack.
+             * @private
+             */
+            this._AlertZoneStack = function (marker,zones) {
+                this.stackId = _outer._generateUid();
+                this.setMarker(marker || null);
+                this.setZones(zones && zones.length ? zones : []);
+                this.updateJSON();
+            };
+            /**
+             * _AlertZoneStack prototype (instance) functions.
+             */
+            this._AlertZoneStack.prototype = {
+                constructor: _outer._AlertZoneStack,
                 /**
                  * Sets the marker and sets up relevant listeners.
                  * @param marker
@@ -402,15 +597,18 @@
                  * @param zone
                  */
                 addZone: function (zone) {
-                    if (_outer._loadedAlertTemplate === this) {
-                        _outer.push('_loadedAlertTemplate.zones',zone);
+                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack === this) {
+                        _outer.push('_loadedAlert.selectedStack.zones',zone);
                     }
                     else {
                         this.zones.push(zone);
                     }
-                    this.updateJSON();
                     if (zone.getShape() === 'polygon') {
+                        this.updateJSONAndCentroid();
                         this._punchOutShape(this.zones.length-1);
+                    }
+                    else {
+                        this.updateJSON();
                     }
                     this._processNewZone(zone);
                 },
@@ -422,8 +620,8 @@
                     zone.shapeOverlay.setMap(null);
                     zone.nameOverlay.setMap(null);
                     var zoneIndex = this.getZoneIndex(zone);
-                    if (_outer._loadedAlertTemplate === this) {
-                        _outer.splice('_loadedAlertTemplate.zones',zoneIndex,1);
+                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack === this) {
+                        _outer.splice('_loadedAlert.selectedStack.zones',zoneIndex,1);
                     }
                     else {
                         this.zones.splice(zoneIndex,1);
@@ -431,25 +629,30 @@
                     this.updateJSON();
                 },
                 /**
-                 * Updates the JSON to reflect the current state of the template. Also updates
+                 * Updates the center of the zone to match the marker and sets up relevant listeners.
+                 * @private
+                 */
+                _processNewZone: function(zone) {
+                    if (zone.getShape() === 'circle') {
+                        zone.shapeOverlay.setCenter(this.marker.getPosition());
+                    }
+                    this._setupZoneListeners(zone);
+                },
+                /**
+                 * Updates the json to reflect the current state of the stack. Also updates
                  * the northernCoordinate which adjusts the position of the zone name overlays.
                  */
                 updateJSON: function () {
-                    var _this = this;
                     var N = 50; //The number of coordinates circular polygons will have.
                     var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
-                    var zone, northernCoordinate, latLng, id, overlay, json = this.constructor.getJSONStructure();
+                    var zone, northernCoordinate, latLng, overlay,
+                        json = _outer._AlertTemplate.getJSONStructure();
 
-                    json.name = this.name;
-                    if (this.parentId) {
-                        json.properties.parentAlertId = this.parentId;
-                    }
                     for (var i=0; i<this.zones.length; i++) {
                         zone = this.zones[i];
                         northernCoordinate = [null, -100];
-                        id = zone.id;
                         overlay = zone.shapeOverlay;
-                        json.properties[id] = {
+                        json.properties[zone.id] = {
                             "name": zone.name,
                             "shape": zone.getShape(),
                             "editable": zone.editable,
@@ -457,20 +660,21 @@
                             "colour": zone.colour
                         };
                         if (zone.messageTemplate) {
-                            json.properties[id].messageTemplate = zone.messageTemplate;
+                            json.properties[zone.id].messageTemplate = zone.messageTemplate;
                         }
                         json.geo.geometries.push({
-                            "id": id,
+                            "id": zone.id,
+                            "stackId": this.stackId,
                             "type": "Polygon",
                             "coordinates": [[]]
                         });
                         if (zone.getShape() === 'circle') {
-                            json.properties[id].radius = overlay.getRadius();
+                            json.properties[zone.id].radius = overlay.getRadius();
                             var center =  this.marker.getPosition();
-                            for (var j=0; j<N; j++) {
+                            for (var k=0; k<N; k++) {
                                 //Calculate and save the next coordinate.
                                 latLng = google.maps.geometry.spherical.computeOffset(
-                                    center, json.properties[id].radius,  degreeStep * j
+                                    center, json.properties[zone.id].radius,  degreeStep * k
                                 );
                                 json.geo.geometries[i].coordinates[0].push([latLng.lng(), latLng.lat()]);
                                 //Look for the northern most point of the circle so we know
@@ -484,17 +688,26 @@
                         }
                         else {
                             json.geo.geometries[i].coordinates =
-                            _this.constructor.calculateCoordinatesFromPaths(overlay.getPaths(),function(latLng) {
-                                //Look for the northern most point of the polygon so we know
-                                //where to render the Proximity Zone overlay label.
-                                if (latLng.lat() > northernCoordinate[1]) {
-                                    northernCoordinate = [latLng.lng(), latLng.lat()];
-                                }
-                            });
+                                _outer._AlertTemplate.calculateCoordinatesFromPaths(overlay.getPaths(),function(latLng) {
+                                    //Look for the northern most point of the polygon so we know
+                                    //where to render the Proximity Zone overlay label.
+                                    if (latLng.lat() > northernCoordinate[1]) {
+                                        northernCoordinate = [latLng.lng(), latLng.lat()];
+                                    }
+                                });
                         }
                         zone.setNorthernCoordinate(northernCoordinate);
                     }
                     this.json = json;
+                },
+                /**
+                 * Updates the position of the stack marker by updating the json and calculating the centroid from that.
+                 */
+                updateJSONAndCentroid: function() {
+                    this.updateJSON();
+                    this.marker.setPosition(
+                        _outer._AlertTemplate.calculateCentroidFromJSON(this.json)
+                    );
                 },
                 /**
                  * Loops the zone coordinates in the JSON and triggers punching out the smaller
@@ -511,15 +724,12 @@
                  * @private
                  */
                 _punchOutShape: function(index) {
-                    //Return if the index of the smallest zone (0) is passed then don't proceed.
+                    //Don't proceed if the index of the smallest zone (0) is passed.
                     if (!index) { return; }
-                    //Turf accepts polygon feature objects so pass these in and then
-                    //only pull out the coordinates from the new feature object.
                     var doughnut = turf.difference({
                             "type": "Feature",
                             "geometry": {
                                 "type": "Polygon",
-                                //Use only the outer boundary of the shape when punching them out.
                                 "coordinates": [this.json.geo.geometries[index].coordinates[0]]
                             }
                         }, {
@@ -533,36 +743,29 @@
                     var coordinates = doughnut.geometry.coordinates;
                     if (this.zones[index].getShape() === 'polygon') {
                         //Calculate and set the new punched out paths so the changes get reflected on the map immediately.
-                        var punchedOutPaths = this.constructor.calculatePathsFromCoordinates(coordinates);
+                        var punchedOutPaths = _outer._AlertTemplate.calculatePathsFromCoordinates(coordinates);
                         this.zones[index].setPaths(punchedOutPaths);
+                        //Re-initialize the polygon path listeners for the edited zone.
+                        this.initializePolygonPathListeners(this.zones[index]);
                     }
                     //Replace the old json coordinates with our new punched out zone.
                     this.json.geo.geometries[index].coordinates = coordinates;
                 },
                 /**
-                 * Updates the center of the zone to match the marker and sets up relevant listeners.
-                 * @private
+                 * Calculates the current zone positions (distance and bearing) relative to the passed location.
+                 * @param latLng - A LatLng object representing the position in
+                 *                 which the distance and bearing will be calculated.
                  */
-                _processNewZone: function(zone) {
-                    if (zone.getShape() === 'circle') {
-                        zone.shapeOverlay.setCenter(this.marker.getPosition());
-                    }
-                    this._setupZoneListeners(zone);
-                },
-                /**
-                 * Calculates the zone positions in relation to the centroid.
-                 * @private
-                 */
-                _calculateCoordinatePositions: function() {
-                    var centroid = this.marker.getPosition(), positions;
+                calculateRelativeZonePositions: function(latLng) {
+                    var position = latLng || this.marker.getPosition(), positions;
                     for (var i=0; i<this.zones.length; i++) {
                         positions=[];
                         if (this.zones[i].getShape() === 'circle') {
-                            //Calculate the distance and bearing from the centroid to the center of the zone.
+                            //Calculate the distance and bearing from the position to the center of the zone.
                             var zoneCenter = this.zones[i].shapeOverlay.getCenter();
                             positions.push({
-                                "distance":google.maps.geometry.spherical.computeDistanceBetween(centroid,zoneCenter),
-                                "bearing":google.maps.geometry.spherical.computeHeading(centroid,zoneCenter)
+                                "distance":google.maps.geometry.spherical.computeDistanceBetween(position,zoneCenter),
+                                "bearing":google.maps.geometry.spherical.computeHeading(position,zoneCenter)
                             });
                         }
                         else { //polygon
@@ -570,40 +773,42 @@
                             for (var j=0; j<paths.length; j++) {
                                 innerPositions = [];
                                 for (var k=0; k<paths.getAt(j).length; k++) {
-                                    //Calculate the distance and bearing from the centroid to the each vertex.
+                                    //Calculate the distance and bearing from the position to the each vertex.
                                     innerPositions.push({
-                                        "distance":google.maps.geometry.spherical.computeDistanceBetween(centroid,paths.getAt(j).getAt(k)),
-                                        "bearing":google.maps.geometry.spherical.computeHeading(centroid,paths.getAt(j).getAt(k))
+                                        "distance":google.maps.geometry.spherical.computeDistanceBetween(position,paths.getAt(j).getAt(k)),
+                                        "bearing":google.maps.geometry.spherical.computeHeading(position,paths.getAt(j).getAt(k))
                                     });
                                 }
                                 positions.push(innerPositions);
                             }
                         }
-                        this.zones[i]._coordinatePositions = positions;
+                        this.zones[i]._relativePositions = positions;
                     }
                 },
                 /**
-                 * Syncs the zone positions with marker movements.
-                 * @private
+                 * Moves zones from their current location to the passed location, maintaining
+                 * the distance and bearing calculated by `calculateRelativeZonePositions`.
+                 * @param latLng - The LatLng object representing the position
+                 *                 in which the zones will be to.
                  */
-                _dragZonesWithMarker: function () {
+                moveZonesRelativeToPosition: function (latLng) {
+                    var position = latLng || this.marker.getPosition();
                     for (var i=0; i<this.zones.length; i++) {
-                        var positions = this.zones[i]._coordinatePositions;
+                        var positions = this.zones[i]._relativePositions, paths = [], path, newCenter;
                         if (this.zones[i].getShape() === 'circle') {
-                            var newCenter = google.maps.geometry.spherical.computeOffset(
-                                this.marker.getPosition(),
+                            newCenter = google.maps.geometry.spherical.computeOffset(
+                                position,
                                 positions[0].distance,
                                 positions[0].bearing
                             );
                             this.zones[i].shapeOverlay.setCenter(newCenter);
                         }
                         else { //polygon
-                            var paths = [], path;
                             for (var j=0; j<positions.length; j++) {
                                 path = [];
                                 for (var k=0; k<positions[j].length; k++) {
                                     path.push(google.maps.geometry.spherical.computeOffset(
-                                        this.marker.getPosition(),
+                                        position,
                                         positions[j][k].distance,
                                         positions[j][k].bearing)
                                     );
@@ -612,6 +817,21 @@
                             }
                             this.zones[i].setPaths(paths);
                         }
+                        //Update the centroid.
+                        this.marker.setPosition((
+                            newCenter || _outer._AlertTemplate.calculateCentroidFromPaths(this.zones[i].shapeOverlay.getPaths())
+                        ));
+                    }
+                    //Update the JSON.
+                    this.updateJSON();
+                },
+                /**
+                 * Removes the stack of zones from the map.
+                 */
+                removeFromMap: function() {
+                    this.marker.setMap(null);
+                    for (var i=0; i<this.zones.length; i++) {
+                        this.zones[i].removeFromMap();
                     }
                 },
                 /**
@@ -622,32 +842,27 @@
                     if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     var _this = this;
                     //The proximity zone center_changed listener will fire continuously when
-                    //dragging the marker so we'll use these listeners to ignore those events.
+                    //dragging the stack marker so we'll add a flag to ignore those events.
                     var marker = this.marker;
                     google.maps.event.addListener(marker, 'dragstart', function () {
-                        _outer._ignoreCenterChangedEvent = true;
-                        _this._calculateCoordinatePositions();
+                        _outer._ignoreZoneCenterChangedEvent = true;
+                        _this.calculateRelativeZonePositions(_this.marker.getPosition());
                     });
                     google.maps.event.addListener(marker, 'dragend', function () {
-                        _outer._ignoreCenterChangedEvent = false;
-                        //Update the alert's location if the alert is activated.
-                        if (_this.parentId && _outer._isActivated) {
-                            _outer._updateAlertLocation();
-                        }
-                    });
-                    //Add click listener to marker.
-                    google.maps.event.addListener(marker, 'click', function () {
-                        //Toggle all the accordions closed.
-                        if (_outer._loadedAlertTemplate) {
-                            _outer._toggleAccordion(-1);
-                        }
-                        //Load the clicked template data in case it's a different template.
-                        _outer._loadedAlertTemplate = _this;
+                        _outer._ignoreZoneCenterChangedEvent = false;
+                        //Re-initialize the polygon path listeners for all zones.
+                        _this.initializePolygonPathListeners();
                     });
                     //Continuously re-draw the overlay as the template is dragged.
                     google.maps.event.addListener(marker, 'drag', function () {
-                        _this._dragZonesWithMarker();
-                        _this.updateJSON();
+                        _this.moveZonesRelativeToPosition(_this.marker.getPosition());
+                        _outer._loadedAlert.template.updateJSONAndCentroid();
+                    });
+                    //Add click listener to marker.
+                    google.maps.event.addListener(marker, 'click', function () {
+                        //Toggle all the accordion panes closed.
+                        _outer._toggleAccordion(-1);
+                        _outer.set('_loadedAlert.selectedStack',_this);
                     });
                 },
                 /**
@@ -662,54 +877,44 @@
                     //Add click listener to shapes.
                     google.maps.event.addListener(overlay, 'click', function () {
                         var zoneIndex = _this.getZoneIndex(zone);
-                        //If we have a currently loaded alert template or alert...
-                        if (_outer._loadedAlertTemplate) {
-                            //If they click a zone for the currently active
-                            //alert template or alert then toggle the accordion.
-                            if (_outer._loadedAlertTemplate === _this) {
-                                _outer._toggleAccordion(zoneIndex);
-                            }
-                            else {
-                                //Toggle the accordion for the previously selected alert template.
-                                _outer._toggleAccordion(-1);
-                                //Load the new one and toggle the selected zone.
-                                _outer._loadedAlertTemplate = _this;
-                                _outer._toggleAccordion(zoneIndex);
-                            }
+                        //If they click a zone for the currently active stack then toggle the accordion.
+                        if (_outer._loadedAlert.selectedStack &&
+                            _outer._loadedAlert.selectedStack === _this) {
+                            _outer._toggleAccordion(zoneIndex);
                         }
-                        else { //If we have no loaded data then always load the template and toggle the selected zone.
-                            _outer._loadedAlertTemplate = _this;
+                        else {
+                            //Toggle the accordion for the previously selected alert template.
+                            _outer._toggleAccordion(-1);
+                            //Load the selected stack and toggle the selected zone.
+                            _outer.set('_loadedAlert.selectedStack',_this);
                             _outer._toggleAccordion(zoneIndex);
                         }
                     });
-
                     if (zone.getShape() === 'circle') {
                         /*This listener is used for the special case of dragging by the center editable point of circular
-                        zones. When the user drags by this center point we need to be sure to move the zones and marker
+                        zones. When the user drags by this center point we need to be sure to move all the zones and marker
                         to their new position after dragging. However, this listener will fire after modifying the positions
                         of other zones so we will use a flag to ignore these events. Additionally, we use a flag to ignore
                         when dragging by the marker because the event fires continuously then as well.*/
                         google.maps.event.addListener(overlay, 'center_changed', function () {
-                            if (_outer._ignoreCenterChangedEvent) {
+                            if (_outer._ignoreZoneCenterChangedEvent) {
                                 return;
                             }
-                            _outer._ignoreCenterChangedEvent = true;
+                            _outer._ignoreZoneCenterChangedEvent = true;
                             _this.marker.setPosition(this.getCenter());
                             for (var i=0; i<_this.zones.length; i++) {
+                                //This step will fire this listener again which is why we set the flag previously.
                                 _this.zones[i].shapeOverlay.setCenter(this.getCenter());
                             }
                             _this.updateJSON();
-                            _outer._ignoreCenterChangedEvent = false;
-                            //Update the alert's location.
-                            if (_this.parentId) {
-                                _outer._updateAlertLocation();
-                            }
+                            _outer._ignoreZoneCenterChangedEvent = false;
+                            _outer._loadedAlert.template.updateJSONAndCentroid();
                         });
                         //Add resize listener to circle.
                         google.maps.event.addListener(overlay, 'radius_changed', function () {
                             _this.updateJSON();
-                            //Sort the zones list.
                             _outer._sortZonesBySize();
+                            _outer._loadedAlert.template.updateJSONAndCentroid();
                         });
                     }
                     else {
@@ -721,12 +926,30 @@
                             }
                         });
                         //Handle polygon edits.
-                        _this._setupPolygonPathListeners(zone);
+                        _this.initializePolygonPathListeners(zone);
                     }
                 },
                 /**
                  * Initializes polygon edit listeners. When that paths of the overlay change significantly, such as when
-                 * punching the shapes out, we may need to call this function again to re-initialize the listeners.
+                 * punching the shapes out, we need to call this function again to re-initialize the listeners.
+                 * @param zone - The optional zone for which listeners will be initialized. If this is not provided then
+                 *               all zones for the stack will be processed.
+                 */
+                initializePolygonPathListeners: function(zone) {
+                    if (zone) {
+                        if (zone.getShape() === 'circle') { return; }
+                        this._setupPolygonPathListeners(zone);
+                    }
+                    else {
+                        for (var i=0; i<this.zones.length; i++) {
+                            if (this.zones[i].getShape() === 'polygon') {
+                                this._setupPolygonPathListeners(this.zones[i]);
+                            }
+                        }
+                    }
+                },
+                /**
+                 * Processes individual zones sent from `initializePolygonPathListeners`.
                  * @param zone
                  * @private
                  */
@@ -763,11 +986,11 @@
                  */
                 _polyAtListener: function (eventName,zone,pathIndex,vertexIndex) {
                     var errorMsg = null;
-                    var zoneIndex = _outer._loadedAlertTemplate.getZoneIndex(zone);
-                    var largestZone = _outer._loadedAlertTemplate.getLargestZone();
+                    var zoneIndex = _outer._loadedAlert.selectedStack.getZoneIndex(zone);
+                    var largestZone = _outer._loadedAlert.selectedStack.getLargestZone();
                     //Check if the polygon intersects itself. To do this we will use the turf library but we
                     //must first extract the new zone coordinates so they can be interpreted by turf as GeoJSON.
-                    var newZoneCoordinates = this.constructor.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
+                    var newZoneCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
                     var kinks = turf.kinks({
                         "type": "Feature",
                         "geometry": {
@@ -778,11 +1001,11 @@
                     if (kinks.features.length) {
                         errorMsg = 'The zone cannot self-intersect';
                     }
-                    if (!errorMsg && _outer._loadedAlertTemplate.zones.length > 1) {
+                    if (!errorMsg && _outer._loadedAlert.selectedStack.zones.length > 1) {
                         var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
                         //Check that the vertex is within our zone boundary. This catches cases
                         //where they drag an inner zone vertex past the boundaries of the stack.
-                        if (zoneIndex !== _outer._loadedAlertTemplate.getZoneIndex(largestZone)) {
+                        if (zoneIndex !== _outer._loadedAlert.selectedStack.getZoneIndex(largestZone)) {
                             if (!google.maps.geometry.poly.containsLocation(vertex,new google.maps.Polygon({
                                     paths: [largestZone.shapeOverlay.getPaths().getAt(pathIndex)]}))) {
                                 errorMsg = 'The zone cannot overlap other zones in the stack';
@@ -792,7 +1015,7 @@
                             //Check that the outer-most zone is touching it's closest inner zone. This
                             //catches the case where they drag a vertex on the outer-most zone to the
                             //opposite side of the shape, detaching it from the stack.
-                            var outerBoundaryPolygonCoordinates = this.constructor.calculateCoordinatesFromPaths(
+                            var outerBoundaryPolygonCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(
                                 zone.shapeOverlay.getPaths()
                             );
                             var intersects = turf.intersect({
@@ -808,8 +1031,8 @@
                                 "type": "Feature",
                                 "geometry": {
                                     "type": "Polygon",
-                                    "coordinates": this.constructor.calculateCoordinatesFromPaths(
-                                        _outer._loadedAlertTemplate.getZoneAt(zoneIndex-1).shapeOverlay.getPaths()
+                                    "coordinates": _outer._AlertTemplate.calculateCoordinatesFromPaths(
+                                        _outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1).shapeOverlay.getPaths()
                                     )
                                 }
                             });
@@ -819,12 +1042,12 @@
                         }
                         //Check if they dragged the vertex into one of the other zones. Overlapping borders is fine.
                         if (!errorMsg) {
-                            for (var i=0; i<_outer._loadedAlertTemplate.zones.length; i++) {
+                            for (var i=0; i<_outer._loadedAlert.selectedStack.zones.length; i++) {
                                 if (i === zoneIndex) { continue; }
                                 if (google.maps.geometry.poly.containsLocation(
-                                        vertex, _outer._loadedAlertTemplate.getZoneAt(i).shapeOverlay
+                                        vertex, _outer._loadedAlert.selectedStack.getZoneAt(i).shapeOverlay
                                     ) && !google.maps.geometry.poly.isLocationOnEdge(
-                                        vertex, _outer._loadedAlertTemplate.getZoneAt(i).shapeOverlay
+                                        vertex, _outer._loadedAlert.selectedStack.getZoneAt(i).shapeOverlay
                                     )) {
                                     errorMsg = 'The zone cannot overlap other zones in the stack';
                                     break;
@@ -853,19 +1076,21 @@
                         for (var j=0; j<zone.shapeOverlay.getPaths().getAt(pathIndex).length; j++) {
                             pathClone.push(zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(j));
                         }
-                        _outer._loadedAlertTemplate.getZoneAt(zoneIndex-1).setPaths(new google.maps.MVCArray(pathClone));
+                        var editedZone = _outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1);
+                        editedZone.setPaths(new google.maps.MVCArray(pathClone));
+                        //Re-initialize the polygon path listeners for the edited zone.
+                        _outer._loadedAlert.selectedStack.initializePolygonPathListeners(editedZone);
                     }
-                    this.updateJSON();
-                    //Always re-punch out the shapes. This will catch cases like filling
+                    //Update the stack JSON and adjust the centroid position.
+                    this.updateJSONAndCentroid();
+                    //Always re-punch out the shapes. This will handle cases like filling
                     //in gaps when the outer boundary of an inner zone is pulled inwards.
                     this.punchOutShapes();
-                    //Recalculate the centroid and adjust the marker position.
-                    _outer._loadedAlertTemplate.marker.setPosition(
-                        this.constructor.calculateCentroidFromPaths(_outer._loadedAlertTemplate.getLargestZone().shapeOverlay.getPaths())
-                    );
+                    //Update the centroid for the template.
+                    _outer._loadedAlert.template.updateJSONAndCentroid();
                 }
             };
-            Object.seal(this._AlertTemplate);
+            Object.seal(this._AlertZoneStack);
 
             /**
              * A class that represents an alert zone, both the drawn map entity and the json.
@@ -899,8 +1124,9 @@
                  */
                 setName: function(name) {
                     this.name = name;
-                    if (_outer._loadedAlertTemplate && _outer._loadedAlertTemplate.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlertTemplate.zones.'+_outer._loadedAlertTemplate.zones.indexOf(this)+'.name',name);
+                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
+                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
+                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.name',name);
                     }
                 },
                 /**
@@ -910,8 +1136,9 @@
                  */
                 setEditable: function(editable) {
                     this.editable = editable;
-                    if (_outer._loadedAlertTemplate && _outer._loadedAlertTemplate.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlertTemplate.zones.'+_outer._loadedAlertTemplate.zones.indexOf(this)+'.editable',editable);
+                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
+                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
+                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.editable',editable);
                     }
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setEditable(editable);
@@ -924,8 +1151,9 @@
                  */
                 setColour: function(colour) {
                     this.colour = colour;
-                    if (_outer._loadedAlertTemplate && _outer._loadedAlertTemplate.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlertTemplate.zones.'+_outer._loadedAlertTemplate.zones.indexOf(this)+'.colour',colour);
+                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
+                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
+                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.colour',colour);
                     }
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({'fillColor':'#'+colour})
@@ -938,8 +1166,9 @@
                  */
                 setOpacity: function(opacity) {
                     this.opacity = opacity;
-                    if (_outer._loadedAlertTemplate && _outer._loadedAlertTemplate.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlertTemplate.zones.'+_outer._loadedAlertTemplate.zones.indexOf(this)+'.opacity',opacity);
+                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
+                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
+                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.opacity',opacity);
                     }
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({'fillOpacity':opacity});
@@ -962,8 +1191,9 @@
                  */
                 setActive: function(active) {
                     this.active = active;
-                    if (_outer._loadedAlertTemplate && _outer._loadedAlertTemplate.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlertTemplate.zones.'+_outer._loadedAlertTemplate.zones.indexOf(this)+'.active',active);
+                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
+                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
+                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.active',active);
                     }
                     active ? this.activateOverlay() : this.deactivateOverlay();
                 },
@@ -987,8 +1217,9 @@
                  */
                 setRenaming: function(renaming) {
                     this.renaming = renaming;
-                    if (_outer._loadedAlertTemplate && _outer._loadedAlertTemplate.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlertTemplate.zones.'+_outer._loadedAlertTemplate.zones.indexOf(this)+'.renaming',renaming);
+                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
+                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
+                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.renaming',renaming);
                     }
                 },
                 /**
@@ -1053,7 +1284,8 @@
                     draggable: false, editable: false,
                     fillColor: '#'+this.colour, fillOpacity: this.opacity,
                     map: _outer._map, radius: this.radius,
-                    strokeWeight:0, zIndex: this.zIndex
+                    strokeWeight:0, zIndex: this.zIndex,
+                    suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                 };
             };
             Object.seal(this._CircularAlertZone);
@@ -1070,7 +1302,6 @@
              * @private
              */
             this._PolygonalAlertZone = function(paths,name,editable,opacity,colour,zIndex) {
-                zIndex = 100;
                 _outer._AlertZone.call(this,name,editable,opacity,colour,zIndex);
                 this.setPaths(paths);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
@@ -1090,10 +1321,6 @@
                 this.paths = paths;
                 if (this.shapeOverlay) {
                     this.shapeOverlay.setPaths(paths);
-                    //Re-initialize the polygon path listeners.
-                    if (_outer._loadedAlertTemplate) {
-                        _outer._loadedAlertTemplate._setupPolygonPathListeners(this);
-                    }
                 }
             };
             /**
@@ -1106,7 +1333,8 @@
                     clickable: _outer.nodeName !== 'VOYENT-ALERT-VIEW', draggable: false,
                     editable:false, fillColor: '#'+this.colour,
                     fillOpacity: this.opacity, map: _outer._map,
-                    strokeWeight:0, zIndex:this.zIndex, paths:this.paths
+                    strokeWeight:0, zIndex:this.zIndex, paths:this.paths,
+                    suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                 };
             };
             Object.seal(this._PolygonalAlertZone);
@@ -1210,6 +1438,7 @@
             this._ProximityZoneOverlay = function(zone) {
                 this.zone = zone;
                 this.setMap(_outer._map);
+                this.div = document.createElement('div');
             };
             /**
              * A class that represents a location name overlay.
@@ -1220,6 +1449,7 @@
             this._LocationOverlay = function(location) {
                 this.loc = location;
                 this.setMap(_outer._map);
+                this.div = document.createElement('div');
             };
             //Inherit the prototype of google.maps.OverlayView.
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
@@ -1230,7 +1460,7 @@
             this._ProximityZoneOverlay.prototype.onAdd =
             this._LocationOverlay.prototype.onAdd = function () {
                 //Setup the div.
-                this.div = document.createElement('div');
+                //this.div = document.createElement('div');
                 this.div.style.borderStyle = 'none';
                 this.div.style.borderWidth = '0px';
                 this.div.style.position = 'absolute';
@@ -1247,13 +1477,15 @@
              * Handles drawing and re-drawing of the proximity zone overlay on the map.
              */
             this._ProximityZoneOverlay.prototype.draw = function() {
+                //This will be called before it's ready when loading Alerts so we'll return if the prototype isn't initialized.
+                if (!this.getProjection()) { return; }
                 //Retrieve the north-center coordinates of this overlay and convert them to pixel coordinates.
                 var northernCoordinate = this.zone.northernCoordinate;
                 var nc = this.getProjection().fromLatLngToDivPixel(
                     new google.maps.LatLng(northernCoordinate[1],northernCoordinate[0])
                 );
-                //Set the div content.
-                this.div.innerHTML = this.zone.name;
+                //Set the div content, replacing spaces with non-breaking ones.
+                this.div.innerHTML = this.zone.name.split(' ').join('&nbsp;');
                 //Center the label above the zone.
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.top = nc.y-20 + 'px';
