@@ -184,9 +184,14 @@ Polymer({
      */
     _circleButtonListener: function() {
         var _this = this;
-        this._openDialog('Please enter the alert template name','',function() {
+        if (!this._loadedAlert) {
+            this._openDialog('Please enter the alert template name','',function() {
+                _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
+            });
+        }
+        else {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
-        });
+        }
     },
 
     /**
@@ -195,9 +200,14 @@ Polymer({
      */
     _polygonButtonListener: function() {
         var _this = this;
-        this._openDialog('Please enter the alert template name','',function() {
+        if (!this._loadedAlert) {
+            this._openDialog('Please enter the alert template name','',function() {
+                _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+            });
+        }
+        else {
             _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-        });
+        }
     },
 
     /**
