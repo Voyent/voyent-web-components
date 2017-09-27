@@ -1099,9 +1099,10 @@
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
+             * @param messageTemplate - The message template associated with this zone
              * @private
              */
-            this._AlertZone = function (name,editable,opacity,colour,zIndex) {
+            this._AlertZone = function (name,editable,opacity,colour,messageTemplate,zIndex) {
                 this.id = _outer._generateUid();
                 this.setName(name || 'Zone_1');
                 this.setEditable(typeof editable === 'boolean' ? editable : true);
@@ -1110,7 +1111,7 @@
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
                 this.setRenaming(false);
-                this.messageTemplate = null;
+                this.messageTemplate = messageTemplate ? messageTemplate : null;
             };
             /**
              * _AlertZone prototype (instance) functions.
@@ -1257,12 +1258,13 @@
              * @param editable - Whether the zone is editable (resizable).
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
+             * @param messageTemplate - The message template associated with this zone
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @extends _AlertZone
              * @private
              */
-            this._CircularAlertZone = function(radius,name,editable,opacity,colour,zIndex) {
-                _outer._AlertZone.call(this,name,editable,opacity,colour,zIndex);
+            this._CircularAlertZone = function(radius,name,editable,opacity,colour,messageTemplate,zIndex) {
+                _outer._AlertZone.call(this,name,editable,opacity,colour,messageTemplate,zIndex);
                 this.radius = radius || 500;
                 this.shapeOverlay = (new google.maps.Circle(this._getShapeOverlayOpts()));
             };
@@ -1297,12 +1299,13 @@
              * @param editable - Whether the zone is editable (resizable).
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
+             * @param messageTemplate - The message template associated with this zone
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @extends _AlertZone
              * @private
              */
-            this._PolygonalAlertZone = function(paths,name,editable,opacity,colour,zIndex) {
-                _outer._AlertZone.call(this,name,editable,opacity,colour,zIndex);
+            this._PolygonalAlertZone = function(paths,name,editable,opacity,colour,messageTemplate,zIndex) {
+                _outer._AlertZone.call(this,name,editable,opacity,colour,messageTemplate,zIndex);
                 this.setPaths(paths);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };

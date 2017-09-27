@@ -241,13 +241,19 @@
          * Sets the message template based onto the zone associated with the zoneIndex.
          * @param messageTemplate
          * @param zoneIndex
+         * @param stackIndex
          */
-        setMessageTemplate: function(messageTemplate, zoneIndex) {
+        setMessageTemplate: function(messageTemplate, zoneIndex, stackIndex) {
             if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
-                this._loadedAlert.selectedStack.getZoneAt(zoneIndex).messageTemplate = messageTemplate;
+                if (typeof stackIndex === 'number' && stackIndex >= 0) {
+                    this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].messageTemplate = messageTemplate;
+                }
+                else {
+                    this._loadedAlert.selectedStack.zones[zoneIndex].messageTemplate = messageTemplate;
+                }
             }
         },
-
+        
         //******************PRIVATE API******************
 
         /**
@@ -486,7 +492,7 @@
                     if (properties.shape === 'circle') {
                         zones.push(new this._CircularAlertZone(
                             properties.radius, properties.name, properties.editable,
-                            properties.opacity, properties.colour, zIndex
+                            properties.opacity, properties.colour, properties.messageTemplate, zIndex
                         ));
                     }
                     else {
@@ -494,7 +500,7 @@
                         zones.push(new this._PolygonalAlertZone(
                             this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
                             properties.name, properties.editable, properties.opacity,
-                            properties.colour, zIndex)
+                            properties.colour, properties.messageTemplate, zIndex)
                         );
                     }
                     zIndex--;
@@ -510,6 +516,7 @@
                     map: this._map, draggable: true, zIndex: 50,
                     visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
                 });
+                
                 zoneStacks.push(new this._AlertZoneStack(stackMarker, zones));
             }
             var parentId = templateJSON.properties.parentAlertId || null;

@@ -219,7 +219,7 @@ Polymer({
         this._loadedAlert.selectedStack.addZone(newZone);
         //Re-adjust the centroid for the template.
         this._loadedAlert.template.updateJSONAndCentroid();
-        this.fire('voyent-alert-zone-added',{"id":newZone.id,"zone":newZone});
+        this.fire('voyent-alert-zone-added',{"id":newZone.id,"zone":newZone,"stack":this._loadedAlert.selectedStack});
     },
 
     /**
