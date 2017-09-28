@@ -194,7 +194,7 @@ Polymer({
         //check what the first one is to determine which kind we want to add.
         if (this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
             var radius = largestZone.shapeOverlay.getRadius() + largestZone.shapeOverlay.getRadius() * 0.5;
-            newZone = new this._CircularAlertZone(radius,name,null,null,null,zIndex);
+            newZone = new this._CircularAlertZone(radius,name,null,null,null,null,zIndex);
         }
         else { //polygon
             var largestZonePaths = largestZone.shapeOverlay.getPaths(), distance, bearing, paths = [], path;
@@ -214,7 +214,7 @@ Polymer({
             }
             //When we add a new zone we don't want to include the full shape so we can
             //punch it out properly later so just pass the filled outer shape via paths[0].
-            newZone = new this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
+            newZone = new this._PolygonalAlertZone([paths[0]],name,null,null,null,null,zIndex);
         }
         this._loadedAlert.selectedStack.addZone(newZone);
         //Re-adjust the centroid for the template.
