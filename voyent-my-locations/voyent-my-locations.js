@@ -4,10 +4,9 @@ Polymer({
 
     ready: function() {
         //Type options for drop-down menus.
-        this._locationTypes = ['home','business','school','other'];
-        this._creationTypes = ['pindrop','address'];
-        this._creationType = 'pindrop';
-        //An array of UserLocations.
+        this._creationTypes = ['address','pindrop'];
+        this._creationType = 'address';
+        //An array of MyLocations, represents the locations currently on the map (saved or not).
         this._myLocations = [];
         //The location that is currently active in the editor (infoWindow is displayed).
         this._loadedLocation = null;
@@ -31,10 +30,26 @@ Polymer({
         var _this = this;
         //Add the buttons to the map.
         this._addCustomControl();
-        //Fetch the realm region and the previously created locations.
-        this._fetchRealmRegion();
-        this._fetchMyLocations();
-        //Add "create new location" button.
+        //Specify that we want to skip panning to the region boundary as
+        //we'll conditionally do this in the promises callback.
+        this._skipRegionPanning = true;
+        //Fetch the realm region and the previously created locations. After we have them
+        //both adjust the bounds based on whether we retrieved any location records.
+        var promises = [];
+        promises.push(this._fetchRealmRegion(true));
+        promises.push(this._fetchMyLocations());
+        Promise.all(promises).then(function() {
+            if (_this._myLocations.length) {
+                _this._adjustBounds();
+            }
+            else {
+                _this._skipRegionPanning = false;
+                _this._map.fitBounds(_this._areaRegion.bounds);
+                _this._map.panToBounds(_this._areaRegion.bounds);
+            }
+        });
+
+        //Add "create new location" button and remove Google's hand button.
         this._addMarkerButton(function() {
             _this._openDialog(function () {
                 if (_this._creationType === 'pindrop') {
@@ -46,9 +61,11 @@ Polymer({
                         map: _this._map,
                         draggable: true
                     }));
+                    _this._adjustBounds();
                 }
             });
         });
+        this._removeStopDrawingButton();
     },
 
     /**
@@ -57,7 +74,6 @@ Polymer({
      * @private
      */
     _saveChanges: function() {
-        if (!this._buttonsEnabled) { return; }
         var _this = this;
         //It's possible that the user edited a location and then later decided to
         //delete it so in these cases make sure we don't bother updating it.
@@ -84,7 +100,6 @@ Polymer({
      * @private
      */
     _cancelChanges: function() {
-        if (!this._buttonsEnabled) { return; }
         var _this = this;
         this._fetchMyLocations().then(function() {
             _this._buttonsEnabled = false;
@@ -110,6 +125,7 @@ Polymer({
                     promises.push(new Promise(function (resolveRequest) {
                         voyent.locate.updateLocation({account:_this.account,realm:_this.realm,
                                                       location:myLocation.json}).then(function() {
+                            myLocation.isPersisted = true;
                             //Don't use i to splice because it may change as we splice out other locations.
                             _this.splice('_locationsToUpdate',_this._locationsToUpdate.indexOf(myLocation),1);
                             resolveRequest(true);
@@ -151,7 +167,7 @@ Polymer({
                             resolveRequest(true);
                         }).catch(function () {
                             //It wasn't deleted so re-add it to the map.
-                            myLocation.marker.setMap(_this._map);
+                            myLocation.addToMap();
                             _this._myLocations.push(myLocation);
                             _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(myLocation),1);
                             resolveRequest(false);
@@ -169,13 +185,23 @@ Polymer({
 
     /**
      * Whenever a property is edited we need to be sure to flag the associated location for updating.
+     * @param myLocation
+     */
+    flagLocationForUpdating: function(myLocation) {
+        if (this._locationsToUpdate.indexOf(myLocation) === -1) {
+            this._locationsToUpdate.push(myLocation);
+        }
+        this._buttonsEnabled = true;
+    },
+
+    /**
+     * Wrapper function for `flagLocationForUpdating`. Used by the template.
      * @private
      */
     _flagLocationForUpdating: function() {
-        if (this._locationsToUpdate.indexOf(this._loadedLocation) === -1) {
-            this._locationsToUpdate.push(this._loadedLocation);
-        }
-        this._buttonsEnabled = true;
+        //This may fire when the toggle component is initializing.
+        if (!this._loadedLocation) { return; }
+        this.flagLocationForUpdating(this._loadedLocation);
     },
 
     /**
@@ -187,10 +213,27 @@ Polymer({
         this._infoWindow.close();
         this._infoWindowOpen = false;
         this._loadedLocation.removeFromMap();
-        this._locationsToDelete.push(this._loadedLocation);
-        this._myLocations.splice(this._myLocations.indexOf(this._loadedLocation));
+        if (this._loadedLocation.isPersisted) {
+            this._locationsToDelete.push(this._loadedLocation);
+            this._buttonsEnabled = true;
+        }
+        else {
+            //If the location isn't persisted then we don't need to flag it for deletion, just
+            //remove it from the map. Additionally, if no other locations have been updated
+            //then we can disable the buttons again as no changes have been made.
+            var locationIndex = this._locationsToUpdate.indexOf(this._loadedLocation);
+            if (locationIndex > -1) {
+                this._locationsToUpdate.splice(locationIndex,1);
+                if (!this._locationsToDelete.length && !this._locationsToUpdate.length) {
+                    this._buttonsEnabled = false;
+                }
+            }
+        }
+        var indexToRemove = this._myLocations.indexOf(this._loadedLocation);
+        if (indexToRemove > -1) {
+            this._myLocations.splice(indexToRemove,1);
+        }
         this._loadedLocation = null;
-        this._buttonsEnabled = true;
     },
 
     /**
@@ -201,7 +244,7 @@ Polymer({
      * @private
      */
     _getSavedMessage: function(saveResults,removalResults) {
-        var successMsg='', failureMsg='', locTxt;
+        var successMsg='', failureMsg='';
         if (saveResults.successes || removalResults.successes) {
             if (saveResults.successes) {
                 successMsg += 'Successfully updated ' + saveResults.successes;
@@ -216,7 +259,7 @@ Polymer({
                 failureMsg += 'Failed to update ' + saveResults.failures;
             }
             if (removalResults.failures) {
-                failureMsg += (failureMsg ? ' and remove ' : 'Failed to remove ') + removalResults.failures + locTxt;
+                failureMsg += (failureMsg ? ' and remove ' : 'Failed to remove ') + removalResults.failures;
             }
             failureMsg += saveResults.failures > 1 || removalResults.failures > 1 ? ' locations.' : ' location.';
         }
@@ -327,7 +370,7 @@ Polymer({
     _confirmDialog: function() {
         //Validate the dialog.
         if (!this._creationType || (this._creationType === 'address' && !this._placeCoordinates) ||
-            !this._locationName || !this._locationName.trim() || !this._locationType) {
+            !this._locationName || !this._locationName.trim()) {
             this.fire('message-error', 'Please complete all fields.');
             return;
         }
@@ -382,57 +425,44 @@ Polymer({
     },
 
     /**
+     * Removes Google's "Stop drawing" hand button from the top-right corner.
+     * @private
+     */
+    _removeStopDrawingButton: function() {
+        if (!this._stopDrawingButtonRemoved) {
+            var _this = this;
+            function waitForStopDrawingButton() {
+                var stopDrawingButton = document.querySelector('div[title="Stop drawing"');
+                if (!stopDrawingButton) {
+                    setTimeout(waitForStopDrawingButton, 10);
+                    return;
+                }
+                stopDrawingButton.parentNode.removeChild(stopDrawingButton);
+                _this._stopDrawingButtonRemoved = true;
+            }
+            waitForStopDrawingButton();
+        }
+    },
+
+    /**
      * Builds a location record from the passed marker.
      * @param marker
      * @private
      */
     _createLocation: function(marker) {
         //Build the new location.
-        var newLocation = new this._MyLocation(null,this._locationName,this._locationType,marker,null);
+        var newLocation = new this._MyLocation(null,this._locationName,this._isPrivateResidence,marker,null);
         this._myLocations.push(newLocation);
         this._locationsToUpdate.push(newLocation);
         //Reset the dialog properties.
-        this._locationType = this._locationName = null;
+        this._isPrivateResidence = false;
+        this._locationName = null;
         var autocomplete = this.$$('#autoComplete');
         if (autocomplete) {
             autocomplete.value = '';
         }
-    },
-
-    /**
-     * Try and determine the location type based on the place types that Google provides.
-     * @param types
-     * @returns {*}
-     * @private
-     */
-    _determineLocationType: function(types) {
-        //Places type categories provided by Google.
-        var placesHome=["street_address","postal_code"],
-            placesBusiness=["accounting","airport","amusement_park","aquarium","art_gallery","atm",
-                            "bakery","bank","bar","beauty_salon","bicycle_store","book_store",
-                            "bowling_alley","cafe","campground","car_dealer","car_rental",
-                            "car_repair","car_wash","casino","clothing_store","convenience_store",
-                            "dentist","department_store","electrician","electronics_store","florist",
-                            "furniture_store","gas_station","gym","hair_care","hardware_store",
-                            "home_goods_store","insurance_agency","jewelry_store","laundry","lawyer",
-                            "liquor_store","locksmith","lodging","meal_delivery","meal_takeaway",
-                            "movie_rental","movie_theater","moving_company","night_club","painter",
-                            "parking","pet_store","pharmacy","physiotherapist","plumber","post_office",
-                            "real_estate_agency","restaurant","roofing_contractor","rv_park","shoe_store",
-                            "shopping_mall","spa","stadium","storage","store","taxi_stand","travel_agency",
-                            "veterinary_care","zoo"],
-            placesSchool=["school","university"];
-
-        var hc = bc = sc = 0;
-        for (var i=0; i<types.length; i++) {
-            placesHome.indexOf(types[i]) > -1 ? hc++ : hc;
-            placesBusiness.indexOf(types[i]) > -1 ? bc++ : bc;
-            placesSchool.indexOf(types[i]) > -1 ? sc++ : sc;
-        }
-        if (hc > bc && hc > sc) { return 'home'; }
-        else if (bc > hc && bc > sc) { return 'business'; }
-        else if (sc > hc && sc > bc) { return 'school'; }
-        return 'other';
+        //Always skip panning to the region when we have at least one location.
+        this._skipRegionPanning = true;
     },
 
     /**
@@ -442,20 +472,46 @@ Polymer({
     _setupAutoComplete: function() {
         if (this._autoComplete) { return; }
         var _this = this, place;
-        this._autoComplete = new google.maps.places.Autocomplete(this.$$('#autoComplete').querySelector('input'),
-                                                                {"bounds":this._areaRegion.bounds,"strictBounds":false});
-        google.maps.event.addListener(this._autoComplete, 'place_changed', function() {
-            place = _this._autoComplete.getPlace();
-            if (place && place.geometry && place.geometry.location) {
-                _this._placeCoordinates = place.geometry.location;
-                _this._locationName = place.name;
-                _this._locationType = _this._determineLocationType(place.types);
+        var autocompleteInput = this.$$('#autoComplete').querySelector('input');
+        autocompleteInput.setAttribute('placeholder','Enter an address');
+        //Wait until we have the area region so we can favour results from within that region.
+        function waitForAreaRegion() {
+            if (!_this._areaRegion) {
+                setTimeout(waitForAreaRegion,50);
+                return;
             }
-            else if (!place || Object.keys(place).length === 1) {
-                _this._placeCoordinates = null;
-                _this._locationName = null;
-            }
-        });
+            _this._autoComplete = new google.maps.places.Autocomplete(autocompleteInput, {
+                "bounds":_this._areaRegion.bounds, "strictBounds":false
+            });
+            google.maps.event.addListener(_this._autoComplete, 'place_changed', function() {
+                place = _this._autoComplete.getPlace();
+                if (place && place.geometry && place.geometry.location) {
+                    _this._placeCoordinates = place.geometry.location;
+                    _this._locationName = place.name;
+                }
+                else if (!place || Object.keys(place).length === 1) {
+                    _this._placeCoordinates = null;
+                    _this._locationName = null;
+                }
+            });
+        }
+        waitForAreaRegion();
+    },
+
+    /**
+     * Adjust the bounds of the map so all locations are in view.
+     * @private
+     */
+    _adjustBounds: function() {
+        //Temporary set the maxZoom so the map doesn't zoom in too far when panning.
+        this._map.setOptions({maxZoom:17});
+        var bounds = new google.maps.LatLngBounds();
+        for (var i=0; i<this._myLocations.length; i++) {
+            bounds.extend(this._myLocations[i].marker.getPosition());
+        }
+        this._map.fitBounds(bounds);
+        this._map.panToBounds(bounds);
+        this._map.setOptions({maxZoom:null});
     },
 
     /**
@@ -481,28 +537,7 @@ Polymer({
      * @returns {string}
      * @private
      */
-    _returnLocTypeLabel: function(type) {
-        return type ? (type.charAt(0).toUpperCase() + type.slice(1)) : type;
-    },
-
-    /**
-     * Proper-case the passed type.
-     * @param type
-     * @returns {string}
-     * @private
-     */
     _returnCreateTypeLabel: function(type) {
         return type === 'pindrop' ? 'Pin Drop' : 'Address';
-    },
-
-    /**
-     *
-     * @param position
-     * @param enabled
-     * @returns {string}
-     * @private
-     */
-    _getButtonClass: function(position,enabled) {
-        return 'control-button ' + position + ' ' + (enabled ? 'enabled' : 'disabled');
     }
 });

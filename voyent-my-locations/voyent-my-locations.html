@@ -2,12 +2,13 @@
 <link rel="import" href="../common/imports/voyent.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-map-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
-<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../../iron-selector/iron-selector.html">
-<link rel="import" href="../../paper-item/paper-item.html">
 <link rel="import" href="../../iron-icon/iron-icon.html">
 <link rel="import" href="../../iron-icons/iron-icons.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../paper-toggle-button/paper-toggle-button.html">
+
 
 <!--
 Displays a map-based tool to allow users to create and edit locations of interest.
@@ -24,6 +25,13 @@ Example:
 <dom-module id="voyent-my-locations">
     <template>
         <style include="voyent-alert-styles" is="custom-style">
+            .info-window {
+                font-weight: 400;
+                -webkit-font-smoothing: antialiased;
+            }
+            .autocomplete {
+                padding-top: 15px;
+            }
             .delete-bttn {
                 text-align: center;
                 padding-left: 23px;
@@ -32,89 +40,82 @@ Example:
                 width: 38px;
                 height: 38px;
             }
-            .no-margin {
-                margin: 0;
+            .info-window .toggle-button {
+                margin-top:10px;
             }
-            .dialog-bttns {
-                margin: 0;
-                padding: 15px;
+            .private-residence {
+                font-size:15px;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                -khtml-user-select: none;
+                user-select: none;
             }
             .custom-control {
                 background-color: #FFF;
                 text-align: center;
                 margin: 10px;
             }
-            .control-button {
-                float:left;
-                direction: ltr;
-                overflow: hidden;
-                text-align: center;
-                position: relative;
-                font-family: Roboto, Arial, sans-serif;
-                user-select: none;
-                font-size: 11px;
-                background-color: #FFF;
-                padding: 8px;
-                -webkit-background-clip: padding-box;
-                background-clip: padding-box;
-                box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+            .custom-control {
+                background-color:transparent;
             }
-            .control-button.left {
-                border-bottom-left-radius: 2px;
-                border-top-left-radius: 2px;
+            .custom-control paper-button {
+                background-color:#FFF;
             }
-            .control-button.right {
-                border-bottom-right-radius: 2px;
-                border-top-right-radius: 2px;
-                border-left: 0px;
+            .dialog-bttns {
+                margin: 0;
+                padding: 15px;
             }
-            .control-button.enabled {
-                cursor: pointer;
-                color: #191919;
+            .dialog-title {
+                font-weight:bold;
+                font-size:17px;
             }
-            .control-button.enabled:hover {
-                background-color: #EBEBEB;
-                color: #000;
+            .dialog-bttns paper-button {
+                font-size:12px;
             }
-            .control-button.disabled {
-                cursor: default;
-                color: #D3D3D3;
+            .modal-dialog .private-residence,
+            .name-input {
+                margin-top:15px !important;
             }
-            .dialog-inline {
+            .no-margin {
+                margin: 0;
+            }
+            .inline {
                 display: inline-block;
             }
-            .dialog-block {
+            .block {
                 display:block;
             }
-            #autoComplete {
-                padding-top: 15px;
+            .text-center {
+                text-align:center;
+            }
+            .valign-middle {
+                vertical-align: middle;
+            }
+            .valign-top {
+                vertical-align: top;
             }
         </style>
         <div id="container">
             <div id="map"></div>
         </div>
-        <div id="infoWindow" hidden>
+        <div id="infoWindow" class="info-window" hidden>
             <paper-input id="label"
                          tabindex="1"
                          label="Name"
                          placeholder="New Name"
-                         on-change="_flagLocationForUpdating"
+                         on-change="flagLocationForUpdating"
                          value="{{_loadedLocation.name::input}}">
             </paper-input>
-            <paper-dropdown-menu id="type"
-                                 tabindex="2"
-                                 label="Type">
-                <iron-selector selected="{{_loadedLocation.type}}"
-                               attr-for-selected="name"
-                               class="dropdown-content"
-                               on-iron-activate="_flagLocationForUpdating">
-                    <template is="dom-repeat" items="[[_locationTypes]]">
-                        <paper-item name="[[item]]">[[_returnLocTypeLabel(item)]]</paper-item>
-                    </template>
-                </iron-selector>
-            </paper-dropdown-menu>
+            <div class="toggle-button">
+                <paper-toggle-button id="isPrivateResidence" class="inline valign-middle" tabindex="2"
+                                     checked="{{_loadedLocation.isPrivateResidence}}"
+                                     on-checked-changed="_flagLocationForUpdating"></paper-toggle-button>
+                <span class="private-residence valign-middle">Private Residence</span>
+            </div>
             <div class="delete-bttn">
-                <paper-icon-button tabindex="4" title="Remove Location" icon="delete"
+                <paper-icon-button tabindex="3" title="Remove Location" icon="delete"
                                    on-click="_flagLocationForRemoval">
                 </paper-icon-button>
             </div>
@@ -129,48 +130,33 @@ Example:
             </div>
         </div>
         <div id="customControl" class="custom-control" hidden>
-            <div class$="[[_getButtonClass('left',_buttonsEnabled)]]" title="Save" on-click="_saveChanges">
-                Save
-            </div>
-            <div class$="[[_getButtonClass('right',_buttonsEnabled)]]" title="Revert" on-click="_cancelChanges">
-                Cancel
-            </div>
+            <paper-button raised disabled$="[[!_buttonsEnabled]]" title="Cancel" on-click="_cancelChanges">Cancel</paper-button>
+            <paper-button raised disabled$="[[!_buttonsEnabled]]" title="Save Changes" on-click="_saveChanges">Save Changes</paper-button>
         </div>
-        <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
-            <p>Location Details</p>
-            <paper-dropdown-menu tabindex="1"
-                                 label="Creation Type"
-                                 on-keyup="_dialogKeyUp"
-                                 class="dialog-block no-margin">
-                <iron-selector selected="{{_creationType}}"
-                               attr-for-selected="name"
-                               class="dropdown-content">
-                        <template is="dom-repeat" items="[[_creationTypes]]">
-                        <paper-item name="[[item]]">[[_returnCreateTypeLabel(item)]]</paper-item>
-                    </template>
-                </iron-selector>
-            </paper-dropdown-menu>
+        <paper-dialog id="modalDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
+                      on-iron-overlay-opened="_fixModalStacking">
+            <p class="dialog-title">New Location Details</p>
+            <paper-radio-group class="block no-margin text-center" selected="{{_creationType}}" on-keyup="_dialogKeyUp">
+                <template is="dom-repeat" items="[[_creationTypes]]">
+                    <paper-radio-button name="[[item]]">
+                        [[_returnCreateTypeLabel(item)]]
+                    </paper-radio-button>
+                </template>
+            </paper-radio-group>
             <template is="dom-if" if="[[_isAddress(_creationType)]]">
-                <paper-input id="autoComplete" class="no-margin" no-label-float tabindex="2"
+                <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" autofocus
                              on-keyup="_dialogKeyUp" placeholder="Enter a location"></paper-input>
             </template>
-            <paper-input class="dialog-inline no-margin" autofocus no-label-float tabindex="3" label="Label"
+            <paper-input class="inline no-margin name-input" autofocus no-label-float tabindex="5" label="Label"
                          on-keyup="_dialogKeyUp" value="{{_locationName}}"></paper-input>
-            <paper-dropdown-menu tabindex="4"
-                                 label="Type"
-                                 on-keyup="_dialogKeyUp"
-                                 class="no-margin">
-                <iron-selector selected="{{_locationType}}"
-                               attr-for-selected="name"
-                               class="dropdown-content">
-                    <template is="dom-repeat" items="[[_locationTypes]]">
-                        <paper-item name="[[item]]">[[_returnLocTypeLabel(item)]]</paper-item>
-                    </template>
-                </iron-selector>
-            </paper-dropdown-menu>
+            <div class="inline no-margin toggle-button">
+                <paper-toggle-button class="inline no-margin valign-top" tabindex="6" on-keyup="_dialogKeyUp"
+                                     checked="{{_isPrivateResidence}}"></paper-toggle-button>
+                <span class="private-residence valign-middle">Private Residence</span>
+            </div>
             <div class="dialog-bttns">
-                <paper-button raised tabindex="5" title="Cancel" on-click="_closeDialog">Cancel</paper-button>
-                <paper-button raised tabindex="6" title="Confirm" on-click="_confirmDialog">Confirm</paper-button>
+                <paper-button raised tabindex="7" title="Cancel" on-click="_closeDialog">Cancel</paper-button>
+                <paper-button raised tabindex="8" title="Confirm" on-click="_confirmDialog">Add Location</paper-button>
             </div>
         </paper-dialog>
     </template>

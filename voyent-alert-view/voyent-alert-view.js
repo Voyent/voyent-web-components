@@ -2,6 +2,11 @@ Polymer({
     is: 'voyent-alert-view',
     behaviors: [Voyent.AlertMapBehaviour,Voyent.AlertBehaviour],
 
+    ready: function() {
+        this._loadedAlert = null;
+        this._myLocations = [];
+    },
+
     /**
      * Updates the view with the last location of the alert associated
      * with the templateId and refreshes the current user's location.
@@ -62,7 +67,7 @@ Polymer({
             if (!_this._templateId) { return; }
             _this._fetchLocationRecord(_this._templateId).then(function(location) {
                 //Update the template coordinates, the label's position and adjust the bounds.
-                coordinates = location.location.geometry.coordinates; //TODO - switch to helper function below
+                coordinates = location.location.geometry.coordinates;
                 _this._loadedAlert.selectedStack.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
                 _this.updateJSON();
                 _this._adjustBounds();
@@ -74,15 +79,6 @@ Polymer({
     },
 
     //******************PRIVATE API******************
-
-    /**
-     * Finish initializing after login.
-     * @private
-     */
-    _onAfterLogin: function() {
-        this._loadedAlert = null;
-        this._myLocations = [];
-    },
 
     /**
      * Draws a user marker on the map based on the passed location data.

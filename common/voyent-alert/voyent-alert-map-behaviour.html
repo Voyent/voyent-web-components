@@ -156,7 +156,8 @@
                 //Async so the new dimensions render first.
                 setTimeout(function() {
                     google.maps.event.trigger(_this._map, 'resize');
-                    if (_this._areaRegion && _this._areaRegion.bounds) {
+                    if (_this._areaRegion && _this._areaRegion.bounds &&
+                        !_this._skipRegionPanning) {
                         _this._map.fitBounds(_this._areaRegion.bounds);
                         _this._map.panToBounds(_this._areaRegion.bounds);
                     }
@@ -211,7 +212,7 @@
          */
         clearMap: function(skipBttnDraw) {
             //Always re-zoom the bounds on the area's region if available.
-            if (this._areaRegion && this._areaRegion.bounds) {
+            if (this._areaRegion && this._areaRegion.bounds && !this._skipRegionPanning) {
                 this._map.fitBounds(this._areaRegion.bounds);
                 this._map.panToBounds(this._areaRegion.bounds);
             }
@@ -253,7 +254,7 @@
                 }
             }
         },
-        
+
         //******************PRIVATE API******************
 
         /**
@@ -356,7 +357,6 @@
          */
         _fetchMyLocations: function() {
             var _this = this;
-            var locs = {};
             return new Promise(function (resolve, reject) {
                 var query = {"location.properties.alertId":{"$exists":false},
                              "location.properties.vras.name":{"$exists":true},
@@ -366,19 +366,9 @@
                 var fields = {"_id":0,"username":0};
                 voyent.locate.findLocations({realm:_this.realm,account:_this.account,
                                              query:query,fields:fields}).then(function(locations) {
-                    for (var i=0; i<locations.length; i++) {
-                        if (!locs[locations[i].location.properties.vras.id]) {
-                            locs[locations[i].location.properties.vras.id] = locations[i];
-                        }
-                        else if (locs[locations[i].location.properties.vras.id].lastUpdated <
-                                 locations[i].lastUpdated) {
-                            locs[locations[i].location.properties.vras.id] = locations[i];
-                        }
-                    }
-                    //First clear the map.
+                    //Clear the map and draw the locations.
                     _this._clearMyLocations();
-                    //Convert the mapping back to an array and draw them.
-                    _this._drawMyLocations(Object.keys(locs).map(function(key){return locs[key]}));
+                    _this._drawMyLocations(locations);
                     resolve();
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching location records: ' + (error.responseText || error.message || error));
@@ -397,7 +387,7 @@
                 this._myLocations.push(new this._MyLocation(
                     locations[i].location.properties.vras.id,
                     locations[i].location.properties.vras.name,
-                    locations[i].location.properties.vras.type,
+                    locations[i].location.properties.vras.type === 'residential',
                     new google.maps.Marker({
                         position: new google.maps.LatLng(
                             locations[i].location.geometry.coordinates[1],
@@ -425,7 +415,7 @@
         /**
          * Draws the passed region on the map as an invisible polygon. We'll use the polygon
          * for setting the map bounds or favouring autocomplete results to it's area.
-         * @param region
+         * @param region - The region to be drawn, in GeoJSON format.
          * @private
          */
         _drawRegion: function(region) {
@@ -460,9 +450,11 @@
                     'visible': false
                 });
             }
-            //Zoom on the newly drawn Region.
-            this._map.fitBounds(bounds);
-            this._map.panToBounds(bounds);
+            if (!this._skipRegionPanning) {
+                //Zoom on the newly drawn Region.
+                this._map.fitBounds(bounds);
+                this._map.panToBounds(bounds);
+            }
             //Save a reference to the region JSON and map polygon for later.
             this._areaRegion = {"region":region,"polygon":polygon,"bounds":bounds};
             this._regionMapping[this.realm] = this._areaRegion;
@@ -516,7 +508,7 @@
                     map: this._map, draggable: true, zIndex: 50,
                     visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
                 });
-                
+
                 zoneStacks.push(new this._AlertZoneStack(stackMarker, zones));
             }
             var parentId = templateJSON.properties.parentAlertId || null;

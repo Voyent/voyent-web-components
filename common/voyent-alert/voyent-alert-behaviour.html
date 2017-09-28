@@ -1099,7 +1099,7 @@
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
-             * @param messageTemplate - The message template associated with this zone
+             * @param messageTemplate - The message template associated with this zone.
              * @private
              */
             this._AlertZone = function (name,editable,opacity,colour,messageTemplate,zIndex) {
@@ -1111,7 +1111,7 @@
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
                 this.setRenaming(false);
-                this.messageTemplate = messageTemplate ? messageTemplate : null;
+                this.messageTemplate = messageTemplate || null;
             };
             /**
              * _AlertZone prototype (instance) functions.
@@ -1258,7 +1258,7 @@
              * @param editable - Whether the zone is editable (resizable).
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
-             * @param messageTemplate - The message template associated with this zone
+             * @param messageTemplate - The message template associated with this zone.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @extends _AlertZone
              * @private
@@ -1299,7 +1299,7 @@
              * @param editable - Whether the zone is editable (resizable).
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
-             * @param messageTemplate - The message template associated with this zone
+             * @param messageTemplate - The message template associated with this zone.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @extends _AlertZone
              * @private
@@ -1346,89 +1346,97 @@
              * A class that represents a user's fixed location record, both the drawn map entity and the json.
              * @param id - The system-generated id.
              * @param name - The user-defined name.
-             * @param type - The type of location, one of home, business, school or other.
+             * @param isPrivateResidence - Indicates whether the location is a private residence.
              * @param marker - The associated map marker.
              * @private
              */
-            this._MyLocation = function(id,name,type,marker) {
+            this._MyLocation = function(id,name,isPrivateResidence,marker) {
+                this.isPersisted = !!id;
                 this.id = id || _outer._generateUid();
                 this.setName(name || '');
-                this.type = type || '';
+                this.isPrivateResidence = typeof isPrivateResidence === 'boolean' ? isPrivateResidence : false;
                 this.setMarker(marker);
             };
-            /**
-             * Sets the name and draws the nameOverlay.
-             * @param name
-             */
-            this._MyLocation.prototype.setName = function (name) {
-                this.name = name;
-                if (this.nameOverlay) {
-                    this.nameOverlay.draw();
-                }
-                else {
-                    this.nameOverlay = new _outer._LocationOverlay(this);
-                }
-            };
-            /**
-             * Sets the marker and sets up relevant listeners.
-             * @param marker
-             */
-            this._MyLocation.prototype.setMarker = function(marker) {
-                this.marker = marker;
-                this._setupMarkerListeners();
-            };
-            /**
-             * Removes the location from the map.
-             */
-            this._MyLocation.prototype.removeFromMap = function() {
-                this.marker.setMap(null);
-                this.nameOverlay.setMap(null);
-            };
-            /**
-             * Updates the JSON to reflect the current state of the template.
-             * @private
-             */
-            this._MyLocation.prototype.updateJSON = function() {
-                var markerPosition = this.marker.getPosition();
-                this.json = {
-                    "location": {
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": [markerPosition.lng(),markerPosition.lat()]
-                        },
-                        "properties": {
-                            "vras": {
-                                "id": this.id,
-                                "name": this.name,
-                                "type": this.type
+            this._MyLocation.prototype = {
+                constructor: _outer._MyLocation,
+                /**
+                 * Sets the name and draws the nameOverlay.
+                 * @param name
+                 */
+                setName: function (name) {
+                    this.name = name;
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
+                    }
+                    else {
+                        this.nameOverlay = new _outer._LocationOverlay(this);
+                    }
+                },
+                /**
+                 * Sets the marker and sets up relevant listeners.
+                 * @param marker
+                 */
+                setMarker: function(marker) {
+                    this.marker = marker;
+                    this._setupMarkerListeners();
+                },
+                /**
+                 * Adds the location to the map. Used to reverse `removeFromMap`.
+                 */
+                addToMap: function() {
+                    this.marker.setMap(_outer._map);
+                    this.nameOverlay.displayAndDraw();
+                },
+                /**
+                 * Removes the location from the map.
+                 */
+                removeFromMap: function() {
+                    this.marker.setMap(null);
+                    this.nameOverlay.hide();
+                },
+                /**
+                 * Updates the JSON to reflect the current state of the template.
+                 * @private
+                 */
+                updateJSON: function() {
+                    var markerPosition = this.marker.getPosition();
+                    this.json = {
+                        "location": {
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [markerPosition.lng(),markerPosition.lat()]
+                            },
+                            "properties": {
+                                "vras": {
+                                    "id": this.id,
+                                    "name": this.name,
+                                    "type": this.isPrivateResidence ? 'residential' : 'other'
+                                }
                             }
                         }
                     }
+                },
+                /**
+                 * Initializes marker listeners.
+                 * @private
+                 */
+                _setupMarkerListeners: function() {
+                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    var _this = this;
+                    //Continuously re-draw the overlay as the location is dragged.
+                    var marker = this.marker;
+                    google.maps.event.addListener(marker,'drag',function() {
+                        _this.nameOverlay.draw();
+                    });
+                    //Update the coordinates on the location record and flag the location for updating after it's dragged.
+                    google.maps.event.addListener(marker,'dragend',function() {
+                        _outer.flagLocationForUpdating(_this);
+                    });
+                    //Display infoWindow on location marker click.
+                    google.maps.event.addListener(marker,'click',function() {
+                        _outer._toggleInfoWindow(_this);
+                    });
                 }
-            };
-            /**
-             * Initializes marker listeners.
-             * @private
-             */
-            this._MyLocation.prototype._setupMarkerListeners = function() {
-                if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
-                var _this = this;
-                //Continuously re-draw the overlay as the location is dragged.
-                var marker = this.marker;
-                google.maps.event.addListener(marker,'drag',function() {
-                    _this.nameOverlay.draw();
-                });
-                //Update the coordinates on the location record and flag the location for updating after it's dragged.
-                google.maps.event.addListener(marker,'dragend',function() {
-                    if (_outer._locationsToUpdate.indexOf(_this) === -1) {
-                        _outer._locationsToUpdate.push(_this);
-                    }
-                    _outer._buttonsEnabled = true;
-                });
-                //Display infoWindow on location marker click.
-                google.maps.event.addListener(marker,'click',function() {
-                    _outer._toggleInfoWindow(_this);
-                });
             };
             Object.seal(this._MyLocation);
 
@@ -1442,6 +1450,7 @@
                 this.zone = zone;
                 this.setMap(_outer._map);
                 this.div = document.createElement('div');
+                this.div.style.fontSize = '8px';
             };
             /**
              * A class that represents a location name overlay.
@@ -1453,6 +1462,7 @@
                 this.loc = location;
                 this.setMap(_outer._map);
                 this.div = document.createElement('div');
+                this.div.style.fontSize = '10px';
             };
             //Inherit the prototype of google.maps.OverlayView.
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
@@ -1468,7 +1478,6 @@
                 this.div.style.borderWidth = '0px';
                 this.div.style.position = 'absolute';
                 this.div.style.padding = '5px';
-                this.div.style.fontSize = '8px';
                 this.div.style.zIndex = 10000;
                 this.div.style.opacity = 1.0;
                 this.div.style.borderRadius = '25px';
