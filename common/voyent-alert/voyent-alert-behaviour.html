@@ -396,16 +396,31 @@
                  * @param zoneStack
                  */
                 removeZoneStack: function (zoneStack) {
-                    for (var i=0; i<zoneStack.length; i++) {
-                        zoneStack[i].removeZone();
-                    }
-                    var zoneStackIndex = this.getZoneIndex(zoneStack);
+                    zoneStack.removeFromMap();
+                    var zoneStackIndex = this.getZoneStackIndex(zoneStack);
                     if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
                         _outer.splice('_loadedAlert.template.zoneStacks',zoneStackIndex,1);
+                        if (_outer._loadedAlert.selectedStack === zoneStack) {
+                            _outer.set('_loadedAlert.selectedStack',null);
+                        }
                     }
                     else {
                         this.zoneStacks.splice(zoneStackIndex,1);
                     }
+                },
+                /**
+                 * Returns the zone stack at the specified index.
+                 * @param index
+                 */
+                getZoneStackAt: function (index) {
+                    return this.zoneStacks[index];
+                },
+                /**
+                 * Returns the index of the passed zone stack.
+                 * @param zoneStack
+                 */
+                getZoneStackIndex: function (zoneStack) {
+                    return this.zoneStacks.indexOf(zoneStack);
                 },
                 /**
                  * Triggers reinitialization of edit listeners for each polygonal zone stack.
@@ -451,7 +466,6 @@
                 },
                 /**
                  * Updates the position of the template marker by updating the json and calculating the centroid from that.
-                 * If this function is called in result of a stack change then the json for that stack should be updated first.
                  */
                 updateJSONAndCentroid: function() {
                     if (this.marker) {
@@ -552,7 +566,9 @@
                  */
                 setMarker: function (marker) {
                     this.marker = marker;
-                    this._setupMarkerListeners();
+                    if (marker) {
+                        this._setupMarkerListeners();
+                    }
                 },
                 /**
                  * Sets the zones and triggers required processing.
@@ -617,8 +633,7 @@
                  * @param zone
                  */
                 removeZone: function (zone) {
-                    zone.shapeOverlay.setMap(null);
-                    zone.nameOverlay.setMap(null);
+                    zone.removeFromMap();
                     var zoneIndex = this.getZoneIndex(zone);
                     if (_outer._loadedAlert && _outer._loadedAlert.selectedStack === this) {
                         _outer.splice('_loadedAlert.selectedStack.zones',zoneIndex,1);
@@ -1378,7 +1393,9 @@
                  */
                 setMarker: function(marker) {
                     this.marker = marker;
-                    this._setupMarkerListeners();
+                    if (marker) {
+                        this._setupMarkerListeners();
+                    }
                 },
                 /**
                  * Adds the location to the map. Used to reverse `removeFromMap`.

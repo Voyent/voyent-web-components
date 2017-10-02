@@ -257,29 +257,6 @@ Polymer({
     },
 
     /**
-     * Removes the current alert template.
-     * @returns {boolean}
-     */
-    _removeAlertTemplate: function() {
-        var _this = this;
-        //Delete from DB if it's saved.
-        if (this._loadedAlert.template.id) {
-            voyent.locate.deleteAlertTemplate({
-                realm: this.realm,
-                account: this.account,
-                id: this._loadedAlert.template.id
-            }).then(function() {
-                _this._removeAlertTemplateFromMap();
-            }).catch(function (error) {
-                _this.fire('message-error', 'Issue deleting alert template: ' + (error.responseText || error.message || error));
-            });
-        }
-        else {
-            _this._removeAlertTemplateFromMap();
-        }
-    },
-
-    /**
      * Removes the currently active alert.
      * @private
      */

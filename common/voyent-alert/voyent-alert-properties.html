@@ -250,52 +250,50 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </div>
                     <div class$="{{_getAccordionClasses('body',zone.active)}}">
                         <template is="dom-if" if="[[!_editing]]">
-                            <template is="dom-if" if="[[!_addingNew]]">
-                                <div class="tableWrap">
-                                    <div class="table">
-                                        <div class="propertyCol tableHeader">
-                                            <div data-index$="[[index]]"
-                                                 title="Click to sort by property">
-                                                Property
-                                            </div>
-                                        </div>
-                                        <div class="valueCol tableHeader">
-                                            <div data-index$="[[index]]"
-                                                 title="Click to sort by property value">
-                                                Value
-                                            </div>
+                            <div class="tableWrap">
+                                <div class="table">
+                                    <div class="propertyCol tableHeader">
+                                        <div data-index$="[[index]]"
+                                             title="Click to sort by property">
+                                            Property
                                         </div>
                                     </div>
-                                    <iron-selector selected="{{_selected}}"
-                                                   attr-for-selected="data-property"
-                                                   on-iron-activate="_onIronActivate">
-                                        <div class="table clickable" data-property="opacity">
-                                            <div class="propertyCol">
-                                                Opacity
-                                            </div>
-                                            <div class="valueCol">
-                                                [[zone.opacity]]
-                                            </div>
+                                    <div class="valueCol tableHeader">
+                                        <div data-index$="[[index]]"
+                                             title="Click to sort by property value">
+                                            Value
                                         </div>
-                                        <div class="table clickable" data-property="editable">
-                                            <div class="propertyCol">
-                                                Editable
-                                            </div>
-                                            <div class="valueCol">
-                                                [[zone.editable]]
-                                            </div>
-                                        </div>
-                                        <div class="table clickable" data-property="colour">
-                                            <div class="propertyCol">
-                                                Colour
-                                            </div>
-                                            <div class="valueCol">
-                                                [[zone.colour]]
-                                            </div>
-                                        </div>
-                                    </iron-selector>
+                                    </div>
                                 </div>
-                            </template>
+                                <iron-selector selected="{{_selected}}"
+                                               attr-for-selected="data-property"
+                                               on-iron-activate="_onIronActivate">
+                                    <div class="table clickable" data-property="opacity">
+                                        <div class="propertyCol">
+                                            Opacity
+                                        </div>
+                                        <div class="valueCol">
+                                            [[zone.opacity]]
+                                        </div>
+                                    </div>
+                                    <div class="table clickable" data-property="editable">
+                                        <div class="propertyCol">
+                                            Editable
+                                        </div>
+                                        <div class="valueCol">
+                                            [[zone.editable]]
+                                        </div>
+                                    </div>
+                                    <div class="table clickable" data-property="colour">
+                                        <div class="propertyCol">
+                                            Colour
+                                        </div>
+                                        <div class="valueCol">
+                                            [[zone.colour]]
+                                        </div>
+                                    </div>
+                                </iron-selector>
+                            </div>
                         </template>
                         <template is="dom-if" if="[[_editing]]">
                             <template is="dom-if" if="{{_selectedEquals('editable',_selected)}}">

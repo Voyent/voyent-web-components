@@ -24,7 +24,7 @@ Polymer({
     ],
 
     ready: function() {
-        this._selected = this._editing = this._addingNew = this._renamingTemplate = false;
+        this._selected = this._editing = this._renamingTemplate = false;
     },
 
     /**
