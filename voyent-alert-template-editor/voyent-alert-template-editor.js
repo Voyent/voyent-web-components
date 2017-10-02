@@ -155,6 +155,21 @@ Polymer({
     _setupDrawingListeners: function() {
         var _this = this, zone;
         google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
+            //Check if they drew a self-intersecting polygon and if so remove it from the map and notify them.
+            if (oce.type === 'polygon') {
+                var kinks = turf.kinks({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(oce.overlay.getPaths())
+                    }
+                });
+                if (kinks.features.length) {
+                    _this.fire('message-error','The zone cannot self-intersect');
+                    oce.overlay.setMap(null);
+                    return;
+                }
+            }
             //Build our stack marker, the position will be added later.
             var stackMarker = new google.maps.Marker({
                 map: _this._map, draggable: true, zIndex: 50
