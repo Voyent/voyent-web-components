@@ -1018,7 +1018,7 @@
                     }
                     if (!errorMsg && _outer._loadedAlert.selectedStack.zones.length > 1) {
                         var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
-                        //Check that the vertex is within our zone boundary. This catches cases
+                        //Check that the vertex is within our zone boundary. This handles the case
                         //where they drag an inner zone vertex past the boundaries of the stack.
                         if (zoneIndex !== _outer._loadedAlert.selectedStack.getZoneIndex(largestZone)) {
                             if (!google.maps.geometry.poly.containsLocation(vertex,new google.maps.Polygon({
@@ -1028,7 +1028,7 @@
                         }
                         else {
                             //Check that the outer-most zone is touching it's closest inner zone. This
-                            //catches the case where they drag a vertex on the outer-most zone to the
+                            //handles the case where they drag a vertex on the outer-most zone to the
                             //opposite side of the shape, detaching it from the stack.
                             var outerBoundaryPolygonCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(
                                 zone.shapeOverlay.getPaths()
@@ -1055,17 +1055,26 @@
                                 errorMsg = 'The zone cannot be detached from the stack';
                             }
                         }
-                        //Check if they dragged the vertex into one of the other zones. Overlapping borders is fine.
-                        if (!errorMsg) {
-                            for (var i=0; i<_outer._loadedAlert.selectedStack.zones.length; i++) {
-                                if (i === zoneIndex) { continue; }
+                        //Check if the vertex overlaps zones beyond the adjacent zone on either side. Overlapping the
+                        //adjacent zone is OK because we will just adjust the shape of that zone to accommodate.
+                        if (!errorMsg && _outer._loadedAlert.selectedStack.zones.length > 2) {
+                            var i;
+                            //Test zones on the outer side of the edited zone, starting with two zones away.
+                            for (i=zoneIndex+2; i<_outer._loadedAlert.selectedStack.zones.length; i++) {
                                 if (google.maps.geometry.poly.containsLocation(
-                                        vertex, _outer._loadedAlert.selectedStack.getZoneAt(i).shapeOverlay
-                                    ) && !google.maps.geometry.poly.isLocationOnEdge(
-                                        vertex, _outer._loadedAlert.selectedStack.getZoneAt(i).shapeOverlay
-                                    )) {
+                                        vertex, _outer._loadedAlert.selectedStack.getZoneAt(i).shapeOverlay)) {
                                     errorMsg = 'The zone cannot overlap other zones in the stack';
                                     break;
+                                }
+                            }
+                            if (!errorMsg) {
+                                //Test zones on the inner side of the edited zone, starting with two zones away.
+                                for (i=zoneIndex-2; i>=0; i--) {
+                                    if (google.maps.geometry.poly.containsLocation(
+                                        vertex, _outer._loadedAlert.selectedStack.getZoneAt(i).shapeOverlay)) {
+                                        errorMsg = 'The zone cannot overlap other zones in the stack';
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -1083,9 +1092,9 @@
                         return;
                     }
                     if (pathIndex > 0) {
-                        //The inner boundary of a zone was was pulled inwards so we must adjust the shape inside of it to
-                        //fill the gap. To do this we will take the inner boundary of the adjusted shape and set it as
-                        //the outer boundary of the inner shape. We must clone the boundary array so the two overlays
+                        //The inner boundary of a zone was pulled inwards or outwards so we must adjust the shape inside
+                        //of it to fill the gap. To do this we will take the inner boundary of the adjusted shape and set
+                        //it as the outer boundary of the inner shape. We must clone the boundary array so the two overlays
                         //will not be linked by reference.
                         var pathClone = [];
                         for (var j=0; j<zone.shapeOverlay.getPaths().getAt(pathIndex).length; j++) {
