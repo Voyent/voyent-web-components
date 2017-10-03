@@ -194,7 +194,7 @@ Polymer({
         //check what the first one is to determine which kind we want to add.
         if (this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
             var radius = largestZone.shapeOverlay.getRadius() + largestZone.shapeOverlay.getRadius() * 0.5;
-            newZone = new this._CircularAlertZone(radius,name,null,null,null,null,zIndex);
+            newZone = new this._CircularAlertZone(radius,name,null,null,null,zIndex);
         }
         else { //polygon
             var largestZonePaths = largestZone.shapeOverlay.getPaths(), distance, bearing, paths = [], path;
@@ -214,7 +214,7 @@ Polymer({
             }
             //When we add a new zone we don't want to include the full shape so we can
             //punch it out properly later so just pass the filled outer shape via paths[0].
-            newZone = new this._PolygonalAlertZone([paths[0]],name,null,null,null,null,zIndex);
+            newZone = new this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
         }
         this._loadedAlert.selectedStack.addZone(newZone);
         //Re-adjust the centroid for the template.
@@ -248,14 +248,6 @@ Polymer({
         if (this._editing) { //We are entering edit mode.
             switch (this._selected) {
                 //Copy the current state of each of the properties into our editing mode inputs.
-                case 'editable':
-                    //Convert boolean to string for UI.
-                    this.set('_editableVal',zone.editable ? 'true' : 'false');
-                    //Focus on the input.
-                    setTimeout(function() {
-                        _this.querySelector('#editable-'+index).focus();
-                    },0);
-                    break;
                 case 'colour':
                     this.set('_colourVal',zone.colour);
                     //Also call the jscolor API so we are sure the input style updates properly.
@@ -291,7 +283,7 @@ Polymer({
         }
         else { //We are exiting editing mode.
             //Clear the editing mode inputs.
-            this._editableVal = this._colourVal = this._opacityVal = null;
+            this._colourVal = this._opacityVal = null;
             switch (this._selected) {
                 case 'colour':
                     //Force the jscolor picker to be hidden in case the color was confirmed via keydown
@@ -340,21 +332,6 @@ Polymer({
     },
 
     /**
-     * Confirms changes made to the editable property whenever the value of the dropdown value changes.
-     * @param e
-     * @private
-     */
-    _editPropertyOnActivate: function(e) {
-        var _this = this;
-        //Do this async since iron-activate fires before this._selected changes.
-        setTimeout(function() {
-            var currentVal = _this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')).editable ? 'true' : 'false';
-            if (_this._editableVal === currentVal) { return; }
-            _this._editProperty(e);
-        },0);
-    },
-
-    /**
      * Confirms the edit of a Proximity Zone property.
      * @param e
      * @private
@@ -363,10 +340,6 @@ Polymer({
         var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
         switch (this._selected) {
             //Copy the new property value from our editing mode inputs to the JSON. We don't bind directly in case we need to revert.
-            case 'editable':
-                zone.setEditable(this._editableVal.toLowerCase() === 'true'); //Convert string from UI to boolean
-                this.set('_editableVal',null);
-                break;
             case 'colour':
                 if (!this._colourVal) { return; }
                 zone.setColour(this._colourVal);

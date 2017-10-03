@@ -670,7 +670,6 @@
                         json.properties[zone.id] = {
                             "name": zone.name,
                             "shape": zone.getShape(),
-                            "editable": zone.editable,
                             "opacity": zone.opacity,
                             "colour": zone.colour
                         };
@@ -1119,17 +1118,15 @@
             /**
              * A class that represents an alert zone, both the drawn map entity and the json.
              * @param name - The user-defined name.
-             * @param editable - Whether the zone is editable (resizable).
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @param messageTemplate - The message template associated with this zone.
              * @private
              */
-            this._AlertZone = function (name,editable,opacity,colour,messageTemplate,zIndex) {
+            this._AlertZone = function (name,opacity,colour,messageTemplate,zIndex) {
                 this.id = _outer._generateUid();
                 this.setName(name || 'Zone_1');
-                this.setEditable(typeof editable === 'boolean' ? editable : true);
                 this.setOpacity(opacity || 0.30);
                 this.setColour(colour || '000000');
                 this.setZIndex(zIndex || 49);
@@ -1152,21 +1149,6 @@
                     if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
                         _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
                         _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.name',name);
-                    }
-                },
-                /**
-                 * Sets editable, updates the overlay and if the instance is
-                 * currently loaded we'll also notify the polymer path via set.
-                 * @param editable
-                 */
-                setEditable: function(editable) {
-                    this.editable = editable;
-                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
-                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.editable',editable);
-                    }
-                    if (this.shapeOverlay) {
-                        this.shapeOverlay.setEditable(editable);
                     }
                 },
                 /**
@@ -1253,7 +1235,7 @@
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({"strokeWeight":1.5});
-                        this.shapeOverlay.setEditable(this.editable);
+                        this.shapeOverlay.setEditable(true);
                     }
                 },
                 /**
@@ -1279,7 +1261,6 @@
              * A class that represents a circular alert zone.
              * @param radius - The circle radius.
              * @param name - The user-defined name.
-             * @param editable - Whether the zone is editable (resizable).
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param messageTemplate - The message template associated with this zone.
@@ -1287,8 +1268,8 @@
              * @extends _AlertZone
              * @private
              */
-            this._CircularAlertZone = function(radius,name,editable,opacity,colour,messageTemplate,zIndex) {
-                _outer._AlertZone.call(this,name,editable,opacity,colour,messageTemplate,zIndex);
+            this._CircularAlertZone = function(radius,name,opacity,colour,messageTemplate,zIndex) {
+                _outer._AlertZone.call(this,name,opacity,colour,messageTemplate,zIndex);
                 this.radius = radius || 500;
                 this.shapeOverlay = (new google.maps.Circle(this._getShapeOverlayOpts()));
             };
@@ -1320,7 +1301,6 @@
              * A class that represents a circular alert zone.
              * @param paths - The polygon paths, an array of arrays of LatLng objects.
              * @param name - The user-defined name.
-             * @param editable - Whether the zone is editable (resizable).
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param messageTemplate - The message template associated with this zone.
@@ -1328,8 +1308,8 @@
              * @extends _AlertZone
              * @private
              */
-            this._PolygonalAlertZone = function(paths,name,editable,opacity,colour,messageTemplate,zIndex) {
-                _outer._AlertZone.call(this,name,editable,opacity,colour,messageTemplate,zIndex);
+            this._PolygonalAlertZone = function(paths,name,opacity,colour,messageTemplate,zIndex) {
+                _outer._AlertZone.call(this,name,opacity,colour,messageTemplate,zIndex);
                 this.setPaths(paths);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };
@@ -1358,7 +1338,7 @@
             this._PolygonalAlertZone.prototype._getShapeOverlayOpts = function() {
                 return {
                     clickable: _outer.nodeName !== 'VOYENT-ALERT-VIEW', draggable: false,
-                    editable:false, fillColor: '#'+this.colour,
+                    editable: false, fillColor: '#'+this.colour,
                     fillOpacity: this.opacity, map: _outer._map,
                     strokeWeight:0, zIndex:this.zIndex, paths:this.paths,
                     suppressUndo: true //This is undocumented but it works for now so we'll leverage it.

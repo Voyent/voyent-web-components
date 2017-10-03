@@ -276,14 +276,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                                             [[zone.opacity]]
                                         </div>
                                     </div>
-                                    <div class="table clickable" data-property="editable">
-                                        <div class="propertyCol">
-                                            Editable
-                                        </div>
-                                        <div class="valueCol">
-                                            [[zone.editable]]
-                                        </div>
-                                    </div>
                                     <div class="table clickable" data-property="colour">
                                         <div class="propertyCol">
                                             Colour
@@ -296,24 +288,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                             </div>
                         </template>
                         <template is="dom-if" if="[[_editing]]">
-                            <template is="dom-if" if="{{_selectedEquals('editable',_selected)}}">
-                                <paper-dropdown-menu id$="editable-[[index]]"
-                                                     tabindex="1"
-                                                     label="Editable"
-                                                     data-index$="[[index]]"
-                                                     on-keydown="_editPropertyViaKeydown"
-                                                     value="{{_editableVal}}"
-                                                     disabled$="[[!zone.active]]">
-                                    <iron-selector class="dropdown-content"
-                                                   selected="{{_editableVal}}"
-                                                   on-iron-activate="_editPropertyOnActivate"
-                                                   data-index$="[[index]]"
-                                                   attr-for-selected="name">
-                                        <paper-item name="true">true</paper-item>
-                                        <paper-item name="false">false</paper-item>
-                                    </iron-selector>
-                                </paper-dropdown-menu>
-                            </template>
                             <template is="dom-if" if="{{_selectedEquals('colour',_selected)}}">
                                 <div class="jscolor-wrapper">
                                     <input id$="jsColor-[[index]]" class="jscolor"

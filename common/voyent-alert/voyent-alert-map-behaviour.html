@@ -483,16 +483,15 @@
                     properties = templateJSON.properties[zoneGeometries[i].id];
                     if (properties.shape === 'circle') {
                         zones.push(new this._CircularAlertZone(
-                            properties.radius, properties.name, properties.editable,
-                            properties.opacity, properties.colour, properties.messageTemplate, zIndex
+                            properties.radius, properties.name, properties.opacity,
+                            properties.colour, properties.messageTemplate, zIndex
                         ));
                     }
                     else {
                         //Generate the ordered sequence of coordinates that completes the Polygon shape.
                         zones.push(new this._PolygonalAlertZone(
                             this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
-                            properties.name, properties.editable, properties.opacity,
-                            properties.colour, properties.messageTemplate, zIndex)
+                            properties.name, properties.opacity, properties.colour, properties.messageTemplate, zIndex)
                         );
                     }
                     zIndex--;
