@@ -2,6 +2,14 @@ Polymer({
     is: 'voyent-alert-editor',
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
+    properties: {
+        /**
+         * Indicate whether to hide the embedded save and remove buttons.
+         * @default false
+         */
+        hideButtons: { type: Boolean, value: false }
+    },
+
     observers: ['_showTemplateListPaneChanged(_showTemplateListPane)'],
 
     ready: function() {
@@ -204,10 +212,12 @@ Polymer({
      * @private
      */
     _revertCursor: function() {
-        //Revert the cursor state, clear the temporary click listener and clear the selected alert template id.
         if (this._selectedAlertTemplateId) {
             this._map.setOptions({draggableCursor:''});
+            //Clear the listeners to remove the temporary click
+            //listener but make sure we re-add the permanent one.
             google.maps.event.clearListeners(this._map,'click');
+            this._setupMapClickListener();
             this._selectedAlertTemplateId = null;
         }
     },
@@ -285,6 +295,7 @@ Polymer({
      * @private
      */
     _promptForRemoval: function(func) {
+        if (!this._loadedAlert) { return; }
         var msg = 'Are you sure you want to delete ' + this._loadedAlert.template.name + '? This cannot be undone!';
         this._openDialog(msg,null,func);
     },

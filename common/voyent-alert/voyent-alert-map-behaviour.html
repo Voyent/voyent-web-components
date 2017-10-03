@@ -117,13 +117,8 @@
                 }
                 //Make sure the map is always sized correctly when the window size changes.
                 window.addEventListener('resize', function() { _this.resizeMap(); });
-                //Always de-select any loaded stack when clicking the map.
-                google.maps.event.addListener(_this._map, 'click', function() {
-                    if (_this._loadedAlert &&  _this._loadedAlert.selectedStack) {
-                        _this._loadedAlert.selectedStack.deactivateZoneOverlays();
-                        _this.set('_loadedAlert.selectedStack',null);
-                    }
-                });
+                //Set up our map click listener for de-selecting zone stacks.
+                _this._setupMapClickListener();
             };
             if (!('google' in window) || !('maps' in window.google)) {
                 if (this.loadGoogleMaps) {
@@ -785,6 +780,20 @@
         },
 
         /**
+         * Set up the map listener for always deselecting the currently selected stack.
+         * @private
+         */
+        _setupMapClickListener: function() {
+            var _this = this;
+            google.maps.event.addListener(this._map, 'click', function() {
+                if (_this._loadedAlert &&  _this._loadedAlert.selectedStack) {
+                    _this._loadedAlert.selectedStack.deactivateZoneOverlays();
+                    _this.set('_loadedAlert.selectedStack',null);
+                }
+            });
+        },
+
+        /**
          * A promise that when resolved indicates that google maps is ready. Can be used in public facing functions
          * to avoid race conditions where the function tries to execute map related calls before the map is ready.
          * @returns {*}
@@ -792,7 +801,7 @@
          */
         _mapIsReady: function() {
             var _this = this;
-            return new Promise(function (resolve,reject) {
+            return new Promise(function (resolve) {
                 if (this._map) {
                     resolve();
                 }

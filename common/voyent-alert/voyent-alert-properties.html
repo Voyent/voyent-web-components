@@ -165,6 +165,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             .delete-button {
                 text-align:center;
             }
+            .no-stack {
+                margin-top:20px;
+            }
         </style>
 
         <template is="dom-if" if="[[_loadedAlert]]">
@@ -284,7 +287,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </template>
             </div>
             <template is="dom-if" if="[[!_loadedAlert.selectedStack]]">
-                <div class="alert-template-desc">
+                <div class="alert-template-desc no-stack">
                     There is currently no stack loaded. Select a stack from the map to load its data.
                 </div>
             </template>

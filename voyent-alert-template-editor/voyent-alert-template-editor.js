@@ -44,7 +44,7 @@ Polymer({
 
     properties: {
         /**
-         * Indicate whether to to hide the embedded save and cancel buttons.
+         * Indicate whether to hide the embedded save and cancel buttons.
          * @default false
          */
         hideButtons: { type: Boolean, value: false }
