@@ -123,6 +123,16 @@
         },
 
         /**
+         * The listener to fire when the entire region button is clicked.
+         * @private
+         */
+        _entireRegionButtonListener: function() {
+            if (this._areaRegion && this._areaRegion.polygon) {
+                this._areaRegion.polygon.setVisible(!this._areaRegion.polygon.getVisible());
+            }
+        },
+
+        /**
          * Sorts the Proximity Zones based on their radius.
          * @private
          */

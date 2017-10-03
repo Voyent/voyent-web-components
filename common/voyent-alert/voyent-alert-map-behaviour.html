@@ -224,6 +224,7 @@
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !skipBttnDraw) {
                 this._addCircleButton(this._circleButtonListener.bind(this));
                 this._addPolygonButton(this._polygonButtonListener.bind(this));
+                this._addEntireRegionButton(this._entireRegionButtonListener.bind(this));
             }
             else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 if (!skipBttnDraw) {
@@ -440,9 +441,10 @@
             else {
                 //Create the invisible polygon object.
                 polygon = new google.maps.Polygon({
-                    'paths': paths,
-                    'map': this._map,
-                    'visible': false
+                    paths: paths, map: this._map,
+                    opacity: 0.1, strokeWeight:0.5,
+                    fillColor:'#FFF', visible: false,
+                    zIndex: 10
                 });
             }
             if (!this._skipRegionPanning) {
@@ -648,6 +650,15 @@
         },
 
         /**
+         * Handles adding the button for displaying the entire region zone.
+         * @param listener
+         * @private
+         */
+        _addEntireRegionButton: function(listener) {
+            this._addDrawButton('entireRegionBttn',listener);
+        },
+
+        /**
          * Handles adding the button for creating new locations.
          * @param listener
          * @private
@@ -685,12 +696,21 @@
         },
 
         /**
-         * Handles removing the button for creating new Alerts.
+         * Handles removing the button for creating new alerts.
          * @private
          */
         _removeAlertButton: function() {
             var alertBttn = this.querySelector('#alertBttn');
             if (alertBttn) { alertBttn.parentNode.removeChild(alertBttn); }
+        },
+
+        /**
+         * Handles removing the button for toggling the realm region.
+         * @private
+         */
+        _removeEntireRegionButton: function() {
+            var entireRegionBttn = this.querySelector('#entireRegionBttn');
+            if (entireRegionBttn) { entireRegionBttn.parentNode.removeChild(entireRegionBttn); }
         },
 
         /**

@@ -45,12 +45,6 @@ Example:
             }
             .private-residence {
                 font-size:15px;
-                -webkit-touch-callout: none;
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                -khtml-user-select: none;
-                user-select: none;
             }
             .custom-control {
                 background-color: #FFF;
@@ -112,7 +106,7 @@ Example:
                 <paper-toggle-button id="isPrivateResidence" class="inline valign-middle" tabindex="2"
                                      checked="{{_loadedLocation.isPrivateResidence}}"
                                      on-checked-changed="_flagLocationForUpdating"></paper-toggle-button>
-                <span class="private-residence valign-middle">Private Residence</span>
+                <span class="private-residence valign-middle no-select">Private Residence</span>
             </div>
             <div class="delete-bttn">
                 <paper-icon-button tabindex="3" title="Remove Location" icon="delete"
@@ -120,7 +114,7 @@ Example:
                 </paper-icon-button>
             </div>
         </div>
-        <div id="markerBttn" class="customMapBttnWrap" hidden>
+        <div id="markerBttn" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Create a new Location">
                 <span>
                     <div class="customMapBttnImg">
@@ -152,7 +146,7 @@ Example:
             <div class="inline no-margin toggle-button">
                 <paper-toggle-button class="inline no-margin valign-top" tabindex="6" on-keyup="_dialogKeyUp"
                                      checked="{{_isPrivateResidence}}"></paper-toggle-button>
-                <span class="private-residence valign-middle">Private Residence</span>
+                <span class="private-residence valign-middle no-select">Private Residence</span>
             </div>
             <div class="dialog-bttns">
                 <paper-button raised tabindex="7" title="Cancel" on-click="_closeDialog">Cancel</paper-button>

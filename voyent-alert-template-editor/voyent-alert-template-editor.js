@@ -121,6 +121,7 @@ Polymer({
         this._isLoggedIn = true; //Toggle for side panel.
         this._addCircleButton(this._circleButtonListener.bind(this));
         this._addPolygonButton(this._polygonButtonListener.bind(this));
+        this._addEntireRegionButton(this._entireRegionButtonListener.bind(this));
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
     },
@@ -240,7 +241,7 @@ Polymer({
     },
 
     /**
-     * The listener to fire when the marker button is clicked.
+     * The listener to fire when the circle button is clicked.
      * @private
      */
     _circleButtonListener: function() {

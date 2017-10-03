@@ -68,8 +68,8 @@
                 overflow: hidden;
                 text-align: left;
                 position: relative;
+                cursor:pointer;
                 color: #565656;
-                -webkit-user-select: none;
                 padding: 4px;
                 border-bottom-right-radius: 2px;
                 border-top-right-radius: 2px;
@@ -91,7 +91,8 @@
             .customMapBttn > span {
                 display: inline-block;
             }
-            .customMapBttnImg {
+            .customMapBttnImg,
+            .customMapBttnTxt {
                 width: 16px;
                 height: 16px;
                 overflow: hidden;
@@ -99,6 +100,16 @@
             }
             .customMapBttnImg > img {
                 display: inline;
+            }
+            .customMapBttnTxt {
+                text-align:center;
+            }
+            .customMapBttnTxt span {
+                position: relative;
+                top: 9px;
+                font-size: 13px;
+                font-weight: bold;
+                color: #969696;
             }
             #markerBttn .customMapBttnImg > img,
             #polygonBttn .customMapBttnImg > img,
@@ -113,6 +124,14 @@
             }
             #circleBttn .customMapBttnImg > img {
                 top:-160px;
+            }
+            .no-select {
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                -khtml-user-select: none;
+                user-select: none;
             }
         </style>
     </template>

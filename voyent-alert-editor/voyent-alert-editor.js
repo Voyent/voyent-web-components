@@ -67,7 +67,7 @@ Polymer({
                     map[obj._id] = obj;
                     return map;
                 },{});
-                //Handle adding and removing the button for creating new Alerts depending on whether we have templates.
+                //Handle adding and removing the buttons depending on whether we have templates.
                 if (_this._parentTemplates.length) {
                     _this._addAlertButton(_this._alertButtonListener.bind(_this));
                 }
