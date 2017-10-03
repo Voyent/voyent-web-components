@@ -151,7 +151,7 @@
                     });
                 }
                 //Update the z-indexes so we can always click the zones.
-                _this._adjustZIndexes();
+                _this._adjustZIndexesAndColourPicker();
             },0)
         },
 
@@ -181,14 +181,15 @@
         },
 
         /**
-         * Maintains the correct z-index for each Proximity Zone.
+         * Maintains the correct z-index for each proximity zone and updates the colour picker input to match each zone.
          * @private
          */
-        _adjustZIndexes: function() {
+        _adjustZIndexesAndColourPicker: function() {
             var zIndex=49, zones = this._loadedAlert.selectedStack.zones;
             for (var i=0; i<zones.length; i++) {
                 zones[i].setZIndex(zIndex);
                 zIndex--;
+                this._initializeColourPicker(zones[i]);
             }
         },
 
