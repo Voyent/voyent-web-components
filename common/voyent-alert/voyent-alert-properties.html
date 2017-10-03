@@ -2,11 +2,8 @@
 <link rel="import" href="../imports/voyent.html">
 <link rel="import" href="./voyent-alert-behaviour.html">
 <link rel="import" href="../imports/jscolor.html">
-<link rel="import" href="../../../iron-selector/iron-selector.html">
 <link rel="import" href="../../../paper-input/paper-input.html">
 <link rel="import" href="../../../paper-slider/paper-slider.html">
-<link rel="import" href="../../../paper-item/paper-item.html">
-<link rel="import" href="../../../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../../iron-icon/iron-icon.html">
 <link rel="import" href="../../../iron-icons/iron-icons.html">
 <link rel="import" href="../../../paper-icon-button/paper-icon-button.html">
@@ -81,63 +78,41 @@ Internal component used to display the properties panel inside Voyent alert comp
                 transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
                 box-shadow: 0px 0px 0px 1px rgba(155,155,155,0.3);
             }
-            iron-selector > div:nth-of-type(odd) {
+            .table > div:nth-of-type(odd) {
                 background-color: #ededed;
             }
-            iron-selector, iron-selector > * {
-                padding: 0;
-            }
-            .tableWrap {
+            .table {
                 width: 100%;
                 min-height: 50px;
                 margin: auto;
             }
-            .table {
+            .row {
                 width: 100%;
                 display: table;
             }
-            .tableHeader {
-                background-color: #dddddd;
-                font-weight: bold;
-                text-align: center;
-                font-size: 15px;
-            }
             .propertyCol,
-            .valueCol,
-            .addCol {
+            .valueCol {
                 display: table-cell;
-                width: 50%;
                 padding: 8px;
                 font-size: 13px;
                 text-align: center;
             }
             .propertyCol {
-                padding: 8px 8px 8px 29px;
+                padding: 8px 8px 8px 20px;
+                width: 25%;
+                vertical-align: middle;
             }
-            .addCol {
-                width:100%;
-                padding: 0;
-                height:31px;
-                vertical-align:middle;
-            }
-            .addCol > paper-icon-button {
-                padding:0;
-                width:19px;
-                height:19px;
-            }
-            .clickable,
-            paper-icon-button {
-                cursor: pointer;
+            .valueCol {
+                width: 75%;
             }
             paper-slider {
-                width:100%;
-                padding-top:20px;
+                width: 125%;
+                margin-left: -15px;
             }
             paper-input-container {
                 padding:0;
             }
-            paper-input,
-            paper-dropdown-menu {
+            paper-input {
                 margin: 0 5px 0 5px;
             }
             paper-icon-button {
@@ -249,64 +224,35 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </template>
                     </div>
                     <div class$="{{_getAccordionClasses('body',zone.active)}}">
-                        <template is="dom-if" if="[[!_editing]]">
-                            <div class="tableWrap">
-                                <div class="table">
-                                    <div class="propertyCol tableHeader">
-                                        <div data-index$="[[index]]"
-                                             title="Click to sort by property">
-                                            Property
-                                        </div>
-                                    </div>
-                                    <div class="valueCol tableHeader">
-                                        <div data-index$="[[index]]"
-                                             title="Click to sort by property value">
-                                            Value
-                                        </div>
+                        <div class="table">
+                            <div class="row">
+                                <div class="propertyCol">
+                                    Colour
+                                </div>
+                                <div class="valueCol">
+                                    <div class="jscolor-wrapper">
+                                        <input id$="jsColor-[[index]]" class="jscolor"
+                                               tabindex="1"
+                                               data-property="colour"
+                                               data-index$="[[index]]"
+                                               on-change="_editProperty"
+                                               on-keydown="_editPropertyViaKeydown"
+                                               value="{{zone.colour::change}}">
                                     </div>
                                 </div>
-                                <iron-selector selected="{{_selected}}"
-                                               attr-for-selected="data-property"
-                                               on-iron-activate="_onIronActivate">
-                                    <div class="table clickable" data-property="opacity">
-                                        <div class="propertyCol">
-                                            Opacity
-                                        </div>
-                                        <div class="valueCol">
-                                            [[zone.opacity]]
-                                        </div>
-                                    </div>
-                                    <div class="table clickable" data-property="colour">
-                                        <div class="propertyCol">
-                                            Colour
-                                        </div>
-                                        <div class="valueCol">
-                                            [[zone.colour]]
-                                        </div>
-                                    </div>
-                                </iron-selector>
                             </div>
-                        </template>
-                        <template is="dom-if" if="[[_editing]]">
-                            <template is="dom-if" if="{{_selectedEquals('colour',_selected)}}">
-                                <div class="jscolor-wrapper">
-                                    <input id$="jsColor-[[index]]" class="jscolor"
-                                           tabindex="1"
-                                           data-index$="[[index]]"
-                                           on-keydown="_editPropertyViaKeydown"
-                                           on-blur="_editPropertyViaBlur"
-                                           value="{{_colourVal::change}}">
+                            <div class="row">
+                                <div class="propertyCol">
+                                    Opacity
                                 </div>
-                            </template>
-                            <template is="dom-if" if="{{_selectedEquals('opacity',_selected)}}">
-                                <paper-slider id$="opacity-[[index]]" min=0 max=1
-                                              step=0.05 pin snaps tabindex="1"
-                                              on-keydown="_editPropertyViaKeydown"
-                                              on-blur="_editPropertyViaBlur"
-                                              data-index$="[[index]]" value="{{_opacityVal}}">
-                                </paper-slider>
-                            </template>
-                        </template>
+                                <div class="valueCol">
+                                    <paper-slider min=0 max=1 step=0.1 pin snaps tabindex="2"
+                                                  on-change="_editProperty" data-index$="[[index]]"
+                                                  data-property="opacity" value="{{zone.opacity}}">
+                                    </paper-slider>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </template>
             </div>

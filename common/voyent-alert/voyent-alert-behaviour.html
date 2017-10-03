@@ -75,6 +75,7 @@
             this._loadedAlert.selectedStack.deactivateZoneOverlays();
             if (index > -1) {
                 var zone = this._loadedAlert.selectedStack.getZoneAt(index);
+                this._initializeColourPicker(zone);
                 zone.setActive(true);
                 this.fire('voyent-alert-zone-selected', {
                     'index': index,
@@ -89,6 +90,26 @@
                     'zone': null
                 });
             }
+        },
+
+        /**
+         * Initializes the JSColor colour picker for the passed zone.
+         * @param zone
+         * @private
+         */
+        _initializeColourPicker: function(zone) {
+            var _this = this;
+            var colorPicker = _this.querySelector('#jsColor-'+this._loadedAlert.selectedStack.getZoneIndex(zone));
+            //Wait till we have a reference to the input.
+            if (!colorPicker) {
+                setTimeout(function(){_this._initializeColourPicker(zone);},50);
+                return;
+            }
+            //Install the jscolor picker on the input and set the colour.
+            if (!colorPicker.jscolor) {
+                jscolor.installByClassName("jscolor");
+            }
+            colorPicker.jscolor.fromString(zone.colour);
         },
 
         /**
@@ -1164,6 +1185,9 @@
                     }
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({'fillColor':'#'+colour})
+                    }
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
                     }
                 },
                 /**

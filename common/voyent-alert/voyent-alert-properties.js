@@ -11,12 +11,7 @@ Polymer({
         /**
          * A container of data associated with the realm region boundary.
          */
-        _areaRegion: { type: Array, value: null, notify: true },
-        /**
-         * This property is used to update the properties _toArray computed binding in the template.
-         * This is necessary because computed bindings are always one-way, host-to-target.
-         */
-        _updatePropertiesBinding: { type: Boolean, value: false, notify: true }
+        _areaRegion: { type: Array, value: null, notify: true }
     },
 
     observers: [
@@ -24,7 +19,7 @@ Polymer({
     ],
 
     ready: function() {
-        this._selected = this._editing = this._renamingTemplate = false;
+        this._renamingTemplate = false;
     },
 
     /**
@@ -236,72 +231,6 @@ Polymer({
     },
 
     /**
-     * Toggles Proximity Zone property editing mode.
-     * @param e
-     * @private
-     */
-    _togglePropertyEditing: function(e) {
-        var _this = this;
-        this._editing = !this._editing;
-        var index = e.model.get('index');
-        var zone = this._loadedAlert.selectedStack.getZoneAt(index);
-        if (this._editing) { //We are entering edit mode.
-            switch (this._selected) {
-                //Copy the current state of each of the properties into our editing mode inputs.
-                case 'colour':
-                    this.set('_colourVal',zone.colour);
-                    //Also call the jscolor API so we are sure the input style updates properly.
-                    function waitForJSColor() {
-                        var colorPicker = _this.querySelector('#jsColor-'+index);
-                        //Wait till we have a reference to the input.
-                        if (!colorPicker) {
-                            setTimeout(function(){waitForJSColor();},50);
-                            return;
-                        }
-                        //Setup the jscolor picker.
-                        if (!colorPicker.jscolor) {
-                            jscolor.installByClassName("jscolor");
-                        }
-                        colorPicker.jscolor.fromString(_this._colourVal);
-                        //Focus on the input and display the color picker.
-                        setTimeout(function() {
-                            colorPicker.focus();
-                            colorPicker.jscolor.show();
-                        },0);
-                    }
-                    waitForJSColor();
-                    break;
-                case 'opacity':
-                    this.set('_opacityVal',zone.opacity);
-                    //Focus on the input.
-                    setTimeout(function() {
-                        var opacitySlider = _this.querySelector('#opacity-'+index);
-                        opacitySlider.focus();
-                    },0);
-                    break;
-            }
-        }
-        else { //We are exiting editing mode.
-            //Clear the editing mode inputs.
-            this._colourVal = this._opacityVal = null;
-            switch (this._selected) {
-                case 'colour':
-                    //Force the jscolor picker to be hidden in case the color was confirmed via keydown
-                    var colorPicker = this.querySelector('#jsColor-'+index);
-                    if (colorPicker) {
-                        colorPicker.jscolor.hide();
-                        //The colours will be the same if the colour change is
-                        //saved because this fires after the property is edited.
-                        if (colorPicker.jscolor.toHEXString().slice(1) === zone.colour) {
-                            //Redraw the overlay since the colour changed.
-                            zone.nameOverlay.draw();
-                        }
-                    }
-            }
-        }
-    },
-
-    /**
      * Confirms or cancels the edit of a Proximity Zone property via enter and esc keys.
      * @param e
      * @private
@@ -309,26 +238,16 @@ Polymer({
     _editPropertyViaKeydown: function(e) {
         //Prevent the event from bubbling.
         e.stopPropagation();
-        if (e.which === 13) { //Enter
+        if (e.which === 13 || e.which === 27) { //Enter & Escape.
             this._editProperty(e);
+            //Close the colour picker.
+            if (e.target.getAttribute('data-property') === 'colour') {
+                var colorPicker = this.querySelector('#jsColor-'+e.model.get('index'));
+                if (colorPicker) {
+                    colorPicker.jscolor.hide();
+                }
+            }
         }
-        else if (e.which === 27) { //Esc
-            this._togglePropertyEditing(e);
-        }
-    },
-
-    /**
-     * Confirms changes made to existing properties when losing focus on the editing area.
-     * @param e
-     * @private
-     */
-    _editPropertyViaBlur: function(e) {
-        //Check if we are in editing mode because if we are not then it means that focus
-        //was removed via the Enter or Esc key press and not just a regular blur.
-        if (!this._editing) {
-            return;
-        }
-        this._editProperty(e);
     },
 
     /**
@@ -338,22 +257,14 @@ Polymer({
      */
     _editProperty: function(e) {
         var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
-        switch (this._selected) {
-            //Copy the new property value from our editing mode inputs to the JSON. We don't bind directly in case we need to revert.
-            case 'colour':
-                if (!this._colourVal) { return; }
-                zone.setColour(this._colourVal);
-                this.set('_colourVal',null);
-                break;
-            case 'opacity':
-                zone.setOpacity(this._opacityVal);
-                this.set('_opacityVal',null);
-                break;
+        //The properties are set directly into the properties since they are bound
+        //in the template but to apply the changes we need to call our set functions.
+        if (e.target.getAttribute('data-property') === 'colour') {
+            zone.setColour(zone.colour);
         }
-        //Toggle editing mode.
-        this._togglePropertyEditing(e);
-        //Sync the computed binding defined in the template.
-        this._updatePropertiesBinding = !this._updatePropertiesBinding;
+        else {
+            zone.setOpacity(zone.opacity);
+        }
     },
 
     /**
@@ -363,47 +274,6 @@ Polymer({
      */
     _zonesUpdated: function(length) {
         this.set('_hasOneZone',!length || length === 1);
-    },
-
-    /**
-     * Triggered each time a property row is selected or de-selected. Toggles the editing mode for that property.
-     * @param e
-     * @private
-     */
-    _onIronActivate: function(e) {
-        var _this = this;
-        //Do this async since iron-activate fires before this._selected changes.
-        setTimeout(function() {
-            _this._togglePropertyEditing(e);
-        },0);
-    },
-
-    /**
-     * Template helper for converting Proximity Zone properties object into an array so we can iterate them.
-     * @param obj
-     * @returns {Array}
-     * @private
-     */
-    _toArray: function(obj) {
-        var array = [];
-        for (var key in obj) {
-            if (!obj.hasOwnProperty(key)) {
-                continue;
-            }
-            array.push({"key":key,"value":obj[key]});
-        }
-        return array;
-    },
-
-    /**
-     * Template helper that determines if the currently selected property matches the passed key.
-     * @param key
-     * @param selected
-     * @returns {boolean}
-     * @private
-     */
-    _selectedEquals: function(key,selected) {
-        return key === selected;
     },
 
     /**
