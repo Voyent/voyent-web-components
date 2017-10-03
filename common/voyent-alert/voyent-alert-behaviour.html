@@ -58,38 +58,48 @@
         },
 
         /**
-         * Toggles the accordion panes. This is used to toggle the accordion for both accordion pane and proximity
-         * zone clicks. In addition to toggling the panes this will also trigger styling updates to zones overlays.
+         * Toggles the zone properties section. This is used to toggle when clicking the accordion pane or the proximity
+         * zone. In addition to toggling the panes this will also trigger styling updates to zones overlays.
          * on the map.
-         * @param eOrI
+         * @param eOrI - The event from the ui or the index from the JS.
          * @private
          */
-        _toggleAccordion: function(eOrI) {
+        _toggleProperties: function(eOrI) {
             if (!this._loadedAlert || !this._loadedAlert.selectedStack) { return; }
-            //This function will either be passed an event (from the ui) or a direct index (from the JS).
+            //
             var index = eOrI.model ? eOrI.model.get('index') : eOrI;
             //If they toggle the currently toggled accordion pane then we'll close it.
             if (index > -1 && this._loadedAlert.selectedStack.getZoneAt(index).active) {
                 index = -1;
             }
             this._loadedAlert.selectedStack.deactivateZoneOverlays();
+            var eventProperties;
             if (index > -1) {
                 var zone = this._loadedAlert.selectedStack.getZoneAt(index);
                 this._initializeColourPicker(zone);
                 zone.setActive(true);
-                this.fire('voyent-alert-zone-selected', {
+                eventProperties = {
                     'index': index,
                     'id': zone.id,
                     'zone': zone
-                });
+                };
             }
             else {
-                this.fire('voyent-alert-zone-selected', {
+                eventProperties = {
                     'index': -1,
                     'id': null,
                     'zone': null
-                });
+                };
             }
+            this.fire('voyent-alert-zone-selected',eventProperties);
+        },
+
+        /**
+         * Toggles the movement properties section.
+         * @private
+         */
+        _toggleMovement: function() {
+            this._showMovement = !this._showMovement;
         },
 
         /**
@@ -533,7 +543,7 @@
                     //Add click listener to marker.
                     google.maps.event.addListener(this.marker, 'click', function () {
                         //Toggle all the accordion panes closed and de-select all stacks.
-                        _outer._toggleAccordion(-1);
+                        _outer._toggleProperties(-1);
                         _outer.set('_loadedAlert.selectedStack',null);
                     });
                 },
@@ -896,7 +906,7 @@
                     //Add click listener to marker.
                     google.maps.event.addListener(marker, 'click', function () {
                         //Toggle all the accordion panes closed.
-                        _outer._toggleAccordion(-1);
+                        _outer._toggleProperties(-1);
                         _outer.set('_loadedAlert.selectedStack',_this);
                     });
                 },
@@ -915,14 +925,14 @@
                         //If they click a zone for the currently active stack then toggle the accordion.
                         if (_outer._loadedAlert.selectedStack &&
                             _outer._loadedAlert.selectedStack === _this) {
-                            _outer._toggleAccordion(zoneIndex);
+                            _outer._toggleProperties(zoneIndex);
                         }
                         else {
                             //Toggle the accordion for the previously selected alert template.
-                            _outer._toggleAccordion(-1);
+                            _outer._toggleProperties(-1);
                             //Load the selected stack and toggle the selected zone.
                             _outer.set('_loadedAlert.selectedStack',_this);
-                            _outer._toggleAccordion(zoneIndex);
+                            _outer._toggleProperties(zoneIndex);
                         }
                     });
                     if (zone.getShape() === 'circle') {

@@ -194,7 +194,7 @@ Polymer({
                 //Add the stack and select it.
                 _this._loadedAlert.template.addZoneStack(zoneStack);
                 //Toggle the accordion closed for the current stack and load the new one.
-                _this._toggleAccordion(-1);
+                _this._toggleProperties(-1);
                 _this.set('_loadedAlert.selectedStack',zoneStack);
                 //When we have only one stack we don't have a template marker, just the marker for the zone stack.
                 //So once we have two zone stacks we need to create the marker and if we have more than two (the

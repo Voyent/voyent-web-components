@@ -19,7 +19,7 @@ Polymer({
     ],
 
     ready: function() {
-        this._renamingTemplate = false;
+        this._renamingTemplate = this._showMovement = false;
     },
 
     /**
@@ -91,14 +91,13 @@ Polymer({
 
     /**
      * Toggles renaming mode for Proximity Zones.
-     * @param eOrI
+     * @param eOrI - The event from the ui or the index from the JS.
      * @private
      */
     _toggleProximityZoneRenaming: function(eOrI) {
         //Prevent the event from bubbling.
         if (eOrI.stopPropagation) { eOrI.stopPropagation(); }
         var _this = this;
-        //This function will either be passed an event (from the ui) or a direct index (from the JS).
         var i = eOrI.model ? eOrI.model.get('index') : eOrI;
         var zone = this._loadedAlert.selectedStack.getZoneAt(i);
         zone.setRenaming(!zone.renaming);

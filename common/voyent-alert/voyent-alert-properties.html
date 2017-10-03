@@ -15,6 +15,11 @@ Internal component used to display the properties panel inside Voyent alert comp
 <dom-module id="voyent-alert-properties">
     <template>
         <style include="voyent-alert-styles" is="custom-style">
+            *,
+            *:before,
+            *:after {
+                box-sizing: border-box;
+            }
             .accordion {
                 text-align: left;
             }
@@ -81,33 +86,30 @@ Internal component used to display the properties panel inside Voyent alert comp
             .table > div:nth-of-type(odd) {
                 background-color: #ededed;
             }
-            .table {
-                width: 100%;
-                min-height: 50px;
-                margin: auto;
-            }
             .row {
                 width: 100%;
-                display: table;
+                padding:0 10px 0 10px;
             }
             .propertyCol,
             .valueCol {
-                display: table-cell;
-                padding: 8px;
+                padding: 8px 0 8px 0;
                 font-size: 13px;
                 text-align: center;
-            }
-            .propertyCol {
-                padding: 8px 8px 8px 20px;
-                width: 25%;
+                display:inline-block;
                 vertical-align: middle;
             }
+            .propertyCol {
+                width: 35%;
+            }
             .valueCol {
-                width: 75%;
+                width: 62%;
+            }
+            .valueCol.opacity {
+                padding:0;
             }
             paper-slider {
-                width: 125%;
-                margin-left: -15px;
+                width: 127px;
+                margin-left: -12px;
             }
             paper-input-container {
                 padding:0;
@@ -128,9 +130,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                 --paper-input-container-input: {
                     font-size:13px;
                 };
-            }
-            .jscolor-wrapper {
-                margin: 5px 11px 5px 5px;
             }
             .jscolor {
                 width:100%;
@@ -187,6 +186,35 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </paper-input>
                 </template>
             </div>
+            <div class="accordion">
+                <div class$="{{_getAccordionClasses('header',_showMovement)}}">
+                    <paper-icon-button title="Toggle Movement Properties" icon="{{_getArrowIcon(_showMovement)}}"
+                                       on-click="_toggleMovement" data-index$="[[index]]"></paper-icon-button>
+                    <div class="title zone" class$="{{_getZoneTitleClasses(_showMovement)}}" data-index$="[[index]]">
+                       Movement
+                    </div>
+                </div>
+                <div class$="{{_getAccordionClasses('body',_showMovement)}}">
+                    <div class="table">
+                        <div class="row">
+                            <div class="propertyCol">
+                                Direction
+                            </div>
+                            <div class="valueCol">
+                                ?
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="propertyCol">
+                                Speed
+                            </div>
+                            <div class="valueCol">
+                               ?
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <template is="dom-if" if="[[_loadedAlert.selectedStack]]">
                 <div>
                     <div class="alert-zones-label">
@@ -199,8 +227,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlert.selectedStack.zones]]" as="zone">
                     <div class$="{{_getAccordionClasses('header',zone.active)}}">
                         <template is="dom-if" if="[[!zone.renaming]]">
-                            <paper-icon-button title="Toggle Zone" icon="{{_getArrowIcon(zone.active)}}"
-                                               on-click="_toggleAccordion" data-index$="[[index]]"></paper-icon-button>
+                            <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
+                                               on-click="_toggleProperties" data-index$="[[index]]"></paper-icon-button>
                             <div class="title zone" class$="{{_getZoneTitleClasses(zone.active)}}"
                                  data-index$="[[index]]" on-click="_toggleProximityZoneRenaming">
                                 [[zone.name]]
@@ -230,22 +258,20 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     Colour
                                 </div>
                                 <div class="valueCol">
-                                    <div class="jscolor-wrapper">
-                                        <input id$="jsColor-[[index]]" class="jscolor"
-                                               tabindex="1"
-                                               data-property="colour"
-                                               data-index$="[[index]]"
-                                               on-change="_editProperty"
-                                               on-keydown="_editPropertyViaKeydown"
-                                               value="{{zone.colour::change}}">
-                                    </div>
+                                    <input id$="jsColor-[[index]]" class="jscolor"
+                                           tabindex="1"
+                                           data-property="colour"
+                                           data-index$="[[index]]"
+                                           on-change="_editProperty"
+                                           on-keydown="_editPropertyViaKeydown"
+                                           value="{{zone.colour::change}}">
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="propertyCol">
                                     Opacity
                                 </div>
-                                <div class="valueCol">
+                                <div class="valueCol opacity">
                                     <paper-slider min=0 max=1 step=0.1 pin snaps tabindex="2"
                                                   on-change="_editProperty" data-index$="[[index]]"
                                                   data-property="opacity" value="{{zone.opacity}}">
