@@ -4,6 +4,10 @@ Polymer({
 
     properties: {
         /**
+         * Indicates whether the movement accordion will be shown.
+         */
+        showMovementAccordion: { type: Boolean, value: false },
+        /**
          * Contains currently loaded _AlertTemplate object and the currently selected stack.
          * eg. { template:_AlertTemplate, selectedStack:_AlertZoneStack }
          */
