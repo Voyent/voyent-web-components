@@ -263,6 +263,7 @@
                 this.setName(name || 'Unnamed');
                 this.setMarker(marker || null);
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
+                this._jsonProperties = {};
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -475,6 +476,22 @@
                     }
                 },
                 /**
+                 * Adds the passed key/value pair to the properties section of the template JSON.
+                 * If the key already exists then the property will be updated.
+                 * @param key
+                 * @param value
+                 */
+                addJSONProperty: function(key,value) {
+                    this._jsonProperties[key] = value;
+                },
+                /**
+                 * Removes the passed key from the properties section of the template JSON.
+                 * @param key
+                 */
+                removeJSONProperty: function(key) {
+                    delete this._jsonProperties[key]
+                },
+                /**
                  * Updates the json to reflect the current state of the template. Since each stack of zones maintains
                  * their own json we update their json and then simply merge the geometries and properties section from
                  * each stack into one.
@@ -486,6 +503,12 @@
                     json.name = this.name;
                     if (this.parentId) {
                         json.properties.parentAlertId = this.parentId;
+                    }
+                    if (Object.keys(this._jsonProperties).length) {
+                        for (var key in this._jsonProperties) {
+                            if (!this._jsonProperties.hasOwnProperty(key)) { continue; }
+                            json.properties[key] = this._jsonProperties[key];
+                        }
                     }
                     for (var i=0; i<this.zoneStacks.length; i++) {
                         //First update the json for the stack.

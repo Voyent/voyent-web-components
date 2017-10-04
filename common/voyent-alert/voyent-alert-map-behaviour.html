@@ -220,6 +220,8 @@
                 this._userLocationMarker.setMap(null);
                 this._userLocationMarker = null;
             }
+            //Clear the movement inputs.
+            this._alertDirection = this._alertSpeed = null;
             //Re-draw the buttons.
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !skipBttnDraw) {
                 this._addCircleButton(this._circleButtonListener.bind(this));

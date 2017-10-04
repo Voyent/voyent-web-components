@@ -15,7 +15,9 @@ Polymer({
     },
 
     observers: [
-        '_zonesUpdated(_loadedAlert.selectedStack.zones.length)'
+        '_zonesUpdated(_loadedAlert.selectedStack.zones.length)',
+        '_alertDirectionChanged(_alertDirection)',
+        '_alertSpeedChanged(_alertSpeed)'
     ],
 
     ready: function() {
@@ -273,6 +275,39 @@ Polymer({
      */
     _zonesUpdated: function(length) {
         this.set('_hasOneZone',!length || length === 1);
+    },
+
+    /**
+     * Validates the alert movement direction value and handles updating the template JSON.
+     * @param alertDirection
+     * @private
+     */
+    _alertDirectionChanged: function(alertDirection) {
+        if (!alertDirection) { //Empty string (occurs when they type in a dash).
+            this._alertDirection = null;
+            this._loadedAlert.template.removeJSONProperty('direction');
+            return;
+        }
+        else if (alertDirection > 360) { //Force 360 max.
+            this._alertDirection = 360;
+            return;
+        }
+        this._loadedAlert.template.addJSONProperty('direction',Number(alertDirection));
+    },
+
+    /**
+     * Validates the alert movement speed value and handles updating the template JSON.
+     * @param alertSpeed
+     * @private
+     */
+    _alertSpeedChanged: function(alertSpeed) {
+        //Empty string (occurs when they type in a dash).
+        if (!alertSpeed) {
+            this._alertSpeed = null;
+            this._loadedAlert.template.removeJSONProperty('speed');
+            return;
+        }
+        this._loadedAlert.template.addJSONProperty('speed',Number(alertSpeed));
     },
 
     /**
