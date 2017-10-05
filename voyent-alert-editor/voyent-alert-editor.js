@@ -341,6 +341,10 @@ Polymer({
         else {
             this._removeFallbackZoneButton();
         }
+        
+        this.fire('voyent-alert-changed',{
+            'alert': loadedAlert || null
+        });
     },
 
     /**
