@@ -15,7 +15,11 @@ Polymer({
         /**
          * A container of data associated with the realm region boundary.
          */
-        _areaRegion: { type: Array, value: null, notify: true }
+        _areaRegion: { type: Object, value: null, notify: true },
+        /**
+         * A google maps data feature that represents the fallback (whole world) region.
+         */
+        _fallbackZone: { type: Object, value: null, notify: true }
     },
 
     observers: [
@@ -104,8 +108,17 @@ Polymer({
         //Prevent the event from bubbling.
         if (eOrI.stopPropagation) { eOrI.stopPropagation(); }
         var _this = this;
-        var i = eOrI.model ? eOrI.model.get('index') : eOrI;
-        var zone = this._loadedAlert.selectedStack.getZoneAt(i);
+        //Determine whether we have a regular zone or the fallback zone. If we have a an index
+        //it means the zone is part of the stack, otherwise it's the fallback zone.
+        var i, zone;
+        if ((eOrI.model && typeof eOrI.model.get('index') !== 'undefined') || typeof eOrI === 'number') {
+            i = (typeof eOrI === 'number' ? eOrI : eOrI.model.get('index'));
+            zone = this._loadedAlert.selectedStack.getZoneAt(i);
+        }
+        else {
+            i = 'fallback';
+            zone = this._fallbackZone;
+        }
         zone.setRenaming(!zone.renaming);
         if (zone.renaming) {
             //Set the input to our current name value. We use a separate value for the input so we can easily revert.
@@ -144,13 +157,18 @@ Polymer({
      */
     _renameProximityZoneViaBlur: function(e) {
         var _this = this;
+        //Determine whether we have a regular zone or the fallback zone. If we have an index
+        //it means the zone is part of the stack, otherwise it's the fallback zone.
+        var zone = (e.model && typeof e.model.get('index') !== 'undefined' ?
+                    this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')) :
+                    this._fallbackZone);
         //Always execute this function async so we can correctly determine the activeElement.
         setTimeout(function() {
             //Check if we are focused on an iron-input because if we are it means focus is still on the input so we
             //won't exit editing mode. Additionally we'll check if we are in editing mode because if we are not
             //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
             if (document.activeElement.getAttribute('is') === 'iron-input' ||
-                  !_this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')).renaming) {
+                  !zone.renaming) {
                 return;
             }
             _this._renameProximityZone(e);
@@ -163,15 +181,26 @@ Polymer({
      * @private
      */
     _renameProximityZone: function(e) {
-        var i = e.model.get('index');
-        var zone = this._loadedAlert.selectedStack.getZoneAt(i);
+        //Determine whether we have a regular zone or the fallback zone. If we have an index
+        //it means the zone is part of the stack, otherwise it's the fallback zone.
+        var i, zone;
+        if (e.model && typeof e.model.get('index') !== 'undefined') {
+            i = e.model.get('index');
+            zone = this._loadedAlert.selectedStack.getZoneAt(i);
+        }
+        else {
+            i = 'fallbackZone';
+            zone = this._fallbackZone;
+        }
         if (this._zoneNameVal !== zone.name) {
             zone.setName(this._zoneNameVal);
             this.set('_zoneNameVal','');
-            this.fire('voyent-alert-zone-name-changed',{
-                "id":zone.id,
-                "name":zone.name
-            });
+            if (i !== 'fallbackZone') {
+                this.fire('voyent-alert-zone-name-changed',{
+                    "id":zone.id,
+                    "name":zone.name
+                });
+            }
             //Redraw the overlay since the content changed.
             zone.nameOverlay.draw();
         }
@@ -189,7 +218,7 @@ Polymer({
         //and de-increment the new zone zIndex so it sits behind the other zones.
         var largestZone = this._loadedAlert.selectedStack.getLargestZone();
         var zIndex = largestZone.zIndex - 1;
-        var name = 'Zone_' + (this._loadedAlert.selectedStack.zones.length + 1);
+        var name = 'Zone ' + (this._loadedAlert.selectedStack.zones.length + 1);
         //Since we don't support mix and match zone types within a stack just
         //check what the first one is to determine which kind we want to add.
         if (this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
@@ -219,11 +248,15 @@ Polymer({
         this._loadedAlert.selectedStack.addZone(newZone);
         //Re-adjust the centroid for the template.
         this._loadedAlert.template.updateJSONAndCentroid();
+        //Re-punch out the fallback zone.
+        if (this._fallbackZone) {
+            this._fallbackZone.punchOutOverlay();
+        }
         this.fire('voyent-alert-zone-added',{"id":newZone.id,"zone":newZone,"stack":this._loadedAlert.selectedStack});
     },
 
     /**
-     * Removes a Proximity Zone from the alert template.
+     * Removes the proximity zone from the alert template.
      * @private
      */
     _removeProximityZone: function(e) {
@@ -233,6 +266,14 @@ Polymer({
         var id = zone.id;
         this._loadedAlert.selectedStack.removeZone(zone);
         this.fire('voyent-alert-zone-removed',{"id":id});
+    },
+
+    /**
+     * Removes the fallback zone entirely.
+     * @private
+     */
+    _removeFallbackZone: function() {
+        this._fallbackZone.removeFromMap();
     },
 
     /**
@@ -247,7 +288,11 @@ Polymer({
             this._editProperty(e);
             //Close the colour picker.
             if (e.target.getAttribute('data-property') === 'colour') {
-                var colorPicker = this.querySelector('#jsColor-'+e.model.get('index'));
+                //If we have a z-index it means the zone is part of the stack, otherwise it's the fallback zone.
+                var jsColorId = '#jsColor-'+ (typeof e.model.get('index') !== 'undefined' ?
+                                this._loadedAlert.selectedStack.getZoneIndex(zone) :
+                                'fallbackZone');
+                var colorPicker = this.querySelector(jsColorId);
                 if (colorPicker) {
                     colorPicker.jscolor.hide();
                 }
@@ -261,7 +306,10 @@ Polymer({
      * @private
      */
     _editProperty: function(e) {
-        var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
+        //If we have a z-index it means the zone is part of the stack, otherwise it's the fallback zone.
+        var zone = typeof e.model.get('index') !== 'undefined' ?
+            this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')) :
+            this._fallbackZone;
         //The properties are set directly into the properties since they are bound
         //in the template but to apply the changes we need to call our set functions.
         if (e.target.getAttribute('data-property') === 'colour') {

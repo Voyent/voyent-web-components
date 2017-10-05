@@ -117,17 +117,17 @@
                 }
                 //Make sure the map is always sized correctly when the window size changes.
                 window.addEventListener('resize', function() { _this.resizeMap(); });
-                //Set up our map click listener for de-selecting zone stacks.
-                _this._setupMapClickListener();
+                //De-select any selected zone stack on map click.
+                _this._deselectStacksOnClick(_this._map);
             };
             if (!('google' in window) || !('maps' in window.google)) {
                 if (this.loadGoogleMaps) {
-                var script = document.createElement('script');
-                script.type = 'text/javascript';
-                script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3&' +
-                    'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-                this.$.container.appendChild(script);
-            }
+                    var script = document.createElement('script');
+                    script.type = 'text/javascript';
+                    script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3&' +
+                        'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
+                    this.$.container.appendChild(script);
+                }
                 else {
                     var msg = 'Error initializing ' + this.nodeName.toLowerCase() + ': The attribute `load-google-maps` ' +
                               'is false but the Google Maps API cannot be found. Please load the component before ' +
@@ -215,6 +215,10 @@
             if (this._loadedAlert) {
                 this._removeAlertTemplateFromMap();
             }
+            //Clear fallback zone.
+            if (this._fallbackZone) {
+                this._fallbackZone.removeFromMap();
+            }
             //Clear the user marker.
             if (this.nodeName === 'VOYENT-ALERT-VIEW' && this._userLocationMarker) {
                 this._userLocationMarker.setMap(null);
@@ -222,13 +226,8 @@
             }
             //Clear the movement inputs.
             this._alertDirection = this._alertSpeed = null;
-            //Re-draw the buttons.
-            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !skipBttnDraw) {
-                this._addCircleButton(this._circleButtonListener.bind(this));
-                this._addPolygonButton(this._polygonButtonListener.bind(this));
-                this._addEntireRegionButton(this._entireRegionButtonListener.bind(this));
-            }
-            else if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+            //Re-draw the alert button.
+            if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 if (!skipBttnDraw) {
                     this._addAlertButton(this._alertButtonListener.bind(this));
                 }
@@ -443,10 +442,7 @@
             else {
                 //Create the invisible polygon object.
                 polygon = new google.maps.Polygon({
-                    paths: paths, map: this._map,
-                    opacity: 0.1, strokeWeight:0.5,
-                    fillColor:'#FFF', visible: false,
-                    zIndex: 10
+                    paths: paths, map: this._map, visible: false
                 });
             }
             if (!this._skipRegionPanning) {
@@ -535,6 +531,19 @@
                 this._loadedAlert.template.moveStacksRelativeToPosition(latLngCentroid);
                 //Re-initialize the polygon path listeners for all stacks of polygonal zones.
                 this._loadedAlert.template.initializePolygonStackPathListeners();
+            }
+            //Draw the fallback zone but only if we have properties
+            //other then enabled set (checking name exists is sufficient).
+            var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
+            if (fallbackZoneProperties && fallbackZoneProperties.name) {
+                this._fallbackZone = new this._FallbackAlertZone(
+                    fallbackZoneProperties.enabled,
+                    fallbackZoneProperties.name,
+                    fallbackZoneProperties.opacity,
+                    fallbackZoneProperties.colour,
+                    fallbackZoneProperties.messageTemplate,
+                    fallbackZoneProperties.zIndex
+                );
             }
             //Disable further alert instance creations - only allowed one at a time.
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
@@ -652,12 +661,12 @@
         },
 
         /**
-         * Handles adding the button for displaying the entire region zone.
+         * Handles adding the button for displaying the fallback zone.
          * @param listener
          * @private
          */
-        _addEntireRegionButton: function(listener) {
-            this._addDrawButton('entireRegionBttn',listener);
+        _addFallbackZoneButton: function(listener) {
+            this._addDrawButton('fallbackZoneBttn',listener);
         },
 
         /**
@@ -668,7 +677,6 @@
         _addAlertButton: function(listener) {
             this._addDrawButton('alertBttn',listener);
         },
-
 
         /**
          * Handles adding drawing buttons.
@@ -707,12 +715,29 @@
         },
 
         /**
-         * Handles removing the button for toggling the realm region.
+         * Handles removing the button for toggling the fallback zone.
          * @private
          */
-        _removeEntireRegionButton: function() {
-            var entireRegionBttn = this.querySelector('#entireRegionBttn');
-            if (entireRegionBttn) { entireRegionBttn.parentNode.removeChild(entireRegionBttn); }
+        _removeFallbackZoneButton: function() {
+            var fallbackZoneBttn = this.querySelector('#fallbackZoneBttn');
+            if (fallbackZoneBttn) { fallbackZoneBttn.parentNode.removeChild(fallbackZoneBttn); }
+        },
+
+        /**
+         * The listener to fire when the fallback zone button is clicked.
+         * @private
+         */
+        _fallbackZoneButtonListener: function() {
+            if (this._fallbackZone && this._fallbackZone.enabled) {
+                this._fallbackZone.setEnabled(false);
+            }
+            else if (this._fallbackZone && !this._fallbackZone.enabled) {
+                this._fallbackZone.setEnabled(true);
+            }
+            else {
+                this._fallbackZone = new this._FallbackAlertZone(true);
+                this._deselectStacksOnClick(this._fallbackZone.shapeOverlay);
+            }
         },
 
         /**
@@ -802,12 +827,13 @@
         },
 
         /**
-         * Set up the map listener for always deselecting the currently selected stack.
+         * Set up a click listener on the passed map entity that when clicked will de-select the currently selected stack.
+         * @param mapEntity
          * @private
          */
-        _setupMapClickListener: function() {
+        _deselectStacksOnClick: function(mapEntity) {
             var _this = this;
-            google.maps.event.addListener(this._map, 'click', function() {
+            google.maps.event.addListener(mapEntity, 'click', function() {
                 if (_this._loadedAlert &&  _this._loadedAlert.selectedStack) {
                     _this._loadedAlert.selectedStack.deactivateZoneOverlays();
                     _this.set('_loadedAlert.selectedStack',null);

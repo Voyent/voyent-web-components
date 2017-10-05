@@ -38,7 +38,8 @@ Example:
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <voyent-alert-properties _loaded-alert="{{_loadedAlert}}"
                                                  _map="{{_map}}"
-                                                 _area-region="{{_areaRegion}}"></voyent-alert-properties>
+                                                 _area-region="{{_areaRegion}}"
+                                                 _fallback-zone="{{_fallbackZone}}"></voyent-alert-properties>
                         <template is="dom-if" if="[[!_loadedAlert]]">
                             <div class="alert-template-title">New Alert Template</div>
                             <div class="alert-template-desc">
@@ -80,11 +81,11 @@ Example:
                 </span>
             </div>
         </div>
-        <div id="entireRegionBttn" class="customMapBttnWrap no-select" hidden>
-            <div class="customMapBttn" title="Toggle the realm region">
+        <div id="fallbackZoneBttn" class="customMapBttnWrap no-select" hidden>
+            <div class="customMapBttn" title="Toggle the fallback zone">
                 <span>
-                    <div class="customMapBttnTxt">
-                        <span>R</span>
+                    <div class="customMapBttnImg">
+                        <img src="../common/voyent-alert/img/fallback_zone_bttn.png">
                     </div>
                 </span>
             </div>

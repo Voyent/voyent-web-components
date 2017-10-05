@@ -21,6 +21,12 @@
 
         ready: function() {
             this._loadedAlert = null;
+            //The number of coordinates circular polygons will have.
+            this._NUM_CIRCULAR_POLY_SIDES = 100;
+            //The number of degrees in which each coordinate will be spaced apart.
+            this._CIRCULAR_POLY_DEGREE_STEP = 360 / this._NUM_CIRCULAR_POLY_SIDES;
+            //The id of the fallback zone under the properties section.
+            this._FALLBACK_ZONE_ID = 'fallback_zone';
         },
 
         observers: ['_zonesUpdated(_loadedAlert.selectedStack.zones.length)'],
@@ -66,13 +72,17 @@
          */
         _toggleProperties: function(eOrI) {
             if (!this._loadedAlert || !this._loadedAlert.selectedStack) { return; }
-            //
             var index = eOrI.model ? eOrI.model.get('index') : eOrI;
             //If they toggle the currently toggled accordion pane then we'll close it.
             if (index > -1 && this._loadedAlert.selectedStack.getZoneAt(index).active) {
                 index = -1;
             }
-            this._loadedAlert.selectedStack.deactivateZoneOverlays();
+            if (this._fallbackZone && this._fallbackZone.active) {
+                this._toggleFallbackZoneProperties();
+            }
+            else {
+                this._loadedAlert.selectedStack.deactivateZoneOverlays();
+            }
             var eventProperties;
             if (index > -1) {
                 var zone = this._loadedAlert.selectedStack.getZoneAt(index);
@@ -95,6 +105,23 @@
         },
 
         /**
+         * Toggles the fallback zone properties section.
+         * @private
+         */
+        _toggleFallbackZoneProperties: function() {
+            if (this._fallbackZone.active) {
+                this._fallbackZone.setActive(false);
+            }
+            else {
+                if (this._loadedAlert && this._loadedAlert.selectedStack) {
+                    this._loadedAlert.selectedStack.deactivateZoneOverlays();
+                }
+                this._initializeColourPicker(this._fallbackZone);
+                this._fallbackZone.setActive(true);
+            }
+        },
+
+        /**
          * Toggles the movement properties section.
          * @private
          */
@@ -109,7 +136,8 @@
          */
         _initializeColourPicker: function(zone) {
             var _this = this;
-            var colorPicker = _this.querySelector('#jsColor-'+this._loadedAlert.selectedStack.getZoneIndex(zone));
+            var jsColorId = '#jsColor-'+ (this._fallbackZone === zone ? 'fallbackZone' : this._loadedAlert.selectedStack.getZoneIndex(zone));
+            var colorPicker = _this.querySelector(jsColorId);
             //Wait till we have a reference to the input.
             if (!colorPicker) {
                 setTimeout(function(){_this._initializeColourPicker(zone);},50);
@@ -123,13 +151,26 @@
         },
 
         /**
-         * The listener to fire when the entire region button is clicked.
+         * Creates and configures the styling for the overlay div, used for zone and location name labels.
          * @private
          */
-        _entireRegionButtonListener: function() {
-            if (this._areaRegion && this._areaRegion.polygon) {
-                this._areaRegion.polygon.setVisible(!this._areaRegion.polygon.getVisible());
+        _buildOverlayDiv: function(type) {
+            var div = document.createElement('div');
+            if (type === 'zone') {
+                div.style.fontSize = '8px';
             }
+            else { //location
+                div.style.fontSize = '10px';
+            }
+            div.style.borderStyle = 'none';
+            div.style.borderWidth = '0px';
+            div.style.position = 'absolute';
+            div.style.padding = '5px';
+            div.style.zIndex = 10000;
+            div.style.opacity = 1.0;
+            div.style.borderRadius = '25px';
+            div.style.letterSpacing = '1px';
+            return div;
         },
 
         /**
@@ -510,6 +551,21 @@
                             json.properties[key] = this._jsonProperties[key];
                         }
                     }
+                    //Add fallback zone, we'll always add it the properties.
+                    json.properties[_outer._FALLBACK_ZONE_ID] = {
+                        "enabled": false
+                    };
+                    if (_outer._fallbackZone) {
+                        json.properties[_outer._FALLBACK_ZONE_ID] = {
+                            "enabled":_outer._fallbackZone.enabled,
+                            "name": _outer._fallbackZone.name,
+                            "opacity": _outer._fallbackZone.opacity,
+                            "colour": _outer._fallbackZone.colour
+                        };
+                        if (_outer._fallbackZone.messageTemplate) {
+                            json.properties[_outer._FALLBACK_ZONE_ID].messageTemplate = _outer._fallbackZone.messageTemplate;
+                        }
+                    }
                     for (var i=0; i<this.zoneStacks.length; i++) {
                         //First update the json for the stack.
                         this.zoneStacks[i].updateJSON();
@@ -573,6 +629,9 @@
                     google.maps.event.addListener(this.marker, 'drag', function () {
                         _this.moveStacksRelativeToPosition();
                         _this.updateJSON();
+                        if (_outer._fallbackZone) {
+                            _outer._fallbackZone.punchOutOverlay();
+                        }
                     });
                     //Add click listener to marker.
                     google.maps.event.addListener(this.marker, 'click', function () {
@@ -723,8 +782,6 @@
                  * the northernCoordinate which adjusts the position of the zone name overlays.
                  */
                 updateJSON: function () {
-                    var N = 50; //The number of coordinates circular polygons will have.
-                    var degreeStep = 360 / N; //The number of degrees in which each coordinate will be spaced apart.
                     var zone, northernCoordinate, latLng, overlay,
                         json = _outer._AlertTemplate.getJSONStructure();
 
@@ -750,10 +807,10 @@
                         if (zone.getShape() === 'circle') {
                             json.properties[zone.id].radius = overlay.getRadius();
                             var center =  this.marker.getPosition();
-                            for (var k=0; k<N; k++) {
+                            for (var k=0; k<_outer._NUM_CIRCULAR_POLY_SIDES; k++) {
                                 //Calculate and save the next coordinate.
                                 latLng = google.maps.geometry.spherical.computeOffset(
-                                    center, json.properties[zone.id].radius,  degreeStep * k
+                                    center, json.properties[zone.id].radius, _outer._CIRCULAR_POLY_DEGREE_STEP * k
                                 );
                                 json.geo.geometries[i].coordinates[0].push([latLng.lng(), latLng.lat()]);
                                 //Look for the northern most point of the circle so we know
@@ -936,6 +993,9 @@
                     google.maps.event.addListener(marker, 'drag', function () {
                         _this.moveZonesRelativeToPosition(_this.marker.getPosition());
                         _outer._loadedAlert.template.updateJSONAndCentroid();
+                        if (_outer._fallbackZone) {
+                            _outer._fallbackZone.punchOutOverlay();
+                        }
                     });
                     //Add click listener to marker.
                     google.maps.event.addListener(marker, 'click', function () {
@@ -994,6 +1054,9 @@
                             _this.updateJSON();
                             _outer._sortZonesBySize();
                             _outer._loadedAlert.template.updateJSONAndCentroid();
+                            if (_outer._fallbackZone) {
+                                _outer._fallbackZone.punchOutOverlay();
+                            }
                         });
                     }
                     else {
@@ -1176,6 +1239,9 @@
                     this.punchOutShapes();
                     //Update the centroid for the template.
                     _outer._loadedAlert.template.updateJSONAndCentroid();
+                    if (_outer._fallbackZone) {
+                        _outer._fallbackZone.punchOutOverlay();
+                    }
                 }
             };
             Object.seal(this._AlertZoneStack);
@@ -1191,7 +1257,7 @@
              */
             this._AlertZone = function (name,opacity,colour,messageTemplate,zIndex) {
                 this.id = _outer._generateUid();
-                this.setName(name || 'Zone_1');
+                this.setName(name || 'Zone 1');
                 this.setOpacity(opacity || 0.30);
                 this.setColour(colour || '000000');
                 this.setZIndex(zIndex || 49);
@@ -1415,6 +1481,272 @@
             Object.seal(this._PolygonalAlertZone);
 
             /**
+             * A class that represents the polygonal fallback alert zone.
+             * @param enabled - Indicates whether the zone should be displayed immediately after initializing.
+             * @param name - The user defined name.
+             * @param opacity - The opacity of the zone, any value from 0 to 1.
+             * @param colour - The colour of the zone, any hexadecimal colour without the #.
+             * @param messageTemplate - The message template associated with this zone.
+             * @param zIndex - The zIndex of the zone, any value between 49 and 0.
+             * @private
+             */
+            this._FallbackAlertZone = function(enabled,name,opacity,colour,messageTemplate,zIndex) {
+                this.setPaths(this._buildWorldPolygon());
+                this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
+                this._setupOverlayClickListener();
+                this.setEnabled(enabled);
+                this.setName(name || 'Fallback Zone');
+                this.setOpacity(opacity || 0.30);
+                this.setColour(colour || '000000');
+                this.setZIndex(zIndex || 49);
+                this.setActive(false);
+                this.setRenaming(false);
+                this.messageTemplate = messageTemplate || null;
+                this.nameOverlay = new _outer._FallbackZoneOverlay(this);
+            };
+
+            this._FallbackAlertZone.prototype = {
+                /**
+                 * Sets the paths and updates the shape overlay.
+                 */
+                setPaths: function(paths) {
+                    this.paths = paths;
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setPaths(paths);
+                    }
+                },
+                /**
+                 * Sets the name and if the instance is currently loaded
+                 * we'll also notify the polymer path via set.
+                 * @param name
+                 */
+                setName: function(name) {
+                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
+                        _outer.set('_fallbackZone.name',name);
+                    }
+                    else {
+                        this.name = name;
+                    }
+                },
+                /**
+                 * Sets the colour, updates the overlays and if the instance is
+                 * currently loaded we'll also notify the polymer path via set.
+                 * @param colour
+                 */
+                setColour: function(colour) {
+                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
+                        _outer.set('_fallbackZone.colour',colour);
+                    }
+                    else {
+                        this.colour = colour;
+                    }
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setOptions({'fillColor':'#'+colour})
+                    }
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
+                    }
+                },
+                /**
+                 * Sets the opacity, updates the overlay and if the instance is
+                 * currently loaded we'll also notify the polymer path via set.
+                 * @param opacity
+                 */
+                setOpacity: function(opacity) {
+                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
+                        _outer.set('_fallbackZone.opacity',opacity);
+                    }
+                    else {
+                        this.opacity = opacity;
+                    }
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setOptions({'fillOpacity':opacity});
+                    }
+                },
+                /**
+                 * Sets the zIndex and updates the overlay.
+                 * @param zIndex
+                 */
+                setZIndex: function(zIndex) {
+                    this.zIndex = zIndex;
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setOptions({'zIndex':zIndex});
+                    }
+                },
+                /**
+                 * Sets active, updates the overlay and if the instance is currently
+                 * loaded we'll also notify the polymer path via set.
+                 * @param active
+                 */
+                setActive: function(active) {
+                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
+                        _outer.set('_fallbackZone.active',active);
+                    }
+                    else {
+                        this.active = active;
+                    }
+                },
+                /**
+                 * Sets renaming and if the instance is currently loaded
+                 * we'll also notify the polymer path via set.
+                 * @param renaming
+                 */
+                setRenaming: function(renaming) {
+                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
+                        _outer.set('_fallbackZone.renaming',renaming);
+                    }
+                    else {
+                        this.renaming = renaming;
+                    }
+                },
+                /**
+                 * Sets enabled, updates the overlays and if the instance is
+                 * currently loaded we'll also notify the polymer path via set.
+                 * @param enabled
+                 */
+                setEnabled: function(enabled) {
+                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
+                        _outer.set('_fallbackZone.enabled',enabled);
+                    }
+                    else {
+                        this.enabled = enabled;
+                    }
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setOptions({'visible':enabled});
+                    }
+                    if (enabled) {
+                        this.punchOutOverlay();
+                        if (this.nameOverlay) {
+                            this.nameOverlay.draw();
+                        }
+                    }
+                    else if (this.nameOverlay) {
+                        this.nameOverlay.hide();
+                    }
+                },
+                /**
+                 * Removes the shape overlay from the map.
+                 */
+                removeFromMap: function() {
+                    this.shapeOverlay.setMap(null);
+                    this.nameOverlay.hide();
+                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
+                        _outer._fallbackZone = null;
+                    }
+                },
+                /**
+                 * Punches out all of the stacks currently drawn on the map.
+                 */
+                punchOutOverlay: function() {
+                    if (!this.enabled) { return; }
+                    var paths = this._buildWorldPolygon();
+                    if (_outer._loadedAlert) {
+                        for (var i=0; i<_outer._loadedAlert.template.zoneStacks.length; i++) {
+                            var largestZone = _outer._loadedAlert.template.zoneStacks[i].getLargestZone();
+                            if (largestZone.getShape() === 'polygon') {
+                                //Ideally we would just push the paths directly from the drawn polygon but Google expects
+                                //a specific "winding order" of the coordinates. Whichever direction the coordinates
+                                //are in for the outer zone, the coordinates for the inner "punched out" zones
+                                //must be in the opposite direction. Google handles this ordering when using the Data Layer
+                                //API, however, this is overly complex for our purposes. Instead we'll use turf to
+                                //reorder the zones by punching them out and returning the newly sorted coordinates.
+
+                                //Convert the array of fallback zone coordinates to a proper MVC paths array.
+                                var fallbackPaths = [_outer._AlertTemplate.calculateCoordinatesFromPaths(
+                                    new google.maps.MVCArray([new google.maps.MVCArray(paths[0])])
+                                )[0]];
+                                //Select only the outer ring of the largest zone in the stack.
+                                var largestZonePaths = [_outer._AlertTemplate.calculateCoordinatesFromPaths(
+                                    largestZone.shapeOverlay.getPaths()
+                                )[0]];
+                                //Do the punch out.
+                                var doughnut = turf.difference({
+                                        "type": "Feature",
+                                        "geometry": {
+                                            "type": "Polygon",
+                                            "coordinates": fallbackPaths
+                                        }
+                                    }, {
+                                        "type": "Feature",
+                                        "geometry": {
+                                            "type": "Polygon",
+                                            "coordinates": largestZonePaths
+                                        }
+                                    }
+                                );
+                                //The coordinates will now be in the correct order so we want to convert them back to paths
+                                //and then use this to draw the Polygon. In this case, we don't use the punched out
+                                //zone at all. This was only for the purposes of correctly ordering the coordinates list.
+                                var orderedLargestZonePaths = _outer._AlertTemplate.calculatePathsFromCoordinates(
+                                    doughnut.geometry.coordinates
+                                )[1];
+                                paths.push(orderedLargestZonePaths);
+                            }
+                            else {
+                                //Since we can't punch out the circular zones directl
+                                //we'll have to convert it to a many-sided polygon first.
+                                //Loop backwards so we have proper ordering (see above).
+                                var circularPath = [];
+                                for (var k=_outer._NUM_CIRCULAR_POLY_SIDES-1; k>=0; k--) {
+                                    circularPath.push(google.maps.geometry.spherical.computeOffset(
+                                        largestZone.shapeOverlay.getCenter(),
+                                        largestZone.shapeOverlay.getRadius(),
+                                        _outer._CIRCULAR_POLY_DEGREE_STEP * k
+                                    ));
+                                }
+                                paths.push(circularPath);
+                            }
+                        }
+                    }
+                    //The path at index 0 will be the entire fallback zone and
+                    //all of the other paths will be punched out stacks.
+                    this.setPaths(paths);
+                },
+                /**
+                 * Returns a rectangular polygon representing the entire world.
+                 */
+                _buildWorldPolygon: function() {
+                    //Since Google Maps uses a special web version of the Mercator projection and it
+                    //excludes the polar regions the maximum latitude is closer to 85° instead of 90°.
+                    var worldCoords = [
+                        new google.maps.LatLng(85.05113, 180), new google.maps.LatLng(0, 180),
+                        new google.maps.LatLng(-85.05113, 180), new google.maps.LatLng(-85.05113, 90),
+                        new google.maps.LatLng(-85.05113, 0), new google.maps.LatLng(-85.05113, -90),
+                        new google.maps.LatLng(-85.05113, -180), new google.maps.LatLng(0, -180),
+                        new google.maps.LatLng(85.05113, -180), new google.maps.LatLng(85.05113, -90),
+                        new google.maps.LatLng(85.05113, 0),new google.maps.LatLng(85.05113, 90),
+                        new google.maps.LatLng(85.05113, 180)
+                    ];
+                    return [new google.maps.MVCArray(worldCoords).getArray()];
+                },
+                /**
+                 * Initializes click listener for activating the overlay.
+                 * @private
+                 */
+                _setupOverlayClickListener: function () {
+                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    google.maps.event.addListener(this.shapeOverlay, 'click', function () {
+                        _outer._toggleFallbackZoneProperties();
+                    });
+                },
+                /**
+                 * Returns the options for building a google maps polygon.
+                 * @returns {*}
+                 * @private
+                 */
+                _getShapeOverlayOpts: function() {
+                    return {
+                        clickable: true, draggable: false,
+                        editable: false, fillColor: '#'+this.colour,
+                        fillOpacity: this.opacity, map: _outer._map,
+                        strokeWeight:0.5, zIndex:this.zIndex, paths:this.paths,
+                        suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
+                    };
+                }
+            };
+            Object.seal(this._FallbackAlertZone);
+
+            /**
              * A class that represents a user's fixed location record, both the drawn map entity and the json.
              * @param id - The system-generated id.
              * @param name - The user-defined name.
@@ -1515,6 +1847,38 @@
             Object.seal(this._MyLocation);
 
             /**
+             * A class that represents the fallback zone control overlay.
+             * @private
+             */
+            this._FallbackZoneOverlay = function(zone) {
+                this.zone = zone;
+                this.div = _outer._buildOverlayDiv('zone');
+                if (zone.enabled) {
+                    this.draw();
+                }
+            };
+            this._FallbackZoneOverlay.prototype = {
+                /**
+                 * Handles drawing and re-drawing of the fallback zone control overlay on the map.
+                 */
+                draw: function() {
+                    //Set the div content, replacing spaces with non-breaking ones.
+                    this.div.innerHTML = this.zone.name.split(' ').join('&nbsp;');
+                    //Configure the styling.
+                    this.div.style.backgroundColor = '#'+this.zone.colour;
+                    this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
+                    //Add the overlay.
+                    _outer._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
+                    _outer._map.controls[google.maps.ControlPosition.TOP_CENTER].push(this.div);
+                },
+                /**
+                 * Hide the control overlay.
+                 */
+                hide: function() {
+                    _outer._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
+                }
+            };
+            /**
              * A class that represents a zone name overlay.
              * @param zone - The zone for which the overlay will be displayed.
              * @extends google.maps.OverlayView
@@ -1523,8 +1887,7 @@
             this._ProximityZoneOverlay = function(zone) {
                 this.zone = zone;
                 this.setMap(_outer._map);
-                this.div = document.createElement('div');
-                this.div.style.fontSize = '8px';
+                this.div = _outer._buildOverlayDiv('zone');
             };
             /**
              * A class that represents a location name overlay.
@@ -1535,8 +1898,7 @@
             this._LocationOverlay = function(location) {
                 this.loc = location;
                 this.setMap(_outer._map);
-                this.div = document.createElement('div');
-                this.div.style.fontSize = '10px';
+                this.div = _outer._buildOverlayDiv('location');
             };
             //Inherit the prototype of google.maps.OverlayView.
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
@@ -1546,17 +1908,7 @@
              */
             this._ProximityZoneOverlay.prototype.onAdd =
             this._LocationOverlay.prototype.onAdd = function () {
-                //Setup the div.
-                //this.div = document.createElement('div');
-                this.div.style.borderStyle = 'none';
-                this.div.style.borderWidth = '0px';
-                this.div.style.position = 'absolute';
-                this.div.style.padding = '5px';
-                this.div.style.zIndex = 10000;
-                this.div.style.opacity = 1.0;
-                this.div.style.borderRadius = '25px';
-                this.div.style.letterSpacing = '1px';
-                // Add the element to the "overlayLayer" pane.
+                //Add the div to the "overlayLayer" pane.
                 this.getPanes().overlayLayer.appendChild(this.div);
             };
             /**
@@ -1618,6 +1970,7 @@
             /**
              * Returns a font colour of black or white based on the zone colour.
              */
+            this._FallbackZoneOverlay.prototype.returnColourBasedOnBackground =
             this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground = function(hex) {
                 //Convert 3 digits to 6.
                 if (hex.length === 3) {
@@ -1635,6 +1988,7 @@
                     ? '#000'
                     : '#FFF';
             };
+            Object.seal(this._FallbackZoneOverlay);
             Object.seal(this._ProximityZoneOverlay);
             Object.seal(this._LocationOverlay);
         }

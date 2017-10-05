@@ -10,7 +10,10 @@ Polymer({
         hideButtons: { type: Boolean, value: false }
     },
 
-    observers: ['_showTemplateListPaneChanged(_showTemplateListPane)'],
+    observers: [
+        '_showTemplateListPaneChanged(_showTemplateListPane)',
+        '_loadedAlertChanged(_loadedAlert)'
+    ],
 
     ready: function() {
         //Initialize some vars
@@ -31,7 +34,7 @@ Polymer({
         promises.push(this._fetchLocationRecord(id));
         Promise.all(promises).then(function(results) {
             //Clear the map of any loaded alert template before drawing. Specify that we want to
-            //skip the button draw because we will remove the buttons after drawing the new alert.
+            //skip the button draw because we will remove the button after drawing the new alert.
             if (_this._loadedAlert) {
                 _this.clearMap(true);
             }
@@ -217,7 +220,7 @@ Polymer({
             //Clear the listeners to remove the temporary click
             //listener but make sure we re-add the permanent one.
             google.maps.event.clearListeners(this._map,'click');
-            this._setupMapClickListener();
+            this._deselectStacksOnClick(this._map);
             this._selectedAlertTemplateId = null;
         }
     },
@@ -323,6 +326,20 @@ Polymer({
         this.toggleClass("selected", showTemplateListPane, this.querySelector('.customMapBttn'));
         if (!showTemplateListPane) {
             this._revertCursor();
+        }
+    },
+
+    /**
+     * Monitors the loaded alert and handles fallback zone button visibility.
+     * @param loadedAlert
+     * @private
+     */
+    _loadedAlertChanged: function(loadedAlert) {
+        if (loadedAlert) {
+            this._addFallbackZoneButton(this._fallbackZoneButtonListener.bind(this));
+        }
+        else {
+            this._removeFallbackZoneButton();
         }
     },
 

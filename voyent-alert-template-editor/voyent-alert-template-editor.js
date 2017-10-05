@@ -121,7 +121,7 @@ Polymer({
         this._isLoggedIn = true; //Toggle for side panel.
         this._addCircleButton(this._circleButtonListener.bind(this));
         this._addPolygonButton(this._polygonButtonListener.bind(this));
-        this._addEntireRegionButton(this._entireRegionButtonListener.bind(this));
+        this._addFallbackZoneButton(this._fallbackZoneButtonListener.bind(this));
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
     },
@@ -225,6 +225,10 @@ Polymer({
             //To keep things simple we'll always use our custom classes for
             //drawing the shapes so remove the google-drawn shape from the map.
             oce.overlay.setMap(null);
+            //Re-punch out the fallback zone.
+            if (_this._fallbackZone) {
+                _this._fallbackZone.punchOutOverlay();
+            }
             //Exit drawing mode.
             _this._drawingManager.setDrawingMode(null);
         });

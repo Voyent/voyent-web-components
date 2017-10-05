@@ -166,7 +166,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 text-align:center;
             }
             .no-stack {
-                margin-top:20px;
+                margin:20px 0 10px 0;
             }
         </style>
 
@@ -248,7 +248,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                         <template is="dom-if" if="[[!zone.renaming]]">
                             <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
                                                on-click="_toggleProperties" data-index$="[[index]]"></paper-icon-button>
-                            <div class="title zone" class$="{{_getZoneTitleClasses(zone.active)}}"
+                            <div class$="{{_getZoneTitleClasses(zone.active)}}"
                                  data-index$="[[index]]" on-click="_toggleProximityZoneRenaming">
                                 [[zone.name]]
                             </div>
@@ -307,6 +307,64 @@ Internal component used to display the properties panel inside Voyent alert comp
                     There is currently no stack loaded. Select a stack from the map to load its data.
                 </div>
             </template>
+            <div class="accordion">
+                <template is="dom-if" if="[[_fallbackZone.enabled]]">
+                    <div class$="{{_getAccordionClasses('header',_fallbackZone.active)}}">
+                        <template is="dom-if" if="[[!_fallbackZone.renaming]]">
+                            <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(_fallbackZone.active)}}"
+                                               on-click="_toggleFallbackZoneProperties"></paper-icon-button>
+                            <div class$="{{_getZoneTitleClasses(_fallbackZone.active)}}"
+                                 on-click="_toggleProximityZoneRenaming">
+                                [[_fallbackZone.name]]
+                            </div>
+                            <div class="title-bttns" hidden="[[!_fallbackZone.active]]">
+                                <paper-icon-button title="Remove Zone" icon="delete"
+                                                   on-click="_removeFallbackZone" tabindex="4">
+                                </paper-icon-button>
+                            </div>
+                        </template>
+                        <template is="dom-if" if="[[_fallbackZone.renaming]]">
+                            <paper-input id="zone-fallback" tabindex="5"
+                                         label="Zone"
+                                         class="rename-input"
+                                         placeholder="New Value"
+                                         on-keydown="_renameProximityZoneViaKeydown"
+                                         on-blur="_renameProximityZoneViaBlur"
+                                         value="{{_zoneNameVal::input}}"
+                                         disabled$="[[!_fallbackZone.renaming]]">>
+                            </paper-input>
+                        </template>
+                    </div>
+                    <div class$="{{_getAccordionClasses('body',_fallbackZone.active)}}">
+                        <div class="table">
+                            <div class="row">
+                                <div class="propertyCol">
+                                    Colour
+                                </div>
+                                <div class="valueCol">
+                                    <input id="jsColor-fallbackZone" class="jscolor"
+                                           tabindex="6"
+                                           data-property="colour"
+                                           on-change="_editProperty"
+                                           on-keydown="_editPropertyViaKeydown"
+                                           value="{{_fallbackZone.colour::change}}">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="propertyCol">
+                                    Opacity
+                                </div>
+                                <div class="valueCol opacity">
+                                    <paper-slider min=0 max=1 step=0.1 pin snaps tabindex="7"
+                                                  on-change="_editProperty" data-property="opacity"
+                                                  value="{{_fallbackZone.opacity}}">
+                                    </paper-slider>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </template>
     </template>
 </dom-module>

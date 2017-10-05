@@ -95,8 +95,9 @@ Example:
                             </div>
                         </template>
                         <template is="dom-if" if="[[_showPropertiesPane]]">
-                            <voyent-alert-properties _loaded-alert="{{_loadedAlert}}" show-movement-accordion
-                                                     _map="{{_map}}" _area-region="{{_areaRegion}}">
+                            <voyent-alert-properties show-movement-accordion _loaded-alert="{{_loadedAlert}}"
+                                                     _map="{{_map}}" _area-region="{{_areaRegion}}"
+                                                     _fallback-zone="{{_fallbackZone}}">
                             </voyent-alert-properties>
                         </template>
                             <template is="dom-if" if="[[_showConfirmingAlertPane]]">
@@ -149,11 +150,11 @@ Example:
                 </span>
             </div>
         </div>
-        <div id="entireRegionBttn" class="customMapBttnWrap no-select" hidden>
-            <div class="customMapBttn" title="Toggle the realm region">
+        <div id="fallbackZoneBttn" class="customMapBttnWrap no-select" hidden>
+            <div class="customMapBttn" title="Toggle the fallback zone">
                 <span>
-                    <div class="customMapBttnTxt">
-                        <span>R</span>
+                    <div class="customMapBttnImg">
+                        <img src="../common/voyent-alert/img/fallback_zone_bttn.png">
                     </div>
                 </span>
             </div>
