@@ -1055,7 +1055,10 @@
                             _outer._sortZonesBySize();
                             _outer._loadedAlert.template.updateJSONAndCentroid();
                             if (_outer._fallbackZone) {
-                                _outer._fallbackZone.punchOutOverlay();
+                                //Async so the list sorts first.
+                                setTimeout(function() {
+                                    _outer._fallbackZone.punchOutOverlay();
+                                },0);
                             }
                         });
                     }
