@@ -1497,7 +1497,6 @@
                 this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
                 this._setupOverlayClickListener();
-                this.setEnabled(enabled);
                 this.setName(name || 'Fallback Zone');
                 this.setOpacity(opacity || 0.30);
                 this.setColour(colour || '000000');
@@ -1506,6 +1505,7 @@
                 this.setRenaming(false);
                 this.messageTemplate = messageTemplate || null;
                 this.nameOverlay = new _outer._FallbackZoneOverlay(this);
+                this.setEnabled(enabled);
             };
 
             this._FallbackAlertZone.prototype = {
