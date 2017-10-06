@@ -1615,13 +1615,17 @@
                         this.shapeOverlay.setOptions({'visible':enabled});
                     }
                     if (enabled) {
+                        _outer.fire('voyent-fallback-zone-enabled',{"id":_outer._FALLBACK_ZONE_ID,"zone":this});
                         this.punchOutOverlay();
                         if (this.nameOverlay) {
                             this.nameOverlay.draw();
                         }
                     }
-                    else if (this.nameOverlay) {
-                        this.nameOverlay.hide();
+                    else {
+                        _outer.fire('voyent-fallback-zone-disabled',{"id":_outer._FALLBACK_ZONE_ID});
+                        if (this.nameOverlay) {
+                            this.nameOverlay.hide();
+                        }
                     }
                 },
                 /**

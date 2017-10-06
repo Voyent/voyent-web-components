@@ -10,6 +10,57 @@
      * @polymerBehavior AlertMapBehaviour
      */
     Voyent.AlertMapBehaviour = {
+        /**
+         * Fires when the alert template is successfully saved. Does not include any data.
+         * @event voyent-alert-template-saved
+         */
+
+        /**
+         * Fires when the alert template name changes. Includes a `name` property that contains the new value.
+         * @event voyent-alert-template-name-changed
+         */
+
+        /**
+         * Fires when an alert zone name changes. Includes a `name` property that contains
+         * the new value and an `id` property that indicates which zone was modified.
+         * @event voyent-alert-zone-name-changed
+         */
+
+        /**
+         * Fires when a new alert zone is added to the template. Includes an `id` property
+         * which identifies the zone and a `zone` property that contains the associated data.
+         * @event voyent-alert-zone-added
+         */
+
+        /**
+         * Fired when an alert zone is removed from the template. Includes an `id` property which identifies the zone.
+         * @event voyent-alert-zone-removed
+         */
+
+        /**
+         * Fires when the selected alert zone changes. Includes an `index` property in relation to the list, `id` property
+         * which identifies the zone and a `zone` property containing the associated data. If no zone is selected then the
+         * index value will be -1 and the other properties will be null.
+         * @event voyent-alert-zone-selected
+         */
+
+        /**
+         * Fires when the fallback zone name changes. Includes a `name` property that contains
+         * the new value and an `id` property that contains the id of the fallback zone.
+         * @event voyent-fallback-zone-name-changed
+         */
+
+        /**
+         * Fires when the fallback zone is added to the template. Includes an `id` property
+         * which identifies the zone and a `zone` property that contains the associated data.
+         * @event voyent-fallback-zone-enabled
+         */
+
+        /**
+         * Fired when the fallback zone is removed from the template. Includes an `id` property which identifies the zone.
+         * @event voyent-fallback-zone-disabled
+         */
+
         properties: {
             /**
              * The Voyent account used for authentication.
@@ -249,6 +300,16 @@
                 else {
                     this._loadedAlert.selectedStack.zones[zoneIndex].messageTemplate = messageTemplate;
                 }
+            }
+        },
+
+        /**
+         * Sets the message template for the fallback zone.
+         * @param messageTemplate
+         */
+        setFallbackMessageTemplate: function(messageTemplate) {
+            if (this._fallbackZone) {
+                this._fallbackZone.messageTemplate = messageTemplate;
             }
         },
 

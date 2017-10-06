@@ -201,6 +201,12 @@ Polymer({
                     "name":zone.name
                 });
             }
+            else {
+                this.fire('voyent-fallback-zone-name-changed',{
+                    "id":this._FALLBACK_ZONE_ID,
+                    "name":zone.name
+                });
+            }
             //Redraw the overlay since the content changed.
             zone.nameOverlay.draw();
         }

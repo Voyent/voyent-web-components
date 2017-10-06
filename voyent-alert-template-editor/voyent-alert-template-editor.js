@@ -3,43 +3,9 @@ Polymer({
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
     /**
-     * Fires when the alert template is successfully saved. Does not include any data.
-     * @event voyent-alert-template-saved
-     */
-
-    /**
      * Fires when the loaded alert template changes. Includes an `alertTemplate`
      * property that contains the loaded template or null if none is loaded.
      * @event voyent-alert-template-changed
-     */
-
-    /**
-     * Fires when the alert template name changes. Includes a `name` property that contains the new value.
-     * @event voyent-alert-template-name-changed
-     */
-
-    /**
-     * Fires when an alert zone name changes. Includes a `name` property that contains
-     * the new value and an `id` property that indicates which zone was modified.
-     * @event voyent-alert-zone-name-changed
-     */
-
-    /**
-     * Fires when a new alert zone is added to the template. Includes an `id` property
-     * which identifies the zone and a `zone` property that contains the associated data.
-     * @event voyent-alert-zone-added
-     */
-
-    /**
-     * Fired when an alert zone is removed from the template. Includes an `id` property which identifies the zone.
-     * @event voyent-alert-zone-removed
-     */
-
-    /**
-     * Fires when the selected alert zone changes. Includes an `index` property in relation to the list, `id` property
-     * which identifies the zone and a `zone` property containing the associated data. If no zone is selected then the
-     * index value will be -1 and the other properties will be null.
-     * @event voyent-alert-zone-selected
      */
 
     properties: {

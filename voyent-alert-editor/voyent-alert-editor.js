@@ -2,6 +2,11 @@ Polymer({
     is: 'voyent-alert-editor',
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
+    /**
+     * Fires when the loaded alert changes. Includes an `alert` property that contains the loaded alert or null if none is loaded.
+     * @event voyent-alert-template-changed
+     */
+
     properties: {
         /**
          * Indicate whether to hide the embedded save and remove buttons.
