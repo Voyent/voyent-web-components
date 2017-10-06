@@ -57,6 +57,13 @@ Polymer({
     },
 
     /**
+     * Removes the currently loaded alert from the database.
+     */
+    removeAlert: function() {
+        this._backToNewAlertPane();
+    },
+
+    /**
      * Fetches the latest alert templates for the realm.
      * @returns {*}
      * @private
@@ -153,7 +160,7 @@ Polymer({
             this._showNewAlertPane = true;
             this._showTemplateListPane = false;
         }
-        else { //_showPropertiesPane || _showConfirmingAlertPane
+        else { //_showPropertiesPane || _showConfirmingAlertPane || regular removal
             this._promptForRemoval(function() {
                 if (this._showPropertiesPane) { this._showPropertiesPane = false; }
                 else if (this._showConfirmingAlertPane) { this._showConfirmingAlertPane = false; }
