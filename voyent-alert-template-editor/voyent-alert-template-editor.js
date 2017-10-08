@@ -13,16 +13,28 @@ Polymer({
          * Indicate whether to hide the embedded save and cancel buttons.
          * @default false
          */
-        hideButtons: { type: Boolean, value: false }
+        hideButtons: { type: Boolean, value: false },
+        /**
+         * Indicates whether a template is currently being fetched from database and loaded into the editor.
+         */
+        isTemplateLoading: { type: Boolean, value: false, readOnly:true, notify:true },
+        /**
+         * Indicates whether a template is currently loaded in the editor.
+         */
+        isTemplateLoaded: { type: Boolean, value: false, readOnly:true, notify:true }
     },
 
-    observers: ['_loadedTemplateChanged(_loadedAlert.template)'],
+    observers: [
+        '_loadedTemplateChanged(_loadedAlert.template)',
+        '_loadedAlertChanged(_loadedAlert)'
+    ],
 
     /**
      * Loads an alert template into the editor using the passed id.
      * @param id
      */
     loadAlertTemplate: function(id) {
+        this._setIsTemplateLoading(true);
         var _this = this;
         this._fetchAlertTemplate(id).then(function(template) {
             //Clear the map of any loaded alert template before drawing. Specify that we want to skip the button
@@ -32,6 +44,7 @@ Polymer({
                 _this.clearMap(true);
             }
             _this._drawAndLoadAlertTemplate(template);
+            _this._setIsTemplateLoading(false);
         }).catch(function (error) {
             _this.fire('message-error', 'Error loading saved alert template: ' + (error.responseText || error.message || error));
         });
@@ -85,9 +98,6 @@ Polymer({
      */
     _onAfterLogin: function() {
         this._isLoggedIn = true; //Toggle for side panel.
-        this._addCircleButton(this._circleButtonListener.bind(this));
-        this._addPolygonButton(this._polygonButtonListener.bind(this));
-        this._addFallbackZoneButton(this._fallbackZoneButtonListener.bind(this));
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
     },
@@ -215,15 +225,7 @@ Polymer({
      * @private
      */
     _circleButtonListener: function() {
-        var _this = this;
-        if (!this._loadedAlert) {
-            this._openDialog('Please enter the alert template name','',function() {
-                _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
-            });
-        }
-        else {
-            _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
-        }
+        this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
     },
 
     /**
@@ -231,25 +233,33 @@ Polymer({
      * @private
      */
     _polygonButtonListener: function() {
-        var _this = this;
-        if (!this._loadedAlert) {
-            this._openDialog('Please enter the alert template name','',function() {
-                _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-            });
-        }
-        else {
-            _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-        }
+        this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
     },
 
     /**
-     * Fires an event indicating that the loaded alert template has changed.
+     * Fires an event indicating that the loaded alert template has changed and manages the templateLoaded property state.
      * @param alertTemplate
      * @private
      */
       _loadedTemplateChanged: function(alertTemplate) {
+        this._setIsTemplateLoaded(!!alertTemplate);
         this.fire('voyent-alert-template-changed',{
             'alertTemplate': alertTemplate || null
         });
+    },
+
+    /**
+     * Manages the drawing button states based on whether an alert is loaded.
+     * @param loadedAlert
+     * @private
+     */
+    _loadedAlertChanged: function(loadedAlert) {
+        if (loadedAlert) {
+            this._addAlertTemplateButtons();
+        }
+        //Don't bother removing the buttons if we are loading a template as they will just be added again.
+        else if (!this.isTemplateLoading) {
+            this._removeAlertTemplateButtons();
+        }
     }
 });

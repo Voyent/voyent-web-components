@@ -43,8 +43,7 @@ Example:
                         <template is="dom-if" if="[[!_loadedAlert]]">
                             <div class="alert-template-title">New Alert Template</div>
                             <div class="alert-template-desc">
-                                Activate one of the icons from the toolbar in the top-right corner
-                                and click a location on the map to begin drawing a new template.
+                                Click the New button and enter a template name to get started.
                             </div>
                         </template>
                     </template>
@@ -63,7 +62,7 @@ Example:
                 </div>
             </div>
         </div>
-        <div id="circleBttn" class="customMapBttnWrap no-select" hidden>
+        <div id$="[[_CIRCLE_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Create a new circular proximity zone stack">
                 <span>
                     <div class="customMapBttnImg">
@@ -72,7 +71,7 @@ Example:
                 </span>
             </div>
         </div>
-        <div id="polygonBttn" class="customMapBttnWrap no-select" hidden>
+        <div id$="[[_POLYGON_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Create a new polygonal proximity zone stack">
                 <span>
                     <div class="customMapBttnImg">
@@ -81,7 +80,7 @@ Example:
                 </span>
             </div>
         </div>
-        <div id="fallbackZoneBttn" class="customMapBttnWrap no-select" hidden>
+        <div id$="[[_FALLBACK_ZONE_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Toggle the fallback zone">
                 <span>
                     <div class="customMapBttnImg">

@@ -303,9 +303,17 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </template>
             </div>
             <template is="dom-if" if="[[!_loadedAlert.selectedStack]]">
-                <div class="alert-template-desc no-stack">
-                    There is currently no stack loaded. Select a stack from the map to load its data.
-                </div>
+                <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
+                    <div class="alert-template-desc no-stack">
+                        There is currently no stack loaded. Select a stack from the map to load its data.
+                    </div>
+                </template>
+                <template is="dom-if" if="[[!_loadedAlert.template.zoneStacks.length]]">
+                    <div class="alert-template-desc no-stack">
+                        There are currently no stacks in this template. Draw a
+                        new stack using the shape icons in the top-right corner.
+                    </div>
+                </template>
             </template>
             <div class="accordion">
                 <template is="dom-if" if="[[_fallbackZone.enabled]]">

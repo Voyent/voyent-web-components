@@ -16,6 +16,11 @@
          */
 
         /**
+         * Fires when the user cancels creating a new template.
+         * @event voyent-alert-template-cancel
+         */
+
+        /**
          * Fires when the alert template name changes. Includes a `name` property that contains the new value.
          * @event voyent-alert-template-name-changed
          */
@@ -105,6 +110,13 @@
         observers: ['_selectedStackChanged(_loadedAlert.selectedStack)'],
 
         ready: function() {
+            //Define some constants.
+            this._CIRCLE_BUTTON_ID = 'circleBttn';
+            this._POLYGON_BUTTON_ID = 'polygonBttn';
+            this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
+            this._MARKER_BUTTON_ID = 'markerBttn';
+            this._ALERT_BUTTON_ID = 'alertBttn';
+
             var _this = this;
             //Default to the last realm and account if one is not set.
             if (!this.realm) {
@@ -249,6 +261,22 @@
                 msg = 'Issue saving alert ' + (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' ? 'template: ' : ': ');
                 _this.fire('message-error', msg + (e.responseText || e.message || e));
                 _this._savingAlertTemplate = false;
+            });
+        },
+
+        /**
+         * Prompts the user to create a new template. On cancel the `voyent-alert-template-cancel` event will be fired.
+         */
+        addNew: function() {
+            var _this = this;
+            this._openDialog('Please enter the alert template name','',function() {
+                _this.clearMap();
+                _this.set('_loadedAlert',{
+                    template: new _this._AlertTemplate(null, null, _this._dialogInput, null, null),
+                    selectedStack: null
+                });
+            },function() {
+                _this.fire('voyent-alert-template-cancel',{});
             });
         },
 
@@ -700,70 +728,109 @@
          * @private
          */
         _addMarkerButton: function(listener) {
-            this._addDrawButton('markerBttn',listener);
+            this._addDrawButton(this._MARKER_BUTTON_ID,listener);
         },
 
         /**
-         * Handles adding the button for creating new circle alert templates.
+         * Adds the button for creating new circular zone stacks.
          * @param listener
          * @private
          */
-        _addCircleButton: function(listener) {
-            this._addDrawButton('circleBttn',listener);
+        _addCircleButton: function(listener,cb) {
+            this._addDrawButton(this._CIRCLE_BUTTON_ID,listener,cb);
         },
 
         /**
-         * Handles adding the button for creating new polygonal alert templates.
+         * Adds the button for creating new polygonal zone stacks.
          * @param listener
          * @private
          */
-        _addPolygonButton: function(listener) {
-            this._addDrawButton('polygonBttn',listener);
+        _addPolygonButton: function(listener,cb) {
+            this._addDrawButton(this._POLYGON_BUTTON_ID,listener,cb);
         },
 
         /**
-         * Handles adding the button for displaying the fallback zone.
+         * Adds adding the button for toggling the fallback zone.
          * @param listener
          * @private
          */
-        _addFallbackZoneButton: function(listener) {
-            this._addDrawButton('fallbackZoneBttn',listener);
+        _addFallbackZoneButton: function(listener,cb) {
+            this._addDrawButton(this._FALLBACK_ZONE_BUTTON_ID,listener,cb);
         },
 
         /**
-         * Handles adding the button for creating new locations.
+         * Adds the circle, polygon and fallback zone buttons.
+         * @param circleButtonListener
+         * @param polygonButtonListener
+         * @param fallbackZoneButtonListener
+         * @private
+         */
+        _addAlertTemplateButtons: function(circleButtonListener,polygonButtonListener,fallbackZoneButtonListener) {
+            var _this = this;
+            circleButtonListener = circleButtonListener || this._circleButtonListener.bind(this);
+            polygonButtonListener = polygonButtonListener || this._polygonButtonListener.bind(this);
+            fallbackZoneButtonListener = fallbackZoneButtonListener || this._fallbackZoneButtonListener.bind(this);
+            //The controls API doesn't like it when we try to inject controls too quickly so we'll use a callback chain to
+            //add each button after the other one has been added successfully. Without this Google adds the buttons but
+            //they end up all stacked up on top of each other, likely because the styling doesn't have time to update.
+            this._addCircleButton(circleButtonListener,function() {
+                _this._addPolygonButton(polygonButtonListener,function() {
+                    _this._addFallbackZoneButton(fallbackZoneButtonListener);
+                });
+            });
+        },
+
+        /**
+         * Handles adding the button for creating new alerts.
          * @param listener
          * @private
          */
         _addAlertButton: function(listener) {
-            this._addDrawButton('alertBttn',listener);
+            this._addDrawButton(this._ALERT_BUTTON_ID,listener);
         },
 
         /**
-         * Handles adding drawing buttons.
+         * Adds drawing buttons.
          * @param id - The id of the button to create.
          * @param listener - The click listener.
+         * @param cb - An optional callback that will be executed after the button has been added.
          * @private
          */
-        _addDrawButton: function(id,listener) {
+        _addDrawButton: function(id,listener,cb) {
             var _this = this;
             this._mapIsReady().then(function() {
-                //We have an additional flag to prevent race conditions when
-                //onAfterLogin and clearMap are called at nearly identical times.
-                if (!_this['_drawing'+id] &&
-                    !_this.querySelector('#'+id+':not([hidden])')) {
-                    _this['_drawing'+id] = true;
-                    var bttn = _this.$[id].cloneNode(true);
-                    bttn.onclick = listener;
-                    _this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(bttn);
+                //Use our saved button reference to check if the button already exists.
+                if (!_this['_'+id]) {
+                    _this['_'+id] = _this.$$('#'+id).cloneNode(true);
+                    //Add the onclick and push the button.
+                    _this['_'+id].onclick = listener;
+                    _this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(_this['_'+id]);
                     //Delay so that the button isn't shown on
                     //the page before being moved into the map.
                     setTimeout(function () {
-                        bttn.hidden = false;
-                        _this['_drawing'+id] = false;
+                        //Display the button.
+                        _this['_'+id].hidden = false;
+                        //Call our callback function, if available.
+                        if (cb && typeof cb === 'function') { cb(); }
                     },100);
                 }
             });
+        },
+
+        /**
+         * Handles removing the button for creating new circular zone stacks.
+         * @private
+         */
+        _removeCircleButton: function() {
+            this._removeDrawButton(this._CIRCLE_BUTTON_ID);
+        },
+
+        /**
+         * Handles removing the button for creating new polygonal zone stacks.
+         * @private
+         */
+        _removePolygonButton: function() {
+            this._removeDrawButton(this._POLYGON_BUTTON_ID);
         },
 
         /**
@@ -771,8 +838,7 @@
          * @private
          */
         _removeAlertButton: function() {
-            var alertBttn = this.querySelector('#alertBttn');
-            if (alertBttn) { alertBttn.parentNode.removeChild(alertBttn); }
+            this._removeDrawButton(this._ALERT_BUTTON_ID);
         },
 
         /**
@@ -780,8 +846,31 @@
          * @private
          */
         _removeFallbackZoneButton: function() {
-            var fallbackZoneBttn = this.querySelector('#fallbackZoneBttn');
-            if (fallbackZoneBttn) { fallbackZoneBttn.parentNode.removeChild(fallbackZoneBttn); }
+            this._removeDrawButton(this._FALLBACK_ZONE_BUTTON_ID);
+        },
+
+        /**
+         * Handles removing the circle, polygon and fallback zone buttons.
+         * @private
+         */
+        _removeAlertTemplateButtons: function() {
+            this._removeCircleButton();
+            this._removePolygonButton();
+            this._removeFallbackZoneButton();
+        },
+
+        /**
+         * Removes drawing buttons
+         * @param id - The id of the button to remove.
+         * @private
+         */
+        _removeDrawButton: function(id) {
+            if (!this._map || !this._map.controls) { return; }
+            var index = this._map.controls[google.maps.ControlPosition.TOP_RIGHT].indexOf(this['_'+id]);
+            if (index > -1) {
+                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(index);
+                this['_'+id] = null;
+            }
         },
 
         /**
@@ -853,6 +942,7 @@
          * @private
          */
         _closeDialog: function(confirmed) {
+            confirmed = typeof confirmed === 'boolean' ? confirmed : false;
             //Only call the cancel function if this is triggered by a cancel.
             //We allow passing the confirm function directly or as a string.
             if (!confirmed && this._dialogCancelFunc) {
