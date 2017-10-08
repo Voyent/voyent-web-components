@@ -389,12 +389,12 @@
              * @private
              */
             this._AlertTemplate = function(id,parentId,name,marker,zoneStacks) {
+                this._jsonProperties = {};
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
                 this.setMarker(marker || null);
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
-                this._jsonProperties = {};
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -549,7 +549,10 @@
                  * @param zoneStacks
                  */
                 setZoneStacks: function (zoneStacks) {
-                    this.zoneStacks = zoneStacks;
+                    this.zoneStacks = [];
+                    for (var i=0; i<zoneStacks.length; i++) {
+                        this.addZoneStack(zoneStacks[i]);
+                    }
                 },
                 /**
                  * Add the passed zone stack.
@@ -770,6 +773,49 @@
                 this.updateJSON();
             };
             /**
+             * Returns the colour of the zone at the passed index, assuming
+             * a default order of `red`, `yellow`, `blue`, `green`.
+             * @param index
+             * @static
+             */
+            this._AlertZoneStack.getZoneColourAtIndex = function(index) {
+                if (this._isZoneAtIndexColour(index,'red')) {
+                    return 'FF0000'
+                }
+                else if (this._isZoneAtIndexColour(index,'yellow')) {
+                    return 'FFFF00';
+                }
+                else if (this._isZoneAtIndexColour(index,'blue')) {
+                    return '0000FF';
+                }
+                else if (this._isZoneAtIndexColour(index,'green')) {
+                    return '00FF00';
+                }
+            };
+            /**
+             * Determines if the zone at the index is the colour.
+             * @param index - The index of the zone.
+             * @param colour - The colour to check. Valid options are `red`, `yellow`, `blue` and `green`.
+             * @static
+             * @private
+             */
+            this._AlertZoneStack._isZoneAtIndexColour = function(index,colour) {
+                var zoneNumber = index+1;
+                //Only generate the minimum amount of numbers in the sequence that we need to determine a match.
+                var count = Math.ceil((zoneNumber)/4);
+                //Determine the starting point for our sequence.
+                var sequence = [];
+                if (colour === 'red') { sequence.push(1); }
+                else if (colour === 'yellow') { sequence.push(2); }
+                else if (colour === 'blue') { sequence.push(3); }
+                else { sequence.push(4); }
+                //Generate the sequence and return whether we have a match.
+                for (var i=1; i<=count; i++) {
+                    sequence.push(sequence[sequence.length-1]+4);
+                }
+                return sequence.indexOf(zoneNumber) > -1;
+            };
+            /**
              * _AlertZoneStack prototype (instance) functions.
              */
             this._AlertZoneStack.prototype = {
@@ -785,13 +831,13 @@
                     }
                 },
                 /**
-                 * Sets the zones and triggers required processing.
+                 * Adds the passed zones to the stack.
                  * @param zones
                  */
                 setZones: function (zones) {
-                    this.zones = zones;
+                    this.zones = [];
                     for (var i=0; i<zones.length; i++) {
-                        this._processNewZone(zones[i]);
+                        this.addZone(zones[i]);
                     }
                 },
                 /**
@@ -832,6 +878,9 @@
                     }
                     else {
                         this.zones.push(zone);
+                    }
+                    if (!zone.colour) {
+                        zone.setColour(this.constructor.getZoneColourAtIndex(this.zones.length-1));
                     }
                     if (zone.getShape() === 'polygon') {
                         this.updateJSONAndCentroid();
@@ -1352,7 +1401,7 @@
                 this.id = _outer._generateUid();
                 this.setName(name || 'Zone 1');
                 this.setOpacity(opacity || 0.30);
-                this.setColour(colour || '000000');
+                this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
                 this.setRenaming(false);
@@ -1780,7 +1829,7 @@
                                 paths.push(orderedLargestZonePaths);
                             }
                             else {
-                                //Since we can't punch out the circular zones directl
+                                //Since we can't punch out the circular zones directly
                                 //we'll have to convert it to a many-sided polygon first.
                                 //Loop backwards so we have proper ordering (see above).
                                 var circularPath = [];
