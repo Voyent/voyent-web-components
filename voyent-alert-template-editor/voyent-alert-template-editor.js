@@ -153,7 +153,7 @@ Polymer({
             });
             if (oce.type === 'circle') { //Circular template.
                 stackMarker.setPosition(oce.overlay.getCenter());
-                zone = new _this._CircularAlertZone(oce.overlay.getRadius());
+                zone = new _this._CircularAlertZone(oce.overlay.getRadius(),_this._dialogInput);
             }
             else { //Polygonal template.
                 //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
@@ -164,7 +164,7 @@ Polymer({
                 }
                 var paths = oce.overlay.getPaths();
                 stackMarker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
-                zone = new _this._PolygonalAlertZone(paths);
+                zone = new _this._PolygonalAlertZone(paths,_this._dialogInput);
             }
             var zoneStack = new _this._AlertZoneStack(stackMarker, [zone]);
             if (_this._loadedAlert) {
@@ -225,7 +225,10 @@ Polymer({
      * @private
      */
     _circleButtonListener: function() {
-        this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
+        var _this = this;
+        this._openDialog('Please enter the zone name','',function() {
+            _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
+        });
     },
 
     /**
@@ -233,7 +236,10 @@ Polymer({
      * @private
      */
     _polygonButtonListener: function() {
-        this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+        var _this = this;
+        this._openDialog('Please enter the zone name','',function() {
+            _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+        });
     },
 
     /**

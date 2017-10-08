@@ -39,7 +39,13 @@ Example:
                         <voyent-alert-properties _loaded-alert="{{_loadedAlert}}"
                                                  _map="{{_map}}"
                                                  _area-region="{{_areaRegion}}"
-                                                 _fallback-zone="{{_fallbackZone}}"></voyent-alert-properties>
+                                                 _fallback-zone="{{_fallbackZone}}"
+                                                 _show-dialog-input="{{_showDialogInput}}"
+                                                 _dialog-input="{{_dialogInput}}"
+                                                 _dialog-message="{{_dialogMessage}}"
+                                                 _dialog-confirm-func="{{_dialogConfirmFunc}}"
+                                                 _dialog-cancel_func="{{_dialogCancelFunc}}">
+                        </voyent-alert-properties>
                         <template is="dom-if" if="[[!_loadedAlert]]">
                             <div class="alert-template-title">New Alert Template</div>
                             <div class="alert-template-desc">
@@ -90,18 +96,6 @@ Example:
             </div>
         </div>
         </div>
-        <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
-            <div>
-                <p>{{_dialogMessage}}</p>
-                <template is="dom-if" if="[[_showDialogInput]]">
-                    <paper-input autofocus no-label-float on-keyup="_dialogKeyUp" value="{{_dialogInput}}"></paper-input>
-                </template>
-                <div class="dialog-bttns">
-                    <paper-button raised title="Cancel" on-click="_closeDialog">Cancel</paper-button>
-                    <paper-button raised title="Confirm" on-click="_confirmDialog">Confirm</paper-button>
-                </div>
-            </div>
-        </paper-dialog>
     </template>
 </dom-module>
 

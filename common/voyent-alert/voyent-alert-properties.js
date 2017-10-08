@@ -19,7 +19,27 @@ Polymer({
         /**
          * A google maps data feature that represents the fallback (whole world) region.
          */
-        _fallbackZone: { type: Object, value: null, notify: true }
+        _fallbackZone: { type: Object, value: null, notify: true },
+        /**
+         * The modal dialog message.
+         */
+        _dialogMessage: { type: String, value: '', notify: true },
+        /**
+         * Whether to show the modal dialog input in the dialog message.
+         */
+        _showDialogInput: { type: Boolean, value: false, notify: true },
+        /**
+         * The value of the modal dialog input, if applicable.
+         */
+        _dialogInput: { type: String, value: '', notify: true },
+        /**
+         * The function called on modal dialog confirmation.
+         */
+        _dialogConfirmFunc: { type: Object, value: null, notify: true },
+        /**
+         * The function called on modal dialog cancellation.
+         */
+        _dialogCancelFunc: { type: Object, value: null, notify: true }
     },
 
     observers: [
@@ -220,46 +240,49 @@ Polymer({
      * @private
      */
     _addProximityZone: function() {
-        var newZone;
-        //Set the new zone radius as 50% larger than the current largest zone
-        //and de-increment the new zone zIndex so it sits behind the other zones.
-        var largestZone = this._loadedAlert.selectedStack.getLargestZone();
-        var zIndex = largestZone.zIndex - 1;
-        var name = 'Zone ' + (this._loadedAlert.selectedStack.zones.length + 1);
-        //Since we don't support mix and match zone types within a stack just
-        //check what the first one is to determine which kind we want to add.
-        if (this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
-            var radius = largestZone.shapeOverlay.getRadius() + largestZone.shapeOverlay.getRadius() * 0.5;
-            newZone = new this._CircularAlertZone(radius,name,null,null,null,zIndex);
-        }
-        else { //polygon
-            var largestZonePaths = largestZone.shapeOverlay.getPaths(), distance, bearing, paths = [], path;
-            var centroid = this._AlertTemplate.calculateCentroidFromPaths(largestZonePaths);
-            for (var i=0; i<largestZonePaths.length; i++) {
-                path=[];
-                for (var j=0; j<largestZonePaths.getAt(i).length; j++) {
-                    //Calculate the distance and bearing from the center to each point.
-                    distance = google.maps.geometry.spherical.computeDistanceBetween(centroid,largestZonePaths.getAt(i).getAt(j));
-                    bearing = google.maps.geometry.spherical.computeHeading(centroid,largestZonePaths.getAt(i).getAt(j));
-                    //Increase the distance by 50% to increase the size of the polygon the same.
-                    distance += distance * 0.5;
-                    //Calculate the new coordinate.
-                    path.push(google.maps.geometry.spherical.computeOffset(centroid,distance,bearing));
-                }
-                paths.push(path);
+        var _this = this;
+        this._openDialog('Please enter the zone name','',function() {
+            var newZone;
+            //Set the new zone radius as 50% larger than the current largest zone
+            //and de-increment the new zone zIndex so it sits behind the other zones.
+            var largestZone = _this._loadedAlert.selectedStack.getLargestZone();
+            var zIndex = largestZone.zIndex - 1;
+            var name = this._dialogInput;
+            //Since we don't support mix and match zone types within a stack just
+            //check what the first one is to determine which kind we want to add.
+            if (_this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
+                var radius = largestZone.shapeOverlay.getRadius() + largestZone.shapeOverlay.getRadius() * 0.5;
+                newZone = new _this._CircularAlertZone(radius,name,null,null,null,zIndex);
             }
-            //When we add a new zone we don't want to include the full shape so we can
-            //punch it out properly later so just pass the filled outer shape via paths[0].
-            newZone = new this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
-        }
-        this._loadedAlert.selectedStack.addZone(newZone);
-        //Re-adjust the centroid for the template.
-        this._loadedAlert.template.updateJSONAndCentroid();
-        //Re-punch out the fallback zone.
-        if (this._fallbackZone) {
-            this._fallbackZone.punchOutOverlay();
-        }
-        this.fire('voyent-alert-zone-added',{"id":newZone.id,"zone":newZone,"stack":this._loadedAlert.selectedStack});
+            else { //polygon
+                var largestZonePaths = largestZone.shapeOverlay.getPaths(), distance, bearing, paths = [], path;
+                var centroid = _this._AlertTemplate.calculateCentroidFromPaths(largestZonePaths);
+                for (var i=0; i<largestZonePaths.length; i++) {
+                    path=[];
+                    for (var j=0; j<largestZonePaths.getAt(i).length; j++) {
+                        //Calculate the distance and bearing from the center to each point.
+                        distance = google.maps.geometry.spherical.computeDistanceBetween(centroid,largestZonePaths.getAt(i).getAt(j));
+                        bearing = google.maps.geometry.spherical.computeHeading(centroid,largestZonePaths.getAt(i).getAt(j));
+                        //Increase the distance by 50% to increase the size of the polygon the same.
+                        distance += distance * 0.5;
+                        //Calculate the new coordinate.
+                        path.push(google.maps.geometry.spherical.computeOffset(centroid,distance,bearing));
+                    }
+                    paths.push(path);
+                }
+                //When we add a new zone we don't want to include the full shape so we can
+                //punch it out properly later so just pass the filled outer shape via paths[0].
+                newZone = new _this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
+            }
+            _this._loadedAlert.selectedStack.addZone(newZone);
+            //Re-adjust the centroid for the template.
+            _this._loadedAlert.template.updateJSONAndCentroid();
+            //Re-punch out the fallback zone.
+            if (_this._fallbackZone) {
+                _this._fallbackZone.punchOutOverlay();
+            }
+            _this.fire('voyent-alert-zone-added',{"id":newZone.id,"zone":newZone,"stack":_this._loadedAlert.selectedStack});
+        });
     },
 
     /**
