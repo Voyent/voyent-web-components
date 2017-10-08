@@ -90,13 +90,14 @@ Polymer({
      * @private
      */
     _renameAlertTemplate: function() {
-        if (this._templateNameVal !== this._loadedAlert.template.name) {
+        if (this._templateNameVal.trim() &&
+            this._templateNameVal !== this._loadedAlert.template.name) {
             this._loadedAlert.template.setName(this._templateNameVal);
             this.set('_templateNameVal','');
             this.fire('voyent-alert-template-name-changed', {"name": this._loadedAlert.template.name});
+            //Toggle renaming mode.
+            this._toggleAlertTemplateRenaming();
         }
-        //Toggle renaming mode.
-        this._toggleAlertTemplateRenaming();
     },
 
     /**
@@ -192,7 +193,7 @@ Polymer({
             i = 'fallbackZone';
             zone = this._fallbackZone;
         }
-        if (this._zoneNameVal !== zone.name) {
+        if (this._zoneNameVal.trim() && this._zoneNameVal !== zone.name) {
             zone.setName(this._zoneNameVal);
             this.set('_zoneNameVal','');
             if (i !== 'fallbackZone') {
@@ -209,9 +210,9 @@ Polymer({
             }
             //Redraw the overlay since the content changed.
             zone.nameOverlay.draw();
+            //Toggle renaming mode.
+            this._toggleProximityZoneRenaming(i);
         }
-        //Toggle renaming mode.
-        this._toggleProximityZoneRenaming(i);
     },
 
     /**
