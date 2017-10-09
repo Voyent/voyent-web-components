@@ -28,6 +28,9 @@
             this._CIRCULAR_POLY_DEGREE_STEP = 360 / this._NUM_CIRCULAR_POLY_SIDES;
             //The id of the fallback zone under the properties section.
             this._FALLBACK_ZONE_ID = 'fallback_zone';
+            //My Location icons.
+            this.MY_LOCATION_ICON_INACTIVE = this.pathtoimages+'/img/green_marker_circle.png';
+            this.MY_LOCATION_ICON_ACTIVE = this.pathtoimages+'/img/green_marker_star.png'
         },
 
         observers: ['_zonesUpdated(_loadedAlert.selectedStack.zones.length)'],
@@ -2089,8 +2092,8 @@
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.top = nc.y-60 + 'px';
                 //Configure the styling.
-                this.div.style.backgroundColor = '#F96757';
-                this.div.style.color = '#F5F5F5';
+                this.div.style.backgroundColor = '#64FE86';
+                this.div.style.color = '#000000';
             };
             /**
              * Cleans up the overlay whenever the overlays map property is set to null.

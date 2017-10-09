@@ -66,7 +66,8 @@ Polymer({
                     _this._createLocation(new google.maps.Marker({
                         position: _this._placeCoordinates,
                         map: _this._map,
-                        draggable: true
+                        draggable: true,
+                        icon: _this.MY_LOCATION_ICON_INACTIVE
                     }));
                     _this._adjustBounds();
                 }
@@ -323,13 +324,11 @@ Polymer({
             });
             //When clicking the close button on the infoWindow redisplay the overlay.
             google.maps.event.addListener(_this._infoWindow,'closeclick',function() {
-                _this._infoWindowOpen = false;
+                _this._closeInfoWindow();
                 if (_this._loadedLocation) {
                     _this._loadedLocation.nameOverlay.displayAndDraw();
                 }
-                if (_this._selectedPlace) {
-                    _this._selectedPlace = null;
-                }
+                _this._selectedPlace = null;
             });
         });
     },
@@ -384,6 +383,7 @@ Polymer({
             setTimeout(function() {
                 //Re-display any previously hidden location overlay.
                 if (_this._loadedLocation) {
+                    _this._loadedLocation.marker.setIcon(_this.MY_LOCATION_ICON_INACTIVE);
                     _this._loadedLocation.nameOverlay.displayAndDraw();
                 }
                 //If we were passed a location then select it otherwise if we
@@ -393,6 +393,7 @@ Polymer({
                     _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
                     //Hide the current location's overlay.
                     _this._loadedLocation.nameOverlay.hide();
+                    myLocation.marker.setIcon(_this.MY_LOCATION_ICON_ACTIVE);
                 }
                 else if (_this._selectedPlace) {
                     _this._infoWindow.setPosition(_this._selectedPlace.latLng);
@@ -413,6 +414,9 @@ Polymer({
     _closeInfoWindow: function() {
         this._infoWindow.close();
         this._infoWindowOpen = false;
+        if (this._loadedLocation) {
+            this._loadedLocation.marker.setIcon(this.MY_LOCATION_ICON_INACTIVE);
+        }
     },
 
     /**
@@ -487,6 +491,7 @@ Polymer({
     _setupDrawingListeners: function () {
         var _this = this;
         google.maps.event.addListener(this._drawingManager, 'markercomplete', function (marker) {
+            marker.setIcon(_this.MY_LOCATION_ICON_INACTIVE);
             //Draw the location marker and exit drawing mode.
             _this._createLocation(marker);
             _this._drawingManager.setDrawingMode(null);
@@ -512,7 +517,8 @@ Polymer({
         this._loadedLocation = this._createLocation(new google.maps.Marker({
             map: this._map,
             position: this._selectedPlace.latLng,
-            draggable: true
+            draggable: true,
+            icon: this.MY_LOCATION_ICON_INACTIVE
         }));
         this._buttonsEnabled = true;
         this._selectedPlace = null;
