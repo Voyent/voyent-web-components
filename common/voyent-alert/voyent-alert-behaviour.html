@@ -1636,6 +1636,7 @@
              * @private
              */
             this._FallbackAlertZone = function(enabled,name,opacity,colour,messageTemplate,zIndex) {
+                this.id = _outer._FALLBACK_ZONE_ID;
                 this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
                 this._setupOverlayClickListener();
