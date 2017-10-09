@@ -22,6 +22,7 @@ Polymer({
         //Set the button state to disabled by default
         this._buttonsEnabled = false;
         //Initialize places service for later.
+        this._mapIsReady().then(function() {
             _this._placesService = new google.maps.places.PlacesService(_this._map);
         });
     },
@@ -513,6 +514,12 @@ Polymer({
             position: this._selectedPlace.latLng,
             draggable: true
         }));
+        this._buttonsEnabled = true;
+        this._selectedPlace = null;
+        this._closeInfoWindow();
+    },
+
+    /**
      * Removes Google's "Stop drawing" hand button from the top-right corner.
      * @private
      */
@@ -533,11 +540,17 @@ Polymer({
     },
 
     /**
+     * Builds a location record from the passed marker and returns it.
      * @param marker
+     * @returns {Voyent.AlertBehaviour._MyLocation}
      * @private
      */
     _createLocation: function(marker) {
         //Build the new location.
+        var newLocation = new this._MyLocation(
+            null, this._locationName||this._selectedPlace.name,
+            this._selectedPlace ? false : this._isPrivateResidence,marker, null
+        );
         this._myLocations.push(newLocation);
         this._locationsToUpdate.push(newLocation);
         //Reset the dialog properties.
@@ -547,6 +560,8 @@ Polymer({
         if (autocomplete) {
             autocomplete.value = '';
         }
+        this._skipRegionPanning = true; //Always skip panning to the region when we have at least one location.
+        return newLocation;
     },
 
     /**
