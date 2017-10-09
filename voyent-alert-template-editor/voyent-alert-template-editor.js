@@ -167,36 +167,25 @@ Polymer({
                 zone = new _this._PolygonalAlertZone(paths,_this._dialogInput);
             }
             var zoneStack = new _this._AlertZoneStack(stackMarker, [zone]);
-            if (_this._loadedAlert) {
-                //Add the stack and select it.
-                _this._loadedAlert.template.addZoneStack(zoneStack);
-                //Toggle the accordion closed for the current stack and load the new one.
-                _this._toggleProperties(-1);
-                _this.set('_loadedAlert.selectedStack',zoneStack);
-                //When we have only one stack we don't have a template marker, just the marker for the zone stack.
-                //So once we have two zone stacks we need to create the marker and if we have more than two (the
-                //marker exists already) then we'll update it's position.
-                if (_this._loadedAlert.template.zoneStacks.length === 2) {
-                    _this._loadedAlert.template.setMarker(new google.maps.Marker({
-                        position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
-                        draggable: true, zIndex: 50,
-                        map: _this._map,
-                        icon: _this.pathtoimages+'/img/alert_marker.png'
-                    }));
-                }
-                else if (_this._loadedAlert.template.zoneStacks.length > 2) {
-                    _this._loadedAlert.template.updateJSONAndCentroid();
-                }
+            //Add the stack and fire the zone added event.
+            _this._loadedAlert.template.addZoneStack(zoneStack);
+            _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack});
+            //Toggle the accordion closed for the current stack and load the new one.
+            _this._toggleProperties(-1);
+            _this.set('_loadedAlert.selectedStack',zoneStack);
+            //When we have only one stack we don't have a template marker, just the marker for the zone stack.
+            //So once we have two zone stacks we need to create the marker and if we have more than two (the
+            //marker exists already) then we'll update it's position.
+            if (_this._loadedAlert.template.zoneStacks.length === 2) {
+                _this._loadedAlert.template.setMarker(new google.maps.Marker({
+                    position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
+                    draggable: true, zIndex: 50,
+                    map: _this._map,
+                    icon: _this.pathtoimages+'/img/alert_marker.png'
+                }));
             }
-            else {
-                //Since we only have one stack we won't pass a marker to
-                //the template since the stack has it's own marker.
-                _this.set('_loadedAlert',{
-                    template: new _this._AlertTemplate(
-                        null, null, _this._dialogInput, null, [zoneStack]
-                    ),
-                    selectedStack: zoneStack
-                });
+            else if (_this._loadedAlert.template.zoneStacks.length > 2) {
+                _this._loadedAlert.template.updateJSONAndCentroid();
             }
             //To keep things simple we'll always use our custom classes for
             //drawing the shapes so remove the google-drawn shape from the map.
