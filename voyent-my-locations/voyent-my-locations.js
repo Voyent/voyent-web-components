@@ -3,6 +3,7 @@ Polymer({
     behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
 
     ready: function() {
+        var _this = this;
         //Type options for drop-down menus.
         this._creationTypes = ['address','pindrop'];
         this._creationType = 'address';
@@ -10,6 +11,8 @@ Polymer({
         this._myLocations = [];
         //The location that is currently active in the editor (infoWindow is displayed).
         this._loadedLocation = null;
+        //An object containing details of the last Google Place search result (after clicking a place icon on map).
+        this._selectedPlace = null;
         //Since all changes are transient before they save we have these lists
         //to flag locations that require a db call once they hit save.
         this._locationsToUpdate = [];
@@ -18,6 +21,9 @@ Polymer({
         this._setupInfoWindow();
         //Set the button state to disabled by default
         this._buttonsEnabled = false;
+        //Initialize places service for later.
+            _this._placesService = new google.maps.places.PlacesService(_this._map);
+        });
     },
 
     //******************PRIVATE API******************
@@ -210,8 +216,7 @@ Polymer({
      * @private
      */
     _flagLocationForRemoval: function() {
-        this._infoWindow.close();
-        this._infoWindowOpen = false;
+        this._closeInfoWindow();
         this._loadedLocation.removeFromMap();
         if (this._loadedLocation.isPersisted) {
             this._locationsToDelete.push(this._loadedLocation);
@@ -290,11 +295,29 @@ Polymer({
             //Initialize infoWindow object for later.
             _this._infoWindow = new google.maps.InfoWindow();
             //Close the infoWindow and re-display the previously hidden overlay when clicking on the map.
-            google.maps.event.addListener(_this._map, "click", function() {
-                _this._infoWindow.close();
-                _this._infoWindowOpen = false;
+            google.maps.event.addListener(_this._map, 'click', function(e) {
+                _this._closeInfoWindow();
                 if (_this._loadedLocation) {
                     _this._loadedLocation.nameOverlay.displayAndDraw();
+                }
+                //If we have a placeId then it means a location of interest was clicked on the map. In this case we will
+                //replace the default infoWindow with a custom one so the user can optionally add it to their locations.
+                if (e.placeId) {
+                    //Prevent the default info window from opening.
+                    e.stop();
+                    _this._loadedLocation = null;
+                    _this._placesService.getDetails({placeId: e.placeId}, function(place,status) {
+                        if (status === 'OK') {
+                            _this._selectedPlace = _this._buildPlaceDetails(place);
+                        }
+                        else {
+                            _this._selectedPlace = {
+                                "name":'Unknown Location',
+                                "latLng":e.latLng
+                            };
+                        }
+                        _this._toggleInfoWindow(null);
+                    });
                 }
             });
             //When clicking the close button on the infoWindow redisplay the overlay.
@@ -303,12 +326,48 @@ Polymer({
                 if (_this._loadedLocation) {
                     _this._loadedLocation.nameOverlay.displayAndDraw();
                 }
+                if (_this._selectedPlace) {
+                    _this._selectedPlace = null;
+                }
             });
         });
     },
 
     /**
-     * Displays an infoWindow that is triggered when clicking on the location markers.
+     * Builds the relevant place details from the Google Places search result.
+     * @param place
+     * @private
+     */
+    _buildPlaceDetails: function(place) {
+        var selectedPlace = {
+            "name":place.name,
+            "latLng":place.geometry.location
+        };
+        var addressComponent;
+        for (var i=0; i<place.address_components.length; i++) {
+            addressComponent = place.address_components[i];
+            if (addressComponent.types.indexOf('street_number') > -1) {
+                selectedPlace.streetNumber = addressComponent.short_name || addressComponent.long_name;
+            }
+            else if (addressComponent.types.indexOf('route') > -1) {
+                selectedPlace.route = addressComponent.short_name || addressComponent.long_name;
+            }
+            else if (addressComponent.types.indexOf('locality') > -1) {
+                selectedPlace.locality = addressComponent.short_name || addressComponent.long_name;
+            }
+            else if (addressComponent.types.indexOf('political') > -1 &&
+                     addressComponent.types.indexOf('country') === -1) {
+                selectedPlace.political = addressComponent.short_name || addressComponent.long_name;
+            }
+            else if (addressComponent.types.indexOf('postal_code') > -1) {
+                selectedPlace.postalCode = addressComponent.short_name || addressComponent.long_name;
+            }
+        }
+        return selectedPlace;
+    },
+
+    /**
+     * Displays an infoWindow that is triggered when clicking on location markers or clicking on a place icon.
      * @param myLocation
      * @private
      */
@@ -316,25 +375,43 @@ Polymer({
         var _this = this;
         //If the selected infoWindow is already opened then close it.
         if (this._infoWindowOpen && myLocation === this._loadedLocation) {
-            this._infoWindow.close();
-            _this._loadedLocation.nameOverlay.displayAndDraw();
-            this._infoWindowOpen = false;
+            this._closeInfoWindow();
+            this._loadedLocation.nameOverlay.displayAndDraw();
         }
         else {
+            //Do this async so we don't get rendering flicker when opening the info window.
             setTimeout(function() {
                 //Re-display any previously hidden location overlay.
                 if (_this._loadedLocation) {
                     _this._loadedLocation.nameOverlay.displayAndDraw();
                 }
-                _this._loadedLocation = myLocation;
+                //If we were passed a location then select it otherwise if we
+                //have a selected place then render the custom info window.
+                if (myLocation) {
+                    _this._loadedLocation = myLocation;
+                    _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
+                    //Hide the current location's overlay.
+                    _this._loadedLocation.nameOverlay.hide();
+                }
+                else if (_this._selectedPlace) {
+                    _this._infoWindow.setPosition(_this._selectedPlace.latLng);
+                    _this._infoWindow.open(_this._map);
+                }
+                else { return; }
                 _this.$.infoWindow.removeAttribute('hidden');
-                _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
-                _this._infoWindowOpen = true;
                 _this._infoWindow.setContent(_this.$.infoWindow);
-                //Hide the current location's overlay.
-                _this._loadedLocation.nameOverlay.hide();
+                _this._infoWindowOpen = true;
             },0);
         }
+    },
+
+    /**
+     * Closes the info window.
+     * @private
+     */
+    _closeInfoWindow: function() {
+        this._infoWindow.close();
+        this._infoWindowOpen = false;
     },
 
     /**
@@ -426,6 +503,16 @@ Polymer({
     },
 
     /**
+     * Adds the last selected Google Place to the map as a new location.
+     * @private
+     */
+    _addPlaceToMyLocations: function() {
+        if (!this._selectedPlace) { return; }
+        this._loadedLocation = this._createLocation(new google.maps.Marker({
+            map: this._map,
+            position: this._selectedPlace.latLng,
+            draggable: true
+        }));
      * Removes Google's "Stop drawing" hand button from the top-right corner.
      * @private
      */
@@ -446,13 +533,11 @@ Polymer({
     },
 
     /**
-     * Builds a location record from the passed marker.
      * @param marker
      * @private
      */
     _createLocation: function(marker) {
         //Build the new location.
-        var newLocation = new this._MyLocation(null,this._locationName,this._isPrivateResidence,marker,null);
         this._myLocations.push(newLocation);
         this._locationsToUpdate.push(newLocation);
         //Reset the dialog properties.
@@ -462,8 +547,6 @@ Polymer({
         if (autocomplete) {
             autocomplete.value = '';
         }
-        //Always skip panning to the region when we have at least one location.
-        this._skipRegionPanning = true;
     },
 
     /**

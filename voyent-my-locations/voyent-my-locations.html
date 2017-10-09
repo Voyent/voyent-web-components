@@ -29,6 +29,27 @@ Example:
                 font-weight: 400;
                 -webkit-font-smoothing: antialiased;
             }
+            .selected-place {
+                text-align:center;
+            }
+            .selected-place .address {
+                margin:10px;
+            }
+            .selected-place .name {
+                margin:5px 10px 10px 10px;
+                font-size:14px;
+            }
+            .selected-place div,
+            .selected-place span {
+                max-width: 150px;
+                word-wrap: break-word;
+            }
+            .selected-place paper-button {
+                margin-bottom:5px;
+            }
+            .selected-place .name {
+                font-weight:bold;
+            }
             .autocomplete {
                 padding-top: 15px;
             }
@@ -95,24 +116,55 @@ Example:
             <div id="map"></div>
         </div>
         <div id="infoWindow" class="info-window" hidden>
-            <paper-input id="label"
-                         tabindex="1"
-                         label="Name"
-                         placeholder="New Name"
-                         on-change="flagLocationForUpdating"
-                         value="{{_loadedLocation.name::input}}">
-            </paper-input>
-            <div class="toggle-button">
-                <paper-toggle-button id="isPrivateResidence" class="inline valign-middle" tabindex="2"
-                                     checked="{{_loadedLocation.isPrivateResidence}}"
-                                     on-checked-changed="_flagLocationForUpdating"></paper-toggle-button>
-                <span class="private-residence valign-middle no-select">Private Residence</span>
-            </div>
-            <div class="delete-bttn">
-                <paper-icon-button tabindex="3" title="Remove Location" icon="delete"
-                                   on-click="_flagLocationForRemoval">
-                </paper-icon-button>
-            </div>
+            <template is="dom-if" if="[[_loadedLocation]]">
+                <paper-input id="label"
+                             tabindex="1"
+                             label="Name"
+                             placeholder="New Name"
+                             on-change="flagLocationForUpdating"
+                             value="{{_loadedLocation.name::input}}">
+                </paper-input>
+                <div class="toggle-button">
+                    <paper-toggle-button id="isPrivateResidence" class="inline valign-middle" tabindex="2"
+                                         checked="{{_loadedLocation.isPrivateResidence}}"
+                                         on-checked-changed="_flagLocationForUpdating"></paper-toggle-button>
+                    <span class="private-residence valign-middle no-select">Private Residence</span>
+                </div>
+                <div class="delete-bttn">
+                    <paper-icon-button tabindex="3" title="Remove Location" icon="delete"
+                                       on-click="_flagLocationForRemoval">
+                    </paper-icon-button>
+                </div>
+            </template>
+            <template is="dom-if" if="[[!_loadedLocation]]">
+                <div class="selected-place">
+                    <div class="name">[[_selectedPlace.name]]</div>
+                    <div class="address">
+                        <div>
+                            <template is="dom-if" if="[[_selectedPlace.streetNumber]]">
+                                <span>[[_selectedPlace.streetNumber]]</span>
+                            </template>
+                            <template is="dom-if" if="[[_selectedPlace.route]]">
+                                <span>[[_selectedPlace.route]]</span>
+                            </template>
+                        </div>
+                        <div>
+                            <template is="dom-if" if="[[_selectedPlace.locality]]">
+                                <span>[[_selectedPlace.locality]],</span>
+                            </template>
+                            <template is="dom-if" if="[[_selectedPlace.political]]">
+                                <span>[[_selectedPlace.political]]</span>
+                            </template>
+                            <template is="dom-if" if="[[_selectedPlace.postalCode]]">
+                                <span>[[_selectedPlace.postalCode]]</span>
+                            </template>
+                        </div>
+                    </div>
+                    <paper-button class="add-place-bttn" raised title="Add to My Locations" on-click="_addPlaceToMyLocations">
+                        Add to My Locations
+                    </paper-button>
+                </div>
+            </template>
         </div>
         <div id="markerBttn" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Create a new Location">
