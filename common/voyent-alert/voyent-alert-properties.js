@@ -318,10 +318,9 @@ Polymer({
             this._editProperty(e);
             //Close the colour picker.
             if (e.target.getAttribute('data-property') === 'colour') {
+                var index = e.model.get('index');
                 //If we have a z-index it means the zone is part of the stack, otherwise it's the fallback zone.
-                var jsColorId = '#jsColor-'+ (typeof e.model.get('index') !== 'undefined' ?
-                                this._loadedAlert.selectedStack.getZoneIndex(zone) :
-                                'fallbackZone');
+                var jsColorId = '#jsColor-'+ (typeof index !== 'undefined' ? index : 'fallbackZone');
                 var colorPicker = this.querySelector(jsColorId);
                 if (colorPicker) {
                     colorPicker.jscolor.hide();
