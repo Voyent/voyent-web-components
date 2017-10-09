@@ -73,7 +73,6 @@ Polymer({
                 }
             });
         });
-        this._removeStopDrawingButton();
     },
 
     /**
@@ -523,26 +522,6 @@ Polymer({
         this._buttonsEnabled = true;
         this._selectedPlace = null;
         this._closeInfoWindow();
-    },
-
-    /**
-     * Removes Google's "Stop drawing" hand button from the top-right corner.
-     * @private
-     */
-    _removeStopDrawingButton: function() {
-        if (!this._stopDrawingButtonRemoved) {
-            var _this = this;
-            function waitForStopDrawingButton() {
-                var stopDrawingButton = document.querySelector('div[title="Stop drawing"');
-                if (!stopDrawingButton) {
-                    setTimeout(waitForStopDrawingButton, 10);
-                    return;
-                }
-                stopDrawingButton.parentNode.removeChild(stopDrawingButton);
-                _this._stopDrawingButtonRemoved = true;
-            }
-            waitForStopDrawingButton();
-        }
     },
 
     /**
