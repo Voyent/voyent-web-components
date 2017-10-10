@@ -216,18 +216,10 @@ Polymer({
         if (this._zoneNameVal.trim() && this._zoneNameVal !== zone.name) {
             zone.setName(this._zoneNameVal);
             this.set('_zoneNameVal','');
-            if (i !== 'fallbackZone') {
-                this.fire('voyent-alert-zone-name-changed',{
-                    "id":zone.id,
-                    "name":zone.name
-                });
-            }
-            else {
-                this.fire('voyent-fallback-zone-name-changed',{
-                    "id":this._FALLBACK_ZONE_ID,
-                    "name":zone.name
-                });
-            }
+            this.fire('voyent-alert-zone-name-changed',{
+                "id":zone.id,
+                "name":zone.name
+            });
             //Redraw the overlay since the content changed.
             zone.nameOverlay.draw();
             //Toggle renaming mode.
@@ -281,7 +273,11 @@ Polymer({
             if (_this._fallbackZone) {
                 _this._fallbackZone.punchOutOverlay();
             }
-            _this.fire('voyent-alert-zone-added',{"id":newZone.id,"zone":newZone,"stack":_this._loadedAlert.selectedStack});
+            _this.fire('voyent-alert-zone-added',{
+                "id":newZone.id,"zone":newZone,
+                "stack":_this._loadedAlert.selectedStack,
+                "isFallbackZone":false
+            });
         });
     },
 
@@ -295,7 +291,7 @@ Polymer({
         var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
         var id = zone.id;
         this._loadedAlert.selectedStack.removeZone(zone);
-        this.fire('voyent-alert-zone-removed',{"id":id});
+        this.fire('voyent-alert-zone-removed',{"id":id,"isFallbackZone":false});
     },
 
     /**

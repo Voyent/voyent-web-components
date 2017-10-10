@@ -1761,14 +1761,14 @@
                         this.shapeOverlay.setOptions({'visible':enabled});
                     }
                     if (enabled) {
-                        _outer.fire('voyent-fallback-zone-enabled',{"id":_outer._FALLBACK_ZONE_ID,"zone":this});
+                        _outer.fire('voyent-alert-zone-added',{"id":this.id,"zone":this,"isFallbackZone":true});
                         this.punchOutOverlay();
                         if (this.nameOverlay) {
                             this.nameOverlay.draw();
                         }
                     }
                     else {
-                        _outer.fire('voyent-fallback-zone-disabled',{"id":_outer._FALLBACK_ZONE_ID});
+                        _outer.fire('voyent-alert-zone-removed',{"id":this.id,"isFallbackZone":true});
                         if (this.nameOverlay) {
                             this.nameOverlay.hide();
                         }
@@ -1783,6 +1783,7 @@
                     if (_outer._fallbackZone && _outer._fallbackZone === this) {
                         _outer._fallbackZone = null;
                     }
+                    _outer.fire('voyent-alert-zone-removed',{"id":this.id,"isFallbackZone":true});
                 },
                 /**
                  * Punches out all of the stacks currently drawn on the map.

@@ -32,13 +32,15 @@
          */
 
         /**
-         * Fires when a new alert zone is added to the template. Includes an `id` property
-         * which identifies the zone and a `zone` property that contains the associated data.
+         * Fires when a new alert zone is added to the template. This could be in the form of a completely new stack or
+         * adding to an existing stack. Includes an `id` property which identifies the zone, a `zone` property that
+         * contains the associated data and an `isFallbackZone` property indicating whether the zone is the fallback zone.
          * @event voyent-alert-zone-added
          */
 
         /**
-         * Fired when an alert zone is removed from the template. Includes an `id` property which identifies the zone.
+         * Fired when an alert zone is removed from the template. Includes an `id` property which identifies
+         * the zone and an `isFallbackZone` property indicating whether the zone is the fallback zone.
          * @event voyent-alert-zone-removed
          */
 
@@ -47,23 +49,6 @@
          * which identifies the zone and a `zone` property containing the associated data. If no zone is selected then the
          * index value will be -1 and the other properties will be null.
          * @event voyent-alert-zone-selected
-         */
-
-        /**
-         * Fires when the fallback zone name changes. Includes a `name` property that contains
-         * the new value and an `id` property that contains the id of the fallback zone.
-         * @event voyent-fallback-zone-name-changed
-         */
-
-        /**
-         * Fires when the fallback zone is added to the template. Includes an `id` property
-         * which identifies the zone and a `zone` property that contains the associated data.
-         * @event voyent-fallback-zone-enabled
-         */
-
-        /**
-         * Fired when the fallback zone is removed from the template. Includes an `id` property which identifies the zone.
-         * @event voyent-fallback-zone-disabled
          */
 
         properties: {

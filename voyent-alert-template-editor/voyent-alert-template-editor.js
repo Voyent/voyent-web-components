@@ -169,7 +169,7 @@ Polymer({
             var zoneStack = new _this._AlertZoneStack(stackMarker, [zone]);
             //Add the stack and fire the zone added event.
             _this._loadedAlert.template.addZoneStack(zoneStack);
-            _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack});
+            _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"isFallbackZone":false});
             //Toggle the accordion closed for the current stack and load the new one.
             _this._toggleProperties(-1);
             _this.set('_loadedAlert.selectedStack',zoneStack);
