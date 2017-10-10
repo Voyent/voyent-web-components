@@ -855,6 +855,7 @@
          * @private
          */
         _fallbackZoneButtonListener: function() {
+            this._drawingManager.setDrawingMode(null);
             if (this._fallbackZone && this._fallbackZone.enabled) {
                 this._fallbackZone.setEnabled(false);
             }
