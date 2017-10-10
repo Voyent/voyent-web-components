@@ -48,6 +48,14 @@ Polymer({
     ],
 
     ready: function() {
+        var _this = this;
+        //JsColor uses a non-standard way of handling custom events so we must setup this listener on the window object.
+        window._jsColorFineChange = function(colorPicker) {
+            var zone = _this._loadedAlert.selectedStack.getZoneAt(colorPicker.targetElement.getAttribute('data-index'));
+            if (zone) {
+                zone.setColour(colorPicker.toHEXString().slice(1));
+            }
+        };
         this._renamingTemplate = this._showMovement = false;
     },
 
@@ -352,8 +360,22 @@ Polymer({
         if (e.target.getAttribute('data-property') === 'colour') {
             zone.setColour(zone.colour);
         }
-        else {
+        else if (e.target.getAttribute('data-property') === 'opacity') {
             zone.setOpacity(zone.opacity);
+        }
+    },
+
+    /**
+     * Triggered as the user is dragging the opacity slider.
+     * @param e
+     * @private
+     */
+    _immediateValueChange: function(e) {
+        var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
+        if (zone) {
+            if (e.target.getAttribute('data-property') === 'opacity') {
+                zone.setOpacity(this._immediateValueOpacity);
+            }
         }
     },
 

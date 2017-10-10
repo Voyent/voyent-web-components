@@ -279,6 +279,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 </div>
                                 <div class="valueCol">
                                     <input id$="jsColor-[[index]]" class="jscolor"
+                                           data-jscolor="{onFineChange:'_jsColorFineChange(this)'}"
                                            tabindex="6"
                                            data-property="colour"
                                            data-index$="[[index]]"
@@ -292,9 +293,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     Opacity
                                 </div>
                                 <div class="valueCol opacity">
-                                    <paper-slider min=0 max=1 step=0.1 pin snaps tabindex="7"
-                                                  on-change="_editProperty" data-index$="[[index]]"
-                                                  data-property="opacity" value="{{zone.opacity}}">
+                                    <paper-slider min="0" max="1" step="0.05" pin snaps tabindex="7" data-property="opacity"
+                                                  on-change="_editProperty" data-index$="[[index]]" value="{{zone.opacity}}"
+                                                  on-immediate-value-change="_immediateValueChange"
+                                                  immediate-value="{{_immediateValueOpacity}}">
                                     </paper-slider>
                                 </div>
                             </div>
