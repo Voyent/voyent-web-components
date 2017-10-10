@@ -519,10 +519,10 @@
                  * @param marker
                  */
                 setMarker: function (marker) {
+                    this.marker = marker;
                     //When we create a new AlertTemplate with only one stack we don't need a marker for
                     //the template since the stack has it's own so always check if we were passed one.
                     if (marker) {
-                        this.marker = marker;
                         this._setupMarkerListeners();
                     }
                 },
@@ -565,6 +565,11 @@
                     }
                     else {
                         this.zoneStacks.splice(zoneStackIndex,1);
+                    }
+                    this.updateJSONAndCentroid();
+                    if (this.zoneStacks.length === 1) {
+                        this.marker.setMap(null);
+                        this.setMarker(null);
                     }
                 },
                 /**
@@ -664,8 +669,8 @@
                  * Updates the position of the template marker by updating the json and calculating the centroid from that.
                  */
                 updateJSONAndCentroid: function() {
+                    this.updateJSON();
                     if (this.marker) {
-                        this.updateJSON();
                         this.marker.setPosition(
                             this.constructor.calculateCentroidFromJSON(this.json)
                         );

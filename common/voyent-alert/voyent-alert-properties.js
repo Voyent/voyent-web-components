@@ -43,7 +43,6 @@ Polymer({
     },
 
     observers: [
-        '_zonesUpdated(_loadedAlert.selectedStack.zones.length)',
         '_alertDirectionChanged(_alertDirection)',
         '_alertSpeedChanged(_alertSpeed)'
     ],
@@ -291,7 +290,19 @@ Polymer({
         e.stopPropagation();
         var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
         var id = zone.id;
-        this._loadedAlert.selectedStack.removeZone(zone);
+        if (this._loadedAlert.selectedStack.zones.length === 1) {
+            this._loadedAlert.template.removeZoneStack(this._loadedAlert.selectedStack);
+            if (this._fallbackZone) {
+                this._fallbackZone.punchOutOverlay();
+            }
+        }
+        else {
+            var isLargestZone = this._loadedAlert.selectedStack.getLargestZone() === zone;
+            this._loadedAlert.selectedStack.removeZone(zone);
+            if (this._fallbackZone && isLargestZone) {
+                this._fallbackZone.punchOutOverlay();
+            }
+        }
         this.fire('voyent-alert-zone-removed',{"id":id,"isFallbackZone":false});
     },
 
@@ -344,15 +355,6 @@ Polymer({
         else {
             zone.setOpacity(zone.opacity);
         }
-    },
-
-    /**
-     * Monitors the number of zones that we the alert template has.
-     * @param length
-     * @private
-     */
-    _zonesUpdated: function(length) {
-        this.set('_hasOneZone',!length || length === 1);
     },
 
     /**

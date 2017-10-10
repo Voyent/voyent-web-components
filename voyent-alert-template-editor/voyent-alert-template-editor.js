@@ -67,28 +67,6 @@ Polymer({
         this._openDialog(msg,null,'clearMap');
     },
 
-    /**
-     * Removes the selected stack from the template. If the last stack is being removed
-     * then the template will also be removed, pending confirmation from the user.
-     * @private
-     */
-    removeZoneStack: function() {
-        var _this = this;
-        if (this._loadedAlert.template.zoneStacks.length === 1) {
-            this._openDialog('Removing the last stack will delete the template. Do you wish to continue?',null,function() {
-                _this._loadedAlert.template.removeZoneStack(_this._loadedAlert.selectedStack);
-                _this._removeAlertTemplate();
-            });
-        }
-        else {
-            this._loadedAlert.template.removeZoneStack(this._loadedAlert.selectedStack);
-            this._loadedAlert.template.updateJSONAndCentroid();
-            if (this._loadedAlert.template.zoneStacks.length === 1) {
-                this._loadedAlert.template.marker.setMap(null);
-                this._loadedAlert.template.setMarker(null);
-            }
-        }
-    },
 
     //******************PRIVATE API******************
 
