@@ -736,6 +736,7 @@
         /**
          * Adds the button for creating new circular zone stacks.
          * @param listener
+         * @param cb
          * @private
          */
         _addCircleButton: function(listener,cb) {
@@ -745,6 +746,7 @@
         /**
          * Adds the button for creating new polygonal zone stacks.
          * @param listener
+         * @param cb
          * @private
          */
         _addPolygonButton: function(listener,cb) {
@@ -754,6 +756,7 @@
         /**
          * Adds adding the button for toggling the fallback zone.
          * @param listener
+         * @param cb
          * @private
          */
         _addFallbackZoneButton: function(listener,cb) {
@@ -804,17 +807,12 @@
                 //Use our saved button reference to check if the button already exists.
                 if (!_this['_'+id]) {
                     _this['_'+id] = _this.$$('#'+id).cloneNode(true);
-                    //Add the onclick and push the button.
+                    //Add the onclick, save and show the button.
                     _this['_'+id].onclick = listener;
                     _this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(_this['_'+id]);
-                    //Delay so that the button isn't shown on
-                    //the page before being moved into the map.
-                    setTimeout(function () {
-                        //Display the button.
-                        _this['_'+id].hidden = false;
-                        //Call our callback function, if available.
-                        if (cb && typeof cb === 'function') { cb(); }
-                    },100);
+                    _this['_'+id].hidden = false;
+                    //Call our callback function, if provided.
+                    if (cb && typeof cb === 'function') { cb(); }
                 }
             });
         },
