@@ -156,18 +156,19 @@ Polymer({
      * @private
      */
     _backToNewAlertPane: function() {
+        var _this = this;
         if (this._showTemplateListPane) {
             this._showNewAlertPane = true;
             this._showTemplateListPane = false;
         }
         else { //_showPropertiesPane || _showConfirmingAlertPane || regular removal
             this._promptForRemoval(function() {
-                if (this._showPropertiesPane) { this._showPropertiesPane = false; }
-                else if (this._showConfirmingAlertPane) { this._showConfirmingAlertPane = false; }
-                this._removeAlert();
-                this._isActivated = false;
-                this._showNewAlertPane = true;
-                this._addAlertButton(this._alertButtonListener.bind(this));
+                if (_this._showPropertiesPane) { _this._showPropertiesPane = false; }
+                else if (_this._showConfirmingAlertPane) { _this._showConfirmingAlertPane = false; }
+                _this._removeAlert();
+                _this._isActivated = false;
+                _this._showNewAlertPane = true;
+                _this._addAlertButton(_this._alertButtonListener.bind(_this));
             });
         }
     },
