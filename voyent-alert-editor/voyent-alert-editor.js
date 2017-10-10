@@ -165,11 +165,6 @@ Polymer({
                 if (this._showPropertiesPane) { this._showPropertiesPane = false; }
                 else if (this._showConfirmingAlertPane) { this._showConfirmingAlertPane = false; }
                 this._removeAlert();
-                this.fire('voyent-alert-zone-selected', {
-                    'index': -1,
-                    'id': null,
-                    'zone': null
-                });
                 this._isActivated = false;
                 this._showNewAlertPane = true;
                 this._addAlertButton(this._alertButtonListener.bind(this));

@@ -87,25 +87,11 @@
             else {
                 this._loadedAlert.selectedStack.deactivateZoneOverlays();
             }
-            var eventProperties;
             if (index > -1) {
                 var zone = this._loadedAlert.selectedStack.getZoneAt(index);
                 this._initializeColourPicker(zone);
                 zone.setActive(true);
-                eventProperties = {
-                    'index': index,
-                    'id': zone.id,
-                    'zone': zone
-                };
             }
-            else {
-                eventProperties = {
-                    'index': -1,
-                    'id': null,
-                    'zone': null
-                };
-            }
-            this.fire('voyent-alert-zone-selected',eventProperties);
         },
 
         /**
@@ -286,13 +272,6 @@
                         selectedZoneIndex = i;
                         break;
                     }
-                }
-                if (selectedZoneIndex > -1) {
-                    _this.fire('voyent-alert-zone-selected',{
-                        'index': selectedZoneIndex,
-                        'id': zones[selectedZoneIndex].id,
-                        'zone': zones[selectedZoneIndex]
-                    });
                 }
                 //Update the z-indexes so we can always click the zones.
                 _this._adjustZIndexesAndColourPicker();

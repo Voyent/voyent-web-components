@@ -218,7 +218,8 @@ Polymer({
             this.set('_zoneNameVal','');
             this.fire('voyent-alert-zone-name-changed',{
                 "id":zone.id,
-                "name":zone.name
+                "name":zone.name,
+                "isFallbackZone":i === 'fallbackZone'
             });
             //Redraw the overlay since the content changed.
             zone.nameOverlay.draw();
