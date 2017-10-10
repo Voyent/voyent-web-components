@@ -212,6 +212,10 @@
             var _this = this, msg;
             //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
             this._loadedAlert.template.updateJSON(true);
+            //If this template is associated with an alert instance then add the timezoneOffset property.
+            if (this._loadedAlert.template.parentId) {
+                this._loadedAlert.template.json.timezoneOffset = new Date().getTimezoneOffset();
+            }
             var requestOpts = {realm: this.realm, account: this.account, alertTemplate: this._loadedAlert.template.json};
             var func = 'createAlertTemplate';
             //If we have an id then the template was already saved.
