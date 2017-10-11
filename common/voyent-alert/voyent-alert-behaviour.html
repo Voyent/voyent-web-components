@@ -2040,8 +2040,8 @@
              */
             this._ProximityZoneOverlay.prototype.onAdd =
             this._LocationOverlay.prototype.onAdd = function () {
-                //Add the div to the "overlayLayer" pane.
-                this.getPanes().overlayLayer.appendChild(this.div);
+                //Add the div to the floatShadow pane so it renders above the markers.
+                this.getPanes().floatShadow.appendChild(this.div);
             };
             /**
              * Handles drawing and re-drawing of the proximity zone overlay on the map.

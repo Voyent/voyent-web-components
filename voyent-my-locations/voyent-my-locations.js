@@ -47,7 +47,7 @@ Polymer({
         promises.push(this._fetchMyLocations());
         Promise.all(promises).then(function() {
             if (_this._myLocations.length) {
-                _this._adjustBounds();
+                _this._adjustBoundsAndPan();
             }
             else {
                 _this._skipRegionPanning = false;
@@ -69,7 +69,7 @@ Polymer({
                         draggable: true,
                         icon: _this.MY_LOCATION_ICON_INACTIVE
                     }));
-                    _this._adjustBounds();
+                    _this._adjustBoundsAndPan();
                 }
             });
         });
@@ -110,6 +110,7 @@ Polymer({
         var _this = this;
         this._fetchMyLocations().then(function() {
             _this._buttonsEnabled = false;
+            _this._adjustBoundsAndPan();
             _this.fire('message-info','Successfully reverted all changes.');
         });
     },
@@ -318,6 +319,7 @@ Polymer({
                             };
                         }
                         _this._toggleInfoWindow(null);
+                        _this._adjustBoundsAndPan();
                     });
                 }
             });
@@ -495,7 +497,7 @@ Polymer({
             _this._createLocation(marker);
             _this._drawingManager.setDrawingMode(null);
             _this._buttonsEnabled = true;
-            _this._adjustBounds();
+            _this._adjustBoundsAndPan();
         });
         //When the escape key is pressed exit drawing mode.
         window.addEventListener('keydown', function (event) {
@@ -583,10 +585,10 @@ Polymer({
     },
 
     /**
-     * Adjust the bounds of the map so all locations are in view.
+     * Updates the map bounds so all the locations are in view and then pans the map.
      * @private
      */
-    _adjustBounds: function() {
+    _adjustBoundsAndPan: function() {
         //Temporary set the maxZoom so the map doesn't zoom in too far when panning.
         this._map.setOptions({maxZoom:17});
         var bounds = new google.maps.LatLngBounds();

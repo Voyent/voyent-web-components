@@ -34,7 +34,7 @@ Polymer({
                 );
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
                 //Adjust the bounds and save the templateId for later.
-                _this._adjustBounds();
+                _this._adjustBoundsAndPan();
                 _this._templateId = _this._loadedAlert.template.id;
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
@@ -51,7 +51,7 @@ Polymer({
     refreshUserLocation: function() {
         var _this = this;
         this._mapIsReady().then(function() {
-            _this._fetchLocationRecord().then(_this._adjustBounds.bind(_this)).catch(function(error) {
+            _this._fetchLocationRecord().then(_this._adjustBoundsAndPan.bind(_this)).catch(function(error) {
                 _this.fire('message-error', 'Issue drawing user\'s location: ' +
                                              (error.responseText || error.message || error));
             });
@@ -70,7 +70,7 @@ Polymer({
                 coordinates = location.location.geometry.coordinates;
                 _this._loadedAlert.selectedStack.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
                 _this.updateJSON();
-                _this._adjustBounds();
+                _this._adjustBoundsAndPan();
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the alert\'s location: ' +
                            (error.responseText || error.message || error));
@@ -103,10 +103,10 @@ Polymer({
     },
 
     /**
-     * Adjust the bounds of the map so the alert and user are in view.
+     * Updates the map bounds so the alert and user are in view and then pans the map.
      * @private
      */
-    _adjustBounds: function() {
+    _adjustBoundsAndPan: function() {
         var bounds = new google.maps.LatLngBounds();
         if (this._loadedAlert) {
             var zones = this._loadedAlert.selectedStack.zones;
