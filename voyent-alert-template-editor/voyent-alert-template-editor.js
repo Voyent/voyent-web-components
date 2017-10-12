@@ -34,7 +34,7 @@ Polymer({
      * @param id
      */
     loadAlertTemplate: function(id) {
-            this._closeDialog(); //Ensure the dialog is closed before loading.
+        this._closeDialog(); //Ensure the dialog is closed before loading.
         this._setIsTemplateLoading(true);
         var _this = this;
         this._fetchAlertTemplate(id).then(function(template) {
@@ -152,6 +152,7 @@ Polymer({
             //Toggle the accordion closed for the current stack and load the new one.
             _this._toggleProperties(-1);
             _this.set('_loadedAlert.selectedStack',zoneStack);
+            _this._toggleProperties(0);
             //When we have only one stack we don't have a template marker, just the marker for the zone stack.
             //So once we have two zone stacks we need to create the marker and if we have more than two (the
             //marker exists already) then we'll update it's position.

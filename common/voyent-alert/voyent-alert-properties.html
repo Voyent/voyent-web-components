@@ -91,7 +91,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 padding:0 10px 0 10px;
             }
             .propertyCol,
-            .valueCol {
+            .valueCol,
+            .buttonCol {
                 padding: 8px 0 8px 0;
                 font-size: 13px;
                 text-align: center;
@@ -103,6 +104,12 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .valueCol {
                 width: 62%;
+            }
+            .buttonCol {
+                width:100%;
+            }
+            .buttonCol paper-button {
+                font-size: 10px;
             }
             .valueCol.opacity {
                 padding:0;
@@ -273,6 +280,15 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </div>
                     <div class$="{{_getAccordionClasses('body',zone.active)}}">
                         <div class="table">
+                            <div class="row">
+                                <div class="buttonCol">
+                                    <paper-button data-index$="[[index]]"
+                                                  raised title="Adjust Area"
+                                                  on-click="_adjustZoneSize">
+                                        Adjust Area
+                                    </paper-button>
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="propertyCol">
                                     Colour

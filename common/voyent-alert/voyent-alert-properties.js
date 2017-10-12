@@ -57,6 +57,7 @@ Polymer({
             }
         };
         this._renamingTemplate = this._showMovement = false;
+        this._loadPointerLockAPI();
     },
 
     /**
@@ -251,28 +252,19 @@ Polymer({
             //Since we don't support mix and match zone types within a stack just
             //check what the first one is to determine which kind we want to add.
             if (_this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
-                var radius = largestZone.shapeOverlay.getRadius() + largestZone.shapeOverlay.getRadius() * 0.5;
+                var radius = this._adjustRadiusByPercentage(largestZone.shapeOverlay.getRadius(),50);
                 newZone = new _this._CircularAlertZone(radius,name,null,null,null,zIndex);
             }
             else { //polygon
-                var largestZonePaths = largestZone.shapeOverlay.getPaths(), distance, bearing, paths = [], path;
-                var centroid = _this._AlertTemplate.calculateCentroidFromPaths(largestZonePaths);
-                for (var i=0; i<largestZonePaths.length; i++) {
-                    path=[];
-                    for (var j=0; j<largestZonePaths.getAt(i).length; j++) {
-                        //Calculate the distance and bearing from the center to each point.
-                        distance = google.maps.geometry.spherical.computeDistanceBetween(centroid,largestZonePaths.getAt(i).getAt(j));
-                        bearing = google.maps.geometry.spherical.computeHeading(centroid,largestZonePaths.getAt(i).getAt(j));
-                        //Increase the distance by 50% to increase the size of the polygon the same.
-                        distance += distance * 0.5;
-                        //Calculate the new coordinate.
-                        path.push(google.maps.geometry.spherical.computeOffset(centroid,distance,bearing));
-                    }
-                    paths.push(path);
-                }
+                var paths = this._adjustPathsByPercentage(largestZone.shapeOverlay.getPaths(),50,this._havePointerLock);
                 //When we add a new zone we don't want to include the full shape so we can
                 //punch it out properly later so just pass the filled outer shape via paths[0].
                 newZone = new _this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
+            }
+            //Check if we have support for the Pointer Lock API and enable it so the user can size the zone.
+            if (this._havePointerLock) {
+                this._requestPointerLock();
+                this._zoneToAdjust = newZone;
             }
             _this._loadedAlert.selectedStack.addZone(newZone);
             //Re-adjust the centroid for the template.
@@ -286,6 +278,8 @@ Polymer({
                 "stack":_this._loadedAlert.selectedStack,
                 "isFallbackZone":false
             });
+            //Show the properties pane for the new zone.
+            _this._toggleProperties(_this._loadedAlert.selectedStack.zones.length-1);
         });
     },
 
@@ -363,6 +357,255 @@ Polymer({
         else if (e.target.getAttribute('data-property') === 'opacity') {
             zone.setOpacity(zone.opacity);
         }
+    },
+
+
+    /**
+     * Checks if the browser has support for the Pointer Lock API, saves a reference to the browser
+     * specific implementations of the relevant functions and sets up any required listeners.
+     * @private
+     */
+    _loadPointerLockAPI: function() {
+        //Check if the API is available.
+        this._havePointerLock = 'pointerLockElement' in document ||
+                                'mozPointerLockElement' in document ||
+                                'webkitPointerLockElement' in document;
+        if (!this._havePointerLock) { return; }
+        this._bindPointerLockListeners();
+        //Initialize our enable and disable functions using the specific browser prefixes.
+        this._requestPointerLock = this.requestPointerLock ||
+                                   this.mozRequestPointerLock ||
+                                   this.webkitRequestPointerLock;
+        document.exitPointerLock = document.exitPointerLock ||
+                                document.mozExitPointerLock ||
+                                document.webkitExitPointerLock;
+        //Hook pointer lock state change events.
+        document.addEventListener('pointerlockchange', this._boundPointerLockChangeListener, false);
+        document.addEventListener('mozpointerlockchange', this._boundPointerLockChangeListener, false);
+        document.addEventListener('webkitpointerlockchange', this._boundPointerLockChangeListener, false);
+
+    },
+
+    /**
+     * Listens for changes to pointer lock state and manages associated listeners.
+     * @private
+     */
+    _pointerLockChangeListener: function() {
+        if (document.pointerLockElement === this ||
+            document.mozPointerLockElement === this ||
+            document.webkitPointerLockElement === this) {
+            //Reset our mousemove related vars.
+            this._y = 0;
+            this._previousY = -1;
+            //Pointer was just locked, enable the mousemove and click listeners.
+            this.addEventListener("mousemove", this._boundMouseMoveListener, false);
+            this.addEventListener("click", this._boundMouseClickListener, false);
+        }
+        else {
+            //Pointer was just unlocked, disable the mousemove and click listeners.
+            this.removeEventListener("mousemove", this._boundMouseMoveListener, false);
+            this.removeEventListener("click", this._boundMouseClickListener, false);
+        }
+    },
+
+    /**
+     * Listens for mouse movements while the pointer is locked. Handles adjusting the size of the zones.
+     * @param e
+     * @private
+     */
+    _mouseMoveListener: function(e) {
+        this._y += (e.movementY || e.mozMovementY || e.webkitMovementY || 0);
+        //Prevent the user from modifying the size of the shape so it extends into other zones in the stacks.
+        //For circles we will just compare the radius but for polygons we will compare the areas and
+        //then check for any intersections since the polygons in a stack can all be different shapes.
+        var innerZone = this._loadedAlert.selectedStack.getZoneAt(this._loadedAlert.selectedStack.getZoneIndex(this._zoneToAdjust)-1);
+        var outerZone = this._loadedAlert.selectedStack.getZoneAt(this._loadedAlert.selectedStack.getZoneIndex(this._zoneToAdjust)+1);
+        var newRadius, newPath, intersects, percentage=2;
+        if (this._y <= this._previousY) {
+            if (this._zoneToAdjust.getShape() === 'circle') {
+                newRadius = this._adjustRadiusByPercentage(this._zoneToAdjust.shapeOverlay.getRadius(),percentage);
+                if (outerZone && newRadius >= outerZone.shapeOverlay.getRadius()) {
+                    this.fire('message-error',this._OVERLAP_MSG);
+                    this._y = this._previousY;
+                    return;
+                }
+                this._zoneToAdjust.setRadius(newRadius);
+            }
+            else {
+                newPath = this._adjustPathsByPercentage(this._zoneToAdjust.shapeOverlay.getPaths(),percentage,true)[0];
+                if (outerZone) {
+                    var outerZonePath = outerZone.shapeOverlay.getPaths().getAt(0);
+                    if (google.maps.geometry.spherical.computeArea(newPath) >=
+                        google.maps.geometry.spherical.computeArea(outerZonePath)) {
+                        this.fire('message-error',this._OVERLAP_MSG);
+                        this._y = this._previousY;
+                        return;
+                    }
+                    else {
+                        intersects = turf.lineIntersect({
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "LineString",
+                                    "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
+                                        new google.maps.MVCArray([new google.maps.MVCArray(newPath)])
+                                    )[0]
+                                }
+                            },
+                            {
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "LineString",
+                                    "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
+                                        new google.maps.MVCArray([outerZonePath])
+                                    )[0]
+                                }
+                            });
+                        if (intersects.features.length) {
+                            this.fire('message-error',this._OVERLAP_MSG);
+                            this._y = this._previousY;
+                            return;
+                        }
+                    }
+                }
+                this._zoneToAdjust.setPaths([newPath]);
+            }
+        }
+        else if (this._y > this._previousY) {
+            if (this._zoneToAdjust.getShape() === 'circle') {
+                newRadius = this._adjustRadiusByPercentage(this._zoneToAdjust.shapeOverlay.getRadius(),-percentage);
+                if (innerZone && newRadius <= innerZone.shapeOverlay.getRadius()) {
+                    this.fire('message-error',this._OVERLAP_MSG);
+                    this._y = this._previousY;
+                    return;
+                }
+                this._zoneToAdjust.setRadius(newRadius);
+            }
+            else {
+                newPath = this._adjustPathsByPercentage(this._zoneToAdjust.shapeOverlay.getPaths(),-percentage,true)[0];
+                if (innerZone) {
+                    var innerZonePath = innerZone.shapeOverlay.getPaths().getAt(0);
+                    if (google.maps.geometry.spherical.computeArea(newPath) <=
+                        google.maps.geometry.spherical.computeArea(innerZonePath)) {
+                        this.fire('message-error',this._OVERLAP_MSG);
+                        this._y = this._previousY;
+                        return;
+                    }
+                    else {
+                        intersects = turf.lineIntersect({
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "LineString",
+                                    "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
+                                        new google.maps.MVCArray([new google.maps.MVCArray(newPath)])
+                                    )[0]
+                                }
+                            },
+                            {
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "LineString",
+                                    "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
+                                        new google.maps.MVCArray([innerZonePath])
+                                    )[0]
+                                }
+                            });
+                        if (intersects.features.length) {
+                            this.fire('message-error',this._OVERLAP_MSG);
+                            this._y = this._previousY;
+                            return;
+                        }
+                    }
+                }
+                this._zoneToAdjust.setPaths([newPath]);
+            }
+        }
+        //No failures so we'll adjust our markers and do the necessary punch outs.
+        //For circles this occurs automatically in the `radius_changed` listener.
+        if (this._zoneToAdjust.getShape() === 'polygon') {
+            this._loadedAlert.selectedStack.updateJSONAndCentroid();
+            this._loadedAlert.selectedStack.punchOutShapes();
+            this._loadedAlert.selectedStack.initializePolygonPathListeners(this._zoneToAdjust);
+            this._loadedAlert.template.updateJSONAndCentroid();
+            if (this._fallbackZone) {
+                this._fallbackZone.punchOutOverlay();
+            }
+        }
+        this._previousY = this._y;
+    },
+
+    /**
+     * Listens for mouse clicks while the pointer is locked and exits pointer lock mode when encountered.
+     * @param e
+     * @private
+     */
+    _mouseClickListener: function(e) {
+        document.exitPointerLock();
+    },
+
+    /**
+     * Binds various pointer lock related listeners so we can maintain a single reference to them and correct `this` scope.
+     * @private
+     */
+    _bindPointerLockListeners: function() {
+        if (!this._boundPointerLockChangeListener) {
+            this._boundPointerLockChangeListener = this._pointerLockChangeListener.bind(this);
+        }
+        if (!this._boundMouseMoveListener) {
+            this._boundMouseMoveListener = this._mouseMoveListener.bind(this);
+        }
+        if (!this._boundMouseClickListener) {
+            this._boundMouseClickListener = this._mouseClickListener.bind(this);
+        }
+    },
+
+    /**
+     * Adjusts the passed radius to be smaller or larger based on the passed percentage.
+     * @param radius
+     * @param percentage
+     * @returns {*}
+     * @private
+     */
+    _adjustRadiusByPercentage: function(radius,percentage) {
+        percentage = percentage / 100;
+        return radius + radius * percentage;
+    },
+
+    /**
+     * Adjusts the size of the passed polygon paths to be smaller or larger based on the passed percentage.
+     * @param paths
+     * @param percentage
+     * @param useOuterZoneOnly
+     * @returns {Array}
+     * @private
+     */
+    _adjustPathsByPercentage: function(paths,percentage,useOuterZoneOnly) {
+        percentage = percentage / 100;
+        var distance, bearing, newPaths = [], newPath;
+        var centroid = this._AlertTemplate.calculateCentroidFromPaths(paths);
+        var limit = useOuterZoneOnly ? 1 : paths.length;
+        for (var i=0; i<limit; i++) {
+            newPath=[];
+            for (var j=0; j<paths.getAt(i).length; j++) {
+                //Calculate the distance and bearing from the center to each point.
+                distance = google.maps.geometry.spherical.computeDistanceBetween(centroid,paths.getAt(i).getAt(j));
+                bearing = google.maps.geometry.spherical.computeHeading(centroid,paths.getAt(i).getAt(j));
+                //Increase the distance by the percentage to increase or decrease the area of the polygon the same.
+                distance += distance * percentage;
+                //Calculate the new coordinate.
+                newPath.push(google.maps.geometry.spherical.computeOffset(centroid,distance,bearing));
+            }
+            newPaths.push(newPath);
+        }
+        return newPaths;
+    },
+
+    /**
+     * Enables pointer lock so the user can adjust the size of the zone.
+     * @private
+     */
+    _adjustZoneSize: function(e) {
+        this._zoneToAdjust = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
+        this._requestPointerLock();
     },
 
     /**
