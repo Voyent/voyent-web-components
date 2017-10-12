@@ -34,6 +34,7 @@ Polymer({
      * @param id
      */
     loadAlertTemplate: function(id) {
+            this._closeDialog(); //Ensure the dialog is closed before loading.
         this._setIsTemplateLoading(true);
         var _this = this;
         this._fetchAlertTemplate(id).then(function(template) {
