@@ -110,6 +110,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .buttonCol paper-button {
                 font-size: 10px;
+                background-color:white;
             }
             .valueCol.opacity {
                 padding:0;
@@ -282,11 +283,16 @@ Internal component used to display the properties panel inside Voyent alert comp
                         <div class="table">
                             <div class="row">
                                 <div class="buttonCol">
-                                    <paper-button data-index$="[[index]]"
-                                                  raised title="Adjust Area"
-                                                  on-click="_adjustZoneSize">
-                                        Adjust Area
-                                    </paper-button>
+                                    <template is="dom-if" if="[[_isPointerLocked]]">
+                                        Move the mouse up and down to adjust the size of the zone. Click or Esc to confirm.
+                                    </template>
+                                    <template is="dom-if" if="[[!_isPointerLocked]]">
+                                        <paper-button data-index$="[[index]]"
+                                                      raised title="Adjust Area"
+                                                      on-click="_adjustZoneSize">
+                                            Adjust Area
+                                        </paper-button>
+                                    </template>
                                 </div>
                             </div>
                             <div class="row">
@@ -381,7 +387,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     Opacity
                                 </div>
                                 <div class="valueCol opacity">
-                                    <paper-slider min=0 max=1 step=0.1 pin snaps tabindex="7"
+                                    <paper-slider min=0 max=1 step=0.05 pin snaps tabindex="7"
                                                   on-change="_editProperty" data-property="opacity"
                                                   value="{{_fallbackZone.opacity}}">
                                     </paper-slider>

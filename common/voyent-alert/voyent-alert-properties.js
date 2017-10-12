@@ -366,6 +366,7 @@ Polymer({
      * @private
      */
     _loadPointerLockAPI: function() {
+        this._isPointerLocked = false;
         //Check if the API is available.
         this._havePointerLock = 'pointerLockElement' in document ||
                                 'mozPointerLockElement' in document ||
@@ -398,11 +399,15 @@ Polymer({
             this._y = 0;
             this._previousY = -1;
             //Pointer was just locked, enable the mousemove and click listeners.
+            this._isPointerLocked = true;
+            this.fire('message-info','Zone resizing mode enabled');
             this.addEventListener("mousemove", this._boundMouseMoveListener, false);
             this.addEventListener("click", this._boundMouseClickListener, false);
         }
         else {
             //Pointer was just unlocked, disable the mousemove and click listeners.
+            this._isPointerLocked = false;
+            this.fire('message-info','Zone resizing mode disabled');
             this.removeEventListener("mousemove", this._boundMouseMoveListener, false);
             this.removeEventListener("click", this._boundMouseClickListener, false);
         }
