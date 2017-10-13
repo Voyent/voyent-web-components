@@ -6,6 +6,13 @@ Polymer({
         this._loadedAlert = null;
         this._myLocations = [];
     },
+    
+    /**
+     * Finish initializing after login.
+     * @private
+     */
+    _onAfterLogin: function() {
+    },
 
     /**
      * Updates the view with the last location of the alert associated
