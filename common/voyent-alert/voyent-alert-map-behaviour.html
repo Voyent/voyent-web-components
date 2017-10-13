@@ -216,6 +216,10 @@
             if (this._loadedAlert.template.parentId) {
                 this._loadedAlert.template.json.timezoneOffset = new Date().getTimezoneOffset();
             }
+            //If we have no geometries defined then delete the geo property entirely.
+            if (!this._loadedAlert.template.json.geo.geometries.length) {
+                delete this._loadedAlert.template.json.geo;
+            }
             var requestOpts = {realm: this.realm, account: this.account, alertTemplate: this._loadedAlert.template.json};
             var func = 'createAlertTemplate';
             //If we have an id then the template was already saved.
