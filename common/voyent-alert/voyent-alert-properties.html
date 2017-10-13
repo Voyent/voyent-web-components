@@ -176,6 +176,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             .no-stack {
                 margin:20px 0 10px 0;
             }
+            .bold {
+                font-weight: bold;
+            }
         </style>
 
         <template is="dom-if" if="[[_loadedAlert]]">
@@ -284,7 +287,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                             <div class="row">
                                 <div class="buttonCol">
                                     <template is="dom-if" if="[[_isPointerLocked]]">
-                                        Move the mouse up and down to adjust the size of the zone. Click or Esc to confirm.
+                                        <div class="bold">Zone Resizing Enabled</div>
+                                        Move the mouse up and down to adjust the size of the zone. Click to exit.
                                     </template>
                                     <template is="dom-if" if="[[!_isPointerLocked]]">
                                         <paper-button data-index$="[[index]]"
