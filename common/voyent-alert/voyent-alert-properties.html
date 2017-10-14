@@ -203,47 +203,49 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </template>
             </div>
             <template is="dom-if" if="[[showMovementAccordion]]">
-                <div class="accordion">
-                    <div class$="{{_getAccordionClasses('header',_showMovement)}}">
-                        <paper-icon-button title="Toggle Movement Properties" icon="{{_getArrowIcon(_showMovement)}}"
-                                           on-click="_toggleMovement" data-index$="[[index]]"></paper-icon-button>
-                        <div class="title zone" class$="{{_getZoneTitleClasses(_showMovement)}}" data-index$="[[index]]">
-                           Movement
-                        </div>
-                    </div>
-                    <div class$="{{_getAccordionClasses('body',_showMovement)}}">
-                        <div class="table">
-                            <div class="row">
-                                <div class="propertyCol">
-                                    Direction
-                                </div>
-                                <div class="valueCol">
-                                    <paper-input value="{{_alertDirection::input}}"
-                                                 tabindex="2"
-                                                 placeholder="Degrees"
-                                                 type="number" no-label-float
-                                                 step="0.05" min="0" max="360"
-                                                 disabled$="[[!_showMovement]]">
-                                    </paper-input>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="propertyCol">
-                                    Speed
-                                </div>
-                                <div class="valueCol">
-                                    <paper-input value="{{_alertSpeed::input}}"
-                                                 tabindex="3"
-                                                 placeholder=KM/H
-                                                 type="number" no-label-float
-                                                 step="0.5" min="0"
-                                                 disabled$="[[!_showMovement]]">
-                                    </paper-input>
-                                </div>
+                <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
+                    <div class="accordion">
+                        <div class$="{{_getAccordionClasses('header',_showMovement)}}">
+                            <paper-icon-button title="Toggle Movement Properties" icon="{{_getArrowIcon(_showMovement)}}"
+                                               on-click="_toggleMovement" data-index$="[[index]]"></paper-icon-button>
+                            <div class="title zone" class$="{{_getZoneTitleClasses(_showMovement)}}" data-index$="[[index]]">
+                               Movement
                             </div>
                         </div>
+                        <div class$="{{_getAccordionClasses('body',_showMovement)}}">
+                            <div class="table">
+                                <div class="row">
+                                    <div class="propertyCol">
+                                        Direction
+                                    </div>
+                                    <div class="valueCol">
+                                        <paper-input value="{{_alertDirection::input}}"
+                                                     tabindex="2"
+                                                     placeholder="Degrees"
+                                                     type="number" no-label-float
+                                                     step="0.05" min="0" max="360"
+                                                     disabled$="[[!_showMovement]]">
+                                        </paper-input>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="propertyCol">
+                                        Speed
+                                    </div>
+                                    <div class="valueCol">
+                                        <paper-input value="{{_alertSpeed::input}}"
+                                                     tabindex="3"
+                                                     placeholder=KM/H
+                                                     type="number" no-label-float
+                                                     step="0.5" min="0"
+                                                     disabled$="[[!_showMovement]]">
+                                        </paper-input>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </template>
             </template>
             <template is="dom-if" if="[[_loadedAlert.selectedStack]]">
                 <div>

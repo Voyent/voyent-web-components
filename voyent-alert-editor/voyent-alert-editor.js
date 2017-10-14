@@ -47,6 +47,9 @@ Polymer({
                 results[1].location.geometry.coordinates[1],
                 results[1].location.geometry.coordinates[0]
             );
+            //If we have no geo section it means the template contains only the fallback
+            //zone so the coordinates they dropped the template at are meaningless.
+            if (!results[0].geo) { latLng = null; }
             _this._drawAndLoadAlertTemplate(results[0],latLng);
             //Toggle the correct pane.
             _this._showPropertiesPane = _this._isActivated = true;
@@ -69,6 +72,9 @@ Polymer({
      * @private
      */
     fetchAlertTemplates: function() {
+        //Make sure we don't fetch the templates an unnecessary amount of times.
+        if (this._isFetchingTemplates) { return; }
+        this._isFetchingTemplates = true;
         var _this = this;
         return new Promise(function (resolve, reject) {
             voyent.locate.findAlertTemplates({realm:_this.realm,account:_this.account}).then(function(templates) {
@@ -89,6 +95,7 @@ Polymer({
                 else {
                     _this._removeAlertButton();
                 }
+                _this._isFetchingTemplates = false;
                 resolve();
             }).catch(function (error) {
                 _this.fire('message-error', 'Issue fetching alert templates: ' + (error.responseText || error.message || error));
@@ -271,6 +278,9 @@ Polymer({
         })[0]));
         //Remove the parent's id from the record as we'll generate a new one.
         delete childTemplate._id;
+        //If we have no geo section it means the template contains only the fallback
+        //zone so the coordinates they dropped the template at are meaningless.
+        if (!childTemplate.geo) { latLng = null; }
         this._drawAndLoadAlertTemplate(childTemplate,latLng);
         this._loadedAlert.template.setParentId(parentAlertId);
         //Toggle the creation mode.

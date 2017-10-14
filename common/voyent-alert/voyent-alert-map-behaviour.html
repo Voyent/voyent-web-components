@@ -541,46 +541,52 @@
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
             var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker;
-            var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
-                stackGroups[item.stackId] = stackGroups[item.stackId] || [];
-                stackGroups[item.stackId].push(item);
-                return stackGroups;
-            },{});
-            for (var stackId in zoneStackGeometries) {
-                if (!zoneStackGeometries.hasOwnProperty(stackId)) { continue; }
-                zoneGeometries = zoneStackGeometries[stackId];
-                zones = [];
-                zIndex = 49;
-                for (var i=0; i<zoneGeometries.length; i++) {
-                    properties = templateJSON.properties[zoneGeometries[i].id];
-                    if (properties.shape === 'circle') {
-                        zones.push(new this._CircularAlertZone(
-                            properties.radius, properties.name, properties.opacity,
-                            properties.colour, properties.messageTemplate, zIndex
-                        ));
-                    }
-                    else {
-                        //Generate the ordered sequence of coordinates that completes the Polygon shape.
-                        zones.push(new this._PolygonalAlertZone(
-                            this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
-                            properties.name, properties.opacity, properties.colour, properties.messageTemplate, zIndex)
-                        );
-                    }
-                    zIndex--;
-                }
-                //Build the stack marker, calculate the position using by building JSON that represents only the stack.
-                stackMarker = new google.maps.Marker({
-                    position: this._AlertTemplate.calculateCentroidFromJSON({
-                        "geo": {
-                            "type": "GeometryCollection",
-                            "geometries": zoneGeometries
+            //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
+            if (templateJSON.geo) {
+                var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
+                    stackGroups[item.stackId] = stackGroups[item.stackId] || [];
+                    stackGroups[item.stackId].push(item);
+                    return stackGroups;
+                },{});
+                for (var stackId in zoneStackGeometries) {
+                    if (!zoneStackGeometries.hasOwnProperty(stackId)) { continue; }
+                    zoneGeometries = zoneStackGeometries[stackId];
+                    zones = [];
+                    zIndex = 49;
+                    for (var i=0; i<zoneGeometries.length; i++) {
+                        properties = templateJSON.properties[zoneGeometries[i].id];
+                        if (properties.shape === 'circle') {
+                            zones.push(new this._CircularAlertZone(
+                                properties.radius, properties.name, properties.opacity,
+                                properties.colour, properties.messageTemplate, zIndex
+                            ));
                         }
-                    }),
-                    map: this._map, draggable: true, zIndex: 50,
-                    visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
-                });
+                        else {
+                            //Generate the ordered sequence of coordinates that completes the Polygon shape.
+                            zones.push(new this._PolygonalAlertZone(
+                                this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
+                                properties.name, properties.opacity, properties.colour, properties.messageTemplate, zIndex)
+                            );
+                        }
+                        zIndex--;
+                    }
+                    //Build the stack marker, calculate the position using by building JSON that represents only the stack.
+                    stackMarker = new google.maps.Marker({
+                        position: this._AlertTemplate.calculateCentroidFromJSON({
+                            "geo": {
+                                "type": "GeometryCollection",
+                                "geometries": zoneGeometries
+                            }
+                        }),
+                        map: this._map, draggable: true, zIndex: 50,
+                        visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
+                    });
 
-                zoneStacks.push(new this._AlertZoneStack(stackMarker, zones));
+                    zoneStacks.push(new this._AlertZoneStack(stackMarker, zones));
+                }
+            }
+            else { //No stacks, fallback zone only.
+                zoneStacks = [];
             }
             var parentId = templateJSON.properties.parentAlertId || null;
             //We only want to create a template marker if we have more than
