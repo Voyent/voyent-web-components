@@ -277,12 +277,8 @@
                 this._map.panToBounds(this._areaRegion.bounds);
             }
             //Clear loaded alert template.
-            if (this._loadedAlert) {
+            if (this._loadedAlert || this._fallbackZone) {
                 this._removeAlertTemplateFromMap();
-            }
-            //Clear fallback zone.
-            if (this._fallbackZone) {
-                this._fallbackZone.removeFromMap();
             }
             //Clear the user marker.
             if (this.nodeName === 'VOYENT-ALERT-VIEW' && this._userLocationMarker) {
@@ -631,8 +627,10 @@
          */
         _removeAlertTemplateFromMap: function() {
             //Remove the entire template from the map.
-            this._loadedAlert.template.removeFromMap();
-            this._loadedAlert = null;
+            if (this._loadedAlert) {
+                this._loadedAlert.template.removeFromMap();
+                this._loadedAlert = null;
+            }
             if (this._fallbackZone) {
                 this._fallbackZone.removeFromMap();
             }
