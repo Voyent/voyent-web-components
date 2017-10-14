@@ -38,10 +38,9 @@ Polymer({
         promises.push(this._fetchAlertTemplate(id));
         promises.push(this._fetchLocationRecord(id));
         Promise.all(promises).then(function(results) {
-            //Clear the map of any loaded alert template before drawing. Specify that we want to
-            //skip the button draw because we will remove the button after drawing the new alert.
+            //Clear the map of any loaded alert template before drawing.
             if (_this._loadedAlert) {
-                _this.clearMap(true);
+                _this.clearMap();
             }
             var latLng = new google.maps.LatLng(
                 results[1].location.geometry.coordinates[1],
@@ -168,7 +167,7 @@ Polymer({
             this._showNewAlertPane = true;
             this._showTemplateListPane = false;
         }
-        else { //_showPropertiesPane || _showConfirmingAlertPane || regular removal
+        else { //_showPropertiesPane || _showConfirmingAlertPane || Regular removal
             this._promptForRemoval(function() {
                 if (_this._showPropertiesPane) { _this._showPropertiesPane = false; }
                 else if (_this._showConfirmingAlertPane) { _this._showConfirmingAlertPane = false; }
@@ -213,10 +212,8 @@ Polymer({
      */
     _proceedToPropertiesPane: function() {
         this._showPropertiesPane = true;
-
         if (this._showTemplateListPane) {
             this._showTemplateListPane = false;
-            this._removeAlertButton();
             this._isActivated = false;
         }
         else { //_showConfirmingAlertPane
@@ -355,11 +352,11 @@ Polymer({
     _loadedAlertChanged: function(loadedAlert) {
         if (loadedAlert) {
             this._addFallbackZoneButton(this._fallbackZoneButtonListener.bind(this));
+            this._removeAlertButton();
         }
         else {
             this._removeFallbackZoneButton();
         }
-        
         this.fire('voyent-alert-changed',{
             'alert': loadedAlert || null
         });

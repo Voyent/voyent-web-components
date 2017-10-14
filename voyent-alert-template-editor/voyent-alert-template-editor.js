@@ -39,11 +39,9 @@ Polymer({
         this._setIsTemplateLoading(true);
         var _this = this;
         this._fetchAlertTemplate(id).then(function(template) {
-            //Clear the map of any loaded alert template before drawing. Specify that we want to skip the button
-            //draw because we will remove the buttons after drawing the new alert template. Without this we
-            //intermittently encounter a bug where the buttons are displayed after loading the template.
+            //Clear the map of any loaded alert template before drawing.
             if (_this._loadedAlert) {
-                _this.clearMap(true);
+                _this.clearMap();
             }
             _this._drawAndLoadAlertTemplate(template);
             _this._setIsTemplateLoading(false);

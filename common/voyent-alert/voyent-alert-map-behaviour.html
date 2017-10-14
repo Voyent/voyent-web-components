@@ -268,10 +268,9 @@
         },
 
         /**
-         * Clears the map of the loaded alert and conditionally also the drawn Alerts.
-         * @param skipBttnDraw
+         * Clears the map entirely. In the case of alert editor the list of templates will also be refreshed.
          */
-        clearMap: function(skipBttnDraw) {
+        clearMap: function() {
             //Always re-zoom the bounds on the area's region if available.
             if (this._areaRegion && this._areaRegion.bounds && !this._skipRegionPanning) {
                 this._map.fitBounds(this._areaRegion.bounds);
@@ -292,11 +291,8 @@
             }
             //Clear the movement inputs.
             this._alertDirection = this._alertSpeed = null;
-            //Re-draw the alert button.
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
-                if (!skipBttnDraw) {
-                    this._addAlertButton(this._alertButtonListener.bind(this));
-                }
+                this.fetchAlertTemplates();
                 this._enableDefaultPane();
             }
         },
@@ -628,10 +624,6 @@
                     fallbackZoneProperties.zIndex
                 );
             }
-            //Disable further alert instance creations - only allowed one at a time.
-            if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
-                this._removeAlertButton();
-            }
         },
 
         /**
@@ -641,6 +633,9 @@
             //Remove the entire template from the map.
             this._loadedAlert.template.removeFromMap();
             this._loadedAlert = null;
+            if (this._fallbackZone) {
+                this._fallbackZone.removeFromMap();
+            }
         },
 
         /**
