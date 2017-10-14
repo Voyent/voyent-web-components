@@ -51,7 +51,11 @@ Polymer({
         var _this = this;
         //JsColor uses a non-standard way of handling custom events so we must setup this listener on the window object.
         window._jsColorFineChange = function(colorPicker) {
-            var zone = _this._loadedAlert.selectedStack.getZoneAt(colorPicker.targetElement.getAttribute('data-index'));
+            //Determine whether we have a regular zone or the fallback zone. If we have an index
+            //it means the zone is part of the stack, otherwise it's the fallback zone.
+            var zone = (colorPicker.targetElement.getAttribute('data-index') ?
+                _this._loadedAlert.selectedStack.getZoneAt(colorPicker.targetElement.getAttribute('data-index')) :
+                _this._fallbackZone);
             if (zone) {
                 zone.setColour(colorPicker.toHEXString().slice(1));
             }
@@ -617,7 +621,11 @@ Polymer({
      * @private
      */
     _immediateValueChange: function(e) {
-        var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
+        //Determine whether we have a regular zone or the fallback zone. If we have an index
+        //it means the zone is part of the stack, otherwise it's the fallback zone.
+        var zone = (e.model && typeof e.model.get('index') !== 'undefined' ?
+            this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')) :
+            this._fallbackZone);
         if (zone) {
             if (e.target.getAttribute('data-property') === 'opacity') {
                 zone.setOpacity(this._immediateValueOpacity);

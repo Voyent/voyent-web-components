@@ -379,6 +379,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 </div>
                                 <div class="valueCol">
                                     <input id="jsColor-fallbackZone" class="jscolor"
+                                           data-jscolor="{onFineChange:'_jsColorFineChange(this)'}"
                                            tabindex="6"
                                            data-property="colour"
                                            on-change="_editProperty"
@@ -391,9 +392,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     Opacity
                                 </div>
                                 <div class="valueCol opacity">
-                                    <paper-slider min=0 max=1 step=0.05 pin snaps tabindex="7"
-                                                  on-change="_editProperty" data-property="opacity"
-                                                  value="{{_fallbackZone.opacity}}">
+                                    <paper-slider min=0 max=1 step=0.05 pin snaps tabindex="7" data-property="opacity"
+                                                  on-change="_editProperty" value="{{_fallbackZone.opacity}}"
+                                                  on-immediate-value-change="_immediateValueChange"
+                                                  immediate-value="{{_immediateValueOpacity}}">
                                     </paper-slider>
                                 </div>
                             </div>
