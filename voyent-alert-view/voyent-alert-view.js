@@ -40,8 +40,6 @@ Polymer({
                     results[1].location.geometry.coordinates[0]
                 );
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
-                //Adjust the bounds and save the templateId for later.
-                _this._adjustBoundsAndPan();
                 _this._templateId = _this._loadedAlert.template.id;
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
@@ -107,23 +105,5 @@ Polymer({
                 icon: this.pathtoimages+'/img/user_marker.png'
             });
         }
-    },
-
-    /**
-     * Updates the map bounds so the alert and user are in view and then pans the map.
-     * @private
-     */
-    _adjustBoundsAndPan: function() {
-        var bounds = new google.maps.LatLngBounds();
-        if (this._loadedAlert) {
-            var zones = this._loadedAlert.selectedStack.zones;
-            for (var i=0; i<zones.length; i++) {
-                bounds.extend(zones[i].shapeOverlay.getBounds().getNorthEast());
-                bounds.extend(zones[i].shapeOverlay.getBounds().getSouthWest());
-            }
-        }
-        if (this._userLocationMarker) { bounds.extend(this._userLocationMarker.getPosition()); }
-        this._map.fitBounds(bounds);
-        this._map.panToBounds(bounds);
     }
 });

@@ -51,8 +51,7 @@ Polymer({
             }
             else {
                 _this._skipRegionPanning = false;
-                _this._map.fitBounds(_this._areaRegion.bounds);
-                _this._map.panToBounds(_this._areaRegion.bounds);
+                _this._zoomOnRegion();
             }
         });
 

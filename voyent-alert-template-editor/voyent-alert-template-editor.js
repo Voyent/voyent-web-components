@@ -17,7 +17,7 @@ Polymer({
         /**
          * Indicates whether a template is currently being fetched from database and loaded into the editor.
          */
-        isTemplateLoading: { type: Boolean, value: false, readOnly: true, notify: true },
+        isTemplateLoading: { type: Boolean, value: false, readOnly: true, notify: true, observer: '_isAlertLoading' },
         /**
          * Indicates whether a template is currently loaded in the editor.
          */

@@ -16,7 +16,7 @@ Polymer({
         /**
          * Indicates whether an alert is currently being fetched from database and loaded into the editor.
          */
-        isAlertLoading: { type: Boolean, value: false, readOnly: true, notify: true },
+        isAlertLoading: { type: Boolean, value: false, readOnly: true, notify: true, observer: '_isAlertLoading' },
         /**
          * Indicates whether an alert is currently loaded in the editor.
          */

@@ -124,6 +124,7 @@
                     mapOptions.zoomControl =  mapOptions.draggable = false;
                     mapOptions.disableDoubleClickZoom = true;
                 }
+                //Initialize the map.
                 _this._map = new google.maps.Map(_this.$.map,mapOptions);
                 //Calculate the map size.
                 _this._calcMapSize();
@@ -193,11 +194,7 @@
                 //Async so the new dimensions render first.
                 setTimeout(function() {
                     google.maps.event.trigger(_this._map, 'resize');
-                    if (_this._areaRegion && _this._areaRegion.bounds &&
-                        !_this._skipRegionPanning) {
-                        _this._map.fitBounds(_this._areaRegion.bounds);
-                        _this._map.panToBounds(_this._areaRegion.bounds);
-                    }
+                    _this._zoomOnRegion();
                 },0);
             });
         },
@@ -271,11 +268,7 @@
          * Clears the map entirely. In the case of alert editor the list of templates will also be refreshed.
          */
         clearMap: function() {
-            //Always re-zoom the bounds on the area's region if available.
-            if (this._areaRegion && this._areaRegion.bounds && !this._skipRegionPanning) {
-                this._map.fitBounds(this._areaRegion.bounds);
-                this._map.panToBounds(this._areaRegion.bounds);
-            }
+            this._zoomOnRegion();
             //Clear loaded alert template.
             if (this._loadedAlert || this._fallbackZone) {
                 this._removeAlertTemplateFromMap();
@@ -514,14 +507,22 @@
                     paths: paths, map: this._map, visible: false
                 });
             }
-            if (!this._skipRegionPanning) {
-                //Zoom on the newly drawn Region.
-                this._map.fitBounds(bounds);
-                this._map.panToBounds(bounds);
-            }
             //Save a reference to the region JSON and map polygon for later.
             this._areaRegion = {"region":region,"polygon":polygon,"bounds":bounds};
             this._regionMapping[this.realm] = this._areaRegion;
+            //Pan the map on the new region.
+            this._zoomOnRegion();
+        },
+
+        /**
+         * Zooms on the realm region.
+         * @private
+         */
+        _zoomOnRegion: function() {
+            if (this._areaRegion && this._areaRegion.bounds && !this._skipRegionPanning) {
+                this._map.fitBounds(this._areaRegion.bounds);
+                this._map.panToBounds(this._areaRegion.bounds);
+            }
         },
 
         /**
@@ -620,6 +621,7 @@
                     fallbackZoneProperties.zIndex
                 );
             }
+            this._adjustBoundsAndPan();
         },
 
         /**
@@ -692,8 +694,8 @@
                 if (_this._fallbackZone) {
                     _this._fallbackZone.punchOutOverlay();
                 }
-                //Exit drawing mode.
-                _this._drawingManager.setDrawingMode(null);
+                _this._drawingManager.setDrawingMode(null); //Exit drawing mode.
+                _this._adjustBoundsAndPan();
             });
             //When the escape key is pressed exit drawing mode.
             window.addEventListener('keydown', function (event) {
@@ -996,6 +998,42 @@
         },
 
         /**
+         * Updates the map bounds so all the map overlays are in view and then pans the map.
+         * @private
+         */
+        _adjustBoundsAndPan: function() {
+            var bounds = new google.maps.LatLngBounds();
+            if (this._loadedAlert) {
+                var zoneStacks = this._loadedAlert.template.zoneStacks;
+                //If we have no zoneStacks then we only have a fallback zone so just pan to the region.
+                if (!zoneStacks.length) {
+                    //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
+                    //or template. This fixes an issue where when we load a fallback zone only template after a stacked
+                    //template the map wouldn't pan.
+                    this._skipRegionPanning = false;
+                    this._zoomOnRegion();
+                    return;
+                }
+                for (var i=0; i<zoneStacks.length; i++) {
+                    var largestZone = zoneStacks[i].getLargestZone();
+                    if (largestZone.getShape() === 'circle') {
+                        bounds.extend(largestZone.shapeOverlay.getBounds().getNorthEast());
+                        bounds.extend(largestZone.shapeOverlay.getBounds().getSouthWest());
+                    }
+                    else {
+                        for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
+                            bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
+                        }
+                    }
+                }
+            }
+            //The alert detail view will have a user marker.
+            if (this._userLocationMarker) { bounds.extend(this._userLocationMarker.getPosition()); }
+            this._map.fitBounds(bounds);
+            this._map.panToBounds(bounds);
+        },
+
+        /**
          * Set up a click listener on the passed map entity that when clicked will de-select the currently selected stack.
          * @param mapEntity
          * @private
@@ -1008,6 +1046,16 @@
                     _this.set('_loadedAlert.selectedStack',null);
                 }
             });
+        },
+
+        /**
+         * Listens to whether are are loading an alert entity and
+         * toggles our flag for skipping region panning accordingly.
+         * @param isAlertLoading
+         * @private
+         */
+        _isAlertLoading: function(isAlertLoading) {
+            this._skipRegionPanning = isAlertLoading;
         },
 
         /**
