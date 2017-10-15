@@ -12,7 +12,15 @@ Polymer({
          * Indicate whether to hide the embedded save and remove buttons.
          * @default false
          */
-        hideButtons: { type: Boolean, value: false }
+        hideButtons: { type: Boolean, value: false },
+        /**
+         * Indicates whether an alert is currently being fetched from database and loaded into the editor.
+         */
+        isAlertLoading: { type: Boolean, value: false, readOnly: true, notify: true },
+        /**
+         * Indicates whether an alert is currently loaded in the editor.
+         */
+        isAlertLoaded: { type: Boolean, value: false, readOnly:true, notify: true }
     },
 
     observers: [
@@ -33,6 +41,7 @@ Polymer({
      * @param id
      */
     loadAlert: function(id) {
+        this._setIsAlertLoading(true);
         var _this = this;
         var promises = [];
         promises.push(this._fetchAlertTemplate(id));
@@ -53,6 +62,7 @@ Polymer({
             //Toggle the correct pane.
             _this._showPropertiesPane = _this._isActivated = true;
             _this._showNewAlertPane = false;
+            _this._setIsAlertLoading(false);
         }).catch(function(error) {
             _this.fire('message-error', 'Issue loading saved alert: ' + (error.responseText || error.message || error));
         });
@@ -88,7 +98,7 @@ Polymer({
                     return map;
                 },{});
                 //Handle adding and removing the buttons depending on whether we have templates.
-                if (_this._parentTemplates.length) {
+                if (_this._parentTemplates.length && !_this.isAlertLoading && !_this.isAlertLoaded) {
                     _this._addAlertButton(_this._alertButtonListener.bind(_this));
                 }
                 else {
@@ -340,9 +350,11 @@ Polymer({
             this._addAlertTemplateButtons();
             this._removeAlertButton();
         }
-        else {
+        //Don't bother removing the buttons if we are loading an alert as they will just be added again.
+        else if (!this.isAlertLoading) {
             this._removeAlertTemplateButtons();
         }
+        this._setIsAlertLoaded(loadedAlert && loadedAlert.template);
         this.fire('voyent-alert-changed',{
             'alert': loadedAlert || null
         });
