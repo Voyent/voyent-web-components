@@ -319,20 +319,6 @@ Polymer({
     },
 
     /**
-     * Initialize a keydown listener for canceling alert creation.
-     * @private
-     */
-    _setupDrawingListeners: function() {
-        var _this = this;
-        //If the escape key is pressed then stop.
-        window.addEventListener('keydown',function (event) {
-            if (event.which === 27 && _this._showTemplateListPane) {
-                _this._backToNewAlertPane();
-            }
-        });
-    },
-
-    /**
      * Handles common code that we want to execute whenever we navigate to or from the template list pane.
      * @param showTemplateListPane
      * @private
@@ -351,11 +337,11 @@ Polymer({
      */
     _loadedAlertChanged: function(loadedAlert) {
         if (loadedAlert) {
-            this._addFallbackZoneButton(this._fallbackZoneButtonListener.bind(this));
+            this._addAlertTemplateButtons();
             this._removeAlertButton();
         }
         else {
-            this._removeFallbackZoneButton();
+            this._removeAlertTemplateButtons();
         }
         this.fire('voyent-alert-changed',{
             'alert': loadedAlert || null
