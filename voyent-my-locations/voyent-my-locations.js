@@ -21,9 +21,26 @@ Polymer({
         this._setupInfoWindow();
         //Set the button state to disabled by default
         this._buttonsEnabled = false;
-        //Initialize places service for later.
         this._mapIsReady().then(function() {
+            //Initialize places service for later.
             _this._placesService = new google.maps.places.PlacesService(_this._map);
+            //Specify that we want to skip panning to the region boundary
+            //as we'll conditionally pan in the promises callback.
+            this._skipRegionPanning = true;
+            //Fetch the realm region and the previously created locations. After we have them
+            //both adjust the bounds based on whether we retrieved any location records.
+            var promises = [];
+            promises.push(_this._fetchRealmRegion());
+            promises.push(_this._fetchMyLocations());
+            Promise.all(promises).then(function() {
+                if (_this._myLocations.length) {
+                    _this._adjustBoundsAndPan();
+                }
+                else {
+                    _this._skipRegionPanning = false;
+                    _this._zoomOnRegion();
+                }
+            });
         });
     },
 
@@ -37,24 +54,6 @@ Polymer({
         var _this = this;
         //Add the buttons to the map.
         this._addCustomControl();
-        //Specify that we want to skip panning to the region boundary as
-        //we'll conditionally do this in the promises callback.
-        this._skipRegionPanning = true;
-        //Fetch the realm region and the previously created locations. After we have them
-        //both adjust the bounds based on whether we retrieved any location records.
-        var promises = [];
-        promises.push(this._fetchRealmRegion(true));
-        promises.push(this._fetchMyLocations());
-        Promise.all(promises).then(function() {
-            if (_this._myLocations.length) {
-                _this._adjustBoundsAndPan();
-            }
-            else {
-                _this._skipRegionPanning = false;
-                _this._zoomOnRegion();
-            }
-        });
-
         //Add "create new location" button and remove Google's hand button.
         this._addMarkerButton(function() {
             _this._openDialog(function () {
