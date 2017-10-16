@@ -698,9 +698,10 @@
                     if (_this.nodeName === 'VOYENT-ALERT-EDITOR' && _this._showTemplateListPane) {
                         _this._backToNewAlertPane();
                     }
-                    //Flag so overlaycomplete listener won't be allowed to proceed after cancelling a polygon mid-draw.
-                    _this._drawingCanceled = true;
                     if (_this._drawingManager.getDrawingMode() !== null) {
+                        //Flag so overlaycomplete listener won't be allowed
+                        //to proceed after cancelling a polygon mid-draw.
+                        _this._drawingCanceled = true;
                         _this._drawingManager.setDrawingMode(null);
                     }
                 }
