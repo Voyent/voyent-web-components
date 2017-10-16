@@ -881,8 +881,9 @@
                     }
                     else {
                         this.updateJSON();
+                        zone.shapeOverlay.setCenter(this.marker.getPosition());
                     }
-                    this._processNewZone(zone);
+                    this._setupZoneListeners(zone);
                 },
                 /**
                  * Remove the passed zone.
@@ -898,16 +899,6 @@
                         this.zones.splice(zoneIndex,1);
                     }
                     this.updateJSON();
-                },
-                /**
-                 * Updates the center of the zone to match the marker and sets up relevant listeners.
-                 * @private
-                 */
-                _processNewZone: function(zone) {
-                    if (zone.getShape() === 'circle') {
-                        zone.shapeOverlay.setCenter(this.marker.getPosition());
-                    }
-                    this._setupZoneListeners(zone);
                 },
                 /**
                  * Updates the json to reflect the current state of the stack. Also updates
@@ -1025,15 +1016,14 @@
                  *                 which the distance and bearing will be calculated.
                  */
                 calculateRelativeZonePositions: function(latLng) {
-                    var position = latLng || this.marker.getPosition(), positions;
                     for (var i=0; i<this.zones.length; i++) {
-                        positions=[];
+                        var positions=[];
                         if (this.zones[i].getShape() === 'circle') {
                             //Calculate the distance and bearing from the position to the center of the zone.
                             var zoneCenter = this.zones[i].shapeOverlay.getCenter();
                             positions.push({
-                                "distance":google.maps.geometry.spherical.computeDistanceBetween(position,zoneCenter),
-                                "bearing":google.maps.geometry.spherical.computeHeading(position,zoneCenter)
+                                "distance":google.maps.geometry.spherical.computeDistanceBetween(latLng,zoneCenter),
+                                "bearing":google.maps.geometry.spherical.computeHeading(latLng,zoneCenter)
                             });
                         }
                         else { //polygon
@@ -1043,8 +1033,8 @@
                                 for (var k=0; k<paths.getAt(j).length; k++) {
                                     //Calculate the distance and bearing from the position to the each vertex.
                                     innerPositions.push({
-                                        "distance":google.maps.geometry.spherical.computeDistanceBetween(position,paths.getAt(j).getAt(k)),
-                                        "bearing":google.maps.geometry.spherical.computeHeading(position,paths.getAt(j).getAt(k))
+                                        "distance":google.maps.geometry.spherical.computeDistanceBetween(latLng,paths.getAt(j).getAt(k)),
+                                        "bearing":google.maps.geometry.spherical.computeHeading(latLng,paths.getAt(j).getAt(k))
                                     });
                                 }
                                 positions.push(innerPositions);
@@ -1060,12 +1050,11 @@
                  *                 in which the zones will be to.
                  */
                 moveZonesRelativeToPosition: function (latLng) {
-                    var position = latLng || this.marker.getPosition();
                     for (var i=0; i<this.zones.length; i++) {
                         var positions = this.zones[i]._relativePositions, paths = [], path, newCenter;
                         if (this.zones[i].getShape() === 'circle') {
                             newCenter = google.maps.geometry.spherical.computeOffset(
-                                position,
+                                latLng,
                                 positions[0].distance,
                                 positions[0].bearing
                             );
@@ -1076,7 +1065,7 @@
                                 path = [];
                                 for (var k=0; k<positions[j].length; k++) {
                                     path.push(google.maps.geometry.spherical.computeOffset(
-                                        position,
+                                        latLng,
                                         positions[j][k].distance,
                                         positions[j][k].bearing)
                                     );
