@@ -59,6 +59,11 @@ Polymer({
             _this._openDialog(function () {
                 if (_this._creationType === 'pindrop') {
                     _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+                    _this._deselectDrawingButtons();
+                    var markerButton = _this.querySelector('#'+_this._MARKER_BUTTON_ID);
+                    if (markerButton) {
+                        _this.toggleClass('selected', true, markerButton.querySelector('.customMapBttn'));
+                    }
                 }
                 else {
                     _this._createLocation(new google.maps.Marker({
@@ -493,7 +498,7 @@ Polymer({
             marker.setIcon(_this._MY_LOCATION_ICON_INACTIVE);
             //Draw the location marker and exit drawing mode.
             _this._createLocation(marker);
-            _this._drawingManager.setDrawingMode(null);
+            _this._disableDrawingMode();
             _this._buttonsEnabled = true;
             _this._adjustBoundsAndPan();
         });
@@ -501,7 +506,7 @@ Polymer({
         window.addEventListener('keydown', function (event) {
             if (event.which === 27) {
                 if (_this._drawingManager.getDrawingMode() !== null) {
-                    _this._drawingManager.setDrawingMode(null);
+                    _this._disableDrawingMode();
                 }
             }
         });

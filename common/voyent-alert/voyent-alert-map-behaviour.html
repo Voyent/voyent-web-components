@@ -85,7 +85,10 @@
             pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' }
         },
 
-        observers: ['_selectedStackChanged(_loadedAlert.selectedStack)'],
+        observers: [
+            '_selectedStackChanged(_loadedAlert.selectedStack)',
+            '_fallbackZoneEnabledChanged(_fallbackZone.enabled)'
+        ],
 
         ready: function() {
             //Define some constants.
@@ -268,6 +271,7 @@
          * Clears the map entirely. In the case of alert editor the list of templates will also be refreshed.
          */
         clearMap: function() {
+            this._disableDrawingMode();
             this._zoomOnRegion();
             //Clear loaded alert template.
             if (this._loadedAlert || this._fallbackZone) {
@@ -689,7 +693,7 @@
                 if (_this._fallbackZone) {
                     _this._fallbackZone.punchOutOverlay();
                 }
-                _this._drawingManager.setDrawingMode(null); //Exit drawing mode.
+                _this._disableDrawingMode();
                 _this._adjustBoundsAndPan();
             });
             //When the escape key is pressed exit drawing mode.
@@ -702,7 +706,7 @@
                         //Flag so overlaycomplete listener won't be allowed
                         //to proceed after cancelling a polygon mid-draw.
                         _this._drawingCanceled = true;
-                        _this._drawingManager.setDrawingMode(null);
+                        _this._disableDrawingMode();
                     }
                 }
             });
@@ -940,7 +944,12 @@
         _circleButtonListener: function() {
             var _this = this;
             this._openDialog('Please enter the zone name','',function() {
+                _this._deselectDrawingButtons();
                 _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
+                var circleButton = _this.querySelector('#'+_this._CIRCLE_BUTTON_ID);
+                if (circleButton) {
+                    _this.toggleClass('selected', true, circleButton.querySelector('.customMapBttn'));
+                }
             });
         },
 
@@ -951,7 +960,12 @@
         _polygonButtonListener: function() {
             var _this = this;
             this._openDialog('Please enter the zone name','',function() {
+                _this._deselectDrawingButtons();
                 _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+                var polygonButton = _this.querySelector('#'+_this._POLYGON_BUTTON_ID);
+                if (polygonButton) {
+                    _this.toggleClass('selected', true, polygonButton.querySelector('.customMapBttn'));
+                }
             });
         },
 
@@ -960,7 +974,7 @@
          * @private
          */
         _fallbackZoneButtonListener: function() {
-            this._drawingManager.setDrawingMode(null);
+            this._disableDrawingMode();
             if (this._fallbackZone && this._fallbackZone.enabled) {
                 this._fallbackZone.setEnabled(false);
             }
@@ -1055,6 +1069,38 @@
         },
 
         /**
+         * Disables drawing mode and selected button states.
+         * @private
+         */
+        _disableDrawingMode: function() {
+            this._drawingManager.setDrawingMode(null);
+            this._deselectDrawingButtons();
+        },
+
+        /**
+         * Ensure that all the drawing buttons are styled as de-selected.
+         * @private
+         */
+        _deselectDrawingButtons: function() {
+            var markerButton = this.querySelector('#'+this._MARKER_BUTTON_ID);
+            if (markerButton) {
+                this.toggleClass('selected', false, markerButton.querySelector('.customMapBttn'));
+            }
+            var polygonButton = this.querySelector('#'+this._POLYGON_BUTTON_ID);
+            if (polygonButton) {
+                this.toggleClass('selected', false, polygonButton.querySelector('.customMapBttn'));
+            }
+            var circleButton = this.querySelector('#'+this._CIRCLE_BUTTON_ID);
+            if (circleButton) {
+                this.toggleClass('selected', false, circleButton.querySelector('.customMapBttn'));
+            }
+            var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_ID);
+            if (fallbackZoneButton) {
+                this.toggleClass('selected', false, fallbackZoneButton.querySelector('.customMapBttn'));
+            }
+        },
+
+        /**
          * A promise that when resolved indicates that google maps is ready. Can be used in public facing functions
          * to avoid race conditions where the function tries to execute map related calls before the map is ready.
          * @returns {*}
@@ -1144,6 +1190,18 @@
                         selectedStack.marker.setIcon(this.pathtoimages+'/img/green-marker.png');
                     }
                 }
+            }
+        },
+
+        /**
+         * Manages selected styling on fallback zone button.
+         * @param enabled
+         * @private
+         */
+        _fallbackZoneEnabledChanged: function(enabled) {
+            var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_BUTTON_ID);
+            if (fallbackZoneButton) {
+                this.toggleClass('selected', !!enabled, fallbackZoneButton.querySelector('.customMapBttn'));
             }
         }
     };

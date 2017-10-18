@@ -334,7 +334,10 @@ Polymer({
      * @private
      */
     _showTemplateListPaneChanged: function(showTemplateListPane) {
-        this.toggleClass("selected", showTemplateListPane, this.querySelector('.customMapBttn'));
+        var alertButton = this.querySelector('#'+this._ALERT_BUTTON_ID);
+        if (alertButton) {
+            this.toggleClass('selected', showTemplateListPane, alertButton.querySelector('.customMapBttn'));
+        }
         if (!showTemplateListPane) {
             this._revertCursor();
         }
