@@ -26,7 +26,7 @@ Polymer({
             _this._placesService = new google.maps.places.PlacesService(_this._map);
             //Specify that we want to skip panning to the region boundary
             //as we'll conditionally pan in the promises callback.
-            this._skipRegionPanning = true;
+            _this._skipRegionPanning = true;
             //Fetch the realm region and the previously created locations. After we have them
             //both adjust the bounds based on whether we retrieved any location records.
             var promises = [];
