@@ -1073,7 +1073,9 @@
          * @private
          */
         _disableDrawingMode: function() {
-            this._drawingManager.setDrawingMode(null);
+            if (this._drawingManager) {
+                this._drawingManager.setDrawingMode(null);
+            }
             this._deselectDrawingButtons();
         },
 
@@ -1082,21 +1084,22 @@
          * @private
          */
         _deselectDrawingButtons: function() {
+            var bttnClass = '.customMapBttn';
             var markerButton = this.querySelector('#'+this._MARKER_BUTTON_ID);
             if (markerButton) {
-                this.toggleClass('selected', false, markerButton.querySelector('.customMapBttn'));
+                this.toggleClass('selected', false, markerButton.querySelector(bttnClass));
             }
             var polygonButton = this.querySelector('#'+this._POLYGON_BUTTON_ID);
             if (polygonButton) {
-                this.toggleClass('selected', false, polygonButton.querySelector('.customMapBttn'));
+                this.toggleClass('selected', false, polygonButton.querySelector(bttnClass));
             }
             var circleButton = this.querySelector('#'+this._CIRCLE_BUTTON_ID);
             if (circleButton) {
-                this.toggleClass('selected', false, circleButton.querySelector('.customMapBttn'));
+                this.toggleClass('selected', false, circleButton.querySelector(bttnClass));
             }
             var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_ID);
             if (fallbackZoneButton) {
-                this.toggleClass('selected', false, fallbackZoneButton.querySelector('.customMapBttn'));
+                this.toggleClass('selected', false, fallbackZoneButton.querySelector(bttnClass));
             }
         },
 
