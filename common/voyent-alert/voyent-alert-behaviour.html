@@ -914,9 +914,11 @@
                         overlay = zone.shapeOverlay;
                         json.properties[zone.id] = {
                             "name": zone.name,
+                            "stackId": this.stackId,
                             "shape": zone.getShape(),
                             "opacity": zone.opacity,
-                            "colour": zone.colour
+                            "colour": zone.colour,
+                            "innermost": i===0
                         };
                         if (zone.messageTemplate) {
                             json.properties[zone.id].messageTemplate = zone.messageTemplate;
