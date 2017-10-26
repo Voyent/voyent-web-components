@@ -259,7 +259,7 @@
             this._openDialog('Please enter the alert template name','',function() {
                 _this.clearMap();
                 _this.set('_loadedAlert',{
-                    template: new _this._AlertTemplate(null, null, _this._dialogInput, null, null),
+                    template: new _this._AlertTemplate(null, null, _this._dialogInput, null, null, null),
                     selectedStack: null
                 });
             },function() {
@@ -594,7 +594,7 @@
             }
             this.set('_loadedAlert', {
                 template: new this._AlertTemplate(
-                    templateJSON._id, parentId, templateJSON.name, templateMarker, zoneStacks
+                    templateJSON._id, parentId, templateJSON.name, templateMarker, zoneStacks, templateJSON.state
                 ),
                 selectedStack: null
             });

@@ -374,15 +374,19 @@
              * @param name - The user-defined name.
              * @param marker - The associated map marker for the entire template, centered between the various stacks.
              * @param zoneStacks - A list of _AlertZoneStack objects, the list of zone stacks belonging with the template.
+             * @param state - The current state of the alert, only relevant for child templates.
              * @private
              */
-            this._AlertTemplate = function(id,parentId,name,marker,zoneStacks) {
+            this._AlertTemplate = function(id,parentId,name,marker,zoneStacks,state) {
                 this._jsonProperties = {};
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
                 this.setMarker(marker || null);
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
+                if (this.parentId) {
+                    this.setState(state || null);
+                }
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -543,6 +547,13 @@
                     }
                 },
                 /**
+                 * Sets the alert state.
+                 * @param state
+                 */
+                setState: function(state) {
+                    this.state = state;
+                },
+                /**
                  * Add the passed zone stack.
                  * @param zoneStack
                  */
@@ -630,6 +641,9 @@
                     json.name = this.name;
                     if (this.parentId) {
                         json.properties.parentAlertId = this.parentId;
+                        if (this.state) {
+                            json.state = this.state;
+                        }
                     }
                     if (Object.keys(this._jsonProperties).length) {
                         for (var key in this._jsonProperties) {
