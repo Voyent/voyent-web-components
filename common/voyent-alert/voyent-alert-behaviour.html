@@ -384,9 +384,7 @@
                 this.setName(name || 'Unnamed');
                 this.setMarker(marker || null);
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
-                if (this.parentId) {
-                    this.setState(state || null);
-                }
+                this.setState(state || null);
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.

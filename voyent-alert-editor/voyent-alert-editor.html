@@ -107,17 +107,6 @@ Example:
                                                      _dialog-cancel_func="{{_dialogCancelFunc}}">
                             </voyent-alert-properties>
                         </template>
-                            <template is="dom-if" if="[[_showConfirmingAlertPane]]">
-                            <div class="alert-template-title">Confirm New Alert</div>
-                            <div class="alert-template-desc">
-                                <div>Start: Now</div><br/>
-                                <div>Stop: Never!</div><br/>
-                                <div>
-                                    If created now, this alert would generate ? notifications.
-                                    Please confirm that you would like to create this alert.
-                                </div>
-                            </div>
-                        </template>
                     </template>
                     <template is="dom-if" if="[[!_isLoggedIn]]">
                         <div class="alert-template-title">Invalid Credentials</div>
@@ -127,23 +116,6 @@ Example:
                 <div id="crudPanel">
                     <template is="dom-if" if="[[_showTemplateListPane]]">
                         <paper-button raised title="Cancel" on-click="_backToNewAlertPane">Cancel</paper-button>
-                    </template>
-                    <template is="dom-if" if="[[_showPropertiesPane]]">
-                        <template is="dom-if" if="[[!_isActivated]]">
-                            <paper-button raised title="Back" on-click="_backToNewAlertPane">Back</paper-button>
-                            <paper-button raised title="Activate Now!" on-click="_proceedToActivatingPane">Activate Now!</paper-button>
-                        </template>
-                        <template is="dom-if" if="[[!hideButtons]]">
-                            <template is="dom-if" if="[[_isActivated]]">
-                                <paper-button raised title="Remove" on-click="_backToNewAlertPane">Remove</paper-button>
-                                <paper-button raised title="Save" on-click="saveAlertTemplate">Save</paper-button>
-                            </template>
-                        </template>
-                    </template>
-                    <template is="dom-if" if="[[_showConfirmingAlertPane]]">
-                        <paper-button raised title="Back" on-click="_backToPropertiesPane">Back</paper-button>
-                        <paper-button raised title="Cancel" on-click="_backToNewAlertPane">Cancel</paper-button>
-                        <paper-button raised title="Confirm" on-click="saveAlertTemplate">Confirm</paper-button>
                     </template>
                 </div>
             </div></div>

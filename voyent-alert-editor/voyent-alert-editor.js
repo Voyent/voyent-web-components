@@ -9,31 +9,29 @@ Polymer({
 
     properties: {
         /**
-         * Indicate whether to hide the embedded save and remove buttons.
-         * @default false
-         */
-        hideButtons: { type: Boolean, value: false },
-        /**
          * Indicates whether an alert is currently being fetched from database and loaded into the editor.
          */
         isAlertLoading: { type: Boolean, value: false, readOnly: true, notify: true, observer: '_isAlertLoading' },
         /**
          * Indicates whether an alert is currently loaded in the editor.
          */
-        isAlertLoaded: { type: Boolean, value: false, readOnly:true, notify: true }
+        isAlertLoaded: { type: Boolean, value: false, readOnly:true, notify: true },
+        /**
+         * The currently loaded alert state.
+         */
+        alertState: { type: String, value: null, readOnly:true, notify: true }
     },
 
     observers: [
         '_showTemplateListPaneChanged(_showTemplateListPane)',
-        '_loadedAlertChanged(_loadedAlert)'
+        '_loadedAlertChanged(_loadedAlert)',
+        '_alertStateChanged(_loadedAlert.template.state)'
     ],
 
     ready: function() {
         //Initialize some vars
         this._parentTemplates = [];
         this._selectedAlertTemplateId = null;
-        //Add listener to native map button for cancelling creation.
-        this._addListenerToStopDrawingBttn();
     },
 
     /**
@@ -60,7 +58,7 @@ Polymer({
             if (!results[0].geo) { latLng = null; }
             _this._drawAndLoadAlertTemplate(results[0],latLng);
             //Toggle the correct pane.
-            _this._showPropertiesPane = _this._isActivated = true;
+            _this._showPropertiesPane = true;
             _this._showNewAlertPane = false;
             _this._setIsAlertLoading(false);
         }).catch(function(error) {
@@ -69,10 +67,59 @@ Polymer({
     },
 
     /**
+     *
+     * @returns {*}
+     */
+    activateAlert: function() {
+        var _this = this;
+        if (!this._loadedAlert || !this._loadedAlert.template) {
+            return this.fire('message-error', 'Unable to active alert: No alert loaded');
+        }
+        var activatableStates = ['draft','preview'];
+        if (activatableStates.indexOf(this._loadedAlert.template.state) === -1) {
+            return this.fire('message-error', 'Unable to active alert: State cannot be transitioned to active from ' + this._loadedAlert.template.state);
+        }
+        this._saveAlertTemplate().then(function() {
+            _this.updateAlertState('active').then(function() {
+                _this.fire('voyent-alert-template-saved',{});
+            });
+        });
+    },
+
+    /**
      * Removes the currently loaded alert from the database.
      */
     removeAlert: function() {
-        this._backToNewAlertPane();
+        var _this = this;
+        this._promptForRemoval(function() {
+            _this._showPropertiesPane = false;
+            _this._removeAlert();
+            _this._showNewAlertPane = true;
+            _this._addAlertButton(_this._alertButtonListener.bind(_this));
+        });
+    },
+
+    /**
+     *
+     * @param state
+     * @returns {*}
+     */
+    updateAlertState: function(state) {
+        var _this = this;
+        var validStates = ['draft','preview','active','deprecated','ended'];
+        if (validStates.indexOf(state) === -1) {
+            return this.fire('message-error', 'Unable to change alert state: State ' + this._loadedAlert.template.state + ' is invalid');
+        }
+        this._loadedAlert.template.setState(state);
+
+        return new Promise(function (resolve, reject) {
+            voyent.locate.updateAlertState({"id":_this._loadedAlert.template.id,"state":state}).then(function() {
+                resolve();
+            }).catch(function(error) {
+                reject(error);
+                _this.fire('message-error', 'Unable to change alert state: ' + (error.responseText || error.message || error));
+            });
+        });
     },
 
     /**
@@ -132,8 +179,7 @@ Polymer({
      */
     _enableDefaultPane: function() {
         this._showNewAlertPane = true;
-        this._showTemplateListPane = this._showPropertiesPane =
-            this._isActivated  = this._showConfirmingAlertPane = false;
+        this._showTemplateListPane = this._showPropertiesPane = false;
     },
 
     /**
@@ -142,78 +188,16 @@ Polymer({
      */
     _alertButtonListener: function() {
         if (this._showNewAlertPane) {
-            this._proceedToTemplateListPane();
+            this._showNewAlertPane = false;
+            this._showTemplateListPane = true;
         }
         else {
-            this._backToNewAlertPane();
-        }
-    },
-
-    /**
-     * Adds a listener to Google's native "Stop Drawing" button so we can de-activate our custom alert Button.
-     * @private
-     */
-    _addListenerToStopDrawingBttn: function() {
-        var _this = this, bttn;
-        waitForButton();
-
-        function waitForButton() {
-            bttn = _this.querySelector('[title="Stop drawing"]');
-            if (!bttn) {
-                setTimeout(waitForButton,500);
-                return;
-            }
-            bttn.onclick = _this._backToNewAlertPane.bind(_this);
-        }
-    },
-
-    /**
-     * Triggered when we want to navigate back to the create new alert pane.
-     * @private
-     */
-    _backToNewAlertPane: function() {
-        var _this = this;
-        if (this._showTemplateListPane) {
+            //this._backToNewAlertPane();
+            //if (this._showTemplateListPane) {
             this._showNewAlertPane = true;
             this._showTemplateListPane = false;
+            //}
         }
-        else { //_showPropertiesPane || _showConfirmingAlertPane || Regular removal
-            this._promptForRemoval(function() {
-                if (_this._showPropertiesPane) { _this._showPropertiesPane = false; }
-                else if (_this._showConfirmingAlertPane) { _this._showConfirmingAlertPane = false; }
-                _this._removeAlert();
-                _this._isActivated = false;
-                _this._showNewAlertPane = true;
-                _this._addAlertButton(_this._alertButtonListener.bind(_this));
-            });
-        }
-    },
-
-    /**
-     * Triggered when we want to navigate back to the properties pane.
-     * @private
-     */
-    _backToPropertiesPane: function() {
-        this._showPropertiesPane = true;
-        this._showConfirmingAlertPane = false;
-    },
-
-    /**
-     * Triggered when we want to navigate to the alert activation pane.
-     * @private
-     */
-    _proceedToActivatingPane: function() {
-        this._showConfirmingAlertPane = true;
-        this._showPropertiesPane = false;
-    },
-
-    /**
-     * Triggered when we want to navigate to the template list pane.
-     * @private
-     */
-    _proceedToTemplateListPane: function() {
-        this._showNewAlertPane = false;
-        this._showTemplateListPane = true;
     },
 
     /**
@@ -224,11 +208,6 @@ Polymer({
         this._showPropertiesPane = true;
         if (this._showTemplateListPane) {
             this._showTemplateListPane = false;
-            this._isActivated = false;
-        }
-        else { //_showConfirmingAlertPane
-            this._showConfirmingAlertPane = false;
-            this._isActivated = true;
         }
     },
 
@@ -288,6 +267,7 @@ Polymer({
         //If we have no geo section it means the template contains only the fallback
         //zone so the coordinates they dropped the template at are meaningless.
         if (!childTemplate.geo) { latLng = null; }
+        childTemplate.state = 'draft'; //Default to draft
         this._drawAndLoadAlertTemplate(childTemplate,latLng);
         this._loadedAlert.template.setParentId(parentAlertId);
         //Toggle the creation mode.
@@ -361,6 +341,15 @@ Polymer({
         this.fire('voyent-alert-changed',{
             'alert': loadedAlert || null
         });
+    },
+
+    /**
+     * Keeps the alertState property in sync with the loaded alert state.
+     * @param state
+     * @private
+     */
+    _alertStateChanged: function(state) {
+        this._setAlertState(state || null);
     },
 
     /**
