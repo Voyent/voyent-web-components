@@ -138,8 +138,8 @@ Polymer({
             return false;
         }
         if (this._script.indexOf('source') === -1 && this._script.indexOf('realmObservable') === -1) {
-            this.fire('message-error', 'Script must contain "source" variable, cancelling create.');
-            console.error('Script must contain "source" variable, cancelling create.');
+            this.fire('message-error', 'Script must contain "source" variable, cancelling create');
+            console.error('Script must contain "source" variable, cancelling create');
             return false;
         }
         return true;
@@ -152,8 +152,8 @@ Polymer({
      */
     isUniqueRecognizerId: function(recognizerId) {
         if (this._ids.indexOf(recognizerId) > -1) {
-            this.fire('message-error', 'The recognizer "' + recognizerId + '" is already in use, please try a different one.');
-            console.error('The recognizer "' + recognizerId + '" is already in use, please try a different one.');
+            this.fire('message-error', 'The recognizer "' + recognizerId + '" is already in use, please try a different one');
+            console.error('The recognizer "' + recognizerId + '" is already in use, please try a different one');
             return false;
         }
         return true;

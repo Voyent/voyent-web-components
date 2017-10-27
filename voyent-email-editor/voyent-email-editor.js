@@ -110,10 +110,10 @@ Voyent.CodeEditor = Polymer({
                 _this.set('currentEmailId', toLoadId);
                 _this.resetPreviewURL();
                 
-                _this.fire('message-info', 'Successfully loaded "' + toLoadId + '" with ' + _this.emailValue.length + ' characters.');
+                _this.fire('message-info', 'Successfully loaded "' + toLoadId + '" with ' + _this.emailValue.length + ' characters');
             }).catch(function(error) {
-                _this.fire('message-error', 'Failed to load the email template "' + toLoadId + '".');
-                console.error('Failed to load the email template "' + toLoadId + '".');
+                _this.fire('message-error', 'Failed to load the email template "' + toLoadId + '"');
+                console.error('Failed to load the email template "' + toLoadId + '"');
             });
         }
         else {
@@ -146,10 +146,10 @@ Voyent.CodeEditor = Polymer({
                                                 'id': toDeleteId}).then(function(s) {
                 _this.newEmail(); // Reset our editor state
                 
-                _this.fire('message-info', 'Successfully deleted the email template "' + toDeleteId + '".');
+                _this.fire('message-info', 'Successfully deleted the email template "' + toDeleteId + '"');
             }).catch(function(error) {
-                _this.fire('message-error', 'Failed to delete the email template "' + toDeleteId + '".');
-                console.error('Failed to delete the email template "' + toDeleteId + '".');
+                _this.fire('message-error', 'Failed to delete the email template "' + toDeleteId + '"');
+                console.error('Failed to delete the email template "' + toDeleteId + '"');
             });
         }
         else {
@@ -198,16 +198,16 @@ Voyent.CodeEditor = Polymer({
                       'id': this.currentEmailId, 'document': { 'content': this.emailValue } };
         
         voyent.docs.updateDocument(toPass).then(function(){
-            _this.fire('message-info', 'Successfully saved email template "' + _this.currentEmailId + '".');
+            _this.fire('message-info', 'Successfully saved email template "' + _this.currentEmailId + '"');
             
             if (cb) { cb(); }
         }).catch(function(error) {
             voyent.docs.createDocument(toPass).then(function(){
-                _this.fire('message-info', 'Successfully saved email template "' + _this.currentEmailId + '".');
+                _this.fire('message-info', 'Successfully saved email template "' + _this.currentEmailId + '"');
                 
                 if (cb) { cb(); }
             }).catch(function(error) {
-                _this.fire('message-error', 'Failed to save email template "' + _this.currentEmailId + '".');
+                _this.fire('message-error', 'Failed to save email template "' + _this.currentEmailId + '"');
                 console.error('Failed to save email template "' + _this.currentEmailId + '".');
             });
         });

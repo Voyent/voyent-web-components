@@ -343,8 +343,8 @@ Polymer({
             hasTasks = true;
             //task group names need to be unique
             if (taskGroupNames.indexOf(this._taskGroups[i].name) > -1) {
-                this.fire('message-error', 'Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
-                console.error('Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'".');
+                this.fire('message-error', 'Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'"');
+                console.error('Task group names must be unique, found duplicate name of "' + this._taskGroups[i].name +'"');
                 return false;
             }
             taskGroupNames.push(this._taskGroups[i].name);
@@ -352,8 +352,8 @@ Polymer({
             for (var j=0; j<tasks.length; j++) {
                 //task names need to be unique within the same task group
                 if (taskNames.indexOf(tasks[j].name) > -1) {
-                    this.fire('message-error', 'Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
-                    console.error('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'".');
+                    this.fire('message-error', 'Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'"');
+                    console.error('Task names must be unique within a task group, found duplicate name of "' + tasks[j].name +'" in "'+ this._taskGroups[i].name +'"');
                     return false;
                 }
                 taskNames.push(tasks[j].name);
@@ -383,8 +383,8 @@ Polymer({
                     }
                     if (definedCount > 0) {
                         if (someGroupDefined) {
-                            this.fire('message-error', 'You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
-                            console.error('You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                            this.fire('message-error', 'You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '"');
+                            console.error('You must define only one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '"');
                             return false;
                         }
                         someGroupDefined=true;
@@ -394,20 +394,20 @@ Polymer({
                     }
                 }
                 if (!allGroupDefined && someGroupDefined) {
-                    this.fire('message-error', 'You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                    this.fire('message-error', 'You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '"');
                     console.error('You must define all properties for the property group in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
                     return false;
                 }
                 else if (!someGroupDefined) {
-                    this.fire('message-error', 'You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
-                    console.error('You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '".');
+                    this.fire('message-error', 'You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '"');
+                    console.error('You must define at least one of the property groups in "' + this._taskGroups[i].name +'" > "' + tasks[j].name + '"');
                     return false;
                 }
             }
         }
         if (!hasTasks) {
-            this.fire('message-error', 'You must define at least one task.');
-            console.error('You must define at least one task.');
+            this.fire('message-error', 'You must define at least one task');
+            console.error('You must define at least one task');
             return false;
         }
         return true;
@@ -420,8 +420,8 @@ Polymer({
      */
     isUniqueActionId: function(actionId) {
         if (this._actionIds.indexOf(actionId) > -1) {
-            this.fire('message-error', 'This Action ID is already in use, please try a different one.');
-            console.error('This Action ID is already in use, please try a different one.');
+            this.fire('message-error', 'This Action ID is already in use, please try a different one');
+            console.error('This Action ID is already in use, please try a different one');
             return false;
         }
         return true;

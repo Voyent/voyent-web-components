@@ -127,8 +127,8 @@ Voyent.LocationRoute = Polymer({
                 }, function(response, status) {
                     if (status !== google.maps.DirectionsStatus.OK) {
                         if (failures == 10) {
-                            _this.fire('message-error', 'Directions request failed 10 times for: ' + _this.label + '. Not retrying.');
-                            console.error('Directions request failed 10 times for: ' + _this.label + '. Not retrying.');
+                            _this.fire('message-error', 'Directions request failed 10 times for: ' + _this.label + '. Not retrying');
+                            console.error('Directions request failed 10 times for: ' + _this.label + '. Not retrying');
                             return;
                         }
                         setTimeout(function () {

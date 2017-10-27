@@ -114,7 +114,7 @@ Polymer({
         this._fetchMyLocations().then(function() {
             _this._buttonsEnabled = false;
             _this._adjustBoundsAndPan();
-            _this.fire('message-info','Successfully reverted all changes.');
+            _this.fire('message-info','Successfully reverted all changes');
         });
     },
 
@@ -457,7 +457,7 @@ Polymer({
         //Validate the dialog.
         if (!this._creationType || (this._creationType === 'address' && !this._placeCoordinates) ||
             !this._locationName || !this._locationName.trim()) {
-            this.fire('message-error', 'Please complete all fields.');
+            this.fire('message-error', 'Please complete all fields');
             return;
         }
         //We allow for passing the confirm function directly or as a string.

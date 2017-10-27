@@ -23,7 +23,7 @@ Polymer({
         var _this = this;
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
-                _this.fire('message-error','Unable to load template, id not provided.');
+                _this.fire('message-error','Unable to load template, id not provided');
                 return;
             }
             //Clear the map.
