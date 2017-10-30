@@ -436,7 +436,8 @@
             var _this = this;
             return new Promise(function (resolve, reject) {
                 voyent.query.executeQuery({
-                    id:"getMyLocationsForUsername", realm:_this.realm, account:_this.account
+                    realm:_this.realm, account:_this.account,
+                    id:"getMyLocationsForUsername", execParams: {username:voyent.auth.getLastKnownUsername()}
                 }).then(function(locations) {
                     //Clear the map and draw the locations.
                     _this._clearMyLocations();
