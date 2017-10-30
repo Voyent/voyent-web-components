@@ -33,13 +33,7 @@ Polymer({
             promises.push(_this._fetchRealmRegion());
             promises.push(_this._fetchMyLocations());
             Promise.all(promises).then(function() {
-                if (_this._myLocations.length) {
-                    _this._adjustBoundsAndPan();
-                }
-                else {
-                    _this._skipRegionPanning = false;
-                    _this._zoomOnRegion();
-                }
+                _this._adjustBoundsAndPan();
             });
         });
     },
@@ -595,11 +589,17 @@ Polymer({
         //Temporary set the maxZoom so the map doesn't zoom in too far when panning.
         this._map.setOptions({maxZoom:17});
         var bounds = new google.maps.LatLngBounds();
-        for (var i=0; i<this._myLocations.length; i++) {
-            bounds.extend(this._myLocations[i].marker.getPosition());
+        if (this._myLocations.length) {
+            for (var i=0; i<this._myLocations.length; i++) {
+                bounds.extend(this._myLocations[i].marker.getPosition());
+            }
+            this._map.fitBounds(bounds);
+            this._map.panToBounds(bounds);
         }
-        this._map.fitBounds(bounds);
-        this._map.panToBounds(bounds);
+        else {
+            this._skipRegionPanning = false;
+            this._zoomOnRegion();
+        }
         this._map.setOptions({maxZoom:null});
     },
 
