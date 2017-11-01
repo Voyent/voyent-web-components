@@ -399,7 +399,6 @@
                     query = {
                         "location.properties.alertId": {"$exists":false},
                         "location.properties.vras.name":{"$exists":false},
-                        "location.properties.vras.type":{"$exists":false},
                         "location.properties.vras.id":{"$exists":false}
                     };
                     query.username = voyent.auth.getLastKnownUsername();
