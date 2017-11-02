@@ -67,14 +67,21 @@ Polymer({
      * Fetches the latest location of the currently loaded alert and refreshes the position on the map.
      */
     refreshAlertLocation: function() {
-        var _this = this, coordinates;
+        var _this = this;
         this._mapIsReady().then(function() {
             if (!_this._templateId) { return; }
             _this._fetchLocationRecord(_this._templateId).then(function(location) {
                 //Update the template coordinates, the label's position and adjust the bounds.
-                coordinates = location.location.geometry.coordinates;
-                _this._loadedAlert.selectedStack.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
-                _this.updateJSON();
+                var pos = new google.maps.LatLng(location.location.geometry.coordinates[1],location.location.geometry.coordinates[0]);
+                if (_this._loadedAlert.template.marker) {
+                    _this._loadedAlert.template.calculateRelativeStackPositions(_this._loadedAlert.template.marker.getPosition());
+                    _this._loadedAlert.template.marker.setPosition(pos);
+                }
+                else if (_this._loadedAlert.template.zoneStacks.length && _this._loadedAlert.template.zoneStacks[0].marker) {
+                    _this._loadedAlert.template.calculateRelativeStackPositions(_this._loadedAlert.template.zoneStacks[0].marker.getPosition());
+                }
+                else { return; }
+                _this._loadedAlert.template.moveStacksRelativeToPosition(pos);
                 _this._adjustBoundsAndPan();
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the alert\'s location: ' +
