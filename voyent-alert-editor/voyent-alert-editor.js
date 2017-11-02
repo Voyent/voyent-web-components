@@ -192,11 +192,8 @@ Polymer({
             this._showTemplateListPane = true;
         }
         else {
-            //this._backToNewAlertPane();
-            //if (this._showTemplateListPane) {
             this._showNewAlertPane = true;
             this._showTemplateListPane = false;
-            //}
         }
     },
 
@@ -241,35 +238,42 @@ Polymer({
      */
     _selectAlertTemplate: function(e) {
         var _this = this;
-        //Store the id of the selected alert template for later use.
         this._selectedAlertTemplateId = e.target.getAttribute('data-id');
-        //Change the cursor to the icon of the alert template (17.5/35 offset so the click registers in the correct position)
-        this._map.setOptions({draggableCursor:'url('+this.pathtoimages+'/img/alert_marker.png) 17.5 35, crosshair'});
-        //Add click listeners to the map so we can drop the new alert wherever they click.
-        google.maps.event.addListener(this._map,'click',createChildTemplate);
-        //Create a new child alert template to be linked one-to-one with the alert.
-        function createChildTemplate(e) { _this._createChildTemplate(_this._selectedAlertTemplateId,e.latLng); }
+        //Find and clone the parent template that we will create the child from.
+        var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
+            return alertTemplate._id === _this._selectedAlertTemplateId;
+        })[0]));
+        if (childTemplate.properties.center) {
+            var position = new google.maps.LatLng(childTemplate.properties.center);
+            delete childTemplate.properties.center;
+            this._createChildTemplate(childTemplate,position);
+        }
+        else {
+            //Change the cursor to the icon of the alert template (17.5/35 offset so the click registers in the correct position)
+            this._map.setOptions({draggableCursor:'url('+this.pathtoimages+'/img/alert_marker.png) 17.5 35, crosshair'});
+            //Add click listeners to the map so we can drop the new alert wherever they click.
+            google.maps.event.addListener(this._map,'click',createChildTemplate);
+            //Create a new child alert template to be linked one-to-one with the alert.
+            function createChildTemplate(e) { _this._createChildTemplate(childTemplate,e.latLng); }
+        }
     },
 
     /**
-     *
-     * @param parentAlertId
+     * Draws the passed template and converts it to a child template by adding the parenAlertId property.
+     * @param childTemplate
      * @param latLng
      * @private
      */
-    _createChildTemplate: function(parentAlertId,latLng) {
-        //Find and clone the parent template that we will create the child from.
-        var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
-            return alertTemplate._id === parentAlertId;
-        })[0]));
+    _createChildTemplate: function(childTemplate,latLng) {
         //Remove the parent's id from the record as we'll generate a new one.
+        var id = childTemplate._id;
         delete childTemplate._id;
         //If we have no geo section it means the template contains only the fallback
         //zone so the coordinates they dropped the template at are meaningless.
         if (!childTemplate.geo) { latLng = null; }
         childTemplate.state = 'draft'; //Default to draft
         this._drawAndLoadAlertTemplate(childTemplate,latLng);
-        this._loadedAlert.template.setParentId(parentAlertId);
+        this._loadedAlert.template.setParentId(id);
         //Toggle the creation mode.
         this._proceedToPropertiesPane();
     },

@@ -10,11 +10,6 @@ Polymer({
 
     properties: {
         /**
-         * Indicate whether to hide the embedded save and cancel buttons.
-         * @default false
-         */
-        hideButtons: { type: Boolean, value: false },
-        /**
          * Indicates whether a template is currently being fetched from database and loaded into the editor.
          */
         isTemplateLoading: { type: Boolean, value: false, readOnly: true, notify: true, observer: '_isAlertLoading' },

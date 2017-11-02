@@ -543,7 +543,7 @@
          * Draws the passed alert or alert template on the map.
          * @param templateJSON - The JSON to build the alert template from.
          * @param latLngCentroid - An optional LatLng object specifying the centroid of the template. When this is not
-         *                         provided we will calculate the centroid based on the template's zone coordinates.
+         *                         provided we will calculate the centroid based on the template's stack coordinates.
          * @private
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
@@ -609,9 +609,9 @@
             }
             this.set('_loadedAlert', {
                 template: new this._AlertTemplate(
-                    templateJSON._id, parentId, templateJSON.name, templateMarker, zoneStacks, templateJSON.state
+                    templateJSON._id, parentId, templateJSON.name, templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center
                 ),
-                selectedStack: null
+                selectedStack: zoneStacks.length === 1 ? zoneStacks[0] : null
             });
             //If we were provided a centroid for the template then we need to move the centroid of the zones from the current
             //position to the new one. To do this we will first calculate their current position based on the template and then
@@ -715,7 +715,8 @@
             window.addEventListener('keydown', function (event) {
                 if (event.which === 27) {
                     if (_this.nodeName === 'VOYENT-ALERT-EDITOR' && _this._showTemplateListPane) {
-                        _this._backToNewAlertPane();
+                        _this._showNewAlertPane = true;
+                        _this._showTemplateListPane = false;
                     }
                     if (_this._drawingManager.getDrawingMode() !== null) {
                         //Flag so overlaycomplete listener won't be allowed
