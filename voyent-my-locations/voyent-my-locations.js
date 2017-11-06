@@ -206,7 +206,10 @@ Polymer({
     _flagLocationForUpdating: function() {
         //This may fire when the toggle component is initializing.
         if (!this._loadedLocation) { return; }
-        this.flagLocationForUpdating(this._loadedLocation);
+        if (this._validateLoadedLocationName()) {
+            this._loadedLocation.setName(this._inputName);
+            this.flagLocationForUpdating(this._loadedLocation);
+        }
     },
 
     /**
@@ -238,6 +241,24 @@ Polymer({
             this._myLocations.splice(indexToRemove,1);
         }
         this._loadedLocation = null;
+    },
+
+    /**
+     * Validates that the locations have a unique name property.
+     * @returns {boolean}
+     * @private
+     */
+    _validateLoadedLocationName: function() {
+        for (var i=0; i<this._myLocations.length; i++) {
+            if (this._myLocations[i] === this._loadedLocation) {
+                continue;
+            }
+            if (this._myLocations[i].name === this._inputName) {
+                this.fire('message-error', 'Location names must be unique');
+                return false;
+            }
+        }
+        return true;
     },
 
     /**
@@ -391,6 +412,7 @@ Polymer({
                 //have a selected place then render the custom info window.
                 if (myLocation) {
                     _this._loadedLocation = myLocation;
+                    _this._inputName = _this._loadedLocation.name;
                     _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
                     //Hide the current location's overlay.
                     _this._loadedLocation.nameOverlay.hide();

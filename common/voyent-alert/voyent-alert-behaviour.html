@@ -1955,11 +1955,17 @@
             this._MyLocation.prototype = {
                 constructor: _outer._MyLocation,
                 /**
-                 * Sets the name and draws the nameOverlay.
+                 * Sets the name, draws the nameOverlay and if the instance is currently
+                 * loaded we'll also notify the polymer path via set.
                  * @param name
                  */
                 setName: function (name) {
-                    this.name = name;
+                    if (_outer._loadedLocation === this) {
+                        _outer.set('_loadedLocation.name',name);
+                    }
+                    else {
+                        this.name = name;
+                    }
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
