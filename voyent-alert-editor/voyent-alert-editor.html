@@ -60,39 +60,35 @@ Example:
             <div id="map"></div><div id="sidePanel">
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
-                        <template is="dom-if" if="[[_showNewAlertPane]]">
+                        <template is="dom-if" if="[[_showTemplateListPane]]">
                             <div class="alert-template-title">New Alert</div>
                             <template is="dom-if" if="[[_parentTemplates.length]]">
-                                <div class="alert-template-desc">
-                                    Activate the
-                                    <div class="icon-div">
-                                        <img class="icon" src="../common/voyent-alert/img/alert_bttn.png">
+                                <div class="alertTemplates">
+                                    <div class="alert-desc">
+                                        <template is="dom-if" if="[[!_selectedAlertTemplateId]]">
+                                            Select an alert template to create a new alert from.
+                                        </template>
+                                        <template is="dom-if" if="[[_selectedAlertTemplateId]]">
+                                            Click a location on the map to drop the alert or press ESC to cancel.
+                                        </template>
                                     </div>
-                                    icon from the toolbar in the top-right corner and follow the menu.
+                                    <template is="dom-repeat" items="{{_parentTemplates}}">
+                                        <div class$="{{_getTemplateClass(item._id,_selectedAlertTemplateId)}}"
+                                             on-click="_selectAlertTemplate" data-id$="{{item._id}}">
+                                            <div class="imgDiv" data-id$="{{item._id}}">
+                                                <img src="[[pathtoimages]]/img/alert_marker.png" data-id$="{{item._id}}"/>
+                                            </div>
+                                            <div class="nameDiv" data-id$="{{item._id}}">{{_getAlertTemplateName(item)}}</div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
                             <template is="dom-if" if="[[!_parentTemplates.length]]">
                                 <div class="alert-template-desc">
-                                    There are no alert templates to create a new alert for.
+                                    There are no alert templates to create a new alert from.
                                     Please create an alert template before using this editor.
                                 </div>
                             </template>
-                        </template>
-                        <template is="dom-if" if="[[_showTemplateListPane]]">
-                            <div class="alertTemplates">
-                                <div class="alert-desc">
-                                    Select an alert template to create a new alert for or press ESC to cancel.
-                                </div>
-                                <template is="dom-repeat" items="{{_parentTemplates}}">
-                                    <div class$="{{_getTemplateClass(item._id,_selectedAlertTemplateId)}}"
-                                         on-click="_selectAlertTemplate" data-id$="{{item._id}}">
-                                        <div class="imgDiv" data-id$="{{item._id}}">
-                                            <img src="[[pathtoimages]]/img/alert_marker.png" data-id$="{{item._id}}"/>
-                                        </div>
-                                        <div class="nameDiv" data-id$="{{item._id}}">{{_getAlertTemplateName(item)}}</div>
-                                    </div>
-                                </template>
-                            </div>
                         </template>
                         <template is="dom-if" if="[[_showPropertiesPane]]">
                             <voyent-alert-properties show-movement-accordion
@@ -115,15 +111,6 @@ Example:
                 </div>
                 <div id="crudPanel"></div>
             </div></div>
-        </div>
-        <div id$="[[_ALERT_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
-            <div class="customMapBttn" title="Create a new alert">
-                <span>
-                    <div class="customMapBttnImg">
-                        <img src="../common/voyent-alert/img/alert_bttn.png">
-                    </div>
-                </span>
-            </div>
         </div>
         <div id$="[[_CIRCLE_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Create a new circular proximity zone stack">

@@ -23,7 +23,7 @@ Polymer({
     },
 
     observers: [
-        '_showTemplateListPaneChanged(_showTemplateListPane)',
+        '_showPropertiesPaneChanged(_showPropertiesPane)',
         '_loadedAlertChanged(_loadedAlert)',
         '_alertStateChanged(_loadedAlert.template.state)'
     ],
@@ -59,7 +59,6 @@ Polymer({
             _this._drawAndLoadAlertTemplate(results[0],latLng);
             //Toggle the correct pane.
             _this._showPropertiesPane = true;
-            _this._showNewAlertPane = false;
             _this._setIsAlertLoading(false);
         }).catch(function(error) {
             _this.fire('message-error', 'Issue loading saved alert: ' + (error.responseText || error.message || error));
@@ -94,8 +93,6 @@ Polymer({
         this._promptForRemoval(function() {
             _this._showPropertiesPane = false;
             _this._removeAlert();
-            _this._showNewAlertPane = true;
-            _this._addAlertButton(_this._alertButtonListener.bind(_this));
         });
     },
 
@@ -144,13 +141,6 @@ Polymer({
                     map[obj._id] = obj;
                     return map;
                 },{});
-                //Handle adding and removing the buttons depending on whether we have templates.
-                if (_this._parentTemplates.length && !_this.isAlertLoading && !_this.isAlertLoaded) {
-                    _this._addAlertButton(_this._alertButtonListener.bind(_this));
-                }
-                else {
-                    _this._removeAlertButton();
-                }
                 _this._isFetchingTemplates = false;
                 resolve();
             }).catch(function (error) {
@@ -178,34 +168,8 @@ Polymer({
      * @private
      */
     _enableDefaultPane: function() {
-        this._showNewAlertPane = true;
-        this._showTemplateListPane = this._showPropertiesPane = false;
-    },
-
-    /**
-     * The listener to fire when the alert button is clicked.
-     * @private
-     */
-    _alertButtonListener: function() {
-        if (this._showNewAlertPane) {
-            this._showNewAlertPane = false;
-            this._showTemplateListPane = true;
-        }
-        else {
-            this._showNewAlertPane = true;
-            this._showTemplateListPane = false;
-        }
-    },
-
-    /**
-     * Triggered when we want to navigate to the properties pane.
-     * @private
-     */
-    _proceedToPropertiesPane: function() {
-        this._showPropertiesPane = true;
-        if (this._showTemplateListPane) {
-            this._showTemplateListPane = false;
-        }
+        this._showTemplateListPane = true;
+        this._showPropertiesPane = false;
     },
 
     /**
@@ -274,8 +238,7 @@ Polymer({
         childTemplate.state = 'draft'; //Default to draft
         this._drawAndLoadAlertTemplate(childTemplate,latLng);
         this._loadedAlert.template.setParentId(id);
-        //Toggle the creation mode.
-        this._proceedToPropertiesPane();
+        this._showPropertiesPane = true;
     },
 
     /**
@@ -313,19 +276,18 @@ Polymer({
     },
 
     /**
-     * Handles common code that we want to execute whenever we navigate to or from the template list pane.
-     * @param showTemplateListPane
+     *
+     * @param showPropertiesPane
      * @private
      */
-    _showTemplateListPaneChanged: function(showTemplateListPane) {
-        var alertButton = this.querySelector('#'+this._ALERT_BUTTON_ID);
-        if (alertButton) {
-            this.toggleClass('selected', showTemplateListPane, alertButton.querySelector('.customMapBttn'));
-        }
-        if (!showTemplateListPane) {
+    _showPropertiesPaneChanged: function(showPropertiesPane) {
+        this._showTemplateListPane = !showPropertiesPane;
+        if (showPropertiesPane) {
             this._revertCursor();
         }
     },
+
+
 
     /**
      * Monitors the loaded alert and handles fallback zone button visibility.
@@ -335,7 +297,6 @@ Polymer({
     _loadedAlertChanged: function(loadedAlert) {
         if (loadedAlert) {
             this._addAlertTemplateButtons();
-            this._removeAlertButton();
         }
         //Don't bother removing the buttons if we are loading an alert as they will just be added again.
         else if (!this.isAlertLoading) {

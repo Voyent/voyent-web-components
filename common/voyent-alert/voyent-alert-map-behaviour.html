@@ -103,7 +103,6 @@
             this._POLYGON_BUTTON_ID = 'polygonBttn';
             this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
             this._MARKER_BUTTON_ID = 'markerBttn';
-            this._ALERT_BUTTON_ID = 'alertBttn';
 
             var _this = this;
             //Default to the last realm and account if one is not set.
@@ -722,8 +721,7 @@
             window.addEventListener('keydown', function (event) {
                 if (event.which === 27) {
                     if (_this.nodeName === 'VOYENT-ALERT-EDITOR' && _this._showTemplateListPane) {
-                        _this._showNewAlertPane = true;
-                        _this._showTemplateListPane = false;
+                        _this._revertCursor();
                     }
                     if (_this._drawingManager.getDrawingMode() !== null) {
                         //Flag so overlaycomplete listener won't be allowed
@@ -873,15 +871,6 @@
         },
 
         /**
-         * Handles adding the button for creating new alerts.
-         * @param listener
-         * @private
-         */
-        _addAlertButton: function(listener) {
-            this._addDrawButton(this._ALERT_BUTTON_ID,listener);
-        },
-
-        /**
          * Adds drawing buttons.
          * @param id - The id of the button to create.
          * @param listener - The click listener.
@@ -918,14 +907,6 @@
          */
         _removePolygonButton: function() {
             this._removeDrawButton(this._POLYGON_BUTTON_ID);
-        },
-
-        /**
-         * Handles removing the button for creating new alerts.
-         * @private
-         */
-        _removeAlertButton: function() {
-            this._removeDrawButton(this._ALERT_BUTTON_ID);
         },
 
         /**

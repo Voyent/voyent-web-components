@@ -63,10 +63,6 @@
                 }
             };
             voyent.locate.updateAlertLocation({realm:this.realm,account:this.account,location: location}).then(function() {
-                if (_this._showConfirmingAlertPane) {
-                    _this._proceedToPropertiesPane();
-                    _this.fire('message-info', 'New alert activated!');
-                }
             }).catch(function (e) {
                 _this.fire('message-error', 'Issue creating ' + _this._loadedAlert.template.name +
                                             ': ' + (e.responseText || e.message || e))
