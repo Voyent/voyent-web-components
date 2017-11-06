@@ -182,26 +182,28 @@ Internal component used to display the properties panel inside Voyent alert comp
         </style>
 
         <template is="dom-if" if="[[_loadedAlert]]">
-            <div>
-                <template is="dom-if" if="[[!_renamingTemplate]]">
-                    <div class="alert-template-title">
-                        <div class="title" on-click="_toggleAlertTemplateRenaming">
-                            [[_loadedAlert.template.name]]
+            <template is="dom-if" if="[[!hideAlertName]]">
+                <div>
+                    <template is="dom-if" if="[[!_renamingTemplate]]">
+                        <div class="alert-template-title">
+                            <div class="title" on-click="_toggleAlertTemplateRenaming">
+                                [[_loadedAlert.template.name]]
+                            </div>
                         </div>
-                    </div>
-                </template>
-                <template is="dom-if" if="[[_renamingTemplate]]">
-                    <paper-input id="alertTemplate" tabindex="1"
-                                 class="rename-input"
-                                 label="Alert Template"
-                                 placeholder="New Value"
-                                 on-keydown="_renameAlertTemplateViaKeydown"
-                                 on-blur="_renameAlertTemplateViaBlur"
-                                 value="{{_templateNameVal::input}}"
-                                 disabled$="[[!_renamingTemplate]]">
-                    </paper-input>
-                </template>
-            </div>
+                    </template>
+                    <template is="dom-if" if="[[_renamingTemplate]]">
+                        <paper-input id="alertTemplate" tabindex="1"
+                                     class="rename-input"
+                                     label="Alert Template"
+                                     placeholder="New Value"
+                                     on-keydown="_renameAlertTemplateViaKeydown"
+                                     on-blur="_renameAlertTemplateViaBlur"
+                                     value="{{_templateNameVal::input}}"
+                                     disabled$="[[!_renamingTemplate]]">
+                        </paper-input>
+                    </template>
+                </div>
+            </template>
             <template is="dom-if" if="[[showMovementAccordion]]">
                 <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
                     <div class="accordion">

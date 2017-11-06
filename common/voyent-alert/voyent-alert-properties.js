@@ -8,6 +8,10 @@ Polymer({
          */
         showMovementAccordion: { type: Boolean, value: false },
         /**
+         * Indicates whether the alert name at the top of the panel should be hidden.
+         */
+        hideAlertName: { type: Boolean, value: false },
+        /**
          * Contains currently loaded _AlertTemplate object and the currently selected stack.
          * eg. { template:_AlertTemplate, selectedStack:_AlertZoneStack }
          */
@@ -60,7 +64,8 @@ Polymer({
                 zone.setColour(colorPicker.toHEXString().slice(1));
             }
         };
-        this._renamingTemplate = this._showMovement = false;
+        this._renamingTemplate = false;
+        this._showMovement = true;
         this._loadPointerLockAPI();
     },
 
