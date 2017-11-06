@@ -88,7 +88,7 @@
                 index = -1;
             }
             if (this._fallbackZone && this._fallbackZone.active) {
-                this._toggleFallbackZoneProperties();
+                this._toggleFallbackZoneProperties(true);
             }
             else {
                 this._loadedAlert.selectedStack.deactivateZoneOverlays();
@@ -97,16 +97,34 @@
                 var zone = this._loadedAlert.selectedStack.getZoneAt(index);
                 this._initializeColourPicker(zone);
                 zone.setActive(true);
+                this.fire('voyent-alert-zone-selected',{
+                    "id": zone.id,
+                    "zone": zone,
+                    "isFallbackZone": false
+                });
+            }
+            else {
+                this.fire('voyent-alert-zone-selected',{
+                    "id": null,
+                    "zone": null
+                });
             }
         },
 
         /**
          * Toggles the fallback zone properties section.
+         * @param skipEvent
          * @private
          */
-        _toggleFallbackZoneProperties: function() {
+        _toggleFallbackZoneProperties: function(skipEvent) {
             if (this._fallbackZone.active) {
                 this._fallbackZone.setActive(false);
+                if (!skipEvent) {
+                    this.fire('voyent-alert-zone-selected',{
+                        "id": null,
+                        "zone": null
+                    });
+                }
             }
             else {
                 if (this._loadedAlert && this._loadedAlert.selectedStack) {
@@ -114,6 +132,11 @@
                 }
                 this._initializeColourPicker(this._fallbackZone);
                 this._fallbackZone.setActive(true);
+                this.fire('voyent-alert-zone-selected',{
+                    "id": this._fallbackZone.id,
+                    "zone": this._fallbackZone,
+                    "isFallbackZone": true
+                });
             }
         },
 

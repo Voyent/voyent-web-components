@@ -44,6 +44,13 @@
          * @event voyent-alert-zone-removed
          */
 
+        /**
+         * Fires when the selected alert zone changes. Includes an `id` property which identifies the zone, a `zone`
+         * property that contains the associated data and an `isFallbackZone` property indicating whether the zone is
+         * the fallback zone. If no zone is selected then the `id` and `zone` values will be null.
+         * @event voyent-alert-zone-selected
+         */
+
         properties: {
             /**
              * The Voyent account used for authentication.
