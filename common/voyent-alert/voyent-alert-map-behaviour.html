@@ -1077,6 +1077,10 @@
                 if (_this._loadedAlert &&  _this._loadedAlert.selectedStack) {
                     _this._loadedAlert.selectedStack.deactivateZoneOverlays();
                     _this.set('_loadedAlert.selectedStack',null);
+                    _this.fire('voyent-alert-zone-selected',{
+                        "id": null,
+                        "zone": null
+                    });
                 }
             });
         },
