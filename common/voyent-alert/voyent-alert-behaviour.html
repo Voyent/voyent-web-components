@@ -115,7 +115,8 @@
         _toggleFallbackZoneProperties: function(skipEvent) {
             if (this._fallbackZone.active) {
                 this._fallbackZone.setActive(false);
-                if (!skipEvent) {
+                if (typeof skipEvent !== 'boolean' ||
+                    (typeof skipEvent === 'boolean' && !skipEvent)) {
                     this.fire('voyent-alert-zone-selected',{
                         "id": null,
                         "zone": null
