@@ -689,6 +689,9 @@
                         if (_outer._fallbackZone.messageTemplate) {
                             json.properties[_outer._FALLBACK_ZONE_ID].messageTemplate = _outer._fallbackZone.messageTemplate;
                         }
+                        if (_outer._fallbackZone.notificationFilter) {
+                            json.properties[_outer._FALLBACK_ZONE_ID].notificationFilter = _outer._fallbackZone.notificationFilter;
+                        }
                     }
                     for (var i=0; i<this.zoneStacks.length; i++) {
                         //First update the json for the stack.
@@ -970,6 +973,9 @@
                         };
                         if (zone.messageTemplate) {
                             json.properties[zone.id].messageTemplate = zone.messageTemplate;
+                        }
+                        if (zone.notificationFilter) {
+                            json.properties[zone.id].notificationFilter = zone.notificationFilter;
                         }
                         json.geo.geometries.push({
                             "id": zone.id,
@@ -1449,11 +1455,12 @@
              * @param name - The user-defined name.
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
-             * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @param messageTemplate - The message template associated with this zone.
+             * @param notificationFilter - The notification filter associated with this zone.
+             * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @private
              */
-            this._AlertZone = function (id,name,opacity,colour,messageTemplate,zIndex) {
+            this._AlertZone = function (id,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
                 this.setOpacity(opacity || 0.30);
@@ -1462,6 +1469,7 @@
                 this.setActive(false);
                 this.setRenaming(false);
                 this.messageTemplate = messageTemplate || null;
+                this.notificationFilter = notificationFilter || null;
             };
             /**
              * _AlertZone prototype (instance) functions.
@@ -1597,12 +1605,13 @@
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param messageTemplate - The message template associated with this zone.
+             * @param notificationFilter - The notification filter associated with this zone.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @extends _AlertZone
              * @private
              */
-            this._CircularAlertZone = function(id,radius,name,opacity,colour,messageTemplate,zIndex) {
-                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,zIndex);
+            this._CircularAlertZone = function(id,radius,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
+                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,notificationFilter,zIndex);
                 this.setRadius(radius || 500);
                 this.shapeOverlay = (new google.maps.Circle(this._getShapeOverlayOpts()));
             };
@@ -1649,12 +1658,13 @@
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param messageTemplate - The message template associated with this zone.
+             * @param notificationFilter - The notification filter associated with this zone.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @extends _AlertZone
              * @private
              */
-            this._PolygonalAlertZone = function(id,paths,name,opacity,colour,messageTemplate,zIndex) {
-                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,zIndex);
+            this._PolygonalAlertZone = function(id,paths,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
+                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,notificationFilter,zIndex);
                 this.setPaths(paths);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };
@@ -1699,10 +1709,11 @@
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param messageTemplate - The message template associated with this zone.
+             * @param notificationFilter - The notification filter associated with this zone.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @private
              */
-            this._FallbackAlertZone = function(enabled,name,opacity,colour,messageTemplate,zIndex) {
+            this._FallbackAlertZone = function(enabled,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
                 this.id = _outer._FALLBACK_ZONE_ID;
                 this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
@@ -1713,6 +1724,7 @@
                 this.setActive(false);
                 this.setRenaming(false);
                 this.messageTemplate = messageTemplate || null;
+                this.notificationFilter = notificationFilter || null;
                 this.nameOverlay = new _outer._FallbackZoneOverlay(this);
                 this.setEnabled(enabled);
             };

@@ -317,7 +317,7 @@
         },
 
         /**
-         * Sets the message template based onto the zone associated with the zoneIndex.
+         * Sets the message template into the zone associated with the stack and zone indices.
          * @param messageTemplate
          * @param zoneIndex
          * @param stackIndex
@@ -329,6 +329,23 @@
                 }
                 else {
                     this._loadedAlert.selectedStack.zones[zoneIndex].messageTemplate = messageTemplate;
+                }
+            }
+        },
+
+        /**
+         * Sets the notification filter into the zone associated with the stack and zone indices.
+         * @param notificationFilter
+         * @param zoneIndex
+         * @param stackIndex
+         */
+        setNotificationFilter: function(notificationFilter, zoneIndex, stackIndex) {
+            if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
+                if (typeof stackIndex === 'number' && stackIndex >= 0) {
+                    this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].notificationFilter = notificationFilter;
+                }
+                else {
+                    this._loadedAlert.selectedStack.zones[zoneIndex].notificationFilter = notificationFilter;
                 }
             }
         },
@@ -577,16 +594,16 @@
                         properties = templateJSON.properties[zoneGeometries[i].id];
                         if (properties.shape === 'circle') {
                             zones.push(new this._CircularAlertZone(
-                                zoneGeometries[i].id, properties.radius, properties.name,
-                                properties.opacity, properties.colour, properties.messageTemplate, zIndex
+                                zoneGeometries[i].id, properties.radius, properties.name, properties.opacity,
+                                properties.colour, properties.messageTemplate, properties.notificationFilter, zIndex
                             ));
                         }
                         else {
                             //Generate the ordered sequence of coordinates that completes the Polygon shape.
                             zones.push(new this._PolygonalAlertZone(
                                 zoneGeometries[i].id,
-                                this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
-                                properties.name, properties.opacity, properties.colour, properties.messageTemplate, zIndex)
+                                this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates), properties.name,
+                                properties.opacity, properties.colour, properties.messageTemplate, properties.notificationFilter, zIndex)
                             );
                         }
                         zIndex--;
@@ -646,6 +663,7 @@
                     fallbackZoneProperties.opacity,
                     fallbackZoneProperties.colour,
                     fallbackZoneProperties.messageTemplate,
+                    fallbackZoneProperties.notificationFilter,
                     fallbackZoneProperties.zIndex
                 );
             }
