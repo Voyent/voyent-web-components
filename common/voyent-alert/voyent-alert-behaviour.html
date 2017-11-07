@@ -1698,7 +1698,6 @@
                 this.id = _outer._FALLBACK_ZONE_ID;
                 this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
-                this._setupOverlayClickListener();
                 this.setName(name || 'Fallback Zone');
                 this.setOpacity(opacity || 0.30);
                 this.setColour(colour || '000000');
@@ -1928,16 +1927,6 @@
                         new google.maps.LatLng(85.05113, 180)
                     ];
                     return [new google.maps.MVCArray(worldCoords).getArray()];
-                },
-                /**
-                 * Initializes click listener for activating the overlay.
-                 * @private
-                 */
-                _setupOverlayClickListener: function () {
-                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
-                    google.maps.event.addListener(this.shapeOverlay, 'click', function () {
-                        _outer._toggleFallbackZoneProperties();
-                    });
                 },
                 /**
                  * Returns the options for building a google maps polygon.
