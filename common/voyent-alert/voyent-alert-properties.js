@@ -270,11 +270,6 @@ Polymer({
                 //punch it out properly later so just pass the filled outer shape via paths[0].
                 newZone = new _this._PolygonalAlertZone(null,[paths[0]],name,null,null,null,null,zIndex);
             }
-            //Check if we have support for the Pointer Lock API and enable it so the user can size the zone.
-            if (this._havePointerLock) {
-                this._requestPointerLock();
-                this._zoneToAdjust = newZone;
-            }
             _this._loadedAlert.selectedStack.addZone(newZone);
             //Re-adjust the centroid for the template.
             _this._loadedAlert.template.updateJSONAndCentroid();
