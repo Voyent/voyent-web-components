@@ -66,7 +66,7 @@ Polymer({
     },
 
     /**
-     *
+     * Activates the currently loaded alert. Alert must be a draft, preview or active. When already active the alert will be revised.
      * @returns {*}
      */
     activateAlert: function() {
@@ -74,15 +74,40 @@ Polymer({
         if (!this._loadedAlert || !this._loadedAlert.template) {
             return this.fire('message-error', 'Unable to active alert: No alert loaded');
         }
-        var activatableStates = ['draft','preview'];
+        var activatableStates = ['draft','preview','active'];
         if (activatableStates.indexOf(this._loadedAlert.template.state) === -1) {
             return this.fire('message-error', 'Unable to active alert: State cannot be transitioned to active from ' + this._loadedAlert.template.state);
         }
-        this._saveAlertTemplate().then(function() {
-            _this.updateAlertState('active').then(function() {
-                _this.fire('voyent-alert-template-saved',{});
+        //The alert was previously saved.
+        if (this._loadedAlert.template.id) {
+            //The alert is already active so update the location and revise it.
+            if (this._loadedAlert.template.state === 'active') {
+                this._saveAlertTemplate().then(function() {
+                    _this._updateAlertLocation().then(function() {
+                        _this.fire('voyent-alert-template-saved',{});
+                    });
+                });
+            }
+            else { //The alert is a draft or preview so save it, update the state and location.
+                this._saveAlertTemplate().then(function() {
+                    _this.updateAlertState('active').then(function() {
+                        _this._updateAlertLocation().then(function() {
+                            _this.fire('voyent-alert-template-saved',{});
+                            _this.fire('message-info', 'New alert activated!')
+                        });
+                    });
+                });
+            }
+        }
+        else { //The alert hasn't been saved yet so save it initially as an active alert.
+            this._loadedAlert.template.setState('active');
+            this._saveAlertTemplate().then(function() {
+                _this._updateAlertLocation().then(function() {
+                    _this.fire('voyent-alert-template-saved',{});
+                    _this.fire('message-info', 'New alert activated!')
+                });
             });
-        });
+        }
     },
 
     /**

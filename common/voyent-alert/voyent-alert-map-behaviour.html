@@ -214,7 +214,15 @@
         saveAlertTemplate: function() {
             var _this = this;
             this._saveAlertTemplate().then(function() {
-                _this.fire('voyent-alert-template-saved',{});
+                if (_this._loadedAlert.template.parentId) {
+                    //Save the alert location regardless of state so we know where to load it later.
+                    _this._updateAlertLocation().then(function() {
+                        _this.fire('voyent-alert-template-saved',{});
+                    });
+                }
+                else {
+                    _this.fire('voyent-alert-template-saved',{});
+                }
             });
         },
 
@@ -258,9 +266,6 @@
                     }
                     if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                         _this.fire('message-info', msg);
-                    }
-                    else if (_this._loadedAlert.template.parentId) {
-                        _this._updateAlertLocation();
                     }
                     resolve();
                 }).catch(function(e) {
