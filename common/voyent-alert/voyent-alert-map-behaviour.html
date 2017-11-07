@@ -203,7 +203,7 @@
                 //Async so the new dimensions render first.
                 setTimeout(function() {
                     google.maps.event.trigger(_this._map, 'resize');
-                    _this._zoomOnRegion();
+                    _this._adjustBoundsAndPan();
                 },0);
             });
         },
@@ -542,6 +542,8 @@
             if (this._areaRegion && this._areaRegion.bounds && !this._skipRegionPanning) {
                 this._map.fitBounds(this._areaRegion.bounds);
                 this._map.panToBounds(this._areaRegion.bounds);
+                //Zooming on the region will cause the map to be panned out far so we'll force a zoom to the street level.
+                this._map.setZoom(15);
             }
         },
 
@@ -1017,34 +1019,41 @@
          */
         _adjustBoundsAndPan: function() {
             var bounds = new google.maps.LatLngBounds();
-            if (this._loadedAlert) {
-                var zoneStacks = this._loadedAlert.template.zoneStacks;
-                //If we have no zoneStacks then we only have a fallback zone so just pan to the region.
-                if (!zoneStacks.length) {
-                    //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
-                    //or template. This fixes an issue where when we load a fallback zone only template after a stacked
-                    //template the map wouldn't pan.
-                    this._skipRegionPanning = false;
-                    this._zoomOnRegion();
-                    return;
-                }
-                for (var i=0; i<zoneStacks.length; i++) {
-                    var largestZone = zoneStacks[i].getLargestZone();
-                    if (largestZone.getShape() === 'circle') {
-                        bounds.extend(largestZone.shapeOverlay.getBounds().getNorthEast());
-                        bounds.extend(largestZone.shapeOverlay.getBounds().getSouthWest());
+            if (this._loadedAlert || this._userLocationMarker) {
+                if (this._loadedAlert) {
+                    var zoneStacks = this._loadedAlert.template.zoneStacks;
+                    //If we have no zoneStacks then we only have a fallback zone so just pan to the region.
+                    if (!zoneStacks.length) {
+                        //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
+                        //or template. This fixes an issue where when we load a fallback zone only template after a stacked
+                        //template the map wouldn't pan.
+                        this._skipRegionPanning = false;
+                        this._zoomOnRegion();
+                        return;
                     }
-                    else {
-                        for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
-                            bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
+                    for (var i=0; i<zoneStacks.length; i++) {
+                        var largestZone = zoneStacks[i].getLargestZone();
+                        if (largestZone.getShape() === 'circle') {
+                            bounds.extend(largestZone.shapeOverlay.getBounds().getNorthEast());
+                            bounds.extend(largestZone.shapeOverlay.getBounds().getSouthWest());
+                        }
+                        else {
+                            for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
+                                bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
+                            }
                         }
                     }
                 }
+                else {
+                    //The alert detail view will have a user marker.
+                    bounds.extend(this._userLocationMarker.getPosition());
+                }
+                this._map.fitBounds(bounds);
+                this._map.panToBounds(bounds);
             }
-            //The alert detail view will have a user marker.
-            if (this._userLocationMarker) { bounds.extend(this._userLocationMarker.getPosition()); }
-            this._map.fitBounds(bounds);
-            this._map.panToBounds(bounds);
+            else {
+                this._zoomOnRegion();
+            }
         },
 
         /**
