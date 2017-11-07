@@ -262,13 +262,13 @@ Polymer({
             //check what the first one is to determine which kind we want to add.
             if (_this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
                 var radius = this._adjustRadiusByPercentage(largestZone.shapeOverlay.getRadius(),50);
-                newZone = new _this._CircularAlertZone(radius,name,null,null,null,zIndex);
+                newZone = new _this._CircularAlertZone(null,radius,name,null,null,null,zIndex);
             }
             else { //polygon
                 var paths = this._adjustPathsByPercentage(largestZone.shapeOverlay.getPaths(),50,this._havePointerLock);
                 //When we add a new zone we don't want to include the full shape so we can
                 //punch it out properly later so just pass the filled outer shape via paths[0].
-                newZone = new _this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
+                newZone = new _this._PolygonalAlertZone(null,[paths[0]],name,null,null,null,zIndex);
             }
             //Check if we have support for the Pointer Lock API and enable it so the user can size the zone.
             if (this._havePointerLock) {

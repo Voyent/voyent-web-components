@@ -1441,6 +1441,7 @@
 
             /**
              * A class that represents an alert zone, both the drawn map entity and the json.
+             * @param id - The unique id that identifies the zone, if one is not provided it will be generated.
              * @param name - The user-defined name.
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
@@ -1448,8 +1449,8 @@
              * @param messageTemplate - The message template associated with this zone.
              * @private
              */
-            this._AlertZone = function (name,opacity,colour,messageTemplate,zIndex) {
-                this.id = _outer._generateUid();
+            this._AlertZone = function (id,name,opacity,colour,messageTemplate,zIndex) {
+                this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
                 this.setOpacity(opacity || 0.30);
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
@@ -1586,6 +1587,7 @@
 
             /**
              * A class that represents a circular alert zone.
+             * @param id - The unique id that identifies the zone, if one is not provided it will be generated.
              * @param radius - The circle radius.
              * @param name - The user-defined name.
              * @param opacity - The opacity of the zone, any value from 0 to 1.
@@ -1595,8 +1597,8 @@
              * @extends _AlertZone
              * @private
              */
-            this._CircularAlertZone = function(radius,name,opacity,colour,messageTemplate,zIndex) {
-                _outer._AlertZone.call(this,name,opacity,colour,messageTemplate,zIndex);
+            this._CircularAlertZone = function(id,radius,name,opacity,colour,messageTemplate,zIndex) {
+                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,zIndex);
                 this.setRadius(radius || 500);
                 this.shapeOverlay = (new google.maps.Circle(this._getShapeOverlayOpts()));
             };
@@ -1637,6 +1639,7 @@
 
             /**
              * A class that represents a circular alert zone.
+             * @param id - The unique id that identifies the zone, if one is not provided it will be generated.
              * @param paths - The polygon paths, an array of arrays of LatLng objects.
              * @param name - The user-defined name.
              * @param opacity - The opacity of the zone, any value from 0 to 1.
@@ -1646,8 +1649,8 @@
              * @extends _AlertZone
              * @private
              */
-            this._PolygonalAlertZone = function(paths,name,opacity,colour,messageTemplate,zIndex) {
-                _outer._AlertZone.call(this,name,opacity,colour,messageTemplate,zIndex);
+            this._PolygonalAlertZone = function(id,paths,name,opacity,colour,messageTemplate,zIndex) {
+                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,zIndex);
                 this.setPaths(paths);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };

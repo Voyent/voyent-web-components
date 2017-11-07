@@ -572,13 +572,14 @@
                         properties = templateJSON.properties[zoneGeometries[i].id];
                         if (properties.shape === 'circle') {
                             zones.push(new this._CircularAlertZone(
-                                properties.radius, properties.name, properties.opacity,
-                                properties.colour, properties.messageTemplate, zIndex
+                                zoneGeometries[i].id, properties.radius, properties.name,
+                                properties.opacity, properties.colour, properties.messageTemplate, zIndex
                             ));
                         }
                         else {
                             //Generate the ordered sequence of coordinates that completes the Polygon shape.
                             zones.push(new this._PolygonalAlertZone(
+                                zoneGeometries[i].id,
                                 this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
                                 properties.name, properties.opacity, properties.colour, properties.messageTemplate, zIndex)
                             );
@@ -674,7 +675,7 @@
                 });
                 if (oce.type === 'circle') { //Circular template.
                     stackMarker.setPosition(oce.overlay.getCenter());
-                    zone = new _this._CircularAlertZone(oce.overlay.getRadius(),_this._dialogInput);
+                    zone = new _this._CircularAlertZone(null, oce.overlay.getRadius(),_this._dialogInput);
                 }
                 else { //Polygonal template.
                     //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
@@ -685,7 +686,7 @@
                     }
                     var paths = oce.overlay.getPaths();
                     stackMarker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
-                    zone = new _this._PolygonalAlertZone(paths,_this._dialogInput);
+                    zone = new _this._PolygonalAlertZone(null,paths,_this._dialogInput);
                 }
                 var zoneStack = new _this._AlertZoneStack(stackMarker, [zone]);
                 //Add the stack and fire the zone added event.
