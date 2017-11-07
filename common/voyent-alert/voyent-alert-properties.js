@@ -261,11 +261,11 @@ Polymer({
             //Since we don't support mix and match zone types within a stack just
             //check what the first one is to determine which kind we want to add.
             if (_this._loadedAlert.selectedStack.getZoneAt(0).getShape() === 'circle') {
-                var radius = this._adjustRadiusByPercentage(largestZone.shapeOverlay.getRadius(),30);
+                var radius = this._adjustRadiusByPercentage(largestZone.shapeOverlay.getRadius(),50);
                 newZone = new _this._CircularAlertZone(radius,name,null,null,null,zIndex);
             }
             else { //polygon
-                var paths = this._adjustPathsByPercentage(largestZone.shapeOverlay.getPaths(),30,this._havePointerLock);
+                var paths = this._adjustPathsByPercentage(largestZone.shapeOverlay.getPaths(),50,this._havePointerLock);
                 //When we add a new zone we don't want to include the full shape so we can
                 //punch it out properly later so just pass the filled outer shape via paths[0].
                 newZone = new _this._PolygonalAlertZone([paths[0]],name,null,null,null,zIndex);
