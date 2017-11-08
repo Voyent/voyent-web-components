@@ -360,6 +360,16 @@
             }
         },
 
+        /**
+         * Sets the notification filter for the fallback zone.
+         * @param notificationFilter
+         */
+        setFallbackNotificationFilter: function(notificationFilter) {
+            if (this._fallbackZone) {
+                this._fallbackZone.notificationFilter = notificationFilter;
+            }
+        },
+
         //******************PRIVATE API******************
 
         /**
