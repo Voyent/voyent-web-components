@@ -1064,7 +1064,7 @@
          */
         _adjustBoundsAndPan: function() {
             var bounds = new google.maps.LatLngBounds();
-            if (this._loadedAlert || this._userLocationMarker || (this.nodeName === 'VOYENT-ALERT-VIEW' && this._myLocations)) {
+            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._userLocationMarker || this._myLocations))) {
                 var i;
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
@@ -1091,7 +1091,6 @@
                     }
                 }
                 if (this._userLocationMarker) {
-                    //The alert detail view will have a user marker.
                     bounds.extend(this._userLocationMarker.getPosition());
                 }
                 if (this._myLocations) {
