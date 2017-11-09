@@ -297,6 +297,7 @@
          * Clears the map entirely. In the case of alert editor the list of templates will also be refreshed.
          */
         clearMap: function() {
+            var _this = this;
             this._disableDrawingMode();
             this._zoomOnRegion();
             //Clear loaded alert template.
@@ -308,11 +309,14 @@
                 this._userLocationMarker.setMap(null);
                 this._userLocationMarker = null;
             }
-            //Clear the movement inputs.
-            this._alertDirection = this._alertSpeed = null;
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 this.fetchAlertTemplates();
                 this._enableDefaultPane();
+                //Clear the movement inputs, async so the side panel has time to render.
+                setTimeout(function() {
+                    _this._alertDirection = _this._alertSpeed = null;
+                    _this._alertSpeedUnit = 'kph';
+                },0);
             }
         },
 

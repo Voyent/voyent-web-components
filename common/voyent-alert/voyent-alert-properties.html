@@ -7,6 +7,9 @@
 <link rel="import" href="../../../iron-icon/iron-icon.html">
 <link rel="import" href="../../../iron-icons/iron-icons.html">
 <link rel="import" href="../../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../../iron-selector/iron-selector.html">
+<link rel="import" href="../../../paper-item/paper-item.html">
 <!--
 Internal component used to display the properties panel inside Voyent alert components.
 
@@ -92,7 +95,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .propertyCol,
             .valueCol,
-            .buttonCol {
+            .buttonCol,
+            .inputCol,
+            .dropdownCol {
                 padding: 8px 0 8px 0;
                 font-size: 13px;
                 text-align: center;
@@ -105,6 +110,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             .valueCol {
                 width: 62%;
             }
+            .valueCol.opacity {
+                padding:0;
+            }
             .buttonCol {
                 width:100%;
             }
@@ -112,8 +120,11 @@ Internal component used to display the properties panel inside Voyent alert comp
                 font-size: 10px;
                 background-color:white;
             }
-            .valueCol.opacity {
-                padding:0;
+            .inputCol {
+                width: 50%;
+            }
+            .dropdownCol {
+                width: 47%;
             }
             paper-slider {
                 width: 127px;
@@ -179,6 +190,11 @@ Internal component used to display the properties panel inside Voyent alert comp
             .bold {
                 font-weight: bold;
             }
+            paper-dropdown-menu {
+                --paper-input-container-input: {
+                    font-size: 13px;
+                };
+            }
         </style>
 
         <template is="dom-if" if="[[_loadedAlert]]">
@@ -217,10 +233,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                         <div class$="{{_getAccordionClasses('body',_showMovement)}}">
                             <div class="table">
                                 <div class="row">
-                                    <div class="propertyCol">
-                                        Direction
-                                    </div>
-                                    <div class="valueCol">
+                                    <div class="inputCol">
                                         <paper-input value="{{_alertDirection::input}}"
                                                      tabindex="2"
                                                      placeholder="Degrees"
@@ -229,19 +242,44 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                      disabled$="[[!_showMovement]]">
                                         </paper-input>
                                     </div>
+                                    <div class="dropdownCol">
+                                        <paper-dropdown-menu tabindex="3"
+                                                             placeholder="Direction"
+                                                             no-label-float
+                                                             disabled$="[[!_showMovement]]">
+                                            <iron-selector id="alertCardinalDirection" class="dropdown-content"
+                                                           on-iron-activate="_alertCardinalDirectionChanged"
+                                                           selected="{{_alertCardinalDirection}}"
+                                                           attr-for-selected="name">
+                                                <template is="dom-repeat" items="[[_alertCardinalDirections]]">
+                                                    <paper-item name="[[item.value]]">[[item.label]]</paper-item>
+                                                </template>
+                                            </iron-selector>
+                                        </paper-dropdown-menu>
+                                    </div>
                                 </div>
                                 <div class="row">
-                                    <div class="propertyCol">
-                                        Speed
-                                    </div>
-                                    <div class="valueCol">
+                                    <div class="inputCol">
                                         <paper-input value="{{_alertSpeed::input}}"
                                                      tabindex="3"
-                                                     placeholder=KM/H
+                                                     placeholder="Speed"
                                                      type="number" no-label-float
                                                      step="0.5" min="0"
                                                      disabled$="[[!_showMovement]]">
                                         </paper-input>
+                                    </div>
+                                    <div class="dropdownCol">
+                                        <paper-dropdown-menu tabindex="4"
+                                                             placeholder="Unit"
+                                                             no-label-float
+                                                             disabled$="[[!_showMovement]]">
+                                            <iron-selector id="alertSpeedUnit" class="dropdown-content"
+                                                           selected="{{_alertSpeedUnit}}"
+                                                           attr-for-selected="name">
+                                                <paper-item name="kph">KPH</paper-item>
+                                                <paper-item name="mph">MPH</paper-item>
+                                            </iron-selector>
+                                        </paper-dropdown-menu>
                                     </div>
                                 </div>
                             </div>

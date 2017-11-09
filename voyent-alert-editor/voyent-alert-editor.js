@@ -49,17 +49,28 @@ Polymer({
             if (_this._loadedAlert) {
                 _this.clearMap();
             }
+            var template = results[0];
             var latLng = new google.maps.LatLng(
                 results[1].location.geometry.coordinates[1],
                 results[1].location.geometry.coordinates[0]
             );
             //If we have no geo section it means the template contains only the fallback
             //zone so the coordinates they dropped the template at are meaningless.
-            if (!results[0].geo) { latLng = null; }
-            _this._drawAndLoadAlertTemplate(results[0],latLng);
+            if (!template.geo) { latLng = null; }
+            _this._drawAndLoadAlertTemplate(template,latLng);
             //Toggle the correct pane.
             _this._showPropertiesPane = true;
             _this._setIsAlertLoading(false);
+            //Populate the movement pane, async so the properties panel has time to initialize.
+            setTimeout(function() {
+                if (typeof template.properties.direction !== 'undefined') {
+                    _this.set('_alertDirection',template.properties.direction);
+                }
+                if (typeof template.properties.speed !== 'undefined') {
+                    _this.set('_alertSpeed',template.properties.speed);
+                    _this.set('_alertSpeedUnit',template.properties.speedUnit || 'kph');
+                }
+            },0);
         }).catch(function(error) {
             _this.fire('message-error', 'Issue loading saved alert: ' + (error.responseText || error.message || error));
         });

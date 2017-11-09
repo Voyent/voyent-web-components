@@ -43,12 +43,23 @@ Polymer({
         /**
          * The function called on modal dialog cancellation.
          */
-        _dialogCancelFunc: { type: Object, value: null, notify: true }
+        _dialogCancelFunc: { type: Object, value: null, notify: true },
+        /**
+         * The direction of movement in degrees, only valid for alerts.
+         */
+        _alertDirection: { type: Number, value: null, notify: true },
+        /**
+         * The speed of movement in kph or mph, only valid for alerts.
+         */
+        _alertSpeed: { type: Number, value: null, notify: true },
+        /**
+         * The unit of movement speed, only valid for alerts.
+         */
+        _alertSpeedUnit: { type: String, value: null, notify: true }
     },
 
     observers: [
-        '_alertDirectionChanged(_alertDirection)',
-        '_alertSpeedChanged(_alertSpeed)'
+        '_alertDirectionChanged(_alertDirection)'
     ],
 
     ready: function() {
@@ -64,9 +75,31 @@ Polymer({
                 zone.setColour(colorPicker.toHEXString().slice(1));
             }
         };
+        //Initialize various flags.
         this._renamingTemplate = false;
-        this._showMovement = true;
         this._loadPointerLockAPI();
+        //Initialize movement variables.
+        this._showMovement = true;
+        this._alertSpeedUnit = 'kph';
+        this._alertCardinalDirection = null;
+        this._alertCardinalDirections = [
+            {"label":"N","value":0},
+            {"label":"NNE","value":22.5},
+            {"label":"NE","value":45},
+            {"label":"ENE","value":67.5},
+            {"label":"E","value":90},
+            {"label":"ESE","value":112.5},
+            {"label":"SE","value":135},
+            {"label":"SSE","value":157.5},
+            {"label":"S","value":180},
+            {"label":"SSW","value":202.5},
+            {"label":"SW","value":225},
+            {"label":"WSW","value":247.5},
+            {"label":"W","value":270},
+            {"label":"WNW","value":292.5},
+            {"label":"NW","value":315},
+            {"label":"NNW","value":337.5}
+        ];
     },
 
     /**
@@ -635,35 +668,48 @@ Polymer({
 
     /**
      * Validates the alert movement direction value and handles updating the template JSON.
-     * @param alertDirection
      * @private
      */
-    _alertDirectionChanged: function(alertDirection) {
-        if (!alertDirection) { //Empty string (occurs when they type in a dash).
-            this._alertDirection = null;
-            this._loadedAlert.template.removeJSONProperty('direction');
+    _alertDirectionChanged: function() {
+        if (!this._alertDirection && this._alertDirection !== 0) {
+            //When we have no alert direction reset the cardinal direction dropdown.
+            var dropdown =  this.querySelector('#alertCardinalDirection');
+            if (dropdown) {
+                dropdown.selected = null;
+            }
             return;
         }
-        else if (alertDirection > 360) { //Force 360 max.
+        else if (this._alertDirection > 360) { //Force 360 max.
             this._alertDirection = 360;
             return;
         }
-        this._loadedAlert.template.addJSONProperty('direction',Number(alertDirection));
+        //If the direction was typed in manually then determine whether
+        //we should select a cardinal direction in the dropdown.
+        if (!this._alertDirectionSetFromCardinal) {
+            for (var i=0; i<this._alertCardinalDirections.length; i++) {
+                if (Number(this._alertDirection) === this._alertCardinalDirections[i].value) {
+                    this.set('_alertCardinalDirection', this._alertCardinalDirections[i].value);
+                    return;
+                }
+            }
+            this.set('_alertCardinalDirection', null);
+        }
+        this._alertDirectionSetFromCardinal = false;
     },
 
     /**
-     * Validates the alert movement speed value and handles updating the template JSON.
-     * @param alertSpeed
+     * Sets the direction input after selecting an item from the cardinal direction dropdown.
      * @private
      */
-    _alertSpeedChanged: function(alertSpeed) {
-        //Empty string (occurs when they type in a dash).
-        if (!alertSpeed) {
-            this._alertSpeed = null;
-            this._loadedAlert.template.removeJSONProperty('speed');
-            return;
-        }
-        this._loadedAlert.template.addJSONProperty('speed',Number(alertSpeed));
+    _alertCardinalDirectionChanged: function() {
+        var _this = this;
+        //Since this fires on iron-activate we need to process it async so the value is current.
+        setTimeout(function() {
+            if (_this._alertCardinalDirection || _this._alertCardinalDirection === 0) {
+                _this._alertDirectionSetFromCardinal = true;
+                _this.set('_alertDirection',_this._alertCardinalDirection);
+            }
+        },0);
     },
 
     /**

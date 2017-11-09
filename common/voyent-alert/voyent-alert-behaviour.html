@@ -403,7 +403,6 @@
              * @private
              */
             this._AlertTemplate = function(id,parentId,name,marker,zoneStacks,state,savePosition) {
-                this._jsonProperties = {};
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
@@ -638,22 +637,6 @@
                     }
                 },
                 /**
-                 * Adds the passed key/value pair to the properties section of the template JSON.
-                 * If the key already exists then the property will be updated.
-                 * @param key
-                 * @param value
-                 */
-                addJSONProperty: function(key,value) {
-                    this._jsonProperties[key] = value;
-                },
-                /**
-                 * Removes the passed key from the properties section of the template JSON.
-                 * @param key
-                 */
-                removeJSONProperty: function(key) {
-                    delete this._jsonProperties[key]
-                },
-                /**
                  * Updates the json to reflect the current state of the template. Since each stack of zones maintains
                  * their own json we update their json and then simply merge the geometries and properties section from
                  * each stack into one.
@@ -668,11 +651,12 @@
                         if (this.state) {
                             json.state = this.state;
                         }
-                    }
-                    if (Object.keys(this._jsonProperties).length) {
-                        for (var key in this._jsonProperties) {
-                            if (!this._jsonProperties.hasOwnProperty(key)) { continue; }
-                            json.properties[key] = this._jsonProperties[key];
+                        if (_outer._alertDirection) {
+                            json.properties.direction = Number(_outer._alertDirection);
+                        }
+                        if (_outer._alertSpeed) {
+                            json.properties.speed = Number(_outer._alertSpeed);
+                            json.properties.speedUnit = _outer._alertSpeedUnit || 'kph';
                         }
                     }
                     //Add fallback zone, we'll always add it the properties.
