@@ -312,6 +312,7 @@
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 this.fetchAlertTemplates();
                 this._enableDefaultPane();
+                this._showMovement = false;
                 //Clear the movement inputs, async so the side panel has time to render.
                 setTimeout(function() {
                     _this._alertDirection = _this._alertSpeed = null;

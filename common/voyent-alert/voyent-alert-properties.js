@@ -55,7 +55,11 @@ Polymer({
         /**
          * The unit of movement speed, only valid for alerts.
          */
-        _alertSpeedUnit: { type: String, value: null, notify: true }
+        _alertSpeedUnit: { type: String, value: null, notify: true },
+        /**
+         * Whether the movement accordion should be open, only valid for alerts.
+         */
+        _showMovement: { type: Boolean, value: false, notify: true }
     },
 
     observers: [
@@ -79,7 +83,6 @@ Polymer({
         this._renamingTemplate = false;
         this._loadPointerLockAPI();
         //Initialize movement variables.
-        this._showMovement = true;
         this._alertSpeedUnit = 'kph';
         this._alertCardinalDirection = null;
         this._alertCardinalDirections = [
