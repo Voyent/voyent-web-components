@@ -498,6 +498,11 @@
          */
         _drawMyLocations: function(locations) {
             for (var i=0; i<locations.length; i++) {
+                if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                    if (!this.locationNames.length ||
+                        this.locationNames.indexOf(locations[i].location.properties.vras.name) === -1)
+                    continue;
+                }
                 this._myLocations.push(new this._MyLocation(
                     locations[i].location.properties.vras.id,
                     locations[i].location.properties.vras.name,

@@ -15,17 +15,19 @@ Polymer({
     },
 
     /**
-     * Updates the view with the last location of the alert associated
-     * with the templateId and refreshes the current user's location.
+     * Updates the view with the last location of the alert associated with the templateId and refreshes the current
+     * user's location. The locationNames are included so that we only show the relevant locations on the map.
      * @param templateId
+     * @param locationNames
      */
-    updateView: function(templateId) {
+    updateView: function(templateId,locationNames) {
         var _this = this;
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
                 _this.fire('message-error','Unable to load template, id not provided');
                 return;
             }
+            _this.locationNames = locationNames || [];
             //Clear the map.
             _this.clearMap();
             //Fetch the alert and user locations.

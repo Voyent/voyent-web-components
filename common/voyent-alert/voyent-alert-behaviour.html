@@ -1577,8 +1577,12 @@
                  * Removes the shape overlay from the map.
                  */
                 removeFromMap: function() {
-                    this.shapeOverlay.setMap(null);
-                    this.nameOverlay.setMap(null);
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setMap(null);
+                    }
+                    if (this.nameOverlay) {
+                        this.nameOverlay.setMap(null);
+                    }
                 }
             };
             Object.seal(this._AlertZone);
@@ -1845,7 +1849,9 @@
                  */
                 removeFromMap: function() {
                     this.shapeOverlay.setMap(null);
-                    this.nameOverlay.hide();
+                    if (this.nameOverlay) {
+                        this.nameOverlay.hide();
+                    }
                     if (_outer._fallbackZone && _outer._fallbackZone === this) {
                         _outer._fallbackZone = null;
                     }
