@@ -605,6 +605,10 @@
                     zones = [];
                     zIndex = 49;
                     for (var i=0; i<zoneGeometries.length; i++) {
+                        //For alert detail view only show the inner zone of each stack.
+                        if (this.nodeName === 'VOYENT-ALERT-VIEW' && i === 1) {
+                            break;
+                        }
                         properties = templateJSON.properties[zoneGeometries[i].id];
                         if (properties.shape === 'circle') {
                             zones.push(new this._CircularAlertZone(

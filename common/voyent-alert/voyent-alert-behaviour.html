@@ -352,7 +352,7 @@
          * @private
          */
         _zonesUpdated: function(length) {
-            if (length) { this._sortZonesBySize(); }
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW' && length) { this._sortZonesBySize(); }
         },
 
         /**
@@ -1538,7 +1538,9 @@
                         this.nameOverlay.draw();
                     }
                     else {
-                        this.nameOverlay = new _outer._ProximityZoneOverlay(this);
+                        if (_outer.nodeName !== 'VOYENT-ALERT-VIEW') {
+                            this.nameOverlay = new _outer._ProximityZoneOverlay(this);
+                        }
                     }
                 },
                 /**
@@ -1709,7 +1711,9 @@
                 this.setRenaming(false);
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
-                this.nameOverlay = new _outer._FallbackZoneOverlay(this);
+                if (_outer.nodeName !== 'VOYENT-ALERT-VIEW') {
+                    this.nameOverlay = new _outer._FallbackZoneOverlay(this);
+                }
                 this.setEnabled(enabled);
             };
 
