@@ -35,6 +35,7 @@ Polymer({
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
             promises.push(_this._fetchLocationRecord());
+            promises.push(_this._fetchMyLocations());
             Promise.all(promises).then(function(results) {
                 //Build our LatLng object using the coordinates of the last location of the alert.
                 var latLng = new google.maps.LatLng(
@@ -46,7 +47,6 @@ Polymer({
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
-            _this._fetchMyLocations();
             //Reset the templateId as we'll re-set it later when we're ready.
             _this._templateId = null;
         });

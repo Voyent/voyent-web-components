@@ -1090,11 +1090,11 @@
                         }
                     }
                 }
-                else if (this._userLocationMarker) {
+                if (this._userLocationMarker) {
                     //The alert detail view will have a user marker.
                     bounds.extend(this._userLocationMarker.getPosition());
                 }
-                else {
+                if (this._myLocations) {
                     for (i=0; i<this._myLocations.length; i++) {
                         bounds.extend(this._myLocations[i].marker.getPosition());
                     }
