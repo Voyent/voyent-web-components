@@ -1064,7 +1064,8 @@
          */
         _adjustBoundsAndPan: function() {
             var bounds = new google.maps.LatLngBounds();
-            if (this._loadedAlert || this._userLocationMarker) {
+            if (this._loadedAlert || this._userLocationMarker || (this.nodeName === 'VOYENT-ALERT-VIEW' && this._myLocations)) {
+                var i;
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
                     //If we have no zoneStacks then we only have a fallback zone so just pan to the region.
@@ -1076,7 +1077,7 @@
                         this._zoomOnRegion();
                         return;
                     }
-                    for (var i=0; i<zoneStacks.length; i++) {
+                    for (i=0; i<zoneStacks.length; i++) {
                         var largestZone = zoneStacks[i].getLargestZone();
                         if (largestZone.getShape() === 'circle') {
                             bounds.extend(largestZone.shapeOverlay.getBounds().getNorthEast());
@@ -1089,9 +1090,14 @@
                         }
                     }
                 }
-                else {
+                else if (this._userLocationMarker) {
                     //The alert detail view will have a user marker.
                     bounds.extend(this._userLocationMarker.getPosition());
+                }
+                else {
+                    for (i=0; i<this._myLocations.length; i++) {
+                        bounds.extend(this._myLocations[i].marker.getPosition());
+                    }
                 }
                 this._map.fitBounds(bounds);
                 this._map.panToBounds(bounds);
