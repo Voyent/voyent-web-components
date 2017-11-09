@@ -127,6 +127,9 @@
                         position: google.maps.ControlPosition.LEFT_CENTER
                     }
                 };
+                if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                    mapOptions.scrollwheel = false;
+                }
                 //Initialize the map.
                 _this._map = new google.maps.Map(_this.$.map,mapOptions);
                 //Calculate the map size.
