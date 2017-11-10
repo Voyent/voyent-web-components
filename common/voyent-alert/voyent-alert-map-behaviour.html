@@ -127,8 +127,11 @@
                         position: google.maps.ControlPosition.LEFT_CENTER
                     }
                 };
+                //Alert view map is readonly.
                 if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
-                    mapOptions.scrollwheel = false;
+                    mapOptions.mapTypeControl =  mapOptions.scrollwheel =
+                    mapOptions.zoomControl =  mapOptions.draggable = false;
+                    mapOptions.disableDoubleClickZoom = true;
                 }
                 //Initialize the map.
                 _this._map = new google.maps.Map(_this.$.map,mapOptions);
