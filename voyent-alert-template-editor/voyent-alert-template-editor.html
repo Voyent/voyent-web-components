@@ -37,7 +37,8 @@ Example:
             <div id="map"></div><div id="sidePanel">
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
-                        <voyent-alert-properties _loaded-alert="{{_loadedAlert}}"
+                        <voyent-alert-properties hide-alert-name
+                                                 _loaded-alert="{{_loadedAlert}}"
                                                  _map="{{_map}}"
                                                  _area-region="{{_areaRegion}}"
                                                  _fallback-zone="{{_fallbackZone}}"
