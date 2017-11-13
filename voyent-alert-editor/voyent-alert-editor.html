@@ -48,6 +48,10 @@ Example:
             .alerts .imgDiv {
                 width: 35px;
             }
+            .imgWrap {
+                width: 35px;
+                height: 35px;
+            }
             .alertTemplates .nameDiv,
             .alerts .nameDiv {
                 width: 129px;
@@ -76,7 +80,9 @@ Example:
                                         <div class$="{{_getTemplateClass(item._id,_selectedAlertTemplateId)}}"
                                              on-click="_selectAlertTemplate" data-id$="{{item._id}}">
                                             <div class="imgDiv" data-id$="{{item._id}}">
-                                                <img src="[[pathtoimages]]/img/alert_marker.png" data-id$="{{item._id}}"/>
+                                                <img src$="{{getBadgeUrl(item.badge)}}"
+                                                     class="imgWrap"
+                                                     data-id$="{{item._id}}"/>
                                             </div>
                                             <div class="nameDiv" data-id$="{{item._id}}">{{_getAlertTemplateName(item)}}</div>
                                         </div>
@@ -98,7 +104,9 @@ Example:
                                                      _area-region="{{_areaRegion}}"
                                                      _fallback-zone="{{_fallbackZone}}"
                                                      _show-dialog-input="{{_showDialogInput}}"
+                                                     _show-dialog-badge="{{_showDialogBadge}}"
                                                      _dialog-input="{{_dialogInput}}"
+                                                     _dialog-badge="{{_dialogBadge}}"
                                                      _dialog-message="{{_dialogMessage}}"
                                                      _dialog-confirm-func="{{_dialogConfirmFunc}}"
                                                      _dialog-cancel-func="{{_dialogCancelFunc}}"

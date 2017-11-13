@@ -1,0 +1,54 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../imports/voyent.html">
+<link rel="import" href="./voyent-alert-behaviour.html">
+<link rel="import" href="../../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../paper-icon-button/paper-icon-button.html">
+<!--
+Internal component used to display alert badge icon chooser
+
+@demo demo.html
+-->
+<dom-module id="voyent-alert-badge-chooser">
+    <template>
+        <style include="voyent-alert-styles" is="custom-style">
+            .button, .buttontrue, .buttonfalse {
+                width: 64px;
+                height: 64px;
+                padding: 0;
+                box-sizing: content-box !important;
+                transition: border 150ms;
+            }
+        
+            .button, .buttonfalse {
+                border: 5px solid white;
+            }
+            
+            .buttontrue {
+                border: 5px outset var(--app-primary-color, blue);
+            }
+            
+            .badgeWrapper {
+                width: 520px;
+                max-height: 150px;
+                overflow: auto;
+            }
+        </style>
+        
+        <template is="dom-if" if="[[showInstructions]]">
+            Choose an alert badge icon
+        </template>
+        
+        <div class="badgeWrapper">
+            <template is="dom-repeat" items="[[defaultList]]" strip-whitespace>
+                <paper-icon-button src="{{getBadgeUrl(item)}}"
+                                   class$="button{{isSelected(item, value)}}"
+                                   data-badge="{{item}}"
+                                   noink="true"
+                                   on-click="selectBadge">
+                </paper-icon-button>
+            </template>
+        </div>
+    </template>
+</dom-module>
+
+<script src="voyent-alert-badge-chooser.js"></script>

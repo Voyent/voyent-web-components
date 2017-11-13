@@ -29,6 +29,10 @@ Polymer({
          */
         _dialogMessage: { type: String, value: '', notify: true },
         /**
+         * Whether to show the modal dialog alert badge chooser.
+         */
+        _showDialogBadge: { type: Boolean, value: false, notify: true },
+        /**
          * Whether to show the modal dialog input in the dialog message.
          */
         _showDialogInput: { type: Boolean, value: false, notify: true },
@@ -36,6 +40,10 @@ Polymer({
          * The value of the modal dialog input, if applicable.
          */
         _dialogInput: { type: String, value: '', notify: true },
+        /**
+         * The value of the modal dialog alert badge chooser, if applicable.
+         */
+        _dialogBadge: { type: String, value: '', notify: true },
         /**
          * The function called on modal dialog confirmation.
          */
@@ -59,7 +67,11 @@ Polymer({
         /**
          * Whether the movement accordion should be open, only valid for alerts.
          */
-        _showMovement: { type: Boolean, value: false, notify: true }
+        _showMovement: { type: Boolean, value: false, notify: true },
+        /**
+         * Whether the alert badge accordion should be open
+         */
+        _showBadge: { type: Boolean, value: false, notify: true},
     },
 
     observers: [
@@ -280,6 +292,23 @@ Polymer({
             this._toggleProximityZoneRenaming(i);
         }
     },
+    
+    _chooseAlertBadge: function() {
+        var _this = this;
+        this._openDialog(null,null,true,function() {
+            // Persist our choice to the template JSON
+            _this._loadedAlert.template.setBadge(this._dialogBadge);
+            
+            // If we only have a single zone stack, then update the map marker as well
+            if (_this._loadedAlert.template.zoneStacks.length === 1) {
+                var image = {
+                    url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
+                    scaledSize: new google.maps.Size(32,32)
+                };
+                _this._loadedAlert.template.zoneStacks[0].marker.setIcon(image);
+            }
+        });
+    },
 
     /**
      * Adds a new proximity zone to the alert template. The new zone is 50% larger than the largest existing zone.
@@ -287,7 +316,7 @@ Polymer({
      */
     _addProximityZone: function() {
         var _this = this;
-        this._openDialog('Please enter the zone name','',function() {
+        this._openDialog('Please enter the zone name','',false,function() {
             var newZone;
             //Set the new zone radius as 50% larger than the current largest zone
             //and de-increment the new zone zIndex so it sits behind the other zones.

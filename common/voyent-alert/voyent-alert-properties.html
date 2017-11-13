@@ -1,6 +1,7 @@
 <link rel="import" href="../../../polymer/polymer.html">
 <link rel="import" href="../imports/voyent.html">
 <link rel="import" href="./voyent-alert-behaviour.html">
+<link rel="import" href="./voyent-alert-badge-chooser.html">
 <link rel="import" href="../imports/jscolor.html">
 <link rel="import" href="../../../paper-input/paper-input.html">
 <link rel="import" href="../../../paper-slider/paper-slider.html">
@@ -296,6 +297,24 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
             <div class="accordion">
+                <div class$="{{_getAccordionClasses('header',_showBadge)}}">
+                    <paper-icon-button title="Toggle Badge Properties" icon="{{_getArrowIcon(_showBadge)}}"
+                                       on-click="_toggleBadge" data-index$="[[index]]"></paper-icon-button>
+                    <div class="title zone" class$="{{_getZoneTitleClasses(_showBadge)}}" data-index$="[[index]]">
+                       Badge
+                    </div>
+                </div>
+                <div class$="{{_getAccordionClasses('body',_showBadge)}}">
+                    <div class="row">
+                        <div class="buttonCol">
+                            <paper-icon-button src="{{getBadgeUrl(_loadedAlert.template.badge)}}"
+                                               class="badgeIcon"
+                                               on-click="_chooseAlertBadge"></paper-icon-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion">
                 <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlert.selectedStack.zones]]" as="zone">
                     <div class$="{{_getAccordionClasses('header',zone.active)}}">
                         <template is="dom-if" if="[[!zone.renaming]]">
@@ -452,7 +471,14 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <template is="dom-if" if="[[_showDialogInput]]">
                     <paper-input autofocus no-label-float on-keyup="_dialogKeyUp" value="{{_dialogInput}}"></paper-input>
                 </template>
+                
+                <template is="dom-if" if="[[_showDialogBadge]]">
+                    <br/>
+                    <voyent-alert-badge-chooser value="{{_dialogBadge}}"></voyent-alert-badge-chooser>
+                </template>
+                
                 <div class="dialog-bttns">
+                    <br/>
                     <paper-button raised title="Cancel" on-click="_closeDialog">Cancel</paper-button>
                     <paper-button raised title="Confirm" on-click="_confirmDialog">Confirm</paper-button>
                 </div>

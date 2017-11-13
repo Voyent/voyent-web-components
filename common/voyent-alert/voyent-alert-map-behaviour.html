@@ -282,10 +282,11 @@
          */
         addNew: function() {
             var _this = this;
-            this._openDialog('Please enter the alert template name','',function() {
+            this._openDialog('Please enter the alert template name','',true,function() {
                 _this.clearMap();
+                
                 _this.set('_loadedAlert',{
-                    template: new _this._AlertTemplate(null, null, _this._dialogInput, null, null, null),
+                    template: new _this._AlertTemplate(null, null, _this._dialogInput, _this._dialogBadge, null, null, null),
                     selectedStack: null
                 });
             },function() {
@@ -664,7 +665,7 @@
             }
             this.set('_loadedAlert', {
                 template: new this._AlertTemplate(
-                    templateJSON._id, parentId, templateJSON.name, templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center
+                    templateJSON._id, parentId, templateJSON.name, templateJSON.badge, templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center
                 ),
                 selectedStack: zoneStacks.length === 1 ? zoneStacks[0] : null
             });
@@ -716,7 +717,7 @@
                         return;
                     }
                 }
-                _this._openDialog('Please enter the zone name','',function() {
+                _this._openDialog('Please enter the zone name','',false,function() {
                     //Build our stack marker, the position will be added later.
                     var stackMarker = new google.maps.Marker({
                         map: _this._map, draggable: true, zIndex: 50
@@ -1251,7 +1252,11 @@
         _selectedStackChanged: function(selectedStack) {
             if (this._loadedAlert) {
                 if (this._loadedAlert.template.zoneStacks.length === 1) {
-                    this._loadedAlert.template.zoneStacks[0].marker.setIcon(this.pathtoimages+'/img/alert_marker.png');
+                    var image = {
+                        url: this.getBadgeUrl(this._loadedAlert.template.badge),
+                        scaledSize: new google.maps.Size(32,32)
+                    };
+                    this._loadedAlert.template.zoneStacks[0].marker.setIcon(image);
                 }
                 else {
                     for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {

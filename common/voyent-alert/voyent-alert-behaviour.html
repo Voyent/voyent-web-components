@@ -11,12 +11,15 @@
      * @polymerBehavior AlertBehaviour
      */
     Voyent.AlertBehaviour = {
-
         properties: {
             /**
              * The google map object that we'll share between components.
              */
-            _map: { type: Object, value: null, notify: true, observer: '_mapChanged'}
+            _map: { type: Object, value: null, notify: true, observer: '_mapChanged'},
+            /**
+             * The location host for convenience of linking.
+             */
+            locationHost: { type: String, value: window.location.host },
         },
 
         ready: function() {
@@ -36,7 +39,18 @@
         },
 
         observers: ['_zonesUpdated(_loadedAlert.selectedStack.zones.length)'],
-
+        
+        getBadgeUrl: function(badgeName) {
+            var url = window.location.protocol + '//' + this.locationHost + '/vras/images/badges/';
+            if (badgeName && typeof badgeName === 'string') {
+                url += badgeName;
+            }
+            else {
+                url += 'info.png';
+            }
+            return url;
+        },
+        
         /**
          * Updates the current alert location.
          * @private
@@ -148,6 +162,14 @@
         _toggleMovement: function() {
             this._showMovement = !this._showMovement;
         },
+        
+        /**
+         * Toggles the badge properties section.
+         * @private
+         */
+        _toggleBadge: function() {
+            this._showBadge = !this._showBadge;
+        },
 
         /**
          * Initializes the JSColor colour picker for the passed zone.
@@ -197,14 +219,20 @@
          * Opens the dialog and sets various properties to be used later.
          * @param message
          * @param input
+         * @param showBadge
          * @param confirmFunc
          * @param cancelFunc
          * @private
          */
-        _openDialog: function(message,input,confirmFunc,cancelFunc) {
+        _openDialog: function(message,input,showBadge,confirmFunc,cancelFunc) {
             this._dialogMessage = message;
             this._dialogInput = input;
+            this._dialogBadge = "info.png";
+            if (this._loadedAlert && this._loadedAlert.template && this._loadedAlert.template.badge) {
+                this._dialogBadge = this._loadedAlert.template.badge;
+            }
             this._showDialogInput = (typeof input !== 'undefined' && input !== null);
+            this._showDialogBadge = showBadge ? showBadge : false;
             this._dialogConfirmFunc = confirmFunc;
             this._dialogCancelFunc = cancelFunc;
             var dialog = this.querySelector('#modalDialog');
@@ -396,16 +424,18 @@
              * @param id - The unique identifier.
              * @param parentId - The parent template id, only relevant for child templates.
              * @param name - The user-defined name.
+             * @param badge - The user chosen alert badge icon.
              * @param marker - The associated map marker for the entire template, centered between the various stacks.
              * @param zoneStacks - A list of _AlertZoneStack objects, the list of zone stacks belonging with the template.
              * @param state - The current state of the alert, only relevant for child templates.
              * @param savePosition - Whether the position of the template should be stored in the json.
              * @private
              */
-            this._AlertTemplate = function(id,parentId,name,marker,zoneStacks,state,savePosition) {
+            this._AlertTemplate = function(id,parentId,name,badge,marker,zoneStacks,state,savePosition) {
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
+                this.setBadge(badge || 'info.png');
                 this.setMarker(marker || null);
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
@@ -493,6 +523,7 @@
             this._AlertTemplate.getJSONStructure = function () {
                 return {
                     "name": "Unnamed",
+                    "badge": "info.png",
                     "geo": {
                         "type": "GeometryCollection",
                         "geometries": []
@@ -545,6 +576,20 @@
                     }
                     if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
                         _outer.set('_loadedAlert.template.name', name);
+                    }
+                },
+                /**
+                 * Sets the alert badge icon, updates the json and if the instance is currently
+                 * loaded we'll also notify the polymer path via set.
+                 * @param badge
+                 */
+                setBadge: function(badge) {
+                    this.badge = badge;
+                    if (this.json) {
+                        this.json.badge = badge;
+                    }
+                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
+                        _outer.set('_loadedAlert.template.badge', badge);
                     }
                 },
                 /**
@@ -646,6 +691,10 @@
                     var json = this.constructor.getJSONStructure();
                     //Add template-level properties.
                     json.name = this.name;
+                    json.badge = "info.png";
+                    if (this.badge) {
+                        json.badge = this.badge;
+                    }
                     if (this.parentId) {
                         json.properties.parentAlertId = this.parentId;
                         if (this.state) {
