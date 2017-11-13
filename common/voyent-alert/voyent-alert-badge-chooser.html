@@ -27,8 +27,12 @@ Internal component used to display alert badge icon chooser
                 border: 5px outset var(--app-primary-color, blue);
             }
             
-            .badgeWrapper {
+            .badgeInnerPresize {
                 width: 520px;
+            }
+            
+            .badgeWrapper {
+                max-width: 520px;
                 max-height: 150px;
                 overflow: auto;
             }
@@ -39,14 +43,16 @@ Internal component used to display alert badge icon chooser
         </template>
         
         <div class="badgeWrapper">
-            <template is="dom-repeat" items="[[defaultList]]" strip-whitespace>
-                <paper-icon-button src="{{getBadgeUrl(item)}}"
-                                   class$="button{{isSelected(item, value)}}"
-                                   data-badge="{{item}}"
-                                   noink="true"
-                                   on-click="selectBadge">
-                </paper-icon-button>
-            </template>
+            <div class="badgeInnerPresize">
+                <template is="dom-repeat" items="[[defaultList]]" strip-whitespace>
+                    <paper-icon-button src="{{getBadgeUrl(item)}}"
+                                       class$="button{{isSelected(item, value)}}"
+                                       data-badge="{{item}}"
+                                       noink="true"
+                                       on-click="selectBadge">
+                    </paper-icon-button>
+                </template>
+            </div>
         </div>
     </template>
 </dom-module>
