@@ -89,7 +89,11 @@
              * necessary when using the component as part of a custom build.
              * @default '.'
              */
-            pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' }
+            pathtoimages: { type: String, value: '.', observer: '_pathtoimagesChanged' },
+            /**
+             * The subdirectory where our badge files are stored
+             */
+            badgedir: { type: String, value: '' },
         },
 
         observers: [

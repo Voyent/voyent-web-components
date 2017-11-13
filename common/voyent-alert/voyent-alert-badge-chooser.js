@@ -34,7 +34,7 @@ Polymer({
     },
     
     _retrieveList: function(setList, folder) {
-        var url = window.location.protocol + "//" + window.location.host + "/vras/images/badges/";
+        var url = window.location.protocol + "//" + window.location.host + this.badgedir;
         if (folder) {
             url += folder + "/";
         }
