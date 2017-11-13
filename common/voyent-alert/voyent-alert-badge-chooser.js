@@ -36,8 +36,9 @@ Polymer({
     _retrieveList: function(setList, folder) {
         var url = window.location.protocol + "//" + window.location.host + "/vras/images/badges/";
         if (folder) {
-            url += folder;
+            url += folder + "/";
         }
+        url += "manifest";
         
         // Blank our list first
         this.set(setList, []);
