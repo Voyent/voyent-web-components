@@ -250,7 +250,7 @@ Polymer({
         }
         else {
             //Change the cursor to the icon of the alert template (17.5/35 offset so the click registers in the correct position)
-            this._map.setOptions({draggableCursor:'url('+this.getBadgeUrl(childTemplate.badge)+') 17.5 35, crosshair'});
+            this._map.setOptions({draggableCursor:'url('+this.getBadgeUrl(childTemplate.badge)+') 64 128, crosshair'});
             //Add click listeners to the map so we can drop the new alert wherever they click.
             google.maps.event.addListener(this._map,'click',createChildTemplate);
             //Create a new child alert template to be linked one-to-one with the alert.
