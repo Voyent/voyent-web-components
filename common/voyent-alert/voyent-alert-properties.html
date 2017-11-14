@@ -296,24 +296,26 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </div>
                 </div>
             </template>
-            <div class="accordion">
-                <div class$="{{_getAccordionClasses('header',_showBadge)}}">
-                    <paper-icon-button title="Toggle Badge Properties" icon="{{_getArrowIcon(_showBadge)}}"
-                                       on-click="_toggleBadge" data-index$="[[index]]"></paper-icon-button>
-                    <div class="title zone" class$="{{_getZoneTitleClasses(_showBadge)}}" data-index$="[[index]]">
-                       Badge
+            <template is="dom-if" if="[[!hideBadgeChooser]]">
+                <div class="accordion">
+                    <div class$="{{_getAccordionClasses('header',_showBadge)}}">
+                        <paper-icon-button title="Toggle Badge Properties" icon="{{_getArrowIcon(_showBadge)}}"
+                                           on-click="_toggleBadge" data-index$="[[index]]"></paper-icon-button>
+                        <div class="title zone" class$="{{_getZoneTitleClasses(_showBadge)}}" data-index$="[[index]]">
+                           Badge
+                        </div>
                     </div>
-                </div>
-                <div class$="{{_getAccordionClasses('body',_showBadge)}}">
-                    <div class="row">
-                        <div class="buttonCol">
-                            <paper-icon-button src="{{getBadgeUrl(_loadedAlert.template.badge)}}"
-                                               class="badgeIcon"
-                                               on-click="_chooseAlertBadge"></paper-icon-button>
+                    <div class$="{{_getAccordionClasses('body',_showBadge)}}">
+                        <div class="row">
+                            <div class="buttonCol">
+                                <paper-icon-button src="{{getBadgeUrl(_loadedAlert.template.badge)}}"
+                                                   class="badgeIcon"
+                                                   on-click="chooseAlertBadge"></paper-icon-button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </template>
             <div class="accordion">
                 <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlert.selectedStack.zones]]" as="zone">
                     <div class$="{{_getAccordionClasses('header',zone.active)}}">

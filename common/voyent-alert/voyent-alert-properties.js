@@ -12,6 +12,10 @@ Polymer({
          */
         hideAlertName: { type: Boolean, value: false },
         /**
+         * Indicates whether the alert badge chooser at the top of the panel should be hidden.
+         */
+        hideBadgeChooser: { type: Boolean, value: false },
+        /**
          * Contains currently loaded _AlertTemplate object and the currently selected stack.
          * eg. { template:_AlertTemplate, selectedStack:_AlertZoneStack }
          */
@@ -293,11 +297,14 @@ Polymer({
         }
     },
     
-    _chooseAlertBadge: function() {
+    chooseAlertBadge: function() {
         var _this = this;
         this._openDialog(null,null,true,function() {
             // Persist our choice to the template JSON
             _this._loadedAlert.template.setBadge(this._dialogBadge);
+            
+            // Fire an event that the badge changed
+            _this.fire('voyent-alert-badge-changed', {"badge": _this._loadedAlert.template.badge});
             
             // If we only have a single zone stack, then update the map marker as well
             if (_this._loadedAlert.template.zoneStacks.length === 1) {
