@@ -166,17 +166,10 @@ Polymer({
         this._isFetchingTemplates = true;
         var _this = this;
         return new Promise(function (resolve, reject) {
-            voyent.locate.findAlertTemplates({realm:_this.realm,account:_this.account}).then(function(templates) {
+            voyent.locate.findAlertTemplates({"query": {"properties.parentAlertId":{"$exists":false}},
+                                                       "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
                 if (!templates) { return; }
-                //Maintain a list of parent templates.
-                _this._parentTemplates = templates.filter(function(alertTemplate) {
-                    return !alertTemplate.properties || !alertTemplate.properties.parentAlertId;
-                });
-                //Maintain an id-mapped object of all templates, including child templates.
-                _this._templatesMap = templates.reduce(function(map,obj) {
-                    map[obj._id] = obj;
-                    return map;
-                },{});
+                _this._parentTemplates = templates;
                 _this._isFetchingTemplates = false;
                 resolve();
             }).catch(function (error) {
