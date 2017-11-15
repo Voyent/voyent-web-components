@@ -211,7 +211,7 @@
       return voyent.auth.connect(params).then(function(authResponse){ //jshint ignore:line
         onAfterConnect(authResponse);
       }).catch(function(error){
-        _this.set('error', 'Login failed ' + (error.responseText || error.message));
+        _this.set('error', 'Login failed ' + JSON.parse(error.responseText).message || error.responseText);
           
         //if fallbackToAdmin try to login as admin
         if( !_this.admin && _this.fallbackToAdmin ){
@@ -224,7 +224,7 @@
           Promise.reject(error);
         }
       }).catch(function(error){
-        _this.set('error', 'Login failed ' + (error.responseText || error.message));
+        _this.set('error', 'Login failed ' + JSON.parse(error.responseText).message || error.responseText);
       });
     },
 
