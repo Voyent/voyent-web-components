@@ -453,7 +453,6 @@
                     }
                     else {
                         if ((!location || !location[0])) {
-                            _this.fire('message-info','User location cannot be found');
                             return resolve();
                         }
                         _this._drawUser(location[0]);
