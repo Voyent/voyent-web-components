@@ -243,14 +243,6 @@
             return new Promise(function (resolve, reject) {
                 //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
                 _this._loadedAlert.template.updateJSON(true);
-                //If this template is associated with an alert instance then add the timezoneOffset property.
-                if (_this._loadedAlert.template.parentId) {
-                    _this._loadedAlert.template.json.timezoneOffset = new Date().getTimezoneOffset();
-                }
-                //If we have no geometries defined then delete the geo property entirely.
-                if (!_this._loadedAlert.template.json.geo.geometries.length) {
-                    delete _this._loadedAlert.template.json.geo;
-                }
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
                 var func = 'createAlertTemplate';
                 //If we have an id then the template was already saved.

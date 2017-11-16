@@ -58,25 +58,7 @@
         _updateAlertLocation: function() {
             var _this = this;
             return new Promise(function (resolve, reject) {
-                var pos;
-                //If we have a template with at least two stacks it means we have a template centroid.
-                if (_this._loadedAlert.template.zoneStacks.length >= 2) {
-                    pos = _this._loadedAlert.template.marker.getPosition();
-                } //One stack means we only have a stack centroid.
-                else if (_this._loadedAlert.template.zoneStacks.length === 1) {
-                    pos = _this._loadedAlert.template.zoneStacks[0].marker.getPosition()
-                }
-                else { //No stacks means we have no centroid, fallback zone only.
-                    pos = new google.maps.LatLng(0,0);
-                }
-                var location = {
-                    "location": {
-                        "geometry": { "type" : "Point", "coordinates" : [pos.lng(),pos.lat()] },
-                        "properties": {
-                            "alertId": _this._loadedAlert.template.id
-                        }
-                    }
-                };
+               var location = _this._buildAlertLocationJSON();
                 voyent.locate.updateAlertLocation({realm:_this.realm,account:_this.account,location:location}).then(function() {
                     resolve();
                 }).catch(function (e) {
@@ -85,6 +67,33 @@
                     reject(e);
                 });
             });
+        },
+
+        /**
+         * Builds the location JSON for the currently loaded alert.
+         * @private
+         */
+        _buildAlertLocationJSON: function() {
+            var pos;
+            //If we have a template with at least two stacks it means we have a template centroid.
+            if (this._loadedAlert.template.zoneStacks.length >= 2) {
+                pos = this._loadedAlert.template.marker.getPosition();
+            } //One stack means we only have a stack centroid.
+            else if (this._loadedAlert.template.zoneStacks.length === 1) {
+                pos = this._loadedAlert.template.zoneStacks[0].marker.getPosition()
+            }
+            else { //No stacks means we have no centroid, fallback zone only.
+                pos = new google.maps.LatLng(0,0);
+            }
+            return {
+                "location": {
+                    "geometry": { "type" : "Point", "coordinates" : [pos.lng(),pos.lat()] },
+                    "properties": {
+                        "alertId": this._loadedAlert.template.id
+                    },
+                    "type": "Feature"
+                }
+            };
         },
 
         /**
@@ -707,6 +716,7 @@
                             json.properties.speed = Number(_outer._alertSpeed);
                             json.properties.speedUnit = _outer._alertSpeedUnit || 'kph';
                         }
+                        json.timezoneOffset = new Date().getTimezoneOffset();
                     }
                     //Add fallback zone, we'll always add it the properties.
                     json.properties[_outer._FALLBACK_ZONE_ID] = {
@@ -753,6 +763,9 @@
                             json.properties.center = this.zoneStacks[0].marker.getPosition();
                         }
                     }
+                    //If we have no geometries defined then delete the geo property entirely.
+                    if (!json.geo.geometries.length) { delete json.geo; }
+
                     this.json = json;
                 },
                 /**

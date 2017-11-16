@@ -53,6 +53,20 @@ Polymer({
     },
 
     /**
+     * Loads the passed template into the view.
+     * @param template
+     */
+    updateViewWithTemplate: function(template) {
+        if (!template || typeof template !== 'object') {
+            this.fire('message-error','Unable to load template, template not provided');
+            return;
+        }
+        //Clear the map.
+        this.clearMap();
+        this._drawAndLoadAlertTemplate(template);
+    },
+
+    /**
      * Fetches the latest location of the current user and refreshes their position on the map.
      */
     refreshUserLocation: function() {
