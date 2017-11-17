@@ -122,6 +122,7 @@
                     center: new google.maps.LatLng(51.08427,-114.13062),
                     streetViewControl: false,
                     fullscreenControl: false,
+                    scrollwheel: false,
                     mapTypeControlOptions: {
                         style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
                         position: google.maps.ControlPosition.LEFT_TOP
@@ -131,6 +132,9 @@
                         position: google.maps.ControlPosition.LEFT_CENTER
                     }
                 };
+                if (_this.nodeName !== 'VOYENT-MY-LOCATIONS') {
+                    mapOptions.clickableIcons = false;
+                }
                 //Alert view map is readonly.
                 if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
                     mapOptions.mapTypeControl =  mapOptions.scrollwheel =
