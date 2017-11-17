@@ -265,6 +265,7 @@
             //Validate the input.
             if (this._showDialogInput && (!this._dialogInput ||
                     !this._dialogInput.trim())) {
+                this.fire('message-error', 'Please enter a value');
                 return;
             }
             //We allow for passing the confirm function directly or as a string.
