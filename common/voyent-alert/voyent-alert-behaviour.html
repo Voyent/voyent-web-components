@@ -273,7 +273,7 @@
                 else { this._dialogConfirmFunc(); }
             }
             //Close the dialog after.
-            this._closeDialog(true);
+            this.closeDialog(true);
         },
 
         /**
@@ -281,17 +281,21 @@
          * @param confirmed
          * @private
          */
-        _closeDialog: function(confirmed) {
+        closeDialog: function(confirmed) {
             confirmed = typeof confirmed === 'boolean' ? confirmed : false;
+            
             //Only call the cancel function if this is triggered by a cancel.
             //We allow passing the confirm function directly or as a string.
             if (!confirmed && this._dialogCancelFunc) {
                 if (typeof this._dialogCancelFunc === 'string') { this[this._dialogCancelFunc](); }
                 else { this._dialogCancelFunc(); }
             }
-            this.querySelector('#modalDialog').close();
+            
+            if (this.querySelector('#modalDialog')) {
+                this.querySelector('#modalDialog').close();
+            }
         },
-
+        
         /**
          * Handles enter and escape key presses when the dialog is focused.
          * @param e
@@ -304,7 +308,7 @@
                 this._confirmDialog();
             }
             else if (e.keyCode === 27) { //Escape
-                this._closeDialog();
+                this.closeDialog();
             }
         },
 
