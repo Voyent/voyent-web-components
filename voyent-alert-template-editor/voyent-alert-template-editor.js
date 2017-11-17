@@ -29,7 +29,6 @@ Polymer({
      */
     loadAlertTemplate: function(id) {
         this._setIsTemplateLoading(true);
-        this.closeDialog(); //Ensure the dialog is closed.`
         var _this = this;
         this._fetchAlertTemplate(id).then(function(template) {
             //Clear the map of any loaded alert template before drawing.
