@@ -177,10 +177,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                 font-size:14px;
             }
             .title.zone.active {
-                width:125px;
+                width:102px;
             }
             .title-bttns {
-                width:20px;
+                width:45px;
             }
             .delete-button {
                 text-align:center;
@@ -323,10 +323,13 @@ Internal component used to display the properties panel inside Voyent alert comp
                             <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
                                                on-click="_toggleProperties" data-index$="[[index]]"></paper-icon-button>
                             <div class$="{{_getZoneTitleClasses(zone.active)}}"
-                                 data-index$="[[index]]" on-click="_toggleProximityZoneRenaming">
+                                 data-index$="[[index]]" on-click="_toggleProperties">
                                 [[zone.name]]
                             </div>
                             <div class="title-bttns" hidden="[[!zone.active]]">
+                                <paper-icon-button icon="create" data-index$="[[index]]"
+                                                   on-click="_toggleProximityZoneRenaming">
+                                </paper-icon-button>
                                 <paper-icon-button title="Remove Zone" icon="delete" on-click="_removeProximityZone"
                                                    data-index$="[[index]]" tabindex="4">
                                 </paper-icon-button>
@@ -413,10 +416,13 @@ Internal component used to display the properties panel inside Voyent alert comp
                             <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(_fallbackZone.active)}}"
                                                on-click="_toggleFallbackZoneProperties"></paper-icon-button>
                             <div class$="{{_getZoneTitleClasses(_fallbackZone.active)}}"
-                                 on-click="_toggleProximityZoneRenaming">
+                                 on-click="_toggleFallbackZoneProperties">
                                 [[_fallbackZone.name]]
                             </div>
                             <div class="title-bttns" hidden="[[!_fallbackZone.active]]">
+                                <paper-icon-button icon="create" data-index$="[[index]]"
+                                                   on-click="_toggleProximityZoneRenaming">
+                                </paper-icon-button>
                                 <paper-icon-button title="Remove Zone" icon="delete"
                                                    on-click="_removeFallbackZone" tabindex="4">
                                 </paper-icon-button>
