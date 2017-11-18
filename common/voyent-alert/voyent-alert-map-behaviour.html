@@ -499,8 +499,8 @@
         _drawMyLocations: function(locations) {
             for (var i=0; i<locations.length; i++) {
                 if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                    if (!this.locationNames.length ||
-                        this.locationNames.indexOf(locations[i].location.properties.vras.name) === -1)
+                    if (!this._locationNames.length ||
+                        this._locationNames.indexOf(locations[i].location.properties.vras.name) === -1)
                     continue;
                 }
                 this._myLocations.push(new this._MyLocation(
@@ -610,11 +610,15 @@
                     zones = [];
                     zIndex = 49;
                     for (var i=0; i<zoneGeometries.length; i++) {
-                        //For alert detail view only show the inner zone of each stack.
-                        if (this.nodeName === 'VOYENT-ALERT-VIEW' && i === 1) {
-                            break;
-                        }
                         properties = templateJSON.properties[zoneGeometries[i].id];
+                        if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                            //For alert detail view only show the inner zone of each stack.
+                            if (i === 1) {
+                                break;
+                            }
+                            //And the alert name for the zone label.
+                            properties.name = templateJSON.name;
+                        }
                         if (properties.shape === 'circle') {
                             zones.push(new this._CircularAlertZone(
                                 zoneGeometries[i].id, properties.radius, properties.name, properties.opacity,
@@ -678,17 +682,19 @@
             }
             //Draw the fallback zone but only if we have properties
             //other then enabled set (checking name exists is sufficient).
-            var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
-            if (fallbackZoneProperties && fallbackZoneProperties.name) {
-                this._fallbackZone = new this._FallbackAlertZone(
-                    fallbackZoneProperties.enabled,
-                    fallbackZoneProperties.name,
-                    fallbackZoneProperties.opacity,
-                    fallbackZoneProperties.colour,
-                    fallbackZoneProperties.messageTemplate,
-                    fallbackZoneProperties.notificationFilter,
-                    fallbackZoneProperties.zIndex
-                );
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+                var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
+                if (fallbackZoneProperties && fallbackZoneProperties.name) {
+                    this._fallbackZone = new this._FallbackAlertZone(
+                        fallbackZoneProperties.enabled,
+                        fallbackZoneProperties.name,
+                        fallbackZoneProperties.opacity,
+                        fallbackZoneProperties.colour,
+                        fallbackZoneProperties.messageTemplate,
+                        fallbackZoneProperties.notificationFilter,
+                        fallbackZoneProperties.zIndex
+                    );
+                }
             }
             this._adjustBoundsAndPan();
         },

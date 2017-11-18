@@ -27,14 +27,16 @@ Polymer({
                 _this.fire('message-error','Unable to load template, id not provided');
                 return;
             }
-            _this.locationNames = locationNames || [];
+            _this._locationNames = locationNames || [];
             //Clear the map.
             _this.clearMap();
             //Fetch the alert and user locations.
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
-            promises.push(_this._fetchLocationRecord());
+            if (_this._locationNames.indexOf('Mobile') > -1) {
+                promises.push(_this._fetchLocationRecord());
+            }
             promises.push(_this._fetchMyLocations());
             Promise.all(promises).then(function(results) {
                 //Build our LatLng object using the coordinates of the last location of the alert.
