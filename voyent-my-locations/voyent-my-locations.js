@@ -45,30 +45,29 @@ Polymer({
      * @private
      */
     _onAfterLogin: function () {
+        this._addCustomControls();
+    },
+
+    /**
+     * Opens the dialog for creating a new location.
+     * @private
+     */
+    _addNewLocation: function() {
         var _this = this;
-        //Add the buttons to the map.
-        this._addCustomControl();
-        //Add "create new location" button and remove Google's hand button.
-        this._addMarkerButton(function() {
-            _this._openDialog(function () {
-                if (_this._creationType === 'pindrop') {
-                    _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
-                    _this._deselectDrawingButtons();
-                    var markerButton = _this.querySelector('#'+_this._MARKER_BUTTON_ID);
-                    if (markerButton) {
-                        _this.toggleClass('selected', true, markerButton.querySelector('.customMapBttn'));
-                    }
-                }
-                else {
-                    _this._createLocation(new google.maps.Marker({
-                        position: _this._placeCoordinates,
-                        map: _this._map,
-                        draggable: true,
-                        icon: _this._MY_LOCATION_ICON_INACTIVE
-                    }));
-                    _this._adjustBoundsAndPan();
-                }
-            });
+        this._openDialog(function () {
+            if (_this._creationType === 'pindrop') {
+                _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
+                _this._deselectDrawingButtons();
+            }
+            else {
+                _this._createLocation(new google.maps.Marker({
+                    position: _this._placeCoordinates,
+                    map: _this._map,
+                    draggable: true,
+                    icon: _this._MY_LOCATION_ICON_INACTIVE
+                }));
+                _this._adjustBoundsAndPan();
+            }
         });
     },
 
@@ -292,7 +291,7 @@ Polymer({
     },
 
     /**
-     *
+     * Process CRUD operation results.
      * @param results
      * @private
      */
@@ -446,10 +445,12 @@ Polymer({
      * Adds the map control that contains the save and cancel buttons.
      * @private
      */
-    _addCustomControl: function() {
+    _addCustomControls: function() {
         if (this._customControlAdded) { return; }
-        this.$.customControl.removeAttribute('hidden');
-        this._map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(this.$.customControl);
+        this.$.crudButtons.removeAttribute('hidden');
+        this._map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(this.$.crudButtons);
+        this.$.locationButton.removeAttribute('hidden');
+        this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.locationButton);
         this._customControlAdded = true;
     },
 

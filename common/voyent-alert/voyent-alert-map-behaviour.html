@@ -106,7 +106,6 @@
             this._CIRCLE_BUTTON_ID = 'circleBttn';
             this._POLYGON_BUTTON_ID = 'polygonBttn';
             this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
-            this._MARKER_BUTTON_ID = 'markerBttn';
 
             var _this = this;
             //Default to the last realm and account if one is not set.
@@ -875,15 +874,6 @@
         },
 
         /**
-         * Handles adding the button for creating new locations.
-         * @param listener
-         * @private
-         */
-        _addMarkerButton: function(listener) {
-            this._addDrawButton(this._MARKER_BUTTON_ID,listener);
-        },
-
-        /**
          * Adds the button for creating new circular zone stacks.
          * @param listener
          * @param cb
@@ -1158,10 +1148,6 @@
          */
         _deselectDrawingButtons: function() {
             var bttnClass = '.customMapBttn';
-            var markerButton = this.querySelector('#'+this._MARKER_BUTTON_ID);
-            if (markerButton) {
-                this.toggleClass('selected', false, markerButton.querySelector(bttnClass));
-            }
             var polygonButton = this.querySelector('#'+this._POLYGON_BUTTON_ID);
             if (polygonButton) {
                 this.toggleClass('selected', false, polygonButton.querySelector(bttnClass));

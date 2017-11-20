@@ -166,16 +166,10 @@ Example:
                 </div>
             </template>
         </div>
-        <div id$="[[_MARKER_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
-            <div class="customMapBttn" title="Create a new Location">
-                <span>
-                    <div class="customMapBttnImg">
-                        <img src="../common/voyent-alert/img/drawing.png">
-                    </div>
-                </span>
-            </div>
+        <div id="locationButton" class="custom-control" hidden>
+            <paper-button raised title="Create a new location" on-click="_addNewLocation">Add Location...</paper-button>
         </div>
-        <div id="customControl" class="custom-control" hidden>
+        <div id="crudButtons" class="custom-control" hidden>
             <paper-button raised disabled$="[[!_buttonsEnabled]]" title="Cancel" on-click="_cancelChanges">Cancel</paper-button>
             <paper-button raised disabled$="[[!_buttonsEnabled]]" title="Save Changes" on-click="_saveChanges">Save Changes</paper-button>
         </div>
