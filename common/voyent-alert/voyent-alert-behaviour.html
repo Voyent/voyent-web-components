@@ -106,6 +106,10 @@
                 var zone = zoneStack.getZoneById(zoneId);
                 if (zone) {
                     if (!zone.active) {
+                        if (zoneStack !== this._loadedAlert.selectedStack) {
+                            this._toggleProperties(-1);
+                            this.set('_loadedAlert.selectedStack',zoneStack);
+                        }
                         this._toggleProperties(zoneStack.getZoneIndex(zone));
                         return;
                     }
