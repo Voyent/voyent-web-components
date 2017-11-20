@@ -97,6 +97,29 @@
         },
 
         /**
+         * Displays the zone properties for the zone matching the passed id.
+         */
+        selectZoneById: function(zoneId) {
+            if (!this._loadedAlert || !this._loadedAlert.template.zoneStacks) { return; }
+            for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
+                var zoneStack = this._loadedAlert.template.zoneStacks[i];
+                var zone = zoneStack.getZoneById(zoneId);
+                if (zone) {
+                    if (!zone.active) {
+                        this._toggleProperties(zoneStack.getZoneIndex(zone));
+                        return;
+                    }
+                }
+                else {
+                    if (this._fallbackZone && this._fallbackZone.id === zoneId && !this._fallbackZone.active) {
+                        this._toggleFallbackZoneProperties();
+                        return;
+                    }
+                }
+            }
+        },
+
+        /**
          * Toggles the zone properties section. This is used to toggle when clicking the accordion pane or the proximity
          * zone. In addition to toggling the panes this will also trigger styling updates to zones overlays.
          * on the map.
@@ -948,6 +971,18 @@
                  */
                 getZoneIndex: function (zone) {
                     return this.zones.indexOf(zone);
+                },
+                /**
+                 * Returns the zone with the specified zoneId.
+                 * @param zoneId
+                 */
+                getZoneById: function (zoneId) {
+                    for (var i=0; i<this.zones.length; i++) {
+                        if (this.zones[i].id === zoneId) {
+                            return this.zones[i];
+                        }
+                    }
+                    return null;
                 },
                 /**
                  * Returns the largest zone.
