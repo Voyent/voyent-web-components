@@ -1278,6 +1278,10 @@
             var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_BUTTON_ID);
             if (fallbackZoneButton) {
                 this.toggleClass('selected', !!enabled, fallbackZoneButton.querySelector('.customMapBttn'));
+                var childDiv = fallbackZoneButton.children[0];
+                if (childDiv) {
+                    childDiv.setAttribute('title',enabled ? 'Disable Entire Region Zone' : 'Enable Entire Region Zone')
+                }
             }
         }
     };
