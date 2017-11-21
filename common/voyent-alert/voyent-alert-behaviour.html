@@ -1628,6 +1628,9 @@
                         _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.active',active);
                     }
                     active ? this.activateOverlay() : this.deactivateOverlay();
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
+                    }
                 },
                 /**
                  * Sets the northern coordinate and draws the nameOverlay.
@@ -1898,6 +1901,9 @@
                     }
                     else {
                         this.active = active;
+                    }
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
                     }
                 },
                 /**
@@ -2192,6 +2198,14 @@
                     //Set the div content, replacing spaces with non-breaking ones.
                     this.div.innerHTML = this.zone.name.split(' ').join('&nbsp;');
                     //Configure the styling.
+                    if (this.zone.active) {
+                        this.div.style.fontSize = '14px';
+                        this.div.style.fontWeight = 'bold';
+                    }
+                    else {
+                        this.div.style.fontSize = '12px';
+                        this.div.style.fontWeight = '';
+                    }
                     this.div.style.backgroundColor = '#'+this.zone.colour;
                     this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
                     //Add the overlay.
@@ -2251,9 +2265,21 @@
                 );
                 //Set the div content, replacing spaces with non-breaking ones.
                 this.div.innerHTML = this.zone.name.split(' ').join('&nbsp;');
-                //Center the label above the zone.
+                //Configure the styling.
+                if (this.zone.active) {
+                    this.div.style.fontSize = '14px';
+                    this.div.style.fontWeight = 'bold';
+                    this.div.style.top = nc.y-25 + 'px';
+                }
+                else {
+                    this.div.style.fontSize = '12px';
+                    this.div.style.fontWeight = '';
+                    this.div.style.top = nc.y-23 + 'px';
+                }
+                //Set the div content, replacing spaces with non-breaking ones.
+                this.div.innerHTML = this.zone.name.split(' ').join('&nbsp;');
+                //Center the label.
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
-                this.div.style.top = nc.y-23 + 'px';
                 //Configure the styling.
                 this.div.style.backgroundColor = '#'+this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
