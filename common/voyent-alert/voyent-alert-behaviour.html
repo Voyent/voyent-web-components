@@ -234,12 +234,7 @@
          */
         _buildOverlayDiv: function(type) {
             var div = document.createElement('div');
-            if (type === 'zone') {
-                div.style.fontSize = '12px';
-            }
-            else { //location
-                div.style.fontSize = '12px';
-            }
+            div.style.fontSize = '12px';
             div.style.borderStyle = 'none';
             div.style.borderWidth = '0px';
             div.style.position = 'absolute';
@@ -1553,7 +1548,7 @@
             this._AlertZone = function (id,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
-                this.setOpacity(opacity || 0.30);
+                this.setOpacity(opacity || 0.25);
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
@@ -1812,8 +1807,8 @@
                 this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
                 this.setName(name || 'Fallback Zone');
-                this.setOpacity(opacity || 0.30);
-                this.setColour(colour || '000000');
+                this.setOpacity(opacity || 0.25);
+                this.setColour(colour || '9EAD9E');
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
                 this.setRenaming(false);

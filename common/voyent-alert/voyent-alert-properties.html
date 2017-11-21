@@ -87,9 +87,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                 transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
                 box-shadow: 0px 0px 0px 1px rgba(155,155,155,0.3);
             }
-            .table > div:nth-of-type(odd) {
-                background-color: #ededed;
-            }
             .row {
                 width: 100%;
                 padding:0 10px 0 10px;
@@ -159,6 +156,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 font-size: 15px;
                 font-weight: bold;
                 margin: 10px 0 10px 0;
+                text-align:center;
             }
             .float-right {
                 float: right;
@@ -228,7 +226,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                             <paper-icon-button title="Toggle Movement Properties" icon="{{_getArrowIcon(_showMovement)}}"
                                                on-click="_toggleMovement" data-index$="[[index]]"></paper-icon-button>
                             <div class="title zone" class$="{{_getZoneTitleClasses(_showMovement)}}" data-index$="[[index]]">
-                               Movement
+                               Alert Movement
                             </div>
                         </div>
                         <div class$="{{_getAccordionClasses('body',_showMovement)}}">
@@ -292,7 +290,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <div>
                     <div class="alert-zones-label">
                         Proximity Zones
-                        <paper-icon-button title="Add New" class="float-right" icon="add" on-click="_addProximityZone"></paper-icon-button>
+                        <paper-icon-button title="Add Zone to Stack" class="float-right" icon="add" on-click="_addProximityZone">
+                        </paper-icon-button>
                     </div>
                 </div>
             </template>
@@ -327,7 +326,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 [[zone.name]]
                             </div>
                             <div class="title-bttns" hidden="[[!zone.active]]">
-                                <paper-icon-button icon="create" data-index$="[[index]]"
+                                <paper-icon-button icon="create" data-index$="[[index]]" title="Edit Zone Name"
                                                    on-click="_toggleProximityZoneRenaming">
                                 </paper-icon-button>
                                 <paper-icon-button title="Remove Zone" icon="delete" on-click="_removeProximityZone"
