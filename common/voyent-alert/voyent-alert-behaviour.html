@@ -2204,7 +2204,7 @@
                     }
                     else {
                         this.div.style.fontSize = '12px';
-                        this.div.style.fontWeight = '';
+                        this.div.style.removeProperty('fontWeight');
                     }
                     this.div.style.backgroundColor = '#'+this.zone.colour;
                     this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
