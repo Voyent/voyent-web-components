@@ -188,7 +188,11 @@ Polymer({
             voyent.locate.findAlertTemplates({"query": {"properties.parentAlertId":{"$exists":false}},
                                                        "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
                 if (!templates) { return; }
-                _this._parentTemplates = templates;
+                _this._parentTemplates = templates.sort(function(a,b) {
+                    if(a.name.toLowerCase() < b.name.toLowerCase()) return -1;
+                    if(a.name.toLowerCase() > b.name.toLowerCase()) return 1;
+                    return 0;
+                });
                 _this._isFetchingTemplates = false;
                 resolve();
             }).catch(function (error) {
