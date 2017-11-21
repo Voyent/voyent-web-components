@@ -152,7 +152,7 @@ Polymer({
     },
 
     /**
-     *
+     * Transition an alert state from one state to another.
      * @param state
      * @returns {*}
      */
