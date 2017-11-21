@@ -122,7 +122,7 @@ Polymer({
     },
 
     /**
-     * Previews the currently loaded alert and returns the alert JSON. This will trigger calculations on
+     * Previews the currently loaded alert and returns the event that was fired. This will trigger calculations on
      * the service which will result in a push notification to the browser containing the preview data.
      * @returns {*}
      */
@@ -137,7 +137,7 @@ Polymer({
         }).catch(function(e) {
             _this.fire('message-error', 'Unable to preview alert: ' + (e.responseText || e.message || e));
         });
-        return event.data.alert;
+        return event;
     },
 
     /**
@@ -355,7 +355,8 @@ Polymer({
                 "currentLocation": currentLocation,
                 "alert": this._loadedAlert.template.json,
                 "alertId" : alertId,
-                "alertInstanceId" : alertId
+                "alertInstanceId" : alertId,
+                "previewMetricsId":this._generateUid()
             }
         };
     },
