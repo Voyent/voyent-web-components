@@ -55,15 +55,24 @@ Polymer({
     },
 
     /**
-     * Loads the passed template into the view.
+     * Loads the passed template into the view and optionally renders only the specified zone.
      * @param template
+     * @param zoneId
      */
-    updateViewWithTemplate: function(template) {
+    previewZoneFromTemplate: function(template,zoneId) {
         if (!template || typeof template !== 'object') {
             this.fire('message-error','Unable to load template, template not provided');
             return;
         }
-        //Clear the map.
+        //Ensure that the passed zoneId is valid. If not we will fallback to just drawing the inner zone of each stack.
+        if (zoneId) {
+            for (var i=0; i<template.geo.geometries.length; i++) {
+                if (zoneId === template.geo.geometries[i].id) {
+                    this._zoneIdToDisplay = zoneId;
+                    break;
+                }
+            }
+        }
         this.clearMap();
         this._drawAndLoadAlertTemplate(template);
     },
