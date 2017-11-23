@@ -202,15 +202,15 @@ Polymer({
      * Wrapper function for `flagLocationForUpdating`. Used by the template.
      * @private
      */
-    _flagLocationForUpdating: function() {
+    _flagLocationForUpdating: function(e) {
         //This may fire when the toggle component is initializing.
         if (!this._loadedLocation) { return; }
-        if (this._validateLoadedLocationName()) {
-            if (this._inputName) {
-                this._loadedLocation.setName(this._inputName);
-            }
-            this.flagLocationForUpdating(this._loadedLocation);
+        //Change event is fired from the input field where as checked-changed is fired from the toggle.
+        if (e.type === 'change') {
+            if (!this._validateLocationName(this._loadedLocation.name)) { return; }
+            this._loadedLocation.setName(this._inputName);
         }
+        this.flagLocationForUpdating(this._loadedLocation);
     },
 
     /**
@@ -246,15 +246,13 @@ Polymer({
 
     /**
      * Validates that the locations have a unique name property.
+     * @param name
      * @returns {boolean}
      * @private
      */
-    _validateLoadedLocationName: function() {
+    _validateLocationName: function(name) {
         for (var i=0; i<this._myLocations.length; i++) {
-            if (this._myLocations[i] === this._loadedLocation) {
-                continue;
-            }
-            if (this._myLocations[i].name === this._inputName) {
+            if (this._myLocations[i].name === name) {
                 this.fire('message-error', 'Location names must be unique');
                 return false;
             }
@@ -482,6 +480,7 @@ Polymer({
             this.fire('message-error', 'Please complete all fields');
             return;
         }
+        if (!this._validateLocationName(this._locationName)) { return; }
         //We allow for passing the confirm function directly or as a string.
         if (this._dialogConfirmFunc) {
             if (typeof this._dialogConfirmFunc === 'string') { this[this._dialogConfirmFunc](); }
@@ -540,6 +539,7 @@ Polymer({
      */
     _addPlaceToMyLocations: function() {
         if (!this._selectedPlace) { return; }
+        if (!this._validateLocationName(this._selectedPlace.name)) { return; }
         this._loadedLocation = this._createLocation(new google.maps.Marker({
             map: this._map,
             position: this._selectedPlace.latLng,
