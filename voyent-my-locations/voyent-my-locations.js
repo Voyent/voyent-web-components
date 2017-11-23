@@ -206,7 +206,9 @@ Polymer({
         //This may fire when the toggle component is initializing.
         if (!this._loadedLocation) { return; }
         if (this._validateLoadedLocationName()) {
-            this._loadedLocation.setName(this._inputName);
+            if (this._inputName) {
+                this._loadedLocation.setName(this._inputName);
+            }
             this.flagLocationForUpdating(this._loadedLocation);
         }
     },
@@ -562,7 +564,7 @@ Polymer({
             this._selectedPlace ? false : this._isPrivateResidence,marker, null
         );
         this._myLocations.push(newLocation);
-        this._locationsToUpdate.push(newLocation);
+        this.flagLocationForUpdating(newLocation);
         //Reset the dialog properties.
         this._isPrivateResidence = false;
         this._locationName = null;
