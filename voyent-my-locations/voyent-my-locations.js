@@ -560,7 +560,7 @@ Polymer({
     _createLocation: function(marker) {
         //Build the new location.
         var newLocation = new this._MyLocation(
-            null, this._locationName||this._selectedPlace.name,
+            null, this._selectedPlace ? this._selectedPlace.name : this._locationName,
             this._selectedPlace ? false : this._isPrivateResidence,marker, null
         );
         this._myLocations.push(newLocation);
