@@ -517,7 +517,6 @@ Polymer({
             _this._createLocation(marker);
             _this._disableDrawingMode();
             _this._buttonsEnabled = true;
-            _this._adjustBoundsAndPan();
         });
         //When the escape key is pressed exit drawing mode.
         window.addEventListener('keydown', function (event) {
