@@ -138,7 +138,10 @@ Example:
             </template>
             <template is="dom-if" if="[[!_loadedLocation]]">
                 <div class="selected-place">
-                    <div class="name">[[_selectedPlace.name]]</div>
+                    <paper-input label="Name"
+                                 placeholder="New Name"
+                                 value="{{_selectedPlace.name::input}}">
+                    </paper-input>
                     <div class="address">
                         <div>
                             <template is="dom-if" if="[[_selectedPlace.streetNumber]]">
