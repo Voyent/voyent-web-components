@@ -336,10 +336,6 @@ Polymer({
                             };
                         }
                         _this._toggleInfoWindow(null);
-                        //Don't bother panning if there are no locations yet.
-                        if (_this._myLocations && _this._myLocations.length) {
-                            _this._adjustBoundsAndPan();
-                        }
                     });
                 }
             });
