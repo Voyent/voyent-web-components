@@ -106,7 +106,6 @@ Polymer({
         var _this = this;
         this._fetchMyLocations().then(function() {
             _this._buttonsEnabled = false;
-            _this._adjustBoundsAndPan();
             _this.fire('message-info','Successfully reverted all changes');
         });
     },
