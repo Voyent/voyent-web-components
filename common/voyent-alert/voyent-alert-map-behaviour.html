@@ -480,6 +480,7 @@
                     id:"getMyLocationsForUsername", execParams: {username:voyent.auth.getLastKnownUsername()}
                 }).then(function(locations) {
                     //Clear the map and draw the locations.
+                    _this._loadedLocation = null;
                     _this._clearMyLocations();
                     _this._drawMyLocations(locations);
                     resolve();
