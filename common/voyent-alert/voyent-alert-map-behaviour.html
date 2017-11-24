@@ -305,9 +305,14 @@
                 this._removeAlertTemplateFromMap();
             }
             //Clear the user marker.
-            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this._userLocationMarker) {
-                this._userLocationMarker.setMap(null);
-                this._userLocationMarker = null;
+            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                if (this._userLocationMarker) {
+                    this._userLocationMarker.setMap(null);
+                    this._userLocationMarker = null;
+                }
+                else if (this._locationMarkers) {
+                    this._clearLocations();
+                }
             }
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 this.fetchAlertTemplates();

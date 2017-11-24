@@ -58,8 +58,9 @@ Polymer({
      * Loads the passed template into the view and optionally renders only the specified zone.
      * @param template
      * @param zoneId
+     * @param locations
      */
-    previewZoneFromTemplate: function(template,zoneId) {
+    previewZoneFromTemplate: function(template,zoneId,locations) {
         if (!template || typeof template !== 'object') {
             this.fire('message-error','Unable to load template, template not provided');
             return;
@@ -75,6 +76,7 @@ Polymer({
         }
         this.clearMap();
         this._drawAndLoadAlertTemplate(template);
+        this._drawLocations(locations);
     },
 
     /**
@@ -139,5 +141,36 @@ Polymer({
                 icon: this.pathtoimages+'/img/user_marker.png'
             });
         }
+    },
+
+    /**
+     * Draws user markers on the map based on the passed location data.
+     * @param locations
+     * @private
+     */
+    _drawLocations: function(locations) {
+        if (!locations) { return; }
+        this._locationMarkers = [];
+        for (var i=0; i<locations.length; i++) {
+            this._locationMarkers.push(new google.maps.Marker({
+                position: new google.maps.LatLng(
+                    locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
+                ),
+                map: this._map,
+                draggable: false,
+                icon: this.pathtoimages+'/img/user_marker.png'
+            }));
+        }
+    },
+
+    /**
+     * Clears user markers from the map.
+     * @private
+     */
+    _clearLocations: function() {
+        for (var i=0; i<this._locationMarkers.length; i++) {
+            this._locationMarkers[i].setMap(null);
+        }
+        this._locationMarkers = [];
     }
 });
