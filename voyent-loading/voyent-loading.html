@@ -15,13 +15,15 @@ Arbitrary content (such as messages) can be injected before the throbber as well
 Two events can also be fired to manage the state:
  loading-on
  loading-off
+ 
+If you don't want a particular instance of this component to listen for the loading-* events set the "locked" attribute
 
 @demo demo.html
 -->
 <dom-module id="voyent-loading">
     <template>
         <link type="text/css" rel="stylesheet" href="./voyent-loading.css">
-    
+        
         <div class="throbber-wrapper" hidden$="{{!on}}">
             <content></content>
             <div class="throbber-loader">...</div>
