@@ -446,7 +446,7 @@
                 else {
                     query = {
                         "location.properties.alertId": {"$exists":false},
-                        "location.properties.type": "mobile"
+                        "location.properties.vras.type": "mobile"
                     };
                     query.username = voyent.auth.getLastKnownUsername();
                 }
