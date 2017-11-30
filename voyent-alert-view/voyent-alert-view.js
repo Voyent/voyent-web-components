@@ -4,7 +4,7 @@ Polymer({
 
     ready: function() {
         this._loadedAlert = null;
-        this._myLocations = [];
+        this._locationMarkers = [];
     },
     
     /**
@@ -15,29 +15,24 @@ Polymer({
     },
 
     /**
-     * Updates the view with the last location of the alert associated with the templateId and refreshes the current
-     * user's location. The locationNames are included so that we only show the relevant locations on the map.
+     * Updates the view with the last location of the alert associated with the templateId.
+     * If location records are included they will be drawn on the map.
      * @param templateId
-     * @param locationNames
+     * @param locations
      */
-    updateView: function(templateId,locationNames) {
+    updateView: function(templateId,locations) {
         var _this = this;
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
                 _this.fire('message-error','Unable to load template, id not provided');
                 return;
             }
-            _this._locationNames = locationNames || [];
             //Clear the map.
             _this.clearMap();
             //Fetch the alert and user locations.
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
-            if (_this._locationNames.indexOf('Mobile') > -1) {
-                promises.push(_this._fetchLocationRecord());
-            }
-            promises.push(_this._fetchMyLocations());
             Promise.all(promises).then(function(results) {
                 //Build our LatLng object using the coordinates of the last location of the alert.
                 var latLng = new google.maps.LatLng(
@@ -45,6 +40,7 @@ Polymer({
                     results[1].location.geometry.coordinates[0]
                 );
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
+                _this._drawLocations(locations,true);
                 _this._templateId = _this._loadedAlert.template.id;
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
@@ -76,7 +72,7 @@ Polymer({
         }
         this.clearMap();
         this._drawAndLoadAlertTemplate(template);
-        this._drawLocations(locations);
+        this._drawLocations(locations,false);
     },
 
     /**
@@ -128,7 +124,7 @@ Polymer({
      */
     _drawUser: function(location) {
         if (!location) { return; }
-        var coordinates = location.location.geometry.coordinates;
+        var coordinates = location.location ? location.location.geometry.coordinates : location.geometry.coordinates;
         //Check if we already have a user location drawn on the map.
         if (this._userLocationMarker) { //Update the existing instance.
             this._userLocationMarker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
@@ -146,19 +142,25 @@ Polymer({
     /**
      * Draws user markers on the map based on the passed location data.
      * @param locations
+     * @param useMarkerIcon
      * @private
      */
-    _drawLocations: function(locations) {
+    _drawLocations: function(locations,useMarkerIcon) {
         if (!locations) { return; }
         this._locationMarkers = [];
         for (var i=0; i<locations.length; i++) {
+            //We should always only have one mobile location.
+            if (locations[i].properties.vras.type === 'mobile') {
+                this._drawUser(locations[i]);
+                continue;
+            }
             this._locationMarkers.push(new google.maps.Marker({
                 position: new google.maps.LatLng(
                     locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
                 ),
                 map: this._map,
                 draggable: false,
-                icon: this.pathtoimages+'/img/user_marker.png'
+                icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this.pathtoimages+'/img/user_marker.png'
             }));
         }
     },

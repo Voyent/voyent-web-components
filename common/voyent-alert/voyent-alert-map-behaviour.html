@@ -503,11 +503,6 @@
          */
         _drawMyLocations: function(locations) {
             for (var i=0; i<locations.length; i++) {
-                if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                    if (!this._locationNames.length ||
-                        this._locationNames.indexOf(locations[i].location.properties.vras.name) === -1)
-                    continue;
-                }
                 this._myLocations.push(new this._MyLocation(
                     locations[i].location.properties.vras.id,
                     locations[i].location.properties.vras.name,
@@ -1074,7 +1069,7 @@
          */
         _adjustBoundsAndPan: function() {
             var bounds = new google.maps.LatLngBounds();
-            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._userLocationMarker || this._myLocations))) {
+            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._userLocationMarker || this._locationMarkers))) {
                 var i;
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
@@ -1105,9 +1100,9 @@
                 if (this._userLocationMarker) {
                     bounds.extend(this._userLocationMarker.getPosition());
                 }
-                if (this._myLocations) {
-                    for (i=0; i<this._myLocations.length; i++) {
-                        bounds.extend(this._myLocations[i].marker.getPosition());
+                if (this._locationMarkers) { //TODO - Does this affect preview negatively?
+                    for (i=0; i<this._locationMarkers.length; i++) {
+                        bounds.extend(this._locationMarkers[i].getPosition());
                     }
                 }
                 this._map.fitBounds(bounds);
