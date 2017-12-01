@@ -332,7 +332,7 @@
          * @param schedule
          */
         setSchedule: function(schedule) {
-            if (this._loadedAlert || this._loadedAlert.template) { return; }
+            if (!this._loadedAlert || !this._loadedAlert.template) { return; }
             this._loadedAlert.template.setSchedule(schedule);
         },
 
