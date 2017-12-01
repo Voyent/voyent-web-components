@@ -62,6 +62,8 @@ Polymer({
             return;
         }
         //Ensure that the passed zoneId is valid. If not we will fallback to just drawing the inner zone of each stack.
+        this._zoneIdToDisplay = null;
+        this._foundZoneIdMatch = false;
         if (zoneId) {
             for (var i=0; i<template.geo.geometries.length; i++) {
                 if (zoneId === template.geo.geometries[i].id) {

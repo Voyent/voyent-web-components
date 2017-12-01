@@ -615,9 +615,12 @@
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //For alert detail view in preview mode only show the requested zone.
                             if (this._zoneIdToDisplay) {
+                                if (this._foundZoneIdMatch) {
+                                    this._foundZoneIdMatch = false;
+                                    break;
+                                }
                                 if (this._zoneIdToDisplay === zoneGeometries[i].id) {
-                                    //Reset the zone id.
-                                    this._zoneIdToDisplay = null;
+                                    this._foundZoneIdMatch = true;
                                 }
                                 else { continue; }
                             }
@@ -645,18 +648,20 @@
                         zIndex--;
                     }
                     //Build the stack marker, calculate the position using by building JSON that represents only the stack.
-                    stackMarker = new google.maps.Marker({
-                        position: this._AlertTemplate.calculateCentroidFromJSON({
-                            "geo": {
-                                "type": "GeometryCollection",
-                                "geometries": zoneGeometries
-                            }
-                        }),
-                        map: this._map, draggable: true, zIndex: 50,
-                        visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
-                    });
+                    if (zones.length) {
+                        stackMarker = new google.maps.Marker({
+                            position: this._AlertTemplate.calculateCentroidFromJSON({
+                                "geo": {
+                                    "type": "GeometryCollection",
+                                    "geometries": zoneGeometries
+                                }
+                            }),
+                            map: this._map, draggable: true, zIndex: 50,
+                            visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
+                        });
 
-                    zoneStacks.push(new this._AlertZoneStack(stackMarker, zones));
+                        zoneStacks.push(new this._AlertZoneStack(stackMarker, zones));
+                    }
                 }
             }
             else { //No stacks, fallback zone only.
