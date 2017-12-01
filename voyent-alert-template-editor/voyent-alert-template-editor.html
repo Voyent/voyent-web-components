@@ -47,6 +47,9 @@ Example:
                                                  _show-dialog-input="{{_showDialogInput}}"
                                                  _show-dialog-badge="{{_showDialogBadge}}"
                                                  _dialog-input="{{_dialogInput}}"
+                                                 _show-dialog-toggle="{{_showDialogToggle}}"
+                                                 _dialog-toggle="{{_dialogToggle}}"
+                                                 _dialog-toggle-label="{{_dialogToggleLabel}}"
                                                  _dialog-badge="{{_dialogBadge}}"
                                                  _dialog-message="{{_dialogMessage}}"
                                                  _dialog-confirm-func="{{_dialogConfirmFunc}}"
@@ -61,9 +64,9 @@ Example:
                 <div id="crudPanel">
                     <template is="dom-if" if="[[_loadedAlert]]">
                         <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
-                            <div style="font-size:12px;text-align:center;">
+                            <div class="text-center" style="font-size:12px;">
                                 Save Location With Template?
-                                <paper-toggle-button style="display:inline;width:150px;"
+                                <paper-toggle-button class="inline" style="width:150px;"
                                                      checked="{{_loadedAlert.template.savePosition}}">
                                 </paper-toggle-button>
                             </div>

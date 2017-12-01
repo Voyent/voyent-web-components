@@ -6,6 +6,7 @@
 <link rel="import" href="../../../paper-input/paper-input.html">
 <link rel="import" href="../../../paper-slider/paper-slider.html">
 <link rel="import" href="../../../iron-icon/iron-icon.html">
+<link rel="import" href="../../../paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../../../iron-icons/iron-icons.html">
 <link rel="import" href="../../../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../../paper-dropdown-menu/paper-dropdown-menu.html">
@@ -488,9 +489,18 @@ Internal component used to display the properties panel inside Voyent alert comp
         </template>
         <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
             <div>
-                <p>[[_dialogMessage]]</p>
+                <template is="dom-if" if="[[_dialogMessage]]">
+                    <p>[[_dialogMessage]]</p>
+                </template>
                 <template is="dom-if" if="[[_showDialogInput]]">
                     <paper-input autofocus no-label-float on-keyup="_dialogKeyUp" value="{{_dialogInput}}"></paper-input>
+                </template>
+                <template is="dom-if" if="[[_showDialogToggle]]">
+                    <div class="text-center">
+                        <div style="width:100%;">[[_dialogToggleLabel]]</div>
+                        <paper-toggle-button class="inline" style="width:150px;" checked="{{_dialogToggle}}">
+                        </paper-toggle-button>
+                    </div>
                 </template>
                 
                 <template is="dom-if" if="[[_showDialogBadge]]">

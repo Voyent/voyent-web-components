@@ -56,7 +56,7 @@ Polymer({
             msg = 'Are you sure you want to cancel creating ' +
                 this._loadedAlert.template.name + '? This action cannot be undone.';
         }
-        this._openDialog(msg,null,'clearMap');
+        this._openDialog(msg,null,null,false,'clearMap');
     },
 
 

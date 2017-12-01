@@ -249,21 +249,27 @@
         /**
          * Opens the dialog and sets various properties to be used later.
          * @param message
-         * @param input
+         * @param inputVal
+         * @param toggleLabel
          * @param showBadge
          * @param confirmFunc
          * @param cancelFunc
          * @private
          */
-        _openDialog: function(message,input,showBadge,confirmFunc,cancelFunc) {
+        _openDialog: function(message,inputVal,toggleLabel,showBadge,confirmFunc,cancelFunc) {
             this._dialogMessage = message;
-            this._dialogInput = input;
-            this._dialogBadge = "info.png";
-            if (this._loadedAlert && this._loadedAlert.template && this._loadedAlert.template.badge) {
-                this._dialogBadge = this._loadedAlert.template.badge;
+            this._dialogInput = inputVal;
+            this._showDialogInput = (typeof inputVal !== 'undefined' && inputVal !== null);
+            this._dialogToggleLabel = toggleLabel;
+            this._showDialogToggle = !!toggleLabel;
+            this._dialogToggle = false;
+            this._showDialogBadge = !!showBadge;
+            if (this._showDialogBadge) {
+                this._dialogBadge = "info.png";
+                if (this._loadedAlert && this._loadedAlert.template && this._loadedAlert.template.badge) {
+                    this._dialogBadge = this._loadedAlert.template.badge;
+                }
             }
-            this._showDialogInput = (typeof input !== 'undefined' && input !== null);
-            this._showDialogBadge = showBadge ? showBadge : false;
             this._dialogConfirmFunc = confirmFunc;
             this._dialogCancelFunc = cancelFunc;
             var dialog = this.querySelector('#modalDialog');
@@ -475,7 +481,7 @@
                 this.setMarker(marker || null);
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
-                this.savePosition = !!savePosition;
+                this.setSavePosition(!!savePosition);
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -658,6 +664,13 @@
                     this.state = state;
                 },
                 /**
+                 * Sets whether we should save the template position.
+                 * @param savePosition
+                 */
+                setSavePosition: function(savePosition) {
+                    this.savePosition = savePosition;
+                },
+                /**
                  * Add the passed zone stack.
                  * @param zoneStack
                  */
@@ -744,6 +757,14 @@
                             json.properties.speedUnit = _outer._alertSpeedUnit || 'kph';
                         }
                         json.timezoneOffset = new Date().getTimezoneOffset();
+                    }
+                    else { //Remove the properties in case we are saving an alert as a template.
+                        delete json.properties.parentAlertId;
+                        delete json.state;
+                        delete json.properties.direction;
+                        delete json.properties.speed;
+                        delete json.properties.speedUnit;
+                        delete json.timezoneOffset;
                     }
                     //Add fallback zone, we'll always add it the properties.
                     json.properties[_outer._FALLBACK_ZONE_ID] = {

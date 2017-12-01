@@ -45,6 +45,19 @@ Polymer({
          */
         _dialogInput: { type: String, value: '', notify: true },
         /**
+         * Whether to show the modal dialog toggle button in the dialog message.
+         */
+        _showDialogToggle: { type: Boolean, value: false, notify: true },
+        /**
+         *
+         * The value of the modal dialog toggle button, if applicable.
+         */
+        _dialogToggle: { type: Boolean, value: false, notify: true },
+        /**
+         * The value of the modal dialog toggle button label, if applicable.
+         */
+        _dialogToggleLabel: { type: String, value: '', notify: true },
+        /**
          * The value of the modal dialog alert badge chooser, if applicable.
          */
         _dialogBadge: { type: String, value: '', notify: true },
@@ -299,7 +312,7 @@ Polymer({
     
     chooseAlertBadge: function() {
         var _this = this;
-        this._openDialog(null,null,true,function() {
+        this._openDialog(null,null,null,true,function() {
             // Persist our choice to the template JSON
             _this._loadedAlert.template.setBadge(this._dialogBadge);
             
@@ -323,7 +336,7 @@ Polymer({
      */
     _addProximityZone: function() {
         var _this = this;
-        this._openDialog('Please enter the zone name','',false,function() {
+        this._openDialog('Please enter the zone name','',null,false,function() {
             var newZone;
             //Set the new zone radius as 50% larger than the current largest zone
             //and de-increment the new zone zIndex so it sits behind the other zones.
