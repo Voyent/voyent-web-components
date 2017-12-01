@@ -471,9 +471,10 @@
              * @param zoneStacks - A list of _AlertZoneStack objects, the list of zone stacks belonging with the template.
              * @param state - The current state of the alert, only relevant for child templates.
              * @param savePosition - Whether the position of the template should be stored in the json.
+             * @param schedule - The schedule details, only relevant for child templates.
              * @private
              */
-            this._AlertTemplate = function(id,parentId,name,badge,marker,zoneStacks,state,savePosition) {
+            this._AlertTemplate = function(id,parentId,name,badge,marker,zoneStacks,state,savePosition,schedule) {
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
@@ -482,6 +483,7 @@
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
                 this.setSavePosition(!!savePosition);
+                this.setSchedule(schedule)
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -671,6 +673,13 @@
                     this.savePosition = savePosition;
                 },
                 /**
+                 *
+                 * @param schedule
+                 */
+                setSchedule: function(schedule) {
+                    this.schedule = schedule;
+                },
+                /**
                  * Add the passed zone stack.
                  * @param zoneStack
                  */
@@ -749,6 +758,9 @@
                         if (this.state) {
                             json.state = this.state;
                         }
+                        if (this.schedule) {
+                            json.schedule = this.schedule;
+                        }
                         if (_outer._alertDirection) {
                             json.properties.direction = Number(_outer._alertDirection);
                         }
@@ -757,14 +769,6 @@
                             json.properties.speedUnit = _outer._alertSpeedUnit || 'kph';
                         }
                         json.timezoneOffset = new Date().getTimezoneOffset();
-                    }
-                    else { //Remove the properties in case we are saving an alert as a template.
-                        delete json.properties.parentAlertId;
-                        delete json.state;
-                        delete json.properties.direction;
-                        delete json.properties.speed;
-                        delete json.properties.speedUnit;
-                        delete json.timezoneOffset;
                     }
                     //Add fallback zone, we'll always add it the properties.
                     json.properties[_outer._FALLBACK_ZONE_ID] = {

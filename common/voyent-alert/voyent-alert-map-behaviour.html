@@ -286,7 +286,7 @@
                 _this.clearMap();
                 
                 _this.set('_loadedAlert',{
-                    template: new _this._AlertTemplate(null, null, _this._dialogInput, _this._dialogBadge, null, null, null),
+                    template: new _this._AlertTemplate(null, null, _this._dialogInput, _this._dialogBadge, null, null, null, false, null),
                     selectedStack: null
                 });
             },function() {
@@ -325,6 +325,15 @@
                     _this._alertSpeedUnit = 'kph';
                 },0);
             }
+        },
+
+        /**
+         * Sets the alert schedule into the loaded template.
+         * @param schedule
+         */
+        setSchedule: function(schedule) {
+            if (this._loadedAlert || this._loadedAlert.template) { return; }
+            this._loadedAlert.template.setSchedule(schedule);
         },
 
         /**
@@ -681,7 +690,7 @@
             }
             this.set('_loadedAlert', {
                 template: new this._AlertTemplate(
-                    templateJSON._id, parentId, templateJSON.name, templateJSON.badge, templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center
+                    templateJSON._id, parentId, templateJSON.name, templateJSON.badge, templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center, templateJSON.schedule
                 ),
                 selectedStack: zoneStacks.length === 1 ? zoneStacks[0] : null
             });
