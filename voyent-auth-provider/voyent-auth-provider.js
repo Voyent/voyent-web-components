@@ -6,10 +6,9 @@
     behaviors: [VoyentCommonPropertiesBehavior],
 
     ready: function(){
-      var loggedIn = voyent.auth.isLoggedIn();
-      console.log('voyent-auth-provider.loggedIn: ' + loggedIn);
-      this.loggedIn = loggedIn;
-      if( loggedIn){
+      this.loggedIn = voyent.auth.isLoggedIn();
+      //The voyent.js lib already handles connecting again on reload so skip this if we are already connected.
+      if (this.loggedIn && !voyent.auth.connected) {
         this.setupTimeRemainingInterval();
         /* check connect settings */
         var connectSettings = voyent.auth.getConnectSettings();
