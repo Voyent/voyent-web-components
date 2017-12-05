@@ -5,14 +5,13 @@
     is: 'voyent-auth-provider',
     behaviors: [VoyentCommonPropertiesBehavior],
 
-    ready: function(){
+    ready: function() {
       this.loggedIn = voyent.auth.isLoggedIn();
-      //The voyent.js lib already handles connecting again on reload so skip this if we are already connected.
-      if (this.loggedIn && !voyent.auth.connected) {
-        this.setupTimeRemainingInterval();
+      console.log('voyent-auth-provider.loggedIn: ' + this.loggedIn);
+      if (this.loggedIn) {
         /* check connect settings */
         var connectSettings = voyent.auth.getConnectSettings();
-        if( !connectSettings ){
+        if (!connectSettings) {
           connectSettings = {};
         }
         connectSettings.account = this.account;
@@ -23,26 +22,14 @@
         connectSettings.admin = this.admin;
         connectSettings.scopeToPath = this.scopeToPath;
         connectSettings.onSessionExpiry = this.onSessionExpiry;
-        if( this.timeout ){
+        if (this.timeout) {
           connectSettings.connectionTimeout = this.timeout;
         }
-        if( !this.admin ){
+        if (!this.admin) {
           connectSettings.realm = this.realm;
         }
         voyent.auth.connect(connectSettings);
       }
-    },
-
-    setupTimeRemainingInterval: function(){
-      var _this = this;
-      this.timeRemaining = voyent.auth.getTimeRemainingBeforeExpiry();
-      this.timeRemainingBeforeExpiryInterval = setInterval(function(){
-        var remaining = voyent.auth.getTimeRemainingBeforeExpiry();
-        if( !remaining ){
-          clearInterval(_this.timeRemainingBeforeExpiryInterval);
-        }
-        _this.timeRemaining = remaining;
-      },1000*60);
     },
 
     properties: {
@@ -60,7 +47,7 @@
        */
       username: {
         notify: true,
-        value: function(){
+        value: function() {
           return voyent.auth.getLastKnownUsername();
         }
       },
@@ -94,21 +81,6 @@
       },
 
       /**
-       * The time remaining in ms before the current token expires.
-       */
-      timeRemaining: {
-        notify: true,
-        type: Number
-      },
-
-      /**
-       * Interval period to update the time remaining property.
-       */
-      timeRemainingBeforeExpiryInterval: {
-        type: Number
-      },
-
-      /**
        * The timeout, in minutes, of inactivity before the component will stop automatically refreshing the access token.
        * @default 20
        */
@@ -127,7 +99,7 @@
       },
 
       /**
-       * Flag to instruct the component to attempt to login as an admin, if logging into the realm has failed. This may be useful for login 
+       * Flag to instruct the component to attempt to login as an admin, if logging into the realm has failed. This may be useful for login
        * forms intended for both normal users and admins.
        * @default false
        */
@@ -151,34 +123,34 @@
     },
 
     /**
-     * Attempts to authenticate. If the username, password and admin flag are not passed in, the bound component values will be used. 
+     * Attempts to authenticate. If the username, password and admin flag are not passed in, the bound component values will be used.
      * After the login is successful, the onAfterLogin event is then fired.
      * @return {Promise} A promise with the response from voyent.auth.connect()
      */
-    login: function(username, password, admin){
+    login: function(username, password, admin) {
       this.set('error', '');
       var _this = this;
-      if( username ){
+      if (username) {
         this.username = username;
       }
-      if( !this.username ){
-        this.set('error', 'Missing username'); 
+      if (!this.username) {
+        this.set('error', 'Missing username');
         return Promise.reject(this.error);
       }
-      if( password ){
+      if (password) {
         this.password = password;
       }
-      if( !this.password ){
+      if (!this.password) {
         this.set('error', 'Missing password');
         return Promise.reject(this.error);
       }
-      
-      if( !this.realm ){
+
+      if (!this.realm) {
         this.set('error', 'Missing realm');
         return Promise.reject(this.error);
       }
-      
-      if( admin ){
+
+      if (admin) {
         this.admin = admin;
       }
       var params = {
@@ -191,38 +163,37 @@
         onSessionExpiry: this.onSessionExpiry,
         scopeToPath: this.scopeToPath
       };
-      if( this.timeout ){
+      if (this.timeout) {
         params.connectionTimeout = this.timeout;
       }
-      if( !admin ){
+      if (!admin) {
         params.realm = this.realm;
       }
 
-      function onAfterConnect(authResponse){
+      function onAfterConnect(authResponse) {
         _this.authResponse = authResponse;
         voyent.setCurrentRealm(_this.realm);
         _this.accessToken = voyent.auth.getLastAccessToken();
         _this.loggedIn = true;
         _this.fire('onAfterLogin');
-        _this.setupTimeRemainingInterval();
       }
 
-      return voyent.auth.connect(params).then(function(authResponse){ //jshint ignore:line
+      return voyent.auth.connect(params).then(function(authResponse) { //jshint ignore:line
         onAfterConnect(authResponse);
-      }).catch(function(error){
+      }).catch(function(error) {
         _this.set('error', 'Login failed ' + JSON.parse(error.responseText).message || error.responseText);
-          
+
         //if fallbackToAdmin try to login as admin
-        if( !_this.admin && _this.fallbackToAdmin ){
+        if (!_this.admin && _this.fallbackToAdmin) {
           params.realm = 'admin';
-          return voyent.auth.connect(params).then(function(authResponse){ //jshint ignore:line
+          return voyent.auth.connect(params).then(function(authResponse) { //jshint ignore:line
             onAfterConnect(authResponse);
           });
         }
         else{
           Promise.reject(error);
         }
-      }).catch(function(error){
+      }).catch(function(error) {
         _this.set('error', 'Login failed ' + JSON.parse(error.responseText).message || error.responseText);
       });
     },
@@ -230,24 +201,22 @@
     /**
      * Log out the current user and clear all credential and authentication information.
      */
-    logout: function(){
+    logout: function() {
       voyent.auth.disconnect();
       this.loggedIn = false;
       this.accessToken = null;
-      this.timeRemaining = 0;
       this.fire('voyent-session-disconnected');
     },
 
-    /** 
+    /**
      * Fired when the current session expired.
      * @private
      */
-    onSessionExpiry: function(){
+    onSessionExpiry: function() {
       //'this' is not the component context during the callback
       var _this = document.querySelector('voyent-auth-provider');
       _this.loggedIn = false;
       _this.accessToken = null;
-      _this.timeRemaining = 0;
       _this.fire('voyent-session-expired');
     }
   });
