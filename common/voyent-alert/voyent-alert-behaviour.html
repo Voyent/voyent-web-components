@@ -761,7 +761,7 @@
                         if (this.schedule) {
                             json.schedule = this.schedule;
                         }
-                        if (_outer._alertDirection) {
+                        if (_outer._alertDirection || _outer._alertDirection === 0) {
                             json.properties.direction = Number(_outer._alertDirection);
                         }
                         if (_outer._alertSpeed) {
