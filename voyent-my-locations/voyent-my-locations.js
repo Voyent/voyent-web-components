@@ -206,7 +206,7 @@ Polymer({
         if (!this._loadedLocation) { return; }
         //Change event is fired from the input field where as checked-changed is fired from the toggle.
         if (e.type === 'change') {
-            if (!this._validateLocationName(this._loadedLocation.name)) { return; }
+            if (!this._validateLocationName(this._inputName)) { return; }
             this._loadedLocation.setName(this._inputName);
         }
         this.flagLocationForUpdating(this._loadedLocation);
@@ -251,8 +251,7 @@ Polymer({
      */
     _validateLocationName: function(name) {
         for (var i=0; i<this._myLocations.length; i++) {
-            if (this._loadedLocation !== this._myLocations[i] &&
-                this._myLocations[i].name === name) {
+                if (this._myLocations[i].name === name) {
                 this.fire('message-error', 'Location names must be unique');
                 return false;
             }
