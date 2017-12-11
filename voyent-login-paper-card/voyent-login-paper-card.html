@@ -100,7 +100,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <form is="iron-form" id="loginForm" on-submit="handleLogin">
       <paper-card heading="{{heading}}" image="{{headerImage}}">
         <div class="card-content">
-          <paper-input id="username" label="Username" required placeholder="Enter your username" value="{{username}}">
+          <paper-input id="username" label="Username" required maxlength="35" placeholder="Enter your username" value="{{username}}">
             <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
           </paper-input>
           <paper-input type="password" required label="Password" placeholder="Enter your password" value="{{password}}">
