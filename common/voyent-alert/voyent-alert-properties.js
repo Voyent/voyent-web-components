@@ -86,9 +86,13 @@ Polymer({
          */
         _showMovement: { type: Boolean, value: false, notify: true },
         /**
-         * Whether the alert badge accordion should be open
+         * Whether the alert badge accordion should be open.
          */
         _showBadge: { type: Boolean, value: false, notify: true},
+        /**
+         * Whether the properties pane is in read only mode.
+         */
+        readonly: { type: Boolean, value: false, notify: true}
     },
 
     observers: [
