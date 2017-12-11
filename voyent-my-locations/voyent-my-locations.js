@@ -609,7 +609,7 @@ Polymer({
      */
     _adjustBoundsAndPan: function() {
         //Temporary set the maxZoom so the map doesn't zoom in too far when panning.
-        this._map.setOptions({maxZoom:15});
+        this._map.setOptions({maxZoom:14});
         var bounds = new google.maps.LatLngBounds();
         if (this._myLocations.length) {
             for (var i=0; i<this._myLocations.length; i++) {
