@@ -81,7 +81,8 @@ Polymer({
     },
 
     /**
-     * Activates the currently loaded alert. Alert must be a draft, preview or active. When already active the alert will be revised.
+     * Handles persisting the alert as active or scheduled. When the alert
+     * is already active or scheduled it will be revised by the service.
      * @returns {*}
      */
     activateAlert: function() {
@@ -89,21 +90,14 @@ Polymer({
         if (!this._loadedAlert || !this._loadedAlert.template) {
             return this.fire('message-error', 'Unable to active alert: No alert loaded');
         }
-        var activatableStates = ['draft','preview','active'];
+        var activatableStates = ['draft','active','scheduled'];
         if (activatableStates.indexOf(this._loadedAlert.template.state) === -1) {
-            return this.fire('message-error', 'Unable to active alert: State cannot be transitioned to active from ' + this._loadedAlert.template.state);
+            return this.fire('message-error', 'Unable to activate alert: State cannot be transitioned from ' + this._loadedAlert.template.state);
         }
         //The alert was previously saved.
         if (this._loadedAlert.template.id) {
-            //The alert is already active so update the location and revise it.
-            if (this._loadedAlert.template.state === 'active') {
-                this._saveAlertTemplate().then(function() {
-                    _this._updateAlertLocation().then(function() {
-                        _this.fire('voyent-alert-template-saved',{});
-                    });
-                });
-            }
-            else { //The alert is a draft or preview so save it, update the state and location.
+            //The alert is a draft so save it, update the state and location.
+            if (this._loadedAlert.template.state === 'draft') {
                 this._saveAlertTemplate().then(function() {
                     _this.updateAlertState('active').then(function() {
                         _this._updateAlertLocation().then(function() {
@@ -113,9 +107,16 @@ Polymer({
                     });
                 });
             }
+            else { //The alert is already active or scheduled so revise it and update the location.
+                this._saveAlertTemplate().then(function() {
+                    _this._updateAlertLocation().then(function() {
+                        _this.fire('voyent-alert-template-saved',{});
+                    });
+                });
+            }
         }
-        else { //The alert hasn't been saved yet so save it initially as an active alert.
-            this._loadedAlert.template.setState('active');
+        else { //The alert hasn't been saved yet so save it initially as active or scheduled.
+            this._loadedAlert.template.setState(this._loadedAlert.template.hasSchedule() ? 'scheduled' : 'active');
             this._saveAlertTemplate().then(function() {
                 _this._updateAlertLocation().then(function() {
                     _this.fire('voyent-alert-template-saved',{});
@@ -198,7 +199,7 @@ Polymer({
      */
     updateAlertState: function(state) {
         var _this = this;
-        var validStates = ['draft','preview','active','deprecated','ended'];
+        var validStates = ['draft','scheduled','active','deprecated','ended'];
         if (validStates.indexOf(state) === -1) {
             return this.fire('message-error', 'Unable to change alert state: State ' + this._loadedAlert.template.state + ' is invalid');
         }

@@ -333,6 +333,9 @@
         setSchedule: function(schedule) {
             if (!this._loadedAlert || !this._loadedAlert.template) { return; }
             this._loadedAlert.template.setSchedule(schedule);
+            if (this._loadedAlert.template.hasSchedule()) {
+                this._loadedAlert.template.setState('scheduled');
+            }
         },
 
         /**
@@ -1114,7 +1117,7 @@
                 if (this._userLocationMarker) {
                     bounds.extend(this._userLocationMarker.getPosition());
                 }
-                if (this._locationMarkers) { //TODO - Does this affect preview negatively?
+                if (this._locationMarkers) {
                     for (i=0; i<this._locationMarkers.length; i++) {
                         bounds.extend(this._locationMarkers[i].getPosition());
                     }

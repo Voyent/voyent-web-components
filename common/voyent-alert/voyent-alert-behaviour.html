@@ -484,7 +484,7 @@
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
                 this.setSavePosition(!!savePosition);
-                this.setSchedule(schedule)
+                this.setSchedule(schedule);
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -679,6 +679,12 @@
                  */
                 setSchedule: function(schedule) {
                     this.schedule = schedule;
+                },
+               /**
+                * Returns a boolean indicating whether the alert has a schedule.
+                */
+                hasSchedule: function() {
+                    return this.schedule;
                 },
                 /**
                  * Add the passed zone stack.
