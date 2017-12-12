@@ -19,7 +19,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../../paper-input/paper-input.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../paper-button/paper-button.html">
-<link rel="import" href="../../paper-spinner/paper-spinner.html">
+<link rel="import" href="../voyent-loading/voyent-loading.html">
 
 <dom-module id="voyent-login-paper-card">
   <template>
@@ -66,14 +66,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         height: 35px;
         width: 35px;
       }
+      .loadWrapper {
+        position: absolute;
+        top: 15px;
+      }
       .error{
         float: left;
         color: red;
         padding: 5px;
         line-height: 28px;
-      }
-      paper-spinner{
-        vertical-align: middle;
       }
       :host ::content .title-text.over-image.paper-card{
         text-shadow: 3px 1px 4px #000;
@@ -134,7 +135,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </content>
         </div>
         <div class="card-actions" style="text-align: right">
-          <paper-spinner id="loginSpinner" class="orange"></paper-spinner>
+          <div class="loadWrapper"><voyent-loading></voyent-loading></div>
           <div class="error"><span>{{error}}</span></div>
           <paper-button raised colored on-click="cancel"><span>{{cancelLabel}}</span></paper-button>
           <paper-button type="submit" raised colored on-click="handleLogin"><button><span>{{submitLabel}}</span></button></paper-button>

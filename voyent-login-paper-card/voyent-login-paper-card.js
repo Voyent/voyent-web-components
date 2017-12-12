@@ -183,7 +183,7 @@
                 console.error('voyent-login-paper-card could not find auth-provider: ' + this.authProvider);
                 return;
             }
-            this.$$('#loginSpinner').active = true;
+            this.fire('loading-on');
             if(_this.showrealminput) {
                 authProvider.setAttribute("realm",_this.realm);
             }
@@ -197,9 +197,9 @@
             authProvider.login(this.username, this.password, this.loginAsAdmin).then(function(){
                 //clear password
                 _this.password = '';
-                _this.$$('#loginSpinner').active = false;
+                _this.fire('loading-off');
             }).catch(function(){
-                _this.$$('#loginSpinner').active = false;
+                _this.fire('loading-off');
             });
             e.preventDefault();
         },
