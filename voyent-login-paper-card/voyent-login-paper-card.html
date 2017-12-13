@@ -107,6 +107,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <paper-input type="password" required label="Password" placeholder="Enter your password" value="{{password}}">
             <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1"></paper-icon-button>
           </paper-input>
+          <content select="forgotten-password"></content>
           <template is="dom-if" if="[[hideallowed]]">
               <div style="text-align: right;">
                   <button type="button" onclick="toggle('#collapse')" title="Toggle the details panel">...</button>
