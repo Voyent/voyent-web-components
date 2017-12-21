@@ -392,7 +392,6 @@ Polymer({
                 "currentLocation": currentLocation,
                 "alert": this._loadedAlert.template.json,
                 "alertId" : alertId,
-                "alertInstanceId" : alertId,
                 "previewMetricsId":this._generateUid()
             }
         };
