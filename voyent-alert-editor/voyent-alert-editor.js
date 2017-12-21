@@ -81,8 +81,7 @@ Polymer({
     },
 
     /**
-     * Handles persisting the alert as active or scheduled. When the alert
-     * is already active or scheduled it will be revised by the service.
+     * Handles persisting the alert as active or scheduled. The alerts may be revised or rescheduled by the service.
      * @returns {*}
      */
     activateAlert: function() {
@@ -94,36 +93,27 @@ Polymer({
         if (activatableStates.indexOf(this._loadedAlert.template.state) === -1) {
             return this.fire('message-error', 'Unable to activate alert: State cannot be transitioned from ' + this._loadedAlert.template.state);
         }
-        //The alert was previously saved.
-        if (this._loadedAlert.template.id) {
-            //The alert is a draft so save it, update the state and location.
-            if (this._loadedAlert.template.state === 'draft') {
-                this._saveAlertTemplate().then(function() {
-                    _this.updateAlertState('active').then(function() {
-                        _this._updateAlertLocation().then(function() {
-                            _this.fire('voyent-alert-template-saved',{});
-                            _this.fire('message-info', 'New alert activated!')
-                        });
-                    });
-                });
+        var isNewActivation = !this._loadedAlert.template.id || this._loadedAlert.template.state === 'draft';
+        this._loadedAlert.template.setState(this._loadedAlert.template.hasSchedule() ? 'scheduled' : 'active');
+        console.log('this._loadedAlert.template.state',this._loadedAlert.template.state);
+        this.saveAlert().then(function() {
+            if (isNewActivation) {
+                if (_this._loadedAlert.template.state === 'scheduled') {
+                    _this.fire('message-info', 'New alert scheduled');
+                }
+                else {
+                    _this.fire('message-info', 'New alert activated');
+                }
             }
-            else { //The alert is already active or scheduled so revise it and update the location.
-                this._saveAlertTemplate().then(function() {
-                    _this._updateAlertLocation().then(function() {
-                        _this.fire('voyent-alert-template-saved',{});
-                    });
-                });
+            else {
+                if (_this._loadedAlert.template.state === 'scheduled') {
+                    _this.fire('message-info', 'Alert successfully rescheduled');
+                }
+                else {
+                    _this.fire('message-info', 'Alert successfully revised');
+                }
             }
-        }
-        else { //The alert hasn't been saved yet so save it initially as active or scheduled.
-            this._loadedAlert.template.setState(this._loadedAlert.template.hasSchedule() ? 'scheduled' : 'active');
-            this._saveAlertTemplate().then(function() {
-                _this._updateAlertLocation().then(function() {
-                    _this.fire('voyent-alert-template-saved',{});
-                    _this.fire('message-info', 'New alert activated!')
-                });
-            });
-        }
+        });
     },
 
     /**
@@ -168,16 +158,18 @@ Polymer({
             var parentId = _this._loadedAlert.template.parentId;
             _this._loadedAlert.template.setId(null);
             _this._loadedAlert.template.setParentId(null);
-            _this._saveAlertTemplate().then(function() {
-                _this._loadedAlert.template.setSavePosition(false);
-                _this._loadedAlert.template.setId(id);
-                _this._loadedAlert.template.setParentId(parentId);
+            _this.saveAlertTemplate().then(function() {
+                done();
                 _this.fire('message-info', 'Successfully saved alert as template');
             }).catch(function(e) {
+                done();
+                _this.fire('message-error', 'Problem saving alert as template: ' + (e.responseText || e.message || e));
+            });
+            function done() {
                 _this._loadedAlert.template.setSavePosition(false);
                 _this._loadedAlert.template.setId(id);
                 _this._loadedAlert.template.setParentId(parentId);
-            });
+            }
         });
     },
 
@@ -377,7 +369,7 @@ Polymer({
         this._loadedAlert.template.updateJSON(true);
         this._loadedAlert.template.json.state = 'preview';
 
-        var alertId = this._loadedAlert.template.id || 'this-alert-is-only-a-preview';
+        var alertId = this._loadedAlert.template.id || 'preview';
 
         var currentLocation = this._buildAlertLocationJSON().location;
         if (!currentLocation.properties.alertId) {

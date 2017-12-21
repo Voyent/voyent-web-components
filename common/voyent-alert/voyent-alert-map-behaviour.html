@@ -217,37 +217,16 @@
         /**
          * Saves or updates the current alert template.
          */
-        saveAlertTemplate: function() {
-            var _this = this;
-            this._saveAlertTemplate().then(function() {
-                if (_this._loadedAlert.template.parentId) {
-                    //Save the alert location regardless of state so we know where to load it later.
-                    _this._updateAlertLocation().then(function() {
-                        _this.fire('voyent-alert-template-saved',{});
-                    });
-                }
-                else {
-                    _this.fire('voyent-alert-template-saved',{});
-                }
-            });
-        },
-
-        /**
-         * Saves or updates the current alert template. The puplic function above wraps
-         * this one so we can control the firing of the `voyent-alert-template-saved` event.
-         */
-        _saveAlertTemplate: function () {
+        saveAlertTemplate: function () {
             //Use this flag to avoid excessive calls if the user mashes the "Activate Now" and "Back" buttons.
             if (this._savingAlertTemplate) { return; }
             this._savingAlertTemplate = true;
              var _this = this, msg;
 
             return new Promise(function (resolve, reject) {
-                //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
                 _this._loadedAlert.template.updateJSON(true);
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
                 var func = 'createAlertTemplate';
-                //If we have an id then the template was already saved.
                 if (_this._loadedAlert.template.id) {
                     func = 'updateAlertTemplate';
                     requestOpts.id = _this._loadedAlert.template.id
@@ -255,22 +234,55 @@
                 voyent.locate[func](requestOpts).then(function (uri) {
                     _this._savingAlertTemplate = false;
                     if (func === 'createAlertTemplate') {
-                        //Grab the generated ID from the return URI and setup change listeners
                         _this._loadedAlert.template.setId(uri.split('/').pop());
-                        msg = 'Alert template successfully created';
+                        _this.fire('message-info', 'Alert template successfully created');
                     }
                     else {
-                        msg = 'Alert template successfully updated';
+                        _this.fire('message-info', 'Alert template successfully updated');
                     }
-                    if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                        _this.fire('message-info', msg);
+                    _this.fire('voyent-alert-template-saved',{});
+                    resolve();
+                }).catch(function(e) {
+                    _this._savingAlertTemplate = false;
+                    _this.fire('message-error', 'Issue saving alert template: ' + (e.responseText || e.message || e));
+                    reject(msg);
+                });
+            });
+        },
+
+        /**
+         * Saves or updates the current alert.
+         */
+        saveAlert: function() {
+            if (this._savingAlert) { return; }
+            this._savingAlert = true;
+            var _this = this, msg;
+
+            return new Promise(function (resolve, reject) {
+                //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
+                _this._loadedAlert.template.updateJSON(true);
+                var requestOpts = {
+                    realm: _this.realm,
+                    account: _this.account,
+                    alert:_this._loadedAlert.template.json,
+                    coordinates:_this._buildAlertLocationJSON().location.geometry.coordinates
+                };
+                var func = 'createAlert';
+                if (_this._loadedAlert.template.id) {
+                    func = 'updateAlert';
+                    requestOpts.id = _this._loadedAlert.template.id
+                }
+                voyent.locate[func](requestOpts).then(function (uri) {
+                    _this._savingAlert = false;
+                    if (func === 'createAlert') {
+                        _this._loadedAlert.template.setId(uri.split('/').pop());
                     }
+                    _this.fire('voyent-alert-template-saved',{});
                     resolve();
                 }).catch(function(e) {
                     //Adjust message based on the component making the request and whether we are saving an alert as a template.
-                    msg = 'Issue saving alert ' + (_this.nodeName === 'VOYENT-ALERT-EDITOR' && _this._loadedAlert.template.parentId ? ': ' : 'template: ');
-                    _this.fire('message-error', msg + (e.responseText || e.message || e));
-                    _this._savingAlertTemplate = false;
+                    _this.fire('message-error', 'Issue saving alert: ' + (e.responseText || e.message || e));
+                    _this._savingAlert = false;
                     reject(msg);
                 });
             });
@@ -333,9 +345,6 @@
         setSchedule: function(schedule) {
             if (!this._loadedAlert || !this._loadedAlert.template) { return; }
             this._loadedAlert.template.setSchedule(schedule);
-            if (this._loadedAlert.template.hasSchedule()) {
-                this._loadedAlert.template.setState('scheduled');
-            }
         },
 
         /**

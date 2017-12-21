@@ -50,24 +50,6 @@
             }
             return url;
         },
-        
-        /**
-         * Updates the current alert location.
-         * @private
-         */
-        _updateAlertLocation: function() {
-            var _this = this;
-            return new Promise(function (resolve, reject) {
-               var location = _this._buildAlertLocationJSON();
-                voyent.locate.updateAlertLocation({realm:_this.realm,account:_this.account,location:location}).then(function() {
-                    resolve();
-                }).catch(function (e) {
-                    _this.fire('message-error', 'Issue creating ' + _this._loadedAlert.template.name +
-                                                ': ' + (e.responseText || e.message || e));
-                    reject(e);
-                });
-            });
-        },
 
         /**
          * Builds the location JSON for the currently loaded alert.
