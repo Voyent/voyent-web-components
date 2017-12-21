@@ -176,5 +176,26 @@ Polymer({
             this._locationMarkers[i].setMap(null);
         }
         this._locationMarkers = [];
+    },
+
+    /**
+     * Adds a listener for the fullscreen event so that we can toggle the readonly state on the map.
+     * @private
+     */
+    _addFullscreenListener: function() {
+        var _this = this;
+        // This event is browser prefixed so we must listen to multiple events
+        document.addEventListener('fullscreenchange', fullScreenListener);
+        document.addEventListener('webkitfullscreenchange', fullScreenListener);
+        document.addEventListener('mozfullscreenchange', fullScreenListener);
+        function fullScreenListener() {
+            var isFullScreen = document['fullScreen'] || document['webkitIsFullScreen'] || document['mozFullScreen'];
+            if (isFullScreen) {
+                _this._map.setOptions({mapTypeControl:true,zoomControl:true,draggable:true,disableDoubleClickZoom:false});
+            }
+            else {
+                _this._map.setOptions({mapTypeControl:false,zoomControl:false,draggable:false,disableDoubleClickZoom:true});
+            }
+        }
     }
 });

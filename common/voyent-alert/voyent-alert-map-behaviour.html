@@ -93,7 +93,7 @@
             /**
              * The subdirectory where our badge files are stored
              */
-            badgedir: { type: String, value: '' },
+            badgedir: { type: String, value: '' }
         },
 
         observers: [
@@ -120,7 +120,7 @@
                     zoom: 10,
                     center: new google.maps.LatLng(51.08427,-114.13062),
                     streetViewControl: false,
-                    fullscreenControl: false,
+                    fullscreenControl: _this.nodeName === 'VOYENT-ALERT-VIEW',
                     scrollwheel: false,
                     mapTypeControlOptions: {
                         style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
@@ -138,6 +138,7 @@
                 if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
                     mapOptions.mapTypeControl = mapOptions.zoomControl =  mapOptions.draggable = false;
                     mapOptions.disableDoubleClickZoom = true;
+                    _this._addFullscreenListener();
                 }
                 //Initialize the map.
                 _this._map = new google.maps.Map(_this.$.map,mapOptions);
