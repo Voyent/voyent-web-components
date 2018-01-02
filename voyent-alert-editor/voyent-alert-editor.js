@@ -19,11 +19,7 @@ Polymer({
         /**
          * The currently loaded alert state.
          */
-        alertState: { type: String, value: null, readOnly:true, notify: true },
-        /**
-         * Specify whether the editor is in readonly mode.
-         */
-        readonly: { type: Boolean, value: false, notify: true }
+        alertState: { type: String, value: null, readOnly:true, notify: true }
     },
 
     observers: [
@@ -133,15 +129,6 @@ Polymer({
             _this.fire('message-error', 'Unable to preview alert: ' + (e.responseText || e.message || e));
         });
         return event;
-    },
-
-    /**
-     * View an alert in readonly mode.
-     * @param id
-     */
-    viewAlert: function(id) {
-        this.set('readonly',true);
-        this.loadAlert(id);
     },
 
     /**

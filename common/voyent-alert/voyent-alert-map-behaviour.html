@@ -677,7 +677,7 @@
                                     "geometries": zoneGeometries
                                 }
                             }),
-                            map: this._map, draggable: !this.readonly, zIndex: 50,
+                            map: this._map, draggable: true, zIndex: 50,
                             visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
                         });
 
@@ -695,7 +695,7 @@
             if (zoneStacks.length > 1) {
                 templateMarker = new google.maps.Marker({
                     position: (latLngCentroid ? latLngCentroid : this._AlertTemplate.calculateCentroidFromJSON(templateJSON)),
-                    map: this._map, draggable: !this.readonly, zIndex: 50,
+                    map: this._map, draggable: true, zIndex: 50,
                     icon: this.pathtoimages+'/img/alert_marker.png',
                     visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
                 });
@@ -759,7 +759,7 @@
                 _this._openDialog('Please enter the zone name','',null,false,function() {
                     //Build our stack marker, the position will be added later.
                     var stackMarker = new google.maps.Marker({
-                        map: _this._map, draggable: !_this.readonly, zIndex: 50
+                        map: _this._map, draggable: true, zIndex: 50
                     });
                     if (oce.type === 'circle') { //Circular template.
                         stackMarker.setPosition(oce.overlay.getCenter());
@@ -790,7 +790,7 @@
                     if (_this._loadedAlert.template.zoneStacks.length === 2) {
                         _this._loadedAlert.template.setMarker(new google.maps.Marker({
                             position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
-                            draggable: !_this.readonly, zIndex: 50,
+                            draggable: true, zIndex: 50,
                             map: _this._map,
                             icon: _this.pathtoimages+'/img/alert_marker.png'
                         }));

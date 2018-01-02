@@ -254,15 +254,13 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                      tabindex="2"
                                                      placeholder="Degrees"
                                                      type="number" no-label-float
-                                                     step="0.05" min="0" max="360" maxlength="3"
-                                                     disabled="[[readonly]]">
+                                                     step="0.05" min="0" max="360" maxlength="3">
                                         </paper-input>
                                     </div>
                                     <div class="dropdownCol">
                                         <paper-dropdown-menu tabindex="3"
                                                              placeholder="Direction"
-                                                             no-label-float
-                                                             disabled="[[readonly]]">>
+                                                             no-label-float>
                                             <iron-selector id="alertCardinalDirection" class="dropdown-content"
                                                            on-iron-activate="_alertCardinalDirectionChanged"
                                                            selected="{{_alertCardinalDirection}}"
@@ -280,15 +278,13 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                      tabindex="3"
                                                      placeholder="Speed"
                                                      type="number" no-label-float
-                                                     step="0.5" min="0" maxlength="5"
-                                                     disabled="[[readonly]]">
+                                                     step="0.5" min="0" maxlength="5">
                                         </paper-input>
                                     </div>
                                     <div class="dropdownCol">
                                         <paper-dropdown-menu tabindex="4"
                                                              placeholder="Unit"
-                                                             no-label-float
-                                                             disabled="[[readonly]]">>
+                                                             no-label-float>
                                             <iron-selector id="alertSpeedUnit" class="dropdown-content"
                                                            selected="{{_alertSpeedUnit}}"
                                                            attr-for-selected="name">
@@ -307,11 +303,9 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <div>
                     <div class="alert-zones-label">
                         Proximity Zones
-                        <template is="dom-if" if="[[!readonly]]">
-                            <paper-icon-button title="Add Zone to Stack" class="float-right"
-                                               icon="add" on-click="_addProximityZone">
-                            </paper-icon-button>
-                        </template>
+                        <paper-icon-button title="Add Zone to Stack" class="float-right"
+                                           icon="add" on-click="_addProximityZone">
+                        </paper-icon-button>
                     </div>
                 </div>
             </template>
@@ -347,10 +341,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                             </div>
                             <div class="title-bttns" hidden="[[!zone.active]]">
                                 <paper-icon-button icon="create" data-index$="[[index]]" title="Edit Zone Name"
-                                                   on-click="_toggleProximityZoneRenaming" disabled="[[readonly]]">
+                                                   on-click="_toggleProximityZoneRenaming">
                                 </paper-icon-button>
                                 <paper-icon-button title="Remove Zone" icon="delete" on-click="_removeProximityZone"
-                                                   data-index$="[[index]]" tabindex="4" disabled="[[readonly]]">
+                                                   data-index$="[[index]]" tabindex="4">
                                 </paper-icon-button>
                             </div>
                         </template>
@@ -379,8 +373,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         <template is="dom-if" if="[[!_isPointerLocked]]">
                                             <paper-button data-index$="[[index]]"
                                                           raised title="Adjust Area"
-                                                          on-click="_adjustZoneSize"
-                                                          disabled="[[readonly]]">
+                                                          on-click="_adjustZoneSize">
                                                 Adjust Area
                                             </paper-button>
                                         </template>
@@ -398,8 +391,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                data-index$="[[index]]"
                                                on-change="_editProperty"
                                                on-keydown="_editPropertyViaKeydown"
-                                               value="{{zone.colour::change}}"
-                                               disabled="[[readonly]]">
+                                               value="{{zone.colour::change}}">
                                     </div>
                                 </div>
                                 <div class="row">
@@ -410,7 +402,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         <paper-slider min="0" max="1" step="0.05" pin snaps tabindex="7" data-property="opacity"
                                                       on-change="_editProperty" data-index$="[[index]]" value="{{zone.opacity}}"
                                                       on-immediate-value-change="_immediateValueChange"
-                                                      immediate-value="{{_immediateValueOpacity}}" disabled="[[readonly]]">
+                                                      immediate-value="{{_immediateValueOpacity}}">
                                         </paper-slider>
                                     </div>
                                 </div>
