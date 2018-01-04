@@ -11,16 +11,16 @@ Polymer({
      * Finish initializing after login.
      * @private
      */
-    _onAfterLogin: function() {
-    },
+    _onAfterLogin: function() {},
 
     /**
      * Updates the view with the last location of the alert associated with the templateId.
      * If location records are included they will be drawn on the map.
      * @param templateId
      * @param locations
+     * @param showAllZones
      */
-    updateView: function(templateId,locations) {
+    updateView: function(templateId,locations,showAllZones) {
         var _this = this;
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
@@ -29,6 +29,7 @@ Polymer({
             }
             //Clear the map.
             _this.clearMap();
+            _this._showAllZones = !!showAllZones;
             //Fetch the alert and user locations.
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
