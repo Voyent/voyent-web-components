@@ -797,10 +797,10 @@
                     delete json.properties.center;
                     if (!this.parentId && this.savePosition) {
                         if (this.marker) {
-                            json.properties.center = this.marker.getPosition();
+                            json.properties.center = this.marker.getPosition().toJSON();
                         }
                         else if (this.zoneStacks.length && this.zoneStacks[0].marker) {
-                            json.properties.center = this.zoneStacks[0].marker.getPosition();
+                            json.properties.center = this.zoneStacks[0].marker.getPosition().toJSON();
                         }
                     }
                     //If we have no geometries defined then delete the geo property entirely.

@@ -118,6 +118,20 @@ Polymer({
         });
     },
 
+    /**
+     * Returns the center point of the alert.
+     * @returns {lat: Number, lng: Number}
+     */
+    getAlertCenter: function() {
+        if (!this._loadedAlert || !this._loadedAlert.template) { return; }
+        if (this._loadedAlert.template.marker) {
+            return this._loadedAlert.template.marker.getPosition().toJSON();
+        }
+        else if (this._loadedAlert.template.zoneStacks.length && this._loadedAlert.template.zoneStacks[0].marker) {
+            return this._loadedAlert.template.zoneStacks[0].marker.getPosition().toJSON();
+        }
+    },
+
     //******************PRIVATE API******************
 
     /**
