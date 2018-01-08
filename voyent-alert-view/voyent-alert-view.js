@@ -40,6 +40,9 @@ Polymer({
                     results[1].location.geometry.coordinates[1],
                     results[1].location.geometry.coordinates[0]
                 );
+                if (_this._templateId) {
+                    _this.clearMap();
+                }
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
                 _this._drawLocations(locations,true);
                 _this._templateId = _this._loadedAlert.template.id;
