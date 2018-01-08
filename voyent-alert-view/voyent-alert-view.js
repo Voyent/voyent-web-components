@@ -35,14 +35,15 @@ Polymer({
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
             Promise.all(promises).then(function(results) {
-                //Build our LatLng object using the coordinates of the last location of the alert.
+                // First clear the map if we have an alert loaded already.
+                if (_this._loadedAlert) {
+                    _this.clearMap();
+                }
+                // Build our LatLng object using the coordinates of the last location of the alert.
                 var latLng = new google.maps.LatLng(
                     results[1].location.geometry.coordinates[1],
                     results[1].location.geometry.coordinates[0]
                 );
-                if (_this._templateId) {
-                    _this.clearMap();
-                }
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
                 _this._drawLocations(locations,true);
                 _this._templateId = _this._loadedAlert.template.id;
