@@ -369,7 +369,7 @@ Polymer({
                         }
                 });
                 if (intersects.features.length) {
-                    _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead');
+                    _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead. Please modify as required');
                     paths = _this._getRectangularPathFromPolygonPath(paths[0]);
                 }
 
