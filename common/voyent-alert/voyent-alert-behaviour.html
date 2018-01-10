@@ -52,6 +52,33 @@
         },
 
         /**
+         * Displays the zone properties for the zone matching the passed id.
+         */
+        selectZoneById: function(zoneId) {
+            if (!this._loadedAlert || !this._loadedAlert.template.zoneStacks) { return; }
+            for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
+                var zoneStack = this._loadedAlert.template.zoneStacks[i];
+                var zone = zoneStack.getZoneById(zoneId);
+                if (zone) {
+                    if (!zone.active) {
+                        if (zoneStack !== this._loadedAlert.selectedStack) {
+                            this._toggleProperties(-1);
+                            this.set('_loadedAlert.selectedStack',zoneStack);
+                        }
+                        this._toggleProperties(zoneStack.getZoneIndex(zone));
+                        return;
+                    }
+                }
+                else {
+                    if (this._fallbackZone && this._fallbackZone.id === zoneId && !this._fallbackZone.active) {
+                        this._toggleFallbackZoneProperties();
+                        return;
+                    }
+                }
+            }
+        },
+
+        /**
          * Builds the location JSON for the currently loaded alert.
          * @private
          */
@@ -79,30 +106,20 @@
         },
 
         /**
-         * Displays the zone properties for the zone matching the passed id.
+         * Returns the rectangular path around the bounds of the polygon path.
+         * @param path
+         * @private
          */
-        selectZoneById: function(zoneId) {
-            if (!this._loadedAlert || !this._loadedAlert.template.zoneStacks) { return; }
-            for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
-                var zoneStack = this._loadedAlert.template.zoneStacks[i];
-                var zone = zoneStack.getZoneById(zoneId);
-                if (zone) {
-                    if (!zone.active) {
-                        if (zoneStack !== this._loadedAlert.selectedStack) {
-                            this._toggleProperties(-1);
-                            this.set('_loadedAlert.selectedStack',zoneStack);
-                        }
-                        this._toggleProperties(zoneStack.getZoneIndex(zone));
-                        return;
-                    }
-                }
-                else {
-                    if (this._fallbackZone && this._fallbackZone.id === zoneId && !this._fallbackZone.active) {
-                        this._toggleFallbackZoneProperties();
-                        return;
-                    }
-                }
-            }
+        _getRectangularPathFromPolygonPath: function(path) {
+            var bounds = new google.maps.LatLngBounds();
+            console.log(path);
+            path.forEach(function (element) {
+                bounds.extend(element);
+            });
+            var ne = bounds.getNorthEast();
+            var sw = bounds.getSouthWest();
+
+            return [[ne,new google.maps.LatLng(sw.lat(),ne.lng()),sw,new google.maps.LatLng(ne.lat(),sw.lng())]];
         },
 
         /**

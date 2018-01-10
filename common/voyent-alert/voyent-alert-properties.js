@@ -351,6 +351,28 @@ Polymer({
             }
             else { //polygon
                 var paths = this._adjustPathsByPercentage(largestZone.shapeOverlay.getPaths(),50,this._havePointerLock);
+                // Now that we have the new shape paths we will first check if the outer line of
+                // each shape overlap each other. If they overlap then we are unable to draw the
+                // shape and will instead draw a rectangle matching the bounds of it.
+                var intersects = turf.lineIntersect({
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(new google.maps.MVCArray([new google.maps.MVCArray(paths[0])]))[0]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(new google.maps.MVCArray([largestZone.shapeOverlay.getPath()]))[0]
+                        }
+                });
+                if (intersects.features.length) {
+                    _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead');
+                    paths = _this._getRectangularPathFromPolygonPath(paths[0]);
+                }
+
                 //When we add a new zone we don't want to include the full shape so we can
                 //punch it out properly later so just pass the filled outer shape via paths[0].
                 newZone = new _this._PolygonalAlertZone(null,[paths[0]],name,null,null,null,null,zIndex);
