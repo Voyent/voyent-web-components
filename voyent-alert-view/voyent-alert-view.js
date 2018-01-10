@@ -19,8 +19,9 @@ Polymer({
      * @param templateId
      * @param locations
      * @param showAllZones
+     * @param mapIsEditable
      */
-    updateView: function(templateId,locations,showAllZones) {
+    updateView: function(templateId,locations,showAllZones,mapIsEditable) {
         var _this = this;
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
@@ -47,6 +48,7 @@ Polymer({
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
                 _this._drawLocations(locations,true);
                 _this._templateId = _this._loadedAlert.template.id;
+                _this._toggleEditableMap(!!mapIsEditable);
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
@@ -198,6 +200,16 @@ Polymer({
     },
 
     /**
+     * Toggle map panning, zooming and dragging.
+     * @param editable
+     * @private
+     */
+    _toggleEditableMap: function(editable) {
+        this._map.setOptions({mapTypeControl:editable,zoomControl:editable,draggable:editable,disableDoubleClickZoom:!editable});
+        this._mapIsEditable = editable;
+    },
+
+    /**
      * Adds a listener for the fullscreen event so that we can toggle the readonly state on the map.
      * @private
      */
@@ -209,12 +221,7 @@ Polymer({
         document.addEventListener('mozfullscreenchange', fullScreenListener);
         function fullScreenListener() {
             var isFullScreen = document['fullScreen'] || document['webkitIsFullScreen'] || document['mozFullScreen'];
-            if (isFullScreen) {
-                _this._map.setOptions({mapTypeControl:true,zoomControl:true,draggable:true,disableDoubleClickZoom:false});
-            }
-            else {
-                _this._map.setOptions({mapTypeControl:false,zoomControl:false,draggable:false,disableDoubleClickZoom:true});
-            }
+            _this._toggleEditableMap(isFullScreen);
         }
     }
 });
