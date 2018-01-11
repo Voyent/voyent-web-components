@@ -112,7 +112,6 @@
          */
         _getRectangularPathFromPolygonPath: function(path) {
             var bounds = new google.maps.LatLngBounds();
-            console.log(path);
             path.forEach(function (element) {
                 bounds.extend(element);
             });
@@ -231,7 +230,7 @@
          * Creates and configures the styling for the overlay div, used for zone and location name labels.
          * @private
          */
-        _buildOverlayDiv: function(type) {
+        _buildOverlayDiv: function() {
             var div = document.createElement('div');
             div.style.fontSize = '12px';
             div.style.borderStyle = 'none';
@@ -2205,6 +2204,17 @@
                     google.maps.event.addListener(marker,'click',function() {
                         _outer._toggleInfoWindow(_this);
                     });
+                    //Adjust the stacking order of the name on mouseover and mouseout.
+                    google.maps.event.addListener(marker,'mouseover',function() {
+                        if (_this.nameOverlay) {
+                            _this.nameOverlay.moveToTopPane();
+                        }
+                    });
+                    google.maps.event.addListener(marker,'mouseout',function() {
+                        if (_this.nameOverlay) {
+                            _this.nameOverlay.moveToDefaultPane();
+                        }
+                    });
                 }
             };
             Object.seal(this._MyLocation);
@@ -2215,7 +2225,7 @@
              */
             this._FallbackZoneOverlay = function(zone) {
                 this.zone = zone;
-                this.div = _outer._buildOverlayDiv('zone');
+                this.div = _outer._buildOverlayDiv();
                 if (zone.enabled) {
                     this.draw();
                 }
@@ -2258,7 +2268,7 @@
             this._ProximityZoneOverlay = function(zone) {
                 this.zone = zone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv('zone');
+                this.div = _outer._buildOverlayDiv();
             };
             /**
              * A class that represents a location name overlay.
@@ -2269,7 +2279,7 @@
             this._LocationOverlay = function(location) {
                 this.loc = location;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv('location');
+                this.div = _outer._buildOverlayDiv();
             };
             //Inherit the prototype of google.maps.OverlayView.
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
@@ -2349,6 +2359,18 @@
             this._LocationOverlay.prototype.displayAndDraw = function() {
                 this.div.style.display = 'block';
                 this.draw();
+            };
+            /**
+             * Moves the location overlay to the map pane with the highest stacking priority.
+             */
+            this._LocationOverlay.prototype.moveToTopPane = function() {
+                this.getPanes().floatPane.appendChild(this.div);
+            };
+            /**
+             * Moves the location overlay to the default map pane.
+             */
+            this._LocationOverlay.prototype.moveToDefaultPane = function() {
+                this.getPanes().floatShadow.appendChild(this.div);
             };
             /**
              * Returns a font colour of black or white based on the zone colour.
