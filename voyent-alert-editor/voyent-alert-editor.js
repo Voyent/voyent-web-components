@@ -50,13 +50,13 @@ Polymer({
                 _this.clearMap();
             }
             var template = results[0];
-            var latLng = new google.maps.LatLng(
-                results[1].location.geometry.coordinates[1],
-                results[1].location.geometry.coordinates[0]
-            );
-            //If we have no geo section it means the template contains only the fallback
-            //zone so the coordinates they dropped the template at are meaningless.
-            if (!template.geo) { latLng = null; }
+            var latLng = null;
+            if (template.geo) {
+                latLng = new google.maps.LatLng(
+                    results[1].location.geometry.coordinates[1],
+                    results[1].location.geometry.coordinates[0]
+                );
+            }
             _this._drawAndLoadAlertTemplate(template,latLng);
             //Toggle the correct pane.
             _this._showPropertiesPane = true;

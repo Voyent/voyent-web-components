@@ -35,7 +35,11 @@ Polymer({
             if (_this._loadedAlert) {
                 _this.clearMap();
             }
-            _this._drawAndLoadAlertTemplate(template);
+            var latLng = null;
+            if (template.geo && template.isDefaultTemplate) {
+                latLng = _this._areaRegion.bounds.getCenter();
+            }
+            _this._drawAndLoadAlertTemplate(template,latLng);
             _this._setIsTemplateLoading(false);
         }).catch(function (error) {
             _this.fire('message-error', 'Error loading saved alert template: ' + (error.responseText || error.message || error));
