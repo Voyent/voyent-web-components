@@ -2279,9 +2279,21 @@
              * @private
              */
             this._LocationOverlay = function(location) {
+                var _this = this;
                 this.loc = location;
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv();
+                this.div.style.cursor = 'pointer';
+                // Add some listeners to support info window toggling via label selection
+                this.div.onmouseover = function () {
+                    _this.moveToTopPane();
+                };
+                this.div.onmouseout = function () {
+                    _this.moveToDefaultPane();
+                };
+                this.div.onclick = function() {
+                    _outer._toggleInfoWindow(_this.loc);
+                };
             };
             //Inherit the prototype of google.maps.OverlayView.
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
@@ -2363,7 +2375,7 @@
                 this.draw();
             };
             /**
-             * Moves the location overlay to the map pane with the highest stacking priority.
+             * Moves the location overlay to a map pane with a higher stacking priority.
              */
             this._LocationOverlay.prototype.moveToTopPane = function() {
                 // Add a border and slightly adjust the position of the overlay
@@ -2375,8 +2387,8 @@
                 var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) - 1;
                 this.div.style.left = newLeft + 'px';
                 this.div.style.fontWeight = 'bold';
-                // Move the overlay to the highest pane
-                this.getPanes().floatPane.appendChild(this.div);
+                // Move the overlay to a pane with a higher stacking priority
+                this.getPanes().overlayMouseTarget.appendChild(this.div);
             };
             /**
              * Moves the location overlay to the default map pane.
