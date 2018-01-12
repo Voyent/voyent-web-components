@@ -2246,7 +2246,7 @@
                     }
                     else {
                         this.div.style.fontSize = '12px';
-                        this.div.style.removeProperty('fontWeight');
+                        this.div.style.fontWeight = '';
                     }
                     this.div.style.backgroundColor = '#'+this.zone.colour;
                     this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
@@ -2374,6 +2374,7 @@
                 this.div.style.top = newTop + 'px';
                 var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) - 1;
                 this.div.style.left = newLeft + 'px';
+                this.div.style.fontWeight = 'bold';
                 // Move the overlay to the highest pane
                 this.getPanes().floatPane.appendChild(this.div);
             };
@@ -2388,6 +2389,7 @@
                 this.div.style.top = newTop + 'px';
                 var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) + 1;
                 this.div.style.left = newLeft + 'px';
+                this.div.style.fontWeight = '';
                 // Move the overlay to the default pane
                 this.getPanes().floatShadow.appendChild(this.div);
             };
