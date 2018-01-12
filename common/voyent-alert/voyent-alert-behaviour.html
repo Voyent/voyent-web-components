@@ -234,6 +234,7 @@
             var div = document.createElement('div');
             div.style.fontSize = '12px';
             div.style.borderStyle = 'none';
+            div.style.borderColor = 'black';
             div.style.borderWidth = '0px';
             div.style.position = 'absolute';
             div.style.padding = '5px';
@@ -241,6 +242,7 @@
             div.style.opacity = 1.0;
             div.style.borderRadius = '25px';
             div.style.letterSpacing = '1px';
+            div.style.whiteSpace = 'nowrap';
             return div;
         },
 
@@ -2334,7 +2336,7 @@
                 this.div.innerHTML = this.loc.name;
                 //Center the label above the location.
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
-                this.div.style.top = nc.y-62 + 'px';
+                this.div.style.top = nc.y-63 + 'px';
                 //Configure the styling.
                 this.div.style.backgroundColor = '#64FE86';
                 this.div.style.color = '#000000';
@@ -2364,12 +2366,29 @@
              * Moves the location overlay to the map pane with the highest stacking priority.
              */
             this._LocationOverlay.prototype.moveToTopPane = function() {
+                // Add a border and slightly adjust the position of the overlay
+                // so it doesn't appear to shift due to the new border
+                this.div.style.borderStyle = 'solid';
+                this.div.style.borderWidth = '1px';
+                var newTop = parseFloat(this.div.style.top.substr(0,this.div.style.top.indexOf('px'))) - 1;
+                this.div.style.top = newTop + 'px';
+                var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) - 1;
+                this.div.style.left = newLeft + 'px';
+                // Move the overlay to the highest pane
                 this.getPanes().floatPane.appendChild(this.div);
             };
             /**
              * Moves the location overlay to the default map pane.
              */
             this._LocationOverlay.prototype.moveToDefaultPane = function() {
+                // Remove the border and positioning
+                this.div.style.borderStyle = 'none';
+                this.div.style.borderWidth = '0px';
+                var newTop = parseFloat(this.div.style.top.substr(0,this.div.style.top.indexOf('px'))) + 1;
+                this.div.style.top = newTop + 'px';
+                var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) + 1;
+                this.div.style.left = newLeft + 'px';
+                // Move the overlay to the default pane
                 this.getPanes().floatShadow.appendChild(this.div);
             };
             /**
