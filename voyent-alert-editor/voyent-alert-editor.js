@@ -287,7 +287,9 @@ Polymer({
         else {
             //Change the cursor to a crosshair for accurate placement
             this._map.setOptions({draggableCursor:'crosshair'});
-            //Add click listeners to the map so we can drop the new alert wherever they click.
+            //Add click listeners to the map so we can drop the new alert wherever they click. First clear the
+            //listener to ensure that the user can click multiple alerts and always get the last one the selected.
+            google.maps.event.clearListeners(this._map,'click');
             google.maps.event.addListener(this._map,'click',createChildTemplate);
             //Create a new child alert template to be linked one-to-one with the alert.
             function createChildTemplate(e) { _this._createChildTemplate(childTemplate,e.latLng); }
