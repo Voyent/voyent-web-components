@@ -2348,7 +2348,7 @@
                 this.div.innerHTML = this.loc.name;
                 //Center the label above the location.
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
-                this.div.style.top = nc.y-63 + 'px';
+                this.div.style.top = nc.y-64 + 'px';
                 //Configure the styling.
                 this.div.style.backgroundColor = '#64FE86';
                 this.div.style.color = '#000000';
@@ -2387,8 +2387,9 @@
                 var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) - 1;
                 this.div.style.left = newLeft + 'px';
                 this.div.style.fontWeight = 'bold';
-                // Move the overlay to a pane with a higher stacking priority
+                // Move the overlay to a pane with a higher stacking priority + adjust marker z-index
                 this.getPanes().overlayMouseTarget.appendChild(this.div);
+                this.loc.marker.setZIndex(100);
             };
             /**
              * Moves the location overlay to the default map pane.
@@ -2402,8 +2403,9 @@
                 var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) + 1;
                 this.div.style.left = newLeft + 'px';
                 this.div.style.fontWeight = '';
-                // Move the overlay to the default pane
+                // Move the overlay to the default pane + adjust marker z-index
                 this.getPanes().floatShadow.appendChild(this.div);
+                this.loc.marker.setZIndex(50);
             };
             /**
              * Returns a font colour of black or white based on the zone colour.
