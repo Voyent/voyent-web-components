@@ -251,8 +251,12 @@ Polymer({
      * @private
      */
     _validateLocationName: function(name) {
+        if (!name || !name.trim()) {
+            this.fire('message-error', 'Location must have a name');
+            return false;
+        }
         for (var i=0; i<this._myLocations.length; i++) {
-                if (this._myLocations[i].name === name) {
+            if (this._myLocations[i].name === name) {
                 this.fire('message-error', 'Location names must be unique');
                 return false;
             }
