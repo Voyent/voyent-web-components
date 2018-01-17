@@ -122,6 +122,7 @@
                     streetViewControl: false,
                     fullscreenControl: _this.nodeName === 'VOYENT-ALERT-VIEW',
                     scrollwheel: false,
+                    scaleControl: true,
                     mapTypeControlOptions: {
                         style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
                         position: google.maps.ControlPosition.LEFT_TOP
@@ -325,8 +326,8 @@
                     this._userLocationMarker.setMap(null);
                     this._userLocationMarker = null;
                 }
-                else if (this._locationMarkers) {
-                    this._clearLocations();
+                else if (this._myLocations) {
+                    this._clearMyLocations();
                 }
             }
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
@@ -650,8 +651,6 @@
                             else {
                                 //For alert detail view in non-preview mode only show the inner zone of each stack.
                                 if (i >= 1) { break; }
-                                //And the alert name for the zone label.
-                                properties.name = templateJSON.name;
                             }
                         }
                         if (properties.shape === 'circle') {
@@ -1117,7 +1116,7 @@
                 return;
             }
             var bounds = new google.maps.LatLngBounds();
-            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._userLocationMarker || this._locationMarkers))) {
+            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._userLocationMarker || this._myLocations))) {
                 var i;
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
@@ -1148,9 +1147,9 @@
                 if (this._userLocationMarker) {
                     bounds.extend(this._userLocationMarker.getPosition());
                 }
-                if (this._locationMarkers) {
-                    for (i=0; i<this._locationMarkers.length; i++) {
-                        bounds.extend(this._locationMarkers[i].getPosition());
+                if (this._myLocations) {
+                    for (i=0; i<this._myLocations.length; i++) {
+                        bounds.extend(this._myLocations[i].marker.getPosition());
                     }
                 }
                 this._map.fitBounds(bounds);
