@@ -4,7 +4,7 @@ Polymer({
 
     ready: function() {
         this._loadedAlert = null;
-        this._locationMarkers = [];
+        this._myLocations = [];
     },
     
     /**
@@ -14,39 +14,41 @@ Polymer({
     _onAfterLogin: function() {},
 
     /**
-     * Updates the view with the last location of the alert associated with the templateId.
+     * View the alert associated with the templateId at its last known location.
      * If location records are included they will be drawn on the map.
-     * @param templateId
-     * @param locations
-     * @param showAllZones
-     * @param mapIsEditable
+     * @param templateId - The id of the alert template to be drawn.
+     * @param locations - An optional array of location records to be drawn.
+     * @param showAllZones - Whether all zones should be shown on the map. When false only the inner zone will be shown for each stack.
+     * @param showZoneLabels - Whether zone labels should be rendered.
+     * @param mapIsEditable - Whether the map can be panned and zoomed.
      */
-    updateView: function(templateId,locations,showAllZones,mapIsEditable) {
+    viewAlert: function(templateId,locations,showAllZones,showZoneLabels,mapIsEditable) {
         var _this = this;
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
                 _this.fire('message-error','Unable to load template, id not provided');
                 return;
             }
-            //Clear the map.
+            //Clear the map and set some flags.
             _this.clearMap();
             _this._showAllZones = !!showAllZones;
+            _this._showZoneLabels = !!showZoneLabels;
             //Fetch the alert and user locations.
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
             Promise.all(promises).then(function(results) {
-                // First clear the map if we have an alert loaded already.
+                //First clear the map if we have an alert loaded already.
                 if (_this._loadedAlert) {
                     _this.clearMap();
                 }
-                // Build our LatLng object using the coordinates of the last location of the alert.
+                //Build our LatLng object using the coordinates of the last location of the alert.
                 var latLng = new google.maps.LatLng(
                     results[1].location.geometry.coordinates[1],
                     results[1].location.geometry.coordinates[0]
                 );
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
-                _this._drawLocations(locations,true);
+                _this._drawLocations(locations,true,true);
                 _this._templateId = _this._loadedAlert.template.id;
                 _this._toggleEditableMap(!!mapIsEditable);
             }).catch(function(error) {
@@ -68,6 +70,8 @@ Polymer({
             this.fire('message-error','Unable to load template, template not provided');
             return;
         }
+        //Always show the zone labels in preview mode.
+        this._showZoneLabels = true;
         //Ensure that the passed zoneId is valid. If not we will fallback to just drawing the inner zone of each stack.
         this._zoneIdToDisplay = null;
         this._foundZoneIdMatch = false;
@@ -81,7 +85,7 @@ Polymer({
         }
         this.clearMap();
         this._drawAndLoadAlertTemplate(template);
-        this._drawLocations(locations,false);
+        this._drawLocations(locations,false,false);
     },
 
     /**
@@ -166,37 +170,34 @@ Polymer({
      * Draws user markers on the map based on the passed location data.
      * @param locations
      * @param useMarkerIcon
+     * @param showLocationLabels
      * @private
      */
-    _drawLocations: function(locations,useMarkerIcon) {
+    _drawLocations: function(locations,useMarkerIcon,showLocationLabels) {
         if (!locations) { return; }
-        this._locationMarkers = [];
+        this._myLocations = [];
         for (var i=0; i<locations.length; i++) {
             //We should always only have one mobile location.
             if (locations[i].properties.vras.type === 'mobile') {
                 this._drawUser(locations[i]);
                 continue;
             }
-            this._locationMarkers.push(new google.maps.Marker({
-                position: new google.maps.LatLng(
-                    locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
-                ),
-                map: this._map,
-                draggable: false,
-                icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this.pathtoimages+'/img/user_marker.png'
-            }));
+            this._showLocationLabels = !!showLocationLabels;
+            this._myLocations.push(new this._MyLocation(
+                locations[i].properties.vras.id,
+                locations[i].properties.vras.name,
+                locations[i].properties.vras.type === 'residential',
+                new google.maps.Marker({
+                    position: new google.maps.LatLng(
+                        locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
+                    ),
+                    map: this._map,
+                    draggable: false,
+                    icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this.pathtoimages+'/img/user_marker.png'
+                }),
+                null
+            ));
         }
-    },
-
-    /**
-     * Clears user markers from the map.
-     * @private
-     */
-    _clearLocations: function() {
-        for (var i=0; i<this._locationMarkers.length; i++) {
-            this._locationMarkers[i].setMap(null);
-        }
-        this._locationMarkers = [];
     },
 
     /**

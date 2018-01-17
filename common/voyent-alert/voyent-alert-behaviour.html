@@ -1673,7 +1673,10 @@
                         this.nameOverlay.draw();
                     }
                     else {
-                        this.nameOverlay = new _outer._ProximityZoneOverlay(this);
+                        if (_outer.nodeName !== 'VOYENT-ALERT-VIEW' ||
+                            (_outer.nodeName === 'VOYENT-ALERT-VIEW' && _outer._showZoneLabels)) {
+                            this.nameOverlay = new _outer._ProximityZoneOverlay(this);
+                        }
                     }
                 },
                 /**
@@ -2137,7 +2140,10 @@
                         this.nameOverlay.draw();
                     }
                     else {
-                        this.nameOverlay = new _outer._LocationOverlay(this);
+                        if (_outer.nodeName !== 'VOYENT-ALERT-VIEW' ||
+                            (_outer.nodeName === 'VOYENT-ALERT-VIEW' && _outer._showLocationLabels)) {
+                            this.nameOverlay = new _outer._LocationOverlay(this);
+                        }
                     }
                 },
                 /**
@@ -2155,14 +2161,18 @@
                  */
                 addToMap: function() {
                     this.marker.setMap(_outer._map);
-                    this.nameOverlay.displayAndDraw();
+                    if (this.nameOverlay) {
+                        this.nameOverlay.displayAndDraw();
+                    }
                 },
                 /**
                  * Removes the location from the map.
                  */
                 removeFromMap: function() {
                     this.marker.setMap(null);
-                    this.nameOverlay.hide();
+                    if (this.nameOverlay) {
+                        this.nameOverlay.hide();
+                    }
                 },
                 /**
                  * Updates the JSON to reflect the current state of the template.
@@ -2196,7 +2206,9 @@
                     //Continuously re-draw the overlay as the location is dragged.
                     var marker = this.marker;
                     google.maps.event.addListener(marker,'drag',function() {
-                        _this.nameOverlay.draw();
+                        if (_this.nameOverlay) {
+                            _this.nameOverlay.draw();
+                        }
                     });
                     //Update the coordinates on the location record and flag the location for updating after it's dragged.
                     google.maps.event.addListener(marker,'dragend',function() {
@@ -2284,16 +2296,18 @@
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv();
                 this.div.style.cursor = 'pointer';
-                // Add some listeners to support info window toggling via label selection
-                this.div.onmouseover = function () {
-                    _this.moveToTopPane();
-                };
-                this.div.onmouseout = function () {
-                    _this.moveToDefaultPane();
-                };
-                this.div.onclick = function() {
-                    _outer._toggleInfoWindow(_this.loc);
-                };
+                if (_outer.nodeName !== 'VOYENT-ALERT-VIEW') {
+                    // Add some listeners to support info window toggling via label selection
+                    this.div.onmouseover = function () {
+                        _this.moveToTopPane();
+                    };
+                    this.div.onmouseout = function () {
+                        _this.moveToDefaultPane();
+                    };
+                    this.div.onclick = function() {
+                        _outer._toggleInfoWindow(_this.loc);
+                    };
+                }
             };
             //Inherit the prototype of google.maps.OverlayView.
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
