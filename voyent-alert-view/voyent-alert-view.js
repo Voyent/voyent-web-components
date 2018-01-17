@@ -120,7 +120,10 @@ Polymer({
                 }
                 else { return; }
                 _this._loadedAlert.template.moveStacksRelativeToPosition(pos);
-                _this._adjustBoundsAndPan();
+                // Don't adjust the map if the user is allowed to pan and zoom it as they may be actively doing so.
+                if (!_this._mapIsEditable) {
+                    _this._adjustBoundsAndPan();
+                }
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the alert\'s location: ' +
                            (error.responseText || error.message || error));

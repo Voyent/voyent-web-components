@@ -1111,10 +1111,6 @@
          * @private
          */
         _adjustBoundsAndPan: function() {
-            // Don't adjust the map if the user is allowed to pan and zoom it as they may be actively doing so.
-            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this._mapIsEditable) {
-                return;
-            }
             var bounds = new google.maps.LatLngBounds();
             if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._userLocationMarker || this._myLocations))) {
                 var i;
