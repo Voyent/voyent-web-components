@@ -2,6 +2,14 @@ Polymer({
     is: 'voyent-alert-view',
     behaviors: [Voyent.AlertMapBehaviour,Voyent.AlertBehaviour],
 
+
+    properties: {
+        /**
+         * Indicates which mode the component is in. Valid values are `notification`, `view` and `preview`.
+         */
+        mode: { type: String }
+    },
+
     ready: function() {
         this._loadedAlert = null;
         this._myLocations = [];
@@ -18,21 +26,15 @@ Polymer({
      * If location records are included they will be drawn on the map.
      * @param templateId - The id of the alert template to be drawn.
      * @param locations - An optional array of location records to be drawn.
-     * @param showAllZones - Whether all zones should be shown on the map. When false only the inner zone will be shown for each stack.
-     * @param showZoneLabels - Whether zone labels should be rendered.
-     * @param mapIsEditable - Whether the map can be panned and zoomed.
      */
-    viewAlert: function(templateId,locations,showAllZones,showZoneLabels,mapIsEditable) {
+    viewAlert: function(templateId,locations) {
         var _this = this;
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
                 _this.fire('message-error','Unable to load template, id not provided');
                 return;
             }
-            //Clear the map and set some flags.
             _this.clearMap();
-            _this._showAllZones = !!showAllZones;
-            _this._showZoneLabels = !!showZoneLabels;
             //Fetch the alert and user locations.
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
@@ -48,9 +50,9 @@ Polymer({
                     results[1].location.geometry.coordinates[0]
                 );
                 _this._drawAndLoadAlertTemplate(results[0],latLng);
-                _this._drawLocations(locations,true,true);
+                _this._drawLocations(locations,true);
                 _this._templateId = _this._loadedAlert.template.id;
-                _this._toggleEditableMap(!!mapIsEditable);
+                _this._toggleEditableMap(_this.mode === 'view');
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
@@ -70,8 +72,6 @@ Polymer({
             this.fire('message-error','Unable to load template, template not provided');
             return;
         }
-        //Always show the zone labels in preview mode.
-        this._showZoneLabels = true;
         //Ensure that the passed zoneId is valid. If not we will fallback to just drawing the inner zone of each stack.
         this._zoneIdToDisplay = null;
         this._foundZoneIdMatch = false;
@@ -85,7 +85,7 @@ Polymer({
         }
         this.clearMap();
         this._drawAndLoadAlertTemplate(template);
-        this._drawLocations(locations,false,false);
+        this._drawLocations(locations,false);
     },
 
     /**
@@ -120,8 +120,8 @@ Polymer({
                 }
                 else { return; }
                 _this._loadedAlert.template.moveStacksRelativeToPosition(pos);
-                // Don't adjust the map if the user is allowed to pan and zoom it as they may be actively doing so.
-                if (!_this._mapIsEditable) {
+                // Don't adjust the map in view mode as the user may be panning the map.
+                if (!_this.mode !== 'view') {
                     _this._adjustBoundsAndPan();
                 }
             }).catch(function(error) {
@@ -173,10 +173,9 @@ Polymer({
      * Draws user markers on the map based on the passed location data.
      * @param locations
      * @param useMarkerIcon
-     * @param showLocationLabels
      * @private
      */
-    _drawLocations: function(locations,useMarkerIcon,showLocationLabels) {
+    _drawLocations: function(locations,useMarkerIcon) {
         if (!locations) { return; }
         this._myLocations = [];
         for (var i=0; i<locations.length; i++) {
@@ -185,7 +184,6 @@ Polymer({
                 this._drawUser(locations[i]);
                 continue;
             }
-            this._showLocationLabels = !!showLocationLabels;
             this._myLocations.push(new this._MyLocation(
                 locations[i].properties.vras.id,
                 locations[i].properties.vras.name,
@@ -210,7 +208,9 @@ Polymer({
      */
     _toggleEditableMap: function(editable) {
         this._map.setOptions({mapTypeControl:editable,zoomControl:editable,draggable:editable,disableDoubleClickZoom:!editable});
-        this._mapIsEditable = editable;
+        if (editable) {
+            this._adjustBoundsAndPan();
+        }
     },
 
     /**
@@ -219,13 +219,16 @@ Polymer({
      */
     _addFullscreenListener: function() {
         var _this = this;
-        // This event is browser prefixed so we must listen to multiple events
-        document.addEventListener('fullscreenchange', fullScreenListener);
-        document.addEventListener('webkitfullscreenchange', fullScreenListener);
-        document.addEventListener('mozfullscreenchange', fullScreenListener);
-        function fullScreenListener() {
-            var isFullScreen = document['fullScreen'] || document['webkitIsFullScreen'] || document['mozFullScreen'];
-            _this._toggleEditableMap(isFullScreen);
+        //We don't need the listener for view mode as we don't want to toggle the controls.
+        if (this.mode !== 'view') {
+            // This event is browser prefixed so we must listen to multiple events
+            document.addEventListener('fullscreenchange', fullScreenListener);
+            document.addEventListener('webkitfullscreenchange', fullScreenListener);
+            document.addEventListener('mozfullscreenchange', fullScreenListener);
+            function fullScreenListener() {
+                var isFullScreen = document['fullScreen'] || document['webkitIsFullScreen'] || document['mozFullScreen'];
+                _this._toggleEditableMap(!!isFullScreen);
+            }
         }
     }
 });
