@@ -116,6 +116,7 @@ Example:
                              label="Name"
                              maxlength="30"
                              placeholder="New Name"
+                             autocapitalize="words"
                              on-change="_flagLocationForUpdating"
                              value="{{_inputName::input}}">
                 </paper-input>
@@ -136,6 +137,7 @@ Example:
                     <paper-input label="Name"
                                  placeholder="New Name"
                                  maxlength="30"
+                                 autocapitalize="words"
                                  value="{{_selectedPlace.name::input}}">
                     </paper-input>
                     <div class="address">
@@ -184,11 +186,11 @@ Example:
             </paper-radio-group>
             <template is="dom-if" if="[[_isAddress(_creationType)]]">
                 <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" autofocus
-                             maxlength="70"
+                             maxlength="70" autocapitalize="words"
                              on-keyup="_dialogKeyUp" placeholder="Enter a location"></paper-input>
             </template>
             <paper-input class="inline no-margin name-input" autofocus no-label-float tabindex="5" label="Label"
-                         maxlength="30"
+                         maxlength="30" autocapitalize="words"
                          on-keyup="_dialogKeyUp" value="{{_locationName}}"></paper-input>
             <div class="inline no-margin toggle-button">
                 <paper-toggle-button class="inline no-margin valign-top" tabindex="6" on-keyup="_dialogKeyUp"
