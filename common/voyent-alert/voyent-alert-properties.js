@@ -92,7 +92,8 @@ Polymer({
     },
 
     observers: [
-        '_alertDirectionChanged(_alertDirection)'
+        '_alertDirectionChanged(_alertDirection)',
+        '_alertSpeedChanged(_alertSpeed)'
     ],
 
     ready: function() {
@@ -741,11 +742,13 @@ Polymer({
     },
 
     /**
-     * Validates the alert movement direction value and handles updating the template JSON.
+     * Validates the alert movement direction value and manages the value of the direction dropdown.
      * @private
      */
     _alertDirectionChanged: function() {
         if (!this._alertDirection && this._alertDirection !== 0) {
+            //This prevents the user from typing the - character which is permitted for number fields.
+            this._alertDirection = null;
             //When we have no alert direction reset the cardinal direction dropdown.
             var dropdown =  this.querySelector('#alertCardinalDirection');
             if (dropdown) {
@@ -755,6 +758,10 @@ Polymer({
         }
         else if (this._alertDirection > 360) { //Force 360 max.
             this._alertDirection = 360;
+            return;
+        }
+        else if (this._alertDirection < 0) { //Force 0 min (this would only occur if they pasted in a negative value).
+            this._alertDirection = 0;
             return;
         }
         //If the direction was typed in manually then determine whether
@@ -769,6 +776,23 @@ Polymer({
             this.set('_alertCardinalDirection', null);
         }
         this._alertDirectionSetFromCardinal = false;
+    },
+
+    /**
+     * Validates the alert movement speed value.
+     * @private
+     */
+    _alertSpeedChanged: function() {
+        if (!this._alertSpeed && this._alertSpeed !== 0) {
+            //This prevents the user from typing the - character which is permitted for number fields.
+            this._alertSpeed = null;
+        }
+        else if (this._alertSpeed > 999) { //Force 999 max.
+            this._alertSpeed = 999;
+        }
+        else if (this._alertSpeed < 0) { //Force 0 min (this would only occur if they pasted in a negative value).
+            this._alertSpeed = 0;
+        }
     },
 
     /**
@@ -790,21 +814,23 @@ Polymer({
      * Returns the style classes for the accordion header and body elements.
      * @param section
      * @param active
+     * @param extraClass
      * @returns {string}
      * @private
      */
-    _getAccordionClasses: function(section,active) {
-        return active ? (section+' active') : section;
+    _getAccordionClasses: function(section,active,extraClass) {
+        return (active ? (section+' active') : section) + ' ' + extraClass;
     },
 
     /**
      * Returns the style classes for the accordion zone label.
      * @param active
+     * @param extraClass
      * @returns {string}
      * @private
      */
-    _getZoneTitleClasses: function(active) {
-        return active ? 'title zone active' : 'title zone';
+    _getZoneTitleClasses: function(active,extraClass) {
+        return (active ? 'title zone active' : 'title zone') + ' ' + extraClass;
     },
 
     /**
