@@ -1674,7 +1674,7 @@
                     }
                     else {
                         if (_outer.nodeName !== 'VOYENT-ALERT-VIEW' ||
-                            (_outer.nodeName === 'VOYENT-ALERT-VIEW' && _outer._showZoneLabels)) {
+                            (_outer.nodeName === 'VOYENT-ALERT-VIEW' && _outer.mode !== 'notification')) {
                             this.nameOverlay = new _outer._ProximityZoneOverlay(this);
                         }
                     }
@@ -2141,7 +2141,7 @@
                     }
                     else {
                         if (_outer.nodeName !== 'VOYENT-ALERT-VIEW' ||
-                            (_outer.nodeName === 'VOYENT-ALERT-VIEW' && _outer._showLocationLabels)) {
+                            (_outer.nodeName === 'VOYENT-ALERT-VIEW' && _outer.mode !== 'preview')) {
                             this.nameOverlay = new _outer._LocationOverlay(this);
                         }
                     }

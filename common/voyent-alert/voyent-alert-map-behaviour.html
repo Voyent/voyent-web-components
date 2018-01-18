@@ -137,7 +137,7 @@
                 }
                 //Alert view map is readonly.
                 if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
-                    mapOptions.mapTypeControl = mapOptions.zoomControl =  mapOptions.draggable = false;
+                    mapOptions.mapTypeControl = mapOptions.zoomControl = mapOptions.draggable = false;
                     mapOptions.disableDoubleClickZoom = true;
                     _this._addFullscreenListener();
                 }
@@ -636,8 +636,8 @@
                     zIndex = 49;
                     for (var i=0; i<zoneGeometries.length; i++) {
                         properties = templateJSON.properties[zoneGeometries[i].id];
-                        if (this.nodeName === 'VOYENT-ALERT-VIEW' && !this._showAllZones) {
-                            //For alert detail view in preview mode only show the requested zone.
+                        if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode !== 'view') {
+                            //For alert detail preview view show the requested zone only.
                             if (this._zoneIdToDisplay) {
                                 if (this._foundZoneIdMatch) {
                                     this._foundZoneIdMatch = false;
@@ -649,7 +649,7 @@
                                 else { continue; }
                             }
                             else {
-                                //For alert detail view in non-preview mode only show the inner zone of each stack.
+                                //For alert detail notification view show the inner zone of each stack.
                                 if (i >= 1) { break; }
                             }
                         }
