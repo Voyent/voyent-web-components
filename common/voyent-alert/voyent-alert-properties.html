@@ -101,6 +101,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                 display:inline-block;
                 vertical-align: middle;
             }
+            .dropdownCol.movement,
+            .inputCol.movement {
+                padding: 0;
+            }
             .propertyCol {
                 width: 35%;
             }
@@ -175,7 +179,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                 -ms-user-select: none !important;
                 user-select: none !important;
                 font-size: 16px !important;
-                font-weight: bold !important;
                 margin: 0 !important;
             }
             .movement-input {
@@ -264,7 +267,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                         <div class$="{{_getAccordionClasses('body',_showMovement,'')}}">
                             <div class="table">
                                 <div class="row">
-                                    <div class="inputCol">
+                                    <div class="inputCol movement">
                                         <paper-input value="{{_alertDirection::input}}"
                                                      class="movement-input"
                                                      tabindex="2"
@@ -273,7 +276,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                      step="0.05" min="0" max="360" maxlength="3">
                                         </paper-input>
                                     </div>
-                                    <div class="dropdownCol">
+                                    <div class="dropdownCol movement">
                                         <paper-dropdown-menu tabindex="3"
                                                              class="movement-input direction"
                                                              placeholder="Direction"
@@ -290,7 +293,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="inputCol">
+                                    <div class="inputCol movement">
                                         <paper-input value="{{_alertSpeed::input}}"
                                                      class="movement-input"
                                                      tabindex="3"
@@ -299,7 +302,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                      step="0.5" min="0" maxlength="5">
                                         </paper-input>
                                     </div>
-                                    <div class="dropdownCol">
+                                    <div class="dropdownCol movement">
                                         <paper-dropdown-menu tabindex="4"
                                                              class="movement-input"
                                                              placeholder="Unit"
