@@ -540,7 +540,7 @@ Polymer({
             if (this._zoneToAdjust.getShape() === 'circle') {
                 newRadius = this._adjustRadiusByPercentage(this._zoneToAdjust.shapeOverlay.getRadius(),percentage);
                 if (outerZone && newRadius >= outerZone.shapeOverlay.getRadius()) {
-                    this.fire('message-error',this._OVERLAP_MSG);
+                    this._displayOverlapMsg();
                     this._y = this._previousY;
                     return;
                 }
@@ -552,7 +552,7 @@ Polymer({
                     var outerZonePath = outerZone.shapeOverlay.getPaths().getAt(0);
                     if (google.maps.geometry.spherical.computeArea(newPath) >=
                         google.maps.geometry.spherical.computeArea(outerZonePath)) {
-                        this.fire('message-error',this._OVERLAP_MSG);
+                        this._displayOverlapMsg();
                         this._y = this._previousY;
                         return;
                     }
@@ -576,7 +576,7 @@ Polymer({
                                 }
                             });
                         if (intersects.features.length) {
-                            this.fire('message-error',this._OVERLAP_MSG);
+                            this._displayOverlapMsg();
                             this._y = this._previousY;
                             return;
                         }
@@ -589,7 +589,7 @@ Polymer({
             if (this._zoneToAdjust.getShape() === 'circle') {
                 newRadius = this._adjustRadiusByPercentage(this._zoneToAdjust.shapeOverlay.getRadius(),-percentage);
                 if (innerZone && newRadius <= innerZone.shapeOverlay.getRadius()) {
-                    this.fire('message-error',this._OVERLAP_MSG);
+                    this._displayOverlapMsg();
                     this._y = this._previousY;
                     return;
                 }
@@ -601,7 +601,7 @@ Polymer({
                     var innerZonePath = innerZone.shapeOverlay.getPaths().getAt(0);
                     if (google.maps.geometry.spherical.computeArea(newPath) <=
                         google.maps.geometry.spherical.computeArea(innerZonePath)) {
-                        this.fire('message-error',this._OVERLAP_MSG);
+                        this._displayOverlapMsg();
                         this._y = this._previousY;
                         return;
                     }
@@ -625,7 +625,7 @@ Polymer({
                                 }
                             });
                         if (intersects.features.length) {
-                            this.fire('message-error',this._OVERLAP_MSG);
+                            this._displayOverlapMsg();
                             this._y = this._previousY;
                             return;
                         }

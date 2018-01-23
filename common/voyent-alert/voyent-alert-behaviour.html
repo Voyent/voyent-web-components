@@ -353,6 +353,21 @@
         },
 
         /**
+         * Handles displaying the overlap message and ensuring we don't display it too frequently.
+         * @private
+         */
+        _displayOverlapMsg: function() {
+            var currentTime = new Date().getTime();
+            //Only allow displaying this message once every 10 seconds.
+            if (this._displayedOverlapMsgAt &&
+                currentTime - this._displayedOverlapMsgAt <= 10000) {
+                return;
+            }
+            this.fire('message-error',this._OVERLAP_MSG);
+            this._displayedOverlapMsgAt = new Date().getTime();
+        },
+
+        /**
          * Sorts the Proximity Zones based on their radius.
          * @private
          */
@@ -1355,7 +1370,7 @@
                             if (outerZone && this.getRadius() >= outerZone.shapeOverlay.getRadius()) {
                                 _outer._ignoreRadiusChangedEvent = true;
                                 zone.setRadius(zone.radius);
-                                _outer.fire('message-error',_outer._OVERLAP_MSG);
+                                _outer._displayOverlapMsg();
                                 return;
                             }
                             //Check if it overlapped the adjacent inner zone.
@@ -1363,7 +1378,7 @@
                             if (innerZone && this.getRadius() <= innerZone.shapeOverlay.getRadius()) {
                                 _outer._ignoreRadiusChangedEvent = true;
                                 zone.setRadius(zone.shape);
-                                _outer.fire('message-error',_outer._OVERLAP_MSG);
+                                _outer._displayOverlapMsg();
                                 return;
                             }
                             _this.updateJSON();
