@@ -758,7 +758,7 @@
             //Draw the fallback zone but only if we have properties
             //other then enabled set (checking name exists is sufficient).
             if (this.nodeName !== 'VOYENT-ALERT-VIEW' ||
-                (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode !== 'notification' && this._zoneIdToDisplay === this._FALLBACK_ZONE_ID)) {
+                (this.nodeName === 'VOYENT-ALERT-VIEW' && (!this._zoneIdToDisplay || this._zoneIdToDisplay === this._FALLBACK_ZONE_ID))) {
                 var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
                 if (fallbackZoneProperties && fallbackZoneProperties.name) {
                     this._fallbackZone = new this._FallbackAlertZone(
@@ -1183,7 +1183,7 @@
                         }
                     }
                 }
-                if (this._userLocationMarker || this._myLocations) {
+                if (this._userLocationMarker || (this._myLocations && this._myLocations.length)) {
                     if (this._userLocationMarker) {
                         bounds.extend(this._userLocationMarker.getPosition());
                     }

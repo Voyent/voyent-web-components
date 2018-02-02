@@ -19,7 +19,9 @@ Polymer({
      * Finish initializing after login.
      * @private
      */
-    _onAfterLogin: function() {},
+    _onAfterLogin: function() {
+        this._fetchRealmRegion()
+    },
 
     /**
      * View the alert associated with the templateId at its last known location.
@@ -40,16 +42,21 @@ Polymer({
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
             Promise.all(promises).then(function(results) {
+                var alert = results[0];
+                var location = results[1];
                 //First clear the map if we have an alert loaded already.
                 if (_this._loadedAlert) {
                     _this.clearMap();
                 }
                 //Build our LatLng object using the coordinates of the last location of the alert.
-                var latLng = new google.maps.LatLng(
-                    results[1].location.geometry.coordinates[1],
-                    results[1].location.geometry.coordinates[0]
-                );
-                _this._drawAndLoadAlertTemplate(results[0],latLng);
+                var latLng = null;
+                if (alert.geo) {
+                    latLng = new google.maps.LatLng(
+                        location.location.geometry.coordinates[1],
+                        location.location.geometry.coordinates[0]
+                    );
+                }
+                _this._drawAndLoadAlertTemplate(alert,latLng);
                 _this._drawLocations(locations,true);
                 _this._templateId = _this._loadedAlert.template.id;
                 _this._toggleEditableMap(_this.mode === 'view');
