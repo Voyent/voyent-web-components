@@ -395,9 +395,17 @@
             if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
                 if (typeof stackIndex === 'number' && stackIndex >= 0) {
                     this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].setName(zoneName);
+                    //Redraw the overlay since the content changed.
+                    if (this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].nameOverlay) {
+                        this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].nameOverlay.draw();
+                    }
                 }
                 else {
                     this._loadedAlert.selectedStack.zones[zoneIndex].setName(zoneName);
+                    //Redraw the overlay since the content changed.
+                    if (this._loadedAlert.selectedStack.zones[zoneIndex].nameOverlay) {
+                        this._loadedAlert.selectedStack.zones[zoneIndex].nameOverlay.draw();
+                    }
                 }
             }
         },
@@ -429,6 +437,10 @@
         setFallbackZoneName: function(zoneName) {
             if (this._fallbackZone) {
                 this._fallbackZone.setName(zoneName);
+                //Redraw the overlay since the content changed.
+                if (this._fallbackZone.nameOverlay) {
+                    this._fallbackZone.nameOverlay.draw();
+                }
             }
         },
 

@@ -92,6 +92,8 @@ Polymer({
         var isNewActivation = !this._loadedAlert.template.id || this._loadedAlert.template.state === 'draft';
         this._loadedAlert.template.setState(this._loadedAlert.template.hasSchedule() ? 'scheduled' : 'active');
         console.log('this._loadedAlert.template.state',this._loadedAlert.template.state);
+        console.log('this',this);
+        console.log('this.saveAlert',this.saveAlert);
         this.saveAlert().then(function() {
             if (isNewActivation) {
                 if (_this._loadedAlert.template.state === 'scheduled') {
