@@ -1118,7 +1118,7 @@
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
                     //If we have no zoneStacks and no user locations then we only have a fallback zone so just pan to the region.
-                    if (!zoneStacks.length && !this._myLocations.length && !this._userLocationMarker.length) {
+                    if (!zoneStacks.length) {
                         //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
                         //or template. This fixes an issue where when we load a fallback zone only template after a stacked
                         //template the map wouldn't pan.
@@ -1126,16 +1126,18 @@
                         this._zoomOnRegion();
                         return;
                     }
-                    for (i=0; i<zoneStacks.length; i++) {
-                        var largestZone = zoneStacks[i].getLargestZone();
-                        if (largestZone) {
-                            if (largestZone.getShape() === 'circle') {
-                                bounds.extend(largestZone.shapeOverlay.getBounds().getNorthEast());
-                                bounds.extend(largestZone.shapeOverlay.getBounds().getSouthWest());
-                            }
-                            else {
-                                for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
-                                    bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
+                    else {
+                        for (i=0; i<zoneStacks.length; i++) {
+                            var largestZone = zoneStacks[i].getLargestZone();
+                            if (largestZone) {
+                                if (largestZone.getShape() === 'circle') {
+                                    bounds.extend(largestZone.shapeOverlay.getBounds().getNorthEast());
+                                    bounds.extend(largestZone.shapeOverlay.getBounds().getSouthWest());
+                                }
+                                else {
+                                    for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
+                                        bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
+                                    }
                                 }
                             }
                         }
