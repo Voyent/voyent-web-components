@@ -758,7 +758,7 @@
             //Draw the fallback zone but only if we have properties
             //other then enabled set (checking name exists is sufficient).
             if (this.nodeName !== 'VOYENT-ALERT-VIEW' ||
-                (this.nodeName === 'VOYENT-ALERT-VIEW' && (!this._zoneIdToDisplay || this._zoneIdToDisplay === this._FALLBACK_ZONE_ID))) {
+                (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode !== 'notification' && (!this._zoneIdToDisplay || this._zoneIdToDisplay === this._FALLBACK_ZONE_ID))) {
                 var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
                 if (fallbackZoneProperties && fallbackZoneProperties.name) {
                     this._fallbackZone = new this._FallbackAlertZone(
@@ -1158,11 +1158,18 @@
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
                     //If we have no zoneStacks and no user locations then we only have a fallback zone so just pan to the region.
                     if (!zoneStacks.length) {
-                        //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
-                        //or template. This fixes an issue where when we load a fallback zone only template after a stacked
-                        //template the map wouldn't pan.
-                        this._skipRegionPanning = false;
-                        this._zoomOnRegion();
+                        //If the view is alert notification detail then don't zoom on the region as we will always have 1 location to pan to.
+                        if (this.mode === 'notification') {
+                            bounds.extend(this._areaRegion.bounds.getNorthEast());
+                            bounds.extend(this._areaRegion.bounds.getSouthWest());
+                        }
+                        else {
+                            //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
+                            //or template. This fixes an issue where when we load a fallback zone only template after a stacked
+                            //template the map wouldn't pan.
+                            this._skipRegionPanning = false;
+                            this._zoomOnRegion();
+                        }
                     }
                     else {
                         for (i=0; i<zoneStacks.length; i++) {
