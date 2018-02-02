@@ -1177,20 +1177,24 @@
                                         bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
                                     }
                                 }
+                                this._map.fitBounds(bounds);
+                                this._map.panToBounds(bounds);
                             }
                         }
                     }
                 }
-                if (this._userLocationMarker) {
-                    bounds.extend(this._userLocationMarker.getPosition());
-                }
-                if (this._myLocations) {
-                    for (i=0; i<this._myLocations.length; i++) {
-                        bounds.extend(this._myLocations[i].marker.getPosition());
+                if (this._userLocationMarker || this._myLocations) {
+                    if (this._userLocationMarker) {
+                        bounds.extend(this._userLocationMarker.getPosition());
                     }
+                    if (this._myLocations) {
+                        for (i=0; i<this._myLocations.length; i++) {
+                            bounds.extend(this._myLocations[i].marker.getPosition());
+                        }
+                    }
+                    this._map.fitBounds(bounds);
+                    this._map.panToBounds(bounds);
                 }
-                this._map.fitBounds(bounds);
-                this._map.panToBounds(bounds);
             }
             else {
                 this._zoomOnRegion();
