@@ -101,10 +101,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <form is="iron-form" id="loginForm" on-submit="handleLogin">
       <paper-card heading="{{heading}}" image="{{headerImage}}">
         <div class="card-content">
-          <paper-input id="username" label="Username" required maxlength="35" placeholder="Enter your username" value="{{username}}">
+          <paper-input id="username" label="Username" required maxlength="35" value="{{username}}">
             <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
           </paper-input>
-          <paper-input id="password" type="password" required label="Password" placeholder="Enter your password" value="{{password}}">
+          <paper-input id="password" type="password" required label="Password" value="{{password}}">
             <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1"></paper-icon-button>
           </paper-input>
           <content select="forgotten-password"></content>
@@ -116,17 +116,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <iron-collapse id="collapse" opened="[[!hideclosed]]" no-animation="true">
               <div id="content">
                   <template is="dom-if" if="[[showrealminput]]">
-                    <paper-input required label="{{realminputlabel}}" placeholder="Enter the {{realminputlabel}}" value="{{realm}}">
+                    <paper-input required label="{{realminputlabel}}" value="{{realm}}">
                       <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
                     </paper-input>
                   </template>
                   <template is="dom-if" if="[[showaccountinput]]">
-                    <paper-input required label="{{accountinputlabel}}" placeholder="Enter the {{accountinputlabel}}" value="{{account}}">
+                    <paper-input required label="{{accountinputlabel}}" value="{{account}}">
                       <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
                     </paper-input>
                   </template>
                   <template is="dom-if" if="[[showhostinput]]">
-                    <paper-input required label="Host" placeholder="Enter the host" value="{{host}}">
+                    <paper-input required label="Host" value="{{host}}">
                         <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1"></paper-icon-button>
                     </paper-input>
                   </template>

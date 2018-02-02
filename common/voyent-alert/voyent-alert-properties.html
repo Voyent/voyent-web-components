@@ -215,8 +215,14 @@ Internal component used to display the properties panel inside Voyent alert comp
                 font-size:16px;
                 width:130px;
             }
+            .title.zone.active.no-edit {
+                width:123px !important;
+            }
             .title-bttns {
                 width:45px;
+            }
+            .title-bttns.no-edit {
+                width:22px !important;
             }
             .delete-button {
                 text-align:center;
@@ -259,7 +265,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                         <div class$="{{_getAccordionClasses('header',_showMovement,'gradient-header')}}">
                             <paper-icon-button title="Toggle Movement Properties" icon="{{_getArrowIcon(_showMovement)}}"
                                                on-click="_toggleMovement" data-index$="[[index]]"></paper-icon-button>
-                            <div class$="{{_getZoneTitleClasses(_showMovement,'movement')}}"
+                            <div class$="{{_getZoneTitleClasses(_showMovement,'','movement')}}"
                                  data-index$="[[index]]" on-click="_toggleMovement">
                                Alert Movement
                             </div>
@@ -336,7 +342,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <div class$="{{_getAccordionClasses('header',_showBadge,'')}}">
                         <paper-icon-button title="Toggle Badge Properties" icon="{{_getArrowIcon(_showBadge)}}"
                                            on-click="_toggleBadge" data-index$="[[index]]"></paper-icon-button>
-                        <div class$="{{_getZoneTitleClasses(_showBadge,'')}}" data-index$="[[index]]">
+                        <div class$="{{_getZoneTitleClasses(_showBadge,'','')}}" data-index$="[[index]]">
                            Badge
                         </div>
                     </div>
@@ -357,14 +363,16 @@ Internal component used to display the properties panel inside Voyent alert comp
                         <template is="dom-if" if="[[!zone.renaming]]">
                             <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
                                                on-click="_toggleProperties" data-index$="[[index]]"></paper-icon-button>
-                            <div class$="{{_getZoneTitleClasses(zone.active,'')}}"
+                            <div class$="{{_getZoneTitleClasses(zone.active,hideZoneNameEditing,'')}}"
                                  data-index$="[[index]]" on-click="_toggleProperties">
                                 [[zone.name]]
                             </div>
-                            <div class="title-bttns" hidden="[[!zone.active]]">
-                                <paper-icon-button icon="create" data-index$="[[index]]" title="Edit Zone Name"
-                                                   on-click="_toggleProximityZoneRenaming">
-                                </paper-icon-button>
+                            <div class$="{{_getZoneTitleButtonClasses(hideZoneNameEditing)}}" hidden="[[!zone.active]]">
+                                <template is="dom-if" if="[[!hideZoneNameEditing]]">
+                                    <paper-icon-button icon="create" data-index$="[[index]]" title="Edit Zone Name"
+                                                       on-click="_toggleProximityZoneRenaming">
+                                    </paper-icon-button>
+                                </template>
                                 <paper-icon-button title="Remove Zone" icon="delete" on-click="_removeProximityZone"
                                                    data-index$="[[index]]" tabindex="4">
                                 </paper-icon-button>
@@ -451,14 +459,16 @@ Internal component used to display the properties panel inside Voyent alert comp
                         <template is="dom-if" if="[[!_fallbackZone.renaming]]">
                             <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(_fallbackZone.active)}}"
                                                on-click="_toggleFallbackZoneProperties"></paper-icon-button>
-                            <div class$="{{_getZoneTitleClasses(_fallbackZone.active,'')}}"
+                            <div class$="{{_getZoneTitleClasses(_fallbackZone.active,hideZoneNameEditing,'')}}"
                                  on-click="_toggleFallbackZoneProperties">
                                 [[_fallbackZone.name]]
                             </div>
-                            <div class="title-bttns" hidden="[[!_fallbackZone.active]]">
-                                <paper-icon-button icon="create" data-index$="[[index]]"
-                                                   on-click="_toggleProximityZoneRenaming">
-                                </paper-icon-button>
+                            <div class$="{{_getZoneTitleButtonClasses(hideZoneNameEditing)}}" hidden="[[!_fallbackZone.active]]">
+                                <template is="dom-if" if="[[!hideZoneNameEditing]]">
+                                    <paper-icon-button icon="create" data-index$="[[index]]"
+                                                       on-click="_toggleProximityZoneRenaming">
+                                    </paper-icon-button>
+                                </template>
                                 <paper-icon-button title="Remove Zone" icon="delete"
                                                    on-click="_removeFallbackZone" tabindex="4">
                                 </paper-icon-button>

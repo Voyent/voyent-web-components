@@ -16,6 +16,10 @@ Polymer({
          */
         hideBadgeChooser: { type: Boolean, value: false },
         /**
+         * Indicates whether the alert zone name editing features should be hidden.
+         */
+        hideZoneNameEditing: { type: Boolean, value: false },
+        /**
          * Contains currently loaded _AlertTemplate object and the currently selected stack.
          * eg. { template:_AlertTemplate, selectedStack:_AlertZoneStack }
          */
@@ -825,12 +829,31 @@ Polymer({
     /**
      * Returns the style classes for the accordion zone label.
      * @param active
+     * @param hideZoneNameEditing
      * @param extraClass
      * @returns {string}
      * @private
      */
-    _getZoneTitleClasses: function(active,extraClass) {
-        return (active ? 'title zone active' : 'title zone') + ' ' + extraClass;
+    _getZoneTitleClasses: function(active,hideZoneNameEditing,extraClass) {
+        var classes = (active ? 'title zone active' : 'title zone') + ' ' + extraClass;
+        if (hideZoneNameEditing) {
+            classes = classes + ' no-edit';
+        }
+        return classes;
+    },
+
+    /**
+     * Returns the style classes for the zone title button wrapper.
+     * @param hideZoneNameEditing
+     * @returns {string}
+     * @private
+     */
+    _getZoneTitleButtonClasses: function(hideZoneNameEditing) {
+        var classes = 'title-bttns';
+        if (hideZoneNameEditing) {
+            classes = classes + ' no-edit';
+        }
+        return classes;
     },
 
     /**
