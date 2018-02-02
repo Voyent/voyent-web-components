@@ -718,7 +718,8 @@
             }
             //Draw the fallback zone but only if we have properties
             //other then enabled set (checking name exists is sufficient).
-            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW' ||
+                (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode !== 'notification' && this._zoneIdToDisplay === this._FALLBACK_ZONE_ID)) {
                 var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
                 if (fallbackZoneProperties && fallbackZoneProperties.name) {
                     this._fallbackZone = new this._FallbackAlertZone(
@@ -1116,8 +1117,8 @@
                 var i;
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
-                    //If we have no zoneStacks then we only have a fallback zone so just pan to the region.
-                    if (!zoneStacks.length) {
+                    //If we have no zoneStacks and no user locations then we only have a fallback zone so just pan to the region.
+                    if (!zoneStacks.length && !this._myLocations.length && !this._userLocationMarker.length) {
                         //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
                         //or template. This fixes an issue where when we load a fallback zone only template after a stacked
                         //template the map wouldn't pan.

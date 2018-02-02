@@ -76,16 +76,24 @@ Polymer({
         this._zoneIdToDisplay = null;
         this._foundZoneIdMatch = false;
         if (zoneId) {
-            for (var i=0; i<template.geo.geometries.length; i++) {
-                if (zoneId === template.geo.geometries[i].id) {
-                    this._zoneIdToDisplay = zoneId;
-                    break;
+            if (zoneId === this._FALLBACK_ZONE_ID && template.properties[this._FALLBACK_ZONE_ID].enabled) {
+                //Ensure we don't zoom in to for when panning the map on a location inside the fallback zone.
+                this._map.setOptions({maxZoom:16});
+                this._zoneIdToDisplay = this._FALLBACK_ZONE_ID;
+            }
+            else {
+                for (var i=0; i<template.geo.geometries.length; i++) {
+                    if (zoneId === template.geo.geometries[i].id) {
+                        this._zoneIdToDisplay = zoneId;
+                        break;
+                    }
                 }
             }
         }
         this.clearMap();
-        this._drawAndLoadAlertTemplate(template);
         this._drawLocations(locations,false);
+        this._drawAndLoadAlertTemplate(template);
+        this._map.setOptions({maxZoom:null});
     },
 
     /**
