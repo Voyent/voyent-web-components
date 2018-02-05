@@ -184,7 +184,7 @@ Polymer({
         this._loadedAlert.template.setState(state);
 
         return new Promise(function (resolve, reject) {
-            voyent.locate.updateAlertState({"id":_this._loadedAlert.template.id,"state":state}).then(function() {
+            voyent.locate.updateAlertState({"realm":_this.realm,"id":_this._loadedAlert.template.id,"state":state}).then(function() {
                 resolve();
             }).catch(function(error) {
                 reject(error);
@@ -204,7 +204,7 @@ Polymer({
         this._isFetchingTemplates = true;
         var _this = this;
         return new Promise(function (resolve, reject) {
-            voyent.locate.findAlertTemplates({"query": {"properties.parentAlertId":{"$exists":false}},
+            voyent.locate.findAlertTemplates({"realm":_this.realm,"query": {"properties.parentAlertId":{"$exists":false}},
                                                        "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
                 if (!templates) { return; }
                 _this._parentTemplates = templates.sort(function(a,b) {
