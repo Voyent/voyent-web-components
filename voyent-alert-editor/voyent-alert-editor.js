@@ -278,9 +278,13 @@ Polymer({
         var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
             return alertTemplate._id === _this._selectedAlertTemplateId;
         })[0]));
-        if (childTemplate.properties.center) {
-            var position = new google.maps.LatLng(childTemplate.properties.center);
-            delete childTemplate.properties.center;
+        //Load the template immediately if it has a center position defined or no geo section (fallback zone only).
+        if (childTemplate.properties.center || !childTemplate.geo) {
+            var position = null;
+            if (childTemplate.properties.center) {
+                position = new google.maps.LatLng(childTemplate.properties.center);
+                delete childTemplate.properties.center;
+            }
             this._createChildTemplate(childTemplate,position);
         }
         else {
