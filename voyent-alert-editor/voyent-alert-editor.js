@@ -184,7 +184,7 @@ Polymer({
         this._loadedAlert.template.setState(state);
 
         return new Promise(function (resolve, reject) {
-            voyent.locate.updateAlertState({"id":_this._loadedAlert.template.id,"state":state}).then(function() {
+            voyent.locate.updateAlertState({"realm":_this.realm,"id":_this._loadedAlert.template.id,"state":state}).then(function() {
                 resolve();
             }).catch(function(error) {
                 reject(error);
@@ -204,7 +204,7 @@ Polymer({
         this._isFetchingTemplates = true;
         var _this = this;
         return new Promise(function (resolve, reject) {
-            voyent.locate.findAlertTemplates({"query": {"properties.parentAlertId":{"$exists":false}},
+            voyent.locate.findAlertTemplates({"realm":_this.realm,"query": {"properties.parentAlertId":{"$exists":false}},
                                                        "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
                 if (!templates) { return; }
                 _this._parentTemplates = templates.sort(function(a,b) {
@@ -278,9 +278,13 @@ Polymer({
         var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
             return alertTemplate._id === _this._selectedAlertTemplateId;
         })[0]));
-        if (childTemplate.properties.center) {
-            var position = new google.maps.LatLng(childTemplate.properties.center);
-            delete childTemplate.properties.center;
+        //Load the template immediately if it has a center position defined or no geo section (fallback zone only).
+        if (childTemplate.properties.center || !childTemplate.geo) {
+            var position = null;
+            if (childTemplate.properties.center) {
+                position = new google.maps.LatLng(childTemplate.properties.center);
+                delete childTemplate.properties.center;
+            }
             this._createChildTemplate(childTemplate,position);
         }
         else {
