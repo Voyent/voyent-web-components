@@ -222,7 +222,7 @@ Polymer({
      * @private
      */
     _addFullscreenControl: function() {
-        if (this._fullscreenControlAdded) { return; }
+        if (this.mode !== 'notification' || this._fullscreenControlAdded) { return; }
         this._isFullscreenMode = false;
         this.$.fullscreenBttn.removeAttribute('hidden');
         this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.fullscreenBttn);
