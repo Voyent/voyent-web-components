@@ -20,7 +20,8 @@ Polymer({
      * @private
      */
     _onAfterLogin: function() {
-        this._fetchRealmRegion()
+        this._fetchRealmRegion();
+        this._addFullscreenControl();
     },
 
     /**
@@ -217,6 +218,77 @@ Polymer({
     },
 
     /**
+     * Adds the fullscreen custom control to the map.
+     * @private
+     */
+    _addFullscreenControl: function() {
+        if (this._fullscreenControlAdded) { return; }
+        this._isFullscreenMode = false;
+        this.$.fullscreenBttn.removeAttribute('hidden');
+        this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.fullscreenBttn);
+        this.$.fullscreenBttn.onclick = this._toggleFullscreenDialog.bind(this);
+        this._fullscreenControlAdded = true;
+    },
+
+    /**
+     * Toggles the modal fullscreen dialog.
+     * @private
+     */
+    _toggleFullscreenDialog: function() {
+        // Open or close the dialog depending on the current state
+        if (this._isFullscreenMode) {
+            this._closeFullscreenDialog();
+        }
+        else {
+            this._openFullscreenDialog();
+        }
+        this._isFullscreenMode = !this._isFullscreenMode;
+        // Toggle the editable features of the map
+        this._toggleEditableMap(this._isFullscreenMode);
+    },
+
+    /**
+     * Opens the fullscreen modal dialog.
+     * @private
+     */
+    _openFullscreenDialog: function() {
+        var _this = this;
+        var dialog = this.querySelector('#fullscreenDialog');
+        if (dialog) {
+            // Open the dialog
+            dialog.open();
+            // Save the current map width before moving it into the dialog container
+            var mapDiv = _this._map.getDiv();
+            if (this.width) {
+                this._beforeDialogWidth = this.width;
+                this.width = null;
+            }
+            // Move the map to the dialog container, adjust the size and hide the fullscreen button
+            this.$.dialogContainer.append(mapDiv);
+            this.resizeMap();
+            this.$.fullscreenBttn.setAttribute('hidden','hidden');
+        }
+    },
+
+    /**
+     * Closes the fullscreen modal dialog.
+     * @private
+     */
+    _closeFullscreenDialog: function() {
+        // Restore the original map width before moving it to the inline container
+        if (this._beforeDialogWidth) {
+            this.width = this._beforeDialogWidth;
+        }
+        // Move the map to the inline container, adjust the size and display the fullscreen button
+        var mapDiv = this._map.getDiv();
+        this.$.container.append(mapDiv);
+        this.resizeMap();
+        this.$.fullscreenBttn.removeAttribute('hidden');
+        // Close the dialog
+        this.querySelector('#fullscreenDialog').close();
+    },
+
+    /**
      * Toggle map panning, zooming and dragging.
      * @param editable
      * @private
@@ -225,25 +297,6 @@ Polymer({
         this._map.setOptions({mapTypeControl:editable,zoomControl:editable,draggable:editable,disableDoubleClickZoom:!editable});
         if (editable) {
             this._adjustBoundsAndPan();
-        }
-    },
-
-    /**
-     * Adds a listener for the fullscreen event so that we can toggle the readonly state on the map.
-     * @private
-     */
-    _addFullscreenListener: function() {
-        var _this = this;
-        //We don't need the listener for view mode as we don't want to toggle the controls.
-        if (this.mode !== 'view') {
-            // This event is browser prefixed so we must listen to multiple events
-            document.addEventListener('fullscreenchange', fullScreenListener);
-            document.addEventListener('webkitfullscreenchange', fullScreenListener);
-            document.addEventListener('mozfullscreenchange', fullScreenListener);
-            function fullScreenListener() {
-                var isFullScreen = document['fullScreen'] || document['webkitIsFullScreen'] || document['mozFullScreen'];
-                _this._toggleEditableMap(!!isFullScreen);
-            }
         }
     }
 });
