@@ -11,7 +11,7 @@ Polymer({
         /**
          * Indicates whether the component is loaded on mobile.
          */
-        isMobile: { type: Boolean }
+        isMobile: { type: Boolean, value: false }
     },
 
     ready: function() {
@@ -269,7 +269,6 @@ Polymer({
             // Move the map to the dialog container, adjust the size and hide the fullscreen button
             this.$.dialogContainer.append(mapDiv);
             this.resizeMap();
-            this.$.fullscreenBttn.setAttribute('hidden','hidden');
         }
     },
 
@@ -286,7 +285,6 @@ Polymer({
         var mapDiv = this._map.getDiv();
         this.$.container.append(mapDiv);
         this.resizeMap();
-        this.$.fullscreenBttn.removeAttribute('hidden');
         // Close the dialog
         this.querySelector('#fullscreenDialog').close();
     },
@@ -312,15 +310,5 @@ Polymer({
         if (mode) {
             this._addFullscreenControl();
         }
-    },
-
-    /**
-     * Returns whether the component is loaded on mobile and in fullscreen dialog mode.
-     * @param isMobile
-     * @param isFullscreenMode
-     * @private
-     */
-    _isMobileFullscreen: function(isMobile,isFullscreenMode) {
-        return isMobile && isFullscreenMode;
     }
 });
