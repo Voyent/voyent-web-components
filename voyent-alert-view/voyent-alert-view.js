@@ -7,7 +7,7 @@ Polymer({
         /**
          * Indicates which mode the component is in. Valid values are `notification`, `view` and `preview`.
          */
-        mode: { type: String }
+        mode: { type: String, observer: '_modeChanged' }
     },
 
     ready: function() {
@@ -21,7 +21,6 @@ Polymer({
      */
     _onAfterLogin: function() {
         this._fetchRealmRegion();
-        this._addFullscreenControl();
     },
 
     /**
@@ -297,6 +296,17 @@ Polymer({
         this._map.setOptions({mapTypeControl:editable,zoomControl:editable,draggable:editable,disableDoubleClickZoom:!editable});
         if (editable) {
             this._adjustBoundsAndPan();
+        }
+    },
+
+    /**
+     * Monitors the `mode` property and handles adding the fullscreen control to the map on changes.
+     * @param mode
+     * @private
+     */
+    _modeChanged: function(mode) {
+        if (mode) {
+            this._addFullscreenControl();
         }
     }
 });
