@@ -34,7 +34,7 @@ Example:
                 margin: 1% auto;
                 padding: 0;
             }
-            .closeDialog {
+            .closeDialogBttn {
                 width: 40px;
                 height: 40px;
                 position: absolute;
@@ -52,9 +52,27 @@ Example:
                 align-items: center;
                 justify-content: center;
             }
+            #map[data-is-mobile-fullscreen] {
+                border: none;
+                border-radius:0;
+            }
+            #fullscreenDialog[data-is-mobile] {
+                width:100%;
+                height:100%;
+                margin:0;
+            }
+            #dialogContainer[data-is-mobile] {
+                width: 100%;
+                height: 100%;
+                margin:0;
+            }
+            .closeDialogBttn[data-is-mobile] {
+                right: -7px;
+                top: -7px;
+            }
         </style>
         <div id="container">
-            <div id="map"></div>
+            <div id="map" data-is-mobile-fullscreen$="[[_isMobileFullscreen(isMobile,_isFullscreenMode)]]"></div>
         </div>
         <div id="fullscreenBttn" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Toggle fullscreen view">
@@ -65,13 +83,13 @@ Example:
                 </span>
             </div>
         </div>
-        <paper-dialog id="fullscreenDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
+        <paper-dialog id="fullscreenDialog" class="modal-dialog" data-is-mobile$="[[isMobile]]" modal on-keyup="_dialogKeyUp"
                       on-iron-overlay-opened="_fixModalStacking">
-            <div class="closeDialog">
+            <div class="closeDialogBttn" data-is-mobile$="[[isMobile]]">
                 <paper-icon-button icon="close" title="Toggle fullscreen view" on-click="_toggleFullscreenDialog">
                 </paper-icon-button>
             </div>
-            <div id="dialogContainer"></div>
+            <div id="dialogContainer" data-is-mobile$="[[isMobile]]"></div>
         </paper-dialog>
     </template>
 </dom-module>

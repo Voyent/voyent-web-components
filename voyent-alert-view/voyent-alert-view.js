@@ -7,7 +7,11 @@ Polymer({
         /**
          * Indicates which mode the component is in. Valid values are `notification`, `view` and `preview`.
          */
-        mode: { type: String, observer: '_modeChanged' }
+        mode: { type: String, observer: '_modeChanged' },
+        /**
+         * Indicates whether the component is loaded on mobile.
+         */
+        isMobile: { type: Boolean }
     },
 
     ready: function() {
@@ -308,5 +312,15 @@ Polymer({
         if (mode) {
             this._addFullscreenControl();
         }
+    },
+
+    /**
+     * Returns whether the component is loaded on mobile and in fullscreen dialog mode.
+     * @param isMobile
+     * @param isFullscreenMode
+     * @private
+     */
+    _isMobileFullscreen: function(isMobile,isFullscreenMode) {
+        return isMobile && isFullscreenMode;
     }
 });
