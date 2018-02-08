@@ -225,7 +225,7 @@ Polymer({
      * @private
      */
     _addFullscreenControl: function() {
-        if (this.mode !== 'notification' || this._fullscreenControlAdded) { return; }
+        if (this._fullscreenControlAdded) { return; }
         this._isFullscreenMode = false;
         this.$.fullscreenBttn.removeAttribute('hidden');
         this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.fullscreenBttn);
@@ -266,9 +266,10 @@ Polymer({
                 this._beforeDialogWidth = this.width;
                 this.width = null;
             }
-            // Move the map to the dialog container, adjust the size and hide the fullscreen button
+            // Move the map to the dialog container, adjust the size and add the esc key listener
             this.$.dialogContainer.append(mapDiv);
             this.resizeMap();
+            this._addKeydownListener();
         }
     },
 
@@ -281,10 +282,11 @@ Polymer({
         if (this._beforeDialogWidth) {
             this.width = this._beforeDialogWidth;
         }
-        // Move the map to the inline container, adjust the size and display the fullscreen button
+        // Move the map to the inline container, adjust the size and remove the esc key listener
         var mapDiv = this._map.getDiv();
         this.$.container.append(mapDiv);
         this.resizeMap();
+        this._removeKeydownListener();
         // Close the dialog
         this.querySelector('#fullscreenDialog').close();
     },
@@ -302,12 +304,36 @@ Polymer({
     },
 
     /**
+     * Adds a keydown listener on desktop that exits fullscreen mode when the esc key is pressed.
+     * @private
+     */
+    _addKeydownListener: function() {
+        if (this.isMobile) { return; }
+        var _this = this;
+        this._dialogKeyListener = function(e) {
+            if (e.which === 27) {
+                _this._toggleFullscreenDialog();
+            }
+        };
+        window.addEventListener('keydown',this._dialogKeyListener);
+    },
+
+    /**
+     * Removes the keydown listener on desktop that exits fullscreen mode when the esc key is pressed.
+     * @private
+     */
+    _removeKeydownListener: function() {
+        if (this.isMobile) { return; }
+        window.removeEventListener('keydown',this._dialogKeyListener);
+    },
+
+    /**
      * Monitors the `mode` property and handles adding the fullscreen control to the map on changes.
      * @param mode
      * @private
      */
     _modeChanged: function(mode) {
-        if (mode) {
+        if (mode && mode === 'notification') {
             this._addFullscreenControl();
         }
     }
