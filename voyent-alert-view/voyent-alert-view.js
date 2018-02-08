@@ -355,7 +355,7 @@ Polymer({
             setTimeout(function() {
                 _this._toggleFullscreenDialog();
                 _this.resizeMap();
-            },0);
+            },400);
         }
     }
 });
