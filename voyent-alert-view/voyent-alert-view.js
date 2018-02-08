@@ -354,6 +354,7 @@ Polymer({
             this._toggleFullscreenDialog();
             setTimeout(function() {
                 _this._toggleFullscreenDialog();
+                _this.resizeMap();
             },0);
         }
     }
