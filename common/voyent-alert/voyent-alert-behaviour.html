@@ -2311,7 +2311,7 @@
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv();
                 this.div.style.cursor = 'pointer';
-                if (_outer.nodeName !== 'VOYENT-ALERT-VIEW') {
+                if (_outer.nodeName === 'VOYENT-MY-LOCATIONS') {
                     // Add some listeners to support info window toggling via label selection
                     this.div.onmouseover = function () {
                         _this.moveToTopPane();
@@ -2419,6 +2419,12 @@
                 // Move the overlay to a pane with a higher stacking priority + adjust marker z-index
                 this.getPanes().overlayMouseTarget.appendChild(this.div);
                 this.loc.marker.setZIndex(100);
+                // Move the other overlays to a pane with a lower stacking priority so they will hide behind this overlay's marker
+                for (var i=0; i<_outer._myLocations.length; i++) {
+                    if (this !== _outer._myLocations[i].nameOverlay) {
+                        this.getPanes().overlayLayer.appendChild(_outer._myLocations[i].nameOverlay.div);
+                    }
+                }
             };
             /**
              * Moves the location overlay to the default map pane.
@@ -2435,6 +2441,12 @@
                 // Move the overlay to the default pane + adjust marker z-index
                 this.getPanes().floatShadow.appendChild(this.div);
                 this.loc.marker.setZIndex(50);
+                // Move the other overlays to the default pane
+                for (var i=0; i<_outer._myLocations.length; i++) {
+                    if (this !== _outer._myLocations[i].nameOverlay) {
+                        this.getPanes().floatShadow.appendChild(_outer._myLocations[i].nameOverlay.div);
+                    }
+                }
             };
             /**
              * Returns a font colour of black or white based on the zone colour.
