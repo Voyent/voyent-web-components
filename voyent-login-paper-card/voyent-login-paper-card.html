@@ -126,7 +126,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     </paper-input>
                   </template>
                   <template is="dom-if" if="[[showhostinput]]">
-                    <paper-input required label="Host" value="{{host}}">
+                    <paper-input required label="Host" value="{{host}}" disabled="{{disablehostinput}}">
                         <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1"></paper-icon-button>
                     </paper-input>
                   </template>
