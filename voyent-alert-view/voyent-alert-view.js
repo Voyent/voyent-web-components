@@ -232,9 +232,10 @@ Polymer({
     _addFullscreenControl: function() {
         if (this._fullscreenControlAdded) { return; }
         this._isFullscreenMode = false;
-        this.$.fullscreenBttn.removeAttribute('hidden');
-        this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.fullscreenBttn);
-        this.$.fullscreenBttn.onclick = this._toggleFullscreenDialog.bind(this);
+        var fullscreenButton = this.querySelector('#fullscreenBttn');
+        fullscreenButton.removeAttribute('hidden');
+        this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(fullscreenButton);
+        fullscreenButton.onclick = this._toggleFullscreenContainer.bind(this);
         this._fullscreenControlAdded = true;
     },
 
@@ -242,13 +243,13 @@ Polymer({
      * Toggles the modal fullscreen dialog.
      * @private
      */
-    _toggleFullscreenDialog: function() {
+    _toggleFullscreenContainer: function() {
         // Open or close the dialog depending on the current state
         if (this._isFullscreenMode) {
-            this._closeFullscreenDialog();
+            this._closeFullscreenContainer();
         }
         else {
-            this._openFullscreenDialog();
+            this._openFullscreenContainer();
         }
         this._isFullscreenMode = !this._isFullscreenMode;
         // Toggle the editable features of the map
@@ -259,20 +260,23 @@ Polymer({
      * Opens the fullscreen modal dialog.
      * @private
      */
-    _openFullscreenDialog: function() {
-        var _this = this;
-        var dialog = this.querySelector('#fullscreenDialog');
+    _openFullscreenContainer: function() {
+        var dialog = this.querySelector('#fullscreenContainer');
         if (dialog) {
-            // Open the dialog
-            dialog.open();
+            // Display the dialog
+            dialog.removeAttribute('hidden');
             // Save the current map width before moving it into the dialog container
-            var mapDiv = _this._map.getDiv();
+            var mapDiv = this._map.getDiv();
             if (this.width) {
-                this._beforeDialogWidth = this.width;
+                this._beforeFullscreenWidth = this.width;
                 this.width = null;
             }
+            if (this.height) {
+                this._beforeFullscreenHeight = this.height;
+                this.height = null;
+            }
             // Move the map to the dialog container, adjust the size and add the esc key listener
-            this.$.dialogContainer.append(mapDiv);
+            dialog.append(mapDiv);
             this.resizeMap();
             this._addKeydownListener();
         }
@@ -282,18 +286,24 @@ Polymer({
      * Closes the fullscreen modal dialog.
      * @private
      */
-    _closeFullscreenDialog: function() {
+    _closeFullscreenContainer: function() {
         // Restore the original map width before moving it to the inline container
-        if (this._beforeDialogWidth) {
-            this.width = this._beforeDialogWidth;
+        if (this._beforeFullscreenWidth) {
+            this.width = this._beforeFullscreenWidth;
+        }
+        if (this._beforeFullscreenHeight) {
+            this.height = this._beforeFullscreenHeight;
         }
         // Move the map to the inline container, adjust the size and remove the esc key listener
         var mapDiv = this._map.getDiv();
-        this.$.container.append(mapDiv);
+        this.querySelector('#container').append(mapDiv);
         this.resizeMap();
         this._removeKeydownListener();
-        // Close the dialog
-        this.querySelector('#fullscreenDialog').close();
+        // Hide the dialog
+        var dialog = this.querySelector('#fullscreenContainer');
+        if (dialog) {
+            dialog.setAttribute('hidden','hidden');
+        }
     },
 
     /**
@@ -317,7 +327,7 @@ Polymer({
         var _this = this;
         this._dialogKeyListener = function(e) {
             if (e.which === 27) {
-                _this._toggleFullscreenDialog();
+                _this._toggleFullscreenContainer();
             }
         };
         window.addEventListener('keydown',this._dialogKeyListener);
@@ -351,9 +361,9 @@ Polymer({
     _isPortraitChanged: function() {
         var _this = this;
         if (this.isMobile && this._isFullscreenMode) {
-            this._toggleFullscreenDialog();
+            this._toggleFullscreenContainer();
             setTimeout(function() {
-                _this._toggleFullscreenDialog();
+                _this._toggleFullscreenContainer();
                 _this.resizeMap();
             },400);
         }

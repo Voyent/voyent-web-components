@@ -3,7 +3,6 @@
 <link rel="import" href="../common/voyent-alert/voyent-alert-map-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-styles.html">
-<link rel="import" href="../../paper-dialog/paper-dialog.html">
 
 <!--
 Displays a map-based read-only view for displaying alert and User data.
@@ -24,23 +23,21 @@ Example:
                 border: none;
                 border-radius: 0;
             }
-            #fullscreenDialog {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                border-radius: 0;
-            }
-            #dialogContainer {
+            #fullscreenContainer {
+                position: fixed;
+                top: 0;
+                left: 0;
                 width: -webkit-calc(100% - 15px);
-                width:    -moz-calc(100% - 15px);
-                width:         calc(100% - 15px);
+                width: -moz-calc(100% - 15px);
+                width: calc(100% - 15px);
                 height: -webkit-calc(100% - 64px);
-                height:    -moz-calc(100% - 64px);
-                height:         calc(100% - 64px);
-                margin-top:64px;
-                padding:0;
+                height: -moz-calc(100% - 64px);
+                height: calc(100% - 64px);
+                margin-top: 64px;
+                padding: 0;
+                z-index: 999;
             }
-            #dialogContainer[data-is-mobile] {
+            #fullscreenContainer[data-is-mobile] {
                 width: 100%;
                 height: 100%;
                 margin: 0;
@@ -59,10 +56,7 @@ Example:
                 </span>
             </div>
         </div>
-        <paper-dialog id="fullscreenDialog" class="modal-dialog" modal
-                      on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
-            <div id="dialogContainer" data-is-mobile$="[[isMobile]]"></div>
-        </paper-dialog>
+        <div id="fullscreenContainer" data-is-mobile$="[[isMobile]]" hidden></div>
     </template>
 </dom-module>
 
