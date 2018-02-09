@@ -102,6 +102,10 @@
                 notify: true,
                 type: Boolean
             },
+            disablehostinput: {
+                notify: true,
+                type: Boolean
+            },
             /**
              * Label for the Realm field
              * Also used automatically as part of the placeholder
