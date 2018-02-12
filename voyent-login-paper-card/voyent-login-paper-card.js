@@ -164,7 +164,12 @@
                 notify: true,
                 type: String,
                 value: 'dev.voyent.cloud'
-            }
+            },
+            hidden: {
+                notify: true,
+                type: Boolean,
+                value: false
+            },
         },
         
         attached: function() {
