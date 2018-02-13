@@ -3,6 +3,8 @@
 <link rel="import" href="../common/voyent-alert/voyent-alert-map-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-styles.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
 
 <!--
 Displays a map-based read-only view for displaying alert and User data.
@@ -43,6 +45,13 @@ Example:
                 margin: 0;
                 padding: 0;
             }
+            .close-button {
+                right: 7px;
+                bottom: 7px;
+            }
+            [hidden] {
+                display: none !important;
+            }
         </style>
         <div id="container">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
@@ -52,7 +61,8 @@ Example:
             <div class="customMapBttn" title="Toggle fullscreen view">
                 <span>
                     <div class="customMapBttnImg">
-                        <img src="../common/voyent-alert/img/fullscreen_bttn.png">
+                        <img src="../common/voyent-alert/img/fullscreen_bttn.png" class="open-button">
+                        <paper-icon-button icon="close" class="close-button no-select" hidden></paper-icon-button>
                     </div>
                 </span>
             </div>
