@@ -1576,8 +1576,10 @@
                     if (_outer._fallbackZone) {
                         _outer._fallbackZone.punchOutOverlay();
                     }
-                    //Quickly toggle the overlay to fix a bug where dragging a multi-zone polygon stack after
-                    //editing will leave a line where the edited vertex connects to its neighbouring vertices.
+                    //Quickly toggle the overlay to fix a couple bugs with correctly displaying the polygons:
+                    //1) Dragging a multi-zone polygon stack after editing will leave a line
+                    //   where the edited vertex connects to its neighbouring vertices.
+                    //2) Editing a polygon after resizing will leave some vertices behind.
                     zone.shapeOverlay.setMap(null);
                     setTimeout(function() {
                         zone.shapeOverlay.setMap(_outer._map);
