@@ -1576,6 +1576,12 @@
                     if (_outer._fallbackZone) {
                         _outer._fallbackZone.punchOutOverlay();
                     }
+                    //Quickly toggle the overlay to fix a bug where dragging a multi-zone polygon stack after
+                    //editing will leave a line where the edited vertex connects to its neighbouring vertices.
+                    zone.shapeOverlay.setMap(null);
+                    setTimeout(function() {
+                        zone.shapeOverlay.setMap(_outer._map);
+                    },0);
                 }
             };
             Object.seal(this._AlertZoneStack);

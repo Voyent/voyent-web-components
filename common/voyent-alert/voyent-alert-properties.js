@@ -658,7 +658,14 @@ Polymer({
      * @private
      */
     _mouseClickListener: function(e) {
+        var _this = this;
         document.exitPointerLock();
+        //Quickly toggle the overlay to fix a bug where editing
+        //a polygon after resizing will leave some vertices behind.
+        this._zoneToAdjust.shapeOverlay.setMap(null);
+        setTimeout(function() {
+            _this._zoneToAdjust.shapeOverlay.setMap(_this._map);
+        },0);
     },
 
     /**
