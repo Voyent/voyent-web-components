@@ -15,7 +15,7 @@ Polymer({
         /**
          * Indicates whether the component is in portrait mode. Applicable only when isMobile is true.
          */
-        isPortrait: { type: Boolean, value: false }
+        isPortrait: { type: Boolean, value: false, observer: '_isPortraitChanged' }
 
     },
 
@@ -350,6 +350,22 @@ Polymer({
     _modeChanged: function(mode) {
         if (mode && mode === 'notification') {
             this._addFullscreenControl();
+        }
+    },
+
+    /**
+     * Monitors the `portrait` property and hides and shows the fullscreen modal dialog if it is
+     * currently visible. This ensures that the styling will be correct when the orientation changes.
+     * @private
+     */
+    _isPortraitChanged: function() {
+        var _this = this;
+        if (this.isMobile && this._isFullscreenMode) {
+            this._toggleFullscreenContainer();
+            setTimeout(function() {
+                _this._toggleFullscreenContainer();
+                _this.resizeMap();
+            },400);
         }
     }
 });
