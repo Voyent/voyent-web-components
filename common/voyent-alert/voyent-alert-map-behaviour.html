@@ -933,8 +933,8 @@
                 }
                 else {
                     //If we don't have a height try the parent
-                    if (height === null) {
-                        height = _this._map.getDiv().parentElement.clientHeight;
+                    if (height === null || typeof height === 'undefined') {
+                        height = _this._map.getDiv().parentElement.parentElement.parentElement.clientHeight;
                     }
                     //If we still don't have a valid height default to a minimum
                     if (height < 50) {
@@ -944,7 +944,7 @@
                 _this.customStyle['--height-var'] = height + 'px';
 
                 //If the width is specified then set it
-                if (_this.width && _this.width !== null && _this.width > 0) {
+                if (_this.width && _this.width > 0) {
                     _this.customStyle['--width-var'] = _this.width + 'px';
                 }
                 else { //Otherwise the map will take up as much space as possible.
