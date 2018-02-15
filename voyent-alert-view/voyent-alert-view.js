@@ -233,16 +233,16 @@ Polymer({
      */
     _getIconByEndpointType: function(endpointType) {
         if (endpointType === 'fcm') {
-            return this.pathtoimages+'/img/orange_circle.png';
+            return this.pathtoimages+'/img/android_triangle.png';
         }
         else if (endpointType === 'apns') {
-            return this.pathtoimages+'/img/orange_circle.png';
+            return this.pathtoimages+'/img/ios_triangle.png';
         }
         else if (endpointType === 'mailto') {
-            return this.pathtoimages+'/img/orange_circle.png';
+            return this.pathtoimages+'/img/email_square.png';
         }
         else if (endpointType === 'sms') {
-            return this.pathtoimages+'/img/orange_circle.png';
+            return this.pathtoimages+'/img/sms_circle.png';
         }
         return this.pathtoimages+'/img/user_marker.png';
     },
