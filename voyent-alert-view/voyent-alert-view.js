@@ -392,7 +392,7 @@ Polymer({
      * @private
      */
     _modeChanged: function(mode) {
-        if (mode && mode === 'notification') {
+        if (mode && mode === 'notification' || mode === 'preview') {
             this._addFullscreenControl();
         }
     },

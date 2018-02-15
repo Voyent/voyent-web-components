@@ -29,9 +29,11 @@ Example:
                 position: fixed;
                 top: 0;
                 left: 0;
+                /* -15px width for the scrollbar */
                 width: -webkit-calc(100% - 15px);
                 width: -moz-calc(100% - 15px);
                 width: calc(100% - 15px);
+                /* -64px width for the app-header */
                 height: -webkit-calc(100% - 64px);
                 height: -moz-calc(100% - 64px);
                 height: calc(100% - 64px);
@@ -44,6 +46,13 @@ Example:
                 height: 100%;
                 margin: 0;
                 padding: 0;
+            }
+            #fullscreenContainer[data-mode="preview"] {
+                /* -250px width for the app-drawer + -15px width for the scrollbar */
+                width: -webkit-calc(100% - 265px);
+                width: -moz-calc(100% - 265px);
+                width: calc(100% - 265px);
+                margin-left:250px;
             }
             .close-button {
                 right: 7px;
@@ -59,7 +68,7 @@ Example:
         <div id="container">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
         </div>
-        <div id="fullscreenContainer" data-is-mobile$="[[isMobile]]" hidden></div>
+        <div id="fullscreenContainer" data-is-mobile$="[[isMobile]]" data-mode$="[[mode]]" hidden></div>
         <div id="fullscreenBttn" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Toggle fullscreen view">
                 <span>
