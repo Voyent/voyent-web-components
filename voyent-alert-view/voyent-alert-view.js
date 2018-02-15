@@ -203,8 +203,9 @@ Polymer({
         if (!locations) { return; }
         this._myLocations = [];
         for (var i=0; i<locations.length; i++) {
-            //We should always only have one mobile location.
-            if (locations[i].properties.vras.type === 'mobile') {
+            // For notification and view modes we want to render the user icon as
+            // we should always only have one mobile location in these cases.
+            if (this.mode !== 'preview' && locations[i].properties.vras.type === 'mobile') {
                 this._drawUser(locations[i]);
                 continue;
             }
