@@ -188,7 +188,7 @@ Polymer({
                 position: new google.maps.LatLng(coordinates[1],coordinates[0]),
                 map: this._map,
                 draggable: false,
-                icon: this.pathtoimages+'/img/user_marker.png'
+                icon: this.pathtoimages+'/img/orange_circle.png'
             });
         }
     },
@@ -218,7 +218,7 @@ Polymer({
                     ),
                     map: this._map,
                     draggable: false,
-                    icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this.pathtoimages+'/img/user_marker.png'
+                    icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this.pathtoimages+'/img/orange_circle.png'
                 }),
                 null
             ));
