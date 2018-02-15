@@ -188,7 +188,7 @@ Polymer({
                 position: new google.maps.LatLng(coordinates[1],coordinates[0]),
                 map: this._map,
                 draggable: false,
-                icon: this.pathtoimages+'/img/orange_circle.png'
+                icon: this.pathtoimages+'/img/user_marker.png'
             });
         }
     },
@@ -218,11 +218,33 @@ Polymer({
                     ),
                     map: this._map,
                     draggable: false,
-                    icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this.pathtoimages+'/img/orange_circle.png'
+                    icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByEndpointType(locations[i].endpointType)
                 }),
                 null
             ));
         }
+    },
+
+    /**
+     * Returns the location marker image to use based on the passed endpoint type.
+     * @param endpointType
+     * @returns {string}
+     * @private
+     */
+    _getIconByEndpointType: function(endpointType) {
+        if (endpointType === 'fcm') {
+            return this.pathtoimages+'/img/orange_circle.png';
+        }
+        else if (endpointType === 'apns') {
+            return this.pathtoimages+'/img/orange_circle.png';
+        }
+        else if (endpointType === 'mailto') {
+            return this.pathtoimages+'/img/orange_circle.png';
+        }
+        else if (endpointType === 'sms') {
+            return this.pathtoimages+'/img/orange_circle.png';
+        }
+        return this.pathtoimages+'/img/user_marker.png';
     },
 
     /**
