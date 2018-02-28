@@ -143,21 +143,21 @@ Example:
                     <div class="address">
                         <div>
                             <template is="dom-if" if="[[_selectedPlace.streetNumber]]">
-                                <span>[[_selectedPlace.streetNumber]]</span>
+                                <span>[[_selectedPlace.streetNumber]]&nbsp;</span>
                             </template>
                             <template is="dom-if" if="[[_selectedPlace.route]]">
-                                <span>[[_selectedPlace.route]]</span>
+                                <span>[[_selectedPlace.route]]&nbsp;</span>
                             </template>
                         </div>
                         <div>
                             <template is="dom-if" if="[[_selectedPlace.locality]]">
-                                <span>[[_selectedPlace.locality]],</span>
+                                <span>[[_selectedPlace.locality]],&nbsp;</span>
                             </template>
                             <template is="dom-if" if="[[_selectedPlace.political]]">
-                                <span>[[_selectedPlace.political]]</span>
+                                <span>[[_selectedPlace.political]]&nbsp;</span>
                             </template>
                             <template is="dom-if" if="[[_selectedPlace.postalCode]]">
-                                <span>[[_selectedPlace.postalCode]]</span>
+                                <span>[[_selectedPlace.postalCode]]&nbsp;</span>
                             </template>
                         </div>
                     </div>
