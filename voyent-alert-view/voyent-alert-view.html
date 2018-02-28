@@ -33,7 +33,7 @@ Example:
                 width: -webkit-calc(100% - 15px);
                 width: -moz-calc(100% - 15px);
                 width: calc(100% - 15px);
-                /* -64px width for the app-header */
+                /* -64px height for the app-header */
                 height: -webkit-calc(100% - 64px);
                 height: -moz-calc(100% - 64px);
                 height: calc(100% - 64px);
@@ -43,8 +43,11 @@ Example:
             }
             #fullscreenContainer[data-is-mobile] {
                 width: 100%;
-                height: 100%;
-                margin: 0;
+                /* -43px height for the mobile div header */
+                height: -webkit-calc(100% - 43px);
+                height: -moz-calc(100% - 43px);
+                height: calc(100% - 43px);
+                margin: 43px 0 0 0;
                 padding: 0;
             }
             #fullscreenContainer[data-mode="preview"] {
