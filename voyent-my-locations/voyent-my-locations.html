@@ -111,9 +111,9 @@ Example:
         </div>
         <div id="infoWindow" class="info-window" hidden>
             <template is="dom-if" if="[[_loadedLocation]]">
-                <paper-input id="label"
+                <paper-input id="name"
                              tabindex="1"
-                             label="Name"
+                             label="Location Name"
                              maxlength="30"
                              placeholder="New Name"
                              autocapitalize="words"
@@ -134,7 +134,8 @@ Example:
             </template>
             <template is="dom-if" if="[[!_loadedLocation]]">
                 <div class="selected-place">
-                    <paper-input label="Name"
+                    <paper-input id="placeName"
+                                 label="Location Name"
                                  placeholder="New Name"
                                  maxlength="30"
                                  autocapitalize="words"
@@ -176,8 +177,8 @@ Example:
             <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" autofocus
                          maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
                          on-keyup="_dialogKeyUp" placeholder="Enter an address, postal code, or business name"></paper-input>
-            <paper-input class="inline no-margin name-input" autofocus no-label-float tabindex="5" label="Label"
-                         maxlength="30" autocapitalize="words"
+            <paper-input class="inline no-margin name-input" autofocus no-label-float tabindex="5"
+                         maxlength="30" autocapitalize="words" placeholder="Location Name"
                          on-keyup="_dialogKeyUp" value="{{_locationName}}"></paper-input>
             <div class="inline no-margin toggle-button">
                 <paper-toggle-button class="inline no-margin valign-top" tabindex="6" on-keyup="_dialogKeyUp"

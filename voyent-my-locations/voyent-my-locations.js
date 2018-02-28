@@ -12,10 +12,9 @@ Polymer({
         this._selectedPlace = null;
         //A flag indicating if the loaded location should be updated, used after info window closures.
         this._locationUpdatePending = false;
-        //Setup the infoWindow.
-        this._setupInfoWindow();
-        //Set the button state to disabled by default
         this._mapIsReady().then(function() {
+            //Setup the infoWindow.
+            _this._setupInfoWindow();
             //Initialize places service for later.
             _this._placesService = new google.maps.places.PlacesService(_this._map);
             //Specify that we want to skip panning to the region boundary
@@ -45,47 +44,23 @@ Polymer({
     },
 
     /**
-     * Opens the dialog for creating a new address location.
-     * @private
-     */
-    _addAddressBasedLocation: function() {
-        var _this = this;
-        this._openDialog(function () {
-            setTimeout(function() {
-                _this._createdAddressLocation = true;
-                _this._createLocation(new google.maps.Marker({
-                    position: _this._placeCoordinates,
-                    map: _this._map,
-                    draggable: true,
-                    icon: _this._MY_LOCATION_ICON_INACTIVE
-                }));
-                _this._resetDialogProperties();
-            },0);
-        });
-        //Ensure we initialize the autoComplete.
-        _this._setupAutoComplete();
-    },
-
-    /**
      * Saves all locations that have been modified since component load or last save.
      * @param locationToSave
+     * @param msgPrefix
      * @private
      */
-    _saveLocation: function(locationToSave) {
+    _saveLocation: function(locationToSave,msgPrefix) {
         var _this = this;
-
         //Ensure we have the latest JSON before saving it.
         locationToSave.updateJSON();
 
         voyent.locate.updateLocation({account:this.account,realm:this.realm,location:locationToSave.json}).then(function() {
+            locationToSave.isPersisted = true;
             _this.push('_myLocations',locationToSave);
-            if (_this._createdAddressLocation) {
-                _this._adjustBoundsAndPan();
-                _this._createdAddressLocation = false;
-            }
-            _this.fire('message-info','Successfully saved ' + locationToSave.name);
+            _this._adjustBoundsAndPan();
+            _this.fire('message-info','Location ' + msgPrefix);
         }).catch(function () {
-            _this.fire('message-error','Failed to save ' + locationToSave.name);
+            _this.fire('message-error','Location update failed');
         });
     },
 
@@ -95,22 +70,20 @@ Polymer({
      */
     _removeLocation: function() {
         var _this = this;
-
         this._closeInfoWindow();
         this._loadedLocation.removeFromMap();
 
         var query = {"location.properties.vras.id":this._loadedLocation.id};
-
         voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
             var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
             if (indexToRemove > -1) {
                 _this.splice('_myLocations',indexToRemove,1);
             }
-            _this.fire('message-info','Successfully removed ' + _this._loadedLocation.name);
             _this._loadedLocation = null;
+            _this.fire('message-info','Location removed');
         }).catch(function () {
             _this._loadedLocation.addToMap();
-            _this.fire('message-error','Failed to remove ' + _this._loadedLocation.name);
+            _this.fire('message-error','Location removal failed');
         });
     },
 
@@ -137,6 +110,27 @@ Polymer({
     },
 
     /**
+     * Opens the dialog for creating a new address location.
+     * @private
+     */
+    _addAddressBasedLocation: function() {
+        var _this = this;
+        this._openDialog(function () {
+            setTimeout(function() {
+                _this._createLocation(new google.maps.Marker({
+                    position: _this._placeCoordinates,
+                    map: _this._map,
+                    draggable: true,
+                    icon: _this._MY_LOCATION_ICON_INACTIVE
+                }),'created');
+                _this._resetDialogProperties();
+            },0);
+        });
+        //Ensure we initialize the autoComplete.
+        _this._setupAutoComplete();
+    },
+
+    /**
      * Handles saving a location after its info window properties have changed as well as initial save of a pin drop location.
      * @private
      */
@@ -148,7 +142,7 @@ Polymer({
             if (!this._loadedLocation.name) {
                 this._loadedLocation.name = 'New Location';
             }
-            this._saveLocation(this._loadedLocation);
+            this._saveLocation(this._loadedLocation,this._loadedLocation.isPersisted ? 'updated' : 'created');
             this._locationUpdatePending = false;
         }
     },
@@ -179,48 +173,46 @@ Polymer({
      */
     _setupInfoWindow: function() {
         var _this = this;
-        this._mapIsReady().then(function() {
-            //Initialize infoWindow object for later.
-            _this._infoWindow = new google.maps.InfoWindow();
-            //Close the infoWindow and re-display the previously hidden overlay when clicking on the map.
-            google.maps.event.addListener(_this._map, 'click', function(e) {
-                //In some cases we may want to ignore map clicks, ignore once and then reset it.
-                if (_this._ignoreMapClick) {
-                    _this._ignoreMapClick = false;
-                    return;
-                }
-                _this._closeInfoWindow();
-                if (_this._loadedLocation) {
-                    _this._loadedLocation.nameOverlay.displayAndDraw();
-                }
-                //If we have a placeId then it means a location of interest was clicked on the map. In this case we will
-                //replace the default infoWindow with a custom one so the user can optionally add it to their locations.
-                if (e.placeId) {
-                    //Prevent the default info window from opening.
-                    e.stop();
-                    _this._loadedLocation = null;
-                    _this._placesService.getDetails({placeId: e.placeId}, function(place,status) {
-                        if (status === 'OK') {
-                            _this._selectedPlace = _this._buildPlaceDetails(place);
-                        }
-                        else {
-                            _this._selectedPlace = {
-                                "name":'Unknown Location',
-                                "latLng":e.latLng
-                            };
-                        }
-                        _this._toggleInfoWindow(null);
-                    });
-                }
-            });
-            //When clicking the close button on the infoWindow redisplay the overlay.
-            google.maps.event.addListener(_this._infoWindow,'closeclick',function() {
-                _this._closeInfoWindow();
-                if (_this._loadedLocation) {
-                    _this._loadedLocation.nameOverlay.displayAndDraw();
-                }
-                _this._selectedPlace = null;
-            });
+        //Initialize infoWindow object for later.
+        _this._infoWindow = new google.maps.InfoWindow();
+        //Close the infoWindow and re-display the previously hidden overlay when clicking on the map.
+        google.maps.event.addListener(_this._map, 'click', function(e) {
+            //In some cases we may want to ignore map clicks, ignore once and then reset it.
+            if (_this._ignoreMapClick) {
+                _this._ignoreMapClick = false;
+                return;
+            }
+            _this._closeInfoWindow();
+            if (_this._loadedLocation) {
+                _this._loadedLocation.nameOverlay.displayAndDraw();
+            }
+            //If we have a placeId then it means a location of interest was clicked on the map. In this case we will
+            //replace the default infoWindow with a custom one so the user can optionally add it to their locations.
+            if (e.placeId) {
+                //Prevent the default info window from opening.
+                e.stop();
+                _this._loadedLocation = null;
+                _this._placesService.getDetails({placeId: e.placeId}, function(place,status) {
+                    if (status === 'OK') {
+                        _this._selectedPlace = _this._buildPlaceDetails(place);
+                    }
+                    else {
+                        _this._selectedPlace = {
+                            "name":'Unknown Location',
+                            "latLng":e.latLng
+                        };
+                    }
+                    _this._toggleInfoWindow(null);
+                });
+            }
+        });
+        //When clicking the close button on the infoWindow redisplay the overlay.
+        google.maps.event.addListener(_this._infoWindow,'closeclick',function() {
+            _this._closeInfoWindow();
+            if (_this._loadedLocation) {
+                _this._loadedLocation.nameOverlay.displayAndDraw();
+            }
+            _this._selectedPlace = null;
         });
     },
 
@@ -259,14 +251,18 @@ Polymer({
                     //Hide the current location's overlay.
                     _this._loadedLocation.nameOverlay.hide();
                     myLocation.marker.setIcon(_this._MY_LOCATION_ICON_ACTIVE);
-                    //Focus on the label input.
+                    //Focus on the name input.
                     setTimeout(function() {
-                        _this.querySelector('#label').focus();
+                        _this.querySelector('#name').focus();
                     },0);
                 }
                 else if (_this._selectedPlace) {
                     _this._infoWindow.setPosition(_this._selectedPlace.latLng);
                     _this._infoWindow.open(_this._map);
+                    //Focus on the name input.
+                    setTimeout(function() {
+                        _this.querySelector('#placeName').focus();
+                    },0);
                 }
                 else { return; }
                 _this.$.infoWindow.removeAttribute('hidden');
@@ -406,7 +402,7 @@ Polymer({
                     _this._ignoreMapClick = true;
                     //Create the new location and open the info window so the user can customize the name.
                     //Don't save the location immediately on creation because the user will likely edit the name.
-                    _this._toggleInfoWindow(_this._createLocation(marker,true));
+                    _this._toggleInfoWindow(_this._createLocation(marker,'created',true));
                 }
             },1000);
         });
@@ -430,7 +426,7 @@ Polymer({
             position: this._selectedPlace.latLng,
             draggable: true,
             icon: this._MY_LOCATION_ICON_INACTIVE
-        }));
+        }),'created');
         this._selectedPlace = null;
         this._closeInfoWindow();
     },
@@ -438,17 +434,18 @@ Polymer({
     /**
      * Builds a location record from the passed marker and returns it.
      * @param marker
+     * @param msgPrefix
      * @param skipSave
      * @returns {Voyent.AlertBehaviour._MyLocation}
      * @private
      */
-    _createLocation: function(marker,skipSave) {
+    _createLocation: function(marker,msgPrefix,skipSave) {
         var newLocation = new this._MyLocation(
             null, this._selectedPlace ? this._selectedPlace.name : this._locationName,
             this._selectedPlace ? false : this._isPrivateResidence,marker, null
         );
         if (!skipSave) {
-            this._saveLocation(newLocation);
+            this._saveLocation(newLocation,msgPrefix);
         }
         return newLocation;
     },

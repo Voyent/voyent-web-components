@@ -2143,6 +2143,7 @@
                 this.setName(name || '');
                 this.isPrivateResidence = typeof isPrivateResidence === 'boolean' ? isPrivateResidence : false;
                 this.setMarker(marker);
+                this.isPersisted = !!id;
             };
             this._MyLocation.prototype = {
                 constructor: _outer._MyLocation,
@@ -2247,7 +2248,7 @@
                     });
                     //Update the coordinates on the location record and flag the location for updating after it's dragged.
                     google.maps.event.addListener(marker,'dragend',function() {
-                        _outer._saveLocation(_this);
+                        _outer._saveLocation(_this,'moved');
                     });
                     //Display infoWindow on location marker click.
                     google.maps.event.addListener(marker,'click',function() {
