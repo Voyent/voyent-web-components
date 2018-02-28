@@ -21,7 +21,7 @@ Polymer({
 
     ready: function() {
         this._loadedAlert = null;
-        this._myLocations = [];
+        this.set('_myLocations',[]);
     },
     
     /**
@@ -201,7 +201,7 @@ Polymer({
      */
     _drawLocations: function(locations,useMarkerIcon) {
         if (!locations) { return; }
-        this._myLocations = [];
+        this.set('_myLocations',[]);
         for (var i=0; i<locations.length; i++) {
             // For notification and view modes we want to render the user icon as
             // we should always only have one mobile location in these cases.
@@ -209,7 +209,7 @@ Polymer({
                 this._drawUser(locations[i]);
                 continue;
             }
-            this._myLocations.push(new this._MyLocation(
+            this.push('_myLocations',new this._MyLocation(
                 locations[i].properties.vras.id,
                 locations[i].properties.vras.name,
                 locations[i].properties.vras.type === 'residential',

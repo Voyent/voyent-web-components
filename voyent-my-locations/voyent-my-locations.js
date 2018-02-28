@@ -4,23 +4,17 @@ Polymer({
 
     ready: function() {
         var _this = this;
-        //Type options for drop-down menus.
-        this._creationTypes = ['address','pindrop'];
-        this._creationType = 'address';
-        //An array of MyLocations, represents the locations currently on the map (saved or not).
-        this._myLocations = [];
+        //An array of MyLocations, represents the saved locations currently on the map.
+        this.set('_myLocations',[]);
         //The location that is currently active in the editor (infoWindow is displayed).
         this._loadedLocation = null;
         //An object containing details of the last Google Place search result (after clicking a place icon on map).
         this._selectedPlace = null;
-        //Since all changes are transient before they save we have these lists
-        //to flag locations that require a db call once they hit save.
-        this._locationsToUpdate = [];
-        this._locationsToDelete = [];
+        //A flag indicating if the loaded location should be updated, used after info window closures.
+        this._locationUpdatePending = false;
         //Setup the infoWindow.
         this._setupInfoWindow();
         //Set the button state to disabled by default
-        this._buttonsEnabled = false;
         this._mapIsReady().then(function() {
             //Initialize places service for later.
             _this._placesService = new google.maps.places.PlacesService(_this._map);
@@ -38,6 +32,8 @@ Polymer({
         });
     },
 
+    observers: ['_myLocationsUpdated(_myLocations.length)'],
+
     //******************PRIVATE API******************
 
     /**
@@ -49,157 +45,77 @@ Polymer({
     },
 
     /**
-     * Opens the dialog for creating a new location.
+     * Opens the dialog for creating a new address location.
      * @private
      */
-    _addNewLocation: function() {
+    _addAddressBasedLocation: function() {
         var _this = this;
         this._openDialog(function () {
-            if (_this._creationType === 'pindrop') {
-                _this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.MARKER);
-                _this._deselectDrawingButtons();
-            }
-            else {
+            setTimeout(function() {
+                _this._createdAddressLocation = true;
                 _this._createLocation(new google.maps.Marker({
                     position: _this._placeCoordinates,
                     map: _this._map,
                     draggable: true,
                     icon: _this._MY_LOCATION_ICON_INACTIVE
                 }));
-                _this._adjustBoundsAndPan();
-            }
+                _this._resetDialogProperties();
+            },0);
         });
-    },
-
-    /**
-     * Triggered whenever the user clicks the save button, fires the save and
-     * delete calls based on changes made since component load or last save.
-     * @private
-     */
-    _saveChanges: function() {
-        var _this = this;
-        //It's possible that the user edited a location and then later decided to
-        //delete it so in these cases make sure we don't bother updating it.
-        for (var i=this._locationsToUpdate.length-1; i>=0; i--) {
-            if (this._locationsToDelete.indexOf(this._locationsToUpdate[i]) > -1) {
-                this.splice('_locationsToUpdate',i,1);
-            }
-        }
-        //Save and delete the locations. Once all operations are done display a message indicating the results.
-        var promises = [];
-        promises.push(this._saveLocations());
-        promises.push(this._removeLocations());
-        Promise.all(promises).then(function(results) {
-            _this.fire('message-info',_this._getSavedMessage(results[0],results[1]));
-            //Disable the buttons as long as we didn't have any POST failures.
-            if (!results[0].failures) {
-                _this._buttonsEnabled = false;
-            }
-            _this._adjustBoundsAndPan();
-        });
-    },
-
-    /**
-     * Triggered whenever the user clicks the cancel button, reverts all changes made since component load or last save.
-     * @private
-     */
-    _cancelChanges: function() {
-        var _this = this;
-        this._fetchMyLocations().then(function() {
-            _this._buttonsEnabled = false;
-            _this.fire('message-info','Successfully reverted all changes');
-        });
+        //Ensure we initialize the autoComplete.
+        _this._setupAutoComplete();
     },
 
     /**
      * Saves all locations that have been modified since component load or last save.
-     * @returns {Promise}
+     * @param locationToSave
      * @private
      */
-    _saveLocations: function() {
-        var _this = this, myLocation;
-        return new Promise(function (resolve) {
-            var promises = [];
-            //Loop backwards since we're splicing.
-            for (var i=_this._locationsToUpdate.length-1; i>=0; i--) {
-                myLocation = _this._locationsToUpdate[i];
-                //Make sure we have the latest JSON before saving it.
-                myLocation.updateJSON();
-                (function(myLocation) {
-                    promises.push(new Promise(function (resolveRequest) {
-                        voyent.locate.updateLocation({account:_this.account,realm:_this.realm,
-                                                      location:myLocation.json}).then(function() {
-                            myLocation.isPersisted = true;
-                            //Don't use i to splice because it may change as we splice out other locations.
-                            _this.splice('_locationsToUpdate',_this._locationsToUpdate.indexOf(myLocation),1);
-                            resolveRequest(true);
-                        }).catch(function () {
-                            //Don't splice the _locationsToUpdate array on failure so the
-                            //request will be attempted again the next time they save.
-                            resolveRequest(false);
-                        });
-                    }));
-                })(myLocation)
+    _saveLocation: function(locationToSave) {
+        var _this = this;
+
+        //Ensure we have the latest JSON before saving it.
+        locationToSave.updateJSON();
+
+        voyent.locate.updateLocation({account:this.account,realm:this.realm,location:locationToSave.json}).then(function() {
+            _this.push('_myLocations',locationToSave);
+            if (_this._createdAddressLocation) {
+                _this._adjustBoundsAndPan();
+                _this._createdAddressLocation = false;
             }
-            //Once all the update requests are complete return the results.
-            //We will resolve immediately if the promises array is empty.
-            Promise.all(promises).then(function(results) {
-                resolve(_this._processResults(results));
-            });
+            _this.fire('message-info','Successfully saved ' + locationToSave.name);
+        }).catch(function () {
+            _this.fire('message-error','Failed to save ' + locationToSave.name);
         });
     },
 
     /**
-     * Removes all locations that have been deleted since component load or last save.
-     * @returns {Promise}
+     * Removes the currently loaded location.
      * @private
      */
-    _removeLocations: function() {
-        var _this = this, myLocation;
-        return new Promise(function (resolve) {
-            var promises = [];
-            //Loop backwards since we're splicing.
-            for (var i=_this._locationsToDelete.length-1; i>=0; i--) {
-                myLocation = _this._locationsToDelete[i];
-                (function(myLocation) {
-                    promises.push(new Promise(function (resolveRequest) {
-                        var query = {"location.properties.vras.id":myLocation.id};
-                        voyent.locate.deleteLocations({account:_this.account,realm:_this.realm,
-                                                       query:query}).then(function() {
-                            //Don't use i to splice because it may change as we splice out other locations.
-                            _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(myLocation),1);
-                            resolveRequest(true);
-                        }).catch(function () {
-                            //It wasn't deleted so re-add it to the map.
-                            myLocation.addToMap();
-                            _this._myLocations.push(myLocation);
-                            _this.splice('_locationsToDelete',_this._locationsToDelete.indexOf(myLocation),1);
-                            resolveRequest(false);
-                        });
-                    }));
-                })(myLocation)
+    _removeLocation: function() {
+        var _this = this;
+
+        this._closeInfoWindow();
+        this._loadedLocation.removeFromMap();
+
+        var query = {"location.properties.vras.id":this._loadedLocation.id};
+
+        voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
+            var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
+            if (indexToRemove > -1) {
+                _this.splice('_myLocations',indexToRemove,1);
             }
-            //Once all the update requests are complete return the results.
-            //We will resolve immediately if the promises array is empty.
-            Promise.all(promises).then(function(results) {
-                resolve(_this._processResults(results));
-            });
+            _this.fire('message-info','Successfully removed ' + _this._loadedLocation.name);
+            _this._loadedLocation = null;
+        }).catch(function () {
+            _this._loadedLocation.addToMap();
+            _this.fire('message-error','Failed to remove ' + _this._loadedLocation.name);
         });
     },
 
     /**
-     * Whenever a property is edited we need to be sure to flag the associated location for updating.
-     * @param myLocation
-     */
-    flagLocationForUpdating: function(myLocation) {
-        if (this._locationsToUpdate.indexOf(myLocation) === -1) {
-            this._locationsToUpdate.push(myLocation);
-        }
-        this._buttonsEnabled = true;
-    },
-
-    /**
-     * Wrapper function for `flagLocationForUpdating`. Used by the template.
+     * Whenever a location is edited via the info window we will flag it so that it can be updated on close.
      * @private
      */
     _flagLocationForUpdating: function(e) {
@@ -210,38 +126,31 @@ Polymer({
             if (!this._validateLocationName(this._inputName)) { return; }
             this._loadedLocation.setName(this._inputName);
         }
-        this.flagLocationForUpdating(this._loadedLocation);
+        else {
+            if (typeof this._inputPrivateResidence === 'undefined' ||
+                this._inputPrivateResidence === this._loadedLocation.isPrivateResidence) {
+                return;
+            }
+            this._loadedLocation.setPrivateResidence(this._inputPrivateResidence);
+        }
+        this._locationUpdatePending = true;
     },
 
     /**
-     * Triggered whenever the user clicks the trash icon in the infoWindow.
-     * Removes the location from the map and flags it for deletion.
+     * Handles saving a location after its info window properties have changed as well as initial save of a pin drop location.
      * @private
      */
-    _flagLocationForRemoval: function() {
-        this._closeInfoWindow();
-        this._loadedLocation.removeFromMap();
-        if (this._loadedLocation.isPersisted) {
-            this._locationsToDelete.push(this._loadedLocation);
-            this._buttonsEnabled = true;
-        }
-        else {
-            //If the location isn't persisted then we don't need to flag it for deletion, just
-            //remove it from the map. Additionally, if no other locations have been updated
-            //then we can disable the buttons again as no changes have been made.
-            var locationIndex = this._locationsToUpdate.indexOf(this._loadedLocation);
-            if (locationIndex > -1) {
-                this._locationsToUpdate.splice(locationIndex,1);
-                if (!this._locationsToDelete.length && !this._locationsToUpdate.length) {
-                    this._buttonsEnabled = false;
-                }
+    _savePendingOrNewLocation: function() {
+        if (this._loadedLocation && (this._locationUpdatePending || !this._loadedLocation.name)) {
+            //If no name is specified then it means they just created a pin
+            //drop location and didn't set one before closing the info window.
+            //So we will set one manually and then save the location.
+            if (!this._loadedLocation.name) {
+                this._loadedLocation.name = 'New Location';
             }
+            this._saveLocation(this._loadedLocation);
+            this._locationUpdatePending = false;
         }
-        var indexToRemove = this._myLocations.indexOf(this._loadedLocation);
-        if (indexToRemove > -1) {
-            this._myLocations.splice(indexToRemove,1);
-        }
-        this._loadedLocation = null;
     },
 
     /**
@@ -265,50 +174,6 @@ Polymer({
     },
 
     /**
-     * Returns the message to be displayed after the changes are saved.
-     * @param saveResults
-     * @param removalResults
-     * @returns {string|*}
-     * @private
-     */
-    _getSavedMessage: function(saveResults,removalResults) {
-        var successMsg='', failureMsg='';
-        if (saveResults.successes || removalResults.successes) {
-            if (saveResults.successes) {
-                successMsg += 'Successfully updated ' + saveResults.successes;
-            }
-            if (removalResults.successes) {
-                successMsg += (successMsg ? ' and removed ' : 'Successfully removed ') + removalResults.successes;
-            }
-            successMsg += saveResults.successes > 1 || removalResults.successes > 1 ? ' locations.' : ' location.';
-        }
-        if (saveResults.failures || removalResults.failures) {
-            if (saveResults.failures) {
-                failureMsg += 'Failed to update ' + saveResults.failures;
-            }
-            if (removalResults.failures) {
-                failureMsg += (failureMsg ? ' and remove ' : 'Failed to remove ') + removalResults.failures;
-            }
-            failureMsg += saveResults.failures > 1 || removalResults.failures > 1 ? ' locations.' : ' location.';
-        }
-        return successMsg + ' ' + failureMsg;
-    },
-
-    /**
-     * Process CRUD operation results.
-     * @param results
-     * @private
-     */
-    _processResults: function(results) {
-        var resultsObj = {"successes":0,"failures":0};
-        for (var i=0; i<results.length; i++) {
-            if (results[i]) { resultsObj.successes++; }
-            else { resultsObj.failures++; }
-        }
-        return resultsObj;
-    },
-
-    /**
      * Initializes the infoWindow object and sets up associated listeners.
      * @private
      */
@@ -319,6 +184,11 @@ Polymer({
             _this._infoWindow = new google.maps.InfoWindow();
             //Close the infoWindow and re-display the previously hidden overlay when clicking on the map.
             google.maps.event.addListener(_this._map, 'click', function(e) {
+                //In some cases we may want to ignore map clicks, ignore once and then reset it.
+                if (_this._ignoreMapClick) {
+                    _this._ignoreMapClick = false;
+                    return;
+                }
                 _this._closeInfoWindow();
                 if (_this._loadedLocation) {
                     _this._loadedLocation.nameOverlay.displayAndDraw();
@@ -355,39 +225,6 @@ Polymer({
     },
 
     /**
-     * Builds the relevant place details from the Google Places search result.
-     * @param place
-     * @private
-     */
-    _buildPlaceDetails: function(place) {
-        var selectedPlace = {
-            "name":place.name,
-            "latLng":place.geometry.location
-        };
-        var addressComponent;
-        for (var i=0; i<place.address_components.length; i++) {
-            addressComponent = place.address_components[i];
-            if (addressComponent.types.indexOf('street_number') > -1) {
-                selectedPlace.streetNumber = addressComponent.short_name || addressComponent.long_name;
-            }
-            else if (addressComponent.types.indexOf('route') > -1) {
-                selectedPlace.route = addressComponent.short_name || addressComponent.long_name;
-            }
-            else if (addressComponent.types.indexOf('locality') > -1) {
-                selectedPlace.locality = addressComponent.short_name || addressComponent.long_name;
-            }
-            else if (addressComponent.types.indexOf('political') > -1 &&
-                     addressComponent.types.indexOf('country') === -1) {
-                selectedPlace.political = addressComponent.short_name || addressComponent.long_name;
-            }
-            else if (addressComponent.types.indexOf('postal_code') > -1) {
-                selectedPlace.postalCode = addressComponent.short_name || addressComponent.long_name;
-            }
-        }
-        return selectedPlace;
-    },
-
-    /**
      * Displays an infoWindow that is triggered when clicking on location markers or clicking on a place icon.
      * @param myLocation
      * @private
@@ -400,6 +237,11 @@ Polymer({
             this._loadedLocation.nameOverlay.displayAndDraw();
         }
         else {
+            //If the infoWindow was toggled by selecting another location then _closeInfoWindow
+            //will not be triggered so we need to update the location here, if applicable.
+            if (this._infoWindowOpen) {
+                this._savePendingOrNewLocation();
+            }
             //Do this async so we don't get rendering flicker when opening the info window.
             setTimeout(function() {
                 //Re-display any previously hidden location overlay.
@@ -412,10 +254,15 @@ Polymer({
                 if (myLocation) {
                     _this._loadedLocation = myLocation;
                     _this._inputName = _this._loadedLocation.name;
+                    _this._inputPrivateResidence = _this._loadedLocation.isPrivateResidence;
                     _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
                     //Hide the current location's overlay.
                     _this._loadedLocation.nameOverlay.hide();
                     myLocation.marker.setIcon(_this._MY_LOCATION_ICON_ACTIVE);
+                    //Focus on the label input.
+                    setTimeout(function() {
+                        _this.querySelector('#label').focus();
+                    },0);
                 }
                 else if (_this._selectedPlace) {
                     _this._infoWindow.setPosition(_this._selectedPlace.latLng);
@@ -438,7 +285,41 @@ Polymer({
         this._infoWindowOpen = false;
         if (this._loadedLocation) {
             this._loadedLocation.marker.setIcon(this._MY_LOCATION_ICON_INACTIVE);
+            this._savePendingOrNewLocation();
         }
+    },
+
+    /**
+     * Builds the relevant place details from the Google Places search result.
+     * @param place
+     * @private
+     */
+    _buildPlaceDetails: function(place) {
+        var selectedPlace = {
+            "name":place.name,
+            "latLng":place.geometry.location
+        };
+        var addressComponent;
+        for (var i=0; i<place.address_components.length; i++) {
+            addressComponent = place.address_components[i];
+            if (addressComponent.types.indexOf('street_number') > -1) {
+                selectedPlace.streetNumber = addressComponent.short_name || addressComponent.long_name;
+            }
+            else if (addressComponent.types.indexOf('route') > -1) {
+                selectedPlace.route = addressComponent.short_name || addressComponent.long_name;
+            }
+            else if (addressComponent.types.indexOf('locality') > -1) {
+                selectedPlace.locality = addressComponent.short_name || addressComponent.long_name;
+            }
+            else if (addressComponent.types.indexOf('political') > -1 &&
+                addressComponent.types.indexOf('country') === -1) {
+                selectedPlace.political = addressComponent.short_name || addressComponent.long_name;
+            }
+            else if (addressComponent.types.indexOf('postal_code') > -1) {
+                selectedPlace.postalCode = addressComponent.short_name || addressComponent.long_name;
+            }
+        }
+        return selectedPlace;
     },
 
     /**
@@ -447,8 +328,6 @@ Polymer({
      */
     _addCustomControls: function() {
         if (this._customControlAdded) { return; }
-        this.$.crudButtons.removeAttribute('hidden');
-        this._map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(this.$.crudButtons);
         this.$.locationButton.removeAttribute('hidden');
         this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.locationButton);
         this._customControlAdded = true;
@@ -475,8 +354,7 @@ Polymer({
      */
     _confirmDialog: function() {
         //Validate the dialog.
-        if (!this._creationType || (this._creationType === 'address' && !this._placeCoordinates) ||
-            !this._locationName || !this._locationName.trim()) {
+        if (!this._placeCoordinates || !this._locationName || !this._locationName.trim()) {
             this.fire('message-error', 'Please complete all fields');
             return;
         }
@@ -488,9 +366,6 @@ Polymer({
         }
         //Close the dialog after.
         this._closeDialog(true);
-        if (this._creationType === 'address') {
-            this._buttonsEnabled = true;
-        }
     },
 
     /**
@@ -510,25 +385,36 @@ Polymer({
     },
 
     /**
-     * Initialize the listeners for drawing a new location on the map.
+     * Initialize the listeners required to pin drop a location by holding the mouse down on the map.
      * @private
      */
     _setupDrawingListeners: function () {
         var _this = this;
-        google.maps.event.addListener(this._drawingManager, 'markercomplete', function (marker) {
-            marker.setIcon(_this._MY_LOCATION_ICON_INACTIVE);
-            //Draw the location marker and exit drawing mode.
-            _this._createLocation(marker);
-            _this._disableDrawingMode();
-            _this._buttonsEnabled = true;
-        });
-        //When the escape key is pressed exit drawing mode.
-        window.addEventListener('keydown', function (event) {
-            if (event.which === 27) {
-                if (_this._drawingManager.getDrawingMode() !== null) {
-                    _this._disableDrawingMode();
+        google.maps.event.addListener(this._map, 'mousedown', function(e) {
+            _this._holdingMouse = true;
+            //If the user holds the mouse down for one second then create a new location at that position.
+            setTimeout(function() {
+                if (_this._holdingMouse) {
+                    var marker = new google.maps.Marker({
+                        position: e.latLng,
+                        map: _this._map,
+                        draggable: true,
+                        icon: _this._MY_LOCATION_ICON_INACTIVE
+                    });
+                    //Without this flag the infoWindow will be closed immediately
+                    //after releasing the mouse after location creation
+                    _this._ignoreMapClick = true;
+                    //Create the new location and open the info window so the user can customize the name.
+                    //Don't save the location immediately on creation because the user will likely edit the name.
+                    _this._toggleInfoWindow(_this._createLocation(marker,true));
                 }
-            }
+            },1000);
+        });
+        google.maps.event.addListener(this._map, 'mouseup', function() {
+            _this._holdingMouse = false;
+        });
+        google.maps.event.addListener(this._map, 'drag', function() {
+            _this._holdingMouse = false;
         });
     },
 
@@ -545,7 +431,6 @@ Polymer({
             draggable: true,
             icon: this._MY_LOCATION_ICON_INACTIVE
         }));
-        this._buttonsEnabled = true;
         this._selectedPlace = null;
         this._closeInfoWindow();
     },
@@ -553,26 +438,32 @@ Polymer({
     /**
      * Builds a location record from the passed marker and returns it.
      * @param marker
+     * @param skipSave
      * @returns {Voyent.AlertBehaviour._MyLocation}
      * @private
      */
-    _createLocation: function(marker) {
-        //Build the new location.
+    _createLocation: function(marker,skipSave) {
         var newLocation = new this._MyLocation(
             null, this._selectedPlace ? this._selectedPlace.name : this._locationName,
             this._selectedPlace ? false : this._isPrivateResidence,marker, null
         );
-        this._myLocations.push(newLocation);
-        this.flagLocationForUpdating(newLocation);
-        //Reset the dialog properties.
+        if (!skipSave) {
+            this._saveLocation(newLocation);
+        }
+        return newLocation;
+    },
+
+    /**
+     * Resets input fields used in the dialog.
+     * @private
+     */
+    _resetDialogProperties: function() {
         this._isPrivateResidence = false;
         this._locationName = null;
         var autocomplete = this.$$('#autoComplete');
         if (autocomplete) {
             autocomplete.value = '';
         }
-        this._skipRegionPanning = true; //Always skip panning to the region when we have at least one location.
-        return newLocation;
     },
 
     /**
@@ -583,7 +474,6 @@ Polymer({
         if (this._autoComplete) { return; }
         var _this = this, place;
         var autocompleteInput = this.$$('#autoComplete').querySelector('input');
-        autocompleteInput.setAttribute('placeholder','Enter an address');
         //Wait until we have the area region so we can favour results from within that region.
         function waitForAreaRegion() {
             if (!_this._areaRegion) {
@@ -609,6 +499,18 @@ Polymer({
     },
 
     /**
+     * Listens for changes to the autocomplete input so we can clear the
+     * place selection if the user manually clears the autocomplete.
+     * @private
+     */
+    _autoCompleteChanged: function() {
+        if (!this._autocompleteValue) {
+            this._placeCoordinates = null;
+            this._locationName = null;
+        }
+    },
+
+    /**
      * Updates the map bounds so all the locations are in view and then pans the map.
      * @private
      */
@@ -631,29 +533,12 @@ Polymer({
     },
 
     /**
-     * Returns whether the passed creationType is of the address type.
-     * @param creationType
+     * Listens for changes on the list of locations.
+     * @param length
      * @private
      */
-    _isAddress: function(creationType) {
-        var _this = this;
-        var isAddress = creationType === 'address';
-        //Make sure we initialize the autoComplete, async is required to allow it time to render.
-        if (isAddress) {
-            setTimeout(function() {
-                _this._setupAutoComplete();
-            },0);
-        }
-        return isAddress;
-    },
-
-    /**
-     * Proper-case the passed type.
-     * @param type
-     * @returns {string}
-     * @private
-     */
-    _returnCreateTypeLabel: function(type) {
-        return type === 'pindrop' ? 'Pin Drop' : 'Address';
+    _myLocationsUpdated: function(length) {
+        //Always skip panning to the region when we have at least one location.
+        this._skipRegionPanning = !!length;
     }
 });

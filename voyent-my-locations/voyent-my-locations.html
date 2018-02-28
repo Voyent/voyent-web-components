@@ -77,6 +77,9 @@ Example:
             }
             .custom-control paper-button {
                 background-color:#FFF;
+                font-size:15px;
+                box-shadow: 2px 2px 5px #006542;
+                color: #006542;
             }
             .dialog-bttns {
                 margin: 0;
@@ -95,9 +98,6 @@ Example:
             }
             .no-margin {
                 margin: 0;
-            }
-            .block {
-                display:block;
             }
             .valign-middle {
                 vertical-align: middle;
@@ -122,13 +122,13 @@ Example:
                 </paper-input>
                 <div class="toggle-button">
                     <paper-toggle-button id="isPrivateResidence" class="inline valign-middle" tabindex="2"
-                                         checked="{{_loadedLocation.isPrivateResidence}}"
+                                         checked="{{_inputPrivateResidence}}"
                                          on-checked-changed="_flagLocationForUpdating"></paper-toggle-button>
                     <span class="private-residence valign-middle no-select">Private Residence</span>
                 </div>
                 <div class="delete-bttn">
                     <paper-icon-button tabindex="3" title="Remove Location" icon="delete"
-                                       on-click="_flagLocationForRemoval">
+                                       on-click="_removeLocation">
                     </paper-icon-button>
                 </div>
             </template>
@@ -168,27 +168,14 @@ Example:
             </template>
         </div>
         <div id="locationButton" class="custom-control" hidden>
-            <paper-button raised title="Create a new location" on-click="_addNewLocation">Add Location...</paper-button>
-        </div>
-        <div id="crudButtons" class="custom-control" hidden>
-            <paper-button raised disabled$="[[!_buttonsEnabled]]" title="Cancel" on-click="_cancelChanges">Cancel</paper-button>
-            <paper-button raised disabled$="[[!_buttonsEnabled]]" title="Save Changes" on-click="_saveChanges">Save Changes</paper-button>
+            <paper-button raised title="Create a new location" on-click="_addAddressBasedLocation">Add Location...</paper-button>
         </div>
         <paper-dialog id="modalDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
                       on-iron-overlay-opened="_fixModalStacking">
             <p class="dialog-title">New Location Details</p>
-            <paper-radio-group class="block no-margin text-center" selected="{{_creationType}}" on-keyup="_dialogKeyUp">
-                <template is="dom-repeat" items="[[_creationTypes]]">
-                    <paper-radio-button name="[[item]]">
-                        [[_returnCreateTypeLabel(item)]]
-                    </paper-radio-button>
-                </template>
-            </paper-radio-group>
-            <template is="dom-if" if="[[_isAddress(_creationType)]]">
-                <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" autofocus
-                             maxlength="70" autocapitalize="words"
-                             on-keyup="_dialogKeyUp" placeholder="Enter a location"></paper-input>
-            </template>
+            <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" autofocus
+                         maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
+                         on-keyup="_dialogKeyUp" placeholder="Enter an address, postal code, or business name"></paper-input>
             <paper-input class="inline no-margin name-input" autofocus no-label-float tabindex="5" label="Label"
                          maxlength="30" autocapitalize="words"
                          on-keyup="_dialogKeyUp" value="{{_locationName}}"></paper-input>

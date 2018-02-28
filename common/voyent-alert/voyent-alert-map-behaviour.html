@@ -132,7 +132,11 @@
                         position: google.maps.ControlPosition.LEFT_CENTER
                     }
                 };
-                if (_this.nodeName !== 'VOYENT-MY-LOCATIONS') {
+                if (_this.nodeName === 'VOYENT-MY-LOCATIONS') {
+                    mapOptions.mapTypeControlOptions.position = google.maps.ControlPosition.TOP_LEFT;
+                    mapOptions.zoomControlOptions.position = google.maps.ControlPosition.LEFT_TOP;
+                }
+                else {
                     mapOptions.clickableIcons = false;
                 }
                 //Alert view map is readonly.
@@ -566,7 +570,7 @@
          */
         _drawMyLocations: function(locations) {
             for (var i=0; i<locations.length; i++) {
-                this._myLocations.push(new this._MyLocation(
+                this.push('_myLocations',new this._MyLocation(
                     locations[i].location.properties.vras.id,
                     locations[i].location.properties.vras.name,
                     locations[i].location.properties.vras.type === 'residential',
@@ -592,7 +596,7 @@
             for (var i=0; i<this._myLocations.length; i++) {
                 this._myLocations[i].removeFromMap();
             }
-            this._myLocations = [];
+            this.set('_myLocations',[]);
         },
 
         /**
