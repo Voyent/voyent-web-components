@@ -12,6 +12,8 @@ Polymer({
         this._selectedPlace = null;
         //A flag indicating if the loaded location should be updated, used after info window closures.
         this._locationUpdatePending = false;
+        //A flag for counting the keypresses to the autocomplete entry so we can reset state as necessary.
+        this._autocompleteKeyupCount = 0;
         this._mapIsReady().then(function() {
             //Setup the infoWindow.
             _this._setupInfoWindow();
@@ -286,6 +288,18 @@ Polymer({
     },
 
     /**
+     * Handles closing the infoWindow on location name input key presses.
+     * @param e
+     * @private
+     */
+    _handleInfoWindowKeyPress: function(e) {
+        //Close the infoWindow on Enter or Esc key presses
+        if (e.keyCode === 13 || e.keyCode === 27) {
+            this._toggleInfoWindow(this._loadedLocation);
+        }
+    },
+
+    /**
      * Builds the relevant place details from the Google Places search result.
      * @param place
      * @private
@@ -505,6 +519,31 @@ Polymer({
             this._placeCoordinates = null;
             this._locationName = null;
         }
+    },
+
+    /**
+     * Handles trapping specific keypresses on the autocomplete when the list is open so they don't bubble to the dialog.
+     * @param e
+     * @private
+     */
+    _handleAutocompleteKeyPress: function(e) {
+        //Reset our keypress state on every 2 keypresses because we only need to track the last two
+        //keypreses - one for selecting a list entry and one for the enter or escape keys after.
+        if (this._autocompleteKeyupCount === 2) {
+            this._autocompleteKeyupCount = 0;
+            this._autocompleteListItemSelected = false;
+        }
+        if (document.querySelector('.pac-item-selected')) {
+            this._autocompleteEntryWasSelected = true;
+        }
+        //When an autocomplete list entry was selected on the last keypress then
+        //we want to prevent the event from bubbling on any enter or escape key
+        //presses after so we don't submit the dialog listener.
+        if (this._autocompleteEntryWasSelected && (e.keyCode === 13 || e.keyCode === 27)) {
+            this._autocompleteEntryWasSelected = false;
+            e.stopPropagation();
+        }
+        this._autocompleteKeyupCount++;
     },
 
     /**
