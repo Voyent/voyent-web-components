@@ -405,30 +405,27 @@ Polymer({
     _setupDrawingListeners: function () {
         var _this = this;
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
-            _this._holdingMouse = true;
             //If the user holds the mouse down for one second then create a new location at that position.
-            setTimeout(function() {
-                if (_this._holdingMouse) {
-                    var marker = new google.maps.Marker({
-                        position: e.latLng,
-                        map: _this._map,
-                        draggable: true,
-                        icon: _this._MY_LOCATION_ICON_INACTIVE
-                    });
-                    //Without this flag the infoWindow will be closed immediately
-                    //after releasing the mouse after location creation
-                    _this._ignoreMapClick = true;
-                    //Create the new location and open the info window so the user can customize the name. Don't save the location
-                    //immediately on creation because the user will likely edit the name, we can save when they close it.
-                    _this._toggleInfoWindow(_this._createLocation(marker,'created',true));
-                }
+            _this._mouseHoldTimer = setTimeout(function() {
+                var marker = new google.maps.Marker({
+                    position: e.latLng,
+                    map: _this._map,
+                    draggable: true,
+                    icon: _this._MY_LOCATION_ICON_INACTIVE
+                });
+                //Without this flag the infoWindow will be closed immediately
+                //after releasing the mouse after location creation
+                _this._ignoreMapClick = true;
+                //Create the new location and open the info window so the user can customize the name. Don't save the location
+                //immediately on creation because the user will likely edit the name, we can save when they close it.
+                _this._toggleInfoWindow(_this._createLocation(marker,'created',true));
             },1000);
         });
         google.maps.event.addListener(this._map, 'mouseup', function() {
-            _this._holdingMouse = false;
+            clearTimeout(_this._mouseHoldTimer);
         });
         google.maps.event.addListener(this._map, 'drag', function() {
-            _this._holdingMouse = false;
+            clearTimeout(_this._mouseHoldTimer);
         });
     },
 
