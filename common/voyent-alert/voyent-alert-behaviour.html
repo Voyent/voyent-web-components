@@ -2139,11 +2139,11 @@
              * @private
              */
             this._MyLocation = function(id,name,isPrivateResidence,marker) {
+                this.isPersisted = !!id;
                 this.id = id || _outer._generateUid();
                 this.setName(name || '');
                 this.isPrivateResidence = typeof isPrivateResidence === 'boolean' ? isPrivateResidence : false;
                 this.setMarker(marker);
-                this.isPersisted = !!id;
             };
             this._MyLocation.prototype = {
                 constructor: _outer._MyLocation,

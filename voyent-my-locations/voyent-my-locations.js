@@ -72,9 +72,12 @@ Polymer({
      */
     _removeLocation: function() {
         var _this = this;
-        this._closeInfoWindow();
+        //Close the info window and specify we don't want to save the location.
+        this._closeInfoWindow(true);
         this._loadedLocation.removeFromMap();
-
+        //If the location is not persisted yet then just remove it from the map. This will
+        //occur when a location is created via pin drop and then immediately deleted.
+        if (!this._loadedLocation.isPersisted) { return; }
         var query = {"location.properties.vras.id":this._loadedLocation.id};
         voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
             var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
@@ -276,12 +279,13 @@ Polymer({
 
     /**
      * Closes the info window.
+     * @param skipSave
      * @private
      */
-    _closeInfoWindow: function() {
+    _closeInfoWindow: function(skipSave) {
         this._infoWindow.close();
         this._infoWindowOpen = false;
-        if (this._loadedLocation) {
+        if (this._loadedLocation && !skipSave) {
             this._loadedLocation.marker.setIcon(this._MY_LOCATION_ICON_INACTIVE);
             this._savePendingOrNewLocation();
         }
@@ -414,8 +418,8 @@ Polymer({
                     //Without this flag the infoWindow will be closed immediately
                     //after releasing the mouse after location creation
                     _this._ignoreMapClick = true;
-                    //Create the new location and open the info window so the user can customize the name.
-                    //Don't save the location immediately on creation because the user will likely edit the name.
+                    //Create the new location and open the info window so the user can customize the name. Don't save the location
+                    //immediately on creation because the user will likely edit the name, we can save when they close it.
                     _this._toggleInfoWindow(_this._createLocation(marker,'created',true));
                 }
             },1000);
