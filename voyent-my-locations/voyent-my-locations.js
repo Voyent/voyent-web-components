@@ -1,6 +1,18 @@
 Polymer({
     is: 'voyent-my-locations',
-    behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour],
+    behaviors: [Voyent.AlertMapBehaviour, Voyent.AlertBehaviour, Voyent.TooltipBehaviour],
+
+    properties: {
+        /**
+         * Indicates whether the component is loaded on mobile.
+         */
+        isMobile: { type: Boolean, value: false },
+        /**
+         * Indicates whether the component is in portrait mode. Applicable only when isMobile is true.
+         */
+        isPortrait: { type: Boolean, value: false, observer: '_isPortraitChanged' }
+
+    },
 
     ready: function() {
         var _this = this;
@@ -31,6 +43,8 @@ Polymer({
                 _this._adjustBoundsAndPan();
             });
         });
+        //Padding to apply to the tooltip, represents the VRAS app header height.
+        _this._tooltipPadding = 64;
     },
 
     observers: ['_myLocationsUpdated(_myLocations.length)'],
@@ -342,9 +356,44 @@ Polymer({
      */
     _addCustomControls: function() {
         if (this._customControlAdded) { return; }
+        var _this = this;
         this.$.locationButton.removeAttribute('hidden');
         this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.locationButton);
         this._customControlAdded = true;
+        //Setup our tooltips after we've added our custom control. Add a slight delay to allow the map to position the control first.
+        setTimeout(function() {
+            _this._setupTooltips([{
+                    tooltipSelector:'#addLocationTooltip',
+                    targetSelector:'#locationButton paper-button',
+                    position:"below",
+                    topPadding:(_this.isMobile ? _this._tooltipPadding : 0) - 20
+                },
+                {
+                    tooltipSelector:'#mapCenterTooltip',
+                    targetSelector:'#map',
+                    position:!_this.isMobile ? 'centered-top' : (_this.isPortrait ? 'centered-bottom' : 'left-top'),
+                    topPadding:!_this.isMobile ? -_this._tooltipPadding : (_this.isPortrait ? _this._tooltipPadding : 0)
+                }
+            ]);
+            //Close the tooltips when the user begins to interact with the page.
+            window.addEventListener('keydown',_this._hideTooltips.bind(_this),{once:true});
+            window.addEventListener('mousedown',_this._hideTooltips.bind(_this),{once:true});
+        },500);
+    },
+
+    /**
+     * Monitors the `isPortrait` property and adjusts tooltip position as necessary.
+     * @private
+     */
+    _isPortraitChanged: function(isPortrait) {
+        if (!this.isMobile || !this._tooltipsList) { return; }
+        var _this = this;
+        //Adjust tooltip position on orientation changes. Add a slight delay to allow the device to switch orientations.
+        setTimeout(function() {
+            _this._tooltipsList[1].position = isPortrait ? 'centered-bottom' : 'left-top';
+            _this._tooltipsList[1].topPadding = isPortrait ? _this._tooltipPadding : 0;
+            _this._repositionTooltips();
+        },400);
     },
 
     //The dialog functions below override the functions in the behaviour.

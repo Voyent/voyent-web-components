@@ -1,0 +1,186 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="imports/voyent.html">
+
+<script>
+    var Voyent = Voyent || {};
+    /**
+     * Provides help tooltip functionality.
+     *
+     * @polymerBehavior TooltipBehaviour
+     */
+    Voyent.TooltipBehaviour = {
+
+        /**
+         * Initialize tooltips based on the passed tooltipData.
+         * @param tooltipsData {array}
+         * @private
+         */
+        _setupTooltips: function(tooltipsData) {
+            this._tooltipsList = tooltipsData;
+            for (var i=0; i<tooltipsData.length; i++) {
+                this._initializeTooltip(tooltipsData[i]);
+            }
+            this._addResizeListener();
+        },
+
+        /**
+         * Initializes the tooltip based on the passed data.
+         * @param tooltipData {object} - An object containing the various pieces required to render tooltips.
+         * @param tooltipData.tooltipSelector {string} - The query selector for locating the tooltip.
+         * @param tooltipData.targetSelector {string} - The query selector for locating the tooltip target.
+         * @param tooltipData.position {string} - The position of the tooltip in relation to the target, one of:
+         *        above||below||centered||centered-top||centered-bottom. If `above` or `below` an arrow will be rendered.
+         * @param tooltipData.maxWidth {string} - The max width of the tooltip, must include % or px character. If not provided we will default to the width of the target.
+         * @param tooltipData.topPadding {number} - The top padding to apply to the tooltip position.
+         * @param tooltipData.leftPadding {number} - The left padding to apply to the tooltip position.
+         * @private
+         */
+        _initializeTooltip: function(tooltipData) {
+            // Ensure we can find the tooltip and target
+            var tooltip = this.querySelector(tooltipData.tooltipSelector) || document.querySelector(tooltipData.tooltipSelector);
+            var target = this.querySelector(tooltipData.targetSelector) || document.querySelector(tooltipData.targetSelector);
+            if (!tooltip) {
+                console.log('cannot find tooltip',tooltipData.tooltipSelector);
+                return;
+            }
+            tooltipData.tooltipElement = tooltip;
+            if (!target) {
+                console.log('cannot find tooltip target',tooltipData.targetSelector);
+                return;
+            }
+            tooltipData.targetElement = target;
+            tooltip.classList.add(tooltipData.position);
+
+            // Display the tooltip
+            tooltip.style.display = 'block';
+
+            this._positionTooltip(tooltip, target, tooltipData.position, tooltipData.maxWidth, tooltipData.topPadding, tooltipData.leftPadding)
+        },
+
+        /**
+         * Positions the tooltip based on the passed parameters.
+         * @param tooltip {object} - The tooltip DOM element.
+         * @param target {object} - The tooltip target DOM element.
+         * @param position {string} - See above.
+         * @param maxWidth {string} - See above.
+         * @param topPadding {number} - See above.
+         * @param leftPadding {number} - See above.
+         * @private
+         */
+        _positionTooltip: function(tooltip, target, position, maxWidth, topPadding, leftPadding) {
+            // Set some defaults if no values are provided
+            position = position || 'above';
+            topPadding = topPadding || 0;
+            leftPadding = leftPadding || 0;
+
+            // Set the max width of the tooltip based on the passed value or the width of the target
+            tooltip.style.maxWidth = maxWidth || (target.getBoundingClientRect().width + 'px');
+
+            // Do these async so we ensure our tooltip and target are sized
+            setTimeout(function() {
+                var tooltipRect = tooltip.getBoundingClientRect();
+                var targetRect = target.getBoundingClientRect();
+
+                if (position === 'above' || position === 'below') {
+                    if (position === 'above') { // Tooltip rendered above target, arrow pointing down
+                        tooltip.style.bottom = (targetRect.top - topPadding) + "px";
+                    }
+                    else { // Tooltip rendered below target, arrow pointing up
+                        tooltip.style.top = (targetRect.bottom + topPadding) + 'px';
+                    }
+                    tooltip.style.left = (targetRect.left - (tooltipRect.width/2) + (targetRect.width/2) + leftPadding) + "px";
+                }
+                else if (position.indexOf('centered') >= 0) {
+                    if (position === 'centered') { // Tooltip rendered at the center of target, with no arrow
+                        tooltip.style.top = (targetRect.top + (targetRect.height/2) - (tooltipRect.height/2) + topPadding) + 'px';
+                    }
+                    else if (position === 'centered-top') { // Tooltip rendered at the top of target, with no arrow
+                        tooltip.style.top = (targetRect.top + topPadding) + 'px';
+                    }
+                    else { // Tooltip rendered at the bottom of target, with no arrow
+                        tooltip.style.top = (targetRect.height - tooltipRect.height + topPadding) + 'px';
+                    }
+                    tooltip.style.left = (targetRect.left + (targetRect.width/2) - (tooltipRect.width/2) + leftPadding) + 'px';
+                }
+                else if (position === 'left-top') { // Tooltip rendered in the top-left corner, with no arrow
+                    tooltip.style.top = (targetRect.top + topPadding) + 'px';
+                    tooltip.style.left = (targetRect.left + leftPadding) + 'px';
+                }
+            },0);
+        },
+
+        /**
+         * Adjusts the position of the tooltips.
+         * @private
+         */
+        _repositionTooltips: function() {
+            if (!this._tooltipsList) { return; }
+            for (var i=0; i<this._tooltipsList.length; i++) {
+                this._positionTooltip(
+                    this._tooltipsList[i].tooltipElement,
+                    this._tooltipsList[i].targetElement,
+                    this._tooltipsList[i].position,
+                    this._tooltipsList[i].maxWidth,
+                    this._tooltipsList[i].topPadding,
+                    this._tooltipsList[i].leftPadding
+                );
+            }
+        },
+
+        /**
+         * Shows all the tooltips stored in tooltipData.
+         * @private
+         */
+        _showTooltips: function() {
+            for (var i=0; i<this._tooltipsList.length; i++) {
+                this._showTooltip(this._tooltipsList[i].tooltipSelector);
+            }
+        },
+
+        /**
+         * Shows the tooltip specified by the passed tooltipSelector.
+         * @param tooltipSelector
+         * @private
+         */
+        _showTooltip: function(tooltipSelector) {
+            var tooltip = this.querySelector(tooltipSelector) || document.querySelector(tooltipSelector);
+            if (tooltip) {
+                tooltip.style.display = 'block';
+            }
+        },
+
+        /**
+         * Hides all the tooltips stored in tooltipData.
+         * @private
+         */
+        _hideTooltips: function() {
+            for (var i=0; i<this._tooltipsList.length; i++) {
+                this._hideTooltip(this._tooltipsList[i].tooltipSelector);
+            }
+            setTimeout(this._showTooltips.bind(this),2000);
+        },
+
+        /**
+         * Hides the tooltip specified by the passed tooltipSelector.
+         * @param tooltipSelector
+         * @private
+         */
+        _hideTooltip: function(tooltipSelector) {
+            var tooltip = this.querySelector(tooltipSelector) || document.querySelector(tooltipSelector);
+            if (tooltip) {
+                tooltip.style.display = 'none';
+            }
+        },
+
+        /**
+         * Initializes a window resize listener so we can reposition the tooltips
+         * @private
+         */
+        _addResizeListener: function() {
+            var _this = this;
+            window.addEventListener('resize',function() {
+                _this._repositionTooltips();
+            });
+        }
+    };
+</script>

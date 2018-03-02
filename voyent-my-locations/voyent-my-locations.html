@@ -2,12 +2,14 @@
 <link rel="import" href="../common/imports/voyent.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-map-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
+<link rel="import" href="../common/voyent-tooltip-behaviour.html">
 <link rel="import" href="../../iron-icon/iron-icon.html">
 <link rel="import" href="../../iron-icons/iron-icons.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../../paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../common/voyent-tooltip-styles.html">
 
 
 <!--
@@ -24,7 +26,7 @@ Example:
 -->
 <dom-module id="voyent-my-locations">
     <template>
-        <style include="voyent-alert-styles" is="custom-style">
+        <style include="voyent-alert-styles voyent-tooltip-styles" is="custom-style">
             .info-window {
                 font-weight: 400;
                 -webkit-font-smoothing: antialiased;
@@ -104,6 +106,9 @@ Example:
             }
             .valign-top {
                 vertical-align: top;
+            }
+            ul {
+                margin:0;
             }
         </style>
         <div id="container">
@@ -191,6 +196,17 @@ Example:
                 <paper-button raised tabindex="8" title="Confirm" on-click="_confirmDialog">Add Location</paper-button>
             </div>
         </paper-dialog>
+        <div id="addLocationTooltip" class="tooltipBox text-center">
+            Use this button to add a new location by address, postal code or business name
+        </div>
+        <div id="mapCenterTooltip" class="tooltipBox">
+            <ul>
+                <li>Click and hold anywhere on the map to create a new location</li>
+                <li>Click a point of interest to create a new location there</li>
+                <li>Drag an existing location pin to move it</li>
+                <li>Click an existing location to edit it</li>
+            </ul>
+        </div>
     </template>
 </dom-module>
 

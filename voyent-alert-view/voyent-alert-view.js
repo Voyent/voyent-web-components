@@ -399,7 +399,7 @@ Polymer({
     },
 
     /**
-     * Monitors the `portrait` property and hides and shows the fullscreen modal dialog if it is
+     * Monitors the `isPortrait` property and hides and shows the fullscreen modal dialog if it is
      * currently visible. This ensures that the styling will be correct when the orientation changes.
      * @private
      */

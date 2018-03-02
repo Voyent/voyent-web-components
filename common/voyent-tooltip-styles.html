@@ -1,0 +1,55 @@
+<dom-module id="voyent-tooltip-styles">
+    <template>
+        <style>
+            .tooltipBox {
+                position: absolute;
+                background: #88b7d5;
+                border: 2px solid #c2e1f5;
+                border-radius: 5px;
+                opacity: 0.9;
+                padding: 5px;
+                display: none;
+            }
+            .tooltipBox.above:after, .tooltipBox.above:before,
+            .tooltipBox.below:after, .tooltipBox.below:before {
+                left: 50%;
+                border: solid transparent;
+                content: " ";
+                height: 0;
+                width: 0;
+                position: absolute;
+                pointer-events: none;
+            }
+
+            .tooltipBox.above:after,
+            .tooltipBox.below:after {
+                border-color: rgba(136, 183, 213, 0);
+                border-top-color: #88b7d5;
+                border-width: 30px;
+                margin-left: -30px;
+            }
+
+            .tooltipBox.above:before,
+            .tooltipBox.below:before {
+                border-color: rgba(194, 225, 245, 0);
+                border-top-color: #c2e1f5;
+                border-width: 36px;
+                margin-left: -36px;
+            }
+
+            .tooltipBox.above:after, .tooltipBox.above:before {
+                top: 100%;
+            }
+            .tooltipBox.below:after, .tooltipBox.below:before {
+                bottom: 100%;
+                -webkit-transform: rotate(180deg);
+                -moz-transform: rotate(180deg);
+                -o-transform: rotate(180deg);
+                -ms-transform: rotate(180deg);
+                transform: rotate(180deg);
+            }
+        </style>
+    </template>
+</dom-module>
+
+
