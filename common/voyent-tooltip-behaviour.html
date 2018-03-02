@@ -28,8 +28,8 @@
          * @param tooltipData {object} - An object containing the various pieces required to render tooltips.
          * @param tooltipData.tooltipSelector {string} - The query selector for locating the tooltip.
          * @param tooltipData.targetSelector {string} - The query selector for locating the tooltip target.
-         * @param tooltipData.position {string} - The position of the tooltip in relation to the target, one of:
-         *        above||below||centered||centered-top||centered-bottom. If `above` or `below` an arrow will be rendered.
+         * @param tooltipData.position {string} - The position of the tooltip in relation to the target, one of above,
+         * below, centered, centered-top, centered-bottom, left-top. If `above` or `below` an arrow will be rendered.
          * @param tooltipData.maxWidth {string} - The max width of the tooltip, must include % or px character. If not provided we will default to the width of the target.
          * @param tooltipData.topPadding {number} - The top padding to apply to the tooltip position.
          * @param tooltipData.leftPadding {number} - The left padding to apply to the tooltip position.
@@ -157,7 +157,6 @@
             for (var i=0; i<this._tooltipsList.length; i++) {
                 this._hideTooltip(this._tooltipsList[i].tooltipSelector);
             }
-            setTimeout(this._showTooltips.bind(this),2000);
         },
 
         /**
