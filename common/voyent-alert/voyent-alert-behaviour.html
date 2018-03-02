@@ -789,7 +789,6 @@
                             json.properties.speed = Number(_outer._alertSpeed);
                             json.properties.speedUnit = _outer._alertSpeedUnit || 'kph';
                         }
-                        json.timezoneOffset = new Date().getTimezoneOffset();
                     }
                     //Add fallback zone, we'll always add it the properties.
                     json.properties[_outer._FALLBACK_ZONE_ID] = {
