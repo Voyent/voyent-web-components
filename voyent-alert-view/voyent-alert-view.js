@@ -190,6 +190,8 @@ Polymer({
                 draggable: false,
                 icon: this.pathtoimages+'/img/user_marker.png'
             });
+            //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
+            this._addFullscreenClickListener(this._userLocationMarker);
         }
     },
 
@@ -209,19 +211,21 @@ Polymer({
                 this._drawUser(locations[i]);
                 continue;
             }
+            var marker = new google.maps.Marker({
+                position: new google.maps.LatLng(
+                    locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
+                ),
+                map: this._map,
+                draggable: false,
+                icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByEndpointType(locations[i].endpointType)
+            });
+            //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
+            this._addFullscreenClickListener(marker);
             this.push('_myLocations',new this._MyLocation(
                 locations[i].properties.vras.id,
                 locations[i].properties.vras.name,
                 locations[i].properties.vras.type === 'residential',
-                new google.maps.Marker({
-                    position: new google.maps.LatLng(
-                        locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
-                    ),
-                    map: this._map,
-                    draggable: false,
-                    icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByEndpointType(locations[i].endpointType)
-                }),
-                null
+                marker
             ));
         }
     },
@@ -260,7 +264,8 @@ Polymer({
         this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(fullscreenButton);
         fullscreenButton.onclick = this._toggleFullscreenContainer.bind(this);
         this._fullscreenControlAdded = true;
-        this._addFullscreenMapClickListener();
+        //Add click listener to the map so the user can click on the map to enable fullscreen.
+        this._addFullscreenClickListener(this._map);
     },
 
     /**
@@ -336,18 +341,22 @@ Polymer({
         if (dialog) {
             dialog.setAttribute('hidden','hidden');
         }
-        // Add the fullscreen map click listener again.
-        this._addFullscreenMapClickListener();
     },
 
     /**
-     * Adds a map click listener for mobile devices so that when the map is not fullscreen clicking on the map will enable
-     * fullscreen mode. This listener is only added once so that it does not fire again after fullscreen is enabled.
+     * Adds a map click listener for mobile devices so that when the map
+     * is windowed clicking on the map will enable fullscreen mode.
      * @private
      */
-    _addFullscreenMapClickListener: function() {
-        if (this.isMobile) {
-            google.maps.event.addListenerOnce(this._map, 'click', this._toggleFullscreenContainer.bind(this));
+    _addFullscreenClickListener: function(mapElement) {
+        var _this = this;
+        if (this.isMobile && this.view === 'notification') {
+            google.maps.event.addListener(mapElement, 'click', function() {
+                if (_this._isFullscreenMode) {
+                    return;
+                }
+                _this._toggleFullscreenContainer();
+            });
         }
     },
 

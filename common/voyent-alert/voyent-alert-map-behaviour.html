@@ -578,8 +578,7 @@
                         map: this._map,
                         draggable: this.nodeName === 'VOYENT-MY-LOCATIONS',
                         icon: this._MY_LOCATION_ICON_INACTIVE
-                    }),
-                    null
+                    })
                 ));
             }
         },
@@ -704,6 +703,10 @@
                                 this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates), properties.name,
                                 properties.opacity, properties.colour, properties.messageTemplate, properties.notificationFilter, zIndex)
                             );
+                        }
+                        if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                            //Add click listener to the zone so the user can click anywhere on the map to enable fullscreen.
+                            this._addFullscreenClickListener(zones[zones.length-1].shapeOverlay);
                         }
                         zIndex--;
                     }

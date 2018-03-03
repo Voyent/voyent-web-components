@@ -506,7 +506,7 @@ Polymer({
     _createLocation: function(marker,msgPrefix,skipSave) {
         var newLocation = new this._MyLocation(
             null, this._selectedPlace ? this._selectedPlace.name : this._locationName,
-            this._selectedPlace ? false : this._isPrivateResidence,marker, null
+            this._selectedPlace ? false : this._isPrivateResidence,marker
         );
         if (!skipSave) {
             this._saveLocation(newLocation,msgPrefix);
