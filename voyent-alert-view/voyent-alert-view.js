@@ -310,8 +310,8 @@ Polymer({
             }
             // Toggle button visiblity so that the close button is displayed
             var buttonContainer = this.querySelector('#fullscreenBttn');
-            buttonContainer.querySelector('.close-button').removeAttribute('hidden');
-            buttonContainer.querySelector('.open-button').setAttribute('hidden','hidden');
+            buttonContainer.querySelector('#closeButton').removeAttribute('hidden');
+            buttonContainer.querySelector('#openButton').setAttribute('hidden','hidden');
             // Move the map to the dialog container, adjust the size and add the esc key listener
             dialog.append(mapDiv);
             this.resizeMap();
@@ -333,8 +333,8 @@ Polymer({
         }
         // Toggle button visiblity so that the fullscreen button is displayed
         var buttonContainer = this.querySelector('#fullscreenBttn');
-        buttonContainer.querySelector('.open-button').removeAttribute('hidden');
-        buttonContainer.querySelector('.close-button').setAttribute('hidden','hidden');
+        buttonContainer.querySelector('#openButton').removeAttribute('hidden');
+        buttonContainer.querySelector('#closeButton').setAttribute('hidden','hidden');
         // Move the map to the inline container, adjust the size and remove the esc key listener
         var mapDiv = this._map.getDiv();
         this.querySelector('#container').append(mapDiv);

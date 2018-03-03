@@ -57,29 +57,31 @@ Example:
                 width: calc(100% - 265px);
                 margin-left:250px;
             }
-            .close-button {
-                right: 7px;
-                bottom: 7px;
-            }
-            [hidden] {
-                display: none !important;
-            }
-            .customMapBttn {
+            .custom-control div {
+                overflow:hidden;
                 border-radius: 5px;
+            }
+            #openButton {
+                width: 25px;
+                height: 25px;
+            }
+            #closeButton paper-button {
+                font-size:12px;
+                margin:0;
+                padding:7px;
             }
         </style>
         <div id="container">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
         </div>
         <div id="fullscreenContainer" data-is-mobile$="[[isMobile]]" data-mode$="[[mode]]" hidden></div>
-        <div id="fullscreenBttn" class="customMapBttnWrap no-select" hidden>
-            <div class="customMapBttn" title="Toggle fullscreen view">
-                <span>
-                    <div class="customMapBttnImg">
-                        <img src="../common/voyent-alert/img/fullscreen_bttn.png" class="open-button">
-                        <paper-icon-button icon="close" class="close-button no-select" hidden></paper-icon-button>
-                    </div>
-                </span>
+
+        <div id="fullscreenBttn" class="custom-control no-select" hidden>
+            <div id="openButton" title="Enter Fullscreen Mode">
+                <img src="../common/voyent-alert/img/fullscreen_bttn.png">
+            </div>
+            <div id="closeButton" title="Exit Fullscreen Mode" hidden>
+                <paper-button>Exit Fullscreen</paper-button>
             </div>
         </div>
     </template>
