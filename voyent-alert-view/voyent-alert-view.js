@@ -40,6 +40,10 @@ Polymer({
      */
     viewAlert: function(templateId,locations) {
         var _this = this;
+        //Always start the view with a windowed component.
+        if (this._isFullscreenMode) {
+            this._toggleFullscreenContainer();
+        }
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
                 _this.fire('message-error','Unable to load template, id not provided');
