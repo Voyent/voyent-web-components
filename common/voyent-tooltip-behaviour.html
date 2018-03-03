@@ -116,6 +116,7 @@
         _repositionTooltips: function() {
             if (!this._tooltipsList) { return; }
             for (var i=0; i<this._tooltipsList.length; i++) {
+                if (this._tooltipsList[i].tooltipElement.style.display === 'none') { continue; }
                 this._positionTooltip(
                     this._tooltipsList[i].tooltipElement,
                     this._tooltipsList[i].targetElement,
