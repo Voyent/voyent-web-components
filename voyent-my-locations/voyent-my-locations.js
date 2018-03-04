@@ -366,7 +366,7 @@ Polymer({
                     tooltipSelector:'#addLocationTooltip',
                     targetSelector:'#locationButton paper-button',
                     position:"below",
-                    topPadding:(_this.isMobile ? _this._tooltipPadding : 0) - 20
+                    topPadding:(_this.isMobile ? _this._tooltipPadding : 0) - 25
                 },
                 {
                     tooltipSelector:'#mapCenterTooltip',
