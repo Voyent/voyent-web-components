@@ -28,6 +28,13 @@ Polymer({
         this._locationUpdatePending = false;
         //A flag for counting the keypresses to the autocomplete entry so we can reset state as necessary.
         this._autocompleteKeyupCount = 0;
+        //Padding to apply to the tooltip, represents the VRAS app header height.
+        this._tooltipPadding = 64;
+        //Set the values of the map tooltip positioning as it changes for the various view options.
+        this._mapTooltipDesktopPos = 'centered-top';
+        this._mapTooltipPortraitPos = 'centered-bottom';
+        this._mapTooltipLandscapePos = 'left-bottom';
+        //Initialize other pieces that depend on the map.
         this._mapIsReady().then(function() {
             //Setup the infoWindow.
             _this._setupInfoWindow();
@@ -45,8 +52,6 @@ Polymer({
                 _this._adjustBoundsAndPan();
             });
         });
-        //Padding to apply to the tooltip, represents the VRAS app header height.
-        _this._tooltipPadding = 64;
     },
 
     observers: ['_myLocationsUpdated(_myLocations.length)'],
@@ -372,9 +377,9 @@ Polymer({
                     topPadding:(_this.isMobile ? _this._tooltipPadding : 0) - 25
                 },
                 {
-                    tooltipSelector:'#mapCenterTooltip',
+                    tooltipSelector:'#mapTooltip',
                     targetSelector:'#map',
-                    position:!_this.isMobile ? 'centered-top' : (_this.isPortrait ? 'centered-bottom' : 'left-top'),
+                    position:!_this.isMobile ? _this._mapTooltipDesktopPos : (_this.isPortrait ? _this._mapTooltipPortraitPos : _this._mapTooltipLandscapePos),
                     topPadding:!_this.isMobile ? -_this._tooltipPadding : (_this.isPortrait ? _this._tooltipPadding : 0)
                 }
             ]);
@@ -393,7 +398,7 @@ Polymer({
         var _this = this;
         //Adjust tooltip position on orientation changes. Add a slight delay to allow the device to switch orientations.
         setTimeout(function() {
-            _this._tooltipsList[1].position = isPortrait ? 'centered-bottom' : 'left-top';
+            _this._tooltipsList[1].position = isPortrait ? _this._mapTooltipPortraitPos : _this._mapTooltipLandscapePos;
             _this._tooltipsList[1].topPadding = isPortrait ? _this._tooltipPadding : 0;
             _this._repositionTooltips();
         },400);
