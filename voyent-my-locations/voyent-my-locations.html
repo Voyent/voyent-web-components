@@ -31,9 +31,6 @@ Example:
                 font-weight: 400;
                 -webkit-font-smoothing: antialiased;
             }
-            .selected-place {
-                text-align:center;
-            }
             .selected-place .address {
                 margin: 10px auto 10px auto;
             }
@@ -51,6 +48,9 @@ Example:
             }
             .selected-place .name {
                 font-weight:bold;
+            }
+            .pin-drop paper-button {
+                margin: 10px 0;
             }
             .autocomplete {
                 padding-top: 15px;
@@ -139,39 +139,62 @@ Example:
                 </div>
             </template>
             <template is="dom-if" if="[[!_loadedLocation]]">
-                <div class="selected-place">
-                    <paper-input id="placeName"
-                                 label="Location Name"
-                                 placeholder="New Name"
-                                 maxlength="30"
-                                 autocapitalize="words"
-                                 value="{{_selectedPlace.name::input}}">
-                    </paper-input>
-                    <div class="address">
-                        <div>
-                            <template is="dom-if" if="[[_selectedPlace.streetNumber]]">
-                                <span>[[_selectedPlace.streetNumber]]&nbsp;</span>
-                            </template>
-                            <template is="dom-if" if="[[_selectedPlace.route]]">
-                                <span>[[_selectedPlace.route]]&nbsp;</span>
-                            </template>
+                <template is="dom-if" if="[[_selectedPlace]]">
+                    <div class="selected-place text-center">
+                        <paper-input id="placeName"
+                                     label="Location Name"
+                                     placeholder="New Name"
+                                     maxlength="30"
+                                     autocapitalize="words"
+                                     value="{{_selectedPlace.name::input}}">
+                        </paper-input>
+                        <div class="address">
+                            <div>
+                                <template is="dom-if" if="[[_selectedPlace.streetNumber]]">
+                                    <span>[[_selectedPlace.streetNumber]]&nbsp;</span>
+                                </template>
+                                <template is="dom-if" if="[[_selectedPlace.route]]">
+                                    <span>[[_selectedPlace.route]]&nbsp;</span>
+                                </template>
+                            </div>
+                            <div>
+                                <template is="dom-if" if="[[_selectedPlace.locality]]">
+                                    <span>[[_selectedPlace.locality]],&nbsp;</span>
+                                </template>
+                                <template is="dom-if" if="[[_selectedPlace.political]]">
+                                    <span>[[_selectedPlace.political]]&nbsp;</span>
+                                </template>
+                                <template is="dom-if" if="[[_selectedPlace.postalCode]]">
+                                    <span>[[_selectedPlace.postalCode]]&nbsp;</span>
+                                </template>
+                            </div>
                         </div>
-                        <div>
-                            <template is="dom-if" if="[[_selectedPlace.locality]]">
-                                <span>[[_selectedPlace.locality]],&nbsp;</span>
-                            </template>
-                            <template is="dom-if" if="[[_selectedPlace.political]]">
-                                <span>[[_selectedPlace.political]]&nbsp;</span>
-                            </template>
-                            <template is="dom-if" if="[[_selectedPlace.postalCode]]">
-                                <span>[[_selectedPlace.postalCode]]&nbsp;</span>
-                            </template>
-                        </div>
+                        <paper-button raised title="Add Location" on-click="_addPlaceToMyLocations">
+                            Add Location
+                        </paper-button>
                     </div>
-                    <paper-button class="add-place-bttn" raised title="Add to My Locations" on-click="_addPlaceToMyLocations">
-                        Add to My Locations
-                    </paper-button>
-                </div>
+                </template>
+                <template is="dom-if" if="[[_pinDropLocation]]">
+                    <paper-input id="pinDropName"
+                                 tabindex="1"
+                                 label="Location Name"
+                                 maxlength="30"
+                                 placeholder="New Name"
+                                 autocapitalize="words"
+                                 on-keyup="_handleInfoWindowKeyPress"
+                                 value="{{_pinDropLocation.name::input}}">
+                    </paper-input>
+                    <div class="toggle-button">
+                        <paper-toggle-button id="isPrivateResidence" class="inline valign-middle" tabindex="2"
+                                             checked="{{_pinDropLocation.isPrivateResidence}}"></paper-toggle-button>
+                        <span class="private-residence valign-middle no-select">Private Residence</span>
+                    </div>
+                    <div class="pin-drop text-center">
+                        <paper-button raised title="Add Location" on-click="_addPinDropToMyLocations">
+                            Add Location
+                        </paper-button>
+                    </div>
+                </template>
             </template>
         </div>
         <div id="locationButton" class="custom-control" hidden>

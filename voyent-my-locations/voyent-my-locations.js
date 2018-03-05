@@ -22,6 +22,8 @@ Polymer({
         this._loadedLocation = null;
         //An object containing details of the last Google Place search result (after clicking a place icon on map).
         this._selectedPlace = null;
+        //An object containing details of the a newly created pin drop location.
+        this._pinDropLocation = null;
         //A flag indicating if the loaded location should be updated, used after info window closures.
         this._locationUpdatePending = false;
         //A flag for counting the keypresses to the autocomplete entry so we can reset state as necessary.
@@ -89,9 +91,6 @@ Polymer({
         //Close the info window and specify we don't want to save the location.
         this._closeInfoWindow(true);
         this._loadedLocation.removeFromMap();
-        //If the location is not persisted yet then just remove it from the map. This will
-        //occur when a location is created via pin drop and then immediately deleted.
-        if (!this._loadedLocation.isPersisted) { return; }
         var query = {"location.properties.vras.id":this._loadedLocation.id};
         voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
             var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
@@ -136,7 +135,8 @@ Polymer({
         var _this = this;
         this._openDialog(function () {
             setTimeout(function() {
-                _this._createLocation(new google.maps.Marker({
+                _this._createLocation(_this._locationName,_this._isPrivateResidence,
+                    new google.maps.Marker({
                     position: _this._placeCoordinates,
                     map: _this._map,
                     draggable: true,
@@ -150,17 +150,11 @@ Polymer({
     },
 
     /**
-     * Handles saving a location after its info window properties have changed as well as initial save of a pin drop location.
+     * Handles saving a location after its info window properties have changed.
      * @private
      */
     _savePendingOrNewLocation: function() {
-        if (this._loadedLocation && (this._locationUpdatePending || !this._loadedLocation.name)) {
-            //If no name is specified then it means they just created a pin
-            //drop location and didn't set one before closing the info window.
-            //So we will set one manually and then save the location.
-            if (!this._loadedLocation.name) {
-                this._loadedLocation.name = 'New Location';
-            }
+        if (this._loadedLocation && this._locationUpdatePending) {
             this._saveLocation(this._loadedLocation,this._loadedLocation.isPersisted ? 'updated' : 'created');
             this._locationUpdatePending = false;
         }
@@ -211,6 +205,7 @@ Polymer({
                 //Prevent the default info window from opening.
                 e.stop();
                 _this._loadedLocation = null;
+                _this._pinDropLocation = null;
                 _this._placesService.getDetails({placeId: e.placeId}, function(place,status) {
                     if (status === 'OK') {
                         _this._selectedPlace = _this._buildPlaceDetails(place);
@@ -243,7 +238,7 @@ Polymer({
     _toggleInfoWindow: function(myLocation) {
         var _this = this;
         //If the selected infoWindow is already opened then close it.
-        if (this._infoWindowOpen && myLocation === this._loadedLocation) {
+        if (this._infoWindowOpen && myLocation && myLocation === this._loadedLocation) {
             this._closeInfoWindow();
             this._loadedLocation.nameOverlay.displayAndDraw();
         }
@@ -281,6 +276,14 @@ Polymer({
                     //Focus on the name input.
                     setTimeout(function() {
                         _this.querySelector('#placeName').focus();
+                    },0);
+                }
+                else if (_this._pinDropLocation) {
+                    _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
+                    _this._infoWindow.open(_this._map);
+                    //Focus on the name input.
+                    setTimeout(function() {
+                        _this.querySelector('#pinDropName').focus();
                     },0);
                 }
                 else { return; }
@@ -456,18 +459,17 @@ Polymer({
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
             //If the user holds the mouse down for one second then create a new location at that position.
             _this._mouseHoldTimer = setTimeout(function() {
-                var marker = new google.maps.Marker({
-                    position: e.latLng,
-                    map: _this._map,
-                    draggable: true,
-                    icon: _this._MY_LOCATION_ICON_INACTIVE
-                });
-                //Without this flag the infoWindow will be closed immediately
-                //after releasing the mouse after location creation
-                _this._ignoreMapClick = true;
-                //Create the new location and open the info window so the user can customize the name. Don't save the location
-                //immediately on creation because the user will likely edit the name, we can save when they close it.
-                _this._toggleInfoWindow(_this._createLocation(marker,'created',true));
+            _this._loadedLocation = null;
+            _this._selectedPlace = null;
+            _this._pinDropLocation = {
+                    "name":'',
+                    "isPrivateResidence":false,
+                    "latLng":e.latLng
+            };
+            _this._toggleInfoWindow(null);
+            //Without this flag the infoWindow will be closed immediately
+            //after releasing the mouse after location creation
+            _this._ignoreMapClick = true;
             },1000);
         });
         google.maps.event.addListener(this._map, 'mouseup', function() {
@@ -479,17 +481,36 @@ Polymer({
     },
 
     /**
+     * Adds a new location that was created via pin drop.
+     * @private
+     */
+    _addPinDropToMyLocations: function() {
+        if (!this._pinDropLocation) { return; }
+        if (!this._validateLocationName(this._pinDropLocation.name)) { return; }
+        this._loadedLocation = this._createLocation(this._pinDropLocation.name,this._pinDropLocation.isPrivateResidence,
+            new google.maps.Marker({
+                map: this._map,
+                position: this._pinDropLocation.latLng,
+                draggable: true,
+                icon: this._MY_LOCATION_ICON_INACTIVE
+        }),'created');
+        this._pinDropLocation = null;
+        this._closeInfoWindow();
+    },
+
+    /**
      * Adds the last selected Google Place to the map as a new location.
      * @private
      */
     _addPlaceToMyLocations: function() {
         if (!this._selectedPlace) { return; }
         if (!this._validateLocationName(this._selectedPlace.name)) { return; }
-        this._loadedLocation = this._createLocation(new google.maps.Marker({
-            map: this._map,
-            position: this._selectedPlace.latLng,
-            draggable: true,
-            icon: this._MY_LOCATION_ICON_INACTIVE
+        this._loadedLocation = this._createLocation(this._selectedPlace.name,false,
+            new google.maps.Marker({
+                map: this._map,
+                position: this._selectedPlace.latLng,
+                draggable: true,
+                icon: this._MY_LOCATION_ICON_INACTIVE
         }),'created');
         this._selectedPlace = null;
         this._closeInfoWindow();
@@ -497,17 +518,16 @@ Polymer({
 
     /**
      * Builds a location record from the passed marker and returns it.
+     * @param name
+     * @param isPrivateResidence
      * @param marker
      * @param msgPrefix
      * @param skipSave
      * @returns {Voyent.AlertBehaviour._MyLocation}
      * @private
      */
-    _createLocation: function(marker,msgPrefix,skipSave) {
-        var newLocation = new this._MyLocation(
-            null, this._selectedPlace ? this._selectedPlace.name : this._locationName,
-            this._selectedPlace ? false : this._isPrivateResidence,marker
-        );
+    _createLocation: function(name,isPrivateResidence,marker,msgPrefix,skipSave) {
+        var newLocation = new this._MyLocation(null, name, isPrivateResidence ,marker);
         if (!skipSave) {
             this._saveLocation(newLocation,msgPrefix);
         }
