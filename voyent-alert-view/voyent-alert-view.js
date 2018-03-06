@@ -354,7 +354,7 @@ Polymer({
      */
     _addFullscreenClickListener: function(mapElement) {
         var _this = this;
-        if (this.isMobile && this.mode === 'notification') {
+        if (this.mode === 'notification') {
             google.maps.event.addListener(mapElement, 'click', function() {
                 if (_this._isFullscreenMode) {
                     return;
