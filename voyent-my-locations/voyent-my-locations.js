@@ -464,25 +464,57 @@ Polymer({
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
             //If the user holds the mouse down for one second then create a new location at that position.
             _this._mouseHoldTimer = setTimeout(function() {
-            _this._loadedLocation = null;
-            _this._selectedPlace = null;
-            _this._pinDropLocation = {
-                    "name":'',
-                    "isPrivateResidence":false,
-                    "latLng":e.latLng
-            };
-            _this._toggleInfoWindow(null);
-            //Without this flag the infoWindow will be closed immediately
-            //after releasing the mouse after location creation
-            _this._ignoreMapClick = true;
+                //We require this flag so the infoWindow will not be closed immediately after releasing the mouse.
+                _this._ignoreMapClick = true;
+                //In order for the map to exit panning mode in desktop after the mouse hold operation we need the map to catch
+                //the mouseup event and not the newly rendered infoWindow. To do this we will render the infoWindow slightly
+                //above the position that the user clicked so that when they release the mouse it is received by the map.
+                var point = _this._map.getProjection().fromLatLngToPoint(e.latLng);
+                var latLng = _this._map.getProjection().fromPointToLatLng(
+                    new google.maps.Point(point.x,point.y-_this._getNewPinDropYPositionBasedonZoom())
+                );
+                //Reset some values and create a container for our pin drop location data.
+                _this._loadedLocation = null;
+                _this._selectedPlace = null;
+                _this._pinDropLocation = {
+                        "name":'',
+                        "isPrivateResidence":false,
+                        "latLng":latLng
+                };
+                //Open the infoWindow.
+                _this._toggleInfoWindow(null);
+                //Set the latLng position of the new location to where the user actually clicked rather than
+                //slightly above due to the above noted requirement. We will apply this position to the
+                //infoWindow position on mouseup and the location will be created at this location.
+                setTimeout(function() {
+                    _this._pinDropLocation.latLng = e.latLng;
+                },0);
             },1000);
         });
         google.maps.event.addListener(this._map, 'mouseup', function() {
+            //Adjust the infoWindow position to where the user actually clicked.
+            if (_this._pinDropLocation) {
+                _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
+            }
             clearTimeout(_this._mouseHoldTimer);
         });
         google.maps.event.addListener(this._map, 'drag', function() {
             clearTimeout(_this._mouseHoldTimer);
         });
+    },
+
+    /**
+     * We initially render the pin drop infoWindow slightly above the position of where they clicked
+     * but the amount of adjustment required varies at each zoom level. This function will return
+     * the y coordinate amount that the infoWindow should be moved up for each zoom level.
+     * @returns {number}
+     * @private
+     */
+    _getNewPinDropYPositionBasedonZoom: function() {
+        //We know that at zoom level 0 we require a 1.6 coordinate movement and each zoom level is 50% more
+        //scaled than the last so we will divide by 2 x number of times where x is the current zoom level.
+        var pixelAdjustementAtZoomLevelZero = 1.6;
+        return pixelAdjustementAtZoomLevelZero/(Math.pow(2,this._map.getZoom()));
     },
 
     /**
