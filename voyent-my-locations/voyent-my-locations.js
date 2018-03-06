@@ -511,9 +511,10 @@ Polymer({
      * @private
      */
     _getNewPinDropYPositionBasedonZoom: function() {
-        //We know that at zoom level 0 we require a 1.6 coordinate movement and each zoom level is 50% more
+        //We know that at zoom level 0 we require 8 y coordinates to space the infoWindow far enough above the
+        //mouse to ensure the map receives the mouseout event. We also know that each zoom level is 50% more
         //scaled than the last so we will divide by 2 x number of times where x is the current zoom level.
-        var pixelAdjustementAtZoomLevelZero = 1.6;
+        var pixelAdjustementAtZoomLevelZero = 8;
         return pixelAdjustementAtZoomLevelZero/(Math.pow(2,this._map.getZoom()));
     },
 
