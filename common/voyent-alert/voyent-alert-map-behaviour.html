@@ -456,11 +456,9 @@
                 voyent.locate.findRegions({realm:_this.realm, account:_this.account,
                                            query:{"_id":_this.realm+"_region"}
                 }).then(function (regions) {
-                    if (!regions) { return resolve(); }
+                    if (!regions || !regions[0]) { return resolve(); }
                     //Filter out the alert regions and we should only be left with the static area Region.
-                    _this._drawRegion(regions.filter(function(region) {
-                        return !region.location.properties || !region.location.properties.alertId;
-                    })[0]);
+                    _this._drawRegion(regions[0]);
                     resolve();
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching or drawing Region: ' + (error.responseText || error.message || error));
