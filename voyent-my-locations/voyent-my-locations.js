@@ -503,6 +503,7 @@ Polymer({
         });
         //Clear on zoom_changed so pinch to zoom on mobile doesn't create a location.
         google.maps.event.addListener(this._map, 'zoom_changed', function() {
+            console.log('zoom_changed');
             clearTimeout(_this._mouseHoldTimer);
         });
     },
