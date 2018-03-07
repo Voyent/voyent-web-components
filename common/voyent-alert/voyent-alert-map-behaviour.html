@@ -1160,8 +1160,10 @@
                     if (!zoneStacks.length) {
                         //If the view is alert notification detail then don't zoom on the region as we will always have 1 location to pan to.
                         if (this.mode === 'notification') {
-                            bounds.extend(this._areaRegion.bounds.getNorthEast());
-                            bounds.extend(this._areaRegion.bounds.getSouthWest());
+                            if (this._areaRegion && this._areaRegion.bounds) {
+                                bounds.extend(this._areaRegion.bounds.getNorthEast());
+                                bounds.extend(this._areaRegion.bounds.getSouthWest());
+                            }
                         }
                         else {
                             //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
