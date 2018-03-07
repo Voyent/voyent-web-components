@@ -462,6 +462,8 @@ Polymer({
     _setupDrawingListeners: function () {
         var _this = this;
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
+            //Ensure we only setup one interval. Mousedown will fire twice on mobile for pinch events.
+            if (_this._mouseHoldTimer) { return; }
             //If the user holds the mouse down for one second then create a new location at that position.
             _this._mouseHoldTimer = setTimeout(function() {
                 //We require this flag so the infoWindow will not be closed immediately after releasing the mouse.
@@ -497,9 +499,11 @@ Polymer({
                 _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
             }
             clearTimeout(_this._mouseHoldTimer);
+            _this._mouseHoldTimer = null;
         });
         google.maps.event.addListener(this._map, 'drag', function() {
             clearTimeout(_this._mouseHoldTimer);
+            _this._mouseHoldTimer = null;
         });
     },
 
