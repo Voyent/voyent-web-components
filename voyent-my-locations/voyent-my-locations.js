@@ -501,6 +501,10 @@ Polymer({
         google.maps.event.addListener(this._map, 'drag', function() {
             clearTimeout(_this._mouseHoldTimer);
         });
+        //Clear on zoom_changed so pinch to zoom on mobile doesn't create a location.
+        google.maps.event.addListener(this._map, 'zoom_changed', function() {
+            clearTimeout(_this._mouseHoldTimer);
+        });
     },
 
     /**
