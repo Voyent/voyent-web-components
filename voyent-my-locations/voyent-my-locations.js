@@ -464,10 +464,8 @@ Polymer({
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
             //Ensure we only setup one interval. Mousedown will fire twice on mobile for pinch events.
             if (_this._mouseHoldTimer) { return; }
-            console.log('mousedown');
             //If the user holds the mouse down for one second then create a new location at that position.
             _this._mouseHoldTimer = setTimeout(function() {
-                console.log('creating pin drop location');
                 //We require this flag so the infoWindow will not be closed immediately after releasing the mouse.
                 _this._ignoreMapClick = true;
                 //In order for the map to exit panning mode in desktop after the mouse hold operation we need the map to catch
@@ -496,7 +494,6 @@ Polymer({
             },1000);
         });
         google.maps.event.addListener(this._map, 'mouseup', function() {
-            console.log('mouseup');
             //Adjust the infoWindow position to where the user actually clicked.
             if (_this._pinDropLocation) {
                 _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
@@ -505,7 +502,6 @@ Polymer({
             _this._mouseHoldTimer = null;
         });
         google.maps.event.addListener(this._map, 'drag', function() {
-            console.log('drag');
             clearTimeout(_this._mouseHoldTimer);
             _this._mouseHoldTimer = null;
         });
