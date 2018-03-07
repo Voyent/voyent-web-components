@@ -462,6 +462,8 @@ Polymer({
     _setupDrawingListeners: function () {
         var _this = this;
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
+            //Ensure we only setup one interval. Mousedown will fire twice on mobile for pinch events.
+            if (_this._mouseHoldTimer) { return; }
             console.log('mousedown');
             //If the user holds the mouse down for one second then create a new location at that position.
             _this._mouseHoldTimer = setTimeout(function() {
@@ -500,33 +502,12 @@ Polymer({
                 _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
             }
             clearTimeout(_this._mouseHoldTimer);
+            _this._mouseHoldTimer = null;
         });
         google.maps.event.addListener(this._map, 'drag', function() {
             console.log('drag');
             clearTimeout(_this._mouseHoldTimer);
-        });
-        //Clear on zoom_changed so pinch to zoom on mobile doesn't create a location.
-        google.maps.event.addListener(this._map, 'zoom_changed', function() {
-            console.log('zoom_changed');
-            clearTimeout(_this._mouseHoldTimer);
-        });
-        window.addEventListener('gesturestart',function() {
-            console.log('gesturestart');
-        });
-        window.addEventListener('gesturechange',function() {
-            console.log('gesturechange');
-        });
-        window.addEventListener('gestureend',function() {
-            console.log('gestureend');
-        });
-        window.addEventListener('pointerdown',function() {
-            console.log('pointerdown');
-        });
-        window.addEventListener('pointermove',function() {
-            console.log('pointermove');
-        });
-        window.addEventListener('pointerup',function() {
-            console.log('pointerup');
+            _this._mouseHoldTimer = null;
         });
     },
 
