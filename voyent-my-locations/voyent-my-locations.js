@@ -462,8 +462,10 @@ Polymer({
     _setupDrawingListeners: function () {
         var _this = this;
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
+            console.log('mousedown');
             //If the user holds the mouse down for one second then create a new location at that position.
             _this._mouseHoldTimer = setTimeout(function() {
+                console.log('creating pin drop location');
                 //We require this flag so the infoWindow will not be closed immediately after releasing the mouse.
                 _this._ignoreMapClick = true;
                 //In order for the map to exit panning mode in desktop after the mouse hold operation we need the map to catch
@@ -492,6 +494,7 @@ Polymer({
             },1000);
         });
         google.maps.event.addListener(this._map, 'mouseup', function() {
+            console.log('mouseup');
             //Adjust the infoWindow position to where the user actually clicked.
             if (_this._pinDropLocation) {
                 _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
@@ -499,12 +502,31 @@ Polymer({
             clearTimeout(_this._mouseHoldTimer);
         });
         google.maps.event.addListener(this._map, 'drag', function() {
+            console.log('drag');
             clearTimeout(_this._mouseHoldTimer);
         });
         //Clear on zoom_changed so pinch to zoom on mobile doesn't create a location.
         google.maps.event.addListener(this._map, 'zoom_changed', function() {
             console.log('zoom_changed');
             clearTimeout(_this._mouseHoldTimer);
+        });
+        window.addEventListener('gesturestart',function() {
+            console.log('gesturestart');
+        });
+        window.addEventListener('gesturechange',function() {
+            console.log('gesturechange');
+        });
+        window.addEventListener('gestureend',function() {
+            console.log('gestureend');
+        });
+        window.addEventListener('pointerdown',function() {
+            console.log('pointerdown');
+        });
+        window.addEventListener('pointermove',function() {
+            console.log('pointermove');
+        });
+        window.addEventListener('pointerup',function() {
+            console.log('pointerup');
         });
     },
 
