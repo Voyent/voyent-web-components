@@ -10,7 +10,7 @@
 <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../../paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../common/voyent-tooltip-styles.html">
-
+<link rel="import" href="../common/voyent-custom-validator.html">
 
 <!--
 Displays a map-based tool to allow users to create and edit locations of interest.
@@ -111,6 +111,9 @@ Example:
                 margin:0;
             }
         </style>
+        <voyent-custom-validator id="placesSearchValidator" validator-name="placesSearchValidator"></voyent-custom-validator>
+        <voyent-custom-validator id="locationNameValidator" validator-name="locationNameValidator"></voyent-custom-validator>
+
         <div id="container">
             <div id="map"></div>
         </div>
@@ -203,15 +206,20 @@ Example:
         <paper-dialog id="modalDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
                       on-iron-overlay-opened="_fixModalStacking">
             <p class="dialog-title">New Location Details</p>
+            <p class="no-margin">Start typing and then select an item from the list...</p>
             <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" autofocus on-keyup="_handleAutocompleteKeyPress"
                          maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
-                         on-keyup="_dialogKeyUp" placeholder="Enter an address, postal code, or business name"></paper-input>
-            <paper-input class="inline no-margin name-input" autofocus no-label-float tabindex="5"
+                         on-keyup="_dialogKeyUp" placeholder="Search Google Maps"
+                         title="Enter an address, postal code, or business name"
+                         validator="placesSearchValidator"></paper-input>
+            <paper-input id="locationName" class="inline no-margin name-input" autofocus no-label-float tabindex="5"
                          maxlength="30" autocapitalize="words" placeholder="Location Name"
-                         on-keyup="_dialogKeyUp" value="{{_locationName}}"></paper-input>
+                         on-keyup="_dialogKeyUp" value="{{_locationName}}"
+                         title="Enter a location name"
+                         validator="locationNameValidator"></paper-input>
             <div class="inline no-margin toggle-button">
                 <paper-toggle-button class="inline no-margin valign-top" tabindex="6" on-keyup="_dialogKeyUp"
-                                     checked="{{_isPrivateResidence}}"></paper-toggle-button>
+                                     checked="{{_isPrivateResidence}}" title="Is this a private residence?"></paper-toggle-button>
                 <span class="private-residence valign-middle no-select">Private Residence</span>
             </div>
             <div class="dialog-bttns">

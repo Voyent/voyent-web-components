@@ -1,0 +1,15 @@
+<link rel="import" href="../../iron-validator-behavior/iron-validator-behavior.html">
+
+<dom-module id="voyent-custom-validator">
+    <script>
+        Polymer({
+            is: "voyent-custom-validator",
+            behaviors: [
+                Polymer.IronValidatorBehavior
+            ]
+            // Don't specify a validate function here, instead we will specify it on a
+            // per-component basis as required. This is so we only need to create a single
+            // custom validator component which can be re-used as many times as required.
+        })
+    </script>
+</dom-module>
