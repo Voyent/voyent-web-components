@@ -36,6 +36,7 @@
          * @private
          */
         _initializeTooltip: function(tooltipData) {
+            var _this = this;
             // Ensure we can find the tooltip and target
             var tooltip = this.querySelector(tooltipData.tooltipSelector) || document.querySelector(tooltipData.tooltipSelector);
             var target = this.querySelector(tooltipData.targetSelector) || document.querySelector(tooltipData.targetSelector);
@@ -50,7 +51,6 @@
                 return;
             }
             tooltipData.targetElement = target;
-            target.addEventListener('mousedown',this._hideTooltips.bind(this),{once:true});
             tooltip.classList.add(tooltipData.position);
 
             // Display the tooltip
@@ -175,6 +175,31 @@
             var tooltip = this.querySelector(tooltipSelector) || document.querySelector(tooltipSelector);
             if (tooltip) {
                 tooltip.style.display = 'none';
+            }
+        },
+
+        /**
+         * Toggles all the tooltips stored in tooltipData.
+         * @private
+         */
+        _toggleTooltips: function() {
+            for (var i=0; i<this._tooltipsList.length; i++) {
+                this._toggleTooltip(this._tooltipsList[i].tooltipSelector);
+            }
+        },
+
+        /**
+         * Toggles the tooltip specified by the passed tooltipSelector.
+         * @param tooltipSelector
+         * @private
+         */
+        _toggleTooltip: function(tooltipSelector) {
+            var tooltip = this.querySelector(tooltipSelector) || document.querySelector(tooltipSelector);
+            if (tooltip.style.display === 'none') {
+                this._showTooltip(tooltipSelector);
+            }
+            else {
+                this._hideTooltip(tooltipSelector);
             }
         },
 

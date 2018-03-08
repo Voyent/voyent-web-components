@@ -83,9 +83,9 @@ Polymer({
         locationToSave.updateJSON();
 
         voyent.locate.updateLocation({account:this.account,realm:this.realm,location:locationToSave.json}).then(function() {
+            _this._adjustBoundsAndPan();
             locationToSave.isPersisted = true;
             _this.push('_myLocations',locationToSave);
-            _this._adjustBoundsAndPan();
             _this.fire('message-info','Location ' + msgPrefix);
         }).catch(function () {
             _this.fire('message-error','Location update failed');
@@ -107,6 +107,7 @@ Polymer({
         this._loadedLocation.removeFromMap();
         var query = {"location.properties.vras.id":this._loadedLocation.id};
         voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
+            _this._adjustBoundsAndPan();
             var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
             if (indexToRemove > -1) {
                 _this.splice('_myLocations',indexToRemove,1);
@@ -375,16 +376,16 @@ Polymer({
      * @private
      */
     _addCustomControls: function() {
-        if (this._customControlAdded) { return; }
+        if (this._customControlsAdded) { return; }
         var _this = this;
-        this.$.locationButton.removeAttribute('hidden');
-        this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.locationButton);
-        this._customControlAdded = true;
+        this.$.customControls.removeAttribute('hidden');
+        this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.customControls);
+        this._customControlsAdded = true;
         //Setup our tooltips after we've added our custom control. Add a slight delay to allow the map to position the control first.
         setTimeout(function() {
             _this._setupTooltips([{
                     tooltipSelector:'#addLocationTooltip',
-                    targetSelector:'#locationButton paper-button',
+                    targetSelector:'#customControls paper-button',
                     position:"below",
                     topPadding:(_this.isMobile ? _this._tooltipPadding : 0) - 25
                 },
@@ -396,8 +397,10 @@ Polymer({
                 }
             ]);
             //Close the tooltips when the user begins to interact with the page.
-            window.addEventListener('keydown',_this._hideTooltips.bind(_this),{once:true});
-            window.addEventListener('mousedown',_this._hideTooltips.bind(_this),{once:true});
+            window.addEventListener('click',function(e) {
+                e.stopPropagation();
+                _this._hideTooltips();
+            },{once:true});
         },500);
     },
 
