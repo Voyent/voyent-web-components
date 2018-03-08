@@ -688,7 +688,7 @@
                                 if (i >= 1) { break; }
                             }
                         }
-                        if (properties.shape === 'circle') {
+                        if (properties.shape === 'circle' && (!this.mode || this.mode === 'notification')) {
                             zones.push(new this._CircularAlertZone(
                                 zoneGeometries[i].id, properties.radius, properties.name, properties.opacity,
                                 properties.colour, properties.messageTemplate, properties.notificationFilter, zIndex
