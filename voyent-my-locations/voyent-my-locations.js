@@ -14,6 +14,11 @@ Polymer({
 
     },
 
+    attached: function() {
+        this.querySelector('#placesSearchValidator').validate = this._validatePlacesSearch.bind(this);
+        this.querySelector('#locationNameValidator').validate = this._validateDialogLocationName.bind(this);
+    },
+
     ready: function() {
         var _this = this;
         //An array of MyLocations, represents the saved locations currently on the map.
@@ -142,10 +147,8 @@ Polymer({
      */
     _addAddressBasedLocation: function() {
         var _this = this;
-        //Always start with a fresh dialog.z
-        this._autocompleteValue = null;
-        this._locationName = null;
-        this._isPrivateResidence = false;
+        //Always start with a fresh dialog.
+        this._clearDialog();
         //Open the dialog and initialize the autocomplete.
         this._openDialog(function () {
             setTimeout(function() {
@@ -433,12 +436,7 @@ Polymer({
      * @private
      */
     _confirmDialog: function() {
-        //Validate the dialog.
-        if (!this._placeCoordinates || !this._locationName || !this._locationName.trim()) {
-            this.fire('message-error', 'Please complete all fields');
-            return;
-        }
-        if (!this._validateLocationName(this._locationName)) { return; }
+        if (!this._validateDialog()) { return; }
         //We allow for passing the confirm function directly or as a string.
         if (this._dialogConfirmFunc) {
             if (typeof this._dialogConfirmFunc === 'string') { this[this._dialogConfirmFunc](); }
@@ -462,6 +460,38 @@ Polymer({
         }
         this._dialogConfirmFunc = this._dialogCancelFunc = null;
         this.querySelector('#modalDialog').close();
+    },
+
+    /**
+     * Validates each field in the dialog.
+     * @returns {boolean}
+     * @private
+     */
+    _validateDialog: function() {
+        var haveErrors = false;
+        if (!this.querySelector('#autoComplete').validate()) {
+            haveErrors = true;
+        }
+        if (!this.querySelector('#locationName').validate()) {
+            haveErrors = true;
+        }
+        return !haveErrors;
+    },
+
+    /**
+     * Clears the dialog state.
+     * @private
+     */
+    _clearDialog: function() {
+        this._autocompleteValue = null;
+        if (this.querySelector('#autoComplete')) {
+            this.querySelector('#locationName').invalid = false;
+        }
+        this._locationName = null;
+        if (this.querySelector('#locationName')) {
+            this.querySelector('#locationName').invalid = false;
+        }
+        this._isPrivateResidence = false;
     },
 
     /**
@@ -685,6 +715,44 @@ Polymer({
             this._zoomOnRegion();
         }
         this._map.setOptions({maxZoom:null});
+    },
+
+    /**
+     * Validates the places search autocomplete inside the dialog.
+     * @returns {boolean}
+     * @private
+     */
+    _validatePlacesSearch: function() {
+        var elem = this.querySelector('#autoComplete');
+        if (!this._autocompleteValue ||!this._autocompleteValue.trim()) {
+            elem.setAttribute('error-message','Please search for a location');
+            return false;
+        }
+        if (!this._placeCoordinates) {
+            elem.setAttribute('error-message','Must select an item from the search results');
+            return false;
+        }
+        return true;
+    },
+
+    /**
+     * Validates the location name field inside the dialog.
+     * @returns {boolean}
+     * @private
+     */
+    _validateDialogLocationName: function() {
+        var elem = this.querySelector('#locationName');
+        if (!this._locationName || !this._locationName.trim()) {
+            elem.setAttribute('error-message','Location must have a name');
+            return false;
+        }
+        for (var i=0; i<this._myLocations.length; i++) {
+            if (this._myLocations[i].name === this._locationName) {
+                elem.setAttribute('error-message','Name must be unique');
+                return false;
+            }
+        }
+        return true;
     },
 
     /**
