@@ -93,6 +93,10 @@ Polymer({
      */
     _removeLocation: function() {
         var _this = this;
+        if (this._myLocations.length === 1) {
+            this.fire('message-error','You must have at least one location');
+            return;
+        }
         //Close the info window and specify we don't want to save the location.
         this._closeInfoWindow(true);
         this._loadedLocation.removeFromMap();
