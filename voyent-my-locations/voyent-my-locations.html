@@ -83,6 +83,15 @@ Example:
                 box-shadow: 2px 2px 5px #006542;
                 color: #006542;
             }
+            .custom-control paper-icon-button {
+                width:30px;
+                height:30px;
+                background-color:#006542;
+                color:white;
+                border-radius:15px;
+                padding:0;
+                margin-left:20px;
+            }
             .dialog-bttns {
                 margin: 0;
                 padding: 15px;
@@ -200,8 +209,9 @@ Example:
                 </template>
             </template>
         </div>
-        <div id="locationButton" class="custom-control" hidden>
+        <div id="customControls" class="custom-control" hidden>
             <paper-button class="glow-green" raised title="Add a new location by Google Map Search" on-click="_addAddressBasedLocation">Add Location...</paper-button>
+            <paper-icon-button title="Toggle bubble help" icon="help" on-click="_toggleTooltips"></paper-icon-button>
         </div>
         <paper-dialog id="modalDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
                       on-iron-overlay-opened="_fixModalStacking">
