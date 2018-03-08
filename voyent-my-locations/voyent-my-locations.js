@@ -142,6 +142,11 @@ Polymer({
      */
     _addAddressBasedLocation: function() {
         var _this = this;
+        //Always start with a fresh dialog.z
+        this._autocompleteValue = null;
+        this._locationName = null;
+        this._isPrivateResidence = false;
+        //Open the dialog and initialize the autocomplete.
         this._openDialog(function () {
             setTimeout(function() {
                 _this._createLocation(_this._locationName,_this._isPrivateResidence,
@@ -614,11 +619,9 @@ Polymer({
                 place = _this._autoComplete.getPlace();
                 if (place && place.geometry && place.geometry.location) {
                     _this._placeCoordinates = place.geometry.location;
-                    _this._locationName = place.name;
                 }
                 else if (!place || Object.keys(place).length === 1) {
                     _this._placeCoordinates = null;
-                    _this._locationName = null;
                 }
             });
         }

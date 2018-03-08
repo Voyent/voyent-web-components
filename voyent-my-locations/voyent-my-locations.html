@@ -198,7 +198,7 @@ Example:
             </template>
         </div>
         <div id="locationButton" class="custom-control" hidden>
-            <paper-button class="glow-green" raised title="Create a new location" on-click="_addAddressBasedLocation">Add Location...</paper-button>
+            <paper-button class="glow-green" raised title="Add a new location by Google Map Search" on-click="_addAddressBasedLocation">Add Location...</paper-button>
         </div>
         <paper-dialog id="modalDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
                       on-iron-overlay-opened="_fixModalStacking">
@@ -220,7 +220,7 @@ Example:
             </div>
         </paper-dialog>
         <div id="addLocationTooltip" class="tooltipBox text-center">
-            Add a new location...
+            Add a new location by Google Map Search...
         </div>
         <div id="mapTooltip" class="tooltipBox">
             <ul>
