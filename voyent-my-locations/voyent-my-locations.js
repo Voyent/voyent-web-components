@@ -358,12 +358,9 @@ Polymer({
      * @private
      */
     _flagLocationForUpdatingMobile: function() {
-        console.log('_flagLocationForUpdatingMobile',this._loadedLocation.name,this._inputName);
-        if (this.isMobile) {
-            if (this._loadedLocation.name !== this._inputName) {
-                console.log('flagging location for updating');
-                this._flagLocationForUpdating({"type":"change"});
-            }
+        if (this.isMobile && this._loadedLocation && this._loadedLocation.name !== this._inputName) {
+            console.log('flagging location for updating');
+            this._flagLocationForUpdating({"type":"change"});
         }
     },
 
