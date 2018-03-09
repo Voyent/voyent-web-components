@@ -266,6 +266,7 @@ Polymer({
      */
     _toggleInfoWindow: function(myLocation) {
         console.log('_toggleInfoWindow',this._infoWindowOpen,myLocation);
+        this._flagLocationForUpdatingMobile();
         var _this = this;
         //If the selected infoWindow is already opened then close it.
         if (this._infoWindowOpen && myLocation && myLocation === this._loadedLocation) {
@@ -331,6 +332,7 @@ Polymer({
      */
     _closeInfoWindow: function(skipSave) {
         console.log('_closeInfoWindow',this._loadedLocation,skipSave);
+        this._flagLocationForUpdatingMobile();
         this._infoWindow.close();
         this._infoWindowOpen = false;
         if (this._loadedLocation && !skipSave) {
@@ -348,6 +350,20 @@ Polymer({
         //Close the infoWindow on Enter or Esc key presses
         if (e.keyCode === 13 || e.keyCode === 27) {
             this._toggleInfoWindow(this._loadedLocation);
+        }
+    },
+
+    /**
+     * On mobile the location name change listener does not fire when closing the infoWindow via map mouseclick or x button.
+     * @private
+     */
+    _flagLocationForUpdatingMobile: function() {
+        console.log('_flagLocationForUpdatingMobile',this._loadedLocation.name,this._inputName);
+        if (this.isMobile) {
+            if (this._loadedLocation.name !== this._inputName) {
+                console.log('flagging location for updating');
+                this._flagLocationForUpdating({"type":"change"});
+            }
         }
     },
 
