@@ -222,12 +222,12 @@ Example:
                       on-iron-overlay-opened="_fixModalStacking">
             <p class="dialog-title">New Location Details</p>
             <p class="no-margin">Start typing and then select an item from the list...</p>
-            <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" autofocus on-keyup="_handleAutocompleteKeyPress"
+            <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" on-keyup="_handleAutocompleteKeyPress"
                          maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
                          on-keyup="_dialogKeyUp" placeholder="Search Google Maps"
                          title="Enter an address, postal code, or business name"
                          validator="placesSearchValidator" on-blur="_validatePlacesSearchOnBlur"></paper-input>
-            <paper-input id="locationName" class="inline no-margin name-input" autofocus no-label-float tabindex="5"
+            <paper-input id="locationName" class="inline no-margin name-input" no-label-float tabindex="5"
                          maxlength="30" autocapitalize="words" placeholder="Location Name"
                          on-keyup="_dialogKeyUp" value="{{_locationName}}"
                          title="Enter a location name"
