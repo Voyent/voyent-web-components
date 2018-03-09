@@ -347,7 +347,7 @@ Polymer({
      */
     _flagLocationForUpdatingMobile: function() {
         //Note that this will cause failures in the browser mobile simulator as the behaviour is different than on mobile.
-        if (this.isMobile && this._loadedLocation && this._loadedLocation.name !== this._inputName) {
+        if (this.isMobile && voyent.$.isIOS() && this._loadedLocation && this._loadedLocation.name !== this._inputName) {
             this._flagLocationForUpdating({"type":"change"});
         }
     },
