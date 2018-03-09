@@ -150,7 +150,7 @@ Polymer({
     _addAddressBasedLocation: function() {
         var _this = this;
         //Always start with a fresh dialog.
-        this._clearDialog();
+        this._resetDialogProperties();
         //Open the dialog and initialize the autocomplete.
         this._openDialog(function () {
             setTimeout(function() {
@@ -493,22 +493,6 @@ Polymer({
     },
 
     /**
-     * Clears the dialog state.
-     * @private
-     */
-    _clearDialog: function() {
-        this._autocompleteValue = null;
-        if (this.querySelector('#autoComplete')) {
-            this.querySelector('#locationName').invalid = false;
-        }
-        this._locationName = null;
-        if (this.querySelector('#locationName')) {
-            this.querySelector('#locationName').invalid = false;
-        }
-        this._isPrivateResidence = false;
-    },
-
-    /**
      * Initialize the listeners required to pin drop a location by holding the mouse down on the map.
      * @private
      */
@@ -634,12 +618,16 @@ Polymer({
      * @private
      */
     _resetDialogProperties: function() {
-        this._isPrivateResidence = false;
+        this._autocompleteValue = null;
         this._locationName = null;
-        var autocomplete = this.$$('#autoComplete');
-        if (autocomplete) {
-            autocomplete.value = '';
+        this._isPrivateResidence = false;
+        if (this.querySelector('#autoComplete')) {
+            this.querySelector('#locationName').invalid = false;
         }
+        if (this.querySelector('#locationName')) {
+            this.querySelector('#locationName').invalid = false;
+        }
+
     },
 
     /**
@@ -681,7 +669,6 @@ Polymer({
     _autoCompleteChanged: function() {
         if (!this._autocompleteValue) {
             this._placeCoordinates = null;
-            this._locationName = null;
         }
     },
 
