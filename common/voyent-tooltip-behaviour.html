@@ -38,21 +38,21 @@
         _initializeTooltip: function(tooltipData) {
             // Ensure we can find the tooltip and target
             var tooltip = this.querySelector(tooltipData.tooltipSelector) || document.querySelector(tooltipData.tooltipSelector);
-            var target = this.querySelector(tooltipData.targetSelector) || document.querySelector(tooltipData.targetSelector);
             if (!tooltip) {
                 console.log('cannot find tooltip',tooltipData.tooltipSelector);
                 return;
             }
             tooltipData.tooltipElement = tooltip;
             tooltip.addEventListener('mousedown',this._hideTooltips.bind(this),{once:true});
+            var target = this.querySelector(tooltipData.targetSelector) || document.querySelector(tooltipData.targetSelector);
             if (!target) {
                 console.log('cannot find tooltip target',tooltipData.targetSelector);
                 return;
             }
             tooltipData.targetElement = target;
-            tooltip.classList.add(tooltipData.position);
 
             // Display the tooltip
+            tooltip.setAttribute('data-position',tooltipData.position);
             tooltip.style.display = 'block';
 
             this._positionTooltip(tooltip, target, tooltipData.position, tooltipData.maxWidth, tooltipData.topPadding, tooltipData.leftPadding)
@@ -71,6 +71,7 @@
         _positionTooltip: function(tooltip, target, position, maxWidth, topPadding, leftPadding) {
             // Set some defaults if no values are provided
             position = position || 'above';
+            tooltip.setAttribute('data-position',position);
             topPadding = topPadding || 0;
             leftPadding = leftPadding || 0;
 

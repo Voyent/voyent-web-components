@@ -425,6 +425,7 @@ Polymer({
      */
     _toggleTooltipHelp: function() {
         this._toggleTooltips();
+        this._repositionTooltips();
         this._tooltipsDisplayed = !this._tooltipsDisplayed;
     },
 
