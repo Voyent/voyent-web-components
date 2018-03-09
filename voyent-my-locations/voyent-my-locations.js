@@ -126,25 +126,20 @@ Polymer({
      * @private
      */
     _flagLocationForUpdating: function(e) {
-        console.log('_flagLocationForUpdating');
         //This may fire when the toggle component is initializing.
-        if (!this._loadedLocation) { console.log('returning'); return; }
+        if (!this._loadedLocation) { return; }
         //Change event is fired from the input field where as checked-changed is fired from the toggle.
         if (e.type === 'change') {
-            if (!this._validateLocationName(this._inputName)) { console.log('returning'); return; }
-            console.log('setting new name');
+            if (!this._validateLocationName(this._inputName)) { return; }
             this._loadedLocation.setName(this._inputName);
         }
         else {
             if (typeof this._inputPrivateResidence === 'undefined' ||
                 this._inputPrivateResidence === this._loadedLocation.isPrivateResidence) {
-                console.log('returning');
                 return;
             }
-            console.log('setting private residence state');
             this._loadedLocation.setPrivateResidence(this._inputPrivateResidence);
         }
-        console.log('location update is pending');
         this._locationUpdatePending = true;
     },
 
@@ -178,14 +173,9 @@ Polymer({
      * @private
      */
     _savePendingOrNewLocation: function() {
-        console.log('_savePendingOrNewLocation');
         if (this._loadedLocation && this._locationUpdatePending) {
-            console.log('saving location');
             this._saveLocation(this._loadedLocation,this._loadedLocation.isPersisted ? 'updated' : 'created');
             this._locationUpdatePending = false;
-        }
-        else {
-            console.log('doing nothing');
         }
     },
 
@@ -265,7 +255,6 @@ Polymer({
      * @private
      */
     _toggleInfoWindow: function(myLocation) {
-        console.log('_toggleInfoWindow',this._infoWindowOpen,myLocation);
         this._flagLocationForUpdatingMobile();
         var _this = this;
         //If the selected infoWindow is already opened then close it.
@@ -331,7 +320,6 @@ Polymer({
      * @private
      */
     _closeInfoWindow: function(skipSave) {
-        console.log('_closeInfoWindow',this._loadedLocation,skipSave);
         this._flagLocationForUpdatingMobile();
         this._infoWindow.close();
         this._infoWindowOpen = false;
@@ -358,8 +346,8 @@ Polymer({
      * @private
      */
     _flagLocationForUpdatingMobile: function() {
+        //Note that this will cause failures in the browser mobile simulator as the behaviour is different than on mobile.
         if (this.isMobile && this._loadedLocation && this._loadedLocation.name !== this._inputName) {
-            console.log('flagging location for updating');
             this._flagLocationForUpdating({"type":"change"});
         }
     },
@@ -749,7 +737,6 @@ Polymer({
      * @private
      */
     _validatePlacesSearch: function() {
-        console.log('validating places search');
         var elem = this.querySelector('#autoComplete');
         if (!this._autocompleteValue ||!this._autocompleteValue.trim()) {
             elem.setAttribute('error-message','Please search for a location');
@@ -767,16 +754,14 @@ Polymer({
      * @private
      */
     _validatePlacesSearchOnBlur: function() {
-        console.log('_validatePlacesSearchOnBlur');
         var _this = this;
         setTimeout(function() {
-            console.log('document.activeElement',document.activeElement);
             if (document.activeElement.getAttribute('is') === 'iron-input') {
                 var parentInput = document.activeElement.parentNode;
                 while (parentInput.nodeName !== 'PAPER-INPUT') {
                     parentInput = parentInput.parentNode;
                 }
-                if (parentInput.id === 'autoComplete') { console.log('autocomplete still selected, returning'); return; }
+                if (parentInput.id === 'autoComplete') { return; }
             }
             _this.querySelector('#autoComplete').validate();
         },0);
@@ -788,7 +773,6 @@ Polymer({
      * @private
      */
     _validateDialogLocationName: function() {
-        console.log('validating location name');
         var elem = this.querySelector('#locationName');
         if (!this._locationName || !this._locationName.trim()) {
             elem.setAttribute('error-message','Location must have a name');
@@ -808,16 +792,14 @@ Polymer({
      * @private
      */
     _validateDialogLocationNameOnBlur: function() {
-        console.log('_validateDialogLocationNameOnBlur');
         var _this = this;
         setTimeout(function() {
-            console.log('document.activeElement',document.activeElement);
             if (document.activeElement.getAttribute('is') === 'iron-input') {
                 var parentInput = document.activeElement.parentNode;
                 while (parentInput.nodeName !== 'PAPER-INPUT') {
                     parentInput = parentInput.parentNode;
                 }
-                if (parentInput.id === 'locationName') { console.log('location name input still selected, returning'); return; }
+                if (parentInput.id === 'locationName') { return; }
             }
             _this.querySelector('#locationName').validate();
         },0);
