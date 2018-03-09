@@ -84,10 +84,10 @@ Polymer({
         locationToSave.updateJSON();
 
         voyent.locate.updateLocation({account:this.account,realm:this.realm,location:locationToSave.json}).then(function() {
-            _this._adjustBoundsAndPan();
             locationToSave.isPersisted = true;
             _this.push('_myLocations',locationToSave);
             _this.fire('message-info','Location ' + msgPrefix);
+            _this._adjustBoundsAndPan();
         }).catch(function () {
             _this.fire('message-error','Location update failed');
         });
@@ -108,13 +108,13 @@ Polymer({
         this._loadedLocation.removeFromMap();
         var query = {"location.properties.vras.id":this._loadedLocation.id};
         voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
-            _this._adjustBoundsAndPan();
             var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
             if (indexToRemove > -1) {
                 _this.splice('_myLocations',indexToRemove,1);
             }
             _this._loadedLocation = null;
             _this.fire('message-info','Location removed');
+            _this._adjustBoundsAndPan();
         }).catch(function () {
             _this._loadedLocation.addToMap();
             _this.fire('message-error','Location removal failed');
