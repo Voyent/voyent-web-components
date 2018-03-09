@@ -656,6 +656,7 @@ Polymer({
                 else if (!place || Object.keys(place).length === 1) {
                     _this._placeCoordinates = null;
                 }
+                _this.querySelector('#autoComplete').validate();
             });
         }
         waitForAreaRegion();
@@ -739,6 +740,24 @@ Polymer({
     },
 
     /**
+     * Validates the places search autocomplete inside the dialog on blur.
+     * @private
+     */
+    _validatePlacesSearchOnBlur: function() {
+        var _this = this;
+        setTimeout(function() {
+            if (document.activeElement.getAttribute('is') === 'iron-input') {
+                var parentInput = document.activeElement.parentNode;
+                while (parentInput.nodeName !== 'PAPER-INPUT') {
+                    parentInput = parentInput.parentNode;
+                }
+                if (parentInput.id === 'autoComplete') { return; }
+            }
+            _this.querySelector('#autoComplete').validate();
+        },0);
+    },
+
+    /**
      * Validates the location name field inside the dialog.
      * @returns {boolean}
      * @private
@@ -756,6 +775,24 @@ Polymer({
             }
         }
         return true;
+    },
+
+    /**
+     * Validates the location name field inside the dialog on blur.
+     * @private
+     */
+    _validateDialogLocationNameOnBlur: function() {
+        var _this = this;
+        setTimeout(function() {
+            if (document.activeElement.getAttribute('is') === 'iron-input') {
+                var parentInput = document.activeElement.parentNode;
+                while (parentInput.nodeName !== 'PAPER-INPUT') {
+                    parentInput = parentInput.parentNode;
+                }
+                if (parentInput.id === 'locationName') { return; }
+            }
+            _this.querySelector('#locationName').validate();
+        },0);
     },
 
     /**

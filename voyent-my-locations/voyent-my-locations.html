@@ -221,12 +221,12 @@ Example:
                          maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
                          on-keyup="_dialogKeyUp" placeholder="Search Google Maps"
                          title="Enter an address, postal code, or business name"
-                         validator="placesSearchValidator"></paper-input>
+                         validator="placesSearchValidator" on-blur="_validatePlacesSearchOnBlur"></paper-input>
             <paper-input id="locationName" class="inline no-margin name-input" autofocus no-label-float tabindex="5"
                          maxlength="30" autocapitalize="words" placeholder="Location Name"
                          on-keyup="_dialogKeyUp" value="{{_locationName}}"
                          title="Enter a location name"
-                         validator="locationNameValidator"></paper-input>
+                         validator="locationNameValidator" on-blur="_validateDialogLocationNameOnBlur"></paper-input>
             <div class="inline no-margin toggle-button">
                 <paper-toggle-button class="inline no-margin valign-top" tabindex="6" on-keyup="_dialogKeyUp"
                                      checked="{{_isPrivateResidence}}" title="Is this a private residence?"></paper-toggle-button>
