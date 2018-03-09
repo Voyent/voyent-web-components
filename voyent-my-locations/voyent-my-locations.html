@@ -92,6 +92,9 @@ Example:
                 padding:0;
                 margin-left:20px;
             }
+            .custom-control paper-icon-button[data-tooltip-displayed] {
+                box-shadow: 0 0 10px 7px #FFFFFF;
+            }
             .dialog-bttns {
                 margin: 0;
                 padding: 15px;
@@ -210,8 +213,10 @@ Example:
             </template>
         </div>
         <div id="customControls" class="custom-control" hidden>
-            <paper-button class="glow-green" raised title="Add a new location by Google Map Search" on-click="_addAddressBasedLocation">Add Location...</paper-button>
-            <paper-icon-button title="Toggle bubble help" icon="help" on-click="_toggleTooltips"></paper-icon-button>
+            <paper-button class="glow-green" raised title="Add a new location by Google Map Search"
+                          on-click="_addAddressBasedLocation">Add Location...</paper-button>
+            <paper-icon-button title="Toggle bubble help" icon="help" on-click="_toggleTooltipHelp"
+                               data-tooltip-displayed$="[[_tooltipsDisplayed]]"></paper-icon-button>
         </div>
         <paper-dialog id="modalDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
                       on-iron-overlay-opened="_fixModalStacking">

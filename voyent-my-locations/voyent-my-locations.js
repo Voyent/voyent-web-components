@@ -35,10 +35,11 @@ Polymer({
         this._autocompleteKeyupCount = 0;
         //Padding to apply to the tooltip, represents the VRAS app header height.
         this._tooltipPadding = 64;
-        //Set the values of the map tooltip positioning as it changes for the various view options.
+        //Set the values of the map tooltip positioning as it changes for the various view options and set our displayed toggle.
         this._mapTooltipDesktopPos = 'centered-top';
         this._mapTooltipPortraitPos = 'centered-bottom';
         this._mapTooltipLandscapePos = 'left-top';
+        this._tooltipsDisplayed = true;
         //Initialize other pieces that depend on the map.
         this._mapIsReady().then(function() {
             //Setup the infoWindow.
@@ -400,8 +401,18 @@ Polymer({
             window.addEventListener('click',function(e) {
                 e.stopPropagation();
                 _this._hideTooltips();
+                _this._tooltipsDisplayed = false;
             },{once:true});
         },500);
+    },
+
+    /**
+     * Toggles tooltip help bubbles.
+     * @private
+     */
+    _toggleTooltipHelp: function() {
+        this._toggleTooltips();
+        this._tooltipsDisplayed = !this._tooltipsDisplayed;
     },
 
     /**
