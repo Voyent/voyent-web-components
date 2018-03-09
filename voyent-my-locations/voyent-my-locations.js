@@ -38,7 +38,7 @@ Polymer({
         //Set the values of the map tooltip positioning as it changes for the various view options.
         this._mapTooltipDesktopPos = 'centered-top';
         this._mapTooltipPortraitPos = 'centered-bottom';
-        this._mapTooltipLandscapePos = 'left-bottom';
+        this._mapTooltipLandscapePos = 'left-top';
         //Initialize other pieces that depend on the map.
         this._mapIsReady().then(function() {
             //Setup the infoWindow.
