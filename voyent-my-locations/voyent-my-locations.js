@@ -35,10 +35,11 @@ Polymer({
         this._autocompleteKeyupCount = 0;
         //Padding to apply to the tooltip, represents the VRAS app header height.
         this._tooltipPadding = 64;
-        //Set the values of the map tooltip positioning as it changes for the various view options.
+        //Set the values of the map tooltip positioning as it changes for the various view options and set our displayed toggle.
         this._mapTooltipDesktopPos = 'centered-top';
         this._mapTooltipPortraitPos = 'centered-bottom';
-        this._mapTooltipLandscapePos = 'left-bottom';
+        this._mapTooltipLandscapePos = 'left-top';
+        this._tooltipsDisplayed = true;
         //Initialize other pieces that depend on the map.
         this._mapIsReady().then(function() {
             //Setup the infoWindow.
@@ -400,8 +401,18 @@ Polymer({
             window.addEventListener('click',function(e) {
                 e.stopPropagation();
                 _this._hideTooltips();
+                _this._tooltipsDisplayed = false;
             },{once:true});
         },500);
+    },
+
+    /**
+     * Toggles tooltip help bubbles.
+     * @private
+     */
+    _toggleTooltipHelp: function() {
+        this._toggleTooltips();
+        this._tooltipsDisplayed = !this._tooltipsDisplayed;
     },
 
     /**
@@ -656,6 +667,7 @@ Polymer({
                 else if (!place || Object.keys(place).length === 1) {
                     _this._placeCoordinates = null;
                 }
+                _this.querySelector('#autoComplete').validate();
             });
         }
         waitForAreaRegion();
@@ -739,6 +751,24 @@ Polymer({
     },
 
     /**
+     * Validates the places search autocomplete inside the dialog on blur.
+     * @private
+     */
+    _validatePlacesSearchOnBlur: function() {
+        var _this = this;
+        setTimeout(function() {
+            if (document.activeElement.getAttribute('is') === 'iron-input') {
+                var parentInput = document.activeElement.parentNode;
+                while (parentInput.nodeName !== 'PAPER-INPUT') {
+                    parentInput = parentInput.parentNode;
+                }
+                if (parentInput.id === 'autoComplete') { return; }
+            }
+            _this.querySelector('#autoComplete').validate();
+        },0);
+    },
+
+    /**
      * Validates the location name field inside the dialog.
      * @returns {boolean}
      * @private
@@ -756,6 +786,24 @@ Polymer({
             }
         }
         return true;
+    },
+
+    /**
+     * Validates the location name field inside the dialog on blur.
+     * @private
+     */
+    _validateDialogLocationNameOnBlur: function() {
+        var _this = this;
+        setTimeout(function() {
+            if (document.activeElement.getAttribute('is') === 'iron-input') {
+                var parentInput = document.activeElement.parentNode;
+                while (parentInput.nodeName !== 'PAPER-INPUT') {
+                    parentInput = parentInput.parentNode;
+                }
+                if (parentInput.id === 'locationName') { return; }
+            }
+            _this.querySelector('#locationName').validate();
+        },0);
     },
 
     /**

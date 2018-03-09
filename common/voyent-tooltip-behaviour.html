@@ -36,7 +36,6 @@
          * @private
          */
         _initializeTooltip: function(tooltipData) {
-            var _this = this;
             // Ensure we can find the tooltip and target
             var tooltip = this.querySelector(tooltipData.tooltipSelector) || document.querySelector(tooltipData.tooltipSelector);
             var target = this.querySelector(tooltipData.targetSelector) || document.querySelector(tooltipData.targetSelector);
@@ -84,10 +83,10 @@
                 var targetRect = target.getBoundingClientRect();
 
                 if (position === 'above' || position === 'below') {
-                    if (position === 'above') { // Tooltip rendered above target, arrow pointing down
+                    if (position === 'above') { // Tooltip rendered above target, arrow down
                         tooltip.style.bottom = (targetRect.top - topPadding) + "px";
                     }
-                    else { // 'below' - Tooltip rendered below target, arrow pointing up
+                    else { // 'below' - Tooltip rendered below target, arrow up
                         tooltip.style.top = (targetRect.bottom + topPadding) + 'px';
                     }
                     tooltip.style.left = (targetRect.left - (tooltipRect.width/2) + (targetRect.width/2) + leftPadding) + "px";
@@ -96,19 +95,19 @@
                     if (position === 'centered') { // Tooltip rendered at the center of target, with no arrow
                         tooltip.style.top = (targetRect.top + (targetRect.height/2) - (tooltipRect.height/2) + topPadding) + 'px';
                     }
-                    else if (position === 'centered-top') { // Tooltip rendered at the top of target, with no arrow
+                    else if (position === 'centered-top') { // Tooltip rendered at the top of target, with arrow down
                         tooltip.style.top = (targetRect.top + topPadding) + 'px';
                     }
-                    else { // 'centered-bottom' - Tooltip rendered at the bottom of target, with no arrow
+                    else { // 'centered-bottom' - Tooltip rendered at the bottom of target, with arrow up
                         tooltip.style.top = (targetRect.height - tooltipRect.height + topPadding) + 'px';
                     }
                     tooltip.style.left = (targetRect.left + (targetRect.width/2) - (tooltipRect.width/2) + leftPadding) + 'px';
                 }
-                else if (position === 'left-top') { // Tooltip rendered in the top-left corner, with no arrow
+                else if (position === 'left-top') { // Tooltip rendered in the top-left corner, with arrow down
                     tooltip.style.top = (targetRect.top + topPadding) + 'px';
                     tooltip.style.left = (targetRect.left + leftPadding) + 'px';
                 }
-                else if (position === 'left-bottom') { // Tooltip rendered in the bottom-left corner, with no arrow
+                else if (position === 'left-bottom') { // Tooltip rendered in the bottom-left corner, with arrow up
                     tooltip.style.top = (targetRect.bottom - tooltipRect.height + topPadding) + 'px';
                     tooltip.style.left = (targetRect.left + leftPadding) + 'px';
                 }
