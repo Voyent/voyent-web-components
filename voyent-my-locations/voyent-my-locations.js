@@ -40,6 +40,8 @@ Polymer({
         this._mapTooltipPortraitPos = 'centered-bottom';
         this._mapTooltipLandscapePos = 'left-top';
         this._tooltipsDisplayed = true;
+        //A flag used to ignore change listener events for the location name input.
+        this._ignoreInputNameChanged = false;
         //Initialize other pieces that depend on the map.
         this._mapIsReady().then(function() {
             //Setup the infoWindow.
@@ -60,7 +62,7 @@ Polymer({
         });
     },
 
-    observers: ['_myLocationsUpdated(_myLocations.length)'],
+    observers: ['_myLocationsUpdated(_myLocations.length)','_inputNameChanged(_inputName)'],
 
     //******************PRIVATE API******************
 
@@ -255,7 +257,6 @@ Polymer({
      * @private
      */
     _toggleInfoWindow: function(myLocation) {
-        this._flagLocationForUpdatingMobile();
         var _this = this;
         //If the selected infoWindow is already opened then close it.
         if (this._infoWindowOpen && myLocation && myLocation === this._loadedLocation) {
@@ -279,6 +280,7 @@ Polymer({
                 //have a selected place then render the custom info window.
                 if (myLocation) {
                     _this._loadedLocation = myLocation;
+                    _this._ignoreInputNameChanged = true;
                     _this._inputName = _this._loadedLocation.name;
                     _this._inputPrivateResidence = _this._loadedLocation.isPrivateResidence;
                     _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
@@ -320,7 +322,6 @@ Polymer({
      * @private
      */
     _closeInfoWindow: function(skipSave) {
-        this._flagLocationForUpdatingMobile();
         this._infoWindow.close();
         this._infoWindowOpen = false;
         if (this._loadedLocation && !skipSave) {
@@ -338,17 +339,6 @@ Polymer({
         //Close the infoWindow on Enter or Esc key presses
         if (e.keyCode === 13 || e.keyCode === 27) {
             this._toggleInfoWindow(this._loadedLocation);
-        }
-    },
-
-    /**
-     * On mobile the location name change listener does not fire when closing the infoWindow via map mouseclick or x button.
-     * @private
-     */
-    _flagLocationForUpdatingMobile: function() {
-        //Note that this will cause failures in the browser mobile simulator as the behaviour is different than on mobile.
-        if (this.isMobile && voyent.$.isIOS() && this._loadedLocation && this._loadedLocation.name !== this._inputName) {
-            this._flagLocationForUpdating({"type":"change"});
         }
     },
 
@@ -814,5 +804,19 @@ Polymer({
     _myLocationsUpdated: function(length) {
         //Always skip panning to the region when we have at least one location.
         this._skipRegionPanning = !!length;
+    },
+
+    /**
+     * Monitors changes to the location input name and flags the location for updating.
+     * We will ignore this event when the location name is changed programatically.
+     * @private
+     */
+    _inputNameChanged: function() {
+        //We use this rather than an on-change on the component because this does not fire on infoWindow blur on iOS.
+        if (this._ignoreInputNameChanged) {
+            this._ignoreInputNameChanged = false;
+            return;
+        }
+        this._flagLocationForUpdating({"type":"change"});
     }
 });
