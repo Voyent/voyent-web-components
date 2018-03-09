@@ -770,12 +770,13 @@ Polymer({
         console.log('_validatePlacesSearchOnBlur');
         var _this = this;
         setTimeout(function() {
+            console.log('document.activeElement',document.activeElement);
             if (document.activeElement.getAttribute('is') === 'iron-input') {
                 var parentInput = document.activeElement.parentNode;
                 while (parentInput.nodeName !== 'PAPER-INPUT') {
                     parentInput = parentInput.parentNode;
                 }
-                if (parentInput.id === 'autoComplete') { console.log('returning'); return; }
+                if (parentInput.id === 'autoComplete') { console.log('autocomplete still selected, returning'); return; }
             }
             _this.querySelector('#autoComplete').validate();
         },0);
@@ -810,12 +811,13 @@ Polymer({
         console.log('_validateDialogLocationNameOnBlur');
         var _this = this;
         setTimeout(function() {
+            console.log('document.activeElement',document.activeElement);
             if (document.activeElement.getAttribute('is') === 'iron-input') {
                 var parentInput = document.activeElement.parentNode;
                 while (parentInput.nodeName !== 'PAPER-INPUT') {
                     parentInput = parentInput.parentNode;
                 }
-                if (parentInput.id === 'locationName') { console.log('returning'); return; }
+                if (parentInput.id === 'locationName') { console.log('location name input still selected, returning'); return; }
             }
             _this.querySelector('#locationName').validate();
         },0);
