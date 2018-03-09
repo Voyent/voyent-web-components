@@ -70,16 +70,13 @@ Example:
                 font-size:15px;
             }
             .custom-control {
-                background-color: #FFF;
-                text-align: center;
-                margin: 10px;
-            }
-            .custom-control {
                 background-color:transparent;
+                text-align: center;
+                margin: 2px 10px 0 0;
             }
             .custom-control paper-button {
                 background-color:#FFF;
-                font-size:14px;
+                font-size:13px;
                 box-shadow: 2px 2px 5px #006542;
                 color: #006542;
             }
@@ -93,7 +90,7 @@ Example:
                 margin-left:20px;
             }
             .custom-control paper-icon-button[data-tooltip-displayed] {
-                box-shadow: 0 0 10px 7px #FFFFFF;
+                box-shadow: 0 0 10px 7px #88b7d5;
             }
             .dialog-bttns {
                 margin: 0;
@@ -222,12 +219,12 @@ Example:
                       on-iron-overlay-opened="_fixModalStacking">
             <p class="dialog-title">New Location Details</p>
             <p class="no-margin">Start typing and then select an item from the list...</p>
-            <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" autofocus on-keyup="_handleAutocompleteKeyPress"
+            <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" on-keyup="_handleAutocompleteKeyPress"
                          maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
                          on-keyup="_dialogKeyUp" placeholder="Search Google Maps"
                          title="Enter an address, postal code, or business name"
                          validator="placesSearchValidator" on-blur="_validatePlacesSearchOnBlur"></paper-input>
-            <paper-input id="locationName" class="inline no-margin name-input" autofocus no-label-float tabindex="5"
+            <paper-input id="locationName" class="inline no-margin name-input" no-label-float tabindex="5"
                          maxlength="30" autocapitalize="words" placeholder="Location Name"
                          on-keyup="_dialogKeyUp" value="{{_locationName}}"
                          title="Enter a location name"

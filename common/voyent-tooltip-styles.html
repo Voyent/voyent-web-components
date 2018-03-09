@@ -10,7 +10,7 @@
                 padding: 5px;
                 display: none;
             }
-            .tooltipBox:not(.centered):after, .tooltipBox:not(.centered):before {
+            .tooltipBox:not([data-position="centered"]):after, .tooltipBox:not([data-position="centered"]):before {
                 left: 50%;
                 border: solid transparent;
                 content: " ";
@@ -20,28 +20,28 @@
                 pointer-events: none;
             }
 
-            .tooltipBox:not(.centered):after {
+            .tooltipBox:not([data-position="centered"]):after {
                 border-color: rgba(136, 183, 213, 0);
                 border-top-color: #88b7d5;
                 border-width: 30px;
                 margin-left: -30px;
             }
 
-            .tooltipBox:not(.centered):before {
+            .tooltipBox:not([data-position="centered"]):before {
                 border-color: rgba(194, 225, 245, 0);
                 border-top-color: #c2e1f5;
                 border-width: 36px;
                 margin-left: -36px;
             }
 
-            .tooltipBox.above:after, .tooltipBox.above:before,
-            .tooltipBox.centered-top:after, .tooltipBox.centered-top:before,
-            .tooltipBox.left-top:after, .tooltipBox.left-top:before {
+            .tooltipBox[data-position="above"]:after, .tooltipBox[data-position="above"]:before,
+            .tooltipBox[data-position="centered-top"]:after, .tooltipBox[data-position="centered-top"]:before,
+            .tooltipBox[data-position="left-top"]:after, .tooltipBox[data-position="left-top"]:before {
                 top: 100%;
             }
-            .tooltipBox.below:after, .tooltipBox.below:before,
-            .tooltipBox.centered-bottom:after, .tooltipBox.centered-bottom:before,
-            .tooltipBox.left-bottom:after, .tooltipBox.left-bottom:before {
+            .tooltipBox[data-position="below"]:after, .tooltipBox[data-position="below"]:before,
+            .tooltipBox[data-position="centered-bottom"]:after, .tooltipBox[data-position="centered-bottom"]:before,
+            .tooltipBox[data-position="left-bottom"]:after, .tooltipBox[data-position="left-bottom"]:before {
                 bottom: 100%;
                 -webkit-transform: rotate(180deg);
                 -moz-transform: rotate(180deg);

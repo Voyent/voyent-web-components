@@ -84,10 +84,10 @@ Polymer({
         locationToSave.updateJSON();
 
         voyent.locate.updateLocation({account:this.account,realm:this.realm,location:locationToSave.json}).then(function() {
-            _this._adjustBoundsAndPan();
             locationToSave.isPersisted = true;
             _this.push('_myLocations',locationToSave);
             _this.fire('message-info','Location ' + msgPrefix);
+            _this._adjustBoundsAndPan();
         }).catch(function () {
             _this.fire('message-error','Location update failed');
         });
@@ -108,13 +108,13 @@ Polymer({
         this._loadedLocation.removeFromMap();
         var query = {"location.properties.vras.id":this._loadedLocation.id};
         voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
-            _this._adjustBoundsAndPan();
             var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
             if (indexToRemove > -1) {
                 _this.splice('_myLocations',indexToRemove,1);
             }
             _this._loadedLocation = null;
             _this.fire('message-info','Location removed');
+            _this._adjustBoundsAndPan();
         }).catch(function () {
             _this._loadedLocation.addToMap();
             _this.fire('message-error','Location removal failed');
@@ -255,6 +255,7 @@ Polymer({
      * @private
      */
     _toggleInfoWindow: function(myLocation) {
+        this._flagLocationForUpdatingMobile();
         var _this = this;
         //If the selected infoWindow is already opened then close it.
         if (this._infoWindowOpen && myLocation && myLocation === this._loadedLocation) {
@@ -319,6 +320,7 @@ Polymer({
      * @private
      */
     _closeInfoWindow: function(skipSave) {
+        this._flagLocationForUpdatingMobile();
         this._infoWindow.close();
         this._infoWindowOpen = false;
         if (this._loadedLocation && !skipSave) {
@@ -336,6 +338,17 @@ Polymer({
         //Close the infoWindow on Enter or Esc key presses
         if (e.keyCode === 13 || e.keyCode === 27) {
             this._toggleInfoWindow(this._loadedLocation);
+        }
+    },
+
+    /**
+     * On mobile the location name change listener does not fire when closing the infoWindow via map mouseclick or x button.
+     * @private
+     */
+    _flagLocationForUpdatingMobile: function() {
+        //Note that this will cause failures in the browser mobile simulator as the behaviour is different than on mobile.
+        if (this.isMobile && voyent.$.isIOS() && this._loadedLocation && this._loadedLocation.name !== this._inputName) {
+            this._flagLocationForUpdating({"type":"change"});
         }
     },
 
@@ -412,6 +425,7 @@ Polymer({
      */
     _toggleTooltipHelp: function() {
         this._toggleTooltips();
+        this._repositionTooltips();
         this._tooltipsDisplayed = !this._tooltipsDisplayed;
     },
 
@@ -627,7 +641,6 @@ Polymer({
         if (this.querySelector('#locationName')) {
             this.querySelector('#locationName').invalid = false;
         }
-
     },
 
     /**
