@@ -126,20 +126,25 @@ Polymer({
      * @private
      */
     _flagLocationForUpdating: function(e) {
+        console.log('_flagLocationForUpdating');
         //This may fire when the toggle component is initializing.
-        if (!this._loadedLocation) { return; }
+        if (!this._loadedLocation) { console.log('returning'); return; }
         //Change event is fired from the input field where as checked-changed is fired from the toggle.
         if (e.type === 'change') {
-            if (!this._validateLocationName(this._inputName)) { return; }
+            if (!this._validateLocationName(this._inputName)) { console.log('returning'); return; }
+            console.log('setting new name');
             this._loadedLocation.setName(this._inputName);
         }
         else {
             if (typeof this._inputPrivateResidence === 'undefined' ||
                 this._inputPrivateResidence === this._loadedLocation.isPrivateResidence) {
+                console.log('returning');
                 return;
             }
+            console.log('setting private residence state');
             this._loadedLocation.setPrivateResidence(this._inputPrivateResidence);
         }
+        console.log('location update is pending');
         this._locationUpdatePending = true;
     },
 
@@ -173,9 +178,14 @@ Polymer({
      * @private
      */
     _savePendingOrNewLocation: function() {
+        console.log('_savePendingOrNewLocation');
         if (this._loadedLocation && this._locationUpdatePending) {
+            console.log('saving location');
             this._saveLocation(this._loadedLocation,this._loadedLocation.isPersisted ? 'updated' : 'created');
             this._locationUpdatePending = false;
+        }
+        else {
+            console.log('doing nothing');
         }
     },
 
@@ -255,6 +265,7 @@ Polymer({
      * @private
      */
     _toggleInfoWindow: function(myLocation) {
+        console.log('_toggleInfoWindow',this._infoWindowOpen,myLocation);
         var _this = this;
         //If the selected infoWindow is already opened then close it.
         if (this._infoWindowOpen && myLocation && myLocation === this._loadedLocation) {
@@ -319,6 +330,7 @@ Polymer({
      * @private
      */
     _closeInfoWindow: function(skipSave) {
+        console.log('_closeInfoWindow',this._loadedLocation,skipSave);
         this._infoWindow.close();
         this._infoWindowOpen = false;
         if (this._loadedLocation && !skipSave) {
@@ -627,7 +639,6 @@ Polymer({
         if (this.querySelector('#locationName')) {
             this.querySelector('#locationName').invalid = false;
         }
-
     },
 
     /**
@@ -725,6 +736,7 @@ Polymer({
      * @private
      */
     _validatePlacesSearch: function() {
+        console.log('validating places search');
         var elem = this.querySelector('#autoComplete');
         if (!this._autocompleteValue ||!this._autocompleteValue.trim()) {
             elem.setAttribute('error-message','Please search for a location');
@@ -742,6 +754,7 @@ Polymer({
      * @private
      */
     _validatePlacesSearchOnBlur: function() {
+        console.log('_validatePlacesSearchOnBlur');
         var _this = this;
         setTimeout(function() {
             if (document.activeElement.getAttribute('is') === 'iron-input') {
@@ -749,7 +762,7 @@ Polymer({
                 while (parentInput.nodeName !== 'PAPER-INPUT') {
                     parentInput = parentInput.parentNode;
                 }
-                if (parentInput.id === 'autoComplete') { return; }
+                if (parentInput.id === 'autoComplete') { console.log('returning'); return; }
             }
             _this.querySelector('#autoComplete').validate();
         },0);
@@ -761,6 +774,7 @@ Polymer({
      * @private
      */
     _validateDialogLocationName: function() {
+        console.log('validating location name');
         var elem = this.querySelector('#locationName');
         if (!this._locationName || !this._locationName.trim()) {
             elem.setAttribute('error-message','Location must have a name');
@@ -780,6 +794,7 @@ Polymer({
      * @private
      */
     _validateDialogLocationNameOnBlur: function() {
+        console.log('_validateDialogLocationNameOnBlur');
         var _this = this;
         setTimeout(function() {
             if (document.activeElement.getAttribute('is') === 'iron-input') {
@@ -787,7 +802,7 @@ Polymer({
                 while (parentInput.nodeName !== 'PAPER-INPUT') {
                     parentInput = parentInput.parentNode;
                 }
-                if (parentInput.id === 'locationName') { return; }
+                if (parentInput.id === 'locationName') { console.log('returning'); return; }
             }
             _this.querySelector('#locationName').validate();
         },0);
