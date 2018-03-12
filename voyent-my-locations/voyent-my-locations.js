@@ -765,7 +765,7 @@ Polymer({
      * @private
      */
     _validatePlaceLocationName: function() {
-        return this._validateLocationName(this.querySelector('#placeLocationName'),this._selectedPlace.name);
+        return this._validateLocationName(this.querySelector('#placeLocationName'),this._selectedPlace ? this._selectedPlace.name : null);
     },
 
     /**
@@ -774,7 +774,7 @@ Polymer({
      * @private
      */
     _validatePinDropLocationName: function() {
-        return this._validateLocationName(this.querySelector('#pinDropLocationName'),this._pinDropLocation.name);
+        return this._validateLocationName(this.querySelector('#pinDropLocationName'),this._pinDropLocation ? this._pinDropLocation.name : null);
     },
 
     /**
