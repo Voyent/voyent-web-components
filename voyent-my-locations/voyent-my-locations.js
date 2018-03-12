@@ -62,7 +62,10 @@ Polymer({
         });
     },
 
-    observers: ['_myLocationsUpdated(_myLocations.length)','_inputNameChanged(_inputName)'],
+    observers: [
+        '_myLocationsUpdated(_myLocations.length)',
+        '_inputNameChanged(_inputName)'
+    ],
 
     //******************PRIVATE API******************
 
@@ -87,7 +90,9 @@ Polymer({
 
         voyent.locate.updateLocation({account:this.account,realm:this.realm,location:locationToSave.json}).then(function() {
             locationToSave.isPersisted = true;
-            _this.push('_myLocations',locationToSave);
+            if (_this._myLocations.indexOf(locationToSave) === -1) {
+                _this.push('_myLocations',locationToSave);
+            }
             _this.fire('message-info','Location ' + msgPrefix);
             _this._adjustBoundsAndPan();
         }).catch(function () {
