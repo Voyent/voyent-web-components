@@ -124,26 +124,29 @@ Example:
             }
         </style>
         <voyent-custom-validator id="placesSearchValidator" validator-name="placesSearchValidator"></voyent-custom-validator>
-        <voyent-custom-validator id="locationNameValidator" validator-name="locationNameValidator"></voyent-custom-validator>
+        <voyent-custom-validator id="nameValidatorDialog" validator-name="nameValidatorDialog"></voyent-custom-validator>
+        <voyent-custom-validator id="nameValidatorInfoWindow" validator-name="nameValidatorInfoWindow"></voyent-custom-validator>
+        <voyent-custom-validator id="nameValidatorPlace" validator-name="nameValidatorPlace"></voyent-custom-validator>
+        <voyent-custom-validator id="nameValidatorPinDrop" validator-name="nameValidatorPinDrop"></voyent-custom-validator>
 
         <div id="container">
             <div id="map"></div>
         </div>
         <div id="infoWindow" class="info-window" hidden>
             <template is="dom-if" if="[[_loadedLocation]]">
-                <paper-input id="name"
+                <paper-input id="infoWindowLocationName"
                              tabindex="1"
                              label="Location Name"
                              maxlength="30"
                              placeholder="New Name"
                              autocapitalize="words"
                              on-keyup="_handleInfoWindowKeyPress"
-                             value="{{_inputName::input}}">
+                             value="{{_infoWindowLocationName::input}}"
+                             validator="nameValidatorInfoWindow">
                 </paper-input>
                 <div class="toggle-button">
                     <paper-toggle-button id="isPrivateResidence" class="inline valign-middle" tabindex="2"
-                                         checked="{{_inputPrivateResidence}}"
-                                         on-checked-changed="_flagLocationForUpdating"></paper-toggle-button>
+                                         checked="{{_inputPrivateResidence}}"></paper-toggle-button>
                     <span class="private-residence valign-middle no-select">Private Residence</span>
                 </div>
                 <div class="delete-bttn">
@@ -155,12 +158,13 @@ Example:
             <template is="dom-if" if="[[!_loadedLocation]]">
                 <template is="dom-if" if="[[_selectedPlace]]">
                     <div class="selected-place text-center">
-                        <paper-input id="placeName"
+                        <paper-input id="placeLocationName"
                                      label="Location Name"
                                      placeholder="New Name"
                                      maxlength="30"
                                      autocapitalize="words"
-                                     value="{{_selectedPlace.name::input}}">
+                                     value="{{_selectedPlace.name::input}}"
+                                     validator="nameValidatorPlace">
                         </paper-input>
                         <div class="address">
                             <div>
@@ -189,14 +193,15 @@ Example:
                     </div>
                 </template>
                 <template is="dom-if" if="[[_pinDropLocation]]">
-                    <paper-input id="pinDropName"
+                    <paper-input id="pinDropLocationName"
                                  tabindex="1"
                                  label="Location Name"
                                  maxlength="30"
                                  placeholder="New Name"
                                  autocapitalize="words"
                                  on-keyup="_handleInfoWindowKeyPress"
-                                 value="{{_pinDropLocation.name::input}}">
+                                 value="{{_pinDropLocation.name::input}}"
+                                 validator="nameValidatorPinDrop">
                     </paper-input>
                     <div class="toggle-button">
                         <paper-toggle-button id="isPrivateResidence" class="inline valign-middle" tabindex="2"
@@ -226,11 +231,11 @@ Example:
                          on-keyup="_dialogKeyUp" placeholder="Search Google Maps"
                          title="Enter an address, postal code, or business name"
                          validator="placesSearchValidator" on-blur="_validatePlacesSearchOnBlur"></paper-input>
-            <paper-input id="locationName" class="inline no-margin name-input" no-label-float tabindex="5"
+            <paper-input id="dialogLocationName" class="inline no-margin name-input" no-label-float tabindex="5"
                          maxlength="30" autocapitalize="words" placeholder="Location Name"
-                         on-keyup="_dialogKeyUp" value="{{_locationName}}"
-                         title="Enter a location name"
-                         validator="locationNameValidator" on-blur="_validateDialogLocationNameOnBlur"></paper-input>
+                         on-keyup="_dialogKeyUp" value="{{_dialogLocationName}}"
+                         title="Enter a location name" validator="nameValidatorDialog"
+                         on-blur="_validateDialogLocationNameOnBlur"></paper-input>
             <div class="inline no-margin toggle-button">
                 <paper-toggle-button class="inline no-margin valign-top" tabindex="6" on-keyup="_dialogKeyUp"
                                      checked="{{_isPrivateResidence}}" title="Is this a private residence?"></paper-toggle-button>

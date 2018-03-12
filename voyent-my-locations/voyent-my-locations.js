@@ -16,7 +16,10 @@ Polymer({
 
     attached: function() {
         this.querySelector('#placesSearchValidator').validate = this._validatePlacesSearch.bind(this);
-        this.querySelector('#locationNameValidator').validate = this._validateDialogLocationName.bind(this);
+        this.querySelector('#nameValidatorDialog').validate = this._validateDialogLocationName.bind(this);
+        this.querySelector('#nameValidatorInfoWindow').validate = this._validateInfoWindowLocationName.bind(this);
+        this.querySelector('#nameValidatorPlace').validate = this._validatePlaceLocationName.bind(this);
+        this.querySelector('#nameValidatorPinDrop').validate = this._validatePinDropLocationName.bind(this);
     },
 
     ready: function() {
@@ -29,8 +32,6 @@ Polymer({
         this._selectedPlace = null;
         //An object containing details of the a newly created pin drop location.
         this._pinDropLocation = null;
-        //A flag indicating if the loaded location should be updated, used after info window closures.
-        this._locationUpdatePending = false;
         //A flag for counting the keypresses to the autocomplete entry so we can reset state as necessary.
         this._autocompleteKeyupCount = 0;
         //Padding to apply to the tooltip, represents the VRAS app header height.
@@ -41,7 +42,7 @@ Polymer({
         this._mapTooltipLandscapePos = 'left-top';
         this._tooltipsDisplayed = true;
         //A flag used to ignore change listener events for the location name input.
-        this._ignoreInputNameChanged = false;
+        this._ignoreLocationNameChanged = false;
         //Initialize other pieces that depend on the map.
         this._mapIsReady().then(function() {
             //Setup the infoWindow.
@@ -64,7 +65,9 @@ Polymer({
 
     observers: [
         '_myLocationsUpdated(_myLocations.length)',
-        '_inputNameChanged(_inputName)'
+        '_infoWindowNameChanged(_infoWindowLocationName)',
+        '_selectedPlaceNameChanged(_selectedPlace.name)',
+        '_pinDropNameChanged(_pinDropLocation.name)'
     ],
 
     //******************PRIVATE API******************
@@ -129,28 +132,6 @@ Polymer({
     },
 
     /**
-     * Whenever a location is edited via the info window we will flag it so that it can be updated on close.
-     * @private
-     */
-    _flagLocationForUpdating: function(e) {
-        //This may fire when the toggle component is initializing.
-        if (!this._loadedLocation) { return; }
-        //Change event is fired from the input field where as checked-changed is fired from the toggle.
-        if (e.type === 'change') {
-            if (!this._validateLocationName(this._inputName)) { return; }
-            this._loadedLocation.setName(this._inputName);
-        }
-        else {
-            if (typeof this._inputPrivateResidence === 'undefined' ||
-                this._inputPrivateResidence === this._loadedLocation.isPrivateResidence) {
-                return;
-            }
-            this._loadedLocation.setPrivateResidence(this._inputPrivateResidence);
-        }
-        this._locationUpdatePending = true;
-    },
-
-    /**
      * Opens the dialog for creating a new address location.
      * @private
      */
@@ -161,7 +142,7 @@ Polymer({
         //Open the dialog and initialize the autocomplete.
         this._openDialog(function () {
             setTimeout(function() {
-                _this._createLocation(_this._locationName,_this._isPrivateResidence,
+                _this._createLocation(_this._dialogLocationName,_this._isPrivateResidence,
                     new google.maps.Marker({
                     position: _this._placeCoordinates,
                     map: _this._map,
@@ -180,30 +161,20 @@ Polymer({
      * @private
      */
     _savePendingOrNewLocation: function() {
-        if (this._loadedLocation && this._locationUpdatePending) {
-            this._saveLocation(this._loadedLocation,this._loadedLocation.isPersisted ? 'updated' : 'created');
-            this._locationUpdatePending = false;
-        }
-    },
-
-    /**
-     * Validates that the locations have a unique name property.
-     * @param name
-     * @returns {boolean}
-     * @private
-     */
-    _validateLocationName: function(name) {
-        if (!name || !name.trim()) {
-            this.fire('message-error', 'Location must have a name');
-            return false;
-        }
-        for (var i=0; i<this._myLocations.length; i++) {
-            if (this._myLocations[i].name === name) {
-                this.fire('message-error', 'Location names must be unique');
-                return false;
+        var doUpdate = false;
+        if (this._loadedLocation) {
+            if (this._locationNameValid && this._loadedLocation.name !== this._infoWindowLocationName) {
+                this._loadedLocation.setName(this._infoWindowLocationName);
+                doUpdate = true;
+            }
+            if (this._loadedLocation.isPrivateResidence !== this._inputPrivateResidence) {
+                this._loadedLocation.setPrivateResidence(this._inputPrivateResidence);
+                doUpdate = true;
+            }
+            if (doUpdate) {
+                this._saveLocation(this._loadedLocation,this._loadedLocation.isPersisted ? 'updated' : 'created');
             }
         }
-        return true;
     },
 
     /**
@@ -285,21 +256,31 @@ Polymer({
                 //have a selected place then render the custom info window.
                 if (myLocation) {
                     _this._loadedLocation = myLocation;
-                    _this._ignoreInputNameChanged = true;
-                    _this._inputName = _this._loadedLocation.name;
+                    _this._ignoreLocationNameChanged = true;
+                    _this._infoWindowLocationName = _this._loadedLocation.name;
+                    _this._locationNameValid = false;
                     _this._inputPrivateResidence = _this._loadedLocation.isPrivateResidence;
                     _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
                     //Hide the current location's overlay.
                     _this._loadedLocation.nameOverlay.hide();
                     myLocation.marker.setIcon(_this._MY_LOCATION_ICON_ACTIVE);
+                    setTimeout(function() {
+                        _this.querySelector('#infoWindowLocationName').invalid = false;
+                    },0);
                 }
                 else if (_this._selectedPlace) {
                     _this._infoWindow.setPosition(_this._selectedPlace.latLng);
                     _this._infoWindow.open(_this._map);
+                    setTimeout(function() {
+                        _this.querySelector('#placeLocationName').invalid = false;
+                    },0);
                 }
                 else if (_this._pinDropLocation) {
                     _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
                     _this._infoWindow.open(_this._map);
+                    setTimeout(function() {
+                        _this.querySelector('#pinDropLocationName').invalid = false;
+                    },0);
                 }
                 else { return; }
                 _this.$.infoWindow.removeAttribute('hidden');
@@ -483,7 +464,7 @@ Polymer({
         if (!this.querySelector('#autoComplete').validate()) {
             haveErrors = true;
         }
-        if (!this.querySelector('#locationName').validate()) {
+        if (!this.querySelector('#dialogLocationName').validate()) {
             haveErrors = true;
         }
         return !haveErrors;
@@ -562,7 +543,7 @@ Polymer({
      */
     _addPinDropToMyLocations: function() {
         if (!this._pinDropLocation) { return; }
-        if (!this._validateLocationName(this._pinDropLocation.name)) { return; }
+        if (!this.querySelector('#pinDropLocationName').validate()) { return; }
         this._loadedLocation = this._createLocation(this._pinDropLocation.name,this._pinDropLocation.isPrivateResidence,
             new google.maps.Marker({
                 map: this._map,
@@ -580,7 +561,7 @@ Polymer({
      */
     _addPlaceToMyLocations: function() {
         if (!this._selectedPlace) { return; }
-        if (!this._validateLocationName(this._selectedPlace.name)) { return; }
+        if (!this.querySelector('#placeLocationName').validate()) { return; }
         this._loadedLocation = this._createLocation(this._selectedPlace.name,false,
             new google.maps.Marker({
                 map: this._map,
@@ -616,13 +597,13 @@ Polymer({
      */
     _resetDialogProperties: function() {
         this._autocompleteValue = null;
-        this._locationName = null;
+        this._dialogLocationName = null;
         this._isPrivateResidence = false;
         if (this.querySelector('#autoComplete')) {
-            this.querySelector('#locationName').invalid = false;
+            this.querySelector('#dialogLocationName').invalid = false;
         }
-        if (this.querySelector('#locationName')) {
-            this.querySelector('#locationName').invalid = false;
+        if (this.querySelector('#dialogLocationName')) {
+            this.querySelector('#dialogLocationName').invalid = false;
         }
     },
 
@@ -752,26 +733,6 @@ Polymer({
     },
 
     /**
-     * Validates the location name field inside the dialog.
-     * @returns {boolean}
-     * @private
-     */
-    _validateDialogLocationName: function() {
-        var elem = this.querySelector('#locationName');
-        if (!this._locationName || !this._locationName.trim()) {
-            elem.setAttribute('error-message','Location must have a name');
-            return false;
-        }
-        for (var i=0; i<this._myLocations.length; i++) {
-            if (this._myLocations[i].name === this._locationName) {
-                elem.setAttribute('error-message','Name must be unique');
-                return false;
-            }
-        }
-        return true;
-    },
-
-    /**
      * Validates the location name field inside the dialog on blur.
      * @private
      */
@@ -783,10 +744,72 @@ Polymer({
                 while (parentInput.nodeName !== 'PAPER-INPUT') {
                     parentInput = parentInput.parentNode;
                 }
-                if (parentInput.id === 'locationName') { return; }
+                if (parentInput.id === 'dialogLocationName') { return; }
             }
-            _this.querySelector('#locationName').validate();
+            _this.querySelector('#dialogLocationName').validate();
         },0);
+    },
+
+    /**
+     * Validates the location name field inside the edit info window.
+     * @returns {boolean}
+     * @private
+     */
+    _validateInfoWindowLocationName: function() {
+        return this._validateLocationName(this.querySelector('#infoWindowLocationName'),this._infoWindowLocationName);
+    },
+
+    /**
+     * Validates the location name field inside the selected place info window.
+     * @returns {boolean}
+     * @private
+     */
+    _validatePlaceLocationName: function() {
+        return this._validateLocationName(this.querySelector('#placeLocationName'),this._selectedPlace.name);
+    },
+
+    /**
+     * Validates the location name field inside the pin drop info window.
+     * @returns {boolean}
+     * @private
+     */
+    _validatePinDropLocationName: function() {
+        return this._validateLocationName(this.querySelector('#pinDropLocationName'),this._pinDropLocation.name);
+    },
+
+    /**
+     * Validates the location name field inside the dialog.
+     * @returns {boolean}
+     * @private
+     */
+    _validateDialogLocationName: function() {
+        return this._validateLocationName(this.querySelector('#dialogLocationName'),this._dialogLocationName);
+    },
+
+    /**
+     * Validates the location name input using the passed location name.
+     * @param elem
+     * @param locationName
+     * @returns {boolean}
+     * @private
+     */
+    _validateLocationName: function(elem, locationName) {
+        this._locationNameValid = true;
+        if (!locationName || !locationName.trim()) {
+            elem.setAttribute('error-message','Location must have a name');
+            this._locationNameValid = false;
+        }
+        for (var i=0; i<this._myLocations.length; i++) {
+            //Don't compare the location against itself.
+            if (this._loadedLocation && this._loadedLocation === this._myLocations[i]) {
+                continue;
+            }
+            if (this._myLocations[i].name === locationName) {
+                elem.setAttribute('error-message','Name must be unique');
+                this._locationNameValid = false;
+            }
+        }
+        return this._locationNameValid;
     },
 
     /**
@@ -800,16 +823,40 @@ Polymer({
     },
 
     /**
-     * Monitors changes to the location input name and flags the location for updating.
-     * We will ignore this event when the location name is changed programatically.
+     * Validates the edit location name input on change. We will ignore this event when the location name is changed programatically.
      * @private
      */
-    _inputNameChanged: function() {
-        //We use this rather than an on-change on the component because this does not fire on infoWindow blur on iOS.
-        if (this._ignoreInputNameChanged) {
-            this._ignoreInputNameChanged = false;
+    _infoWindowNameChanged: function() {
+        //We use this rather than an on-change on the paper-input because this does not fire on infoWindow blur on iOS.
+        if (this._ignoreLocationNameChanged) {
+            this._ignoreLocationNameChanged = false;
             return;
         }
-        this._flagLocationForUpdating({"type":"change"});
+        var elem = this.querySelector('#infoWindowLocationName');
+        if (elem) {
+            elem.validate();
+        }
+    },
+
+    /**
+     * Validates the selected place name input on change.
+     * @private
+     */
+    _selectedPlaceNameChanged: function() {
+        var elem = this.querySelector('#placeLocationName');
+        if (elem) {
+            elem.validate();
+        }
+    },
+
+    /**
+     * Validates the pin drop name input on change.
+     * @private
+     */
+    _pinDropNameChanged: function() {
+        var elem = this.querySelector('#pinDropLocationName');
+        if (elem) {
+            elem.validate();
+        }
     }
 });
