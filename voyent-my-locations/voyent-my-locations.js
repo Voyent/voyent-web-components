@@ -292,26 +292,14 @@ Polymer({
                     //Hide the current location's overlay.
                     _this._loadedLocation.nameOverlay.hide();
                     myLocation.marker.setIcon(_this._MY_LOCATION_ICON_ACTIVE);
-                    //Focus on the name input.
-                    setTimeout(function() {
-                        _this.querySelector('#name').focus();
-                    },0);
                 }
                 else if (_this._selectedPlace) {
                     _this._infoWindow.setPosition(_this._selectedPlace.latLng);
                     _this._infoWindow.open(_this._map);
-                    //Focus on the name input.
-                    setTimeout(function() {
-                        _this.querySelector('#placeName').focus();
-                    },0);
                 }
                 else if (_this._pinDropLocation) {
                     _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
                     _this._infoWindow.open(_this._map);
-                    //Focus on the name input.
-                    setTimeout(function() {
-                        _this.querySelector('#pinDropName').focus();
-                    },0);
                 }
                 else { return; }
                 _this.$.infoWindow.removeAttribute('hidden');
