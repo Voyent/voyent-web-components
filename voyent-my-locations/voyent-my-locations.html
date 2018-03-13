@@ -30,6 +30,9 @@ Example:
             .info-window {
                 font-weight: 400;
                 -webkit-font-smoothing: antialiased;
+                /* Hide overflow so that when the location name label moves
+                to the top it doesn't render a scrollbar temporarily. */
+                overflow:hidden;
             }
             .selected-place .address {
                 margin: 10px auto 10px auto;
@@ -138,7 +141,6 @@ Example:
                              tabindex="1"
                              label="Location Name"
                              maxlength="30"
-                             placeholder="New Name"
                              autocapitalize="words"
                              on-keyup="_handleInfoWindowKeyPress"
                              value="{{_infoWindowLocationName::input}}"
@@ -159,8 +161,8 @@ Example:
                 <template is="dom-if" if="[[_selectedPlace]]">
                     <div class="selected-place text-center">
                         <paper-input id="placeLocationName"
+                                     tabindex="1"
                                      label="Location Name"
-                                     placeholder="New Name"
                                      maxlength="30"
                                      autocapitalize="words"
                                      value="{{_selectedPlace.name::input}}"
@@ -187,7 +189,7 @@ Example:
                                 </template>
                             </div>
                         </div>
-                        <paper-button raised title="Add Location" on-click="_addPlaceToMyLocations">
+                        <paper-button tabindex="2" raised title="Add Location" on-click="_addPlaceToMyLocations">
                             Add Location
                         </paper-button>
                     </div>
@@ -197,7 +199,6 @@ Example:
                                  tabindex="1"
                                  label="Location Name"
                                  maxlength="30"
-                                 placeholder="New Name"
                                  autocapitalize="words"
                                  on-keyup="_handleInfoWindowKeyPress"
                                  value="{{_pinDropLocation.name::input}}"
@@ -209,7 +210,7 @@ Example:
                         <span class="private-residence valign-middle no-select">Private Residence</span>
                     </div>
                     <div class="pin-drop text-center">
-                        <paper-button raised title="Add Location" on-click="_addPinDropToMyLocations">
+                        <paper-button tabindex="3" raised title="Add Location" on-click="_addPinDropToMyLocations">
                             Add Location
                         </paper-button>
                     </div>
@@ -226,24 +227,24 @@ Example:
                       on-iron-overlay-opened="_fixModalStacking">
             <p class="dialog-title">New Location Details</p>
             <p class="no-margin">Start typing and then select an item from the list...</p>
-            <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" on-keyup="_handleAutocompleteKeyPress"
+            <paper-input id="autoComplete" class="autocomplete no-margin" tabindex="1" on-keyup="_handleAutocompleteKeyPress"
                          maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
-                         on-keyup="_dialogKeyUp" placeholder="Search Google Maps"
+                         on-keyup="_dialogKeyUp" label="Search Google Maps"
                          title="Enter an address, postal code, or business name"
                          validator="placesSearchValidator" on-blur="_validatePlacesSearchOnBlur"></paper-input>
-            <paper-input id="dialogLocationName" class="inline no-margin name-input" no-label-float tabindex="5"
-                         maxlength="30" autocapitalize="words" placeholder="Location Name"
+            <paper-input id="dialogLocationName" class="inline no-margin name-input" tabindex="2"
+                         label="Location Name" maxlength="30" autocapitalize="words"
                          on-keyup="_dialogKeyUp" value="{{_dialogLocationName}}"
                          title="Enter a location name" validator="nameValidatorDialog"
                          on-blur="_validateDialogLocationNameOnBlur"></paper-input>
             <div class="inline no-margin toggle-button">
-                <paper-toggle-button class="inline no-margin valign-top" tabindex="6" on-keyup="_dialogKeyUp"
+                <paper-toggle-button class="inline no-margin valign-top" tabindex="3" on-keyup="_dialogKeyUp"
                                      checked="{{_isPrivateResidence}}" title="Is this a private residence?"></paper-toggle-button>
                 <span class="private-residence valign-middle no-select">Private Residence</span>
             </div>
             <div class="dialog-bttns">
-                <paper-button raised tabindex="7" title="Cancel" on-click="_closeDialog">Cancel</paper-button>
-                <paper-button raised tabindex="8" title="Confirm" on-click="_confirmDialog">Add Location</paper-button>
+                <paper-button raised tabindex="4" title="Cancel" on-click="_closeDialog">Cancel</paper-button>
+                <paper-button raised tabindex="5" title="Confirm" on-click="_confirmDialog">Add Location</paper-button>
             </div>
         </paper-dialog>
         <div id="addLocationTooltip" class="tooltipBox text-center">

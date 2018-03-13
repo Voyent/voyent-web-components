@@ -72,6 +72,8 @@ Polymer({
 
     //******************PRIVATE API******************
 
+    //TODO - Editing a location name immediately after editing it doesn't update it
+
     /**
      * Finish initializing after login.
      * @private
