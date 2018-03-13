@@ -406,6 +406,10 @@ Polymer({
             _this._tooltipsList[1].position = isPortrait ? _this._mapTooltipPortraitPos : _this._mapTooltipLandscapePos;
             _this._tooltipsList[1].topPadding = isPortrait ? _this._tooltipPadding : 0;
             _this._repositionTooltips();
+            var dialog = _this.querySelector('#modalDialog');
+            if (dialog) {
+                dialog.notifyResize();
+            }
         },400);
     },
 
