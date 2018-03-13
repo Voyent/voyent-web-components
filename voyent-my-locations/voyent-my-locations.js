@@ -408,13 +408,15 @@ Polymer({
                 _this._tooltipsList[1].topPadding = isPortrait ? _this._tooltipPadding : 0;
                 _this._repositionTooltips();
             }
+            //Ensure the dialog resizes correctly if it is open during the orientation change.
             var dialog = _this.querySelector('#modalDialog');
             if (dialog) {
                 dialog.notifyResize();
             }
+            //Ensure the map resizes correctly after orientation changes.
             setTimeout(function() {
                 _this.resizeMap();
-            },200);
+            },500);
         },400);
     },
 
