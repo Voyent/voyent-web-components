@@ -55,9 +55,6 @@ Example:
             .pin-drop paper-button {
                 margin: 10px 0;
             }
-            .autocomplete {
-                padding-top: 15px;
-            }
             .delete-bttn {
                 text-align: center;
                 padding-left: 23px;
@@ -71,6 +68,9 @@ Example:
             }
             #modalDialog .toggle-button {
                 margin-top:20px;
+            }
+            #modalDialog {
+                margin:0;
             }
             .private-residence {
                 font-size:15px;
@@ -224,7 +224,7 @@ Example:
                                data-tooltip-displayed$="[[_tooltipsDisplayed]]"></paper-icon-button>
         </div>
         <paper-dialog id="modalDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
-                      on-iron-overlay-opened="_fixModalStacking">
+                      on-iron-overlay-opened="_fixModalStacking" always-on-top>
             <p class="dialog-title">New Location Details</p>
             <p class="no-margin">Start typing and then select an item from the list...</p>
             <paper-input id="autoComplete" class="autocomplete no-margin" tabindex="1" on-keyup="_handleAutocompleteKeyPress"

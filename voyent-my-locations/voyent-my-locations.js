@@ -399,17 +399,19 @@ Polymer({
      * @private
      */
     _isPortraitChanged: function(isPortrait) {
-        if (!this.isMobile || !this._tooltipsList) { return; }
+        if (!this.isMobile) { return; }
         var _this = this;
         //Adjust tooltip position on orientation changes. Add a slight delay to allow the device to switch orientations.
         setTimeout(function() {
-            _this._tooltipsList[1].position = isPortrait ? _this._mapTooltipPortraitPos : _this._mapTooltipLandscapePos;
-            _this._tooltipsList[1].topPadding = isPortrait ? _this._tooltipPadding : 0;
-            _this._repositionTooltips();
+            if (_this._tooltipsList && _this._tooltipsList[1]) {
+                _this._tooltipsList[1].position = isPortrait ? _this._mapTooltipPortraitPos : _this._mapTooltipLandscapePos;
+                _this._tooltipsList[1].topPadding = isPortrait ? _this._tooltipPadding : 0;
+                _this._repositionTooltips();
+            }
             var dialog = _this.querySelector('#modalDialog');
             if (dialog) {
-                dialog.refit();
                 dialog.notifyResize();
+                dialog.refit();
             }
         },400);
     },
@@ -426,7 +428,9 @@ Polymer({
         this._dialogConfirmFunc = confirmFunc;
         this._dialogCancelFunc = cancelFunc;
         var dialog = this.querySelector('#modalDialog');
-        if (dialog) { dialog.open(); }
+        if (dialog) {
+            dialog.open();
+        }
     },
 
     /**
