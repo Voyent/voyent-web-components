@@ -126,11 +126,11 @@ Example:
                 margin:0;
             }
         </style>
-        <voyent-custom-validator id="placesSearchValidator" validator-name="placesSearchValidator"></voyent-custom-validator>
-        <voyent-custom-validator id="nameValidatorDialog" validator-name="nameValidatorDialog"></voyent-custom-validator>
         <voyent-custom-validator id="nameValidatorInfoWindow" validator-name="nameValidatorInfoWindow"></voyent-custom-validator>
         <voyent-custom-validator id="nameValidatorPlace" validator-name="nameValidatorPlace"></voyent-custom-validator>
         <voyent-custom-validator id="nameValidatorPinDrop" validator-name="nameValidatorPinDrop"></voyent-custom-validator>
+        <voyent-custom-validator id="nameValidatorDialog" validator-name="nameValidatorDialog"></voyent-custom-validator>
+        <voyent-custom-validator id="placesSearchValidator" validator-name="placesSearchValidator"></voyent-custom-validator>
 
         <div id="container">
             <div id="map"></div>
@@ -235,8 +235,7 @@ Example:
             <paper-input id="dialogLocationName" class="inline no-margin name-input" tabindex="2"
                          label="Location Name" maxlength="30" autocapitalize="words"
                          on-keyup="_dialogKeyUp" value="{{_dialogLocationName}}"
-                         title="Enter a location name" validator="nameValidatorDialog"
-                         on-blur="_validateDialogLocationNameOnBlur"></paper-input>
+                         title="Enter a location name" validator="nameValidatorDialog"></paper-input>
             <div class="inline no-margin toggle-button">
                 <paper-toggle-button class="inline no-margin valign-top" tabindex="3" on-keyup="_dialogKeyUp"
                                      checked="{{_isPrivateResidence}}" title="Is this a private residence?"></paper-toggle-button>

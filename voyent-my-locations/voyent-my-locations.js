@@ -15,11 +15,11 @@ Polymer({
     },
 
     attached: function() {
-        this.querySelector('#placesSearchValidator').validate = this._validatePlacesSearch.bind(this);
-        this.querySelector('#nameValidatorDialog').validate = this._validateDialogLocationName.bind(this);
         this.querySelector('#nameValidatorInfoWindow').validate = this._validateInfoWindowLocationName.bind(this);
         this.querySelector('#nameValidatorPlace').validate = this._validatePlaceLocationName.bind(this);
         this.querySelector('#nameValidatorPinDrop').validate = this._validatePinDropLocationName.bind(this);
+        this.querySelector('#nameValidatorDialog').validate = this._validateDialogLocationName.bind(this);
+        this.querySelector('#placesSearchValidator').validate = this._validatePlacesSearch.bind(this);
     },
 
     ready: function() {
@@ -67,7 +67,8 @@ Polymer({
         '_myLocationsUpdated(_myLocations.length)',
         '_infoWindowNameChanged(_infoWindowLocationName)',
         '_selectedPlaceNameChanged(_selectedPlace.name)',
-        '_pinDropNameChanged(_pinDropLocation.name)'
+        '_pinDropNameChanged(_pinDropLocation.name)',
+        '_dialogNameChanged(_dialogLocationName)'
     ],
 
     //******************PRIVATE API******************
@@ -732,24 +733,6 @@ Polymer({
     },
 
     /**
-     * Validates the location name field inside the dialog on blur.
-     * @private
-     */
-    _validateDialogLocationNameOnBlur: function() {
-        var _this = this;
-        setTimeout(function() {
-            if (document.activeElement.getAttribute('is') === 'iron-input') {
-                var parentInput = document.activeElement.parentNode;
-                while (parentInput.nodeName !== 'PAPER-INPUT') {
-                    parentInput = parentInput.parentNode;
-                }
-                if (parentInput.id === 'dialogLocationName') { return; }
-            }
-            _this.querySelector('#dialogLocationName').validate();
-        },0);
-    },
-
-    /**
      * Validates the location name field inside the edit info window.
      * @returns {boolean}
      * @private
@@ -854,6 +837,17 @@ Polymer({
      */
     _pinDropNameChanged: function() {
         var elem = this.querySelector('#pinDropLocationName');
+        if (elem) {
+            elem.validate();
+        }
+    },
+
+    /**
+     * Validates the location name input inside the dialog on change.
+     * @private
+     */
+    _dialogNameChanged: function() {
+        var elem = this.querySelector('#dialogLocationName');
         if (elem) {
             elem.validate();
         }
