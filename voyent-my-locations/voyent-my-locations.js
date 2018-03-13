@@ -408,6 +408,7 @@ Polymer({
             _this._repositionTooltips();
             var dialog = _this.querySelector('#modalDialog');
             if (dialog) {
+                dialog.refit();
                 dialog.notifyResize();
             }
         },400);
