@@ -412,7 +412,9 @@ Polymer({
             if (dialog) {
                 dialog.notifyResize();
             }
-            _this.resizeMap();
+            setTimeout(function() {
+                _this.resizeMap();
+            },200);
         },400);
     },
 
