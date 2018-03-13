@@ -114,19 +114,19 @@ Polymer({
             return;
         }
         //Close the info window and specify we don't want to save the location.
-        this._closeInfoWindow(true);
-        this._loadedLocation.removeFromMap();
-        var query = {"location.properties.vras.id":this._loadedLocation.id};
+        var locationToRemove = this._loadedLocation;
+        this._toggleInfoWindow(null,true);
+        locationToRemove.removeFromMap();
+        var query = {"location.properties.vras.id":locationToRemove.id};
         voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
-            var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
+            var indexToRemove = _this._myLocations.indexOf(locationToRemove);
             if (indexToRemove > -1) {
                 _this.splice('_myLocations',indexToRemove,1);
             }
-            _this._loadedLocation = null;
             _this.fire('message-info','Location removed');
             _this._adjustBoundsAndPan();
         }).catch(function () {
-            _this._loadedLocation.addToMap();
+            locationToRemove.addToMap();
             _this.fire('message-error','Location removal failed');
         });
     },
@@ -185,17 +185,14 @@ Polymer({
         var _this = this;
         //Initialize infoWindow object for later.
         _this._infoWindow = new google.maps.InfoWindow();
-        //Close the infoWindow and re-display the previously hidden overlay when clicking on the map.
         google.maps.event.addListener(_this._map, 'click', function(e) {
             //In some cases we may want to ignore map clicks, ignore once and then reset it.
             if (_this._ignoreMapClick) {
                 _this._ignoreMapClick = false;
                 return;
             }
-            _this._closeInfoWindow();
-            if (_this._loadedLocation) {
-                _this._loadedLocation.nameOverlay.displayAndDraw();
-            }
+            //Close any open infoWindow.
+            _this._toggleInfoWindow();
             //If we have a placeId then it means a location of interest was clicked on the map. In this case we will
             //replace the default infoWindow with a custom one so the user can optionally add it to their locations.
             if (e.placeId) {
@@ -213,81 +210,79 @@ Polymer({
                             "latLng":e.latLng
                         };
                     }
-                    _this._toggleInfoWindow(null);
+                    //Open the info window.
+                    _this._toggleInfoWindow();
                 });
             }
         });
         //When clicking the close button on the infoWindow redisplay the overlay.
         google.maps.event.addListener(_this._infoWindow,'closeclick',function() {
-            _this._closeInfoWindow();
-            if (_this._loadedLocation) {
-                _this._loadedLocation.nameOverlay.displayAndDraw();
-            }
-            _this._selectedPlace = null;
+            //Reset these on info window x button click to ensure they are reset when
+            _this._toggleInfoWindow();
         });
     },
 
     /**
      * Displays an infoWindow that is triggered when clicking on location markers or clicking on a place icon.
-     * @param myLocation
+     * @param selectedLocation
+     * @param skipSave
      * @private
      */
-    _toggleInfoWindow: function(myLocation) {
+    _toggleInfoWindow: function(selectedLocation,skipSave) {
         var _this = this;
-        //If the selected infoWindow is already opened then close it.
-        if (this._infoWindowOpen && myLocation && myLocation === this._loadedLocation) {
-            this._closeInfoWindow();
-            this._loadedLocation.nameOverlay.displayAndDraw();
-        }
-        else {
-            //If the infoWindow was toggled by selecting another location then _closeInfoWindow
-            //will not be triggered so we need to update the location here, if applicable.
-            if (this._infoWindowOpen) {
-                this._savePendingOrNewLocation();
+        if (this._infoWindowOpen) {
+            //If the info window is already open then we will close it.
+            this._closeInfoWindow(!!skipSave);
+            //If no location was selected or the location that was selected is
+            //already selected then close the info window and do nothing else.
+            if (!selectedLocation || (selectedLocation && selectedLocation === this._loadedLocation)) {
+                //Reset our state, no locations are loaded, places selected or pin drop locations active.
+                this._loadedLocation = null;
+                this._selectedPlace = null;
+                this._pinDropLocation = null;
+                return;
             }
-            //Do this async so we don't get rendering flicker when opening the info window.
-            setTimeout(function() {
-                //Re-display any previously hidden location overlay.
-                if (_this._loadedLocation) {
-                    _this._loadedLocation.marker.setIcon(_this._MY_LOCATION_ICON_INACTIVE);
-                    _this._loadedLocation.nameOverlay.displayAndDraw();
-                }
-                //If we were passed a location then select it otherwise if we
-                //have a selected place then render the custom info window.
-                if (myLocation) {
-                    _this._loadedLocation = myLocation;
-                    _this._ignoreLocationNameChanged = true;
-                    _this._infoWindowLocationName = _this._loadedLocation.name;
-                    _this._locationNameValid = false;
-                    _this._inputPrivateResidence = _this._loadedLocation.isPrivateResidence;
-                    _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
-                    //Hide the current location's overlay.
-                    _this._loadedLocation.nameOverlay.hide();
-                    myLocation.marker.setIcon(_this._MY_LOCATION_ICON_ACTIVE);
-                    setTimeout(function() {
-                        _this.querySelector('#infoWindowLocationName').invalid = false;
-                    },0);
-                }
-                else if (_this._selectedPlace) {
-                    _this._infoWindow.setPosition(_this._selectedPlace.latLng);
-                    _this._infoWindow.open(_this._map);
-                    setTimeout(function() {
-                        _this.querySelector('#placeLocationName').invalid = false;
-                    },0);
-                }
-                else if (_this._pinDropLocation) {
-                    _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
-                    _this._infoWindow.open(_this._map);
-                    setTimeout(function() {
-                        _this.querySelector('#pinDropLocationName').invalid = false;
-                    },0);
-                }
-                else { return; }
-                _this.$.infoWindow.removeAttribute('hidden');
-                _this._infoWindow.setContent(_this.$.infoWindow);
-                _this._infoWindowOpen = true;
-            },0);
         }
+        //Do this async so we don't get rendering flicker when opening the info window.
+        setTimeout(function() {
+            //If we were passed a location then select it otherwise if we
+            //have a selected place then render the custom info window.
+            if (selectedLocation) {
+                _this._loadedLocation = selectedLocation;
+                _this._ignoreLocationNameChanged = true;
+                _this._infoWindowLocationName = _this._loadedLocation.name;
+                _this._locationNameValid = false;
+                _this._inputPrivateResidence = _this._loadedLocation.isPrivateResidence;
+                _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
+                //Hide the current location's overlay.
+                _this._loadedLocation.nameOverlay.hide();
+                selectedLocation.marker.setIcon(_this._MY_LOCATION_ICON_ACTIVE);
+                setTimeout(function() {
+                    _this.querySelector('#infoWindowLocationName').invalid = false;
+                },0);
+            }
+            else if (_this._selectedPlace) {
+                _this._infoWindow.setPosition(_this._selectedPlace.latLng);
+                _this._infoWindow.open(_this._map);
+                setTimeout(function() {
+                    _this.querySelector('#placeLocationName').invalid = false;
+                },0);
+            }
+            else if (_this._pinDropLocation) {
+                _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
+                _this._infoWindow.open(_this._map);
+                setTimeout(function() {
+                    _this.querySelector('#pinDropLocationName').invalid = false;
+                },0);
+            }
+            else {
+                //If no location was selected or we don't have data for place or pin drop locations then just return.
+                return;
+            }
+            _this.$.infoWindow.removeAttribute('hidden');
+            _this._infoWindow.setContent(_this.$.infoWindow);
+            _this._infoWindowOpen = true;
+        },0);
     },
 
     /**
@@ -298,9 +293,12 @@ Polymer({
     _closeInfoWindow: function(skipSave) {
         this._infoWindow.close();
         this._infoWindowOpen = false;
-        if (this._loadedLocation && !skipSave) {
+        if (this._loadedLocation) {
+            this._loadedLocation.nameOverlay.displayAndDraw();
             this._loadedLocation.marker.setIcon(this._MY_LOCATION_ICON_INACTIVE);
-            this._savePendingOrNewLocation();
+            if (!skipSave) {
+                this._savePendingOrNewLocation();
+            }
         }
     },
 
@@ -552,7 +550,8 @@ Polymer({
                 icon: this._MY_LOCATION_ICON_INACTIVE
         }),'created');
         this._pinDropLocation = null;
-        this._closeInfoWindow();
+        //this._closeInfoWindow();
+        this._toggleInfoWindow(null,true);
     },
 
     /**
@@ -570,7 +569,8 @@ Polymer({
                 icon: this._MY_LOCATION_ICON_INACTIVE
         }),'created');
         this._selectedPlace = null;
-        this._closeInfoWindow();
+        //this._closeInfoWindow();
+        this._toggleInfoWindow(null,true);
     },
 
     /**
@@ -579,15 +579,12 @@ Polymer({
      * @param isPrivateResidence
      * @param marker
      * @param msgPrefix
-     * @param skipSave
      * @returns {Voyent.AlertBehaviour._MyLocation}
      * @private
      */
-    _createLocation: function(name,isPrivateResidence,marker,msgPrefix,skipSave) {
+    _createLocation: function(name,isPrivateResidence,marker,msgPrefix) {
         var newLocation = new this._MyLocation(null, name, isPrivateResidence ,marker);
-        if (!skipSave) {
-            this._saveLocation(newLocation,msgPrefix);
-        }
+        this._saveLocation(newLocation,msgPrefix);
         return newLocation;
     },
 
