@@ -411,7 +411,6 @@ Polymer({
             var dialog = _this.querySelector('#modalDialog');
             if (dialog) {
                 dialog.notifyResize();
-                dialog.refit();
             }
         },400);
     },
