@@ -86,10 +86,10 @@ Polymer({
     /**
      * Saves all locations that have been modified since component load or last save.
      * @param locationToSave
-     * @param msgPrefix
+     * @param msgSuffix
      * @private
      */
-    _saveLocation: function(locationToSave,msgPrefix) {
+    _saveLocation: function(locationToSave,msgSuffix) {
         var _this = this;
         //Ensure we have the latest JSON before saving it.
         locationToSave.updateJSON();
@@ -99,7 +99,7 @@ Polymer({
             if (_this._myLocations.indexOf(locationToSave) === -1) {
                 _this.push('_myLocations',locationToSave);
             }
-            //_this.fire('message-info','Location ' + msgPrefix);
+            //_this.fire('message-info','Location ' + msgSuffix);
             _this._adjustBoundsAndPan();
         }).catch(function () {
             _this.fire('message-error','Location update failed');
@@ -594,13 +594,13 @@ Polymer({
      * @param name
      * @param isPrivateResidence
      * @param marker
-     * @param msgPrefix
+     * @param msgSuffix
      * @returns {Voyent.AlertBehaviour._MyLocation}
      * @private
      */
-    _createLocation: function(name,isPrivateResidence,marker,msgPrefix) {
+    _createLocation: function(name,isPrivateResidence,marker,msgSuffix) {
         var newLocation = new this._MyLocation(null, name, isPrivateResidence ,marker);
-        this._saveLocation(newLocation,msgPrefix);
+        this._saveLocation(newLocation,msgSuffix);
         return newLocation;
     },
 
