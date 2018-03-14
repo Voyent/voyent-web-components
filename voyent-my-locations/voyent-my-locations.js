@@ -99,7 +99,7 @@ Polymer({
             if (_this._myLocations.indexOf(locationToSave) === -1) {
                 _this.push('_myLocations',locationToSave);
             }
-            _this.fire('message-info','Location ' + msgPrefix);
+            //_this.fire('message-info','Location ' + msgPrefix);
             _this._adjustBoundsAndPan();
         }).catch(function () {
             _this.fire('message-error','Location update failed');
@@ -126,7 +126,7 @@ Polymer({
             if (indexToRemove > -1) {
                 _this.splice('_myLocations',indexToRemove,1);
             }
-            _this.fire('message-info','Location removed');
+            //_this.fire('message-info','Location removed');
             _this._adjustBoundsAndPan();
         }).catch(function () {
             locationToRemove.addToMap();
