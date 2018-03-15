@@ -20,6 +20,9 @@ Example:
 <dom-module id="voyent-alert-editor">
     <template>
         <style include="voyent-alert-styles" is="custom-style">
+            #propertiesPanel {
+                height: var(--height-var);
+            }
             .icon-div {
                 display:inline-block;
             }
@@ -59,9 +62,12 @@ Example:
                 line-height: 12px;
                 overflow:hidden;
             }
+            .custom-control {
+                margin: -5px 5px 0 0;
+            }
         </style>
         <div id="container">
-            <div id="map"></div><div id="sidePanel">
+            <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div><div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <template is="dom-if" if="[[_showTemplateListPane]]">
@@ -77,7 +83,7 @@ Example:
                                         </template>
                                     </div>
                                     <template is="dom-repeat" items="{{_parentTemplates}}">
-                                        <div class$="{{_getTemplateClass(item._id,_selectedAlertTemplateId)}}"
+                                        <div class$="[[_getTemplateClass(item._id,_selectedAlertTemplateId)]]"
                                              on-click="_selectAlertTemplate" data-id$="{{item._id}}">
                                             <div class="imgDiv" data-id$="{{item._id}}">
                                                 <img src$="{{getBadgeUrl(item.badge)}}"
@@ -128,8 +134,13 @@ Example:
                         <div class="alert-template-desc">Please login to active this panel.</div>
                     </template>
                 </div>
-                <div id="crudPanel"></div>
             </div></div>
+        </div>
+        <div id$="[[_FULLSCREEN_CONTAINER_ID]]" data-is-mobile$="[[isMobile]]" data-mode$="[[mode]]" hidden></div>
+        <div id$="[[_FULLSCREEN_BUTTON_ID]]" class="custom-control no-select" hidden
+             title$="[[_getFullscreenBttnTitle(_isFullscreenMode)]]"
+             data-loaded-alert$="[[_loadedAlert]]">
+            <img src="../common/voyent-alert/img/fullscreen_bttn.png">
         </div>
         <div id$="[[_CIRCLE_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Add Circular Zone">

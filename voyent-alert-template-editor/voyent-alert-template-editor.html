@@ -21,6 +21,9 @@ Example:
 <dom-module id="voyent-alert-template-editor">
     <template>
         <style include="voyent-alert-styles" is="custom-style">
+            #propertiesPanel {
+                height: calc(var(--height-var) - 45px);
+            }
             .icon-div {
                 width:16px;
                 height:16px;
@@ -32,9 +35,12 @@ Example:
                 position:absolute;
                 top:-176px;
             }
+            .custom-control {
+                margin: -5px 5px 0 0;
+            }
         </style>
         <div id="container">
-            <div id="map"></div><div id="sidePanel">
+            <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div><div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <voyent-alert-properties hide-alert-name
@@ -75,6 +81,12 @@ Example:
                 </template>
                 </div>
             </div>
+        </div>
+        <div id$="[[_FULLSCREEN_CONTAINER_ID]]" data-is-mobile$="[[isMobile]]" data-mode$="[[mode]]" hidden></div>
+        <div id$="[[_FULLSCREEN_BUTTON_ID]]" class="custom-control no-select" hidden
+             title$="[[_getFullscreenBttnTitle(_isFullscreenMode)]]"
+             data-loaded-alert$="[[_loadedAlert]]">
+            <img src="../common/voyent-alert/img/fullscreen_bttn.png">
         </div>
         <div id$="[[_CIRCLE_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
             <div class="customMapBttn" title="Add Circular Zone">

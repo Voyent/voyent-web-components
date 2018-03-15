@@ -17,16 +17,18 @@
                 border: 2px inset rgba(0,0,0,0.5);
                 vertical-align: top;
             }
+            #map[data-is-fullscreen],
+            #sidePanel[data-is-fullscreen] {
+                border: none;
+                border-radius: 0;
+            }
             #sidePanel {
                 width: 200px;
                 border-left:none;
             }
-            #propertiesPanel {
-                height: calc(var(--height-var) - 45px);
-            }
             #propertiesPanel,
             #crudPanel {
-                overflow-y: scroll;
+                overflow-y: auto;
                 background-color: white;
                 position:relative;
             }
@@ -122,20 +124,46 @@
                 top:-160px;
             }
             .custom-control {
-                background-color: #FFF;
-                text-align: center;
-                margin: 10px;
-            }
-            .custom-control {
                 background-color:transparent;
+                text-align: center;
+                cursor: pointer;
+            }
+            .custom-control[data-loaded-alert] {
+                margin: 10px 5px 0 0;
             }
             .custom-control paper-button {
                 background-color: #FFF;
-                font-size: 14px;
+                font-size: 13px;
             }
             .custom-control paper-button.glow-green {
                 box-shadow: 2px 2px 5px #006542;
                 color: #006542;
+            }
+            .custom-control paper-icon-button {
+                width:30px;
+                height:30px;
+                background-color:#006542;
+                color:white;
+                border-radius:15px;
+                padding:0;
+                margin-left:8px;
+            }
+            #fullscreenContainer {
+                position: fixed;
+                top: 0;
+                left: 0;
+                /* -250px width for the app-drawer + -15px width for the scrollbar */
+                width: -webkit-calc(100% - 265px);
+                width: -moz-calc(100% - 265px);
+                width: calc(100% - 265px);
+                margin-left:250px;
+                /* -64px height for the app-header */
+                height: -webkit-calc(100% - 64px);
+                height: -moz-calc(100% - 64px);
+                height: calc(100% - 64px);
+                margin-top: 64px;
+                padding: 0;
+                z-index: 999;
             }
             .no-select {
                 -webkit-touch-callout: none;

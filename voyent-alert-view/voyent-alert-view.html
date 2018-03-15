@@ -21,25 +21,12 @@ Example:
 <dom-module id="voyent-alert-view">
     <template>
         <style include="voyent-alert-styles" is="custom-style">
-            #map[data-is-fullscreen] {
-                border: none;
-                border-radius: 0;
-            }
-            #fullscreenContainer {
-                position: fixed;
-                top: 0;
-                left: 0;
+            #fullscreenContainer[data-mode="notification"] {
                 /* -15px width for the scrollbar */
                 width: -webkit-calc(100% - 15px);
                 width: -moz-calc(100% - 15px);
                 width: calc(100% - 15px);
-                /* -64px height for the app-header */
-                height: -webkit-calc(100% - 64px);
-                height: -moz-calc(100% - 64px);
-                height: calc(100% - 64px);
-                margin-top: 64px;
-                padding: 0;
-                z-index: 999;
+                margin-left:0;
             }
             #fullscreenContainer[data-is-mobile] {
                 width: 100%;
@@ -48,14 +35,9 @@ Example:
                 height: -moz-calc(100% - 43px);
                 height: calc(100% - 43px);
                 margin: 43px 0 0 0;
-                padding: 0;
             }
-            #fullscreenContainer[data-mode="preview"] {
-                /* -250px width for the app-drawer + -15px width for the scrollbar */
-                width: -webkit-calc(100% - 265px);
-                width: -moz-calc(100% - 265px);
-                width: calc(100% - 265px);
-                margin-left:250px;
+            .custom-control {
+                margin:10px;
             }
             .custom-control div {
                 overflow:hidden;
@@ -74,9 +56,8 @@ Example:
         <div id="container">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
         </div>
-        <div id="fullscreenContainer" data-is-mobile$="[[isMobile]]" data-mode$="[[mode]]" hidden></div>
-
-        <div id="fullscreenBttn" class="custom-control no-select" hidden>
+        <div id$="[[_FULLSCREEN_CONTAINER_ID]]" data-is-mobile$="[[isMobile]]" data-mode$="[[mode]]" hidden></div>
+        <div id$="[[_FULLSCREEN_BUTTON_ID]]" class="custom-control no-select" hidden>
             <div id="openButton" title="Enter Fullscreen Mode">
                 <img src="../common/voyent-alert/img/fullscreen_bttn.png">
             </div>
