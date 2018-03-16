@@ -405,12 +405,15 @@ Polymer({
                     topPadding:!_this.isMobile ? -_this._tooltipPadding : (_this.isPortrait ? _this._tooltipPadding : 0)
                 }
             ]);
-            //Close the tooltips when the user begins to interact with the page.
-            window.addEventListener('click',function(e) {
-                e.stopPropagation();
+            //Close the tooltips when the user begins to interact with the page. Remove the listener
+            //after they click once. We use removeEventListener rather than the {once:true} option
+            //because this is not supported in IE11 and causes issues with page interaction.
+            var windowClickListener = function() {
                 _this._hideTooltips();
                 _this._tooltipsDisplayed = false;
-            },{once:true});
+                window.removeEventListener('click',windowClickListener);
+            };
+            window.addEventListener('click',windowClickListener);
         },500);
     },
 
