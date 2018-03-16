@@ -1,6 +1,7 @@
 <link rel="import" href="../../../polymer/polymer.html">
 <link rel="import" href="../imports/voyent.html">
 <link rel="import" href="../../../paper-button/paper-button.html">
+<link rel="import" href="../imports/resize-observer.html">
 
 <script>
     var Voyent = Voyent || {};
@@ -103,9 +104,10 @@
 
         ready: function() {
             //Define some constants.
+            this._CONTAINER_ID = 'container';
+            this._SIDE_PANEL_ID = 'sidePanel';
             this._FULLSCREEN_BUTTON_ID = 'fullscreenBttn';
             this._FULLSCREEN_CONTAINER_ID = 'fullscreenContainer';
-            this._SIDE_PANEL_ID = 'sidePanel';
             this._CIRCLE_BUTTON_ID = 'circleBttn';
             this._POLYGON_BUTTON_ID = 'polygonBttn';
             this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
@@ -180,8 +182,8 @@
                     }.bind(_this);
                     window.addEventListener('voyent-login-succeeded',onAfterLoginListener);
                 }
-                //Make sure the map is always sized correctly when the window size changes.
-                window.addEventListener('resize', function() { _this.resizeMap(); });
+                //Make sure the map is always sized correctly when the map size changes.
+                new ResizeObserver(_this.resizeMap.bind(_this)).observe(_this.querySelector('#map'));
                 //De-select any selected zone stack on map click.
                 _this._deselectStacksOnClick(_this._map);
             };
@@ -352,9 +354,9 @@
             }
             // Move the map to the inline container, adjust the size and remove the esc key listener
             var mapDiv = this._map.getDiv();
-            this.querySelector('#container').append(mapDiv);
+            this.querySelector('#'+this._CONTAINER_ID).append(mapDiv);
             if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                this.querySelector('#container').append(this.querySelector('#'+this._SIDE_PANEL_ID));
+                this.querySelector('#'+this._CONTAINER_ID).append(this.querySelector('#'+this._SIDE_PANEL_ID));
             }
             this.resizeMap();
             this._removeKeydownListener();
