@@ -35,11 +35,11 @@
     "awesomplete": "https://github.com/LeaVerou/awesomplete.git#^1.0.0",
     "pikaday": "https://github.com/dbushell/Pikaday.git#1.4.0",
     "randomColor": "https://github.com/davidmerfield/randomColor.git#0.4.1",
-    "jscolor": "https://github.com/EastDesire/jscolor.git"
+    "jscolor": "https://github.com/EastDesire/jscolor.git",
+    "resize-observer-polyfill": "^1.5.0"
   },
   "devDependencies": {
-    "web-component-tester": "*",
-    "resize-observer-polyfill": "^1.5.0"
+    "web-component-tester": "*"
   },
   "resolutions": {
     "polymer": "^1.6.0"
