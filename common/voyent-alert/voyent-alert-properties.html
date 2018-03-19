@@ -128,8 +128,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 width: 47%;
             }
             paper-slider {
-                width: 127px;
-                margin-left: -12px;
+                width: 100%;
+                margin:0;
             }
             paper-input-container {
                 padding:0;
@@ -155,6 +155,9 @@ Internal component used to display the properties panel inside Voyent alert comp
                 --paper-input-container-input: {
                     font-size: 13px;
                 };
+            }
+            paper-dropdown-menu {
+                width:100%;
             }
             .jscolor {
                 width:100%;
@@ -204,19 +207,18 @@ Internal component used to display the properties panel inside Voyent alert comp
                 word-wrap:break-word;
             }
             .title.zone {
-                width: 149px;
+                width: calc(100% - 26px);
                 font-size:14px;
             }
             .title.zone.active {
-                width:102px;
+                width: calc(100% - 78px);
             }
             .title.zone.movement,
             .title.zone.movement.active {
                 font-size:16px;
-                width:130px;
             }
             .title.zone.active.no-edit {
-                width:123px !important;
+                width: calc(100% - 52px);
             }
             .title-bttns {
                 width:45px;

@@ -22,7 +22,12 @@ Example:
     <template>
         <style include="voyent-alert-styles" is="custom-style">
             #propertiesPanel {
-                height: calc(var(--height-var) - 45px);
+                height: calc(var(--map-height) - 45px);
+                width: calc(var(--sidePanel-width,200px) - 7px);
+                display:inline-block;
+            }
+            .drag-handle {
+                height: calc(var(--map-height) - 45px);
             }
             .icon-div {
                 width:16px;
@@ -40,7 +45,9 @@ Example:
             }
         </style>
         <div id="container">
-            <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div><div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
+            <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
+            <div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
+                <div class="drag-handle" title="Resize Properties Panel" on-mousedown="_beginResizeOperation" on-mousemove="_doResizeOperation" on-mouseup="_endResizeOperation"></div>
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <voyent-alert-properties hide-alert-name
@@ -67,8 +74,7 @@ Example:
                         <div class="alert-template-title">Invalid Credentials</div>
                         <div class="alert-template-desc">Please login to active this panel.</div>
                     </template>
-                </div>
-                <div id="crudPanel">
+                </div><div id="crudPanel">
                     <template is="dom-if" if="[[_loadedAlert]]">
                         <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
                             <div class="text-center" style="font-size:12px;">

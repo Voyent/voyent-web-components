@@ -2,11 +2,11 @@
     <template>
         <style>
             #container {
-                height: var(--height-var);
+                height: var(--map-height);
                 width:100%;
             }
             #map {
-                width: var(--width-var);
+                width: var(--map-width);
                 border-radius: 15px 0 0 15px;
                 z-index: 0;
                 @apply(--map);
@@ -23,7 +23,7 @@
                 border-radius: 0;
             }
             #sidePanel {
-                width: 200px;
+                width: var(--sidePanel-width,200px);
                 border-left:none;
             }
             #propertiesPanel,
@@ -39,6 +39,11 @@
             }
             #crudPanel paper-button {
                 margin: 7px 0 0 0;
+            }
+            .drag-handle {
+                width: 2px;
+                cursor:ew-resize;
+                display:inline-block;
             }
             .alert-template-title,
             .alert-zones-label,
@@ -181,6 +186,10 @@
             }
             [hidden] {
                 display: none !important;
+            }
+            /* Fix space issue when using inline-block elements  */
+            #container, #map, #sidePanel, #propertiesPanel, #crudPanel, .drag-handle {
+                font-size: 0;
             }
         </style>
     </template>

@@ -1099,11 +1099,11 @@
                         height = 500;
                     }
                 }
-                _this.customStyle['--height-var'] = height + 'px';
+                _this.customStyle['--map-height'] = height + 'px';
 
                 //If the width is specified then set it
                 if (_this.width && _this.width > 0) {
-                    _this.customStyle['--width-var'] = _this.width + 'px';
+                    _this.customStyle['--map-width'] = _this.width + 'px';
                 }
                 else { //Otherwise the map will take up as much space as possible.
                     if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' || _this.nodeName === 'VOYENT-ALERT-EDITOR') {
@@ -1112,16 +1112,71 @@
                         if (!_this._isFullscreenMode) {
                             w-=20;
                         }
-                        _this.customStyle['--width-var'] = w + 'px';
+                        _this.customStyle['--map-width'] = w + 'px';
                     }
                     else {
-                        _this.customStyle['--width-var'] = _this._map.getDiv().parentElement.offsetWidth + 'px';
+                        _this.customStyle['--map-width'] = _this._map.getDiv().parentElement.offsetWidth + 'px';
                     }
 
                 }
                 //Apply the styles
                 _this.updateStyles();
             },0);
+        },
+
+        /**
+         * Begins resizing the properties panel, triggered when the user clicks the drag handle on the left side of the panel.
+         * @param e
+         * @private
+         */
+        _beginResizeOperation: function(e) {
+            e.preventDefault();
+            //Store the starting position of the mouse.
+            this._startX = e.pageX;
+            this._startWidth = this.querySelector('#'+this._SIDE_PANEL_ID).clientWidth;
+            //Attach mouse listenrs to document so mouse events are still captured when the mouse is no longer over the drag handle.
+            this._tmpMouseMoveListener = this._doResizeOperation.bind(this);
+            this._tmpMouseUpListener = this._endResizeOperation.bind(this);
+            document.addEventListener('mousemove', this._tmpMouseMoveListener);
+            document.addEventListener('mouseup', this._tmpMouseUpListener);
+        },
+
+        /**
+         * Resizes the properties panel, triggered while the user drags the drag handle on the left side of the panel.
+         * @param e
+         * @private
+         */
+        _doResizeOperation: function(e) {
+            e.preventDefault();
+            if (!this._startX) {
+                return;
+            }
+            //Calculate the new width by taking the difference between the start position and current mouse position.
+            var newWidth = this._startWidth - (e.pageX - this._startX);
+            //We will set a min width of 190px as the panel becomes unuseable past this and a max width of the same size as the map.
+            var minWidth = 190;
+            var maxWidth = this.querySelector('#container').clientWidth / 2;
+            if (newWidth <= minWidth) {
+                newWidth = minWidth;
+            }
+            else if (newWidth >= maxWidth) {
+                newWidth = maxWidth;
+            }
+            newWidth += 'px';
+            this.customStyle['--sidePanel-width'] = newWidth;
+            this.resizeMap();
+        },
+
+        /**
+         * Ends resizing the properties panel, triggered while the user releases the mouse.
+         * @private
+         */
+        _endResizeOperation: function() {
+            this._startX = null;
+            document.removeEventListener('mousemove', this._tmpMouseMoveListener);
+            this._tmpMouseMoveListener = null;
+            document.removeEventListener('mouseup', this._tmpMouseUpListener);
+            this._tmpMouseUpListener = null;
         },
 
         /**

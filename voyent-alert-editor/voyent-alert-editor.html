@@ -21,7 +21,12 @@ Example:
     <template>
         <style include="voyent-alert-styles" is="custom-style">
             #propertiesPanel {
-                height: var(--height-var);
+                height: var(--map-height);
+                width: calc(var(--sidePanel-width,200px) - 7px);
+                display:inline-block;
+            }
+            .drag-handle {
+                height: var(--map-height);
             }
             .icon-div {
                 display:inline-block;
@@ -57,7 +62,7 @@ Example:
             }
             .alertTemplates .nameDiv,
             .alerts .nameDiv {
-                width: 125px;
+                width: calc(100% - 40px);
                 font-size:12px;
                 line-height: 12px;
                 overflow:hidden;
@@ -67,7 +72,9 @@ Example:
             }
         </style>
         <div id="container">
-            <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div><div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
+            <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
+            <div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
+                <div class="drag-handle" title="Resize Properties Panel" on-mousedown="_beginResizeOperation" on-mousemove="_doResizeOperation" on-mouseup="_endResizeOperation"></div>
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <template is="dom-if" if="[[_showTemplateListPane]]">
