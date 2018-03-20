@@ -125,7 +125,7 @@ Polymer({
     refreshUserLocation: function() {
         var _this = this;
         this._mapIsReady().then(function() {
-            _this._fetchLocationRecord().then(_this._adjustBoundsAndPan.bind(_this)).catch(function(error) {
+            _this._fetchLocationRecord().catch(function(error) {
                 _this.fire('message-error', 'Issue drawing user\'s location: ' +
                                              (error.responseText || error.message || error));
             });
