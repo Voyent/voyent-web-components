@@ -69,10 +69,13 @@ Polymer({
                         location.location.geometry.coordinates[0]
                     );
                 }
-                _this._drawAndLoadAlertTemplate(alert,latLng);
+                _this._drawAndLoadAlertTemplate(alert,latLng,true);
                 _this._drawLocations(locations,true);
                 _this._templateId = _this._loadedAlert.template.id;
                 _this._toggleEditableMap(_this.mode === 'view');
+                setTimeout(function() {
+                    _this._adjustBoundsAndPan();
+                },0);
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
