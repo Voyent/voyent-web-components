@@ -653,9 +653,10 @@
          * @param templateJSON - The JSON to build the alert template from.
          * @param latLngCentroid - An optional LatLng object specifying the centroid of the template. When this is not
          *                         provided we will calculate the centroid based on the template's stack coordinates.
+         * @param skipMapPan
          * @private
          */
-        _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
+        _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid,skipMapPan) {
             var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker;
             //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
             if (templateJSON.geo) {
@@ -772,7 +773,9 @@
                     );
                 }
             }
-            this._adjustBoundsAndPan();
+            if (!skipMapPan) {
+                this._adjustBoundsAndPan();
+            }
         },
 
         /**
