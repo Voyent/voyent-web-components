@@ -1374,7 +1374,7 @@
          */
         _adjustBoundsAndPan: function() {
             var bounds = new google.maps.LatLngBounds();
-            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations))) {
+            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations.length))) {
                 var i;
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
@@ -1414,20 +1414,19 @@
                         }
                     }
                 }
-                if (this._mobileLocation) {
-                    if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1) {
+                if (this._mobileLocation || this._myLocations.length) {
+                    if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
                         bounds.extend(this._mobileLocation.marker.getPosition());
                     }
-                }
-                if (this._myLocations) {
                     for (i=0; i<this._myLocations.length; i++) {
                         if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
                             bounds.extend(this._myLocations[i].marker.getPosition());
                         }
                     }
+                    //Ensure we only do this if the bounds were extended otherwise the map may pan to the middle of the ocean.
+                    this._map.fitBounds(bounds);
+                    this._map.panToBounds(bounds);
                 }
-                this._map.fitBounds(bounds);
-                this._map.panToBounds(bounds);
             }
             else {
                 this._zoomOnRegion();
