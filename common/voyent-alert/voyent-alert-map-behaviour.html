@@ -473,9 +473,9 @@
             }
             //Clear the user marker.
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                if (this._userLocationMarker) {
-                    this._userLocationMarker.setMap(null);
-                    this._userLocationMarker = null;
+                if (this._mobileLocation) {
+                    this._mobileLocation.removeFromMap();
+                    this._mobileLocation = null;
                 }
                 else if (this._myLocations) {
                     this._clearMyLocations();
@@ -676,7 +676,6 @@
                         if ((!location || !location[0])) {
                             return resolve();
                         }
-                        _this._drawUser(location[0]);
                     }
                     resolve(location[0]);
                 }).catch(function(error) {
@@ -697,11 +696,18 @@
                     realm:_this.realm, account:_this.account,
                     id:"getMyLocationsForUsername", execParams: {username:voyent.auth.getLastKnownUsername()}
                 }).then(function(locations) {
-                    //Clear the map and draw the locations.
-                    _this._loadedLocation = null;
-                    _this._clearMyLocations();
-                    _this._drawMyLocations(locations);
-                    resolve();
+                    if (_this.nodeName === 'VOYENT-MY-LOCATIONS') {
+                        //Clear the map and draw the locations.
+                        _this._loadedLocation = null;
+                        _this._clearMyLocations();
+                        _this._drawMyLocations(locations);
+                    }
+                    else {
+                        locations = locations.map(function(obj) {
+                            return obj.location;
+                        })
+                    }
+                    resolve(locations);
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching location records: ' + (error.responseText || error.message || error));
                     reject(error);
@@ -805,10 +811,9 @@
          * @param templateJSON - The JSON to build the alert template from.
          * @param latLngCentroid - An optional LatLng object specifying the centroid of the template. When this is not
          *                         provided we will calculate the centroid based on the template's stack coordinates.
-         * @param skipMapPan
          * @private
          */
-        _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid,skipMapPan) {
+        _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
             var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker;
             //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
             if (templateJSON.geo) {
@@ -925,7 +930,7 @@
                     );
                 }
             }
-            if (!skipMapPan) {
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW' || this.mode !== 'notification') {
                 this._adjustBoundsAndPan();
             }
         },
@@ -1369,7 +1374,7 @@
          */
         _adjustBoundsAndPan: function() {
             var bounds = new google.maps.LatLngBounds();
-            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._userLocationMarker || this._myLocations))) {
+            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations))) {
                 var i;
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
@@ -1409,18 +1414,20 @@
                         }
                     }
                 }
-                if (this._userLocationMarker || (this._myLocations && this._myLocations.length)) {
-                    if (this._userLocationMarker) {
-                        bounds.extend(this._userLocationMarker.getPosition());
+                if (this._mobileLocation) {
+                    if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1) {
+                        bounds.extend(this._mobileLocation.marker.getPosition());
                     }
-                    if (this._myLocations) {
-                        for (i=0; i<this._myLocations.length; i++) {
+                }
+                if (this._myLocations) {
+                    for (i=0; i<this._myLocations.length; i++) {
+                        if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
                             bounds.extend(this._myLocations[i].marker.getPosition());
                         }
                     }
-                    this._map.fitBounds(bounds);
-                    this._map.panToBounds(bounds);
                 }
+                this._map.fitBounds(bounds);
+                this._map.panToBounds(bounds);
             }
             else {
                 this._zoomOnRegion();

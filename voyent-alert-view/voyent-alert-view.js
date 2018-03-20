@@ -50,13 +50,31 @@ Polymer({
                 return;
             }
             _this.clearMap();
-            //Fetch the alert and user locations.
+            //Fetch the alert template, its current location and the user locations (incl. mobile).
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
+            if (_this.mode === 'notification') {
+                //First create a list of affected location ids. We will draw all locations but
+                //will use this list to ensure we only pan the map on the affected locations.
+                _this._affectedLocationIds = [];
+                if (locations && locations.length) {
+                    _this._affectedLocationIds = locations.map(function(obj) {
+                        return obj.properties.vras.id;
+                    });
+                }
+                promises.push(_this._fetchLocationRecord());
+                promises.push(_this._fetchMyLocations());
+            }
             Promise.all(promises).then(function(results) {
                 var alert = results[0];
-                var location = results[1];
+                var alertLocation = results[1];
+                var userLocation = results[2];
+                var myLocations = results[3];
+                //Add the mobile location to our list of locations so it also gets drawn.
+                if (userLocation) {
+                    myLocations.push(userLocation.location);
+                }
                 //First clear the map if we have an alert loaded already.
                 if (_this._loadedAlert) {
                     _this.clearMap();
@@ -65,17 +83,19 @@ Polymer({
                 var latLng = null;
                 if (alert.geo) {
                     latLng = new google.maps.LatLng(
-                        location.location.geometry.coordinates[1],
-                        location.location.geometry.coordinates[0]
+                        alertLocation.location.geometry.coordinates[1],
+                        alertLocation.location.geometry.coordinates[0]
                     );
                 }
-                _this._drawAndLoadAlertTemplate(alert,latLng,true);
-                _this._drawLocations(locations,true);
+                _this._drawAndLoadAlertTemplate(alert,latLng);
+                _this._drawLocations(myLocations);
                 _this._templateId = _this._loadedAlert.template.id;
                 _this._toggleEditableMap(_this.mode === 'view');
-                setTimeout(function() {
-                    _this._adjustBoundsAndPan();
-                },0);
+                if (_this.mode === 'notification') {
+                    setTimeout(function() {
+                        _this._adjustBoundsAndPan();
+                    },0);
+                }
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
@@ -114,7 +134,7 @@ Polymer({
             }
         }
         this.clearMap();
-        this._drawLocations(locations,false);
+        this._drawLocations(locations);
         this._drawAndLoadAlertTemplate(template);
         this._map.setOptions({maxZoom:null});
     },
@@ -125,7 +145,10 @@ Polymer({
     refreshUserLocation: function() {
         var _this = this;
         this._mapIsReady().then(function() {
-            _this._fetchLocationRecord().catch(function(error) {
+            _this._fetchLocationRecord().then(function(location) {
+                _this._drawUser(location);
+                _this._adjustBoundsAndPan();
+            }).catch(function(error) {
                 _this.fire('message-error', 'Issue drawing user\'s location: ' +
                                              (error.responseText || error.message || error));
             });
@@ -185,35 +208,38 @@ Polymer({
      */
     _drawUser: function(location) {
         if (!location) { return; }
-        var coordinates = location.location ? location.location.geometry.coordinates : location.geometry.coordinates;
+        location = location.location || location;
         //Check if we already have a user location drawn on the map.
-        if (this._userLocationMarker) { //Update the existing instance.
-            this._userLocationMarker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
+        if (this._mobileLocation) { //Update the existing instance.
+            this._mobileLocation.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
         }
         else {
-            this._userLocationMarker = new google.maps.Marker({
-                position: new google.maps.LatLng(coordinates[1],coordinates[0]),
-                map: this._map,
-                draggable: false,
-                icon: this.pathtoimages+'/img/user_marker.png'
-            });
+            this._mobileLocation = new this._MyLocation(
+                location.properties.vras.id,
+                null, //No name so the label doesn't render.
+                location.properties.vras.type === 'residential',
+                new google.maps.Marker({
+                    position: new google.maps.LatLng(location.geometry.coordinates[1],location.geometry.coordinates[0]),
+                    map: this._map,
+                    draggable: false,
+                    icon: this.pathtoimages+'/img/user_marker.png'
+                })
+            );
             //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
-            this._addFullscreenClickListener(this._userLocationMarker);
+            this._addFullscreenClickListener(this._mobileLocation.marker);
         }
     },
 
     /**
      * Draws user markers on the map based on the passed location data.
      * @param locations
-     * @param useMarkerIcon
      * @private
      */
-    _drawLocations: function(locations,useMarkerIcon) {
-        if (!locations) { return; }
+    _drawLocations: function(locations) {
+        if (!locations || !locations.length) { return; }
         this.set('_myLocations',[]);
         for (var i=0; i<locations.length; i++) {
-            // For notification and view modes we want to render the user icon as
-            // we should always only have one mobile location in these cases.
+            // For notification and view modes we want to render the user icon for the mobile location.
             if (this.mode !== 'preview' && locations[i].properties.vras.type === 'mobile') {
                 this._drawUser(locations[i]);
                 continue;
@@ -224,7 +250,7 @@ Polymer({
                 ),
                 map: this._map,
                 draggable: false,
-                icon: useMarkerIcon ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByEndpointType(locations[i].endpointType)
+                icon: this.mode !== 'preview' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByEndpointType(locations[i].endpointType)
             });
             //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
             this._addFullscreenClickListener(marker);

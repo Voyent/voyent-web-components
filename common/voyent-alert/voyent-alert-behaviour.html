@@ -2161,8 +2161,7 @@
                         this.nameOverlay.draw();
                     }
                     else {
-                        if (_outer.nodeName !== 'VOYENT-ALERT-VIEW' ||
-                            (_outer.nodeName === 'VOYENT-ALERT-VIEW' && _outer.mode !== 'preview')) {
+                        if (name && (_outer.nodeName !== 'VOYENT-ALERT-VIEW' || _outer.mode !== 'preview')) {
                             this.nameOverlay = new _outer._LocationOverlay(this);
                         }
                     }
