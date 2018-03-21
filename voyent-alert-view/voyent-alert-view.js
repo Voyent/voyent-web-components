@@ -211,7 +211,7 @@ Polymer({
         location = location.location || location;
         //Check if we already have a user location drawn on the map.
         if (this._mobileLocation) { //Update the existing instance.
-            this._mobileLocation.marker.setPosition(new google.maps.LatLng(coordinates[1],coordinates[0]));
+            this._mobileLocation.marker.setPosition(new google.maps.LatLng(location.geometry.coordinates[1],location.geometry.coordinates[0]));
         }
         else {
             this._mobileLocation = new this._MyLocation(
