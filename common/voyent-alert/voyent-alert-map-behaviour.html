@@ -1421,22 +1421,44 @@
                 if (this._mobileLocation || (this._myLocations && this._myLocations.length)) {
                     if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
                         bounds.extend(this._mobileLocation.marker.getPosition());
-                        this._extendBoundsForNameOverlay(this._mobileLocation,bounds);
                     }
+                    var locationsToPanTo = [];
                     for (i=0; i<this._myLocations.length; i++) {
                         if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
                             bounds.extend(this._myLocations[i].marker.getPosition());
-                            this._extendBoundsForNameOverlay(this._myLocations[i],bounds);
+                            locationsToPanTo.push(this._myLocations[i]);
                         }
                     }
                     //Ensure we only do this if the bounds were extended otherwise the map may pan to the middle of the ocean.
                     this._map.fitBounds(bounds);
                     this._map.panToBounds(bounds);
+                    //Include the name overlays in the map bounds.
+                    this._panBoundsForNameOverlays(locationsToPanTo,bounds);
                 }
             }
             else {
                 this._zoomOnRegion();
             }
+        },
+
+        /**
+         * Pans the map bounds so that it includes all of the location name overlays in the view.
+         * @param locations
+         * @param bounds
+         * @private
+         */
+        _panBoundsForNameOverlays: function(locations, bounds) {
+            if (!locations || !locations.length) { return; }
+            var _this = this;
+            //Async to ensure the map is panned on the markers before proceeding. This
+            //is so we can correctly calculate the pixel positions of the name overlays.
+            setTimeout(function() {
+                for (var i=0; i<locations.length; i++) {
+                    _this._extendBoundsForNameOverlay(locations[i],bounds);
+                }
+                _this._map.fitBounds(bounds);
+                _this._map.panToBounds(bounds);
+            },0);
         },
 
         /**
@@ -1446,23 +1468,22 @@
          * @private
          */
         _extendBoundsForNameOverlay: function(location, bounds) {
+            if (!location.nameOverlay) { return; }
             var overlayProjection = this._overlayView.getProjection();
-            if (location.nameOverlay) {
-                //Get the pixel coordinates of the marker position.
-                var nc = overlayProjection.fromLatLngToDivPixel(location.marker.getPosition());
-                //Include the location name overlay in the map bounds by extending the bounds to include
-                //the NW and SE coordinate of the overlay. This will ensure the entire label is in view.
-                var nwCoordinate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
-                    nc.x - location.nameOverlay.div.offsetWidth/2,
-                    nc.y-64
-                ));
-                bounds.extend(nwCoordinate);
-                var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
-                    nc.x + location.nameOverlay.div.offsetWidth/2,
-                    nc.y-64+location.nameOverlay.div.offsetHeight
-                ));
-                bounds.extend(seCoordindate);
-            }
+            //Get the pixel coordinates of the marker position.
+            var nc = overlayProjection.fromLatLngToDivPixel(location.marker.getPosition());
+            //Include the location name overlay in the map bounds by extending the bounds to include
+            //the NW and SE coordinate of the overlay. This will ensure the entire label is in view.
+            var nwCoordinate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
+                nc.x - location.nameOverlay.div.offsetWidth/2,
+                nc.y-64
+            ));
+            bounds.extend(nwCoordinate);
+            var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
+                nc.x + location.nameOverlay.div.offsetWidth/2,
+                nc.y-64+location.nameOverlay.div.offsetHeight
+            ));
+            bounds.extend(seCoordindate);
         },
 
         /**

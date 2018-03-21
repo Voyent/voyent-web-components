@@ -702,15 +702,8 @@ Polymer({
             }
             this._map.fitBounds(bounds);
             this._map.panToBounds(bounds);
-            //Wait until the map is panned on the initial markers before considering
-            //the name overlays so we can correctly calculate the pixel positions.
-            setTimeout(function() {
-                for (i=0; i<this._myLocations.length; i++) {
-                    this._extendBoundsForNameOverlay(this._myLocations[i],bounds);
-                }
-                this._map.fitBounds(bounds);
-                this._map.panToBounds(bounds);
-            }.bind(this),0);
+            //Include the name overlays in the map bounds.
+            this._panBoundsForNameOverlays(this._myLocations,bounds);
         }
         else {
             this._skipRegionPanning = false;
