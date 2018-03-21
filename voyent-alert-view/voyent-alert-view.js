@@ -58,9 +58,16 @@ Polymer({
                 //First create a list of affected location ids. We will draw all locations but
                 //will use this list to ensure we only pan the map on the affected locations.
                 _this._affectedLocationIds = [];
+                //Then create a list of affected stack ids. These are the zone stacks which have locations inside
+                //of them. We will use this list to ensure we only draw alert stacks that contain affected locations.
+                _this._affectedStackIds = [];
                 if (locations && locations.length) {
                     _this._affectedLocationIds = locations.map(function(obj) {
                         return obj.properties.vras.id;
+                    });
+                    _this._affectedStackIds = locations.map(function(obj) {
+                        //We will get undefined values here for locations inside fallback zone, this is expected.
+                        return obj.properties.vras.insideStackId;
                     });
                 }
                 promises.push(_this._fetchLocationRecord());

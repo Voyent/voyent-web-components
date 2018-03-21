@@ -827,7 +827,13 @@
                     return stackGroups;
                 },{});
                 for (var stackId in zoneStackGeometries) {
-                    if (!zoneStackGeometries.hasOwnProperty(stackId)) { continue; }
+                    //For the alert detail notification view we will only render the
+                    //inner-most zone of a stack if it contains an affected location.
+                    if (this.nodeName === 'VOYENT-ALERT-VIEW' &&
+                        this.mode === 'notification' &&
+                        this._affectedStackIds.indexOf(stackId) === -1) {
+                        continue;
+                    }
                     zoneGeometries = zoneStackGeometries[stackId];
                     zones = [];
                     zIndex = 49;
@@ -846,7 +852,7 @@
                                 else { continue; }
                             }
                             else {
-                                //For alert detail notification view show the inner zone of each stack.
+                                //For alert detail notification view show the inner zone of each relevant stack.
                                 if (i >= 1) { break; }
                             }
                         }
@@ -887,9 +893,7 @@
                     }
                 }
             }
-            else { //No stacks, fallback zone only.
-                zoneStacks = [];
-            }
+
             var parentId = templateJSON.properties.parentAlertId || null;
             //We only want to create a template marker if we have more than
             //one stack, otherwise the stack marker will just be used.
