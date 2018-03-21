@@ -186,6 +186,10 @@
                 new ResizeObserver(_this.resizeMap.bind(_this)).observe(_this.querySelector('#map'));
                 //De-select any selected zone stack on map click.
                 _this._deselectStacksOnClick(_this._map);
+                //Create a general use OverlayView object that so we can access some of its utility functions.
+                _this._overlayView = new google.maps.OverlayView();
+                _this._overlayView.draw = function() {};
+                _this._overlayView.setMap(_this._map);
             };
             if (!('google' in window) || !('maps' in window.google)) {
                 if (this.loadGoogleMaps) {
@@ -1417,10 +1421,12 @@
                 if (this._mobileLocation || (this._myLocations && this._myLocations.length)) {
                     if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
                         bounds.extend(this._mobileLocation.marker.getPosition());
+                        this._extendBoundsForNameOverlay(this._mobileLocation,bounds);
                     }
                     for (i=0; i<this._myLocations.length; i++) {
                         if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
                             bounds.extend(this._myLocations[i].marker.getPosition());
+                            this._extendBoundsForNameOverlay(this._myLocations[i],bounds);
                         }
                     }
                     //Ensure we only do this if the bounds were extended otherwise the map may pan to the middle of the ocean.
@@ -1430,6 +1436,32 @@
             }
             else {
                 this._zoomOnRegion();
+            }
+        },
+
+        /**
+         * Extends the map bounds to include the location name overlay in the view.
+         * @param location
+         * @param bounds
+         * @private
+         */
+        _extendBoundsForNameOverlay: function(location, bounds) {
+            var overlayProjection = this._overlayView.getProjection();
+            if (location.nameOverlay) {
+                //Get the pixel coordinates of the marker position.
+                var nc = overlayProjection.fromLatLngToDivPixel(location.marker.getPosition());
+                //Include the location name overlay in the map bounds by extending the bounds to include
+                //the NW and SE coordinate of the overlay. This will ensure the entire label is in view.
+                var nwCoordinate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
+                    nc.x - location.nameOverlay.div.offsetWidth/2,
+                    nc.y-64
+                ));
+                bounds.extend(nwCoordinate);
+                var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
+                    nc.x + location.nameOverlay.div.offsetWidth/2,
+                    nc.y-64+location.nameOverlay.div.offsetHeight
+                ));
+                bounds.extend(seCoordindate);
             }
         },
 
