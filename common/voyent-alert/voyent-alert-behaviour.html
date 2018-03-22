@@ -2424,7 +2424,7 @@
                 var nc = this.getProjection().fromLatLngToDivPixel(this.latLng);
                 //Set the div content.
                 this.div.innerHTML = 'Release ' + (_outer.isMobile ? 'Finger' : 'Mouse') +' to Create Location';
-                //Generally we will render the overlay 10 pixels above where the user selects. If this position will be hidden
+                //Generally we will render the overlay x pixels above where the user selects. If this position will be hidden
                 //because they selected near the top of the map then we will render 10 pixels below instead. If they select on
                 //the left or right edge then we will adjust the position to the side to ensure the entire overlay is within view.
                 var halfWidth = this.div.offsetWidth/2;
@@ -2441,8 +2441,10 @@
                     var renderLeftOffset = halfWidth - this.pixelCoordinates.x;
                     this.div.style.left = (nc.x - halfWidth) + renderLeftOffset + 'px';
                 }
-                var renderAboveOffset = this.div.offsetHeight+10, renderBelowOffset = 10;
-                this.div.style.top = (this.pixelCoordinates.y > renderAboveOffset ? nc.y-this.div.offsetHeight-10 : nc.y+renderBelowOffset) + 'px';
+                //Render further from coordinate on mobile since the user's finger is in the way.
+                var generalPixelOffset = _outer.isMobile ? 45 : 10;
+                var renderAboveOffset = this.div.offsetHeight+generalPixelOffset;
+                this.div.style.top = (this.pixelCoordinates.y > renderAboveOffset ? nc.y-this.div.offsetHeight-generalPixelOffset : nc.y+generalPixelOffset) + 'px';
                 //Configure additional styling.
                 this.div.style.backgroundColor = '#88b7d5';
                 this.div.style.border = '2px solid #c2e1f5';
