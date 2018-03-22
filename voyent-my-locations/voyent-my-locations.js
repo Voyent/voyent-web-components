@@ -187,11 +187,6 @@ Polymer({
         //Initialize infoWindow object for later.
         _this._infoWindow = new google.maps.InfoWindow();
         google.maps.event.addListener(_this._map, 'click', function(e) {
-            //In some cases we may want to ignore map clicks, ignore once and then reset it.
-            if (_this._ignoreMapClick) {
-                _this._ignoreMapClick = false;
-                return;
-            }
             //Close any open infoWindow.
             _this._toggleInfoWindow();
             //If we have a placeId then it means a location of interest was clicked on the map. In this case we will
@@ -494,39 +489,28 @@ Polymer({
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
             //Ensure we only setup one interval. Mousedown will fire twice on mobile for pinch events.
             if (_this._mouseHoldTimer) { return; }
-            //If the user holds the mouse down for one second then create a new location at that position.
+            //If the user holds the mouse down for a set interval then create a new location at that position.
             _this._mouseHoldTimer = setTimeout(function() {
-                //We require this flag so the infoWindow will not be closed immediately after releasing the mouse.
-                _this._ignoreMapClick = true;
-                //In order for the map to exit panning mode in desktop after the mouse hold operation we need the map to catch
-                //the mouseup event and not the newly rendered infoWindow. To do this we will render the infoWindow slightly
-                //above the position that the user clicked so that when they release the mouse it is received by the map.
-                var point = _this._map.getProjection().fromLatLngToPoint(e.latLng);
-                var latLng = _this._map.getProjection().fromPointToLatLng(
-                    new google.maps.Point(point.x,point.y-_this._getNewPinDropYPositionBasedonZoom())
-                );
+                //We will just display an overlay indicating to the user that they should release their mouse. We do this
+                //rather than rendering the infoWindow immediately to avoid issues with releasing panning mode (VRAS-293).
+                _this._mouseHoldOverlay = new _this._MouseHoldOverlay(e.latLng,e.pixel);
+            },500);
+        });
+        google.maps.event.addListener(this._map, 'mouseup', function(e) {
+            if (_this._mouseHoldOverlay) {
+                //Remove the temporary overlay from the view.
+                _this._mouseHoldOverlay.setMap(null);
+                _this._mouseHoldOverlay = null;
                 //Reset some values and create a container for our pin drop location data.
                 _this._loadedLocation = null;
                 _this._selectedPlace = null;
                 _this._pinDropLocation = {
-                        "name":'',
-                        "isPrivateResidence":false,
-                        "latLng":latLng
+                    "name":'',
+                    "isPrivateResidence":false,
+                    "latLng":e.latLng
                 };
                 //Open the infoWindow.
                 _this._toggleInfoWindow(null);
-                //Set the latLng position of the new location to where the user actually clicked rather than
-                //slightly above due to the above noted requirement. We will apply this position to the
-                //infoWindow position on mouseup and the location will be created at this location.
-                setTimeout(function() {
-                    _this._pinDropLocation.latLng = e.latLng;
-                },0);
-            },1000);
-        });
-        google.maps.event.addListener(this._map, 'mouseup', function() {
-            //Adjust the infoWindow position to where the user actually clicked.
-            if (_this._pinDropLocation) {
-                _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
             }
             clearTimeout(_this._mouseHoldTimer);
             _this._mouseHoldTimer = null;
@@ -535,21 +519,13 @@ Polymer({
             clearTimeout(_this._mouseHoldTimer);
             _this._mouseHoldTimer = null;
         });
-    },
-
-    /**
-     * We initially render the pin drop infoWindow slightly above the position of where they clicked
-     * but the amount of adjustment required varies at each zoom level. This function will return
-     * the y coordinate amount that the infoWindow should be moved up for each zoom level.
-     * @returns {number}
-     * @private
-     */
-    _getNewPinDropYPositionBasedonZoom: function() {
-        //We know that at zoom level 0 we require 8 y coordinates to space the infoWindow far enough above the
-        //mouse to ensure the map receives the mouseout event. We also know that each zoom level is 50% more
-        //scaled than the last so we will divide by 2 x number of times where x is the current zoom level.
-        var pixelAdjustementAtZoomLevelZero = 8;
-        return pixelAdjustementAtZoomLevelZero/(Math.pow(2,this._map.getZoom()));
+        //Add a keyup listener so that if the user presses escape while creating a pin drop location the op will be cancelled.
+        window.addEventListener('keyup', function(e) {
+            if (_this._mouseHoldOverlay && e.keyCode === 27) {
+                _this._mouseHoldOverlay.setMap(null);
+                _this._mouseHoldOverlay = null;
+            }
+        });
     },
 
     /**
