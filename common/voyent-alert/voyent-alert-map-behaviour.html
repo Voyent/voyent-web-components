@@ -182,6 +182,8 @@
                     }.bind(_this);
                     window.addEventListener('voyent-login-succeeded',onAfterLoginListener);
                 }
+                //Make sure the map is always sized correctly when the window size changes.
+                window.addEventListener('resize', _this.resizeMap.bind(_this));
                 //Make sure the map is always sized correctly when the map size changes.
                 new ResizeObserver(_this.resizeMap.bind(_this)).observe(_this.querySelector('#map'));
                 //De-select any selected zone stack on map click.
