@@ -271,7 +271,7 @@
          */
         _addFullscreenClickListener: function(mapElement) {
             var _this = this;
-            if (this.mode === 'notification') {
+            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'notification') {
                 google.maps.event.addListener(mapElement, 'click', function() {
                     if (_this._isFullscreenMode) {
                         return;
