@@ -289,6 +289,9 @@ Polymer({
         else if (endpointType === 'sms') {
             return this.pathtoimages+'/img/sms_circle.png';
         }
+        else if (endpointType === 'voice') {
+            return this.pathtoimages+'/img/voice_donut.png';
+        }
         return this.pathtoimages+'/img/user_marker.png';
     },
 
