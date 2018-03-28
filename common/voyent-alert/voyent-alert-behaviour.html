@@ -34,7 +34,8 @@
             this._MY_LOCATION_ICON_INACTIVE = this.pathtoimages+'/img/green_marker_circle.png';
             this._MY_LOCATION_ICON_ACTIVE = this.pathtoimages+'/img/green_marker_star.png';
             //Messages.
-            this._OVERLAP_MSG = 'The zone cannot overlap other zones in the stack';
+            this._OVERLAP_WITHIN_STACK_MSG = 'The zone cannot overlap other zones in the stack';
+            this._OVERLAP_ANOTHER_STACK_MSG = 'Notification zones cannot overlap each other';
         },
 
         observers: ['_zonesUpdated(_loadedAlert.selectedStack.zones.length)'],
@@ -107,6 +108,7 @@
         /**
          * Returns the rectangular path around the bounds of the polygon path.
          * @param path
+         * @returns {google.maps.MVCArray}
          * @private
          */
         _getRectangularPathFromPolygonPath: function(path) {
@@ -117,7 +119,84 @@
             var ne = bounds.getNorthEast();
             var sw = bounds.getSouthWest();
 
-            return [[ne,new google.maps.LatLng(sw.lat(),ne.lng()),sw,new google.maps.LatLng(ne.lat(),sw.lng())]];
+            return new google.maps.MVCArray([new google.maps.MVCArray([ne,new google.maps.LatLng(sw.lat(),ne.lng()),sw,new google.maps.LatLng(ne.lat(),sw.lng())])]);
+        },
+
+
+        /**
+         * Checks if the passed zone overlaps other zones.
+         * @param type - The type of zone, one of `circle` or `polygon`.
+         * @param zoneData - The zone data required for processing, different depending on the type.
+         * @param stackToIgnore - A zone stack that will be ignored in the comparison.
+         * @returns {boolean}
+         * @private
+         */
+        _alertHasIntersectingStacks: function(type,zoneData,stackToIgnore) {
+            var coordinatesToCompare = type === 'circle' ?
+                this._AlertTemplate.calculateCoordinatesFromCircleProperties(zoneData.center,zoneData.radius) :
+                this._AlertTemplate.calculateCoordinatesFromPaths(zoneData.paths);
+
+            for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
+                var currentStack = this._loadedAlert.template.zoneStacks[i];
+                if (stackToIgnore && stackToIgnore === currentStack) {
+                    continue;
+                }
+                var largestZone = currentStack.getLargestZone();
+                var largestZoneCoordinates = largestZone.getShape() === 'circle' ?
+                    this._AlertTemplate.calculateCoordinatesFromCircleProperties(largestZone.shapeOverlay.getCenter(),largestZone.shapeOverlay.getRadius()) :
+                    this._AlertTemplate.calculateCoordinatesFromPaths(largestZone.shapeOverlay.getPaths());
+                //Check if the passed zone intersects with the largest zone from each stack.
+                var intersects = turf.lineIntersect({
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": coordinatesToCompare[0]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": largestZoneCoordinates[0]
+                        }
+                    }
+                );
+                if (intersects.features.length) {
+                    return true;
+                }
+                //Check if the passed zone is inside of the largest zone from each
+                //stack or the passed zone engulfs the largest zone from each stack.
+                if (turf.booleanWithin({
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": largestZoneCoordinates
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": coordinatesToCompare
+                        }
+                    }) || turf.booleanContains({
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": largestZoneCoordinates
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": coordinatesToCompare
+                        }
+                    })) {
+                    return true;
+                }
+            }
+            return false;
         },
 
         /**
@@ -352,18 +431,33 @@
         },
 
         /**
-         * Handles displaying the overlap message and ensuring we don't display it too frequently.
+         * Handles displaying the zone overlap message and ensuring we don't display it too frequently.
          * @private
          */
         _displayOverlapMsg: function() {
             var currentTime = new Date().getTime();
-            //Only allow displaying this message once every 10 seconds.
-            if (this._displayedOverlapMsgAt &&
-                currentTime - this._displayedOverlapMsgAt <= 10000) {
+            //Only allow displaying this message once every 5 seconds.
+            if (this._displayedZoneOverlapMsgAt &&
+                currentTime - this._displayedZoneOverlapMsgAt <= 5000) {
                 return;
             }
-            this.fire('message-error',this._OVERLAP_MSG);
-            this._displayedOverlapMsgAt = new Date().getTime();
+            this.fire('message-error',this._OVERLAP_WITHIN_STACK_MSG);
+            this._displayedZoneOverlapMsgAt = new Date().getTime();
+        },
+
+        /**
+         * Handles displaying the stack overlap message and ensuring we don't display it too frequently.
+         * @private
+         */
+        _displayStackOverlapMsg: function() {
+            var currentTime = new Date().getTime();
+            //Only allow displaying this message once every 5 seconds.
+            if (this._displayedStackOverlapMsgAt &&
+                currentTime - this._displayedStackOverlapMsgAt <= 5000) {
+                return;
+            }
+            this.fire('message-error',this._OVERLAP_ANOTHER_STACK_MSG);
+            this._displayedStackOverlapMsgAt = new Date().getTime();
         },
 
         /**
@@ -573,6 +667,25 @@
                     outer.push(inner);
                 }
                 return outer;
+            };
+            /**
+             * Calculate the GeoJSON coordinates using the passed circle properties
+             * @param center
+             * @param radius
+             * @static
+             */
+            this._AlertTemplate.calculateCoordinatesFromCircleProperties = function(center,radius) {
+                var latLng, coordinates=[];
+                for (var k=0; k<_outer._NUM_CIRCULAR_POLY_SIDES; k++) {
+                    //Calculate and save the next coordinate.
+                    latLng = google.maps.geometry.spherical.computeOffset(
+                        center, radius, _outer._CIRCULAR_POLY_DEGREE_STEP * k
+                    );
+                    coordinates.push([latLng.lng(), latLng.lat()]);
+                }
+                //In GeoJSON we must copy the first coordinate to the last one to complete the shape.
+                coordinates.push(coordinates[0]);
+                return [coordinates];
             };
             /**
              * A static function that returns the default JSON structure.
@@ -1289,9 +1402,21 @@
                     google.maps.event.addListener(marker, 'dragstart', function () {
                         _outer._ignoreZoneCenterChangedEvent = true;
                         _this.calculateRelativeZonePositions(_this.marker.getPosition());
+                        _outer._dragStartPosition = _this.marker.getPosition();
                     });
                     google.maps.event.addListener(marker, 'dragend', function () {
                         _outer._ignoreZoneCenterChangedEvent = false;
+                        //Check if the new stack position overlaps another zone stack.
+                        var largestZone = _this.getLargestZone();
+                        var props = largestZone.getShape() === 'circle' ?
+                            {"center":largestZone.shapeOverlay.getCenter(),"radius":largestZone.shapeOverlay.getRadius()} :
+                            {"paths":largestZone.shapeOverlay.getPaths()};
+                        if (_outer._alertHasIntersectingStacks(largestZone.getShape(),props,_this)) {
+                            _outer._displayStackOverlapMsg();
+                            _this.moveZonesRelativeToPosition(_outer._dragStartPosition);
+                            _outer._loadedAlert.template.updateJSONAndCentroid();
+                            return;
+                        }
                         //Re-initialize the polygon path listeners for all zones.
                         _this.initializePolygonPathListeners();
                     });
@@ -1345,14 +1470,21 @@
                             if (_outer._ignoreZoneCenterChangedEvent) {
                                 return;
                             }
+                            if (_outer._alertHasIntersectingStacks('circle',{"center":this.getCenter(),"radius":this.getRadius()},_this)) {
+                                _outer._displayStackOverlapMsg();
+                                _outer._ignoreZoneCenterChangedEvent = true;
+                                overlay.setCenter(_this.marker.getPosition());
+                                _outer._ignoreZoneCenterChangedEvent = false;
+                                return;
+                            }
                             _outer._ignoreZoneCenterChangedEvent = true;
                             _this.marker.setPosition(this.getCenter());
                             for (var i=0; i<_this.zones.length; i++) {
                                 //This step will fire this listener again which is why we set the flag previously.
                                 _this.zones[i].shapeOverlay.setCenter(this.getCenter());
                             }
-                            _this.updateJSON();
                             _outer._ignoreZoneCenterChangedEvent = false;
+                            _this.updateJSON();
                             _outer._loadedAlert.template.updateJSONAndCentroid();
                         });
                         //Add resize listener to circle.
@@ -1363,8 +1495,15 @@
                             }
                             //Prevent the circle form overlapping the other zones.
                             var thisZoneIndex = _outer._loadedAlert.selectedStack.getZoneIndex(zone);
-                            //Check if it overlapped the adjacent outer zone.
                             var outerZone = _outer._loadedAlert.selectedStack.getZoneAt(thisZoneIndex+1);
+                            //If we are resizing the outer zone check if it overlaps another zone stack
+                            if (!outerZone && _outer._alertHasIntersectingStacks('circle',{"center":this.getCenter(),"radius":this.getRadius()},_outer._loadedAlert.selectedStack)) {
+                                _outer._displayStackOverlapMsg();
+                                _outer._ignoreRadiusChangedEvent = true;
+                                zone.setRadius(zone.radius);
+                                return;
+                            }
+                            //Check if it overlapped the adjacent outer zone.
                             if (outerZone && this.getRadius() >= outerZone.shapeOverlay.getRadius()) {
                                 _outer._ignoreRadiusChangedEvent = true;
                                 zone.setRadius(zone.radius);
@@ -1475,6 +1614,9 @@
                     if (kinks.features.length) {
                         errorMsg = 'The zone cannot self-intersect';
                     }
+                    if (!errorMsg && largestZone === zone && _outer._alertHasIntersectingStacks('polygon',{"paths":zone.shapeOverlay.getPaths()},this)) {
+                        errorMsg = _outer._OVERLAP_ANOTHER_STACK_MSG;
+                    }
                     if (!errorMsg && _outer._loadedAlert.selectedStack.zones.length > 1) {
                         var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
                         //Check that the vertex is within our zone boundary. This handles the case
@@ -1482,7 +1624,7 @@
                         if (zoneIndex !== _outer._loadedAlert.selectedStack.getZoneIndex(largestZone)) {
                             if (!google.maps.geometry.poly.containsLocation(vertex,new google.maps.Polygon({
                                     paths: [largestZone.shapeOverlay.getPaths().getAt(pathIndex)]}))) {
-                                errorMsg = _outer._OVERLAP_MSG;
+                                errorMsg = _outer._OVERLAP_WITHIN_STACK_MSG;
                             }
                         }
                         else {
@@ -1522,7 +1664,7 @@
                             for (i=zoneIndex+2; i<_outer._loadedAlert.selectedStack.zones.length; i++) {
                                 if (google.maps.geometry.poly.containsLocation(
                                         vertex, _outer._loadedAlert.selectedStack.getZoneAt(i).shapeOverlay)) {
-                                    errorMsg = _outer._OVERLAP_MSG;
+                                    errorMsg = _outer._OVERLAP_WITHIN_STACK_MSG;
                                     break;
                                 }
                             }
@@ -1531,7 +1673,7 @@
                                 for (i=zoneIndex-2; i>=0; i--) {
                                     if (google.maps.geometry.poly.containsLocation(
                                         vertex, _outer._loadedAlert.selectedStack.getZoneAt(i).shapeOverlay)) {
-                                        errorMsg = _outer._OVERLAP_MSG;
+                                        errorMsg = _outer._OVERLAP_WITHIN_STACK_MSG;
                                         break;
                                     }
                                 }

@@ -800,6 +800,15 @@
         _setupDrawingListeners: function() {
             var _this = this, zone;
             google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
+                //Check if the new zone overlaps another zone stack.
+                var props = oce.type === 'circle' ?
+                    {"center":oce.overlay.getCenter(),"radius":oce.overlay.getRadius()} :
+                    {"paths":oce.overlay.getPaths()};
+                if (_this._alertHasIntersectingStacks(oce.type,props)) {
+                    _this._displayStackOverlapMsg();
+                    oce.overlay.setMap(null);
+                    return;
+                }
                 //Check if they drew a self-intersecting polygon and if so remove it from the map and notify them.
                 if (oce.type === 'polygon') {
                     var kinks = turf.kinks({
