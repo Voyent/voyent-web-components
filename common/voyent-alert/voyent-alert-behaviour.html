@@ -330,11 +330,12 @@
          * @param inputVal
          * @param toggleLabel
          * @param showBadge
+         * @param showCategoryPicker
          * @param confirmFunc
          * @param cancelFunc
          * @private
          */
-        _openDialog: function(message,inputVal,toggleLabel,showBadge,confirmFunc,cancelFunc) {
+        _openDialog: function(message,inputVal,toggleLabel,showBadge,showCategoryPicker,confirmFunc,cancelFunc) {
             this._dialogMessage = message;
             this._dialogInput = inputVal;
             this._showDialogInput = (typeof inputVal !== 'undefined' && inputVal !== null);
@@ -348,11 +349,25 @@
                     this._dialogBadge = this._loadedAlert.template.badge;
                 }
             }
+            this._showDialogCategories = !!showCategoryPicker;
+            if (this._showDialogCategories) {
+                this.set('_selectedCategories',this._loadedAlert ? this._loadedAlert.template.categories.slice(0) : []);
+                setTimeout(function() {
+                    var categoryWrapper = document.querySelector('.category-wrapper');
+                    if (categoryWrapper) {
+                        categoryWrapper.scrollTop = 0;
+                    }
+                },0);
+            }
             this._dialogConfirmFunc = confirmFunc;
             this._dialogCancelFunc = cancelFunc;
             var dialog = this.querySelector('#modalDialog');
             if (dialog) {
                 dialog.open();
+                //Ensure that our dialog is sized correctly
+                setTimeout(function() {
+                    dialog.notifyResize();
+                },0);
                 //If there's no input rendered in the dialog then focus on the dialog so
                 //we can capture the user's key presses. The input will focus automatically.
                 if (!this._showDialogInput) {
@@ -579,10 +594,12 @@
              * @param zoneStacks - A list of _AlertZoneStack objects, the list of zone stacks belonging with the template.
              * @param state - The current state of the alert, only relevant for child templates.
              * @param savePosition - Whether the position of the template should be stored in the json.
+             * @param isDefaultTemplate - Whether this is a default (predefined) template provided by Voyent.
              * @param schedule - The schedule details, only relevant for child templates.
+             * @param categories - Zero or more categories that this template belongs to.
              * @private
              */
-            this._AlertTemplate = function(id,parentId,name,badge,marker,zoneStacks,state,savePosition,schedule) {
+            this._AlertTemplate = function(id,parentId,name,badge,marker,zoneStacks,state,savePosition,isDefaultTemplate,schedule,categories) {
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
@@ -591,7 +608,9 @@
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
                 this.setSavePosition(!!savePosition);
+                this.setIsDefaultTemplate(!!isDefaultTemplate);
                 this.setSchedule(schedule);
+                this.setCategories(categories || []);
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed json.
@@ -800,6 +819,13 @@
                     this.savePosition = savePosition;
                 },
                 /**
+                 * Sets whether this is a default (predefined) template.
+                 * @param isDefaultTemplate
+                 */
+                setIsDefaultTemplate: function(isDefaultTemplate) {
+                    this.isDefaultTemplate = isDefaultTemplate;
+                },
+                /**
                  * Sets the schedule for the alert.
                  * @param schedule
                  */
@@ -811,6 +837,16 @@
                 */
                 hasSchedule: function() {
                     return this.schedule;
+                },
+                /**
+                 * Sets the categories that this alert belongs to.
+                 * @param categories
+                 */
+                setCategories: function(categories) {
+                    this.categories = categories;
+                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
+                        _outer.fire('voyent-alert-categories-changed', {"categories":this.categories});
+                    }
                 },
                 /**
                  * Add the passed zone stack.
@@ -882,7 +918,8 @@
                     var json = this.constructor.getJSONStructure();
                     //Add template-level properties.
                     json.name = this.name;
-                    json.badge = "info.png";
+                    json.badge = 'info.png';
+                    json.categories = this.categories;
                     if (this.badge) {
                         json.badge = this.badge;
                     }

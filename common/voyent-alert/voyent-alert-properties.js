@@ -53,7 +53,6 @@ Polymer({
          */
         _showDialogToggle: { type: Boolean, value: false, notify: true },
         /**
-         *
          * The value of the modal dialog toggle button, if applicable.
          */
         _dialogToggle: { type: Boolean, value: false, notify: true },
@@ -92,13 +91,34 @@ Polymer({
         /**
          * Whether the alert badge accordion should be open.
          */
-        _showBadge: { type: Boolean, value: false, notify: true}
+        _showBadge: { type: Boolean, value: false, notify: true},
+        /**
+         * A new template category to be added to the list of categories.
+         */
+        _newTemplateCategory: { type: String, notify: true },
+        /**
+         * Whether to show the category picker in the dialog.
+         */
+        _showDialogCategories: { type: Boolean, value: false, notify: true },
+        /**
+         * The list of available template categories.
+         */
+        _templateCategories: { type: Array, value: [], notify: true },
+        /**
+         * The list of selected categories for the current template.
+         */
+        _selectedCategories: { type: Array, value: [], notify: true }
     },
 
     observers: [
         '_alertDirectionChanged(_alertDirection)',
         '_alertSpeedChanged(_alertSpeed)'
     ],
+
+    attached: function() {
+        this.querySelector('#newCategoryValidator').validate = this._validateNewTemplateCategory.bind(this);
+        this.querySelector('#existingCategoryValidator').validate = this._validateExistingTemplateCategory.bind(this);
+    },
 
     ready: function() {
         var _this = this;
@@ -137,6 +157,218 @@ Polymer({
             {"label":"NW","value":315},
             {"label":"NNW","value":337.5}
         ];
+    },
+
+    /**
+     * Opens and initializes the category management dialog.
+     * @private
+     */
+    _manageCategories: function() {
+        var dialog = this.querySelector('#categoryManager');
+        if (dialog) {
+            dialog.open();
+            //If the update failed then open the dialog and do nothing else. This is so we don't overwrite the
+            //categories the next time they open the editor, allowing them to go back in and try the save again.
+            if (this._categoryUpdateFailed) {
+                this._categoryUpdateFailed = false;
+                return;
+            }
+            //Create a copy of our template categories list and ensure it is sorted.
+            var templateCategories = this._templateCategories.slice(0);
+            templateCategories.sort(this._sortCategories);
+            //Build our list of categories to be used in the dialog. We wrap the categories in an object to fix
+            //issues with data bindings joining each other in the dom-repeat when the values are the same.
+            this.set('_editedTemplateCategories',templateCategories.map(function(category) {
+                return {"name":category}
+            }));
+            //Ensure the dialog opens with a clean input state.
+            this.set('_newTemplateCategory','');
+            this.querySelector('#newCategoryInput').invalid = false;
+        }
+    },
+
+    /**
+     * Handles validating and adding a new template category.
+     * @private
+     */
+    _addNewTemplateCategory: function() {
+        if (!this.querySelector('#newCategoryInput').validate()) {
+            return;
+        }
+        this.push('_editedTemplateCategories',{
+            "name":this._newTemplateCategory
+        });
+        this.set('_newTemplateCategory','');
+        //Sort the list and re-set it so the indices on the dom-repeat update. We do this
+        //rather than using a dom-repeat sort because that sort does not update the indices.
+        this._editedTemplateCategories.sort(this._sortCategories);
+        this.set('_editedTemplateCategories',this._editedTemplateCategories.slice(0));
+    },
+
+    /**
+     * Handles deleting an existing category.
+     * @param e
+     * @private
+     */
+    _deleteCategory: function(e) {
+        var index = e.model.get('index');
+        this.splice('_editedTemplateCategories',index,1);
+    },
+
+    /**
+     * Saves changes in the category management dialog.
+     * @private
+     */
+    _saveCategoryChanges: function() {
+        var _this = this;
+        //Close the dialog and reduce the category object list to a flat array of strings.
+        this.querySelector('#categoryManager').close();
+        var editedCategoryNames = this._editedTemplateCategories.map(function(obj) {
+            return obj.name;
+        });
+        //If no changes were made then bail.
+        if (editedCategoryNames.length === this._templateCategories.length &&
+            editedCategoryNames.join(',') === this._templateCategories.join(',')) {
+            this._categoriesSaved(editedCategoryNames);
+            return;
+        }
+        //If the user deletes a selected category then we need to manually remove it from the selected entries list.
+        for (var i=this._selectedCategories.length-1; i>=0; i--) {
+            if (editedCategoryNames.indexOf(this._selectedCategories[i]) === -1) {
+                this.splice('_selectedCategories',i,1);
+            }
+        }
+        voyent.scope.createRealmData({data:{"templateCategories":editedCategoryNames}}).then(function() {
+            _this._categoriesSaved(editedCategoryNames);
+        }).catch(function() {
+            _this.fire('message-error', 'Failed to update categories, please try again');
+            _this._categoryUpdateFailed = true;
+        });
+    },
+
+    /**
+     * Triggered whenever the user confirms category changes, manages state.
+     * @param editedCategoryNames
+     * @private
+     */
+    _categoriesSaved: function(editedCategoryNames) {
+        this.set('_templateCategories',editedCategoryNames);
+        this.set('_editedTemplateCategories',[]);
+    },
+
+    /**
+     * Reverts all changes made in the category management dialog.
+     * @private
+     */
+    _cancelCategoryChanges: function() {
+        this.set('_editedTemplateCategories',[]);
+        this.querySelector('#categoryManager').close();
+    },
+
+    /**
+     * Validates the new category input in the category management dialog.
+     * @private
+     */
+    _validateNewTemplateCategory: function() {
+        return this._validateCategory(
+            this.querySelector('#newCategoryInput'),
+            this._newTemplateCategory,
+            null
+        );
+    },
+
+    /**
+     * Validates the existing category inputs in the category management dialog.
+     * @private
+     */
+    _validateExistingTemplateCategory: function() {
+        return this._validateCategory(
+            this.querySelector('#category-'+this._categoryIndexBeingValidated),
+            this._editedTemplateCategories[this._categoryIndexBeingValidated].name,
+            this._categoryIndexBeingValidated
+        );
+    },
+
+    /**
+     * Generic function to validate template categories.
+     * @param categoryInput
+     * @param categoryName
+     * @param indexToSkip
+     * @returns {boolean}
+     * @private
+     */
+    _validateCategory: function(categoryInput,categoryName,indexToSkip) {
+        if (!categoryName || !categoryName.trim().length) {
+            categoryInput.setAttribute('error-message','Must specify a category');
+            return false;
+        }
+        for (var i=0; i<this._editedTemplateCategories.length; i++) {
+            if (i === indexToSkip) { continue; }
+            if (categoryName.toLowerCase() === this._editedTemplateCategories[i].name.toLowerCase()) {
+                categoryInput.setAttribute('error-message','Category already exists');
+                return false;
+            }
+        }
+        return true;
+    },
+
+    /**
+     * Validates one or more category inputs in the category management dialog and sets a flag indicating current validation state.
+     * @param e
+     * @private
+     */
+    _validateCategoriesOnChange: function(e) {
+        var _this = this;
+        //Async since this on-value-changed listener fires before the value is persisted to the property.
+        setTimeout(function() {
+            //First validate the input whose value is currently changing. If this is valid then validate the other inputs.
+            //We do this to ensure that validation messages are always reflecting the actual state of the inputs. One example
+            //of this is if validation fails on an input due to an already existing existing, the user goes to the other
+            //input and changes it then failed validation will stay on the first input even though it now valid.
+            _this._categoryIndexBeingValidated = e.model.get('index');
+            if (_this.querySelector('#category-'+_this._categoryIndexBeingValidated).validate()) {
+                for (var i=0; i<_this._editedTemplateCategories.length; i++) {
+                    //Don't validate the input we already validated.
+                    if (i === _this._categoryIndexBeingValidated) { continue; }
+                    _this._categoryIndexBeingValidated = i;
+                    if (!_this.querySelector('#category-'+i).validate()) {
+                        _this._categoryInputInvalid = true;
+                        return;
+                    }
+                }
+                _this._categoryInputInvalid = false;
+            }
+            else {
+                _this._categoryInputInvalid = true;
+            }
+        },0);
+    },
+
+    /**
+     * An alphabetical sorting function for alert template categories.
+     * @param a
+     * @param b
+     * @returns {number}
+     * @private
+     */
+    _sortCategories: function(a,b) {
+        if (a.name) {
+            return a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase());
+        }
+        else {
+            return a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase());
+        }
+    },
+
+    /**
+     * Handles submitting the new category input field on enter key presses.
+     * @param e
+     * @private
+     */
+    _newCategoryKeyUp: function(e) {
+        if (e.keyCode === 13) {
+            this._addNewTemplateCategory();
+        }
     },
 
     /**
@@ -314,26 +546,6 @@ Polymer({
             this._toggleProximityZoneRenaming(i);
         }
     },
-    
-    chooseAlertBadge: function() {
-        var _this = this;
-        this._openDialog(null,null,null,true,function() {
-            // Persist our choice to the template JSON
-            _this._loadedAlert.template.setBadge(this._dialogBadge);
-            
-            // Fire an event that the badge changed
-            _this.fire('voyent-alert-badge-changed', {"badge": _this._loadedAlert.template.badge});
-            
-            // If we only have a single zone stack, then update the map marker as well
-            if (_this._loadedAlert.template.zoneStacks.length === 1) {
-                var image = {
-                    url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
-                    scaledSize: new google.maps.Size(32,32)
-                };
-                _this._loadedAlert.template.zoneStacks[0].marker.setIcon(image);
-            }
-        });
-    },
 
     /**
      * Adds a new proximity zone to the alert template. The new zone is 50% larger than the largest existing zone.
@@ -364,7 +576,7 @@ Polymer({
                 return;
             }
         }
-        this._openDialog('Please enter the zone name','',null,false,function() {
+        this._openDialog('Please enter the zone name','',null,false,false,function() {
             var name = this._dialogInput;
             if (shape === 'circle') {
                 newZone = new _this._CircularAlertZone(null,radius,name,null,null,null,null,zIndex);

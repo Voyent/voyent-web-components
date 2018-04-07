@@ -26,8 +26,9 @@ Polymer({
     /**
      * Loads an alert template into the editor using the passed id.
      * @param id
+     * @param loadAsNew
      */
-    loadAlertTemplate: function(id) {
+    loadAlertTemplate: function(id,loadAsNew) {
         this._setIsTemplateLoading(true);
         var _this = this;
         this._fetchAlertTemplate(id).then(function(template) {
@@ -39,9 +40,15 @@ Polymer({
             if (template.geo && template.isDefaultTemplate) {
                 latLng = _this._areaRegion.bounds.getCenter();
             }
+            if (loadAsNew) {
+                delete template.isDefaultTemplate;
+                delete template.lastUpdated;
+                delete template.lastUpdatedBy;
+                delete template._id;
+            }
             //Set this flag so the center_changed listener will not fire for each circular zone that is drawn.
             _this._ignoreZoneCenterChangedEvent = true;
-            _this._drawAndLoadAlertTemplate(template,latLng); _this._ignoreZoneCenterChangedEvent = false;
+            _this._drawAndLoadAlertTemplate(template,latLng);
             _this._setIsTemplateLoading(false);
             setTimeout(function() {
                 _this._ignoreZoneCenterChangedEvent = false;
@@ -49,6 +56,7 @@ Polymer({
         }).catch(function (error) {
             _this.fire('message-error', 'Error loading saved alert template: ' + (error.responseText || error.message || error));
         });
+        this._fetchTemplateCategories();
     },
 
     /**
@@ -65,7 +73,7 @@ Polymer({
             msg = 'Are you sure you want to cancel creating ' +
                 this._loadedAlert.template.name + '? This action cannot be undone.';
         }
-        this._openDialog(msg,null,null,false,'clearMap');
+        this._openDialog(msg,null,null,false,false,'clearMap');
     },
 
 

@@ -12,6 +12,7 @@
 <link rel="import" href="../../../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../../iron-selector/iron-selector.html">
 <link rel="import" href="../../../paper-item/paper-item.html">
+<link rel="import" href="../../common/voyent-custom-validator.html">
 <!--
 Internal component used to display the properties panel inside Voyent alert components.
 
@@ -235,7 +236,103 @@ Internal component used to display the properties panel inside Voyent alert comp
             .bold {
                 font-weight: bold;
             }
+            .category-message {
+                margin: 15px 0;
+            }
+            .new-category-wrapper {
+                max-width: 535px;
+                margin-bottom: 20px;
+            }
+            .new-category-input-wrapper {
+                display: inline-block;
+                width: 325px;
+            }
+            .new-category-button-wrapper {
+                display:inline-block;
+                margin-left: 32px;
+            }
+            .category-wrapper {
+                max-width: 535px;
+                max-height: 128px;
+                overflow-y: auto;
+                overflow-x: hidden;
+                padding-top: 2px;
+            }
+            .category-item {
+                max-width: 400px;
+                border: 2px black solid;
+                height: 40px;
+                cursor: pointer;
+                line-height: 40px;
+                text-align: center;
+                display: inline-block;
+                margin-top:-2px;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+                padding: 0 10px;
+                font-weight:bold;
+                border-radius:10px;
+            }
+            .category-item.iron-selected {
+                border: 5px outset #2E348E;
+                color: #2E348E;
+                line-height: 34px;
+                padding: 0 15px;
+            }
+            .category-buttons-wrapper {
+                margin: 20px;
+            }
+            .category-picker paper-button {
+                margin-top: 10px;
+            }
+            .table-wrap {
+                max-width: 535px;
+                margin-bottom: 20px;
+            }
+            .table-scroll {
+                max-height: 200px;
+                min-height: 200px;
+                overflow-y: scroll;
+            }
+            .table-scroll > *:nth-child(even) {
+                background-color: #EDEDED;
+            }
+            .tableHeader {
+                background-color: #dddddd;
+                font-weight: bold;
+                text-align: center;
+            }
+            .table {
+                width: 100%;
+                display: table;
+            }
+            .category-col, .delete-col {
+                display: table-cell;
+                vertical-align: middle;
+                overflow: auto;
+                text-align: left;
+                text-overflow: clip;
+                word-break: keep-all;
+            }
+            .category-col {
+                width: 90%;
+                text-align: center;
+                padding: 10px 10px 20px 10px;
+            }
+            .category-col paper-input {
+                --paper-input-container-input: {
+                    font-size:13px;
+                };
+            }
+            .delete-col {
+                width: 10%;
+                text-align: center;
+            }
         </style>
+
+        <voyent-custom-validator id="newCategoryValidator" validator-name="newCategoryValidator"></voyent-custom-validator>
+        <voyent-custom-validator id="existingCategoryValidator" validator-name="existingCategoryValidator"></voyent-custom-validator>
 
         <template is="dom-if" if="[[_loadedAlert]]">
             <template is="dom-if" if="[[!hideAlertName]]">
@@ -537,7 +634,29 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </paper-toggle-button>
                     </div>
                 </template>
-                
+                <template is="dom-if" if="[[_showDialogCategories]]">
+                    <div class="category-picker">
+                        <template is="dom-if" if="[[!_templateCategories.length]]">
+                            <p class="category-message">No template categories defined</p>
+                            <paper-button raised title="Add New Category" on-click="_manageCategories">Add New Category</paper-button>
+                        </template>
+                        <template is="dom-if" if="[[_templateCategories.length]]">
+                            <p class="category-message">
+                                Select one or more template categories
+                            </p>
+                            <div class="category-wrapper">
+                                <iron-selector id="categorySelector" attr-for-selected="name" multi selected-values="{{_selectedCategories}}">
+                                    <template is="dom-repeat" items="[[_templateCategories]]" as="category" sort="_sortCategories">
+                                        <div name="[[category]]" class="category-item" title="[[category]]">
+                                            [[category]]
+                                        </div>
+                                    </template>
+                                </iron-selector>
+                            </div>
+                            <paper-button style="font-size:11px;padding:5px;" raised title="Manage Categories" on-click="_manageCategories">Manage Categories</paper-button>
+                        </template>
+                    </div>
+                </template>
                 <template is="dom-if" if="[[_showDialogBadge]]">
                     <br/>
                     <voyent-alert-badge-chooser value="{{_dialogBadge}}" badgedir="{{badgedir}}"></voyent-alert-badge-chooser>
@@ -548,6 +667,43 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <paper-button raised title="Cancel" on-click="closeDialog">Cancel</paper-button>
                     <paper-button raised title="Confirm" on-click="_confirmDialog">Confirm</paper-button>
                 </div>
+            </div>
+        </paper-dialog>
+        <paper-dialog id="categoryManager" modal on-iron-overlay-opened="_fixModalStacking">
+            <div class="new-category-wrapper">
+                <div class="new-category-input-wrapper">
+                    <paper-input id="newCategoryInput" class="new-category-input"
+                                 label="New Category Name" on-keyup="_newCategoryKeyUp"
+                                 validator="newCategoryValidator" value="{{_newTemplateCategory}}"></paper-input>
+                </div>
+                <div class="new-category-button-wrapper">
+                    <paper-button class="new-category-button" raised on-click="_addNewTemplateCategory">Add New Category</paper-button>
+                </div>
+            </div>
+            <template is="dom-if" if="[[_editedTemplateCategories.length]]">
+                <div class="table-wrap">
+                    <div class="table">
+                        <div class="category-col tableHeader">Category</div>
+                        <div class="delete-col tableHeader"></div>
+                    </div>
+                    <div class="table-scroll">
+                        <template is="dom-repeat" items="[[_editedTemplateCategories]]" as="category">
+                            <div class="table">
+                                <div class="category-col no-select">
+                                    <paper-input id$="category-[[index]]" label="Category Name" no-label-float value="{{category.name::input}}"
+                                                 validator="existingCategoryValidator" on-value-changed="_validateCategoriesOnChange"></paper-input>
+                                </div>
+                                <div class="delete-col no-select">
+                                    <paper-icon-button icon="delete" on-click="_deleteCategory" title="Delete Category"></paper-icon-button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+            <div class="category-buttons-wrapper text-center">
+                <paper-button raised title="Cancel changes" on-click="_cancelCategoryChanges">Cancel</paper-button>
+                <paper-button raised title="Confirm changes" on-click="_saveCategoryChanges" disabled="[[_categoryInputInvalid]]">Confirm</paper-button>
             </div>
         </paper-dialog>
     </template>

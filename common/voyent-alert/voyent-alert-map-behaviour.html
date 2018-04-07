@@ -165,7 +165,10 @@
                     _this._removeStopDrawingButton();
                 }
                 if (_this.nodeName === 'VOYENT-ALERT-EDITOR' || _this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                    //Add the fullscreen control.
                     _this._addFullscreenControl();
+                    //Fetch the alert template categories.
+                    _this._fetchTemplateCategories();
                 }
                 _this._regionMapping = {}; //Map of region data so we can toggle between them.
                 _this._isLoggedIn = false; //Toggle for side panel.
@@ -227,150 +230,6 @@
                     _this._adjustBoundsAndPan();
                 },0);
             });
-        },
-
-        /**
-         * Adds the fullscreen custom control to the map.
-         * @private
-         */
-        _addFullscreenControl: function() {
-            if (this._fullscreenControlAdded) { return; }
-            this._isFullscreenMode = false;
-            var fullscreenButton = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
-            fullscreenButton.removeAttribute('hidden');
-            this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(fullscreenButton);
-            fullscreenButton.onclick = this._toggleFullscreenContainer.bind(this);
-            this._fullscreenControlAdded = true;
-            //Add click listener to the map so the user can click on the map to enable fullscreen.
-            this._addFullscreenClickListener(this._map);
-        },
-
-        /**
-         * Toggles the modal fullscreen dialog.
-         * @private
-         */
-        _toggleFullscreenContainer: function() {
-            // Open or close the dialog depending on the current state
-            if (this._isFullscreenMode) {
-                this._closeFullscreenContainer();
-            }
-            else {
-                this._openFullscreenContainer();
-            }
-            this._isFullscreenMode = !this._isFullscreenMode;
-            // Toggle the editable features of the map
-            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                this._toggleEditableMap(this._isFullscreenMode);
-            }
-        },
-
-        /**
-         * Adds a map click listener for mobile devices so that when the map
-         * is windowed clicking on the map will enable fullscreen mode.
-         * @private
-         */
-        _addFullscreenClickListener: function(mapElement) {
-            var _this = this;
-            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'notification') {
-                google.maps.event.addListener(mapElement, 'click', function() {
-                    if (_this._isFullscreenMode) {
-                        return;
-                    }
-                    _this._toggleFullscreenContainer();
-                });
-            }
-        },
-
-        /**
-         * Adds a keydown listener on desktop that exits fullscreen mode when the esc key is pressed.
-         * @private
-         */
-        _addKeydownListener: function() {
-            if (this.isMobile) { return; }
-            var _this = this;
-            this._dialogKeyListener = function(e) {
-                if (e.which === 27) {
-                    _this._toggleFullscreenContainer();
-                }
-            };
-            window.addEventListener('keydown',this._dialogKeyListener);
-        },
-
-        /**
-         * Removes the keydown listener on desktop that exits fullscreen mode when the esc key is pressed.
-         * @private
-         */
-        _removeKeydownListener: function() {
-            if (this.isMobile) { return; }
-            window.removeEventListener('keydown',this._dialogKeyListener);
-        },
-
-        /**
-         * Opens the fullscreen modal dialog.
-         * @private
-         */
-        _openFullscreenContainer: function() {
-            var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
-            if (dialog) {
-                // Display the dialog
-                dialog.removeAttribute('hidden');
-                // Save the current map width before moving it into the dialog container
-                var mapDiv = this._map.getDiv();
-                if (this.width) {
-                    this._beforeFullscreenWidth = this.width;
-                    this.width = null;
-                }
-                if (this.height) {
-                    this._beforeFullscreenHeight = this.height;
-                    this.height = null;
-                }
-                // Toggle button visibility so that the close button is displayed
-                if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                    var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
-                    buttonContainer.querySelector('#closeButton').removeAttribute('hidden');
-                    buttonContainer.querySelector('#openButton').setAttribute('hidden','hidden');
-                }
-                // Move the map to the dialog container, adjust the size and add the esc key listener
-                dialog.append(mapDiv);
-                if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                    dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
-                }
-                this.resizeMap();
-                this._addKeydownListener();
-            }
-        },
-
-        /**
-         * Closes the fullscreen modal dialog.
-         * @private
-         */
-        _closeFullscreenContainer: function() {
-            // Restore the original map width before moving it to the inline container
-            if (this._beforeFullscreenWidth) {
-                this.width = this._beforeFullscreenWidth;
-            }
-            if (this._beforeFullscreenHeight) {
-                this.height = this._beforeFullscreenHeight;
-            }
-            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                // Toggle button visiblity so that the fullscreen button is displayed
-                var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
-                buttonContainer.querySelector('#openButton').removeAttribute('hidden');
-                buttonContainer.querySelector('#closeButton').setAttribute('hidden','hidden');
-            }
-            // Move the map to the inline container, adjust the size and remove the esc key listener
-            var mapDiv = this._map.getDiv();
-            this.querySelector('#'+this._CONTAINER_ID).append(mapDiv);
-            if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                this.querySelector('#'+this._CONTAINER_ID).append(this.querySelector('#'+this._SIDE_PANEL_ID));
-            }
-            this.resizeMap();
-            this._removeKeydownListener();
-            // Hide the dialog
-            var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
-            if (dialog) {
-                dialog.setAttribute('hidden','hidden');
-            }
         },
 
         /**
@@ -454,15 +313,16 @@
          */
         addNew: function() {
             var _this = this;
-            this._openDialog('Please enter the alert template name','',null,true,function() {
-                _this.clearMap();
-                
-                _this.set('_loadedAlert',{
-                    template: new _this._AlertTemplate(null, null, _this._dialogInput, _this._dialogBadge, null, null, null, false, null),
-                    selectedStack: null
+            this._fetchTemplateCategories().then(function() {
+                _this._openDialog('Please enter the alert template name','',null,true,true,function() {
+                    _this.clearMap();
+                    _this.set('_loadedAlert',{
+                        template: new _this._AlertTemplate(null,null,_this._dialogInput,_this._dialogBadge,null,null,null,false,false,null,_this._selectedCategories),
+                        selectedStack: null
+                    });
+                },function() {
+                    _this.fire('voyent-alert-template-cancel',{});
                 });
-            },function() {
-                _this.fire('voyent-alert-template-cancel',{});
             });
         },
 
@@ -497,6 +357,37 @@
                     _this._alertSpeedUnit = 'kph';
                 },0);
             }
+        },
+
+        /**
+         * Opens a dialog for choosing template categories.
+         */
+        chooseCategories: function() {
+            var _this = this;
+            this._openDialog(null,null,null,false,true,function() {
+                _this._loadedAlert.template.setCategories(_this._selectedCategories.slice(0));
+            });
+        },
+
+        /**
+         * Opens a dialog for choosing alert badges.
+         */
+        chooseAlertBadge: function() {
+            var _this = this;
+            this._openDialog(null,null,null,true,false,function() {
+                // Persist our choice to the template JSON
+                _this._loadedAlert.template.setBadge(this._dialogBadge);
+                // Fire an event that the badge changed
+                _this.fire('voyent-alert-badge-changed', {"badge": _this._loadedAlert.template.badge});
+                // If we only have a single zone stack, then update the map marker as well
+                if (_this._loadedAlert.template.zoneStacks.length === 1) {
+                    var image = {
+                        url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
+                        scaledSize: new google.maps.Size(32,32)
+                    };
+                    _this._loadedAlert.template.zoneStacks[0].marker.setIcon(image);
+                }
+            });
         },
 
         /**
@@ -645,6 +536,21 @@
                     resolve(results[0]);
                 }).catch(function (error) {
                     _this.fire('message-error', 'Error fetching alert template: ' + (error.responseText || error.message || error));
+                    reject(error);
+                });
+            });
+        },
+
+        /**
+         * Fetches alert template categories from realm scope.
+         */
+        _fetchTemplateCategories: function() {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                voyent.scope.getRealmData({"property":"templateCategories"}).then(function (categories) {
+                    _this.set('_templateCategories',categories || []);
+                    resolve(_this._templateCategories);
+                }).catch(function (error) {
                     reject(error);
                 });
             });
@@ -910,7 +816,9 @@
             }
             this.set('_loadedAlert', {
                 template: new this._AlertTemplate(
-                    templateJSON._id, parentId, templateJSON.name, templateJSON.badge, templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center, templateJSON.schedule
+                    templateJSON._id, parentId, templateJSON.name, templateJSON.badge,
+                    templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center,
+                    !!templateJSON.isDefaultTemplate, templateJSON.schedule, templateJSON.categories
                 ),
                 selectedStack: zoneStacks.length === 1 ? zoneStacks[0] : null
             });
@@ -991,7 +899,7 @@
                         return;
                     }
                 }
-                _this._openDialog('Please enter the zone name','',null,false,function() {
+                _this._openDialog('Please enter the zone name','',null,false,false,function() {
                     //Build our stack marker, the position will be added later.
                     var stackMarker = new google.maps.Marker({
                         map: _this._map, draggable: true, zIndex: 50
@@ -1385,6 +1293,150 @@
                 }
                 waitForStopDrawingButton();
             }
+        },
+
+        /**
+         * Adds the fullscreen custom control to the map.
+         * @private
+         */
+        _addFullscreenControl: function() {
+            if (this._fullscreenControlAdded) { return; }
+            this._isFullscreenMode = false;
+            var fullscreenButton = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
+            fullscreenButton.removeAttribute('hidden');
+            this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(fullscreenButton);
+            fullscreenButton.onclick = this._toggleFullscreenContainer.bind(this);
+            this._fullscreenControlAdded = true;
+            //Add click listener to the map so the user can click on the map to enable fullscreen.
+            this._addFullscreenClickListener(this._map);
+        },
+
+        /**
+         * Toggles the modal fullscreen dialog.
+         * @private
+         */
+        _toggleFullscreenContainer: function() {
+            // Open or close the dialog depending on the current state
+            if (this._isFullscreenMode) {
+                this._closeFullscreenContainer();
+            }
+            else {
+                this._openFullscreenContainer();
+            }
+            this._isFullscreenMode = !this._isFullscreenMode;
+            // Toggle the editable features of the map
+            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                this._toggleEditableMap(this._isFullscreenMode);
+            }
+        },
+
+        /**
+         * Opens the fullscreen modal dialog.
+         * @private
+         */
+        _openFullscreenContainer: function() {
+            var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
+            if (dialog) {
+                // Display the dialog
+                dialog.removeAttribute('hidden');
+                // Save the current map width before moving it into the dialog container
+                var mapDiv = this._map.getDiv();
+                if (this.width) {
+                    this._beforeFullscreenWidth = this.width;
+                    this.width = null;
+                }
+                if (this.height) {
+                    this._beforeFullscreenHeight = this.height;
+                    this.height = null;
+                }
+                // Toggle button visibility so that the close button is displayed
+                if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                    var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
+                    buttonContainer.querySelector('#closeButton').removeAttribute('hidden');
+                    buttonContainer.querySelector('#openButton').setAttribute('hidden','hidden');
+                }
+                // Move the map to the dialog container, adjust the size and add the esc key listener
+                dialog.append(mapDiv);
+                if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                    dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
+                }
+                this.resizeMap();
+                this._addFullscreenKeydownListener();
+            }
+        },
+
+        /**
+         * Closes the fullscreen modal dialog.
+         * @private
+         */
+        _closeFullscreenContainer: function() {
+            // Restore the original map width before moving it to the inline container
+            if (this._beforeFullscreenWidth) {
+                this.width = this._beforeFullscreenWidth;
+            }
+            if (this._beforeFullscreenHeight) {
+                this.height = this._beforeFullscreenHeight;
+            }
+            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                // Toggle button visiblity so that the fullscreen button is displayed
+                var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
+                buttonContainer.querySelector('#openButton').removeAttribute('hidden');
+                buttonContainer.querySelector('#closeButton').setAttribute('hidden','hidden');
+            }
+            // Move the map to the inline container, adjust the size and remove the esc key listener
+            var mapDiv = this._map.getDiv();
+            this.querySelector('#'+this._CONTAINER_ID).append(mapDiv);
+            if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                this.querySelector('#'+this._CONTAINER_ID).append(this.querySelector('#'+this._SIDE_PANEL_ID));
+            }
+            this.resizeMap();
+            this._removeFullscreenKeydownListener();
+            // Hide the dialog
+            var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
+            if (dialog) {
+                dialog.setAttribute('hidden','hidden');
+            }
+        },
+
+        /**
+         * Adds a map click listener for mobile devices so that when the map
+         * is windowed clicking on the map will enable fullscreen mode.
+         * @private
+         */
+        _addFullscreenClickListener: function(mapElement) {
+            var _this = this;
+            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'notification') {
+                google.maps.event.addListener(mapElement, 'click', function() {
+                    if (_this._isFullscreenMode) {
+                        return;
+                    }
+                    _this._toggleFullscreenContainer();
+                });
+            }
+        },
+
+        /**
+         * Adds a keydown listener on desktop that exits fullscreen mode when the esc key is pressed.
+         * @private
+         */
+        _addFullscreenKeydownListener: function() {
+            if (this.isMobile) { return; }
+            var _this = this;
+            this._dialogKeyListener = function(e) {
+                if (e.which === 27) {
+                    _this._toggleFullscreenContainer();
+                }
+            };
+            window.addEventListener('keydown',this._dialogKeyListener);
+        },
+
+        /**
+         * Removes the keydown listener on desktop that exits fullscreen mode when the esc key is pressed.
+         * @private
+         */
+        _removeFullscreenKeydownListener: function() {
+            if (this.isMobile) { return; }
+            window.removeEventListener('keydown',this._dialogKeyListener);
         },
 
         /**
