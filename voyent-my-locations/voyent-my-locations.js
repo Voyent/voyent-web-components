@@ -773,6 +773,10 @@ Polymer({
             elem.setAttribute('error-message','Location must have a name');
             this._locationNameValid = false;
         }
+        if (locationName.length > 60) {
+            elem.setAttribute('error-message','Location name must not be more than 60 characters');
+            this._locationNameValid = false;
+        }
         for (var i=0; i<this._myLocations.length; i++) {
             //Don't compare the location against itself.
             if (this._loadedLocation && this._loadedLocation === this._myLocations[i]) {

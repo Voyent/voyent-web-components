@@ -123,7 +123,7 @@ Example:
                 <paper-input id="infoWindowLocationName"
                              tabindex="1"
                              label="Location Name"
-                             maxlength="30"
+                             maxlength="60"
                              autocapitalize="words"
                              on-keyup="_handleInfoWindowKeyPress"
                              value="{{_infoWindowLocationName::input}}"
@@ -146,7 +146,7 @@ Example:
                         <paper-input id="placeLocationName"
                                      tabindex="1"
                                      label="Location Name"
-                                     maxlength="30"
+                                     maxlength="60"
                                      autocapitalize="words"
                                      value="{{_selectedPlace.name::input}}"
                                      validator="nameValidatorPlace">
@@ -181,7 +181,7 @@ Example:
                     <paper-input id="pinDropLocationName"
                                  tabindex="1"
                                  label="Location Name"
-                                 maxlength="30"
+                                 maxlength="60"
                                  autocapitalize="words"
                                  on-keyup="_handleInfoWindowKeyPress"
                                  value="{{_pinDropLocation.name::input}}"
@@ -211,12 +211,12 @@ Example:
             <p class="dialog-title">New Location Details</p>
             <p class="no-margin">Start typing and then select an item from the list...</p>
             <paper-input id="autoComplete" class="autocomplete no-margin" tabindex="1" on-keyup="_handleAutocompleteKeyPress"
-                         maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
+                         autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
                          on-keyup="_dialogKeyUp" label="Search Google Maps"
                          title="Enter an address, postal code, or business name"
                          validator="placesSearchValidator" on-blur="_validatePlacesSearchOnBlur"></paper-input>
             <paper-input id="dialogLocationName" class="inline no-margin name-input" tabindex="2"
-                         label="Location Name" maxlength="30" autocapitalize="words"
+                         label="Location Name" maxlength="60" autocapitalize="words"
                          on-keyup="_dialogKeyUp" value="{{_dialogLocationName}}"
                          title="Enter a location name" validator="nameValidatorDialog"></paper-input>
             <div class="inline no-margin toggle-button">
