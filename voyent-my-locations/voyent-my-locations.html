@@ -134,7 +134,7 @@ Example:
                 <paper-input id="name"
                              tabindex="1"
                              label="Location Name"
-                             maxlength="30"
+                             maxlength="60"
                              placeholder="New Name"
                              autocapitalize="words"
                              on-keyup="_handleInfoWindowKeyPress"
@@ -158,7 +158,7 @@ Example:
                         <paper-input id="placeName"
                                      label="Location Name"
                                      placeholder="New Name"
-                                     maxlength="30"
+                                     maxlength="60"
                                      autocapitalize="words"
                                      value="{{_selectedPlace.name::input}}">
                         </paper-input>
@@ -192,7 +192,7 @@ Example:
                     <paper-input id="pinDropName"
                                  tabindex="1"
                                  label="Location Name"
-                                 maxlength="30"
+                                 maxlength="60"
                                  placeholder="New Name"
                                  autocapitalize="words"
                                  on-keyup="_handleInfoWindowKeyPress"
@@ -222,12 +222,12 @@ Example:
             <p class="dialog-title">New Location Details</p>
             <p class="no-margin">Start typing and then select an item from the list...</p>
             <paper-input id="autoComplete" class="autocomplete no-margin" no-label-float tabindex="4" on-keyup="_handleAutocompleteKeyPress"
-                         maxlength="70" autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
+                         autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"
                          on-keyup="_dialogKeyUp" placeholder="Search Google Maps"
                          title="Enter an address, postal code, or business name"
                          validator="placesSearchValidator" on-blur="_validatePlacesSearchOnBlur"></paper-input>
             <paper-input id="locationName" class="inline no-margin name-input" no-label-float tabindex="5"
-                         maxlength="30" autocapitalize="words" placeholder="Location Name"
+                         maxlength="60" autocapitalize="words" placeholder="Location Name"
                          on-keyup="_dialogKeyUp" value="{{_locationName}}"
                          title="Enter a location name"
                          validator="locationNameValidator" on-blur="_validateDialogLocationNameOnBlur"></paper-input>

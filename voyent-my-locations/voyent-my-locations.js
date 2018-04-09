@@ -777,6 +777,10 @@ Polymer({
             elem.setAttribute('error-message','Location must have a name');
             return false;
         }
+        if (this._locationName.length > 60) {
+            elem.setAttribute('error-message','Location name must not be more than 60 characters');
+            return false;
+        }
         for (var i=0; i<this._myLocations.length; i++) {
             if (this._myLocations[i].name === this._locationName) {
                 elem.setAttribute('error-message','Name must be unique');
