@@ -98,8 +98,7 @@
             .customMapBttn:hover {
                 background-color: #EBEBEB;
             }
-            .customMapBttn.selected,
-            .alertTemplates .item.selected {
+            .customMapBttn.selected {
                 background-color: #c5c5c5;
             }
             .customMapBttn > span {
@@ -190,6 +189,38 @@
             /* Fix space issue when using inline-block elements  */
             #container, #map, #sidePanel, #propertiesPanel, #crudPanel, .drag-handle {
                 font-size: 0;
+            }
+            .table-wrap {
+                max-width: 535px;
+                margin-bottom: 20px;
+            }
+            .table-scroll {
+                max-height: 200px;
+                min-height: 200px;
+                overflow-y: scroll;
+            }
+            .table {
+                width: 100%;
+                display: table;
+            }
+            .table-header {
+                background-color: #dddddd;
+                font-weight: bold;
+                text-align: center;
+            }
+            .table-col {
+                display: table-cell;
+                vertical-align: middle;
+                overflow: auto;
+                text-align: left;
+                text-overflow: clip;
+                word-break: keep-all;
+            }
+            .alternating-row-parent > *:nth-child(even) {
+                background-color: #EDEDED;
+            }
+            .pointer {
+                cursor: pointer;
             }
         </style>
     </template>

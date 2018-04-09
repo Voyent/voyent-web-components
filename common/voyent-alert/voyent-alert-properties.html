@@ -286,41 +286,12 @@ Internal component used to display the properties panel inside Voyent alert comp
             .category-picker paper-button {
                 margin-top: 10px;
             }
-            .table-wrap {
-                max-width: 535px;
-                margin-bottom: 20px;
-            }
-            .table-scroll {
-                max-height: 200px;
-                min-height: 200px;
-                overflow-y: scroll;
-            }
-            .table-scroll > *:nth-child(even) {
-                background-color: #EDEDED;
-            }
-            .tableHeader {
-                background-color: #dddddd;
-                font-weight: bold;
-                text-align: center;
-            }
-            .table {
-                width: 100%;
-                display: table;
-            }
-            .category-col, .delete-col {
-                display: table-cell;
-                vertical-align: middle;
-                overflow: auto;
-                text-align: left;
-                text-overflow: clip;
-                word-break: keep-all;
-            }
-            .category-col {
+            .category-input-col {
                 width: 90%;
                 text-align: center;
                 padding: 10px 10px 20px 10px;
             }
-            .category-col paper-input {
+            .category-input-col paper-input {
                 --paper-input-container-input: {
                     font-size:13px;
                 };
@@ -683,17 +654,17 @@ Internal component used to display the properties panel inside Voyent alert comp
             <template is="dom-if" if="[[_editedTemplateCategories.length]]">
                 <div class="table-wrap">
                     <div class="table">
-                        <div class="category-col tableHeader">Category</div>
-                        <div class="delete-col tableHeader"></div>
+                        <div class="table-col category-input-col table-header">Category</div>
+                        <div class="table-col delete-col table-header"></div>
                     </div>
-                    <div class="table-scroll">
+                    <div class="table-scroll alternating-row-parent">
                         <template is="dom-repeat" items="[[_editedTemplateCategories]]" as="category">
                             <div class="table">
-                                <div class="category-col no-select">
+                                <div class="table-col category-input-col no-select">
                                     <paper-input id$="category-[[index]]" label="Category Name" no-label-float value="{{category.name::input}}"
                                                  validator="existingCategoryValidator" on-value-changed="_validateCategoriesOnChange"></paper-input>
                                 </div>
-                                <div class="delete-col no-select">
+                                <div class="table-col delete-col no-select">
                                     <paper-icon-button icon="delete" on-click="_deleteCategory" title="Delete Category"></paper-icon-button>
                                 </div>
                             </div>

@@ -60,6 +60,24 @@ Polymer({
     },
 
     /**
+     * Prompts the user to create a new template. On cancel the `voyent-alert-template-cancel` event will be fired.
+     */
+    addNew: function() {
+        var _this = this;
+        this._fetchTemplateCategories().then(function() {
+            _this._openDialog('Please enter the alert template name','',null,true,true,function() {
+                _this.clearMap();
+                _this.set('_loadedAlert',{
+                    template: new _this._AlertTemplate(null,null,_this._dialogInput,_this._dialogBadge,null,null,null,false,false,null,_this._selectedCategories),
+                    selectedStack: null
+                });
+            },function() {
+                _this.fire('voyent-alert-template-cancel',{});
+            });
+        });
+    },
+
+    /**
      * Opens a confirmation prompt for cancelling alert template creation or edits.
      * @private
      */
@@ -74,6 +92,16 @@ Polymer({
                 this._loadedAlert.template.name + '? This action cannot be undone.';
         }
         this._openDialog(msg,null,null,false,false,'clearMap');
+    },
+
+    /**
+     * Opens a dialog for choosing template categories.
+     */
+    chooseCategories: function() {
+        var _this = this;
+        this._openDialog(null,null,null,false,true,function() {
+            _this._loadedAlert.template.setCategories(_this._selectedCategories.slice(0));
+        });
     },
 
 

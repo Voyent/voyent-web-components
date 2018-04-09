@@ -28,10 +28,14 @@ Polymer({
         '_alertStateChanged(_loadedAlert.template.state)'
     ],
 
+    attached: function() {
+        this.querySelector('#newAlertValidator').validate = this._validateNewAlertName.bind(this);
+    },
+
     ready: function() {
-        //Initialize some vars
-        this._parentTemplates = [];
-        this._selectedAlertTemplateId = null;
+        //Initialize parentTemplate list with a fake element so the "no templates found"
+        //message won't flicker in the sidebar while we are fetching the templates.
+        this._parentTemplatesByCategory = ['tmp'];
     },
 
     /**
@@ -40,6 +44,7 @@ Polymer({
      */
     loadAlert: function(id) {
         this._setIsAlertLoading(true);
+        this._closeNewAlertDialog();
         var _this = this;
         var promises = [];
         promises.push(this._fetchAlertTemplate(id));
@@ -76,6 +81,35 @@ Polymer({
             },0);
         }).catch(function(error) {
             _this.fire('message-error', 'Issue loading saved alert: ' + (error.responseText || error.message || error));
+        });
+    },
+
+    /**
+     * Prompts the user to create a new alert.
+     */
+    addNew: function() {
+        var _this = this;
+        //Ensure we start with a clean state.
+        this._closeNewAlertDialog();
+        this.set('_selectedAlertTemplateId',null);
+        this.set('_newAlertName','');
+        this.querySelector('#newAlertNameInput').invalid = false;
+        this._sortTemplatesBy = 'name';
+        this._lastSortOrderName = 'ascending';
+        this._lastSortOrderCategory = 'ascending';
+        //Fetch the list of categories and templates before opening the dialog. Fetch the
+        //categories first because we need them to build our list of categorized templates.
+        var errMsg = 'Problem initializing editor, please try again';
+        this._fetchTemplateCategories().then(function() {
+            _this._fetchAlertTemplates().then(function() {
+                _this._openNewAlertDialog();
+            }).catch(function() {
+                _this.fire('message-error',errMsg);
+                _this._cancelNewAlert();
+            });
+        }).catch(function() {
+            _this.fire('message-error',errMsg);
+            _this._cancelNewAlert();
         });
     },
 
@@ -196,34 +230,6 @@ Polymer({
         });
     },
 
-    /**
-     * Fetches the latest alert templates for the realm.
-     * @returns {*}
-     * @private
-     */
-    fetchAlertTemplates: function() {
-        //Make sure we don't fetch the templates an unnecessary amount of times.
-        if (this._isFetchingTemplates) { return; }
-        this._isFetchingTemplates = true;
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            voyent.locate.findAlertTemplates({"realm":_this.realm,"query": {"properties.parentAlertId":{"$exists":false}},
-                                                       "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
-                if (!templates) { return; }
-                _this._parentTemplates = templates.sort(function(a,b) {
-                    if(a.name.toLowerCase() < b.name.toLowerCase()) return -1;
-                    if(a.name.toLowerCase() > b.name.toLowerCase()) return 1;
-                    return 0;
-                });
-                _this._isFetchingTemplates = false;
-                resolve();
-            }).catch(function (error) {
-                _this.fire('message-error', 'Issue fetching alert templates: ' + (error.responseText || error.message || error));
-                reject(error);
-            });
-        });
-    },
-
     //******************PRIVATE API******************
 
     /**
@@ -232,9 +238,248 @@ Polymer({
      */
     _onAfterLogin: function() {
         this._isLoggedIn = true; //Toggle for side panel.
-        this.fetchAlertTemplates();
         this._fetchRealmRegion();
         this._enableDefaultPane();
+    },
+
+    /**
+     * Fetches the latest alert templates for the realm.
+     * @returns {*}
+     * @private
+     */
+    _fetchAlertTemplates: function() {
+        //Make sure we don't fetch the templates an unnecessary amount of times.
+        if (this._isFetchingTemplates) { return; }
+        this._isFetchingTemplates = true;
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            voyent.locate.findAlertTemplates({"realm":_this.realm,"query": {"properties.parentAlertId":{"$exists":false}},
+                "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
+                if (!templates || !templates.length) {
+                    _this.set('_parentTemplatesByCategory',[]);
+                }
+                else {
+                    _this._parentTemplatesByCategory = _this._duplicateTemplatesByCategory(templates);
+                }
+                _this._isFetchingTemplates = false;
+                resolve(_this._parentTemplatesByCategory);
+            }).catch(function (error) {
+                _this.fire('message-error', 'Issue fetching alert templates: ' + (error.responseText || error.message || error));
+                reject(error);
+            });
+        });
+    },
+
+    /**
+     * Creates an object map of templates so that there is one an entry for every valid category they belong to.
+     * @param templates
+     * @private
+     */
+    _duplicateTemplatesByCategory: function(templates) {
+        var templatesDuplicatedByCategory = [];
+        for (var i=0; i<templates.length; i++) {
+            var template = templates[i];
+            if (template.categories && template.categories.length) {
+                var foundMatch = false;
+                for (var j=template.categories.length-1; j>=0; j--) {
+                    if (this._templateCategories.indexOf(template.categories[j]) > -1) {
+                        foundMatch = true;
+                        templatesDuplicatedByCategory.push({
+                            "template": template,
+                            "category": template.categories[j]
+                        });
+                    }
+                    else {
+                        //Remove categories that no longer exist so they will be removed when persisting the alert.
+                        template.categories.splice(j,1);
+                    }
+                }
+                if (!foundMatch) {
+                    template.category = 'Uncategorized';
+                    templatesDuplicatedByCategory.push({
+                        "template": template,
+                        "category": "Uncategorized"
+                    });
+                }
+            }
+            else {
+                templatesDuplicatedByCategory.push({
+                    "template": template,
+                    "category": template.isDefaultTemplate ? "Predefined" : "Uncategorized"
+                });
+            }
+        }
+        return templatesDuplicatedByCategory;
+    },
+
+    /**
+     * Opens the dialog for creating a new alert.
+     * @private
+     */
+    _openNewAlertDialog: function() {
+        var dialog = this.querySelector('#newAlertDialog');
+        if (dialog) {
+            dialog.open();
+        }
+    },
+
+    /**
+     * Closes the dialog for creating a new alert.
+     * @private
+     */
+    _closeNewAlertDialog: function() {
+        var dialog = this.querySelector('#newAlertDialog');
+        if (dialog) {
+            dialog.close();
+        }
+    },
+
+    /**
+     * Handles submitting the new alert dialog via key press.
+     * @param e
+     * @private
+     */
+    _submitNewAlertDialog: function(e) {
+        e.stopPropagation();
+        if (e.keyCode === 13) { //Enter
+            this._createNewAlert();
+        }
+        else if (e.keyCode === 27) { //Escape
+            this._cancelNewAlert();
+        }
+    },
+
+    /**
+     * Handles confirmation from the new alert dialog. Validates the dialog, builds the child template and closes the dialog.
+     * @private
+     */
+    _createNewAlert: function() {
+        if (!this.querySelector('#newAlertNameInput').validate()) {
+            return;
+        }
+        if (!this._selectedAlertTemplateId) {
+            this.fire('message-error','Must select an alert template');
+            return;
+        }
+        var _this = this;
+        //Find and clone the parent template that we will create the child from.
+        var childTemplate = JSON.parse(JSON.stringify(this._parentTemplatesByCategory.filter(function(alertTemplateByCategory) {
+            return alertTemplateByCategory.template._id === _this._selectedAlertTemplateId;
+        })[0].template));
+        childTemplate.name = this._newAlertName;
+        //Load the template immediately if it has a center position defined or no geo section (fallback zone only).
+        if (childTemplate.properties.center || !childTemplate.geo) {
+            var position = null;
+            if (childTemplate.properties.center) {
+                position = new google.maps.LatLng(childTemplate.properties.center);
+                delete childTemplate.properties.center;
+            }
+            this._createChildTemplate(childTemplate,position);
+        }
+        else {
+            this._displayClickMapMsg = true;
+            //Change the cursor to a crosshair for accurate placement
+            this._map.setOptions({draggableCursor:'crosshair'});
+            //Add click listeners to the map so we can drop the new alert wherever they click. First clear the
+            //listener to ensure that the user can click multiple alerts and always get the last one the selected.
+            google.maps.event.clearListeners(this._map,'click');
+            google.maps.event.addListener(this._map,'click',createChildTemplate);
+            //Create a new child alert template to be linked one-to-one with the alert.
+            function createChildTemplate(e) { _this._createChildTemplate(childTemplate,e.latLng); }
+        }
+        this._closeNewAlertDialog();
+    },
+
+    /**
+     * Draws the passed template and converts it to a child template by adding the parenAlertId property.
+     * @param childTemplate
+     * @param latLng
+     * @private
+     */
+    _createChildTemplate: function(childTemplate,latLng) {
+        //Remove the parent's id from the record as we'll generate a new one.
+        var id = childTemplate._id;
+        delete childTemplate._id;
+        //If we have no geo section it means the template contains only the fallback
+        //zone so the coordinates they dropped the template at are meaningless.
+        if (!childTemplate.geo) { latLng = null; }
+        childTemplate.state = 'draft'; //Default to draft
+        this._drawAndLoadAlertTemplate(childTemplate,latLng);
+        this._loadedAlert.template.setParentId(id);
+        this._showPropertiesPane = true;
+        this._displayClickMapMsg = false;
+    },
+
+    /**
+     * Cancels new alert creation by firing the `voyent-alert-template-cancel` event.
+     * @private
+     */
+    _cancelNewAlert: function() {
+        var _this = this;
+        this._closeNewAlertDialog();
+        setTimeout(function() {
+            _this.fire('voyent-alert-template-cancel',{});
+        },0);
+    },
+
+    /**
+     * Validates the input field for the new alert name.
+     * @returns {boolean}
+     * @private
+     */
+    _validateNewAlertName: function() {
+        var newAlertNameInput = this.querySelector('#newAlertNameInput');
+        if (!this._newAlertName || !this._newAlertName.trim().length) {
+            newAlertNameInput.setAttribute('error-message','Must specify an alert name');
+            return false;
+        }
+        if (this._newAlertName.length > 60) {
+            newAlertNameInput.setAttribute('error-message','Alert name must not be more than 60 characters');
+            return false;
+        }
+        return true;
+    },
+
+    /**
+     * Sorts the template list by name.
+     * @private
+     */
+    _sortTemplatesByName: function() {
+        this._sortTemplatesBy = 'name';
+        this._lastSortOrderName = this._lastSortOrderName === 'ascending' ? 'descending' : 'ascending';
+        this.querySelector('#alertTemplatesList').render();
+    },
+
+    /**
+     * Sorts the template list by category.
+     * @private
+     */
+    _sortTemplatesByCategory: function() {
+        this._sortTemplatesBy = 'category';
+        this._lastSortOrderCategory = this._lastSortOrderCategory === 'ascending' ? 'descending' : 'ascending';
+        this.querySelector('#alertTemplatesList').render();
+    },
+
+    /**
+     * Sorting function for the list of categorized parent templates.
+     * @param a
+     * @param b
+     * @returns {number}
+     * @private
+     */
+    _sortTemplates: function(a,b) {
+        if (this._sortTemplatesBy === 'name') {
+            if (this._lastSortOrderName === 'ascending') {
+                return a.template.name.toLocaleLowerCase().localeCompare(b.template.name.toLocaleLowerCase());
+            }
+            return b.template.name.toLocaleLowerCase().localeCompare(a.template.name.toLocaleLowerCase());
+        }
+        else {
+            if (this._lastSortOrderCategory === 'ascending') {
+                return a.category.toLocaleLowerCase().localeCompare(b.category.toLocaleLowerCase());
+            }
+            return b.category.toLocaleLowerCase().localeCompare(a.category.toLocaleLowerCase());
+        }
     },
 
     /**
@@ -259,66 +504,6 @@ Polymer({
             this._deselectStacksOnClick(this._map);
             this._selectedAlertTemplateId = null;
         }
-    },
-
-    /**
-     * Returns the alert template name or the _id.
-     * @param alertTemplate
-     * @private
-     */
-    _getAlertTemplateName: function(alertTemplate) {
-        return alertTemplate.name || alertTemplate._id;
-    },
-
-    /**
-     * Fired when an alert template is selected when creating a new alert.
-     * @private
-     */
-    _selectAlertTemplate: function(e) {
-        var _this = this;
-        this._selectedAlertTemplateId = e.target.getAttribute('data-id');
-        //Find and clone the parent template that we will create the child from.
-        var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
-            return alertTemplate._id === _this._selectedAlertTemplateId;
-        })[0]));
-        //Load the template immediately if it has a center position defined or no geo section (fallback zone only).
-        if (childTemplate.properties.center || !childTemplate.geo) {
-            var position = null;
-            if (childTemplate.properties.center) {
-                position = new google.maps.LatLng(childTemplate.properties.center);
-                delete childTemplate.properties.center;
-            }
-            this._createChildTemplate(childTemplate,position);
-        }
-        else {
-            //Change the cursor to a crosshair for accurate placement
-            this._map.setOptions({draggableCursor:'crosshair'});
-            //Add click listeners to the map so we can drop the new alert wherever they click. First clear the
-            //listener to ensure that the user can click multiple alerts and always get the last one the selected.
-            google.maps.event.clearListeners(this._map,'click');
-            google.maps.event.addListener(this._map,'click',createChildTemplate);
-            //Create a new child alert template to be linked one-to-one with the alert.
-            function createChildTemplate(e) { _this._createChildTemplate(childTemplate,e.latLng); }
-        }
-    },
-
-    /**
-     * Draws the passed template and converts it to a child template by adding the parenAlertId property.
-     * @param childTemplate
-     * @param latLng
-     * @private
-     */
-    _createChildTemplate: function(childTemplate,latLng) {
-        //Remove the parent's id from the record as we'll generate a new one.
-        var id = childTemplate._id;
-        delete childTemplate._id;
-        //If we have no geo section it means the template contains only the fallback
-        //zone so the coordinates they dropped the template at are meaningless.
-        if (!childTemplate.geo) { latLng = null; }
-        childTemplate.state = 'draft'; //Default to draft
-        this._drawAndLoadAlertTemplate(childTemplate,latLng);
-        this._loadedAlert.template.setParentId(id);
-        this._showPropertiesPane = true;
     },
 
     /**
@@ -393,7 +578,7 @@ Polymer({
     },
 
     /**
-     *
+     * Handles state related to the toggling of the properties pane.
      * @param showPropertiesPane
      * @private
      */
@@ -403,8 +588,6 @@ Polymer({
             this._revertCursor();
         }
     },
-
-
 
     /**
      * Monitors the loaded alert and handles fallback zone button visibility.
@@ -432,18 +615,5 @@ Polymer({
      */
     _alertStateChanged: function(state) {
         this._setAlertState(state || null);
-    },
-
-    /**
-     * Returns the style classes for the list of alert template items.
-     * @param thisTemplate
-     * @param selectedTemplate
-     * @private
-     */
-    _getTemplateClass: function(thisTemplate,selectedTemplate) {
-        if (selectedTemplate && thisTemplate === selectedTemplate) {
-            return 'item selected';
-        }
-        return 'item';
     }
 });

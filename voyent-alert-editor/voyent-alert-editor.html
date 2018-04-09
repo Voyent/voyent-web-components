@@ -4,6 +4,8 @@
 <link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-properties.html">
 <link rel="import" href="../../paper-dialog/paper-dialog.html">
+<link rel="import" href="../../iron-selector/iron-selector.html">
+<link rel="import" href="../common/voyent-custom-validator.html">
 
 <!--
 Displays a map-based tool for creating new alert templates.
@@ -28,50 +30,39 @@ Example:
             .drag-handle {
                 height: var(--map-height);
             }
-            .icon-div {
-                display:inline-block;
-            }
-            .alert-desc {
-                font-size: 13px;
-                padding: 10px;
-            }
-            .alertTemplates .item {
-                font-size:12px;
-                height:35px;
-                padding:6px 6px 6px 10px;
-                border-bottom:1px solid #ccc;
-                cursor:pointer;
-            }
-            .alertTemplates .item:hover {
-                background:rgb(235,235,235);
-            }
-            .alertTemplates .imgDiv,
-            .alertTemplates .nameDiv,
-            .alerts .imgDiv,
-            .alerts .nameDiv {
-                display: inline-block;
-                vertical-align: middle;
-                cursor: pointer;
-            }
-            .alertTemplates .imgDiv,
-            .alerts .imgDiv {
-                width: 35px;
-            }
-            .imgWrap {
-                width: 35px;
-                height: 35px;
-            }
-            .alertTemplates .nameDiv,
-            .alerts .nameDiv {
-                width: calc(100% - 42px);
-                font-size:12px;
-                line-height: 12px;
-                overflow:hidden;
-            }
             .custom-control {
                 margin: -5px 5px 0 0;
             }
+            .iron-selected div {
+                background-color: #2E348E;
+                color: #FFF;
+            }
+            .table-col {
+                text-align: center;
+                padding: 5px;
+            }
+            .badge-col {
+                width: 5%;
+            }
+            .name-col {
+                width: 55%;
+            }
+            .category-col {
+                width: 40%;
+            }
+            .badge-img {
+                max-width: 40px;
+                max-height: 40px;
+                vertical-align: middle;
+                padding: 2px 0 2px 0;
+            }
+            .dialog-buttons-wrapper {
+                margin-top: 30px;
+            }
         </style>
+
+        <voyent-custom-validator id="newAlertValidator" validator-name="newAlertValidator"></voyent-custom-validator>
+
         <div id="container">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
             <div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
@@ -79,35 +70,20 @@ Example:
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <template is="dom-if" if="[[_showTemplateListPane]]">
-                            <div class="alert-template-title">New Alert</div>
-                            <template is="dom-if" if="[[_parentTemplates.length]]">
-                                <div class="alertTemplates">
-                                    <div class="alert-desc">
-                                        <template is="dom-if" if="[[!_selectedAlertTemplateId]]">
-                                            Select an alert template to create a new alert from.
-                                        </template>
-                                        <template is="dom-if" if="[[_selectedAlertTemplateId]]">
-                                            Click a location on the map to drop the alert or press ESC to cancel.
-                                        </template>
-                                    </div>
-                                    <template is="dom-repeat" items="{{_parentTemplates}}">
-                                        <div class$="[[_getTemplateClass(item._id,_selectedAlertTemplateId)]]"
-                                             on-click="_selectAlertTemplate" data-id$="{{item._id}}">
-                                            <div class="imgDiv" data-id$="{{item._id}}">
-                                                <img src$="{{getBadgeUrl(item.badge)}}"
-                                                     class="imgWrap"
-                                                     data-id$="{{item._id}}"/>
-                                            </div>&nbsp;
-                                            <div class="nameDiv" data-id$="{{item._id}}">{{_getAlertTemplateName(item)}}</div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </template>
-                            <template is="dom-if" if="[[!_parentTemplates.length]]">
+                            <template is="dom-if" if="[[!_parentTemplatesByCategory.length]]">
+                                <div class="alert-template-title">New Alert</div>
                                 <div class="alert-template-desc">
                                     There are no alert templates to create a new alert from.
                                     Please create an alert template before using this editor.
                                 </div>
+                            </template>
+                            <template is="dom-if" if="[[_parentTemplatesByCategory.length]]">
+                                <template is="dom-if" if="[[_displayClickMapMsg]]">
+                                    <div class="alert-template-title">New Alert</div>
+                                    <div class="alert-template-desc">
+                                        Click a location on the map to place the alert...
+                                    </div>
+                                </template>
                             </template>
                         </template>
                         <template is="dom-if" if="[[_showPropertiesPane]]">
@@ -177,6 +153,38 @@ Example:
                 </span>
             </div>
         </div>
+        <paper-dialog id="newAlertDialog" on-keyup="_submitNewAlertDialog" modal on-iron-overlay-opened="_fixModalStacking">
+            <paper-input id="newAlertNameInput" autofocus label="Alert Name" value="{{_newAlertName}}"
+                         validator="newAlertValidator" maxlength="60" on-keyup="_submitNewAlertDialog"></paper-input>
+            <div class="table-wrap">
+                <div class="table">
+                    <div class="table-col badge-col table-header no-select"></div>
+                    <div class="table-col name-col table-header no-select pointer" on-click="_sortTemplatesByName" title="Click to sort by Alert Name">Name</div>
+                    <div class="table-col category-col table-header no-select pointer" on-click="_sortTemplatesByCategory" title="Click to sort by Category">Category</div>
+                </div>
+                <div class="table-scroll">
+                    <iron-selector id="newAlertCategories" class="alternating-row-parent" selected="{{_selectedAlertTemplateId}}" attr-for-selected="name">
+                        <template id="alertTemplatesList" is="dom-repeat" items="[[_parentTemplatesByCategory]]" as="obj" sort="_sortTemplates">
+                            <div name="[[obj.template._id]]" class="table pointer">
+                                <div class="table-col badge-col no-select">
+                                    <img class="badge-img" src="[[getBadgeUrl(obj.template.badge)]]"/>
+                                </div>
+                                <div class="table-col name-col no-select">
+                                    [[obj.template.name]]
+                                </div>
+                                <div class="table-col category-col no-select">
+                                    [[obj.category]]
+                                </div>
+                            </div>
+                        </template>
+                    </iron-selector>
+                </div>
+                <div class="dialog-buttons-wrapper text-center">
+                    <paper-button raised title="Cancel changes" on-click="_cancelNewAlert">Cancel</paper-button>
+                    <paper-button raised title="Confirm changes" on-click="_createNewAlert">Confirm</paper-button>
+                </div>
+            </div>
+        </paper-dialog>
     </template>
 </dom-module>
 
