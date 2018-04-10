@@ -278,7 +278,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                 border: 5px outset #2E348E;
                 color: #2E348E;
                 line-height: 34px;
-                padding: 0 15px;
             }
             .category-buttons-wrapper {
                 margin: 20px;
@@ -299,6 +298,10 @@ Internal component used to display the properties panel inside Voyent alert comp
             .delete-col {
                 width: 10%;
                 text-align: center;
+            }
+            .manage-categories-button {
+                font-size: 11px;
+                padding: 5px;
             }
         </style>
 
@@ -605,29 +608,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </paper-toggle-button>
                     </div>
                 </template>
-                <template is="dom-if" if="[[_showDialogCategories]]">
-                    <div class="category-picker">
-                        <template is="dom-if" if="[[!_templateCategories.length]]">
-                            <p class="category-message">No template categories defined</p>
-                            <paper-button raised title="Add New Category" on-click="_manageCategories">Add New Category</paper-button>
-                        </template>
-                        <template is="dom-if" if="[[_templateCategories.length]]">
-                            <p class="category-message">
-                                Select one or more template categories
-                            </p>
-                            <div class="category-wrapper">
-                                <iron-selector id="categorySelector" attr-for-selected="name" multi selected-values="{{_selectedCategories}}">
-                                    <template is="dom-repeat" items="[[_templateCategories]]" as="category" sort="_sortCategories">
-                                        <div name="[[category]]" class="category-item" title="[[category]]">
-                                            [[category]]
-                                        </div>
-                                    </template>
-                                </iron-selector>
-                            </div>
-                            <paper-button style="font-size:11px;padding:5px;" raised title="Manage Categories" on-click="_manageCategories">Manage Categories</paper-button>
-                        </template>
-                    </div>
-                </template>
                 <template is="dom-if" if="[[_showDialogBadge]]">
                     <br/>
                     <voyent-alert-badge-chooser value="{{_dialogBadge}}" badgedir="{{badgedir}}"></voyent-alert-badge-chooser>
@@ -638,6 +618,33 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <paper-button raised title="Cancel" on-click="closeDialog">Cancel</paper-button>
                     <paper-button raised title="Confirm" on-click="_confirmDialog">Confirm</paper-button>
                 </div>
+            </div>
+        </paper-dialog>
+        <paper-dialog id="categoryPicker" modal on-iron-overlay-opened="_fixModalStacking">
+            <div class="category-picker">
+                <template is="dom-if" if="[[!_templateCategories.length]]">
+                    <p class="category-message">No template categories defined</p>
+                    <paper-button raised title="Add New Category" on-click="_manageCategories">Add New Category</paper-button>
+                </template>
+                <template is="dom-if" if="[[_templateCategories.length]]">
+                    <p class="category-message">
+                        Select one or more template categories
+                    </p>
+                    <div class="category-wrapper">
+                        <iron-selector id="categoryPicker" attr-for-selected="name" multi selected-values="{{_selectedCategories}}">
+                            <template is="dom-repeat" items="[[_templateCategories]]" as="category" sort="_sortCategories">
+                                <div name="[[category]]" class="category-item" title="[[category]]">
+                                    [[category]]
+                                </div>
+                            </template>
+                        </iron-selector>
+                    </div>
+                    <paper-button class="manage-categories-button" raised title="Manage Categories" on-click="_manageCategories">Manage Categories</paper-button>
+                </template>
+            </div>
+            <div class="dialog-bttns text-center">
+                <paper-button raised title="Cancel" on-click="_cancelCategorySelector">Cancel</paper-button>
+                <paper-button raised title="Confirm" on-click="_confirmCategorySelector">Confirm</paper-button>
             </div>
         </paper-dialog>
         <paper-dialog id="categoryManager" modal on-iron-overlay-opened="_fixModalStacking">

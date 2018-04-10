@@ -231,42 +231,6 @@
         },
 
         /**
-         * Saves or updates the current alert template.
-         */
-        saveAlertTemplate: function () {
-            if (this._savingAlertTemplate) { return; }
-            if (!this._validateTemplate()) { return; }
-
-            this._savingAlertTemplate = true;
-             var _this = this, msg;
-            return new Promise(function (resolve, reject) {
-                _this._loadedAlert.template.updateJSON(true);
-                var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
-                var func = 'createAlertTemplate';
-                if (_this._loadedAlert.template.id) {
-                    func = 'updateAlertTemplate';
-                    requestOpts.id = _this._loadedAlert.template.id
-                }
-                voyent.locate[func](requestOpts).then(function (uri) {
-                    _this._savingAlertTemplate = false;
-                    if (func === 'createAlertTemplate') {
-                        _this._loadedAlert.template.setId(uri.split('/').pop());
-                        _this.fire('message-info', 'Alert template successfully created');
-                    }
-                    else {
-                        _this.fire('message-info', 'Alert template successfully updated');
-                    }
-                    _this.fire('voyent-alert-template-saved',{});
-                    resolve();
-                }).catch(function(e) {
-                    _this._savingAlertTemplate = false;
-                    _this.fire('message-error', 'Issue saving alert template: ' + (e.responseText || e.message || e));
-                    reject(msg);
-                });
-            });
-        },
-
-        /**
          * Saves or updates the current alert.
          */
         saveAlert: function() {
@@ -820,21 +784,6 @@
             if (this.nodeName !== 'VOYENT-ALERT-VIEW' || this.mode !== 'notification') {
                 this._adjustBoundsAndPan();
             }
-        },
-
-        /**
-         * Validates the currently loaded alert template.
-         * @returns {boolean}
-         * @private
-         */
-        _validateTemplate: function() {
-            if (!this._loadedAlert || !this._loadedAlert.template ||
-                (!this._loadedAlert.template.zoneStacks || !this._loadedAlert.template.zoneStacks.length) &&
-                (!this._fallbackZone || !this._fallbackZone.enabled)) {
-                this.fire('message-error','Please define at least one zone');
-                return false;
-            }
-            return true;
         },
 
         /**

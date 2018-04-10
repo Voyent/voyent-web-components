@@ -97,17 +97,17 @@ Polymer({
          */
         _newTemplateCategory: { type: String, notify: true },
         /**
-         * Whether to show the category picker in the dialog.
-         */
-        _showDialogCategories: { type: Boolean, value: false, notify: true },
-        /**
          * The list of available template categories.
          */
         _templateCategories: { type: Array, value: [], notify: true },
         /**
          * The list of selected categories for the current template.
          */
-        _selectedCategories: { type: Array, value: [], notify: true }
+        _selectedCategories: { type: Array, value: [], notify: true },
+        /**
+         * Whether a template save is pending after we prompt the user for an uncategorized template before saving.
+         */
+        _templateSavePending: { type: Boolean, value: false, notify: true }
     },
 
     observers: [

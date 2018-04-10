@@ -69,9 +69,9 @@ Example:
                                                  _dialog-confirm-func="{{_dialogConfirmFunc}}"
                                                  _dialog-cancel-func="{{_dialogCancelFunc}}"
                                                  _new-template-category="{{_newTemplateCategory}}"
-                                                 _show-dialog-categories="{{_showDialogCategories}}"
                                                  _template-categories="{{_templateCategories}}"
-                                                 _selected-categories="{{_selectedCategories}}">
+                                                 _selected-categories="{{_selectedCategories}}"
+                                                 _template-save-pending="{{_templateSavePending}}">
                         </voyent-alert-properties>
                     </template>
                     <template is="dom-if" if="[[!_isLoggedIn]]">
@@ -125,7 +125,13 @@ Example:
                 </span>
             </div>
         </div>
-        </div>
+        <paper-dialog id="uncategorizedTemplate" modal on-iron-overlay-opened="_fixModalStacking">
+            <p>No categories have been specified for this template, would you like to specify them now?</p>
+            <div class="dialog-bttns text-center">
+                <paper-button raised title="Cancel" on-click="_openCategorySelectorBeforeSave">Yes, Choose Category</paper-button>
+                <paper-button raised title="Confirm" on-click="_saveAlertTemplateWithoutCategory">No, Save Anyway</paper-button>
+            </div>
+        </paper-dialog>
     </template>
 </dom-module>
 

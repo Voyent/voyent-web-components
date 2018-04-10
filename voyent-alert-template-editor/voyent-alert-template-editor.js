@@ -98,10 +98,7 @@ Polymer({
      * Opens a dialog for choosing template categories.
      */
     chooseCategories: function() {
-        var _this = this;
-        this._openDialog(null,null,null,false,true,function() {
-            _this._loadedAlert.template.setCategories(_this._selectedCategories.slice(0));
-        });
+        this._openCategorySelector();
     },
 
 

@@ -79,6 +79,75 @@
         },
 
         /**
+         * Saves or updates the current alert template.
+         */
+        saveAlertTemplate: function () {
+            if (this._savingAlertTemplate) { return; }
+            if (!this._validateTemplate()) { return; }
+
+            this._savingAlertTemplate = true;
+            var _this = this, msg;
+            return new Promise(function (resolve, reject) {
+                _this._loadedAlert.template.updateJSON(true);
+                var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
+                var func = 'createAlertTemplate';
+                if (_this._loadedAlert.template.id) {
+                    func = 'updateAlertTemplate';
+                    requestOpts.id = _this._loadedAlert.template.id
+                }
+                voyent.locate[func](requestOpts).then(function (uri) {
+                    _this._savingAlertTemplate = false;
+                    if (func === 'createAlertTemplate') {
+                        _this._loadedAlert.template.setId(uri.split('/').pop());
+                        _this.fire('message-info', 'Alert template successfully created');
+                    }
+                    else {
+                        _this.fire('message-info', 'Alert template successfully updated');
+                    }
+                    _this.fire('voyent-alert-template-saved',{});
+                    resolve();
+                }).catch(function(e) {
+                    _this._savingAlertTemplate = false;
+                    _this.fire('message-error', 'Issue saving alert template: ' + (e.responseText || e.message || e));
+                    reject(msg);
+                });
+            });
+        },
+
+        /**
+         * Wrapper for `saveAlertTemplate` that disables prompt for unspecified template categories.
+         * @private
+         */
+        _saveAlertTemplateWithoutCategory: function() {
+            var _this = this;
+            this._skipCategoryValidation = true;
+            this._closeUncategorizedTemplateDialog();
+            this.saveAlertTemplate().then(function() {
+                _this._skipCategoryValidation = false;
+            });
+        },
+
+        /**
+         * Validates the currently loaded alert template.
+         * @returns {boolean}
+         * @private
+         */
+        _validateTemplate: function() {
+            if (!this._loadedAlert || !this._loadedAlert.template ||
+                (!this._loadedAlert.template.zoneStacks || !this._loadedAlert.template.zoneStacks.length) &&
+                (!this._fallbackZone || !this._fallbackZone.enabled)) {
+                this.fire('message-error','Please define at least one zone');
+                return false;
+            }
+            if (!this._skipCategoryValidation &&
+                (!this._loadedAlert.template.categories || !this._loadedAlert.template.categories.length)) {
+                this._openUncategorizedTemplateDialog();
+                return false;
+            }
+            return true;
+        },
+
+        /**
          * Builds the location JSON for the currently loaded alert.
          * @private
          */
@@ -349,16 +418,6 @@
                     this._dialogBadge = this._loadedAlert.template.badge;
                 }
             }
-            this._showDialogCategories = !!showCategoryPicker;
-            if (this._showDialogCategories) {
-                this.set('_selectedCategories',this._loadedAlert ? this._loadedAlert.template.categories.slice(0) : []);
-                setTimeout(function() {
-                    var categoryWrapper = document.querySelector('.category-wrapper');
-                    if (categoryWrapper) {
-                        categoryWrapper.scrollTop = 0;
-                    }
-                },0);
-            }
             this._dialogConfirmFunc = confirmFunc;
             this._dialogCancelFunc = cancelFunc;
             var dialog = this.querySelector('#modalDialog');
@@ -432,6 +491,88 @@
             else if (e.keyCode === 27) { //Escape
                 this.closeDialog();
             }
+        },
+
+        /**
+         * Opens the category picker dialog.
+         * @private
+         */
+        _openCategorySelector: function() {
+            var dialog = this.querySelector('#categoryPicker');
+            if (dialog) {
+                dialog.open();
+                this.set('_selectedCategories',this._loadedAlert ? this._loadedAlert.template.categories.slice(0) : []);
+                setTimeout(function() {
+                    var categoryWrapper = document.querySelector('.category-wrapper');
+                    if (categoryWrapper) {
+                        categoryWrapper.scrollTop = 0;
+                    }
+                },0);
+            }
+        },
+
+        /**
+         * Closes the category picker dialog.
+         * @private
+         */
+        _closeCategorySelector: function() {
+            var dialog = this.querySelector('#categoryPicker');
+            if (dialog) {
+                dialog.close();
+            }
+        },
+
+        /**
+         * Confirms category selection changes made in the category picker dialog.
+         * @private
+         */
+        _confirmCategorySelector: function() {
+            this._loadedAlert.template.setCategories(this._selectedCategories.slice(0));
+            if (this._templateSavePending) {
+                this.saveAlertTemplate();
+                this._templateSavePending = false;
+            }
+            this._closeCategorySelector();
+        },
+
+        /**
+         * Cancels category selection changes made in the category picker dialog.
+         * @private
+         */
+        _cancelCategorySelector: function() {
+            this._closeCategorySelector();
+        },
+
+        /**
+         * Opens a prompt message during a saving when no categories are specified for a template.
+         * @private
+         */
+        _openUncategorizedTemplateDialog: function() {
+            var dialog = this.querySelector('#uncategorizedTemplate');
+            if (dialog) {
+                dialog.open();
+            }
+        },
+
+        /**
+         * Closes the prompt message displayed during a save when no categories are specified for a template.
+         * @private
+         */
+        _closeUncategorizedTemplateDialog: function() {
+            var dialog = this.querySelector('#uncategorizedTemplate');
+            if (dialog) {
+                dialog.close();
+            }
+        },
+
+        /**
+         * Opens the category picker dialog so the user can define template categories before saving.
+         * @private
+         */
+        _openCategorySelectorBeforeSave: function() {
+            this._templateSavePending = true;
+            this._closeUncategorizedTemplateDialog();
+            this._openCategorySelector();
         },
 
         /**
