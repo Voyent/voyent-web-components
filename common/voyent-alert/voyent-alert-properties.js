@@ -1059,6 +1059,16 @@ Polymer({
     },
 
     /**
+     * Returns a displayable list of selected template categories.
+     * @returns {string}
+     * @private
+     */
+    _getReadableSelectedCategories: function() {
+        var toReturn = this._selectedCategories.sort(this._sortCategories).toString().split(',').join(', ');
+        return toReturn || 'None';
+    },
+
+    /**
      * Returns the style classes for the accordion header and body elements.
      * @param section
      * @param active

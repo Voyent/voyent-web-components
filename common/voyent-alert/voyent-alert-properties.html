@@ -238,6 +238,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .category-message {
                 margin: 15px 0;
+                max-width: 535px;
             }
             .new-category-wrapper {
                 max-width: 535px;
@@ -270,7 +271,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 text-overflow: ellipsis;
                 overflow: hidden;
                 white-space: nowrap;
-                padding: 0 10px;
+                padding: 0 13px;
                 font-weight:bold;
                 border-radius:10px;
             }
@@ -278,6 +279,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 border: 5px outset #2E348E;
                 color: #2E348E;
                 line-height: 34px;
+                padding: 0 10px;
             }
             .category-buttons-wrapper {
                 margin: 20px;
@@ -302,6 +304,42 @@ Internal component used to display the properties panel inside Voyent alert comp
             .manage-categories-button {
                 font-size: 11px;
                 padding: 5px;
+            }
+            .dialog-title-bar {
+                margin: 0;
+                padding: 0;
+                background-color: #DDD;
+                font-size: 17px;
+                font-weight: bold;
+                cursor: default;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                -khtml-user-select: none;
+                user-select: none;
+
+            }
+            .dialog-title-bar .title {
+                cursor: default;
+                padding: 10px 15px;
+                width: 95%;
+            }
+            .dialog-title-bar .close-button {
+                width: 5%;
+            }
+            .dialog-title-bar .close-button paper-icon-button {
+                top: -5px;
+                width: 23px;
+                height: 23px;
+                cursor: pointer;
+            }
+            .selected-categories-label {
+                font-weight: bold;
+            }
+            .selected-categories-label,
+            .selected-categories-text {
+                font-size: 15px;
             }
         </style>
 
@@ -621,6 +659,12 @@ Internal component used to display the properties panel inside Voyent alert comp
             </div>
         </paper-dialog>
         <paper-dialog id="categoryPicker" modal on-iron-overlay-opened="_fixModalStacking">
+            <div class="dialog-title-bar">
+                <span class="title">Select Categories</span>
+                <span class="close-button">
+                    <paper-icon-button icon="close" on-click="_cancelCategorySelector" title="Cancel"></paper-icon-button>
+                </span>
+            </div>
             <div class="category-picker">
                 <template is="dom-if" if="[[!_templateCategories.length]]">
                     <p class="category-message">No template categories defined</p>
@@ -628,7 +672,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </template>
                 <template is="dom-if" if="[[_templateCategories.length]]">
                     <p class="category-message">
-                        Select one or more template categories
+                        <span class="selected-categories-label">Selected Categories: </span><span class="selected-categories-text">[[_getReadableSelectedCategories(_selectedCategories,_selectedCategories.length)]]</span>
                     </p>
                     <div class="category-wrapper">
                         <iron-selector id="categoryPicker" attr-for-selected="name" multi selected-values="{{_selectedCategories}}">
