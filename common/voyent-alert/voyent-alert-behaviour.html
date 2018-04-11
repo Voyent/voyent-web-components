@@ -1593,7 +1593,9 @@
                             _outer._displayStackOverlapMsg();
                             _this.moveZonesRelativeToPosition(_outer._dragStartPosition);
                             _outer._loadedAlert.template.updateJSONAndCentroid();
-                            return;
+                            if (_outer._fallbackZone) {
+                                _outer._fallbackZone.punchOutOverlay();
+                            }
                         }
                         //Re-initialize the polygon path listeners for all zones.
                         _this.initializePolygonPathListeners();
