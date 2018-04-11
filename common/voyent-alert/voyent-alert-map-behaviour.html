@@ -234,13 +234,12 @@
          * Saves or updates the current alert.
          */
         saveAlert: function() {
-            if (this._savingAlert) { return; }
-            if (!this._validateTemplate()) { return; }
-
-            this._savingAlert = true;
             var _this = this, msg;
-
             return new Promise(function (resolve, reject) {
+                if (this._savingAlert) { return reject('already saving alert'); }
+                if (!this._validateTemplate()) { return reject('invalid alert'); }
+                this._savingAlert = true;
+
                 //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
                 _this._loadedAlert.template.updateJSON(true);
                 var requestOpts = {

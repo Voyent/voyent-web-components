@@ -139,7 +139,7 @@
                 this.fire('message-error','Please define at least one zone');
                 return false;
             }
-            if (!this._skipCategoryValidation &&
+            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !this._skipCategoryValidation &&
                 (!this._loadedAlert.template.categories || !this._loadedAlert.template.categories.length)) {
                 this._openUncategorizedTemplateDialog();
                 return false;
