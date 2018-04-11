@@ -243,7 +243,6 @@ Internal component used to display the properties panel inside Voyent alert comp
             .dialog-title-bar {
                 margin: 0;
                 padding: 0;
-                background-color: #DDD;
                 width: 650px;
                 font-size: 17px;
                 font-weight: bold;
@@ -320,7 +319,8 @@ Internal component used to display the properties panel inside Voyent alert comp
             .category-item[data-editing] {
                 height: 80px;
             }
-            .category-item .delete-category-button {
+            .category-item .delete-category-button,
+            .category-item:not([data-editing])[data-invalid-category] .delete-category-button {
                 display: none;
             }
             .category-item:hover .delete-category-button,
@@ -731,7 +731,9 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <template is="dom-if" if="[[_editedTemplateCategories.length]]">
                         <div class="category-wrapper">
                             <template is="dom-repeat" items="[[_editedTemplateCategories]]" as="obj">
-                                <div class="category-item no-select" data-editing$="[[obj.editing]]" title="[[obj.name]]" on-click="_enableCategoryNameEditing">
+                                <div class="category-item no-select" data-editing$="[[obj.editing]]"
+                                     data-invalid-category$="[[_categoryInputInvalid]]"
+                                     title="[[obj.name]]" on-click="_enableCategoryNameEditing">
                                     <div class="delete-category-button-wrapper">
                                         <paper-icon-button class="delete-category-button" icon="close" on-click="_deleteCategory"
                                                            title="Remove Category"></paper-icon-button>
@@ -740,7 +742,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         <template is="dom-if" if="[[obj.editing]]">
                                             <paper-input id$="category-[[index]]" value="{{obj.newName::input}}" no-label-float
                                                          validator="existingCategoryValidator" on-value-changed="_validateCategoriesOnChange"
-                                                         on-keyup="_existingCategoryKeyup">
+                                                         on-keyup="_existingCategoryKeyup" on-blur="_existingCategoryBlur">
                                             </paper-input>
                                         </template>
                                         <template is="dom-if" if="[[!obj.editing]]">

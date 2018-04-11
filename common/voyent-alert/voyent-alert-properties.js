@@ -387,6 +387,30 @@ Polymer({
     },
 
     /**
+     * Handles submitting an existing category input field on blur.
+     * @param e
+     * @private
+     */
+    _existingCategoryBlur: function(e) {
+        e.stopPropagation();
+        var _this = this;
+        //Always execute this async so we can correctly determine the activeElement.
+        setTimeout(function() {
+            //Check if we are focused on an iron-input because if we are it means focus is still on the input so we
+            //won't exit editing mode (polymer fires blur event even when the input has focus). Also check if the
+            //focus is on the close button because this means they are deleting the category. Finally we'll check
+            //if we are in editing mode because if we are not then it means that focus was removed via the Enter
+            //or Esc key press and not just a regular blur.
+            if (document.activeElement.getAttribute('is') !== 'iron-input' &&
+                document.activeElement.getAttribute('icon') !== 'close' &&
+                typeof _this._editingCategoryAtIndex === 'number') {
+                _this._disableCategoryNameEditing(_this._editingCategoryAtIndex,true);
+            }
+        },150); //Delay for when a user clicks another category so we don't trigger the disable function
+                // here, we will call this when enabling the new one in _enableCategoryNameEditing.
+    },
+
+    /**
      * Handles submitting an existing category input field on enter key presses and cancelling on escape key presses.
      * @param e
      * @private
