@@ -289,10 +289,6 @@ Polymer({
                             "category": template.categories[j]
                         });
                     }
-                    else {
-                        //Remove categories that no longer exist so they will be removed when persisting the alert.
-                        template.categories.splice(j,1);
-                    }
                 }
                 if (!foundMatch) {
                     template.category = 'Uncategorized';
@@ -416,10 +412,15 @@ Polymer({
      */
     _cancelNewAlert: function() {
         var _this = this;
-        this._closeNewAlertDialog();
-        setTimeout(function() {
-            _this.fire('voyent-alert-template-cancel',{});
-        },0);
+        //Add some checks here since this function is called on window keydown
+        //events, meaning it may fire when the component is not active.
+        var dialog = this.querySelector('#newAlertDialog');
+        if ((dialog && dialog.opened) || this._selectedAlertTemplateId) {
+            this._closeNewAlertDialog();
+            setTimeout(function() {
+                _this.fire('voyent-alert-template-cancel',{});
+            },0);
+        }
     },
 
     /**

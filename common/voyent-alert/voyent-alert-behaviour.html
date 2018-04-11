@@ -498,7 +498,7 @@
          * @private
          */
         _openCategorySelector: function() {
-            var dialog = this.querySelector('#categoryPicker');
+            var dialog = this.querySelector('#categoryManager');
             if (dialog) {
                 dialog.open();
                 this.set('_selectedCategories',this._loadedAlert ? this._loadedAlert.template.categories.slice(0) : []);
@@ -516,7 +516,7 @@
          * @private
          */
         _closeCategorySelector: function() {
-            var dialog = this.querySelector('#categoryPicker');
+            var dialog = this.querySelector('#categoryManager');
             if (dialog) {
                 dialog.close();
             }

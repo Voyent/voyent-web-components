@@ -875,8 +875,8 @@
             window.addEventListener('keydown', function (event) {
                 if (event.which === 27) {
                     if (_this.nodeName === 'VOYENT-ALERT-EDITOR' && _this._showTemplateListPane) {
-                        _this._revertCursor();
                         _this._cancelNewAlert();
+                        _this._revertCursor();
                     }
                     if (_this._drawingManager.getDrawingMode() !== null) {
                         //Flag so overlaycomplete listener won't be allowed

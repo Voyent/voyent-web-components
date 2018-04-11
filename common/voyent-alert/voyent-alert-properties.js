@@ -157,6 +157,8 @@ Polymer({
             {"label":"NW","value":315},
             {"label":"NNW","value":337.5}
         ];
+        //Flag indicating which category pane to display in the dialog, default is category selector.
+        this._showCategoryManager = false;
     },
 
     /**
@@ -164,27 +166,30 @@ Polymer({
      * @private
      */
     _manageCategories: function() {
-        var dialog = this.querySelector('#categoryManager');
-        if (dialog) {
-            dialog.open();
-            //If the update failed then open the dialog and do nothing else. This is so we don't overwrite the
-            //categories the next time they open the editor, allowing them to go back in and try the save again.
-            if (this._categoryUpdateFailed) {
-                this._categoryUpdateFailed = false;
-                return;
-            }
-            //Create a copy of our template categories list and ensure it is sorted.
-            var templateCategories = this._templateCategories.slice(0);
-            templateCategories.sort(this._sortCategories);
-            //Build our list of categories to be used in the dialog. We wrap the categories in an object to fix
-            //issues with data bindings joining each other in the dom-repeat when the values are the same.
-            this.set('_editedTemplateCategories',templateCategories.map(function(category) {
-                return {"name":category}
-            }));
-            //Ensure the dialog opens with a clean input state.
-            this.set('_newTemplateCategory','');
-            this.querySelector('#newCategoryInput').invalid = false;
+        var _this = this;
+        this._showCategoryManager = true;
+        //If the update failed then open the dialog and do nothing else. This is so we don't overwrite the
+        //categories the next time they open the editor, allowing them to go back in and try the save again.
+        if (this._categoryUpdateFailed) {
+            this._categoryUpdateFailed = false;
+            return;
         }
+        //Create a copy of our template categories list and ensure it is sorted.
+        var templateCategories = this._templateCategories.slice(0);
+        templateCategories.sort(this._sortCategories);
+        //Build our list of categories to be used in the dialog with some extra properties for template binding.
+        this.set('_editedTemplateCategories',templateCategories.map(function(category) {
+            return {
+                "name": category,
+                "newName": '',
+                "editing": false
+            };
+        }));
+        //Ensure the dialog opens with a clean input state.
+        this.set('_newTemplateCategory','');
+        setTimeout(function() {
+            _this.querySelector('#newCategoryInput').invalid = false;
+        },0);
     },
 
     /**
@@ -196,7 +201,9 @@ Polymer({
             return;
         }
         this.push('_editedTemplateCategories',{
-            "name":this._newTemplateCategory
+            "name": this._newTemplateCategory,
+            "newName": '',
+            "editing": false
         });
         this.set('_newTemplateCategory','');
         //Sort the list and re-set it so the indices on the dom-repeat update. We do this
@@ -211,8 +218,60 @@ Polymer({
      * @private
      */
     _deleteCategory: function(e) {
+        e.stopPropagation();
         var index = e.model.get('index');
+        //If we are currently editing the field that is being deleted then editing will be disabled automatically
+        //when splicing so we must reset this property to indicate that we are no longer editing.
+        if (this._editedTemplateCategories[index].editing) {
+            this._editingCategoryAtIndex = null;
+        }
         this.splice('_editedTemplateCategories',index,1);
+    },
+
+    /**
+     * Enables category name editing when clicking on a category.
+     * @param e
+     * @private
+     */
+    _enableCategoryNameEditing: function(e) {
+        e.stopPropagation();
+        var _this = this;
+        var index = e.model.get('index');
+        //If we are already editing a category then don't allow the user to edit another one if validation is currently
+        //failing. If validation is passing then just disable editing for the current field and proceed.
+        if (typeof this._editingCategoryAtIndex === 'number' && !this._disableCategoryNameEditing(this._editingCategoryAtIndex,true)) {
+            return;
+        }
+        this.set('_editedTemplateCategories.'+index+'.newName',_this._editedTemplateCategories[index].name);
+        this.set('_editedTemplateCategories.'+index+'.editing',true);
+        this._editingCategoryAtIndex = index;
+        setTimeout(function() {
+            _this.querySelector('#category-'+index).focus();
+        },0);
+    },
+
+    /**
+     * Disables category name editing at the specified index. If validation is currently failing then the operation will be aborted.
+     * @param index
+     * @param persist
+     * @returns {boolean} - Whether the category name could successfully be disabled (validation passes).
+     * @private
+     */
+    _disableCategoryNameEditing: function(index,persist) {
+        if (this._categoryInputInvalid) {
+            return false;
+        }
+        if (persist) {
+            this.set('_editedTemplateCategories.'+index+'.name',this._editedTemplateCategories[index].newName);
+        }
+        //Reset the newName value so that when we set it again when enabling editing the set is reflected
+        //in the view. Additionally, toggle a flag so the input change listener doesn't fire and try to validate.
+        this._ignoreChangeEvent = true;
+        this.set('_editedTemplateCategories.'+index+'.newName','');
+        this._ignoreChangeEvent = false;
+        this.set('_editedTemplateCategories.'+index+'.editing',false);
+        this._editingCategoryAtIndex = null;
+        return true;
     },
 
     /**
@@ -221,8 +280,8 @@ Polymer({
      */
     _saveCategoryChanges: function() {
         var _this = this;
-        //Close the dialog and reduce the category object list to a flat array of strings.
-        this.querySelector('#categoryManager').close();
+        //Toggle the category manager and reduce the category object list to a flat array of strings.
+        this._showCategoryManager = false;
         var editedCategoryNames = this._editedTemplateCategories.map(function(obj) {
             return obj.name;
         });
@@ -262,7 +321,7 @@ Polymer({
      */
     _cancelCategoryChanges: function() {
         this.set('_editedTemplateCategories',[]);
-        this.querySelector('#categoryManager').close();
+        this._showCategoryManager = false;
     },
 
     /**
@@ -284,7 +343,7 @@ Polymer({
     _validateExistingTemplateCategory: function() {
         return this._validateCategory(
             this.querySelector('#category-'+this._categoryIndexBeingValidated),
-            this._editedTemplateCategories[this._categoryIndexBeingValidated].name,
+            this._editedTemplateCategories[this._categoryIndexBeingValidated].newName,
             this._categoryIndexBeingValidated
         );
     },
@@ -299,13 +358,13 @@ Polymer({
      */
     _validateCategory: function(categoryInput,categoryName,indexToSkip) {
         if (!categoryName || !categoryName.trim().length) {
-            categoryInput.setAttribute('error-message','Must specify a category');
+            categoryInput.setAttribute('error-message','Specify a category');
             return false;
         }
         for (var i=0; i<this._editedTemplateCategories.length; i++) {
             if (i === indexToSkip) { continue; }
             if (categoryName.toLowerCase() === this._editedTemplateCategories[i].name.toLowerCase()) {
-                categoryInput.setAttribute('error-message','Category already exists');
+                categoryInput.setAttribute('error-message','Category exists');
                 return false;
             }
         }
@@ -319,29 +378,40 @@ Polymer({
      */
     _validateCategoriesOnChange: function(e) {
         var _this = this;
-        //Async since this on-value-changed listener fires before the value is persisted to the property.
+        if (this._ignoreChangeEvent) { return; }
+        //Async since this on-value-changed listener fires before the new value is reflected to the property.
         setTimeout(function() {
-            //First validate the input whose value is currently changing. If this is valid then validate the other inputs.
-            //We do this to ensure that validation messages are always reflecting the actual state of the inputs. One example
-            //of this is if validation fails on an input due to an already existing existing, the user goes to the other
-            //input and changes it then failed validation will stay on the first input even though it now valid.
             _this._categoryIndexBeingValidated = e.model.get('index');
-            if (_this.querySelector('#category-'+_this._categoryIndexBeingValidated).validate()) {
-                for (var i=0; i<_this._editedTemplateCategories.length; i++) {
-                    //Don't validate the input we already validated.
-                    if (i === _this._categoryIndexBeingValidated) { continue; }
-                    _this._categoryIndexBeingValidated = i;
-                    if (!_this.querySelector('#category-'+i).validate()) {
-                        _this._categoryInputInvalid = true;
-                        return;
-                    }
-                }
-                _this._categoryInputInvalid = false;
-            }
-            else {
-                _this._categoryInputInvalid = true;
-            }
+            _this._categoryInputInvalid = !_this.querySelector('#category-'+_this._categoryIndexBeingValidated).validate();
         },0);
+    },
+
+    /**
+     * Handles submitting an existing category input field on enter key presses and cancelling on escape key presses.
+     * @param e
+     * @private
+     */
+    _existingCategoryKeyup: function(e) {
+        e.stopPropagation();
+        var index = e.model.get('index');
+        if (e.keyCode === 13) {
+            this._disableCategoryNameEditing(index,true);
+        }
+        else if (e.keyCode === 27) {
+            this._disableCategoryNameEditing(index,false);
+        }
+    },
+
+    /**
+     * Handles submitting the new category input field on enter key presses.
+     * @param e
+     * @private
+     */
+    _newCategoryKeyUp: function(e) {
+        e.stopPropagation();
+        if (e.keyCode === 13) {
+            this._addNewTemplateCategory();
+        }
     },
 
     /**
@@ -357,17 +427,6 @@ Polymer({
         }
         else {
             return a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase());
-        }
-    },
-
-    /**
-     * Handles submitting the new category input field on enter key presses.
-     * @param e
-     * @private
-     */
-    _newCategoryKeyUp: function(e) {
-        if (e.keyCode === 13) {
-            this._addNewTemplateCategory();
         }
     },
 
