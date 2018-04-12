@@ -213,19 +213,114 @@ Polymer({
     },
 
     /**
-     * Handles deleting an existing category.
+     * Handles deleting an existing category and prompting the user if the category is associated with existing templates.
      * @param e
      * @private
      */
     _deleteCategory: function(e) {
+        var _this = this;
         e.stopPropagation();
-        var index = e.model.get('index');
+        this._categoryIndexToDelete = e.model.get('index');
+        voyent.locate.findAlertTemplates({
+            "query": {
+                "properties.parentAlertId": { "$exists": false },
+                "categories":this._editedTemplateCategories[this._categoryIndexToDelete].name
+            }
+        }).then(function(templates) {
+            //If the category is associated with templates then prompt the user otherwise just confirm the removal.
+            if (templates.length) {
+                _this._associatedTemplates = templates;
+                _this._openCategoryDeletionDialog();
+            }
+            else {
+                _this._confirmCategoryDeletion();
+            }
+        }).catch(function () {
+            _this.fire('message-error', 'Issue removing category, please try again.');
+            _this._cancelCategoryDeletion();
+        });
+    },
+
+    /**
+     * Removes a category marked for deletion from it's associated templates.
+     * @param isRetry
+     * @private
+     */
+    _removeCategoryFromTemplates: function(isRetry) {
+        var _this = this;
+        var categoryToRemove = this._editedTemplateCategories[this._categoryIndexToDelete].name;
+        var promises = [];
+        for (var i=this._associatedTemplates.length-1; i>=0; i--) {
+            (function(associatedTemplate) {
+                //Remove the category from the template and update it.
+                associatedTemplate.categories.splice(associatedTemplate.categories.indexOf(categoryToRemove),1);
+                promises.push(voyent.locate.updateAlertTemplate({
+                    "id": associatedTemplate._id,
+                    "alertTemplate": associatedTemplate
+                }).then(function() {
+                    _this.splice('_associatedTemplates',_this._associatedTemplates.indexOf(associatedTemplate),1);
+                }));
+            })(this._associatedTemplates[i])
+        }
+        //Once all the update requests are complete we will confirm deletion of the category and close the dialog.
+        //If for some reason all of the templates we're not updated we will retry the operation once.
+        Promise.all(promises).then(function() {
+            if (_this._associatedTemplates[i].length) {
+                if (isRetry) {
+                    _this.fire('Problem dissociating category from ' + _this._associatedTemplates[i].length + 'template(s), please contact an administrator.');
+                    return;
+                }
+                _this._removeCategoryFromTemplates(true);
+            }
+            else {
+                _this._confirmCategoryDeletion();
+                _this._closeCategoryDeletionDialog();
+            }
+        });
+    },
+
+    /**
+     * Confirms deletion of a template category and closes the confirmation dialog.
+     * @private
+     */
+    _confirmCategoryDeletion: function() {
         //If we are currently editing the field that is being deleted then editing will be disabled automatically
         //when splicing so we must reset this property to indicate that we are no longer editing.
-        if (this._editedTemplateCategories[index].editing) {
+        if (this._editedTemplateCategories[this._categoryIndexToDelete].editing) {
             this._editingCategoryAtIndex = null;
         }
-        this.splice('_editedTemplateCategories',index,1);
+        this.splice('_editedTemplateCategories',this._categoryIndexToDelete,1);
+        this._categoryIndexToDelete = null;
+    },
+
+    /**
+     * Cancels template category deletion by closing the confirmation dialog.
+     * @private
+     */
+    _cancelCategoryDeletion: function() {
+        this._closeCategoryDeletionDialog();
+    },
+
+    /**
+     * Opens a prompt during a deletion when the category being deleted is being used in templates.
+     * @private
+     */
+    _openCategoryDeletionDialog: function() {
+        var dialog = this.querySelector('#confirmCategoryDeletionDialog');
+        if (dialog) {
+            dialog.open();
+        }
+    },
+
+    /**
+     * Closes the prompt message displayed when the category being deleted is being used in templates.
+     * @private
+     */
+    _closeCategoryDeletionDialog: function() {
+        var dialog = this.querySelector('#confirmCategoryDeletionDialog');
+        if (dialog) {
+            dialog.close();
+        }
     },
 
     /**
@@ -452,6 +547,16 @@ Polymer({
         else {
             return a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase());
         }
+    },
+
+    /**
+     * Template helper indicating whether we have one template associated with a specific category.
+     * @param length
+     * @returns {boolean}
+     * @private
+     */
+    _haveOneAssociatedTemplate: function(length) {
+        return length === 1;
     },
 
     /**

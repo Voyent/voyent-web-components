@@ -759,6 +759,23 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
         </paper-dialog>
+        <paper-dialog id="confirmCategoryDeletionDialog" modal on-iron-overlay-opened="_fixModalStacking">
+            <p>
+                <template is="dom-if" if="[[_haveOneAssociatedTemplate(_associatedTemplates.length)]]">
+                    This category is associated with [[_associatedTemplates.length]] template.
+                    Are you sure you want to remove it (the template will NOT be removed)?
+                </template>
+                <template is="dom-if" if="[[!_haveOneAssociatedTemplate(_associatedTemplates.length)]]">
+                    This category is associated with [[_associatedTemplates.length]] templates.
+                    Are you sure you want to remove it (the templates will NOT be removed)?
+                </template>
+
+            </p>
+            <div class="dialog-bttns text-center">
+                <paper-button raised title="Confirm" on-click="_cancelCategoryDeletion">No, Cancel</paper-button>
+                <paper-button raised title="Cancel" on-click="_removeCategoryFromTemplates">Yes, Remove Category</paper-button>
+            </div>
+        </paper-dialog>
     </template>
 </dom-module>
 
