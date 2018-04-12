@@ -678,33 +678,36 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <div class="dialog-title-bar no-select">
                     <div class="title">Select Categories</div>
                     <div class="close-button">
-                        <paper-icon-button icon="close" on-click="_confirmCategorySelector" title="Close Dialog"></paper-icon-button>
+                        <paper-icon-button icon="close" on-click="_confirmCategorySelector" title="Close dialog"></paper-icon-button>
                     </div>
                 </div>
                 <div class="category-manager-dialog-wrapper">
                     <div class="category-picker">
                         <template is="dom-if" if="[[!_templateCategories.length]]">
                             <p class="category-message">No template categories defined</p>
-                            <paper-button raised title="Add New Category" on-click="_manageCategories">Add New Category</paper-button>
+                            <paper-button raised title="Add new category" on-click="_manageCategories">Add New Category</paper-button>
                         </template>
                         <template is="dom-if" if="[[_templateCategories.length]]">
                             <p class="category-message">
-                                <span class="selected-categories-label">Selected Categories: </span><span class="selected-categories-text">[[_getReadableSelectedCategories(_selectedCategories,_selectedCategories.length)]]</span>
+                                <span class="selected-categories-label">Selected Categories: </span>
+                                <span class="selected-categories-text">
+                                    [[_getReadableSelectedCategories(_selectedCategories,_selectedCategories.length)]]
+                                </span>
                             </p>
                             <div class="category-wrapper">
-                                <iron-selector id="categoryManager" attr-for-selected="name" multi selected-values="{{_selectedCategories}}">
-                                    <template is="dom-repeat" items="[[_templateCategories]]" as="category" sort="_sortCategories">
-                                        <div name="[[category]]" class="category-item" title="[[category]]">
-                                            [[category]]
+                                <iron-selector id="categoryManager" multi selected-values="{{_selectedCategories}}" attr-for-selected="name">
+                                    <template is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories">
+                                        <div name="[[categoryObj]]" class="category-item" title="[[categoryObj.name]]">
+                                            [[categoryObj.name]]
                                         </div>
                                     </template>
                                 </iron-selector>
                             </div>
-                            <paper-button class="manage-categories-button" raised title="Manage Categories" on-click="_manageCategories">Manage Categories</paper-button>
+                            <paper-button class="manage-categories-button" raised title="Manage categories" on-click="_manageCategories">Manage Categories</paper-button>
                         </template>
                     </div>
                     <div class="category-buttons-wrapper text-center">
-                        <paper-button raised title="Cancel" on-click="_confirmCategorySelector">Done</paper-button>
+                        <paper-button raised title="Close dialog" on-click="_confirmCategorySelector">Done</paper-button>
                     </div>
                 </div>
             </template>
@@ -712,8 +715,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <div class="dialog-title-bar no-select">
                     <span class="title">Manage Categories</span>
                     <span class="close-button">
-                        <paper-icon-button icon="close" on-click="_saveCategoryChanges" disabled="[[_categoryInputInvalid]]"
-                                           title="Save changes and close dialog" tabindex="99"></paper-icon-button>
+                        <paper-icon-button icon="close" on-click="_closeCategoryManager" title="Close dialog"
+                                           disabled="[[_categoryInputInvalid]]" ></paper-icon-button>
                     </span>
                 </div>
                 <div class="category-manager-dialog-wrapper">
@@ -724,29 +727,29 @@ Internal component used to display the properties panel inside Voyent alert comp
                                          validator="newCategoryValidator" value="{{_newTemplateCategory}}"></paper-input>
                         </div>
                         <div class="new-category-button-wrapper">
-                            <paper-button class="new-category-button" raised
+                            <paper-button class="new-category-button" raised title="Add new category"
                                           on-click="_addNewTemplateCategory">Add New Category</paper-button>
                         </div>
                     </div>
-                    <template is="dom-if" if="[[_editedTemplateCategories.length]]">
+                    <template is="dom-if" if="[[_templateCategories.length]]">
                         <div class="category-wrapper">
-                            <template is="dom-repeat" items="[[_editedTemplateCategories]]" as="obj">
-                                <div class="category-item no-select" data-editing$="[[obj.editing]]"
+                            <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories">
+                                <div class="category-item no-select" data-editing$="[[categoryObj.editing]]"
                                      data-invalid-category$="[[_categoryInputInvalid]]"
-                                     title="[[obj.name]]" on-click="_enableCategoryNameEditing">
+                                     title="[[categoryObj.name]]" on-click="_enableCategoryNameEditing">
                                     <div class="delete-category-button-wrapper">
                                         <paper-icon-button class="delete-category-button" icon="close" on-click="_deleteCategory"
                                                            title="Remove Category"></paper-icon-button>
                                     </div>
                                     <div class="category-name-wrapper">
-                                        <template is="dom-if" if="[[obj.editing]]">
-                                            <paper-input id$="category-[[index]]" value="{{obj.newName::input}}" no-label-float
+                                        <template is="dom-if" if="[[categoryObj.editing]]">
+                                            <paper-input id$="category-[[categoryObj.id]]" value="{{categoryObj.newName::input}}" no-label-float
                                                          validator="existingCategoryValidator" on-value-changed="_validateCategoriesOnChange"
                                                          on-keyup="_existingCategoryKeyup" on-blur="_existingCategoryBlur">
                                             </paper-input>
                                         </template>
-                                        <template is="dom-if" if="[[!obj.editing]]">
-                                            [[obj.name]]
+                                        <template is="dom-if" if="[[!categoryObj.editing]]">
+                                            [[categoryObj.name]]
                                         </template>
                                     </div>
                                 </div>
@@ -754,7 +757,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </div>
                     </template>
                     <div class="category-buttons-wrapper text-center">
-                        <paper-button raised title="Confirm changes" on-click="_saveCategoryChanges" disabled="[[_categoryInputInvalid]]">Done</paper-button>
+                        <paper-button raised title="Close dialog" on-click="_closeCategoryManager" disabled="[[_categoryInputInvalid]]">Done</paper-button>
                     </div>
                 </div>
             </template>

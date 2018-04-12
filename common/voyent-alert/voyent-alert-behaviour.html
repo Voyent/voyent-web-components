@@ -498,10 +498,22 @@
          * @private
          */
         _openCategorySelector: function() {
+            var _this = this;
             var dialog = this.querySelector('#categoryManager');
             if (dialog) {
                 dialog.open();
-                this.set('_selectedCategories',this._loadedAlert ? this._loadedAlert.template.categories.slice(0) : []);
+                this.set('_selectedCategories',this._loadedAlert ?
+                    function(categories) {
+                        var selectedCategories = [];
+                        for (var i=0; i<_this._templateCategories.length; i++) {
+                            if (categories.indexOf(_this._templateCategories[i].name) > -1) {
+                                selectedCategories.push(_this._templateCategories[i]);
+                            }
+                        }
+                        return selectedCategories;
+                    }(this._loadedAlert.template.categories) :
+                    []
+                );
                 setTimeout(function() {
                     var categoryWrapper = document.querySelector('.category-wrapper');
                     if (categoryWrapper) {
@@ -527,19 +539,13 @@
          * @private
          */
         _confirmCategorySelector: function() {
-            this._loadedAlert.template.setCategories(this._selectedCategories.slice(0));
+            this._loadedAlert.template.setCategories(this._selectedCategories.map(function(categoryObj) {
+                return categoryObj.name;
+            }));
             if (this._templateSavePending) {
                 this.saveAlertTemplate();
                 this._templateSavePending = false;
             }
-            this._closeCategorySelector();
-        },
-
-        /**
-         * Cancels category selection changes made in the category picker dialog.
-         * @private
-         */
-        _cancelCategorySelector: function() {
             this._closeCategorySelector();
         },
 

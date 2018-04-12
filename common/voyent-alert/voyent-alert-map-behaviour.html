@@ -474,13 +474,28 @@
         },
 
         /**
-         * Fetches alert template categories from realm scope.
+         * Fetches alert template categories from realm scope and builds an object array from the results.
          */
         _fetchTemplateCategories: function() {
             var _this = this;
             return new Promise(function (resolve, reject) {
                 voyent.scope.getRealmData({"property":"templateCategories"}).then(function (categories) {
-                    _this.set('_templateCategories',categories || []);
+                    if (categories && categories.length) {
+                        //Build an object array to simplify template logic for category editing.
+                        _this.set('_templateCategories',categories.map(function(categoryName) {
+                            return {
+                                "id": _this._generateUid(), //This is will be used to find the associated category name input for editing validation
+                                "name": categoryName,
+                                "newName": '',
+                                "editing": false
+                            }
+                        }));
+                        _this.set('_templateCategoryNames',categories);
+                    }
+                    else {
+                        _this.set('_templateCategories',[]);
+                        _this.set('_templateCategoryNames',[]);
+                    }
                     resolve(_this._templateCategories);
                 }).catch(function (error) {
                     reject(error);

@@ -68,7 +68,10 @@ Polymer({
             _this._openDialog('Please enter the alert template name','',null,true,true,function() {
                 _this.clearMap();
                 _this.set('_loadedAlert',{
-                    template: new _this._AlertTemplate(null,null,_this._dialogInput,_this._dialogBadge,null,null,null,false,false,null,_this._selectedCategories),
+                    template: new _this._AlertTemplate(
+                        null,null,_this._dialogInput,_this._dialogBadge,
+                        null,null,null,false,false,null,[]
+                    ),
                     selectedStack: null
                 });
             },function() {

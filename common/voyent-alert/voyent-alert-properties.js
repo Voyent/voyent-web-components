@@ -97,11 +97,11 @@ Polymer({
          */
         _newTemplateCategory: { type: String, notify: true },
         /**
-         * The list of available template categories.
+         * An object array of the available template categories.
          */
         _templateCategories: { type: Array, value: [], notify: true },
         /**
-         * The list of selected categories for the current template.
+         * The list of selected categories.
          */
         _selectedCategories: { type: Array, value: [], notify: true },
         /**
@@ -168,23 +168,6 @@ Polymer({
     _manageCategories: function() {
         var _this = this;
         this._showCategoryManager = true;
-        //If the update failed then open the dialog and do nothing else. This is so we don't overwrite the
-        //categories the next time they open the editor, allowing them to go back in and try the save again.
-        if (this._categoryUpdateFailed) {
-            this._categoryUpdateFailed = false;
-            return;
-        }
-        //Create a copy of our template categories list and ensure it is sorted.
-        var templateCategories = this._templateCategories.slice(0);
-        templateCategories.sort(this._sortCategories);
-        //Build our list of categories to be used in the dialog with some extra properties for template binding.
-        this.set('_editedTemplateCategories',templateCategories.map(function(category) {
-            return {
-                "name": category,
-                "newName": '',
-                "editing": false
-            };
-        }));
         //Ensure the dialog opens with a clean input state.
         this.set('_newTemplateCategory','');
         setTimeout(function() {
@@ -197,19 +180,28 @@ Polymer({
      * @private
      */
     _addNewTemplateCategory: function() {
+        var _this = this;
         if (!this.querySelector('#newCategoryInput').validate()) {
             return;
         }
-        this.push('_editedTemplateCategories',{
-            "name": this._newTemplateCategory,
-            "newName": '',
-            "editing": false
+        //Generate a flat string array of category names, add the new category and save the changes.
+        var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
+            return categoryObj.name;
         });
-        this.set('_newTemplateCategory','');
-        //Sort the list and re-set it so the indices on the dom-repeat update. We do this
-        //rather than using a dom-repeat sort because that sort does not update the indices.
-        this._editedTemplateCategories.sort(this._sortCategories);
-        this.set('_editedTemplateCategories',this._editedTemplateCategories.slice(0));
+        newTemplateCategories.push(this._newTemplateCategory);
+
+        voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
+            //Add the category to our local list.
+            _this.push('_templateCategories',{
+                "id": _this._generateUid(),
+                "name": _this._newTemplateCategory,
+                "newName": '',
+                "editing": false
+            });
+            _this.set('_newTemplateCategory','');
+        }).catch(function() {
+            _this.fire('message-error', 'Failed to add new category, please try again');
+        });
     },
 
     /**
@@ -220,15 +212,15 @@ Polymer({
     _deleteCategory: function(e) {
         var _this = this;
         e.stopPropagation();
-        this._categoryIndexToDelete = e.model.get('index');
+        this._categoryToRemove = e.model.get('categoryObj');
         voyent.locate.findAlertTemplates({
             "query": {
                 "properties.parentAlertId": { "$exists": false },
-                "categories":this._editedTemplateCategories[this._categoryIndexToDelete].name
+                "categories":this._categoryToRemove.name
             }
         }).then(function(templates) {
             //If the category is associated with templates then prompt the user otherwise just confirm the removal.
-            if (templates.length) {
+            if (templates && templates.length) {
                 _this._associatedTemplates = templates;
                 _this._openCategoryDeletionDialog();
             }
@@ -248,12 +240,12 @@ Polymer({
      */
     _removeCategoryFromTemplates: function(isRetry) {
         var _this = this;
-        var categoryToRemove = this._editedTemplateCategories[this._categoryIndexToDelete].name;
+        var categoryNameToRemove = this._categoryToRemove.name;
         var promises = [];
         for (var i=this._associatedTemplates.length-1; i>=0; i--) {
             (function(associatedTemplate) {
                 //Remove the category from the template and update it.
-                associatedTemplate.categories.splice(associatedTemplate.categories.indexOf(categoryToRemove),1);
+                associatedTemplate.categories.splice(associatedTemplate.categories.indexOf(categoryNameToRemove),1);
                 promises.push(voyent.locate.updateAlertTemplate({
                     "id": associatedTemplate._id,
                     "alertTemplate": associatedTemplate
@@ -265,7 +257,7 @@ Polymer({
         //Once all the update requests are complete we will confirm deletion of the category and close the dialog.
         //If for some reason all of the templates we're not updated we will retry the operation once.
         Promise.all(promises).then(function() {
-            if (_this._associatedTemplates[i].length) {
+            if (_this._associatedTemplates.length) {
                 if (isRetry) {
                     _this.fire('Problem dissociating category from ' + _this._associatedTemplates[i].length + 'template(s), please contact an administrator.');
                     return;
@@ -284,13 +276,31 @@ Polymer({
      * @private
      */
     _confirmCategoryDeletion: function() {
-        //If we are currently editing the field that is being deleted then editing will be disabled automatically
-        //when splicing so we must reset this property to indicate that we are no longer editing.
-        if (this._editedTemplateCategories[this._categoryIndexToDelete].editing) {
-            this._editingCategoryAtIndex = null;
-        }
-        this.splice('_editedTemplateCategories',this._categoryIndexToDelete,1);
-        this._categoryIndexToDelete = null;
+        var _this = this;
+        //Generate a flat string array of category names, remove the category and save the changes.
+        var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
+            return categoryObj.name;
+        });
+        newTemplateCategories.splice(this._templateCategories.indexOf(this._categoryToRemove),1);
+
+        voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
+            //If we are currently editing the field that is being deleted then editing will be disabled automatically
+            //when splicing so we must reset this property to indicate that we are no longer editing.
+            if (_this._categoryToRemove.editing) {
+                _this._categoryBeingEdited = null;
+                _this._categoryInputInvalid = false;
+            }
+            //Remove the category from our local list.
+            _this.splice('_templateCategories',_this._templateCategories.indexOf(_this._categoryToRemove),1);
+            //If the user deletes a selected category then we need to manually remove it from the selected entries list.
+            var index = _this._selectedCategories.indexOf(_this._categoryToRemove);
+            if (index > -1) {
+                _this.splice('_selectedCategories', index, 1);
+            }
+            _this._categoryToRemove = null;
+        }).catch(function() {
+            _this.fire('message-error', 'Failed to remove category, please try again');
+        });
     },
 
     /**
@@ -331,91 +341,110 @@ Polymer({
     _enableCategoryNameEditing: function(e) {
         e.stopPropagation();
         var _this = this;
-        var index = e.model.get('index');
+        var categoryBeingEdited = e.model.get('categoryObj');
+        var index = this._templateCategories.indexOf(categoryBeingEdited);
         //If we are already editing a category then don't allow the user to edit another one if validation is currently
         //failing. If validation is passing then just disable editing for the current field and proceed.
-        if (typeof this._editingCategoryAtIndex === 'number' && !this._disableCategoryNameEditing(this._editingCategoryAtIndex,true)) {
+        if (this._categoryBeingEdited && !this._disableCategoryNameEditing(this._categoryBeingEdited,true)) {
             return;
         }
-        this.set('_editedTemplateCategories.'+index+'.newName',_this._editedTemplateCategories[index].name);
-        this.set('_editedTemplateCategories.'+index+'.editing',true);
-        this._editingCategoryAtIndex = index;
+        this.set('_templateCategories.'+index+'.newName',_this._templateCategories[index].name);
+        this.set('_templateCategories.'+index+'.editing',true);
+        this._categoryBeingEdited = categoryBeingEdited;
         setTimeout(function() {
-            _this.querySelector('#category-'+index).focus();
+            _this.querySelector('#category-'+_this._categoryBeingEdited.id).focus();
         },0);
     },
 
     /**
      * Disables category name editing at the specified index. If validation is currently failing then the operation will be aborted.
-     * @param index
+     * @param categoryObj
      * @param persist
      * @returns {boolean} - Whether the category name could successfully be disabled (validation passes).
      * @private
      */
-    _disableCategoryNameEditing: function(index,persist) {
+    _disableCategoryNameEditing: function(categoryObj,persist) {
+        var _this = this;
         if (this._categoryInputInvalid) {
             return false;
         }
-        if (persist) {
-            this.set('_editedTemplateCategories.'+index+'.name',this._editedTemplateCategories[index].newName);
+        var indexOfCategoryBeingEdited = this._templateCategories.indexOf(categoryObj);
+        if (persist && categoryObj.name !== categoryObj.newName) {
+            //Generate a flat string array of category names, update the category and save the changes.
+            var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
+                return categoryObj.name;
+            });
+            newTemplateCategories[indexOfCategoryBeingEdited] = categoryObj.newName;
+
+            voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
+                //When renaming an existing category we must update all usages to match.
+                _this._updateCategoryInTemplates(categoryObj.name,categoryObj.newName);
+                //Update our local list and state.
+                _this.set('_templateCategories.'+indexOfCategoryBeingEdited+'.name',categoryObj.newName);
+                _this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
+               //Force a re-sort of the categories list.
+               _this.querySelector('#editableTemplateCategoriesList').render();
+            }).catch(function() {
+                _this.fire('message-error', 'Failed to update category, please try again');
+            });
         }
-        //Reset the newName value so that when we set it again when enabling editing the set is reflected
-        //in the view. Additionally, toggle a flag so the input change listener doesn't fire and try to validate.
-        this._ignoreChangeEvent = true;
-        this.set('_editedTemplateCategories.'+index+'.newName','');
-        this._ignoreChangeEvent = false;
-        this.set('_editedTemplateCategories.'+index+'.editing',false);
-        this._editingCategoryAtIndex = null;
+        else {
+            this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
+        }
         return true;
     },
 
     /**
-     * Saves changes in the category management dialog.
+     * Confirms disabling category name editing mode.
+     * @param index
      * @private
      */
-    _saveCategoryChanges: function() {
-        var _this = this;
-        //Toggle the category manager and reduce the category object list to a flat array of strings.
-        this._showCategoryManager = false;
-        var editedCategoryNames = this._editedTemplateCategories.map(function(obj) {
-            return obj.name;
-        });
-        //If no changes were made then bail.
-        if (editedCategoryNames.length === this._templateCategories.length &&
-            editedCategoryNames.join(',') === this._templateCategories.join(',')) {
-            this._categoriesSaved(editedCategoryNames);
-            return;
-        }
-        //If the user deletes a selected category then we need to manually remove it from the selected entries list.
-        for (var i=this._selectedCategories.length-1; i>=0; i--) {
-            if (editedCategoryNames.indexOf(this._selectedCategories[i]) === -1) {
-                this.splice('_selectedCategories',i,1);
-            }
-        }
-        voyent.scope.createRealmData({data:{"templateCategories":editedCategoryNames}}).then(function() {
-            _this._categoriesSaved(editedCategoryNames);
-        }).catch(function() {
-            _this.fire('message-error', 'Failed to update categories, please try again');
-            _this._categoryUpdateFailed = true;
-        });
+    _confirmDisableCategoryNameEditing: function(index) {
+        //Reset the newName value so that when we set it again when enabling editing the set is reflected
+        //in the view. Additionally, toggle a flag so the input change listener doesn't fire and try to validate.
+        this._ignoreChangeEvent = true;
+        this.set('_templateCategories.'+index+'.newName','');
+        this._ignoreChangeEvent = false;
+        this.set('_templateCategories.'+index+'.editing',false);
+        this._categoryBeingEdited = null;
     },
 
     /**
-     * Triggered whenever the user confirms category changes, manages state.
-     * @param editedCategoryNames
+     * Handles syncing the category name inside existing alert templates with the new category name.
+     * @param oldCategoryName
+     * @param newCategoryName
      * @private
      */
-    _categoriesSaved: function(editedCategoryNames) {
-        this.set('_templateCategories',editedCategoryNames);
-        this.set('_editedTemplateCategories',[]);
+    _updateCategoryInTemplates: function(oldCategoryName,newCategoryName) {
+        var _this = this;
+        voyent.locate.findAlertTemplates({
+            "query": {
+                "properties.parentAlertId": { "$exists": false },
+                "categories" :oldCategoryName
+            }
+        }).then(function(templates) {
+            //If the category is associated with templates then update them.
+            if (templates && templates.length) {
+                for (var i=0; i<templates.length; i++) {
+                    (function(templateToUpdate) {
+                        //Replace the old category name with the new one and update the template.
+                        templateToUpdate.categories[templateToUpdate.categories.indexOf(oldCategoryName)] = newCategoryName;
+                        templateToUpdate.categories.sort(_this._sortCategories);
+                        voyent.locate.updateAlertTemplate({
+                            "id": templateToUpdate._id,
+                            "alertTemplate": templateToUpdate
+                        });
+                    })(templates[i])
+                }
+            }
+        });
     },
 
     /**
      * Reverts all changes made in the category management dialog.
      * @private
      */
-    _cancelCategoryChanges: function() {
-        this.set('_editedTemplateCategories',[]);
+    _closeCategoryManager: function() {
         this._showCategoryManager = false;
     },
 
@@ -426,8 +455,7 @@ Polymer({
     _validateNewTemplateCategory: function() {
         return this._validateCategory(
             this.querySelector('#newCategoryInput'),
-            this._newTemplateCategory,
-            null
+            this._newTemplateCategory
         );
     },
 
@@ -437,9 +465,8 @@ Polymer({
      */
     _validateExistingTemplateCategory: function() {
         return this._validateCategory(
-            this.querySelector('#category-'+this._categoryIndexBeingValidated),
-            this._editedTemplateCategories[this._categoryIndexBeingValidated].newName,
-            this._categoryIndexBeingValidated
+            this.querySelector('#category-'+this._categoryBeingValidated.id),
+            this._categoryBeingValidated.newName
         );
     },
 
@@ -447,18 +474,17 @@ Polymer({
      * Generic function to validate template categories.
      * @param categoryInput
      * @param categoryName
-     * @param indexToSkip
      * @returns {boolean}
      * @private
      */
-    _validateCategory: function(categoryInput,categoryName,indexToSkip) {
+    _validateCategory: function(categoryInput,categoryName) {
         if (!categoryName || !categoryName.trim().length) {
             categoryInput.setAttribute('error-message','Specify a category');
             return false;
         }
-        for (var i=0; i<this._editedTemplateCategories.length; i++) {
-            if (i === indexToSkip) { continue; }
-            if (categoryName.toLowerCase() === this._editedTemplateCategories[i].name.toLowerCase()) {
+        for (var i=0; i<this._templateCategories.length; i++) {
+            if (this._templateCategories[i] === this._categoryBeingValidated) { continue; }
+            if (categoryName.toLowerCase() === this._templateCategories[i].name.toLowerCase()) {
                 categoryInput.setAttribute('error-message','Category exists');
                 return false;
             }
@@ -476,8 +502,8 @@ Polymer({
         if (this._ignoreChangeEvent) { return; }
         //Async since this on-value-changed listener fires before the new value is reflected to the property.
         setTimeout(function() {
-            _this._categoryIndexBeingValidated = e.model.get('index');
-            _this._categoryInputInvalid = !_this.querySelector('#category-'+_this._categoryIndexBeingValidated).validate();
+            _this._categoryBeingValidated = e.model.get('categoryObj');
+            _this._categoryInputInvalid = !_this.querySelector('#category-'+_this._categoryBeingValidated.id).validate();
         },0);
     },
 
@@ -498,8 +524,8 @@ Polymer({
             //or Esc key press and not just a regular blur.
             if (document.activeElement.getAttribute('is') !== 'iron-input' &&
                 document.activeElement.getAttribute('icon') !== 'close' &&
-                typeof _this._editingCategoryAtIndex === 'number') {
-                _this._disableCategoryNameEditing(_this._editingCategoryAtIndex,true);
+                _this._categoryBeingEdited) {
+                _this._disableCategoryNameEditing(_this._categoryBeingEdited,true);
             }
         },150); //Delay for when a user clicks another category so we don't trigger the disable function
                 // here, we will call this when enabling the new one in _enableCategoryNameEditing.
@@ -512,12 +538,12 @@ Polymer({
      */
     _existingCategoryKeyup: function(e) {
         e.stopPropagation();
-        var index = e.model.get('index');
+        var categoryObj = e.model.get('categoryObj');
         if (e.keyCode === 13) {
-            this._disableCategoryNameEditing(index,true);
+            this._disableCategoryNameEditing(categoryObj,true);
         }
         else if (e.keyCode === 27) {
-            this._disableCategoryNameEditing(index,false);
+            this._disableCategoryNameEditing(categoryObj,false);
         }
     },
 
@@ -1252,8 +1278,17 @@ Polymer({
      * @private
      */
     _getReadableSelectedCategories: function() {
-        var toReturn = this._selectedCategories.sort(this._sortCategories).toString().split(',').join(', ');
-        return toReturn || 'None';
+        if (!this._selectedCategories.length) {
+            return 'None';
+        }
+        //Build a comma and space separated list of categories.
+        var selectedCategories = this._selectedCategories.map(function(categoryObj) {
+            return categoryObj.name;
+        }).sort(this._sortCategories).toString().split(',').join(', ');
+        //Return the selected category string, slicing off any trailing comma.
+        return selectedCategories.charAt(selectedCategories.length-1) === ',' ?
+            selectedCategories.slice(0,selectedCategories.length-2) :
+            selectedCategories;
     },
 
     /**
