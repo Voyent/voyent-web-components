@@ -490,11 +490,11 @@
                                 "editing": false
                             }
                         }));
-                        _this.set('_templateCategoryNames',categories);
+                        _this.set('_filteredTemplateCategories',_this._templateCategories.slice(0));
                     }
                     else {
                         _this.set('_templateCategories',[]);
-                        _this.set('_templateCategoryNames',[]);
+                        _this.set('_filteredTemplateCategories',[]);
                     }
                     resolve(_this._templateCategories);
                 }).catch(function (error) {

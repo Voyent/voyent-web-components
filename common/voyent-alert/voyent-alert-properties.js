@@ -101,6 +101,10 @@ Polymer({
          */
         _templateCategories: { type: Array, value: [], notify: true },
         /**
+         * An object array of the available template categories. Changes length based on user search queries.
+         */
+        _filteredTemplateCategories: { type: Array, value: [], notify: true },
+        /**
          * The list of selected categories.
          */
         _selectedCategories: { type: Array, value: [], notify: true },
@@ -445,7 +449,11 @@ Polymer({
      * @private
      */
     _closeCategoryManager: function() {
+        //Toggle the category manager pane.
         this._showCategoryManager = false;
+        //Ensure our filtered list is up to date and any previous search results are applied.
+        this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
+        this._queryCategories(this._categorySearchQuery);
     },
 
     /**
@@ -556,6 +564,35 @@ Polymer({
         e.stopPropagation();
         if (e.keyCode === 13) {
             this._addNewTemplateCategory();
+        }
+    },
+
+    /**
+     * Handles filtering the template categories based on user input.
+     * @private
+     */
+    _searchQueryKeyUp: function() {
+        this._queryCategories(this._categorySearchQuery);
+    },
+
+    /**
+     * Queries the categories for the passed search query.
+     * @param searchQuery
+     * @private
+     */
+    _queryCategories: function(searchQuery) {
+        if (!searchQuery || !searchQuery.trim()) {
+            this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
+        }
+        else {
+            //Always execute the search query against on a complete list so
+            //changes made via backspace, copy/paste, etc.. are applied properly.
+            this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
+            for (var i=this._filteredTemplateCategories.length-1; i>=0; i--) {
+                if (this._filteredTemplateCategories[i].name.toLowerCase().indexOf(searchQuery.toLowerCase()) === -1) {
+                    this.splice('_filteredTemplateCategories',i,1);
+                }
+            }
         }
     },
 

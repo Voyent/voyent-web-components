@@ -276,7 +276,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 margin-top: 0;
             }
             .category-message {
-                margin: 15px 0;
+                margin: 15px 0 10px 0;
             }
             .category-wrapper {
                 margin: 20px 0 10px 0;
@@ -694,14 +694,21 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     [[_getReadableSelectedCategories(_selectedCategories,_selectedCategories.length)]]
                                 </span>
                             </p>
+                            <div class="search-query-input-wrapper">
+                                <paper-input id="categoryQueryInput" label="Search Categories"
+                                             on-keyup="_searchQueryKeyUp" value="{{_categorySearchQuery}}"></paper-input>
+                            </div>
                             <div class="category-wrapper">
                                 <iron-selector id="categoryManager" multi selected-values="{{_selectedCategories}}" attr-for-selected="name">
-                                    <template is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories">
+                                    <template is="dom-repeat" items="[[_filteredTemplateCategories]]" as="categoryObj" sort="_sortCategories">
                                         <div name="[[categoryObj]]" class="category-item" title="[[categoryObj.name]]">
                                             [[categoryObj.name]]
                                         </div>
                                     </template>
                                 </iron-selector>
+                                <template is="dom-if" if="[[!_filteredTemplateCategories.length]]">
+                                    Your search <span class="bold">[[_categorySearchQuery]]</span> does not match any categories.
+                                </template>
                             </div>
                             <paper-button class="manage-categories-button" raised title="Manage categories" on-click="_manageCategories">Manage Categories</paper-button>
                         </template>
@@ -772,7 +779,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                     This category is associated with [[_associatedTemplates.length]] templates.
                     Are you sure you want to remove it (the templates will NOT be removed)?
                 </template>
-
             </p>
             <div class="dialog-bttns text-center">
                 <paper-button raised title="Confirm" on-click="_cancelCategoryDeletion">No, Cancel</paper-button>

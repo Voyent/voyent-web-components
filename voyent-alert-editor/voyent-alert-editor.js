@@ -280,21 +280,10 @@ Polymer({
         for (var i=0; i<templates.length; i++) {
             var template = templates[i];
             if (template.categories && template.categories.length) {
-                var foundMatch = false;
                 for (var j=template.categories.length-1; j>=0; j--) {
-                    if (this._templateCategoryNames.indexOf(template.categories[j]) > -1) {
-                        foundMatch = true;
-                        templatesDuplicatedByCategory.push({
-                            "template": template,
-                            "category": template.categories[j]
-                        });
-                    }
-                }
-                if (!foundMatch) {
-                    template.category = 'Uncategorized';
                     templatesDuplicatedByCategory.push({
                         "template": template,
-                        "category": "Uncategorized"
+                        "category": template.categories[j]
                     });
                 }
             }
