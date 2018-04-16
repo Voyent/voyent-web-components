@@ -571,27 +571,25 @@ Polymer({
      * Handles filtering the template categories based on user input.
      * @private
      */
-    _searchQueryKeyUp: function() {
+    _categorySearchQueryKeyUp: function() {
         this._queryCategories(this._categorySearchQuery);
     },
 
     /**
-     * Queries the categories for the passed search query.
+     * Queries the categories against the passed search query.
      * @param searchQuery
      * @private
      */
     _queryCategories: function(searchQuery) {
+        //Always execute the search query against a complete list so
+        //changes made via backspace, copy/paste, etc.. are applied properly.
+        this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
         if (!searchQuery || !searchQuery.trim()) {
-            this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
+            return;
         }
-        else {
-            //Always execute the search query against on a complete list so
-            //changes made via backspace, copy/paste, etc.. are applied properly.
-            this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
-            for (var i=this._filteredTemplateCategories.length-1; i>=0; i--) {
-                if (this._filteredTemplateCategories[i].name.toLowerCase().indexOf(searchQuery.toLowerCase()) === -1) {
-                    this.splice('_filteredTemplateCategories',i,1);
-                }
+        for (var i=this._filteredTemplateCategories.length-1; i>=0; i--) {
+            if (this._filteredTemplateCategories[i].name.toLowerCase().indexOf(searchQuery.toLowerCase()) === -1) {
+                this.splice('_filteredTemplateCategories',i,1);
             }
         }
     },

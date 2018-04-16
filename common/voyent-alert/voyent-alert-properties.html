@@ -695,8 +695,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 </span>
                             </p>
                             <div class="search-query-input-wrapper">
-                                <paper-input id="categoryQueryInput" label="Search Categories"
-                                             on-keyup="_searchQueryKeyUp" value="{{_categorySearchQuery}}"></paper-input>
+                                <paper-input id="categoryQueryInput" label="Search categories..."
+                                             on-keyup="_categorySearchQueryKeyUp" value="{{_categorySearchQuery}}"></paper-input>
                             </div>
                             <div class="category-wrapper">
                                 <iron-selector id="categoryManager" multi selected-values="{{_selectedCategories}}" attr-for-selected="name">

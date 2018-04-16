@@ -37,6 +37,9 @@ Example:
                 background-color: #2E348E;
                 color: #FFF;
             }
+            .table-wrap {
+                margin-top: 0;
+            }
             .table-col {
                 text-align: center;
                 padding: 5px;
@@ -58,6 +61,17 @@ Example:
             }
             .dialog-buttons-wrapper {
                 margin-top: 30px;
+            }
+            .search-query-input-wrapper {
+                margin-top: 20px;
+            }
+            .no-query-results-msg {
+                text-align: center;
+                margin-top: 15px;
+            }
+            .select-template-msg {
+                margin-bottom: 0;
+                padding-bottom: 0;
             }
         </style>
 
@@ -154,8 +168,16 @@ Example:
             </div>
         </div>
         <paper-dialog id="newAlertDialog" on-keyup="_submitNewAlertDialog" modal on-iron-overlay-opened="_fixModalStacking">
-            <paper-input id="newAlertNameInput" autofocus label="Alert Name" value="{{_newAlertName}}"
+            <p>Please enter the alert name</p>
+            <paper-input id="newAlertNameInput" autofocus value="{{_newAlertName}}" no-label-float
                          validator="newAlertValidator" maxlength="60" on-keyup="_submitNewAlertDialog"></paper-input>
+            <p class="select-template-msg">
+                Choose a template from the list below
+            </p>
+            <div class="search-query-input-wrapper">
+                <paper-input id="categoryQueryInput" no-label-float placeholder="Search templates by name or category..."
+                             on-keyup="_templateSearchQueryKeyUp" value="{{_templateSearchQuery}}"></paper-input> <!--TODO label="Search templates by name and category..." -->
+            </div>
             <div class="table-wrap">
                 <div class="table">
                     <div class="table-col badge-col table-header no-select"></div>
@@ -163,8 +185,13 @@ Example:
                     <div class="table-col category-col table-header no-select pointer" on-click="_sortTemplatesByCategory" title="Click to sort by Category">Category</div>
                 </div>
                 <div class="table-scroll">
+                    <template is="dom-if" if="[[!_filteredParentTemplatesByCategory.length]]">
+                        <div class="no-query-results-msg">
+                            Your search <span class="bold">[[_templateSearchQuery]]</span> does not match any templates.
+                        </div>
+                    </template>
                     <iron-selector id="newAlertCategories" class="alternating-row-parent" selected="{{_selectedAlertTemplateId}}" attr-for-selected="name">
-                        <template id="alertTemplatesList" is="dom-repeat" items="[[_parentTemplatesByCategory]]" as="obj" sort="_sortTemplates">
+                        <template id="alertTemplatesList" is="dom-repeat" items="[[_filteredParentTemplatesByCategory]]" as="obj" sort="_sortTemplates">
                             <div name="[[obj.template._id]]" class="table pointer">
                                 <div class="table-col badge-col no-select">
                                     <img class="badge-img" src="[[getBadgeUrl(obj.template.badge)]]"/>

@@ -257,9 +257,11 @@ Polymer({
                 "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
                 if (!templates || !templates.length) {
                     _this.set('_parentTemplatesByCategory',[]);
+                    _this.set('_filteredParentTemplatesByCategory',[]);
                 }
                 else {
-                    _this._parentTemplatesByCategory = _this._duplicateTemplatesByCategory(templates);
+                    _this.set('_parentTemplatesByCategory',_this._duplicateTemplatesByCategory(templates));
+                    _this.set('_filteredParentTemplatesByCategory',_this._parentTemplatesByCategory.slice(0));
                 }
                 _this._isFetchingTemplates = false;
                 resolve(_this._parentTemplatesByCategory);
@@ -331,6 +333,50 @@ Polymer({
         }
         else if (e.keyCode === 27) { //Escape
             this._cancelNewAlert();
+        }
+    },
+
+    /**
+     * Handles filtering the templates based on user input.
+     * @private
+     */
+    _templateSearchQueryKeyUp: function() {
+        this._queryTemplates(this._templateSearchQuery);
+    },
+
+    /**
+     * Queries the template names and categories against the passed search query.
+     * @param searchQuery
+     * @private
+     */
+    _queryTemplates: function(searchQuery) {
+        //Always execute the search query against a complete list so
+        //changes made via backspace, copy/paste, etc.. are applied properly.
+        this.set('_filteredParentTemplatesByCategory',this._parentTemplatesByCategory.slice(0));
+        //Just return the entire template set if no query is specified.
+        if (!searchQuery || !searchQuery.trim()) {
+            return;
+        }
+        var searchQueryKeywords = searchQuery.toLowerCase().split(' ');
+        for (var i=this._filteredParentTemplatesByCategory.length-1; i>=0; i--) {
+            var matchCount = 0;
+            for (var j=0; j<searchQueryKeywords.length; j++) {
+                var keyword = searchQueryKeywords[j];
+                //Ignore extra spaces.
+                if (!keyword) {
+                    matchCount++;
+                    continue;
+                }
+                //Consider the keyword a match if it is found in either the name or category of the template.
+                if (this._filteredParentTemplatesByCategory[i].template.name.toLowerCase().indexOf(keyword) > -1 ||
+                    this._filteredParentTemplatesByCategory[i].category.toLowerCase().indexOf(keyword) > -1) {
+                    matchCount++;
+                }
+            }
+            //All keywords must match in order for the result to be included.
+            if (matchCount !== searchQueryKeywords.length) {
+                this.splice('_filteredParentTemplatesByCategory',i,1);
+            }
         }
     },
 
