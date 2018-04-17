@@ -331,6 +331,7 @@ Polymer({
         this.set('_addingNewCategory',true);
         setTimeout(function() {
             _this.querySelector('#newCategoryInput').focus();
+            _this.querySelector('#newCategoryInput').invalid = false;
         },0);
     },
 

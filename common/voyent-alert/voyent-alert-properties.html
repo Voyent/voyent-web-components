@@ -715,8 +715,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </span>
                 </div>
                 <div class="category-manager-dialog-wrapper">
-                    <template is="dom-if" if="[[_templateCategories.length]]">
-                        <div class="category-wrapper">
+                    <div class="category-wrapper">
+                        <template is="dom-if" if="[[_templateCategories.length]]">
                             <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories">
                                 <div class="category-item no-select" data-editing$="[[categoryObj.editing]]"
                                      title="[[categoryObj.name]]" on-click="_enableCategoryNameEditing">
@@ -737,22 +737,22 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     </div>
                                 </div>
                             </template>
-                            <div class="category-item no-select" data-editing$="[[_addingNewCategory]]"
-                                 title="Add Category" on-click="_enableNewCategoryInput">
-                                <div class="category-name-wrapper">
-                                    <template is="dom-if" if="[[_addingNewCategory]]">
-                                        <paper-input id="newCategoryInput" value="{{_newTemplateCategory::input}}" no-label-float
-                                                     validator="newCategoryValidator" on-value-changed="_validateCategoryOnChange"
-                                                     on-keyup="_newCategoryKeyUp" on-blur="_newCategoryBlur">
-                                        </paper-input>
-                                    </template>
-                                    <template is="dom-if" if="[[!_addingNewCategory]]">
-                                        <paper-icon-button class="add-category-button" icon="add"></paper-icon-button>
-                                    </template>
-                                </div>
+                        </template>
+                        <div class="category-item no-select" data-editing$="[[_addingNewCategory]]"
+                             title="Add Category" on-click="_enableNewCategoryInput">
+                            <div class="category-name-wrapper">
+                                <template is="dom-if" if="[[_addingNewCategory]]">
+                                    <paper-input id="newCategoryInput" value="{{_newTemplateCategory::input}}" no-label-float
+                                                 validator="newCategoryValidator" on-value-changed="_validateCategoryOnChange"
+                                                 on-keyup="_newCategoryKeyUp" on-blur="_newCategoryBlur">
+                                    </paper-input>
+                                </template>
+                                <template is="dom-if" if="[[!_addingNewCategory]]">
+                                    <paper-icon-button class="add-category-button" icon="add"></paper-icon-button>
+                                </template>
                             </div>
                         </div>
-                    </template>
+                    </div>
                     <div class="category-buttons-wrapper text-center">
                         <paper-button raised title="Close dialog" on-click="_closeCategoryManager">Done</paper-button>
                     </div>
