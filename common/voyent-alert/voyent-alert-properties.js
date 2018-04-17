@@ -163,49 +163,28 @@ Polymer({
         ];
         //Flag indicating which category pane to display in the dialog, default is category selector.
         this._showCategoryManager = false;
+        //Flag for displaying the new category input when clicking the + icon.
+        this._addingNewCategory = false;
     },
 
     /**
-     * Opens and initializes the category management dialog.
+     * Opens the category management dialog.
      * @private
      */
-    _manageCategories: function() {
-        var _this = this;
-        this._showCategoryManager = true;
-        //Ensure the dialog opens with a clean input state.
-        this.set('_newTemplateCategory','');
-        setTimeout(function() {
-            _this.querySelector('#newCategoryInput').invalid = false;
-        },0);
+    _openCategoryManager: function() {
+        this.set('_showCategoryManager',true);
     },
 
     /**
-     * Handles validating and adding a new template category.
+     * Reverts all changes made in the category management dialog.
      * @private
      */
-    _addNewTemplateCategory: function() {
-        var _this = this;
-        if (!this.querySelector('#newCategoryInput').validate()) {
-            return;
-        }
-        //Generate a flat string array of category names, add the new category and save the changes.
-        var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
-            return categoryObj.name;
-        });
-        newTemplateCategories.push(this._newTemplateCategory);
-
-        voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
-            //Add the category to our local list.
-            _this.push('_templateCategories',{
-                "id": _this._generateUid(),
-                "name": _this._newTemplateCategory,
-                "newName": '',
-                "editing": false
-            });
-            _this.set('_newTemplateCategory','');
-        }).catch(function() {
-            _this.fire('message-error', 'Failed to add new category, please try again');
-        });
+    _closeCategoryManager: function() {
+        //Toggle the category manager pane.
+        this.set('_showCategoryManager',false);
+        //Ensure our filtered list is up to date and any previous search results are applied.
+        this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
+        this._queryCategories(this._categorySearchQuery);
     },
 
     /**
@@ -338,6 +317,72 @@ Polymer({
     },
 
     /**
+     * Enables the new category input when clicking on the + icon.
+     * @param e
+     * @private
+     */
+    _enableNewCategoryInput: function(e) {
+        e.stopPropagation();
+        var _this = this;
+        //If we are already editing a category then don't allow the user to edit another one if validation is currently
+        //failing. If validation is passing then just disable editing for the current field and proceed.
+        if (this._categoryBeingEdited && !this._disableCategoryNameEditing(this._categoryBeingEdited,true)) {
+            return;
+        }
+        this.set('_newTemplateCategory','');
+        this.set('_addingNewCategory',true);
+        setTimeout(function() {
+            _this.querySelector('#newCategoryInput').focus();
+            _this.querySelector('#newCategoryInput').invalid = false;
+        },0);
+    },
+
+    /**
+     * Disables the new category input. If validation is currently failing then the operation will be aborted.
+     * @param persist
+     * @returns {boolean} - Whether the category name could successfully be disabled (validation passes).
+     * @private
+     */
+    _disableNewCategoryInput: function(persist) {
+        var _this = this;
+        if (this._categoryInputInvalid) {
+            return false;
+        }
+        if (persist && this._newTemplateCategory) {
+            //Generate a flat string array of category names, add the new category and save the changes.
+            var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
+                return categoryObj.name;
+            });
+            newTemplateCategories.push(this._newTemplateCategory);
+
+            voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
+                //Add the category to our local list.
+                _this.push('_templateCategories',{
+                    "id": _this._generateUid(),
+                    "name": _this._newTemplateCategory,
+                    "newName": '',
+                    "editing": false
+                });
+                _this._confirmDisableNewCategoryInput();
+            }).catch(function() {
+                _this.fire('message-error', 'Failed to add new category, please try again');
+            });
+        }
+        else {
+            this._confirmDisableNewCategoryInput();
+        }
+        return true;
+    },
+
+    /**
+     * Confirms disabling the new category input.
+     * @private
+     */
+    _confirmDisableNewCategoryInput: function() {
+        this.set('_addingNewCategory',false);
+    },
+
+    /**
      * Enables category name editing when clicking on a category.
      * @param e
      * @private
@@ -347,10 +392,17 @@ Polymer({
         var _this = this;
         var categoryBeingEdited = e.model.get('categoryObj');
         var index = this._templateCategories.indexOf(categoryBeingEdited);
-        //If we are already editing a category then don't allow the user to edit another one if validation is currently
-        //failing. If validation is passing then just disable editing for the current field and proceed.
-        if (this._categoryBeingEdited && !this._disableCategoryNameEditing(this._categoryBeingEdited,true)) {
-            return;
+        //If we are already adding a new or editing an existing category then don't allow the user to edit or add another
+        //one if validation is currently failing. If validation is passing then just disable editing for the current field and proceed.
+        if (this._categoryBeingEdited) {
+            if (!this._disableCategoryNameEditing(this._categoryBeingEdited,true)) {
+                return;
+            }
+        }
+        else if (this._addingNewCategory) {
+            if (!this._disableNewCategoryInput(true)) {
+                return;
+            }
         }
         this.set('_templateCategories.'+index+'.newName',_this._templateCategories[index].name);
         this.set('_templateCategories.'+index+'.editing',true);
@@ -445,18 +497,6 @@ Polymer({
     },
 
     /**
-     * Reverts all changes made in the category management dialog.
-     * @private
-     */
-    _closeCategoryManager: function() {
-        //Toggle the category manager pane.
-        this._showCategoryManager = false;
-        //Ensure our filtered list is up to date and any previous search results are applied.
-        this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
-        this._queryCategories(this._categorySearchQuery);
-    },
-
-    /**
      * Validates the new category input in the category management dialog.
      * @private
      */
@@ -505,14 +545,39 @@ Polymer({
      * @param e
      * @private
      */
-    _validateCategoriesOnChange: function(e) {
+    _validateCategoryOnChange: function(e) {
         var _this = this;
         if (this._ignoreChangeEvent) { return; }
         //Async since this on-value-changed listener fires before the new value is reflected to the property.
         setTimeout(function() {
-            _this._categoryBeingValidated = e.model.get('categoryObj');
-            _this._categoryInputInvalid = !_this.querySelector('#category-'+_this._categoryBeingValidated.id).validate();
+            if (e.model.get('categoryObj')) {
+                _this._categoryBeingValidated = e.model.get('categoryObj');
+                _this._categoryInputInvalid = !_this.querySelector('#category-'+_this._categoryBeingValidated.id).validate();
+            }
+            else {
+                _this._categoryInputInvalid = !_this.querySelector('#newCategoryInput').validate();
+            }
         },0);
+    },
+
+    /**
+     * Handles submitting the new category input field on blur.
+     * @private
+     */
+    _newCategoryBlur: function(e) {
+        e.stopPropagation();
+        var _this = this;
+        //Always execute this async so we can correctly determine the activeElement.
+        setTimeout(function() {
+            //Check if we are focused on an iron-input because if we are it means focus is still on the input so we
+            //won't exit editing mode (polymer fires blur event even when the input has focus). Also check
+            //if we are in editing mode because if we are not then it means that focus was removed via the Enter
+            //or Esc key press and not just a regular blur.
+            if (document.activeElement.getAttribute('is') !== 'iron-input' && _this._addingNewCategory) {
+                _this._disableNewCategoryInput(true);
+            }
+        },150); //Delay for when a user clicks another category so we don't trigger the disable function
+                //here, we will call this when enabling the new one in _enableCategoryNameEditing.
     },
 
     /**
@@ -535,7 +600,7 @@ Polymer({
                 _this._categoryBeingEdited) {
                 _this._disableCategoryNameEditing(_this._categoryBeingEdited,true);
             }
-        },150); //Delay for when a user clicks another category so we don't trigger the disable function
+        },150); //Delay for when a user clicks another category bubble so we don't trigger the disable function
                 // here, we will call this when enabling the new one in _enableCategoryNameEditing.
     },
 
@@ -563,7 +628,10 @@ Polymer({
     _newCategoryKeyUp: function(e) {
         e.stopPropagation();
         if (e.keyCode === 13) {
-            this._addNewTemplateCategory();
+            this._disableNewCategoryInput(true);
+        }
+        else if (e.keyCode === 27) {
+            this._disableNewCategoryInput(false);
         }
     },
 

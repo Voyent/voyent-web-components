@@ -282,17 +282,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                 margin: 20px 0 10px 0;
                 padding-top: 2px;
             }
-            .new-category-input-wrapper {
-                display: inline-block;
-                width: 440px;
-            }
-            .new-category-button-wrapper {
-                display:inline-block;
-                margin-left: 32px;
-            }
-            .new-category-wrapper {
-                margin-top: -10px;
-            }
             .category-item {
                 max-width: 500px;
                 border: 2px black solid;
@@ -685,7 +674,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <div class="category-picker">
                         <template is="dom-if" if="[[!_templateCategories.length]]">
                             <p class="category-message">No template categories defined</p>
-                            <paper-button raised title="Add new category" on-click="_manageCategories">Add New Category</paper-button>
+                            <paper-button raised title="Add new category" on-click="_openCategoryManager">Add New Category</paper-button>
                         </template>
                         <template is="dom-if" if="[[_templateCategories.length]]">
                             <p class="category-message">
@@ -710,7 +699,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     Your search <span class="bold">[[_categorySearchQuery]]</span> does not match any categories.
                                 </template>
                             </div>
-                            <paper-button class="manage-categories-button" raised title="Manage categories" on-click="_manageCategories">Manage Categories</paper-button>
+                            <paper-button class="manage-categories-button" raised title="Manage categories" on-click="_openCategoryManager">Manage Categories</paper-button>
                         </template>
                     </div>
                     <div class="category-buttons-wrapper text-center">
@@ -727,17 +716,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </span>
                 </div>
                 <div class="category-manager-dialog-wrapper">
-                    <div class="new-category-wrapper">
-                        <div class="new-category-input-wrapper">
-                            <paper-input id="newCategoryInput" class="new-category-input"
-                                         label="New Category Name" on-keyup="_newCategoryKeyUp"
-                                         validator="newCategoryValidator" value="{{_newTemplateCategory}}"></paper-input>
-                        </div>
-                        <div class="new-category-button-wrapper">
-                            <paper-button class="new-category-button" raised title="Add new category"
-                                          on-click="_addNewTemplateCategory">Add New Category</paper-button>
-                        </div>
-                    </div>
                     <template is="dom-if" if="[[_templateCategories.length]]">
                         <div class="category-wrapper">
                             <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories">
@@ -751,7 +729,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     <div class="category-name-wrapper">
                                         <template is="dom-if" if="[[categoryObj.editing]]">
                                             <paper-input id$="category-[[categoryObj.id]]" value="{{categoryObj.newName::input}}" no-label-float
-                                                         validator="existingCategoryValidator" on-value-changed="_validateCategoriesOnChange"
+                                                         validator="existingCategoryValidator" on-value-changed="_validateCategoryOnChange"
                                                          on-keyup="_existingCategoryKeyup" on-blur="_existingCategoryBlur">
                                             </paper-input>
                                         </template>
@@ -761,6 +739,20 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     </div>
                                 </div>
                             </template>
+                            <div class="category-item no-select" data-editing$="[[_addingNewCategory]]"
+                                 title="Add Category" on-click="_enableNewCategoryInput">
+                                <div class="category-name-wrapper">
+                                    <template is="dom-if" if="[[_addingNewCategory]]">
+                                        <paper-input id="newCategoryInput" value="{{_newTemplateCategory::input}}" no-label-float
+                                                     validator="newCategoryValidator" on-value-changed="_validateCategoryOnChange"
+                                                     on-keyup="_newCategoryKeyUp" on-blur="_newCategoryBlur">
+                                        </paper-input>
+                                    </template>
+                                    <template is="dom-if" if="[[!_addingNewCategory]]">
+                                        <paper-icon-button class="add-category-button" icon="add"></paper-icon-button>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                     </template>
                     <div class="category-buttons-wrapper text-center">
