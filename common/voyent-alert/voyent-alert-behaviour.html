@@ -82,12 +82,12 @@
          * Saves or updates the current alert template.
          */
         saveAlertTemplate: function () {
-            if (this._savingAlertTemplate) { return; }
-            if (!this._validateTemplate()) { return; }
-
-            this._savingAlertTemplate = true;
             var _this = this, msg;
             return new Promise(function (resolve, reject) {
+                if (_this._savingAlertTemplate) { return reject('already saving template'); }
+                if (!_this._validateTemplate()) { return reject('template validation failed'); }
+                _this._savingAlertTemplate = true;
+
                 _this._loadedAlert.template.updateJSON(true);
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
                 var func = 'createAlertTemplate';

@@ -185,8 +185,10 @@ Polymer({
                 done();
                 _this.fire('message-info', 'Successfully saved alert as template');
             }).catch(function(e) {
-                done();
-                _this.fire('message-error', 'Problem saving alert as template: ' + (e.responseText || e.message || e));
+                if (e !== 'already saving template') {
+                    _this.fire('message-error', 'Problem saving alert as template: ' + (e.responseText || e.message || e));
+                    done();
+                }
             });
             function done() {
                 _this._loadedAlert.template.setSavePosition(false);
@@ -214,13 +216,14 @@ Polymer({
      */
     updateAlertState: function(state) {
         var _this = this;
-        var validStates = ['draft','scheduled','active','deprecated','ended'];
-        if (validStates.indexOf(state) === -1) {
-            return this.fire('message-error', 'Unable to change alert state: State ' + this._loadedAlert.template.state + ' is invalid');
-        }
-        this._loadedAlert.template.setState(state);
-
         return new Promise(function (resolve, reject) {
+            var validStates = ['draft','scheduled','active','deprecated','ended'];
+            if (validStates.indexOf(state) === -1) {
+                var rejectMsg = 'Unable to change alert state: State ' + _this._loadedAlert.template.state + ' is invalid';
+                _this.fire('message-error',rejectMsg);
+                return reject(rejectMsg);
+            }
+            _this._loadedAlert.template.setState(state);
             voyent.locate.updateAlertState({"realm":_this.realm,"id":_this._loadedAlert.template.id,"state":state}).then(function() {
                 resolve();
             }).catch(function(error) {
@@ -248,11 +251,11 @@ Polymer({
      * @private
      */
     _fetchAlertTemplates: function() {
-        //Make sure we don't fetch the templates an unnecessary amount of times.
-        if (this._isFetchingTemplates) { return; }
-        this._isFetchingTemplates = true;
         var _this = this;
         return new Promise(function (resolve, reject) {
+            //Make sure we don't fetch the templates an unnecessary amount of times.
+            if (_this._isFetchingTemplates) { return resolve(); }
+            _this._isFetchingTemplates = true;
             voyent.locate.findAlertTemplates({"realm":_this.realm,"query": {"properties.parentAlertId":{"$exists":false}},
                 "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
                 if (!templates || !templates.length) {
