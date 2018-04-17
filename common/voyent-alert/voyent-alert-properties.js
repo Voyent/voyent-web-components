@@ -185,6 +185,9 @@ Polymer({
         //Ensure our filtered list is up to date and any previous search results are applied.
         this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
         this._queryCategories(this._categorySearchQuery);
+        //Reset our toggles to ensure any edits before closing don't get applied on blur.
+        this.set('_addingNewCategory',false);
+        this.set('_categoryBeingEdited',false);
     },
 
     /**
@@ -577,8 +580,8 @@ Polymer({
             if (document.activeElement.getAttribute('is') !== 'iron-input' && _this._addingNewCategory) {
                 _this._disableNewCategoryInput(true);
             }
-        },150); //Delay for when a user clicks another category so we don't trigger the disable function
-                //here, we will call this when enabling the new one in _enableCategoryNameEditing.
+        },150); //Delay for when a user clicks another category so we don't trigger the disable function here, we will
+                //call this when enabling the new one in _enableCategoryNameEditing.
     },
 
     /**
@@ -601,8 +604,8 @@ Polymer({
                 _this._categoryBeingEdited) {
                 _this._disableCategoryNameEditing(_this._categoryBeingEdited,true);
             }
-        },150); //Delay for when a user clicks another category bubble so we don't trigger the disable function
-                // here, we will call this when enabling the new one in _enableCategoryNameEditing.
+        },150); //Delay for when a user clicks another category so we don't trigger the disable function here, we will
+                //call this when enabling the new one in  _enableCategoryNameEditing or _enableNewCategoryInput.
     },
 
     /**
