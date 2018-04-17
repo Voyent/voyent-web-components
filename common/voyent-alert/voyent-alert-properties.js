@@ -674,7 +674,7 @@ Polymer({
      * @private
      */
     _sortCategories: function(a,b) {
-        if (a.name) {
+        if (typeof a.name === 'string') {
             return a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase());
         }
         else {
@@ -1377,25 +1377,6 @@ Polymer({
                 _this.set('_alertDirection',_this._alertCardinalDirection);
             }
         },0);
-    },
-
-    /**
-     * Returns a displayable list of selected template categories.
-     * @returns {string}
-     * @private
-     */
-    _getReadableSelectedCategories: function() {
-        if (!this._selectedCategories.length) {
-            return 'None';
-        }
-        //Build a comma and space separated list of categories.
-        var selectedCategories = this._selectedCategories.map(function(categoryObj) {
-            return categoryObj.name;
-        }).sort(this._sortCategories).toString().split(',').join(', ');
-        //Return the selected category string, slicing off any trailing comma.
-        return selectedCategories.charAt(selectedCategories.length-1) === ',' ?
-            selectedCategories.slice(0,selectedCategories.length-2) :
-            selectedCategories;
     },
 
     /**

@@ -276,7 +276,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 margin-top: 0;
             }
             .category-message {
-                margin: 15px 0 10px 0;
+                margin: 15px 0 0 0;
+                line-height: 35px;
             }
             .category-wrapper {
                 margin: 20px 0 10px 0;
@@ -325,9 +326,10 @@ Internal component used to display the properties panel inside Voyent alert comp
             .selected-categories-label {
                 font-weight: bold;
             }
-            .selected-categories-label,
-            .selected-categories-text {
-                font-size: 15px;
+            .selected-categories-item {
+                border: 1px solid;
+                padding: 5px;
+                border-radius: 10px;
             }
             .delete-category-button {
                 width: 13px;
@@ -677,10 +679,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </template>
                         <template is="dom-if" if="[[_templateCategories.length]]">
                             <p class="category-message">
-                                <span class="selected-categories-label">Selected Categories: </span>
-                                <span class="selected-categories-text">
-                                    [[_getReadableSelectedCategories(_selectedCategories,_selectedCategories.length)]]
-                                </span>
+                                <span class="selected-categories-label no-select">Selected Categories: </span>
+                                <template is="dom-repeat" items="[[_selectedCategories]]" as="sc">
+                                    <span class="selected-categories-item no-select">[[sc.name]]</span>
+                                </template>
                             </p>
                             <div class="search-query-input-wrapper">
                                 <paper-input id="categoryQueryInput" label="Filter categories..."
@@ -689,7 +691,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                             <div class="category-wrapper">
                                 <iron-selector id="categoryManager" multi selected-values="{{_selectedCategories}}" attr-for-selected="name">
                                     <template is="dom-repeat" items="[[_filteredTemplateCategories]]" as="categoryObj" sort="_sortCategories">
-                                        <div name="[[categoryObj]]" class="category-item" title="[[categoryObj.name]]">
+                                        <div name="[[categoryObj]]" class="category-item no-select" title="[[categoryObj.name]]">
                                             [[categoryObj.name]]
                                         </div>
                                     </template>
