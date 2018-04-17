@@ -308,8 +308,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             .category-item[data-editing] {
                 height: 80px;
             }
-            .category-item .delete-category-button,
-            .category-item:not([data-editing])[data-invalid-category] .delete-category-button {
+            .category-item .delete-category-button {
                 display: none;
             }
             .category-item:hover .delete-category-button,
@@ -711,8 +710,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <div class="dialog-title-bar no-select">
                     <span class="title">Manage Categories</span>
                     <span class="close-button">
-                        <paper-icon-button icon="close" on-click="_closeCategoryManager" title="Close dialog"
-                                           disabled="[[_categoryInputInvalid]]" ></paper-icon-button>
+                        <paper-icon-button icon="close" on-click="_closeCategoryManager"
+                                           title="Close dialog"></paper-icon-button>
                     </span>
                 </div>
                 <div class="category-manager-dialog-wrapper">
@@ -720,7 +719,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                         <div class="category-wrapper">
                             <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories">
                                 <div class="category-item no-select" data-editing$="[[categoryObj.editing]]"
-                                     data-invalid-category$="[[_categoryInputInvalid]]"
                                      title="[[categoryObj.name]]" on-click="_enableCategoryNameEditing">
                                     <div class="delete-category-button-wrapper">
                                         <paper-icon-button class="delete-category-button" icon="close" on-click="_deleteCategory"
@@ -756,7 +754,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </div>
                     </template>
                     <div class="category-buttons-wrapper text-center">
-                        <paper-button raised title="Close dialog" on-click="_closeCategoryManager" disabled="[[_categoryInputInvalid]]">Done</paper-button>
+                        <paper-button raised title="Close dialog" on-click="_closeCategoryManager">Done</paper-button>
                     </div>
                 </div>
             </template>

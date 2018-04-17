@@ -324,30 +324,33 @@ Polymer({
     _enableNewCategoryInput: function(e) {
         e.stopPropagation();
         var _this = this;
-        //If we are already editing a category then don't allow the user to edit another one if validation is currently
-        //failing. If validation is passing then just disable editing for the current field and proceed.
-        if (this._categoryBeingEdited && !this._disableCategoryNameEditing(this._categoryBeingEdited,true)) {
-            return;
-        }
+        //Ensure existing category editing is disabled before adding a new category.
+        this._disableCategoryNameEditing(this._categoryBeingEdited,true);
+        //Enable the category input with a fresh state.
         this.set('_newTemplateCategory','');
         this.set('_addingNewCategory',true);
         setTimeout(function() {
             _this.querySelector('#newCategoryInput').focus();
-            _this.querySelector('#newCategoryInput').invalid = false;
         },0);
     },
 
     /**
      * Disables the new category input. If validation is currently failing then the operation will be aborted.
      * @param persist
-     * @returns {boolean} - Whether the category name could successfully be disabled (validation passes).
      * @private
      */
     _disableNewCategoryInput: function(persist) {
         var _this = this;
-        if (this._categoryInputInvalid) {
-            return false;
+        if (!this._addingNewCategory) {
+            return;
         }
+        //If the new category input is currently invalid then just hide the input, reverting the changes.
+        if (this._categoryInputInvalid) {
+            this._confirmDisableNewCategoryInput();
+            this._categoryInputInvalid = false;
+            return;
+        }
+        //Handle persisting the new category or just hiding the input.
         if (persist && this._newTemplateCategory) {
             //Generate a flat string array of category names, add the new category and save the changes.
             var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
@@ -371,7 +374,6 @@ Polymer({
         else {
             this._confirmDisableNewCategoryInput();
         }
-        return true;
     },
 
     /**
@@ -379,6 +381,7 @@ Polymer({
      * @private
      */
     _confirmDisableNewCategoryInput: function() {
+        this.querySelector('#newCategoryInput').invalid = false;
         this.set('_addingNewCategory',false);
     },
 
@@ -392,18 +395,9 @@ Polymer({
         var _this = this;
         var categoryBeingEdited = e.model.get('categoryObj');
         var index = this._templateCategories.indexOf(categoryBeingEdited);
-        //If we are already adding a new or editing an existing category then don't allow the user to edit or add another
-        //one if validation is currently failing. If validation is passing then just disable editing for the current field and proceed.
-        if (this._categoryBeingEdited) {
-            if (!this._disableCategoryNameEditing(this._categoryBeingEdited,true)) {
-                return;
-            }
-        }
-        else if (this._addingNewCategory) {
-            if (!this._disableNewCategoryInput(true)) {
-                return;
-            }
-        }
+        //Ensure existing category editing or new category creation is disabled before editing a different category.
+        this._disableCategoryNameEditing(this._categoryBeingEdited,true);
+        this._disableNewCategoryInput(true);
         this.set('_templateCategories.'+index+'.newName',_this._templateCategories[index].name);
         this.set('_templateCategories.'+index+'.editing',true);
         this._categoryBeingEdited = categoryBeingEdited;
@@ -416,15 +410,21 @@ Polymer({
      * Disables category name editing at the specified index. If validation is currently failing then the operation will be aborted.
      * @param categoryObj
      * @param persist
-     * @returns {boolean} - Whether the category name could successfully be disabled (validation passes).
      * @private
      */
     _disableCategoryNameEditing: function(categoryObj,persist) {
         var _this = this;
-        if (this._categoryInputInvalid) {
-            return false;
+        if (!categoryObj) {
+            return;
         }
         var indexOfCategoryBeingEdited = this._templateCategories.indexOf(categoryObj);
+        //If a category input is currently invalid then just hide the input, reverting the changes.
+        if (this._categoryInputInvalid) {
+            this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
+            this._categoryInputInvalid = false;
+            return;
+        }
+        //Handle persisting the new category or just hiding the input.
         if (persist && categoryObj.name !== categoryObj.newName) {
             //Generate a flat string array of category names, update the category and save the changes.
             var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
@@ -447,7 +447,6 @@ Polymer({
         else {
             this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
         }
-        return true;
     },
 
     /**
@@ -462,6 +461,7 @@ Polymer({
         this.set('_templateCategories.'+index+'.newName','');
         this._ignoreChangeEvent = false;
         this.set('_templateCategories.'+index+'.editing',false);
+        this.querySelector('#category-'+this._categoryBeingValidated.id).invalid = false;
         this._categoryBeingEdited = null;
     },
 
