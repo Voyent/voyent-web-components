@@ -568,6 +568,10 @@ Polymer({
             categoryInput.setAttribute('error-message','Specify a category');
             return false;
         }
+        if (categoryName.length > 60) {
+            categoryInput.setAttribute('error-message','60 characters max');
+            return false;
+        }
         for (var i=0; i<this._templateCategories.length; i++) {
             if (this._templateCategories[i] === this._categoryBeingValidated) { continue; }
             if (categoryName.toLowerCase() === this._templateCategories[i].name.toLowerCase()) {

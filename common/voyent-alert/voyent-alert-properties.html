@@ -730,7 +730,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         <template is="dom-if" if="[[categoryObj.editing]]">
                                             <paper-input id$="category-[[categoryObj.id]]" value="{{categoryObj.newName::input}}" no-label-float
                                                          validator="existingCategoryValidator" on-value-changed="_validateCategoryOnChange"
-                                                         on-keyup="_existingCategoryKeyup" on-blur="_existingCategoryBlur">
+                                                         on-keyup="_existingCategoryKeyup" on-blur="_existingCategoryBlur" maxlength="60">
                                             </paper-input>
                                         </template>
                                         <template is="dom-if" if="[[!categoryObj.editing]]">
@@ -746,7 +746,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 <template is="dom-if" if="[[_addingNewCategory]]">
                                     <paper-input id="newCategoryInput" value="{{_newTemplateCategory::input}}" no-label-float
                                                  validator="newCategoryValidator" on-value-changed="_validateCategoryOnChange"
-                                                 on-keyup="_newCategoryKeyUp" on-blur="_newCategoryBlur">
+                                                 on-keyup="_newCategoryKeyUp" on-blur="_newCategoryBlur" maxlength="60">
                                     </paper-input>
                                 </template>
                                 <template is="dom-if" if="[[!_addingNewCategory]]">
