@@ -111,7 +111,11 @@ Polymer({
         /**
          * Whether a template save is pending after we prompt the user for an uncategorized template before saving.
          */
-        _templateSavePending: { type: Boolean, value: false, notify: true }
+        _templateSavePending: { type: Boolean, value: false, notify: true },
+        /**
+         * Whether the category manager is shown in the category dialog, default is to show the category selector.
+         */
+        _showCategoryManager: { type: Boolean, value: false, notify: true }
     },
 
     observers: [
@@ -161,10 +165,17 @@ Polymer({
             {"label":"NW","value":315},
             {"label":"NNW","value":337.5}
         ];
-        //Flag indicating which category pane to display in the dialog, default is category selector.
-        this._showCategoryManager = false;
         //Flag for displaying the new category input when clicking the + icon.
         this._addingNewCategory = false;
+    },
+
+    /**
+     * Opens the category manager dialog and immediately enables the new category input.
+     * @private
+     */
+    _addFirstCategory: function() {
+        this._openCategoryManager();
+        this._enableNewCategoryInput();
     },
 
     /**
@@ -184,6 +195,7 @@ Polymer({
         this.set('_showCategoryManager',false);
         //Ensure our filtered list is up to date and any previous search results are applied.
         this.set('_filteredTemplateCategories',this._templateCategories.slice(0));
+        this.set('_selectedCategories',this._selectedCategories.slice(0));
         this._queryCategories(this._categorySearchQuery);
         //Reset our toggles to ensure any edits before closing don't get applied on blur.
         this.set('_addingNewCategory',false);
@@ -325,7 +337,6 @@ Polymer({
      * @private
      */
     _enableNewCategoryInput: function(e) {
-        e.stopPropagation();
         var _this = this;
         //Ensure existing category editing is disabled before adding a new category.
         this._disableCategoryNameEditing(this._categoryBeingEdited,true);
@@ -422,14 +433,19 @@ Polymer({
             return;
         }
         var indexOfCategoryBeingEdited = this._templateCategories.indexOf(categoryObj);
+        var indexOfSelectedCategoryBeingEdited = this._selectedCategories.indexOf(categoryObj);
+        var indexOfFilteredCategoryBeingEdited = this._filteredTemplateCategories.indexOf(categoryObj);
         //If a category input is currently invalid then just hide the input, reverting the changes.
         if (this._categoryInputInvalid) {
             this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
             this._categoryInputInvalid = false;
             return;
         }
-        //Handle persisting the new category or just hiding the input.
-        if (persist && categoryObj.name !== categoryObj.newName) {
+        //Handle persisting the new category or just hiding the input. Since the blur event may fire multiple times
+        //rapidly, like when editing a category and navigating away from the page, we will use the _persistingCategories
+        //flag to prevent triggering requests to persist the categories more than necessary.
+        if (!this._persistingCategories && persist && categoryObj.name !== categoryObj.newName) {
+            this._persistingCategories = true;
             //Generate a flat string array of category names, update the category and save the changes.
             var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
                 return categoryObj.name;
@@ -437,12 +453,20 @@ Polymer({
             newTemplateCategories[indexOfCategoryBeingEdited] = categoryObj.newName;
 
             voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
+                _this._persistingCategories = false;
                 //When renaming an existing category we must update all usages to match.
                 _this._updateCategoryInTemplates(categoryObj.name,categoryObj.newName);
-                //Update our local list and state.
+                //Update our local lists and state.
+                //The category objects are shared in each list but we need to notifyPath for the UI to update.
                 _this.set('_templateCategories.'+indexOfCategoryBeingEdited+'.name',categoryObj.newName);
+                if (indexOfSelectedCategoryBeingEdited > -1) {
+                    _this.notifyPath('_selectedCategories.'+indexOfSelectedCategoryBeingEdited+'.name');
+                }
+                if (indexOfFilteredCategoryBeingEdited > -1) {
+                    _this.notifyPath('_filteredTemplateCategories.'+indexOfFilteredCategoryBeingEdited+'.name');
+                }
                 _this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
-               //Force a re-sort of the categories list.
+                //Force a re-sort of the categories list.
                _this.querySelector('#editableTemplateCategoriesList').render();
             }).catch(function() {
                 _this.fire('message-error', 'Failed to update category, please try again');
@@ -459,13 +483,19 @@ Polymer({
      * @private
      */
     _confirmDisableCategoryNameEditing: function(index) {
+        if (typeof index !== 'number' || !this._categoryBeingValidated) {
+            return;
+        }
         //Reset the newName value so that when we set it again when enabling editing the set is reflected
         //in the view. Additionally, toggle a flag so the input change listener doesn't fire and try to validate.
         this._ignoreChangeEvent = true;
         this.set('_templateCategories.'+index+'.newName','');
         this._ignoreChangeEvent = false;
         this.set('_templateCategories.'+index+'.editing',false);
-        this.querySelector('#category-'+this._categoryBeingValidated.id).invalid = false;
+        var input = this.querySelector('#category-'+this._categoryBeingValidated.id);
+        if (input) {
+            input.invalid = false;
+        }
         this._categoryBeingEdited = null;
     },
 

@@ -44,7 +44,6 @@ Polymer({
      */
     loadAlert: function(id) {
         this._setIsAlertLoading(true);
-        this._closeNewAlertDialog();
         var _this = this;
         var promises = [];
         promises.push(this._fetchAlertTemplate(id));
@@ -90,7 +89,6 @@ Polymer({
     addNew: function() {
         var _this = this;
         //Ensure we start with a clean state.
-        this._closeNewAlertDialog();
         this.set('_selectedAlertTemplateId',null);
         this.set('_newAlertName','');
         this.querySelector('#newAlertNameInput').invalid = false;
@@ -181,7 +179,7 @@ Polymer({
             var parentId = _this._loadedAlert.template.parentId;
             _this._loadedAlert.template.setId(null);
             _this._loadedAlert.template.setParentId(null);
-            _this.saveAlertTemplate().then(function() {
+            _this._saveAlertTemplate().then(function() {
                 done();
                 _this.fire('message-info', 'Successfully saved alert as template');
             }).catch(function(e) {
@@ -315,9 +313,8 @@ Polymer({
 
     /**
      * Closes the dialog for creating a new alert.
-     * @private
      */
-    _closeNewAlertDialog: function() {
+    closeNewAlertDialog: function() {
         var dialog = this.querySelector('#newAlertDialog');
         if (dialog) {
             dialog.close();
@@ -421,7 +418,7 @@ Polymer({
             //Create a new child alert template to be linked one-to-one with the alert.
             function createChildTemplate(e) { _this._createChildTemplate(childTemplate,e.latLng); }
         }
-        this._closeNewAlertDialog();
+        this.closeNewAlertDialog();
     },
 
     /**
@@ -454,7 +451,7 @@ Polymer({
         //events, meaning it may fire when the component is not active.
         var dialog = this.querySelector('#newAlertDialog');
         if ((dialog && dialog.opened) || this._selectedAlertTemplateId) {
-            this._closeNewAlertDialog();
+            this.closeNewAlertDialog();
             setTimeout(function() {
                 _this.fire('voyent-alert-template-cancel',{});
             },0);

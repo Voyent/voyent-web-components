@@ -327,7 +327,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 font-weight: bold;
             }
             .selected-categories-item {
-                border: 1px solid;
+                border: 2px solid;
                 padding: 5px;
                 border-radius: 10px;
             }
@@ -675,7 +675,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <div class="category-picker">
                         <template is="dom-if" if="[[!_templateCategories.length]]">
                             <p class="category-message">No template categories defined</p>
-                            <paper-button raised title="Add new category" on-click="_openCategoryManager">Add New Category</paper-button>
+                            <paper-button raised title="Add new category" on-click="_addFirstCategory">Add New Category</paper-button>
                         </template>
                         <template is="dom-if" if="[[_templateCategories.length]]">
                             <p class="category-message">

@@ -81,7 +81,16 @@
         /**
          * Saves or updates the current alert template.
          */
-        saveAlertTemplate: function () {
+        saveAlertTemplate: function() {
+            this._saveAlertTemplate().catch(function(e){})
+        },
+
+        /**
+         * Wrapped function for `saveAlertTemplate` that returns a Promise for internal component use.
+         * @returns {Promise}
+         * @private
+         */
+        _saveAlertTemplate: function () {
             var _this = this, msg;
             return new Promise(function (resolve, reject) {
                 if (_this._savingAlertTemplate) { return reject('already saving template'); }
@@ -115,14 +124,14 @@
         },
 
         /**
-         * Wrapper for `saveAlertTemplate` that disables prompt for unspecified template categories.
+         * Wrapper for `_saveAlertTemplate` that disables prompt for unspecified template categories.
          * @private
          */
         _saveAlertTemplateWithoutCategory: function() {
             var _this = this;
             this._skipCategoryValidation = true;
             this._closeUncategorizedTemplateDialog();
-            this.saveAlertTemplate().then(function() {
+            this._saveAlertTemplate().then(function() {
                 _this._skipCategoryValidation = false;
             });
         },
@@ -525,9 +534,9 @@
 
         /**
          * Closes the category picker dialog.
-         * @private
          */
-        _closeCategorySelector: function() {
+        closeCategorySelector: function() {
+            this.set('_showCategoryManager',false);
             var dialog = this.querySelector('#categoryManager');
             if (dialog) {
                 dialog.close();
@@ -546,7 +555,7 @@
                 this.saveAlertTemplate();
                 this._templateSavePending = false;
             }
-            this._closeCategorySelector();
+            this.closeCategorySelector();
         },
 
         /**
