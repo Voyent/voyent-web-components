@@ -191,6 +191,10 @@ Polymer({
      * @private
      */
     _closeCategoryManager: function() {
+        //If we are currently editing a category and the user closes the category manager then don't save the changes.
+        if (this._categoryBeingEdited) {
+            this._disableCategoryNameEditing(this._categoryBeingEdited,false);
+        }
         //Toggle the category manager pane.
         this.set('_showCategoryManager',false);
         //Ensure our filtered list is up to date and any previous search results are applied.
@@ -199,7 +203,7 @@ Polymer({
         this._queryCategories(this._categorySearchQuery);
         //Reset our toggles to ensure any edits before closing don't get applied on blur.
         this.set('_addingNewCategory',false);
-        this.set('_categoryBeingEdited',false);
+        this.set('_categoryBeingEdited',null);
     },
 
     /**
