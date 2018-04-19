@@ -178,6 +178,10 @@
                 window.addEventListener('resize', function() { _this.resizeMap(); });
                 //De-select any selected zone stack on map click.
                 _this._deselectStacksOnClick(_this._map);
+                //Create a general use OverlayView object that so we can access some of its utility functions.
+                _this._overlayView = new google.maps.OverlayView();
+                _this._overlayView.draw = function() {};
+                _this._overlayView.setMap(_this._map);
             };
             if (!('google' in window) || !('maps' in window.google)) {
                 if (this.loadGoogleMaps) {
@@ -321,9 +325,9 @@
             }
             //Clear the user marker.
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                if (this._userLocationMarker) {
-                    this._userLocationMarker.setMap(null);
-                    this._userLocationMarker = null;
+                if (this._mobileLocation) {
+                    this._mobileLocation.removeFromMap();
+                    this._mobileLocation = null;
                 }
                 else if (this._myLocations) {
                     this._clearMyLocations();
@@ -524,7 +528,6 @@
                         if ((!location || !location[0])) {
                             return resolve();
                         }
-                        _this._drawUser(location[0]);
                     }
                     resolve(location[0]);
                 }).catch(function(error) {
@@ -545,11 +548,18 @@
                     realm:_this.realm, account:_this.account,
                     id:"getMyLocationsForUsername", execParams: {username:voyent.auth.getLastKnownUsername()}
                 }).then(function(locations) {
-                    //Clear the map and draw the locations.
-                    _this._loadedLocation = null;
-                    _this._clearMyLocations();
-                    _this._drawMyLocations(locations);
-                    resolve();
+                    if (_this.nodeName === 'VOYENT-MY-LOCATIONS') {
+                        //Clear the map and draw the locations.
+                        _this._loadedLocation = null;
+                        _this._clearMyLocations();
+                        _this._drawMyLocations(locations);
+                    }
+                    else {
+                        locations = locations.map(function(obj) {
+                            return obj.location;
+                        })
+                    }
+                    resolve(locations);
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching location records: ' + (error.responseText || error.message || error));
                     reject(error);
@@ -653,10 +663,9 @@
          * @param templateJSON - The JSON to build the alert template from.
          * @param latLngCentroid - An optional LatLng object specifying the centroid of the template. When this is not
          *                         provided we will calculate the centroid based on the template's stack coordinates.
-         * @param skipMapPan
          * @private
          */
-        _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid,skipMapPan) {
+        _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
             var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker;
             //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
             if (templateJSON.geo) {
@@ -666,7 +675,13 @@
                     return stackGroups;
                 },{});
                 for (var stackId in zoneStackGeometries) {
-                    if (!zoneStackGeometries.hasOwnProperty(stackId)) { continue; }
+                    //For the alert detail notification view we will only render the
+                    //inner-most zone of a stack if it contains an affected location.
+                    if (this.nodeName === 'VOYENT-ALERT-VIEW' &&
+                        this.mode === 'notification' &&
+                        this._affectedStackIds.indexOf(stackId) === -1) {
+                        continue;
+                    }
                     zoneGeometries = zoneStackGeometries[stackId];
                     zones = [];
                     zIndex = 49;
@@ -685,7 +700,7 @@
                                 else { continue; }
                             }
                             else {
-                                //For alert detail notification view show the inner zone of each stack.
+                                //For alert detail notification view show the inner zone of each relevant stack.
                                 if (i >= 1) { break; }
                             }
                         }
@@ -726,9 +741,7 @@
                     }
                 }
             }
-            else { //No stacks, fallback zone only.
-                zoneStacks = [];
-            }
+
             var parentId = templateJSON.properties.parentAlertId || null;
             //We only want to create a template marker if we have more than
             //one stack, otherwise the stack marker will just be used.
@@ -773,7 +786,7 @@
                     );
                 }
             }
-            if (!skipMapPan) {
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW' || this.mode !== 'notification') {
                 this._adjustBoundsAndPan();
             }
         },
@@ -1164,7 +1177,7 @@
          */
         _adjustBoundsAndPan: function() {
             var bounds = new google.maps.LatLngBounds();
-            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._userLocationMarker || this._myLocations))) {
+            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations))) {
                 var i;
                 if (this._loadedAlert) {
                     var zoneStacks = this._loadedAlert.template.zoneStacks;
@@ -1204,22 +1217,72 @@
                         }
                     }
                 }
-                if (this._userLocationMarker || (this._myLocations && this._myLocations.length)) {
-                    if (this._userLocationMarker) {
-                        bounds.extend(this._userLocationMarker.getPosition());
+                if (this._mobileLocation || (this._myLocations && this._myLocations.length)) {
+                    if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
+                        bounds.extend(this._mobileLocation.marker.getPosition());
                     }
-                    if (this._myLocations) {
-                        for (i=0; i<this._myLocations.length; i++) {
+                    var locationsToPanTo = [];
+                    for (i=0; i<this._myLocations.length; i++) {
+                        if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
                             bounds.extend(this._myLocations[i].marker.getPosition());
+                            locationsToPanTo.push(this._myLocations[i]);
                         }
                     }
+                    //Ensure we only do this if the bounds were extended otherwise the map may pan to the middle of the ocean.
                     this._map.fitBounds(bounds);
                     this._map.panToBounds(bounds);
+                    //Include the name overlays in the map bounds.
+                    this._panBoundsForNameOverlays(locationsToPanTo,bounds);
                 }
             }
             else {
                 this._zoomOnRegion();
             }
+        },
+
+        /**
+         * Pans the map bounds so that it includes all of the location name overlays in the view.
+         * @param locations
+         * @param bounds
+         * @private
+         */
+        _panBoundsForNameOverlays: function(locations, bounds) {
+            if (!locations || !locations.length) { return; }
+            var _this = this;
+            //Async to ensure the map is panned on the markers before proceeding. This
+            //is so we can correctly calculate the pixel positions of the name overlays.
+            setTimeout(function() {
+                for (var i=0; i<locations.length; i++) {
+                    _this._extendBoundsForNameOverlay(locations[i],bounds);
+                }
+                _this._map.fitBounds(bounds);
+                _this._map.panToBounds(bounds);
+            },0);
+        },
+
+        /**
+         * Extends the map bounds to include the location name overlay in the view.
+         * @param location
+         * @param bounds
+         * @private
+         */
+        _extendBoundsForNameOverlay: function(location, bounds) {
+            if (!location.nameOverlay) { return; }
+            var overlayProjection = this._overlayView.getProjection();
+            //Get the pixel coordinates of the marker position.
+            var nc = overlayProjection.fromLatLngToDivPixel(location.marker.getPosition());
+            //Include the location name overlay in the map bounds by extending the bounds to include
+            //the NW and SE coordinate of the overlay. This will ensure the entire label is in view.
+            var nwCoordinate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
+                nc.x - location.nameOverlay.div.offsetWidth/2,
+                nc.y-64
+            ));
+            bounds.extend(nwCoordinate);
+            var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
+                nc.x + location.nameOverlay.div.offsetWidth/2,
+                nc.y-64+location.nameOverlay.div.offsetHeight
+            ));
+            bounds.extend(seCoordindate);
         },
 
         /**

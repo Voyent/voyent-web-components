@@ -709,7 +709,7 @@ Polymer({
     },
 
     /**
-     * Updates the map bounds so all the locations are in view and then pans the map.
+     * Updates the map bounds so all the locations and location name overlays are in view and then pans the map.
      * @private
      */
     _adjustBoundsAndPan: function() {
@@ -722,6 +722,8 @@ Polymer({
             }
             this._map.fitBounds(bounds);
             this._map.panToBounds(bounds);
+            //Include the name overlays in the map bounds.
+            this._panBoundsForNameOverlays(this._myLocations,bounds);
         }
         else {
             this._skipRegionPanning = false;
