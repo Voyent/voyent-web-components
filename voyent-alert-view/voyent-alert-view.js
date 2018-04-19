@@ -60,15 +60,18 @@ Polymer({
                 _this._affectedLocationIds = [];
                 //Then create a list of affected stack ids. These are the zone stacks which have locations inside
                 //of them. We will use this list to ensure we only draw alert stacks that contain affected locations.
+                //If there are no affected stack ids then it means this notification was triggered by a fallback zone
                 _this._affectedStackIds = [];
                 if (locations && locations.length) {
                     _this._affectedLocationIds = locations.map(function(obj) {
                         return obj.properties.vras.id;
                     });
-                    _this._affectedStackIds = locations.map(function(obj) {
-                        //We will get undefined values here for locations inside fallback zone, this is expected.
-                        return obj.properties.vras.insideStackId;
-                    });
+                    _this._affectedStackIds = locations.reduce(function(result, obj) {
+                        if (typeof obj.properties.vras.insideStackId !== 'undefined') {
+                            result.push(obj.properties.vras.insideStackId);
+                        }
+                        return result;
+                    }, []);
                 }
                 promises.push(_this._fetchLocationRecord());
                 promises.push(_this._fetchMyLocations());

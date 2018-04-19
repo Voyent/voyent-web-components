@@ -675,11 +675,12 @@
                     return stackGroups;
                 },{});
                 for (var stackId in zoneStackGeometries) {
-                    //For the alert detail notification view we will only render the
-                    //inner-most zone of a stack if it contains an affected location.
-                    if (this.nodeName === 'VOYENT-ALERT-VIEW' &&
-                        this.mode === 'notification' &&
-                        this._affectedStackIds.indexOf(stackId) === -1) {
+                    //For the alert detail notification view we will only render the inner-most zone of a stack if it
+                    //contains an affected location unless no zones contain an affected location. If no zones contain
+                    //an affected location it means the user was notified for a fallback zone so we will render the inner
+                    //zones of each stack so the map has some useful information besides just their locations.
+                    if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'notification' &&
+                        this._affectedStackIds.indexOf(stackId) === -1 && this._affectedStackIds.length) {
                         continue;
                     }
                     zoneGeometries = zoneStackGeometries[stackId];
