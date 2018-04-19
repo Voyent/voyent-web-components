@@ -115,7 +115,11 @@ Polymer({
         /**
          * Whether the category manager is shown in the category dialog, default is to show the category selector.
          */
-        _showCategoryManager: { type: Boolean, value: false, notify: true }
+        _showCategoryManager: { type: Boolean, value: false, notify: true },
+        /**
+         * The search query entered by the user to filter categories.
+         */
+        _categorySearchQuery: { type: String, value: '', notify: true }
     },
 
     observers: [

@@ -63,7 +63,7 @@ Example:
                 margin-top: 30px;
             }
             .search-query-input-wrapper {
-                margin-top: 20px;
+                margin-top: 0;
             }
             .no-query-results-msg {
                 text-align: center;
@@ -74,8 +74,6 @@ Example:
                 padding-bottom: 0;
             }
         </style>
-
-        <voyent-custom-validator id="newAlertValidator" validator-name="newAlertValidator"></voyent-custom-validator>
 
         <div id="container">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
@@ -168,14 +166,11 @@ Example:
             </div>
         </div>
         <paper-dialog id="newAlertDialog" on-keyup="_submitNewAlertDialog" modal on-iron-overlay-opened="_fixModalStacking">
-            <p>Please enter the alert name</p>
-            <paper-input id="newAlertNameInput" autofocus value="{{_newAlertName}}" no-label-float
-                         validator="newAlertValidator" maxlength="60" on-keyup="_submitNewAlertDialog"></paper-input>
             <p class="select-template-msg">
                 Choose a template from the list below
             </p>
             <div class="search-query-input-wrapper">
-                <paper-input id="categoryQueryInput" no-label-float placeholder="Filter templates by name or category..."
+                <paper-input id="categoryQueryInput" label="Filter templates by name or category..."
                              on-keyup="_templateSearchQueryKeyUp" value="{{_templateSearchQuery}}"></paper-input>
             </div>
             <div class="table-wrap">

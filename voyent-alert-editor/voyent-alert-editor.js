@@ -28,10 +28,6 @@ Polymer({
         '_alertStateChanged(_loadedAlert.template.state)'
     ],
 
-    attached: function() {
-        this.querySelector('#newAlertValidator').validate = this._validateNewAlertName.bind(this);
-    },
-
     ready: function() {
         //Initialize parentTemplate list with a fake element so the "no templates found"
         //message won't flicker in the sidebar while we are fetching the templates.
@@ -90,11 +86,10 @@ Polymer({
         var _this = this;
         //Ensure we start with a clean state.
         this.set('_selectedAlertTemplateId',null);
-        this.set('_newAlertName','');
-        this.querySelector('#newAlertNameInput').invalid = false;
         this._sortTemplatesBy = 'name';
         this._lastSortOrderName = 'ascending';
         this._lastSortOrderCategory = 'ascending';
+        this.set('_templateSearchQuery','');
         //Fetch the list of categories and templates before opening the dialog. Fetch the
         //categories first because we need them to build our list of categorized templates.
         var errMsg = 'Problem initializing editor, please try again';
@@ -378,6 +373,10 @@ Polymer({
                 this.splice('_filteredParentTemplatesByCategory',i,1);
             }
         }
+        //Automatically select the template if there is only one result from filtering.
+        if (this._filteredParentTemplatesByCategory.length === 1) {
+            this.set('_selectedAlertTemplateId',this._filteredParentTemplatesByCategory[0].template._id);
+        }
     },
 
     /**
@@ -385,9 +384,6 @@ Polymer({
      * @private
      */
     _createNewAlert: function() {
-        if (!this.querySelector('#newAlertNameInput').validate()) {
-            return;
-        }
         if (!this._selectedAlertTemplateId) {
             this.fire('message-error','Must select an alert template');
             return;
@@ -397,7 +393,6 @@ Polymer({
         var childTemplate = JSON.parse(JSON.stringify(this._parentTemplatesByCategory.filter(function(alertTemplateByCategory) {
             return alertTemplateByCategory.template._id === _this._selectedAlertTemplateId;
         })[0].template));
-        childTemplate.name = this._newAlertName;
         //Load the template immediately if it has a center position defined or no geo section (fallback zone only).
         if (childTemplate.properties.center || !childTemplate.geo) {
             var position = null;
@@ -409,6 +404,7 @@ Polymer({
         }
         else {
             this._displayClickMapMsg = true;
+            this.fire('message-info','Click a location on the map to place the alert...');
             //Change the cursor to a crosshair for accurate placement
             this._map.setOptions({draggableCursor:'crosshair'});
             //Add click listeners to the map so we can drop the new alert wherever they click. First clear the
@@ -456,24 +452,6 @@ Polymer({
                 _this.fire('voyent-alert-template-cancel',{});
             },0);
         }
-    },
-
-    /**
-     * Validates the input field for the new alert name.
-     * @returns {boolean}
-     * @private
-     */
-    _validateNewAlertName: function() {
-        var newAlertNameInput = this.querySelector('#newAlertNameInput');
-        if (!this._newAlertName || !this._newAlertName.trim().length) {
-            newAlertNameInput.setAttribute('error-message','Must specify an alert name');
-            return false;
-        }
-        if (this._newAlertName.length > 60) {
-            newAlertNameInput.setAttribute('error-message','Alert name must not be more than 60 characters');
-            return false;
-        }
-        return true;
     },
 
     /**
