@@ -585,8 +585,7 @@ Polymer({
             _this.querySelector('#editableTemplateCategoriesList').render();
             _this._categoryToUpdate = null;
             _this._associatedTemplates = [];
-        }).catch(function(e) {
-            console.error(e);
+        }).catch(function() {
             _this.fire('message-error', 'Failed to update category, please try again');
             _this._persistingCategories = false;
             _this._categoryToUpdate = null;
