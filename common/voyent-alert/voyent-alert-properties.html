@@ -679,10 +679,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </template>
                         <template is="dom-if" if="[[_templateCategories.length]]">
                             <p class="category-message">
-                                <span class="selected-categories-label no-select">Selected Categories: </span>
-                                <template is="dom-repeat" items="[[_selectedCategories]]" as="sc">
-                                    <span class="selected-categories-item no-select">[[sc.name]]</span>
-                                </template>
+                                <span class="selected-categories-label">Selected Categories: </span>
+                                <span class="selected-categories-text">
+                                    [[_getReadableSelectedCategories(_selectedCategories,_selectedCategories.length)]]
+                                </span>
                             </p>
                             <div class="search-query-input-wrapper">
                                 <paper-input id="categoryQueryInput" label="Filter categories..."

@@ -1511,6 +1511,25 @@ Polymer({
     },
 
     /**
+     * Returns a displayable list of selected template categories.
+     * @returns {string}
+     * @private
+     */
+    _getReadableSelectedCategories: function() {
+        if (!this._selectedCategories.length) {
+            return 'None';
+        }
+        //Build a comma and space separated list of categories.
+        var selectedCategories = this._selectedCategories.map(function(categoryObj) {
+            return categoryObj.name;
+        }).sort(this._sortCategories).toString().split(',').join(', ');
+        //Return the selected category string, slicing off any trailing comma.
+        return selectedCategories.charAt(selectedCategories.length-1) === ',' ?
+            selectedCategories.slice(0,selectedCategories.length-2) :
+            selectedCategories;
+    },
+
+    /**
      * Returns the style classes for the accordion header and body elements.
      * @param section
      * @param active
