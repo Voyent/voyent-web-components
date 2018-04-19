@@ -304,8 +304,11 @@ Polymer({
                 _this.splice('_selectedCategories', index, 1);
             }
             _this._categoryToRemove = null;
+            _this._associatedTemplates = [];
         }).catch(function() {
             _this.fire('message-error', 'Failed to remove category, please try again');
+            _this._categoryToRemove = null;
+            _this._associatedTemplates = [];
         });
     },
 
@@ -315,10 +318,12 @@ Polymer({
      */
     _cancelCategoryDeletion: function() {
         this._closeCategoryDeletionDialog();
+        this._categoryToRemove = null;
+        this._associatedTemplates = [];
     },
 
     /**
-     * Opens a prompt during a deletion when the category being deleted is being used in templates.
+     * Opens a confirmation prompt when the category being deleted is being used in templates.
      * @private
      */
     _openCategoryDeletionDialog: function() {
@@ -329,7 +334,7 @@ Polymer({
     },
 
     /**
-     * Closes the prompt message displayed when the category being deleted is being used in templates.
+     * Closes the confirmation prompt displayed when the category being deleted is being used in templates.
      * @private
      */
     _closeCategoryDeletionDialog: function() {
@@ -436,13 +441,11 @@ Polymer({
      * @private
      */
     _disableCategoryNameEditing: function(categoryObj,persist) {
-        var _this = this;
-        if (!categoryObj) {
+        //Only proceed if we have valid data and if we are not already updating a category.
+        if (!categoryObj || this._categoryToUpdate) {
             return;
         }
         var indexOfCategoryBeingEdited = this._templateCategories.indexOf(categoryObj);
-        var indexOfSelectedCategoryBeingEdited = this._selectedCategories.indexOf(categoryObj);
-        var indexOfFilteredCategoryBeingEdited = this._filteredTemplateCategories.indexOf(categoryObj);
         //If a category input is currently invalid then just hide the input, reverting the changes.
         if (this._categoryInputInvalid) {
             this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
@@ -454,31 +457,8 @@ Polymer({
         //flag to prevent triggering requests to persist the categories more than necessary.
         if (!this._persistingCategories && persist && categoryObj.name !== categoryObj.newName) {
             this._persistingCategories = true;
-            //Generate a flat string array of category names, update the category and save the changes.
-            var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
-                return categoryObj.name;
-            });
-            newTemplateCategories[indexOfCategoryBeingEdited] = categoryObj.newName;
-
-            voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
-                _this._persistingCategories = false;
-                //When renaming an existing category we must update all usages to match.
-                _this._updateCategoryInTemplates(categoryObj.name,categoryObj.newName);
-                //Update our local lists and state.
-                //The category objects are shared in each list but we need to notifyPath for the UI to update.
-                _this.set('_templateCategories.'+indexOfCategoryBeingEdited+'.name',categoryObj.newName);
-                if (indexOfSelectedCategoryBeingEdited > -1) {
-                    _this.notifyPath('_selectedCategories.'+indexOfSelectedCategoryBeingEdited+'.name');
-                }
-                if (indexOfFilteredCategoryBeingEdited > -1) {
-                    _this.notifyPath('_filteredTemplateCategories.'+indexOfFilteredCategoryBeingEdited+'.name');
-                }
-                _this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
-                //Force a re-sort of the categories list.
-               _this.querySelector('#editableTemplateCategoriesList').render();
-            }).catch(function() {
-                _this.fire('message-error', 'Failed to update category, please try again');
-            });
+            this._categoryToUpdate = categoryObj;
+            this._updateCategory();
         }
         else {
             this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
@@ -508,34 +488,144 @@ Polymer({
     },
 
     /**
-     * Handles syncing the category name inside existing alert templates with the new category name.
-     * @param oldCategoryName
-     * @param newCategoryName
+     * Handles updating an existing category and prompting the user if the category is associated with existing templates.
      * @private
      */
-    _updateCategoryInTemplates: function(oldCategoryName,newCategoryName) {
+    _updateCategory: function() {
         var _this = this;
         voyent.locate.findAlertTemplates({
             "query": {
                 "properties.parentAlertId": { "$exists": false },
-                "categories" :oldCategoryName
+                "categories":this._categoryToUpdate.name
             }
         }).then(function(templates) {
-            //If the category is associated with templates then update them.
+            //If the category is associated with templates then prompt the user otherwise just confirm the edit.
             if (templates && templates.length) {
-                for (var i=0; i<templates.length; i++) {
-                    (function(templateToUpdate) {
-                        //Replace the old category name with the new one and update the template.
-                        templateToUpdate.categories[templateToUpdate.categories.indexOf(oldCategoryName)] = newCategoryName;
-                        templateToUpdate.categories.sort(_this._sortCategories);
-                        voyent.locate.updateAlertTemplate({
-                            "id": templateToUpdate._id,
-                            "alertTemplate": templateToUpdate
-                        });
-                    })(templates[i])
+                _this._associatedTemplates = templates;
+                _this._openCategoryUpdateDialog();
+            }
+            else {
+                _this._confirmCategoryUpdate();
+            }
+        }).catch(function () {
+            _this.fire('message-error', 'Issue updating category, please try again.');
+            _this._confirmCategoryUpdate();
+        });
+    },
+
+    /**
+     * Updates a category marked for update in it's associated templates.
+     * @param isRetry
+     * @private
+     */
+    _updateCategoryInTemplates: function(isRetry) {
+        var _this = this;
+        var categoryNameToUpdate = this._categoryToUpdate.name;
+        var newCategoryName = this._categoryToUpdate.newName;
+        var promises = [];
+        for (var i=this._associatedTemplates.length-1; i>=0; i--) {
+            (function(associatedTemplate) {
+                //Replace the old category name with the new one and update the template.
+                associatedTemplate.categories[associatedTemplate.categories.indexOf(categoryNameToUpdate)] = newCategoryName;
+                associatedTemplate.categories.sort(_this._sortCategories);
+                promises.push(voyent.locate.updateAlertTemplate({
+                    "id": associatedTemplate._id,
+                    "alertTemplate": associatedTemplate
+                }).then(function() {
+                    _this.splice('_associatedTemplates',_this._associatedTemplates.indexOf(associatedTemplate),1);
+                }));
+            })(this._associatedTemplates[i])
+        }
+        //Once all the update requests are complete we will confirm and close the dialog.
+        //If for some reason all of the templates we're not updated we will retry the operation once.
+        Promise.all(promises).then(function() {
+            if (_this._associatedTemplates.length) {
+                if (isRetry) {
+                    _this.fire('Problem updating category in ' + _this._associatedTemplates[i].length + 'template(s), please contact an administrator.');
+                    return;
                 }
+                _this._updateCategoryInTemplates(true);
+            }
+            else {
+                _this._confirmCategoryUpdate();
+                _this._closeCategoryUpdateDialog();
             }
         });
+    },
+
+    /**
+     * Confirms updating of a template category and closes the confirmation dialog.
+     * @private
+     */
+    _confirmCategoryUpdate: function() {
+        var _this = this;
+        //Determine the index of the category object in each of our lists so we can update the view.
+        var indexOfCategoryBeingEdited = this._templateCategories.indexOf(this._categoryToUpdate);
+        var indexOfSelectedCategoryBeingEdited = this._selectedCategories.indexOf(this._categoryToUpdate);
+        var indexOfFilteredCategoryBeingEdited = this._filteredTemplateCategories.indexOf(this._categoryToUpdate);
+        //Generate a flat string array of category names, update the category and save the changes.
+        var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
+            return categoryObj.name;
+        });
+        newTemplateCategories[indexOfCategoryBeingEdited] = this._categoryToUpdate.newName;
+
+        voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
+            //Update our local lists and state.
+            _this._persistingCategories = false;
+            _this.set('_templateCategories.'+indexOfCategoryBeingEdited+'.name',_this._categoryToUpdate.newName);
+            //The category objects are shared in each list but we need to notifyPath for the UI to update.
+            if (indexOfSelectedCategoryBeingEdited > -1) {
+                _this.notifyPath('_selectedCategories.'+indexOfSelectedCategoryBeingEdited+'.name');
+            }
+            if (indexOfFilteredCategoryBeingEdited > -1) {
+                _this.notifyPath('_filteredTemplateCategories.'+indexOfFilteredCategoryBeingEdited+'.name');
+            }
+            _this._confirmDisableCategoryNameEditing(indexOfCategoryBeingEdited);
+            //Force a re-sort of the categories list.
+            _this.querySelector('#editableTemplateCategoriesList').render();
+            _this._categoryToUpdate = null;
+            _this._associatedTemplates = [];
+        }).catch(function(e) {
+            console.error(e);
+            _this.fire('message-error', 'Failed to update category, please try again');
+            _this._persistingCategories = false;
+            _this._categoryToUpdate = null;
+            _this._associatedTemplates = [];
+        });
+    },
+
+    /**
+     * Cancels the template category update by closing the confirmation dialog and updating some state.
+     * @private
+     */
+    _cancelCategoryUpdate: function() {
+        this._closeCategoryUpdateDialog();
+        this._confirmDisableCategoryNameEditing(this._templateCategories.indexOf(this._categoryToUpdate));
+        this._persistingCategories = false;
+        this._categoryToUpdate = null;
+        this._associatedTemplates = [];
+    },
+
+    /**
+     * Opens a confirmation prompt when the category being edited is being used in templates.
+     * @private
+     */
+    _openCategoryUpdateDialog: function() {
+        var dialog = this.querySelector('#confirmCategoryUpdateDialog');
+        if (dialog) {
+            dialog.open();
+        }
+    },
+
+    /**
+     * Closes the confirmation prompt displayed when the category being edited is being used in templates.
+     * @private
+     */
+    _closeCategoryUpdateDialog: function() {
+        var dialog = this.querySelector('#confirmCategoryUpdateDialog');
+        if (dialog) {
+            dialog.close();
+        }
     },
 
     /**

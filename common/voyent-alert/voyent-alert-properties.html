@@ -764,7 +764,7 @@ Internal component used to display the properties panel inside Voyent alert comp
         <paper-dialog id="confirmCategoryDeletionDialog" modal on-iron-overlay-opened="_fixModalStacking">
             <p>
                 <template is="dom-if" if="[[_haveOneAssociatedTemplate(_associatedTemplates.length)]]">
-                    This category is associated with [[_associatedTemplates.length]] template.
+                    This category is associated with 1 template.
                     Are you sure you want to remove it (the template will NOT be removed)?
                 </template>
                 <template is="dom-if" if="[[!_haveOneAssociatedTemplate(_associatedTemplates.length)]]">
@@ -775,6 +775,22 @@ Internal component used to display the properties panel inside Voyent alert comp
             <div class="dialog-bttns text-center">
                 <paper-button raised title="Confirm" on-click="_cancelCategoryDeletion">No, Cancel</paper-button>
                 <paper-button raised title="Cancel" on-click="_removeCategoryFromTemplates">Yes, Remove Category</paper-button>
+            </div>
+        </paper-dialog>
+        <paper-dialog id="confirmCategoryUpdateDialog" modal on-iron-overlay-opened="_fixModalStacking">
+            <p>
+                <template is="dom-if" if="[[_haveOneAssociatedTemplate(_associatedTemplates.length)]]">
+                    This category is associated with 1 template.
+                    Are you sure you want to modify it (the template will be updated)?
+                </template>
+                <template is="dom-if" if="[[!_haveOneAssociatedTemplate(_associatedTemplates.length)]]">
+                    This category is associated with [[_associatedTemplates.length]] templates.
+                    Are you sure you want to modify it (the templates will be updated)?
+                </template>
+            </p>
+            <div class="dialog-bttns text-center">
+                <paper-button raised title="Confirm" on-click="_cancelCategoryUpdate">No, Cancel</paper-button>
+                <paper-button raised title="Cancel" on-click="_updateCategoryInTemplates">Yes, Update Category</paper-button>
             </div>
         </paper-dialog>
     </template>
