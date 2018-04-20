@@ -1,6 +1,7 @@
 <link rel="import" href="../../../polymer/polymer.html">
 <link rel="import" href="../imports/voyent.html">
 <link rel="import" href="../../../paper-button/paper-button.html">
+<link rel="import" href="../imports/resize-observer.html">
 
 <script>
     var Voyent = Voyent || {};
@@ -174,8 +175,8 @@
                     }.bind(_this);
                     window.addEventListener('voyent-login-succeeded',onAfterLoginListener);
                 }
-                //Make sure the map is always sized correctly when the window size changes.
-                window.addEventListener('resize', function() { _this.resizeMap(); });
+                //Make sure the map is always sized correctly when the map size changes.
+                new ResizeObserver(_this.resizeMap.bind(_this)).observe(_this.querySelector('#map'));
                 //De-select any selected zone stack on map click.
                 _this._deselectStacksOnClick(_this._map);
                 //Create a general use OverlayView object that so we can access some of its utility functions.
