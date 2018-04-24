@@ -226,6 +226,18 @@ Polymer({
         });
     },
 
+    /**
+     * Returns a JSON representation of the currently loaded alert.
+     * @returns {*}
+     */
+    getCurrentAlert: function() {
+        if (this._loadedAlert && this._loadedAlert.template) {
+            this._loadedAlert.template.updateJSON(true);
+            return this._loadedAlert.template.json;
+        }
+        return null;
+    },
+
     //******************PRIVATE API******************
 
     /**
