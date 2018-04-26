@@ -311,6 +311,36 @@ Polymer({
     },
 
     /**
+     * Handles submitting or closing the new place dialog on enter and escape key presses.
+     * @param e
+     * @private
+     */
+    _handleNewPlaceKeyPress: function(e) {
+        e.stopPropagation();
+        if (e.keyCode === 13) {
+            this._addPlaceToMyLocations();
+        }
+        else if (e.keyCode === 27) {
+            this._toggleInfoWindow();
+        }
+    },
+
+    /**
+     * Handles submitting or closing the new pin drop dialog on enter and escape key presses.
+     * @param e
+     * @private
+     */
+    _handleNewPinDropKeyPress: function(e) {
+        e.stopPropagation();
+        if (e.keyCode === 13) {
+            this._addPinDropToMyLocations();
+        }
+        else if (e.keyCode === 27) {
+            this._toggleInfoWindow();
+        }
+    },
+
+    /**
      * Builds the relevant place details from the Google Places search result.
      * @param place
      * @private
