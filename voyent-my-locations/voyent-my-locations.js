@@ -98,7 +98,6 @@ Polymer({
                 _this.push('_myLocations',locationToSave);
             }
             //_this.fire('message-info','Location ' + msgSuffix);
-            _this._adjustBoundsAndPan();
         }).catch(function () {
             _this.fire('message-error','Location update failed');
         });
@@ -125,7 +124,6 @@ Polymer({
                 _this.splice('_myLocations',indexToRemove,1);
             }
             //_this.fire('message-info','Location removed');
-            _this._adjustBoundsAndPan();
         }).catch(function () {
             locationToRemove.addToMap();
             _this.fire('message-error','Location removal failed');

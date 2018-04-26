@@ -5,6 +5,7 @@
 <link rel="import" href="../common/voyent-tooltip-behaviour.html">
 <link rel="import" href="../../iron-icon/iron-icon.html">
 <link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../../iron-icons/maps-icons.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
@@ -95,6 +96,11 @@ Example:
             .modal-dialog .private-residence,
             .name-input {
                 margin-top:15px !important;
+            }
+            .adjust-bounds {
+                background-color: white !important;
+                color: #006542 !important;
+                border-radius: 5px !important;
             }
             .no-margin {
                 margin: 0;
@@ -204,6 +210,8 @@ Example:
         <div id="customControls" class="custom-control" hidden>
             <paper-button class="glow-green" raised title="Add a new location by Google Map Search"
                           on-click="_addAddressBasedLocation">Add Location...</paper-button>
+            <paper-icon-button class="adjust-bounds" title="Show all of my locations"
+                               icon="maps:zoom-out-map" on-click="_adjustBoundsAndPan"></paper-icon-button>
             <paper-icon-button title="Toggle bubble help" icon="help" on-click="_toggleTooltipHelp"
                                data-tooltip-displayed$="[[_tooltipsDisplayed]]"></paper-icon-button>
         </div>
