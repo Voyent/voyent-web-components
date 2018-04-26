@@ -170,7 +170,7 @@ Example:
                 Choose a template from the list below
             </p>
             <div class="search-query-input-wrapper">
-                <paper-input id="categoryQueryInput" label="Filter templates by name or category..."
+                <paper-input id="categoryQueryInput" label="Filter templates by name or category..." autofocus tabindex="1"
                              on-keyup="_templateSearchQueryKeyUp" value="{{_templateSearchQuery}}"></paper-input>
             </div>
             <div class="table-wrap">
@@ -202,8 +202,8 @@ Example:
                     </iron-selector>
                 </div>
                 <div class="dialog-buttons-wrapper text-center">
-                    <paper-button raised title="Cancel changes" on-click="_cancelNewAlert">Cancel</paper-button>
-                    <paper-button raised title="Confirm changes" on-click="_createNewAlert">Confirm</paper-button>
+                    <paper-button raised title="Cancel changes" on-click="_cancelNewAlert" tabindex="2">Cancel</paper-button>
+                    <paper-button raised title="Confirm changes" on-click="_createNewAlert" tabindex="3">Confirm</paper-button>
                 </div>
             </div>
         </paper-dialog>

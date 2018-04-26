@@ -315,12 +315,6 @@ Polymer({
         var dialog = this.querySelector('#newAlertDialog');
         if (dialog) {
             dialog.open();
-            setTimeout(function() {
-                var input = document.querySelector('#categoryQueryInput');
-                if (input) {
-                    input.focus();
-                }
-            },200);
         }
     },
 
