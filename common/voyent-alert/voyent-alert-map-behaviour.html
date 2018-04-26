@@ -1237,12 +1237,16 @@
             if (this._fullscreenControlAdded) { return; }
             this._isFullscreenMode = false;
             var fullscreenButton = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
-            fullscreenButton.removeAttribute('hidden');
             this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(fullscreenButton);
             fullscreenButton.onclick = this._toggleFullscreenContainer.bind(this);
             this._fullscreenControlAdded = true;
             //Add click listener to the map so the user can click on the map to enable fullscreen.
             this._addFullscreenClickListener(this._map);
+            //Small delay so the fullscreen button doesn't flicker outside
+            //of the map before being rendered in the correct location.
+            setTimeout(function() {
+                fullscreenButton.removeAttribute('hidden');
+            },500);
         },
 
         /**
