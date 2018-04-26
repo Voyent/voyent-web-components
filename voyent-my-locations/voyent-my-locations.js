@@ -543,7 +543,6 @@ Polymer({
                 icon: this._MY_LOCATION_ICON_INACTIVE
         }),'created');
         this._pinDropLocation = null;
-        //this._closeInfoWindow();
         this._toggleInfoWindow(null,true);
     },
 
@@ -562,7 +561,6 @@ Polymer({
                 icon: this._MY_LOCATION_ICON_INACTIVE
         }),'created');
         this._selectedPlace = null;
-        //this._closeInfoWindow();
         this._toggleInfoWindow(null,true);
     },
 
@@ -772,10 +770,12 @@ Polymer({
         if (!locationName || !locationName.trim()) {
             elem.setAttribute('error-message','Location must have a name');
             this._locationNameValid = false;
+            return this._locationNameValid;
         }
         if (locationName.length > 60) {
             elem.setAttribute('error-message','Location name must not be more than 60 characters');
             this._locationNameValid = false;
+            return this._locationNameValid;
         }
         for (var i=0; i<this._myLocations.length; i++) {
             //Don't compare the location against itself.
@@ -785,6 +785,7 @@ Polymer({
             if (this._myLocations[i].name === locationName) {
                 elem.setAttribute('error-message','Name must be unique');
                 this._locationNameValid = false;
+                return this._locationNameValid;
             }
         }
         return this._locationNameValid;
@@ -821,6 +822,9 @@ Polymer({
      * @private
      */
     _selectedPlaceNameChanged: function() {
+        if (this._selectedPlace === null) {
+            return;
+        }
         var elem = this.querySelector('#placeLocationName');
         if (elem) {
             elem.validate();
@@ -832,6 +836,9 @@ Polymer({
      * @private
      */
     _pinDropNameChanged: function() {
+        if (this._pinDropLocation === null) {
+            return;
+        }
         var elem = this.querySelector('#pinDropLocationName');
         if (elem) {
             elem.validate();
@@ -843,6 +850,9 @@ Polymer({
      * @private
      */
     _dialogNameChanged: function() {
+        if (this._dialogLocationName === null) {
+            return;
+        }
         var elem = this.querySelector('#dialogLocationName');
         if (elem) {
             elem.validate();
