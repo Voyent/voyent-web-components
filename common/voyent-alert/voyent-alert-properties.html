@@ -642,7 +642,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <p>[[_dialogMessage]]</p>
                 </template>
                 <template is="dom-if" if="[[_showDialogInput]]">
-                    <paper-input autofocus no-label-float on-keyup="_dialogKeyUp" value="{{_dialogInput}}"></paper-input>
+                    <paper-input autofocus no-label-float on-keyup="_dialogKeyUp" maxlength="70" value="{{_dialogInput}}"></paper-input>
                 </template>
                 <template is="dom-if" if="[[_showDialogToggle]]">
                     <div class="text-center">
