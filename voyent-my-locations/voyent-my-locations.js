@@ -245,7 +245,7 @@ Polymer({
                 _this._loadedLocation = selectedLocation;
                 _this._ignoreLocationNameChanged = true;
                 _this._infoWindowLocationName = _this._loadedLocation.name;
-                _this._locationNameValid = false;
+                _this._locationNameValid = true;
                 _this._inputPrivateResidence = _this._loadedLocation.isPrivateResidence;
                 _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
                 //Hide the current location's overlay.
