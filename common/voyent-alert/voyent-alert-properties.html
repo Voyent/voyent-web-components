@@ -288,7 +288,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 border: 2px black solid;
                 height: 40px;
                 cursor: pointer;
-                line-height: 40px;
+                line-height: 36px;
                 text-align: center;
                 display: inline-block;
                 margin: -2px 4px 0 0;
@@ -301,10 +301,9 @@ Internal component used to display the properties panel inside Voyent alert comp
                 position:relative;
             }
             .category-item.iron-selected {
-                border: 5px outset #2E348E;
-                color: #2E348E;
-                line-height: 34px;
-                padding: 0 17px;
+                background-color: var(--app-primary-color,#2E348E);
+                border: 2px outset black;
+                color: white;
             }
             .category-item[data-editing] {
                 height: 80px;
