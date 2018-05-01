@@ -195,9 +195,12 @@ Polymer({
      * @private
      */
     _closeCategoryManager: function() {
-        //If we are currently editing a category and the user closes the category manager then don't save the changes.
+        //If we are currently editing or creating a new category and the user closes the category manager then save the changes.
         if (this._categoryBeingEdited) {
-            this._disableCategoryNameEditing(this._categoryBeingEdited,false);
+            this._disableCategoryNameEditing(this._categoryBeingEdited,true);
+        }
+        if (this._addingNewCategory) {
+            this._disableNewCategoryInput(true);
         }
         //Toggle the category manager pane.
         this.set('_showCategoryManager',false);
@@ -394,6 +397,14 @@ Polymer({
                     "newName": '',
                     "editing": false
                 });
+                //If the category manager is not shown it means the user typed in a new category and then immediately
+                //clicked done. In this case we need to be sure to update the lists in the category selector.
+                if (!_this._showCategoryManager) {
+                    //Ensure our filtered list is up to date and any previous search results are applied.
+                    _this.set('_filteredTemplateCategories',_this._templateCategories.slice(0));
+                    _this.set('_selectedCategories',_this._selectedCategories.slice(0));
+                    _this._queryCategories(_this._categorySearchQuery);
+                }
                 _this._confirmDisableNewCategoryInput();
             }).catch(function() {
                 _this.fire('message-error', 'Failed to add new category, please try again');
