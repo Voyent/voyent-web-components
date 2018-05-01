@@ -80,7 +80,6 @@
 
             // Do these async so we ensure our tooltip and target are sized
             setTimeout(function() {
-                var tooltipRect = tooltip.getBoundingClientRect();
                 var targetRect = target.getBoundingClientRect();
 
                 if (position === 'above' || position === 'below') {
@@ -90,26 +89,30 @@
                     else { // 'below' - Tooltip rendered below target, arrow up
                         tooltip.style.top = (targetRect.bottom + topPadding) + 'px';
                     }
-                    tooltip.style.left = (targetRect.left - (tooltipRect.width/2) + (targetRect.width/2) + leftPadding) + "px";
+                    tooltip.style.left = (targetRect.left - (tooltip.offsetWidth/2) + (target.offsetWidth/2) + leftPadding) + "px";
+                    //Set the horizontal tooltip position again immediately to ensure the tooltip width is calculated correctly (VRAS-305 Issue #2)
+                    setTimeout(function() {
+                        tooltip.style.left = (targetRect.left - (tooltip.offsetWidth/2) + (target.offsetWidth/2) + leftPadding) + "px";
+                    },0);
                 }
                 else if (position.indexOf('centered') >= 0) {
                     if (position === 'centered') { // Tooltip rendered at the center of target, with no arrow
-                        tooltip.style.top = (targetRect.top + (targetRect.height/2) - (tooltipRect.height/2) + topPadding) + 'px';
+                        tooltip.style.top = (targetRect.top + (target.offsetHeight/2) - (tooltip.offsetHeight/2) + topPadding) + 'px';
                     }
                     else if (position === 'centered-top') { // Tooltip rendered at the top of target, with arrow down
                         tooltip.style.top = (targetRect.top + topPadding) + 'px';
                     }
                     else { // 'centered-bottom' - Tooltip rendered at the bottom of target, with arrow up
-                        tooltip.style.top = (targetRect.height - tooltipRect.height + topPadding) + 'px';
+                        tooltip.style.top = (target.offsetHeight - tooltip.offsetHeight + topPadding) + 'px';
                     }
-                    tooltip.style.left = (targetRect.left + (targetRect.width/2) - (tooltipRect.width/2) + leftPadding) + 'px';
+                    tooltip.style.left = (targetRect.left + (target.offsetWidth/2) - (tooltip.offsetWidth/2) + leftPadding) + 'px';
                 }
                 else if (position === 'left-top') { // Tooltip rendered in the top-left corner, with arrow down
                     tooltip.style.top = (targetRect.top + topPadding) + 'px';
                     tooltip.style.left = (targetRect.left + leftPadding) + 'px';
                 }
                 else if (position === 'left-bottom') { // Tooltip rendered in the bottom-left corner, with arrow up
-                    tooltip.style.top = (targetRect.bottom - tooltipRect.height + topPadding) + 'px';
+                    tooltip.style.top = (targetRect.bottom - tooltip.offsetHeight + topPadding) + 'px';
                     tooltip.style.left = (targetRect.left + leftPadding) + 'px';
                 }
             },0);

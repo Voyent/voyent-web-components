@@ -412,7 +412,7 @@ Polymer({
      * Toggles tooltip help bubbles.
      * @private
      */
-    _toggleTooltipHelp: function() {
+    _toggleBubbleHelp: function() {
         this._toggleTooltips();
         this._repositionTooltips();
         this._tooltipsDisplayed = !this._tooltipsDisplayed;
