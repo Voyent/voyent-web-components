@@ -990,6 +990,10 @@
                 }
                 //Apply the styles
                 _this.updateStyles();
+                //Update the position of any displayed tooltips.
+                if (_this._tooltipsDisplayed) {
+                    _this._repositionTooltips();
+                }
             },0);
         },
 
