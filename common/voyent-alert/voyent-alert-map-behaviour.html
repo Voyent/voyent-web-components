@@ -73,18 +73,18 @@
              * The height of the google map to be created, as an integer. If left empty we will default to the height
              * of the parent container. If a height cannot be found then a default minimum of 500 will be used.
              */
-            height: Number,
+            height: { type: Number, observer: '_mapSizePropertyChanged' },
             /**
              * The width of the google map to be created, as an integer. If left empty we will default to the width of the
              * parent container minus the width of the side panel.
              */
-            width: Number,
+            width: { type: Number, observer: '_mapSizePropertyChanged' },
             /**
              * Enable a percent of the full page height to automatically fill with the map. To disable use a value of -1.
              * Height = "h*autoheight" so 0.8 corresponds to 80% of the page height. 1.2 would be 120%, etc.
              * @default -1
              */
-            autoheight: { type: Number, value: -1, notify: true },
+            autoheight: { type: Number, value: -1, notify: true, observer: '_mapSizePropertyChanged' },
             /**
              * The relative path to the `img` resource directory. This may be
              * necessary when using the component as part of a custom build.
@@ -989,6 +989,10 @@
                 }
                 //Apply the styles
                 _this.updateStyles();
+                //Update the position of any displayed tooltips.
+                if (_this._tooltipsDisplayed) {
+                    _this._repositionTooltips();
+                }
             },0);
         },
 
@@ -1400,6 +1404,13 @@
                 //Refresh the map with the latest data.
                 this.fetchAlertTemplates();
             }
+        },
+
+        /**
+         * Listens for changes to map size related properties and recalculates and sizes the map.
+         */
+        _mapSizePropertyChanged: function() {
+            this._calcMapSize();
         },
 
         /**
