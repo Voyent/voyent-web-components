@@ -168,6 +168,7 @@
                     //Add the fullscreen control.
                     _this._addFullscreenControl();
                 }
+                _this._manageMaxZoomLevel(); //Ensure we always have imagery in satellite view modes.
                 _this._regionMapping = {}; //Map of region data so we can toggle between them.
                 _this._isLoggedIn = false; //Toggle for side panel.
                 //Custom initialization for each component after login.
@@ -1557,6 +1558,39 @@
             var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_ID);
             if (fallbackZoneButton) {
                 this.toggleClass('selected', false, fallbackZoneButton.querySelector(bttnClass));
+            }
+        },
+
+        /**
+         * Initializes listeners to manage the max zoom level of the map. This is to
+         * ensure that we always have imagery in satellite view modes (see VRAS-367).
+         * @private
+         */
+        _manageMaxZoomLevel: function() {
+            var _this = this;
+
+            google.maps.event.addListener(this._map, 'center_changed', function () {
+                if (_this._map.get('mapTypeId') === 'satellite' ||
+                    _this._map.get('mapTypeId') === 'hybrid') {
+                    setMaxZoomLevel();
+                }
+            });
+            google.maps.event.addListener(this._map, 'maptypeid_changed', function() {
+                if (_this._map.get('mapTypeId') === 'satellite' ||
+                    _this._map.get('mapTypeId') === 'hybrid') {
+                    setMaxZoomLevel();
+                }
+                else {
+                    _this._map.setOptions({maxZoom: null});
+                }
+            });
+            function setMaxZoomLevel() {
+                new google.maps.MaxZoomService().getMaxZoomAtLatLng(_this._map.getCenter(), function(response) {
+                    if (response.status !== 'OK') {
+                        return;
+                    }
+                    _this._map.setOptions({maxZoom: response.zoom});
+                });
             }
         },
 
