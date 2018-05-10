@@ -89,7 +89,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .row {
                 width: 100%;
-                padding:0 10px 0 10px;
+                padding:0 10px;
             }
             .propertyCol,
             .valueCol,
@@ -235,6 +235,10 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .bold {
                 font-weight: bold;
+            }
+            .moving-alerts-msg {
+                font-size: 13px;
+                padding: 0 10px;
             }
             .category-manager-dialog-wrapper {
                 max-width: 650px;
@@ -388,6 +392,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                             </div>
                         </div>
                         <div class$="{{_getAccordionClasses('body',_showMovement,'')}}">
+                            <p class="moving-alerts-msg"><strong>Note:</strong> Moving alerts are restricted to a maximum of two zones, excluding the "Entire Region" zone.</p>
                             <div class="table">
                                 <div class="row">
                                     <div class="inputCol movement">
