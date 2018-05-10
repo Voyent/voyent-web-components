@@ -1471,7 +1471,7 @@ Polymer({
             this._alertDirection = 360;
             return;
         }
-        else if (this._alertDirection < 0) { //Force 0 min (this would only occur if they pasted in a negative value).
+        else if (this._alertDirection < 0) { //Force 0 min.
             this._alertDirection = 0;
             return;
         }
@@ -1498,11 +1498,11 @@ Polymer({
             //This prevents the user from typing the - character which is permitted for number fields.
             this._alertSpeed = null;
         }
-        else if (this._alertSpeed > 999) { //Force 999 max.
-            this._alertSpeed = 999;
+        else if (this._alertSpeed > 500) { //Force 500 max.
+            this._alertSpeed = 500;
         }
-        else if (this._alertSpeed < 0) { //Force 0 min (this would only occur if they pasted in a negative value).
-            this._alertSpeed = 0;
+        else if (this._alertSpeed <= 0) { //Force 1 min.
+            this._alertSpeed = 1;
         }
     },
 

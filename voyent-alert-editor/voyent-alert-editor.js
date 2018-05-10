@@ -121,7 +121,7 @@ Polymer({
         }
         var isNewActivation = !this._loadedAlert.template.id || this._loadedAlert.template.state === 'draft';
         this._loadedAlert.template.setState(this._loadedAlert.template.hasSchedule() ? 'scheduled' : 'active');
-        this.saveAlert().then(function() {
+        this._saveAlert().then(function() {
             if (isNewActivation) {
                 if (_this._loadedAlert.template.state === 'scheduled') {
                     _this.fire('message-info', 'New alert scheduled');
@@ -138,7 +138,7 @@ Polymer({
                     _this.fire('message-info', 'Alert successfully revised');
                 }
             }
-        });
+        }).catch(function(e) {});
     },
 
     /**

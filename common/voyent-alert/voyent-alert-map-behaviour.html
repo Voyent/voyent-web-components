@@ -234,6 +234,15 @@
          * Saves or updates the current alert.
          */
         saveAlert: function() {
+            this._saveAlert().catch(function(e){})
+        },
+
+        /**
+         * Wrapped function for `saveAlert` that returns a Promise for internal component use.
+         * @returns {Promise}
+         * @private
+         */
+        _saveAlert: function() {
             var _this = this, msg;
             return new Promise(function (resolve, reject) {
                 if (_this._savingAlert) { return reject('already saving alert'); }

@@ -148,6 +148,13 @@
                 this.fire('message-error','Please define at least one zone');
                 return false;
             }
+            //Ensure we have both movement parameters or none at all.
+            if (this.nodeName === 'VOYENT-ALERT-EDITOR' &&
+                ((this._alertSpeed && (!this._alertDirection && this._alertDirection !== 0)) ||
+                (this._alertDirection || this._alertDirection === 0) && !this._alertSpeed)) {
+                this.fire('message-error','Moving alerts must have both a speed and direction defined');
+                return false;
+            }
             if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !this._skipCategoryValidation &&
                 (!this._loadedAlert.template.categories || !this._loadedAlert.template.categories.length)) {
                 this._openUncategorizedTemplateDialog();
