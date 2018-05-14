@@ -560,6 +560,7 @@
          */
         _fetchMyLocations: function() {
             var _this = this;
+            this._fetchingMyLocations = true;
             return new Promise(function (resolve, reject) {
                 voyent.query.executeQuery({
                     realm:_this.realm, account:_this.account,
@@ -576,6 +577,7 @@
                             return obj.location;
                         })
                     }
+                    _this._fetchingMyLocations = false;
                     resolve(locations);
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching location records: ' + (error.responseText || error.message || error));
@@ -1497,12 +1499,16 @@
                 nc.x - location.nameOverlay.div.offsetWidth/2,
                 nc.y-64
             ));
-            bounds.extend(nwCoordinate);
+            if (!this._map.getBounds().contains(nwCoordinate)) {
+                bounds.extend(nwCoordinate);
+            }
             var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
                 nc.x + location.nameOverlay.div.offsetWidth/2,
                 nc.y-64+location.nameOverlay.div.offsetHeight
             ));
-            bounds.extend(seCoordindate);
+            if (!this._map.getBounds().contains(seCoordindate)) {
+                bounds.extend(seCoordindate);
+            }
         },
 
         /**

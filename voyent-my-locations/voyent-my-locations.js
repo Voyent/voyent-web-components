@@ -113,19 +113,17 @@ Polymer({
             this.fire('message-error','You must have at least one location');
             return;
         }
-        //Close the info window and specify we don't want to save the location.
-        var locationToRemove = this._loadedLocation;
-        this._toggleInfoWindow(null,true);
-        locationToRemove.removeFromMap();
-        var query = {"location.properties.vras.id":locationToRemove.id};
+        this._closeInfoWindow(true);
+        this._loadedLocation.removeFromMap();
+        var query = {"location.properties.vras.id":this._loadedLocation.id};
         voyent.locate.deleteLocations({account:this.account,realm:this.realm,query:query}).then(function() {
-            var indexToRemove = _this._myLocations.indexOf(locationToRemove);
+            var indexToRemove = _this._myLocations.indexOf(_this._loadedLocation);
             if (indexToRemove > -1) {
                 _this.splice('_myLocations',indexToRemove,1);
             }
             //_this.fire('message-info','Location removed');
         }).catch(function () {
-            locationToRemove.addToMap();
+            _this._loadedLocation.addToMap();
             _this.fire('message-error','Location removal failed');
         });
     },
@@ -140,6 +138,7 @@ Polymer({
         this._resetDialogProperties();
         //Open the dialog and initialize the autocomplete.
         this._openDialog(function () {
+            _this._closeInfoWindow();
             setTimeout(function() {
                 _this._createLocation(_this._dialogLocationName,_this._isPrivateResidence,
                     new google.maps.Marker({
@@ -185,15 +184,19 @@ Polymer({
         //Initialize infoWindow object for later.
         _this._infoWindow = new google.maps.InfoWindow();
         google.maps.event.addListener(_this._map, 'click', function(e) {
-            //Close any open infoWindow.
-            _this._toggleInfoWindow();
+            //If the info window is open we will close it and if the user did not
+            //click on a place we will also pan the map to show all the locations.
+            if (_this._infoWindowOpen) {
+                _this._closeInfoWindow();
+                if (!e.placeId) {
+                    _this._adjustBoundsAndPan();
+                }
+            }
             //If we have a placeId then it means a location of interest was clicked on the map. In this case we will
             //replace the default infoWindow with a custom one so the user can optionally add it to their locations.
             if (e.placeId) {
                 //Prevent the default info window from opening.
                 e.stop();
-                _this._loadedLocation = null;
-                _this._pinDropLocation = null;
                 _this._placesService.getDetails({placeId: e.placeId}, function(place,status) {
                     if (status === 'OK') {
                         _this._selectedPlace = _this._buildPlaceDetails(place);
@@ -201,18 +204,19 @@ Polymer({
                     else {
                         _this._selectedPlace = {
                             "name":'Unknown Location',
-                            "latLng":e.latLng
+                            "latLng":e.latLng,
+                            "type": 'place'
                         };
                     }
                     //Open the info window.
-                    _this._toggleInfoWindow();
+                    _this._toggleInfoWindow(_this._selectedPlace);
                 });
             }
         });
         //When clicking the close button on the infoWindow redisplay the overlay.
         google.maps.event.addListener(_this._infoWindow,'closeclick',function() {
-            //Reset these on info window x button click to ensure they are reset when
-            _this._toggleInfoWindow();
+            _this._closeInfoWindow();
+            _this._adjustBoundsAndPan();
         });
     },
 
@@ -224,24 +228,24 @@ Polymer({
      */
     _toggleInfoWindow: function(selectedLocation,skipSave) {
         var _this = this;
+        //If the info window is already open then we will close it.
         if (this._infoWindowOpen) {
-            //If the info window is already open then we will close it.
+            //Always skip pan if we are opening another info window and one is already open.
             this._closeInfoWindow(!!skipSave);
             //If no location was selected or the location that was selected is
-            //already selected then close the info window and do nothing else.
+            //already selected then just close the info window and pan the map.
             if (!selectedLocation || (selectedLocation && selectedLocation === this._loadedLocation)) {
-                //Reset our state, no locations are loaded, places selected or pin drop locations active.
-                this._loadedLocation = null;
-                this._selectedPlace = null;
-                this._pinDropLocation = null;
+                this._adjustBoundsAndPan();
                 return;
             }
         }
         //Do this async so we don't get rendering flicker when opening the info window.
         setTimeout(function() {
-            //If we were passed a location then select it otherwise if we
-            //have a selected place then render the custom info window.
-            if (selectedLocation) {
+            if (selectedLocation instanceof _this._MyLocation) {
+                //Reset state so the correct infoWindow is shown
+                _this._pinDropLocation = null;
+                _this._selectedPlace = null;
+                //Load the location details and open the infoWindow
                 _this._loadedLocation = selectedLocation;
                 _this._ignoreLocationNameChanged = true;
                 _this._infoWindowLocationName = _this._loadedLocation.name;
@@ -251,27 +255,37 @@ Polymer({
                 //Hide the current location's overlay.
                 _this._loadedLocation.nameOverlay.hide();
                 selectedLocation.marker.setIcon(_this._MY_LOCATION_ICON_ACTIVE);
+                //Pan to the location and ensure input validation state is correct
                 setTimeout(function() {
+                    _this._panToLatLng(selectedLocation.marker.getPosition());
                     _this.querySelector('#infoWindowLocationName').invalid = false;
                 },0);
             }
-            else if (_this._selectedPlace) {
-                _this._infoWindow.setPosition(_this._selectedPlace.latLng);
+            else if (selectedLocation.type === 'place') {
+                //Reset template state so the correct infoWindow is shown
+                _this._pinDropLocation = null;
+                _this._loadedLocation = null;
+                //Set the infoWindow position and open it
+                _this._infoWindow.setPosition(selectedLocation.latLng);
                 _this._infoWindow.open(_this._map);
+                //Pan to the location and ensure input validation state is correct
                 setTimeout(function() {
+                    _this._panToLatLng(selectedLocation.latLng);
                     _this.querySelector('#placeLocationName').invalid = false;
                 },0);
             }
-            else if (_this._pinDropLocation) {
-                _this._infoWindow.setPosition(_this._pinDropLocation.latLng);
+            else if (selectedLocation.type === 'pindrop') {
+                //Reset state so the correct infoWindow is shown
+                _this._selectedPlace = null;
+                _this._loadedLocation = null;
+                //Set the infoWindow position and open it
+                _this._infoWindow.setPosition(selectedLocation.latLng);
                 _this._infoWindow.open(_this._map);
+                //Pan to the location and ensure input validation state is correct
                 setTimeout(function() {
+                    _this._panToLatLng(selectedLocation.latLng);
                     _this.querySelector('#pinDropLocationName').invalid = false;
                 },0);
-            }
-            else {
-                //If no location was selected or we don't have data for place or pin drop locations then just return.
-                return;
             }
             _this.$.infoWindow.removeAttribute('hidden');
             _this._infoWindow.setContent(_this.$.infoWindow);
@@ -297,14 +311,18 @@ Polymer({
     },
 
     /**
-     * Handles closing the infoWindow on location name input key presses.
+     * Handles submitting or closing the existing location dialog on enter and escape key presses.
      * @param e
      * @private
      */
     _handleInfoWindowKeyPress: function(e) {
-        //Close the infoWindow on Enter or Esc key presses
-        if (e.keyCode === 13 || e.keyCode === 27) {
-            this._toggleInfoWindow(this._loadedLocation);
+        if (e.keyCode === 13) {
+            this._closeInfoWindow();
+            this._adjustBoundsAndPan();
+        }
+        else if (e.keyCode === 27) {
+            this._closeInfoWindow(true);
+            this._adjustBoundsAndPan();
         }
     },
 
@@ -319,7 +337,8 @@ Polymer({
             this._addPlaceToMyLocations();
         }
         else if (e.keyCode === 27) {
-            this._toggleInfoWindow();
+            this._closeInfoWindow(true);
+            this._adjustBoundsAndPan();
         }
     },
 
@@ -334,7 +353,8 @@ Polymer({
             this._addPinDropToMyLocations();
         }
         else if (e.keyCode === 27) {
-            this._toggleInfoWindow();
+            this._closeInfoWindow(true);
+            this._adjustBoundsAndPan();
         }
     },
 
@@ -346,7 +366,8 @@ Polymer({
     _buildPlaceDetails: function(place) {
         var selectedPlace = {
             "name":place.name,
-            "latLng":place.geometry.location
+            "latLng":place.geometry.location,
+            "type": 'place'
         };
         var addressComponent;
         for (var i=0; i<place.address_components.length; i++) {
@@ -530,15 +551,14 @@ Polymer({
                 _this._mouseHoldOverlay.setMap(null);
                 _this._mouseHoldOverlay = null;
                 //Reset some values and create a container for our pin drop location data.
-                _this._loadedLocation = null;
-                _this._selectedPlace = null;
                 _this._pinDropLocation = {
                     "name":'',
                     "isPrivateResidence":false,
-                    "latLng":e.latLng
+                    "latLng":e.latLng,
+                    "type": "pindrop"
                 };
-                //Open the infoWindow.
-                _this._toggleInfoWindow(null);
+                //Open the info window.
+                _this._toggleInfoWindow(_this._pinDropLocation);
             }
             clearTimeout(_this._mouseHoldTimer);
             _this._mouseHoldTimer = null;
@@ -695,8 +715,7 @@ Polymer({
      * @private
      */
     _adjustBoundsAndPan: function() {
-        //Temporary set the maxZoom so the map doesn't zoom in too far when panning.
-        this._map.setOptions({maxZoom:16});
+        this._map.setOptions({maxZoom:18});
         var bounds = new google.maps.LatLngBounds();
         if (this._myLocations.length) {
             for (var i=0; i<this._myLocations.length; i++) {
@@ -711,6 +730,20 @@ Polymer({
             this._skipRegionPanning = false;
             this._zoomOnRegion();
         }
+        this._map.setOptions({maxZoom:null});
+    },
+
+    /**
+     * Pans the map bounds to the provided LatLng coordinates.
+     * @param latLng
+     * @private
+     */
+    _panToLatLng: function(latLng) {
+        this._map.setOptions({maxZoom:18});
+        var bounds = new google.maps.LatLngBounds();
+        bounds.extend(latLng);
+        this._map.fitBounds(bounds);
+        this._map.panToBounds(bounds);
         this._map.setOptions({maxZoom:null});
     },
 
@@ -827,6 +860,10 @@ Polymer({
     _myLocationsUpdated: function(length) {
         //Always skip panning to the region when we have at least one location.
         this._skipRegionPanning = !!length;
+        //Whenever we save or remove a location we will adjust the map bounds to include all the locations.
+        if (!this._fetchingMyLocations) {
+            this._adjustBoundsAndPan();
+        }
     },
 
     /**
