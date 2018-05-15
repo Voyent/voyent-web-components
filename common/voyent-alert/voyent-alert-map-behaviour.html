@@ -187,7 +187,10 @@
                 //Make sure the map is always sized correctly when the window size changes.
                 window.addEventListener('resize', function() {
                     //Async so isPortrait will fire first.
-                    setTimeout(function() {_this.resizeMap();},0);
+                    setTimeout(function() {
+                        console.log('resizing map from window.resize listener...');
+                        _this.resizeMap();
+                        },0);
                 });
                 //Make sure the map is always sized correctly when the map size changes.
                 new ResizeObserver(function() {
@@ -201,6 +204,7 @@
                         }
                         _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
                         _this._previousMapHeight = _this.querySelector('#map').offsetHeight;
+                        console.log('resizing map from map.ResizeObserver listener...');
                         _this.resizeMap();
                     },0);
                 }).observe(_this.querySelector('#map'));
@@ -237,6 +241,7 @@
          */
         resizeMap: function() {
             var _this = this;
+            console.log('resizing map...');
             this._resizingMap = true;
             this._mapIsReady().then(function() {
                 _this._calcMapSize();
@@ -1419,6 +1424,7 @@
             if (this._preventBoundsChange) {
                 return;
             }
+            console.log('adjust map bounds...');
             var bounds = new google.maps.LatLngBounds();
             if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations))) {
                 var i;

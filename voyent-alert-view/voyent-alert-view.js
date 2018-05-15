@@ -327,12 +327,14 @@ Polymer({
     _isPortraitChanged: function() {
         var _this = this;
         if (this.isMobile && this._isFullscreenMode) {
+            console.log('isPortrait changed...');
             this._preventBoundsChange = true;
             var previousCenter = this._map.getCenter();
             this._toggleFullscreenContainer();
             setTimeout(function() {
                 _this._toggleFullscreenContainer();
                 _this._waitForMapResize(function() {
+                    console.log('setting map center...');
                     _this._map.setCenter(previousCenter);
                     _this._preventBoundsChange = false;
                 });
@@ -364,6 +366,7 @@ Polymer({
             return;
         }
         _this._resizingMapWaitCount = 0;
+        console.log('map resize complete!');
         cb();
     }
 });
