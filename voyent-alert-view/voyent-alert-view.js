@@ -327,7 +327,7 @@ Polymer({
     _isPortraitChanged: function() {
         var _this = this;
         if (this.isMobile && this._isFullscreenMode) {
-            console.log('isPortrait changed...');
+            console.log('setting _isPortraitChanging...');
             this._isPortraitChanging = true;
             var previousCenter = this._map.getCenter();
             this._toggleFullscreenContainer();
@@ -337,6 +337,7 @@ Polymer({
                     console.log('setting map center...');
                     _this._map.setCenter(previousCenter);
                     setTimeout(function() {
+                        console.log('resetting _isPortraitChanging');
                         _this._isPortraitChanging = false;
                     },1000);
                 });

@@ -188,7 +188,7 @@
                 window.addEventListener('resize', function() {
                     //Async so isPortrait will fire first.
                     setTimeout(function() {
-                        console.log('resizing map from window.resize listener...');
+                        console.log('resizing map from window.resize listener...',window.innerWidth,window.innerHeight);
                         _this.resizeMap();
                         },0);
                 });
@@ -204,7 +204,7 @@
                         }
                         _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
                         _this._previousMapHeight = _this.querySelector('#map').offsetHeight;
-                        console.log('resizing map from map.ResizeObserver listener...');
+                        console.log('resizing map from map.ResizeObserver listener...',_this._previousMapWidth,_this._previousMapHeight);
                         _this.resizeMap();
                     },0);
                 }).observe(_this.querySelector('#map'));
