@@ -319,9 +319,9 @@ Polymer({
     },
 
     /**
-     * Monitors the `isPortrait` property and hides and shows the fullscreen modal dialog if it is currently visible.
-     * This ensures that the styling will be correct when the orientation changes. We will also try to maintain the
-     * user-defined map position and zoom level with the help of a couple of flags (_preventBoundsChange, _resizingMap).
+     * Monitors the `isPortrait` property and hides and shows the fullscreen modal dialog if it
+     * is currently visible. This ensures that the styling will be correct when the orientation
+     * changes.  We will also try to maintain the user-defined map position and zoom level.
      * @private
      */
     _isPortraitChanged: function() {
