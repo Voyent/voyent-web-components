@@ -1421,7 +1421,7 @@
          * @private
          */
         _adjustBoundsAndPan: function() {
-            if (this._preventBoundsChange || (this.isMobile && this._isFullscreenMode)) {
+            if (this._isPortraitChanging) {
                 return;
             }
             console.log('adjust map bounds...');
