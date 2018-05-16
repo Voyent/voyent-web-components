@@ -327,6 +327,7 @@ Polymer({
     _isPortraitChanged: function() {
         var _this = this;
         if (this.isMobile && this._isFullscreenMode) {
+            this._mapCenterBeforeOrientationChange = this._map.getCenter();
             this._toggleFullscreenContainer();
             setTimeout(function() {
                 _this._toggleFullscreenContainer();

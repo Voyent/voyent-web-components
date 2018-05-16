@@ -1289,9 +1289,11 @@
          * @private
          */
         _toggleFullscreenContainer: function(toggledByUser) {
-            var _this = this;
             if (toggledByUser) {
-                _this._fullscreenEnabledByUser = !_this._isFullscreenMode;
+                this._fullscreenEnabledByUser = !this._isFullscreenMode;
+                if (!this._fullscreenEnabledByUser) {
+                    this._mapCenterBeforeOrientationChange = null;
+                }
             }
             // Open or close the dialog depending on the current state
             if (this._isFullscreenMode) {
@@ -1425,7 +1427,10 @@
          * @private
          */
         _adjustBoundsAndPan: function(forceMapPan) {
-            if (this._fullscreenEnabledByUser && !forceMapPan) {
+            if (this._fullscreenEnabledByUser && !forceMapPan) { //VRAS-306
+                if (this._mapCenterBeforeOrientationChange) {
+                    this._map.setCenter(this._mapCenterBeforeOrientationChange);
+                }
                 return;
             }
             var bounds = new google.maps.LatLngBounds();
