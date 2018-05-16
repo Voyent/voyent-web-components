@@ -186,27 +186,19 @@
                 }
                 //Make sure the map is always sized correctly when the window size changes.
                 window.addEventListener('resize', function() {
-                    //Async so isPortrait will fire first.
-                    setTimeout(function() {
-                        console.log('resizing map from window.resize listener...',window.innerWidth,window.innerHeight);
-                        _this.resizeMap();
-                        },0);
+                    _this.resizeMap();
                 });
                 //Make sure the map is always sized correctly when the map size changes.
                 new ResizeObserver(function() {
-                    //Async so isPortrait will fire first.
-                    setTimeout(function() {
-                        //This ResizeObserver listener sometimes fires when the map
-                        //dimensions have not changed so we will ignore these events.
-                        if (_this._previousMapWidth === _this.querySelector('#map').offsetWidth &&
-                            _this._previousMapHeight === _this.querySelector('#map').offsetHeight) {
-                            return;
-                        }
-                        _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
-                        _this._previousMapHeight = _this.querySelector('#map').offsetHeight;
-                        console.log('resizing map from map.ResizeObserver listener...',_this._previousMapWidth,_this._previousMapHeight);
-                        _this.resizeMap();
-                    },0);
+                    //This ResizeObserver listener sometimes fires when the map
+                    //dimensions have not changed so we will ignore these events.
+                    if (_this._previousMapWidth === _this.querySelector('#map').offsetWidth &&
+                        _this._previousMapHeight === _this.querySelector('#map').offsetHeight) {
+                        return;
+                    }
+                    _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
+                    _this._previousMapHeight = _this.querySelector('#map').offsetHeight;
+                    _this.resizeMap();
                 }).observe(_this.querySelector('#map'));
                 //De-select any selected zone stack on map click.
                 _this._deselectStacksOnClick(_this._map);
@@ -238,18 +230,16 @@
 
         /**
          * Recalculates the map size, fires the Google Map resize event and pans the map.
+         * @param forceMapPan
          */
-        resizeMap: function() {
+        resizeMap: function(forceMapPan) {
             var _this = this;
-            console.log('resizing map...');
-            this._resizingMap = true;
             this._mapIsReady().then(function() {
                 _this._calcMapSize();
                 //Async so the new dimensions render first.
                 setTimeout(function() {
                     google.maps.event.trigger(_this._map, 'resize');
-                    _this._adjustBoundsAndPan();
-                    _this._resizingMap = false;
+                    _this._adjustBoundsAndPan(forceMapPan);
                 },0);
             });
         },
@@ -1273,11 +1263,14 @@
          * @private
          */
         _addFullscreenControl: function() {
+            var _this = this;
             if (this._fullscreenControlAdded) { return; }
             this._isFullscreenMode = false;
             var fullscreenButton = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
             this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(fullscreenButton);
-            fullscreenButton.onclick = this._toggleFullscreenContainer.bind(this);
+            fullscreenButton.onclick = function() {
+                _this._toggleFullscreenContainer(true);
+            };
             this._fullscreenControlAdded = true;
             //Add click listener to the map so the user can click on the map to enable fullscreen.
             this._addFullscreenClickListener(this._map);
@@ -1290,15 +1283,24 @@
 
         /**
          * Toggles the modal fullscreen dialog.
+         * @param toggledByUser - A flag indicating whether the fullscreen container is being toggled by the user
+         * via page interaction or whether the component itself toggled the fullscreen container. We use
+         * this flag to manage the map panning behaviour when switching mobile orientation (VRAS-306).
          * @private
          */
-        _toggleFullscreenContainer: function() {
+        _toggleFullscreenContainer: function(toggledByUser) {
+            var _this = this;
+            if (toggledByUser) {
+                _this._fullscreenEnabledByUser = !_this._isFullscreenMode;
+            }
             // Open or close the dialog depending on the current state
             if (this._isFullscreenMode) {
                 this._closeFullscreenContainer();
             }
             else {
-                this._openFullscreenContainer();
+                // Ensure that when the fullscreen container is opened by the user that we force the map pan operation
+                // for the initial load rather than skipping it which we will do afterwards until they close it (VRAS-306).
+                this._openFullscreenContainer(toggledByUser);
             }
             this._isFullscreenMode = !this._isFullscreenMode;
             // Toggle the editable features of the map
@@ -1309,9 +1311,10 @@
 
         /**
          * Opens the fullscreen modal dialog.
+         * @param forceMapPan
          * @private
          */
-        _openFullscreenContainer: function() {
+        _openFullscreenContainer: function(forceMapPan) {
             var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
             if (dialog) {
                 // Display the dialog
@@ -1337,7 +1340,7 @@
                 if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                     dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
                 }
-                this.resizeMap();
+                this.resizeMap(forceMapPan);
                 this._addFullscreenKeydownListener();
             }
         },
@@ -1387,7 +1390,7 @@
                     if (_this._isFullscreenMode) {
                         return;
                     }
-                    _this._toggleFullscreenContainer();
+                    _this._toggleFullscreenContainer(true);
                 });
             }
         },
@@ -1401,7 +1404,7 @@
             var _this = this;
             this._dialogKeyListener = function(e) {
                 if (e.which === 27) {
-                    _this._toggleFullscreenContainer();
+                    _this._toggleFullscreenContainer(true);
                 }
             };
             window.addEventListener('keydown',this._dialogKeyListener);
@@ -1418,13 +1421,13 @@
 
         /**
          * Updates the map bounds so all the map overlays are in view and then pans the map.
+         * @param forceMapPan
          * @private
          */
-        _adjustBoundsAndPan: function() {
-            if (this._isPortraitChanging) {
+        _adjustBoundsAndPan: function(forceMapPan) {
+            if (this._fullscreenEnabledByUser && !forceMapPan) {
                 return;
             }
-            console.log('adjust map bounds...');
             var bounds = new google.maps.LatLngBounds();
             if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations))) {
                 var i;

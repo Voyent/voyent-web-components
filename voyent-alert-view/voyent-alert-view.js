@@ -327,49 +327,10 @@ Polymer({
     _isPortraitChanged: function() {
         var _this = this;
         if (this.isMobile && this._isFullscreenMode) {
-            console.log('setting _isPortraitChanging...');
-            this._isPortraitChanging = true;
-            var previousCenter = this._map.getCenter();
             this._toggleFullscreenContainer();
             setTimeout(function() {
                 _this._toggleFullscreenContainer();
-                _this._waitForMapResize(function() {
-                    console.log('setting map center...');
-                    _this._map.setCenter(previousCenter);
-                    setTimeout(function() {
-                        console.log('resetting _isPortraitChanging');
-                        _this._isPortraitChanging = false;
-                    },1000);
-                });
             },400);
         }
-    },
-
-    /**
-     * Waits for the map resize to be completed. This is a simple helper function used by _isPortraitChanged
-     * and should only ever be called after a call has been made to the resize the map.
-     * @param cb
-     * @private
-     */
-    _waitForMapResize: function(cb) {
-        var _this = this;
-        var waitMs = 50;
-        if (typeof this._resizingMapWaitCount === 'undefined') {
-            this._resizingMapWaitCount = 0;
-        }
-        //Wait a maximum of 2 seconds before just triggering the callback.
-        if (this._resizingMapWaitCount >= 2000/waitMs) {
-            return cb();
-        }
-        if (this._resizingMap) {
-            setTimeout(function() {
-                _this._waitForMapResize(cb);
-            },waitMs);
-            _this._resizingMapWaitCount++;
-            return;
-        }
-        _this._resizingMapWaitCount = 0;
-        console.log('map resize complete!');
-        cb();
     }
 });
