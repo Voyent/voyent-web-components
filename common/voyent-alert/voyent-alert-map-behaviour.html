@@ -313,14 +313,21 @@
                     this._clearMyLocations();
                 }
             }
-            if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
-                this._enableDefaultPane();
-                this._showMovement = false;
-                //Clear the movement inputs, async so the side panel has time to render.
-                setTimeout(function() {
-                    _this._alertDirection = _this._alertSpeed = null;
-                    _this._alertSpeedUnit = 'kph';
-                },0);
+            if (this.nodeName === 'VOYENT-ALERT-EDITOR' ||
+                this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                //Always start the view with a windowed component.
+                if (this._isFullscreenMode) {
+                    this._toggleFullscreenContainer();
+                }
+                if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+                    this._enableDefaultPane();
+                    this._showMovement = false;
+                    //Clear the movement inputs, async so the side panel has time to render.
+                    setTimeout(function() {
+                        _this._alertDirection = _this._alertSpeed = null;
+                        _this._alertSpeedUnit = 'kph';
+                    },0);
+                }
             }
         },
 

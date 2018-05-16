@@ -39,8 +39,12 @@ Polymer({
      * @param id
      */
     loadAlert: function(id) {
-        this._setIsAlertLoading(true);
         var _this = this;
+        this._setIsAlertLoading(true);
+        //Always start the view with a windowed component.
+        if (this._isFullscreenMode) {
+            this._toggleFullscreenContainer();
+        }
         var promises = [];
         promises.push(this._fetchAlertTemplate(id));
         promises.push(this._fetchLocationRecord(id));

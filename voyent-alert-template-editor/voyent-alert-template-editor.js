@@ -29,8 +29,12 @@ Polymer({
      * @param loadAsNew
      */
     loadAlertTemplate: function(id,loadAsNew) {
-        this._setIsTemplateLoading(true);
         var _this = this;
+        this._setIsTemplateLoading(true);
+        //Always start the view with a windowed component.
+        if (this._isFullscreenMode) {
+            this._toggleFullscreenContainer();
+        }
         this._fetchAlertTemplate(id).then(function(template) {
             //Clear the map of any loaded alert template before drawing.
             if (_this._loadedAlert) {
