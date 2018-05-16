@@ -20,13 +20,24 @@ Polymer component wrapper for blocking any embedded content as Premium
                 text-shadow: 0 0 5px #AAAAAA;
                 color: white;
                 background-color: #2E348E;
-                border-radius: 10px 10px 10px 0;
+                border-radius: 10px 10px 10px 10px;
                 box-shadow: 2px 2px 4px rgba(0,0,0,0.8);
                 line-height: normal;
                 padding: 5px;
+            }
+            
+            .premiumTextright {
                 float: right;
                 margin-right: -15px;
                 margin-top: -20px;
+                border-radius: 10px 10px 10px 0;
+            }
+            
+            .premiumTextmiddle {
+                margin-top: 10px;
+                position: absolute;
+                top: 0;
+                left: 30%;
             }
             
             .wrapper {
@@ -88,7 +99,7 @@ Polymer component wrapper for blocking any embedded content as Premium
                  style$="{{overlayStyle}}"
                  title="This feature is exclusive to Premium level accounts. Upgrade today!"
                  on-click="upgradeClick"
-                 hidden$="{{hasPremium}}"><span class="premiumText">Premium</span></div>
+                 hidden$="{{hasPremium}}"><span class$="premiumText premiumText[[bubblePos]]">Premium</span></div>
             <content></content>
         </div>
     </template>

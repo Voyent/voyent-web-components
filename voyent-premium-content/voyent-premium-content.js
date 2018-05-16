@@ -10,6 +10,10 @@ Polymer({
         noPremium: {
             type: Boolean
         },
+        bubblePos: {
+            type: String,
+            value: 'right' // also uses 'middle'
+        },
         style: {
             type: String,
             notify: true
