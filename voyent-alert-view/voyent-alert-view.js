@@ -327,9 +327,11 @@ Polymer({
     _isPortraitChanged: function() {
         var _this = this;
         if (this.isMobile && this._isFullscreenMode) {
+            var previousCenter = this._map.getCenter();
             this._toggleFullscreenContainer();
             setTimeout(function() {
                 _this._toggleFullscreenContainer();
+                _this._map.setCenter(previousCenter);
             },400);
         }
     }
