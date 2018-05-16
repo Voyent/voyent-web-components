@@ -715,6 +715,7 @@ Polymer({
      * @private
      */
     _adjustBoundsAndPan: function() {
+        var _this = this;
         this._map.setOptions({maxZoom:18});
         var bounds = new google.maps.LatLngBounds();
         if (this._myLocations.length) {
@@ -730,7 +731,9 @@ Polymer({
             this._skipRegionPanning = false;
             this._zoomOnRegion();
         }
-        this._map.setOptions({maxZoom:null});
+        setTimeout(function() {
+            _this._map.setOptions({maxZoom:null});
+        },0);
     },
 
     /**
@@ -739,12 +742,15 @@ Polymer({
      * @private
      */
     _panToLatLng: function(latLng) {
+        var _this = this;
         this._map.setOptions({maxZoom:18});
         var bounds = new google.maps.LatLngBounds();
         bounds.extend(latLng);
         this._map.fitBounds(bounds);
         this._map.panToBounds(bounds);
-        this._map.setOptions({maxZoom:null});
+        setTimeout(function() {
+            _this._map.setOptions({maxZoom:null});
+        },0);
     },
 
     /**
@@ -861,7 +867,7 @@ Polymer({
         //Always skip panning to the region when we have at least one location.
         this._skipRegionPanning = !!length;
         //Whenever we save or remove a location we will adjust the map bounds to include all the locations.
-        if (!this._fetchingMyLocations) {
+        if (length && !this._fetchingMyLocations) {
             this._adjustBoundsAndPan();
         }
     },
