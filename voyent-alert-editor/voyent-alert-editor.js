@@ -242,6 +242,14 @@ Polymer({
         return null;
     },
 
+    /**
+     * Returns whether the loaded alert is configured for movement.
+     * @returns {boolean}
+     */
+    isMovementConfigured: function() {
+        return (this._alertDirection || this._alertDirection === 0) && this._alertSpeed;
+    },
+
     //******************PRIVATE API******************
 
     /**
