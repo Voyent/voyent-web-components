@@ -247,7 +247,7 @@ Polymer({
      * @returns {boolean}
      */
     isMovementConfigured: function() {
-        return ((this._alertDirection || this._alertDirection === 0) && this._alertSpeed);
+        return !!((this._alertDirection || this._alertDirection === 0) && this._alertSpeed);
     },
 
     //******************PRIVATE API******************
