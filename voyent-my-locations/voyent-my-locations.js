@@ -716,7 +716,7 @@ Polymer({
      */
     _adjustBoundsAndPan: function() {
         var _this = this;
-        this._map.setOptions({maxZoom:18});
+        this._map.setOptions({maxZoom:17});
         var bounds = new google.maps.LatLngBounds();
         if (this._myLocations.length) {
             for (var i=0; i<this._myLocations.length; i++) {
@@ -743,7 +743,7 @@ Polymer({
      */
     _panToLatLng: function(latLng) {
         var _this = this;
-        this._map.setOptions({maxZoom:18});
+        this._map.setOptions({maxZoom:17});
         var bounds = new google.maps.LatLngBounds();
         bounds.extend(latLng);
         this._map.fitBounds(bounds);
