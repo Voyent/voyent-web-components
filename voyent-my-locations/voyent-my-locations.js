@@ -24,6 +24,8 @@ Polymer({
 
     ready: function() {
         var _this = this;
+        //Flag used to prevent map panning while the component is initializing since it will be panned once afterwards.
+        this._initializingMyLocations = true;
         //An array of MyLocations, represents the saved locations currently on the map.
         this.set('_myLocations',[]);
         //The location that is currently active in the editor (infoWindow is displayed).
@@ -58,6 +60,7 @@ Polymer({
             promises.push(_this._fetchRealmRegion());
             promises.push(_this._fetchMyLocations());
             Promise.all(promises).then(function() {
+                _this._initializingMyLocations = false;
                 _this._adjustBoundsAndPan();
             });
         });
@@ -397,13 +400,20 @@ Polymer({
      * @private
      */
     _addCustomControls: function() {
-        if (this._customControlsAdded) { return; }
         var _this = this;
-        this.$.customControls.removeAttribute('hidden');
-        this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(this.$.customControls);
-        this._customControlsAdded = true;
-        //Setup our tooltips after we've added our custom control. Add a slight delay to allow the map to position the control first.
-        setTimeout(function() {
+        if (this._customControlsAdded) { return; }
+        _this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(_this.$.customControls);
+        _this._customControlsAdded = true;
+        //Since Google Maps version 3.32 we must explicitly wait for the map controls to be visible before rendering the tooltips.
+        //Unfortunately, we don't have a better way to check that the controls are visible other than searching for one of them.
+        function waitForControls() {
+            if (!document.querySelector('[title="Show street map"]')) {
+                setTimeout(waitForControls,100);
+                return;
+            }
+            //Remove the hidden attribute, do this after the controls are rendered so they don't flicker on the page before being positioned.
+            document.querySelector('#customControls').removeAttribute('hidden');
+            //Setup our tooltips after we've added our custom control.
             _this._setupTooltips([{
                     tooltipSelector:'#addLocationTooltip',
                     targetSelector:'#customControls paper-button',
@@ -426,7 +436,8 @@ Polymer({
                 window.removeEventListener('click',windowClickListener);
             };
             window.addEventListener('click',windowClickListener);
-        },500);
+        }
+        waitForControls();
     },
 
     /**
@@ -716,7 +727,10 @@ Polymer({
      */
     _adjustBoundsAndPan: function() {
         var _this = this;
-        this._map.setOptions({maxZoom:17});
+        if (this._initializingMyLocations) {
+            return;
+        }
+        this._map.setOptions({maxZoom:this._maxZoom});
         var bounds = new google.maps.LatLngBounds();
         if (this._myLocations.length) {
             for (var i=0; i<this._myLocations.length; i++) {
@@ -733,7 +747,8 @@ Polymer({
         }
         setTimeout(function() {
             _this._map.setOptions({maxZoom:null});
-        },0);
+        },250); //Since Google Maps version 3.32 we must add a slight delay when
+                //resetting the max zoom in order for the map to render correctly.
     },
 
     /**
@@ -743,14 +758,15 @@ Polymer({
      */
     _panToLatLng: function(latLng) {
         var _this = this;
-        this._map.setOptions({maxZoom:17});
+        this._map.setOptions({maxZoom:this._map.getZoom()});
         var bounds = new google.maps.LatLngBounds();
         bounds.extend(latLng);
         this._map.fitBounds(bounds);
         this._map.panToBounds(bounds);
         setTimeout(function() {
             _this._map.setOptions({maxZoom:null});
-        },0);
+        },250); //Since Google Maps version 3.32 we must add a slight delay when
+                //resetting the max zoom in order for the map to render correctly.
     },
 
     /**
@@ -867,7 +883,7 @@ Polymer({
         //Always skip panning to the region when we have at least one location.
         this._skipRegionPanning = !!length;
         //Whenever we save or remove a location we will adjust the map bounds to include all the locations.
-        if (length && !this._fetchingMyLocations) {
+        if (length && !this._initializingMyLocations) {
             this._adjustBoundsAndPan();
         }
     },

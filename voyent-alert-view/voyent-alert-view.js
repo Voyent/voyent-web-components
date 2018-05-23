@@ -131,7 +131,7 @@ Polymer({
         if (zoneId) {
             if (zoneId === this._FALLBACK_ZONE_ID && template.properties[this._FALLBACK_ZONE_ID].enabled) {
                 //Ensure we don't zoom in to for when panning the map on a location inside the fallback zone.
-                this._map.setOptions({maxZoom:16});
+                this._map.setOptions({maxZoom:this._maxZoom});
                 this._zoneIdToDisplay = this._FALLBACK_ZONE_ID;
             }
             else {

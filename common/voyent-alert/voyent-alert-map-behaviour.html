@@ -168,6 +168,7 @@
                     //Add the fullscreen control.
                     _this._addFullscreenControl();
                 }
+                _this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
                 _this._manageMaxZoomLevel(); //Ensure we always have imagery in satellite view modes.
                 _this._regionMapping = {}; //Map of region data so we can toggle between them.
                 _this._isLoggedIn = false; //Toggle for side panel.
@@ -238,7 +239,6 @@
                 _this._calcMapSize();
                 //Async so the new dimensions render first.
                 setTimeout(function() {
-                    google.maps.event.trigger(_this._map, 'resize');
                     _this._adjustBoundsAndPan(forceMapPan);
                 },0);
             });
@@ -580,7 +580,6 @@
          */
         _fetchMyLocations: function() {
             var _this = this;
-            this._fetchingMyLocations = true;
             return new Promise(function (resolve, reject) {
                 voyent.query.executeQuery({
                     realm:_this.realm, account:_this.account,
@@ -597,7 +596,6 @@
                             return obj.location;
                         })
                     }
-                    _this._fetchingMyLocations = false;
                     resolve(locations);
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching location records: ' + (error.responseText || error.message || error));
@@ -1517,41 +1515,53 @@
             //Async to ensure the map is panned on the markers before proceeding. This
             //is so we can correctly calculate the pixel positions of the name overlays.
             setTimeout(function() {
+                var panBounds = false;
                 for (var i=0; i<locations.length; i++) {
-                    _this._extendBoundsForNameOverlay(locations[i],bounds);
+                    if (_this._extendBoundsForNameOverlay(locations[i],bounds)) {
+                        panBounds = true;
+                    }
                 }
-                _this._map.fitBounds(bounds);
-                _this._map.panToBounds(bounds);
+                if (panBounds) {
+                    _this._map.fitBounds(bounds);
+                    _this._map.panToBounds(bounds);
+                }
             },0);
         },
 
         /**
-         * Extends the map bounds to include the location name overlay in the view.
+         * Checks if the map bounds needs to be extended to include the
+         * location name overlay in the view and returns whether it was.
          * @param location
          * @param bounds
+         * @returns {boolean}
          * @private
          */
         _extendBoundsForNameOverlay: function(location, bounds) {
-            if (!location.nameOverlay) { return; }
-            var overlayProjection = this._overlayView.getProjection();
-            //Get the pixel coordinates of the marker position.
-            var nc = overlayProjection.fromLatLngToDivPixel(location.marker.getPosition());
-            //Include the location name overlay in the map bounds by extending the bounds to include
-            //the NW and SE coordinate of the overlay. This will ensure the entire label is in view.
-            var nwCoordinate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
-                nc.x - location.nameOverlay.div.offsetWidth/2,
-                nc.y-64
-            ));
-            if (!this._map.getBounds().contains(nwCoordinate)) {
-                bounds.extend(nwCoordinate);
+            var boundsExtended = false;
+            if (location.nameOverlay) {
+                var overlayProjection = this._overlayView.getProjection();
+                //Get the pixel coordinates of the marker position.
+                var nc = overlayProjection.fromLatLngToDivPixel(location.marker.getPosition());
+                //Include the location name overlay in the map bounds by extending the bounds to include
+                //the NW and SE coordinate of the overlay. This will ensure the entire label is in view.
+                var nwCoordinate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
+                    nc.x - location.nameOverlay.div.offsetWidth/2,
+                    nc.y-64
+                ));
+                if (!this._map.getBounds().contains(nwCoordinate)) {
+                    bounds.extend(nwCoordinate);
+                    boundsExtended = true;
+                }
+                var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
+                    nc.x + location.nameOverlay.div.offsetWidth/2,
+                    nc.y-64+location.nameOverlay.div.offsetHeight
+                ));
+                if (!this._map.getBounds().contains(seCoordindate)) {
+                    bounds.extend(seCoordindate);
+                    boundsExtended = true;
+                }
             }
-            var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
-                nc.x + location.nameOverlay.div.offsetWidth/2,
-                nc.y-64+location.nameOverlay.div.offsetHeight
-            ));
-            if (!this._map.getBounds().contains(seCoordindate)) {
-                bounds.extend(seCoordindate);
-            }
+            return boundsExtended;
         },
 
         /**
@@ -1637,6 +1647,10 @@
                 new google.maps.MaxZoomService().getMaxZoomAtLatLng(_this._map.getCenter(), function(response) {
                     if (response.status !== 'OK') {
                         return;
+                    }
+                    //Since Google Maps version 3.32 we must explicitly zoom out if we are zoomed in past the max zoom level.
+                    if (_this._map.getZoom() > response.zoom) {
+                        _this._map.setZoom(response.zoom);
                     }
                     _this._map.setOptions({maxZoom: response.zoom});
                 });
