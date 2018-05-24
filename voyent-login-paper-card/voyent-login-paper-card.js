@@ -195,34 +195,34 @@
         handleLogin: function(e){
             var _this = this;
             e.preventDefault();
-            var authProvider = document.querySelector('#' + this.authProvider) ||
+            this._authProviderElem = document.querySelector('#' + this.authProvider) ||
                                Polymer.dom(this).parentNode.querySelector('#' + this.authProvider);
-            if( !authProvider ){
+            if( !this._authProviderElem ){
                 console.error('voyent-login-paper-card could not find auth-provider: ' + this.authProvider);
                 return;
             }
             this.fire('loading-on');
             // Pre-process our account to a form understandable by the login
-            var safeAccount = this._getSafeDatabaseName(_this.account);
-            if(_this.showaccountinput) {
-                authProvider.setAttribute("account", safeAccount);
+            var safeAccount = this._getSafeDatabaseName(this.account);
+            if(this.showaccountinput) {
+                this._authProviderElem.setAttribute("account", safeAccount);
             }
-            if(_this.showhostinput) {
-                authProvider.setAttribute("host",_this.host)
+            if(this.showhostinput) {
+                this._authProviderElem.setAttribute("host",this.host)
             }
-            if(_this.showrealminput) {
-                authProvider.setAttribute("realm",_this.realm);
+            if(this.showrealminput) {
+                this._authProviderElem.setAttribute("realm",this.realm);
             }
-            else if (_this.searchforrealm) {
-                authProvider.set('error',null);
-                _this._publicLookupUser(_this.username,safeAccount).then(function(res) {
+            else if (this.searchforrealm) {
+                this._authProviderElem.set('error',null);
+                this._publicLookupUser(this.username,safeAccount).then(function(res) {
                     if (!res.matches.length) {
                         _this.fire('loading-off');
-                        authProvider.set('error','Unauthorized');
+                        _this._authProviderElem.set('error','Unauthorized');
                     }
                     else if (res.matches.length === 1) {
                         _this.set('realm',res.matches[0].realm);
-                        authProvider.setAttribute("realm",_this.realm);
+                        _this._authProviderElem.setAttribute("realm",_this.realm);
                         _this._login();
                     }
                     else {
@@ -234,12 +234,12 @@
                 });
                 return;
             }
-            _this._login();
+            this._login();
         },
 
         _login: function() {
             var _this = this;
-            authProvider.login(_this.username, _this.password, _this.loginAsAdmin).then(function() {
+            this._authProviderElem.login(this.username, this.password, this.loginAsAdmin).then(function() {
                 //clear password
                 _this.password = '';
                 _this.fire('loading-off');
@@ -377,7 +377,7 @@
 
         _selectRegion: function(e) {
             this.set('realm',e.model.item.realm);
-            authProvider.setAttribute("realm",this.realm);
+            this._authProviderElem.setAttribute("realm",this.realm);
             this._login();
         }
     });
