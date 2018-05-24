@@ -758,7 +758,7 @@ Polymer({
      */
     _panToLatLng: function(latLng) {
         var _this = this;
-        this._map.setOptions({maxZoom:this._map.getZoom()});
+        this._map.setOptions({maxZoom:this._maxZoom});
         var bounds = new google.maps.LatLngBounds();
         bounds.extend(latLng);
         this._map.fitBounds(bounds);
