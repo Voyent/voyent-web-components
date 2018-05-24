@@ -343,36 +343,16 @@
             return ('https:' == document.location.protocol ? 'https://' : 'http://');
         },
 
-        _arrayLength: function(toShow) {
-            return toShow ? toShow.length : 0;
+        _arrayLength: function(array) {
+            return array ? array.length : 0;
         },
 
-        /**
-         * Easy to read region match results string
-         * Ideally "display name - description"
-         * Note that description will be temporarily cropped to 100 characters for preview readability
-         */
-        _friendlyResults: function(result) {
-            var toReturn = "Unknown";
-            if (result) {
-                if (result.displayName) {
-                    toReturn = result.displayName;
-                }
-                else if (result.realm) {
-                    toReturn = result.realm;
-                }
+        _getRegionName: function(regionDetails) {
+            return regionDetails.displayName || regionDetails.realm || 'Unknown';
+        },
 
-                if (result.description) {
-                    // Crop the description if it's too long
-                    if (result.description.length > 100) {
-                        toReturn += " - " + result.description.substring(0, 100) + "...";
-                    }
-                    else {
-                        toReturn += " - " + result.description;
-                    }
-                }
-            }
-            return toReturn;
+        _getRegionDescription: function(regionDetails) {
+          return regionDetails.description && regionDetails.description.trim().length ? (' - ' + regionDetails.description) : '';
         },
 
         _selectRegion: function(e) {

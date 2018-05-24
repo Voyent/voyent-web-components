@@ -101,6 +101,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           display: block;
           margin-bottom: 15px;
           text-transform: none;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+      }
+      .italic {
+          font-style:italic;
+      }
+      .bold {
+          font-weight: bold;
       }
     </style>
     <div hidden$="{{hidden}}">
@@ -108,9 +117,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-card heading="{{heading}}" image="{{headerImage}}">
                 <template is="dom-if" if="[[_regionResults.length]]">
                     <div class="card-content">
-                        <p>The administrator <span style="font-style:italic;">[[username]]</span> is registered to [[_arrayLength(_regionResults)]] regions in this account. Select the region you’d like to access.</p>
+                        <p>The administrator <span class="italic">[[username]]</span> is registered to [[_arrayLength(_regionResults)]] regions in this account. Select the region you’d like to access.</p>
                         <template is="dom-repeat" items="[[_regionResults]]">
-                            <paper-button class="regionResultButton" raised on-click="_selectRegion" title="Select this region">[[_friendlyResults(item)]]</paper-button>
+                            <paper-button class="regionResultButton" raised on-click="_selectRegion" title="Select this region">
+                                <span class="bold">[[_getRegionName(item)]]</span><span class="italic">[[_getRegionDescription(item)]]</span>
+                            </paper-button>
                         </template>
                     </div>
                 </template>
