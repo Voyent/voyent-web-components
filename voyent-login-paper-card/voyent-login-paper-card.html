@@ -97,19 +97,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         };
       }
 
+      .regionResultButton {
+          display: block;
+          margin-bottom: 15px;
+          text-transform: none;
+      }
     </style>
     <div hidden$="{{hidden}}">
         <form is="iron-form" id="loginForm" on-submit="handleLogin">
             <paper-card heading="{{heading}}" image="{{headerImage}}">
                 <template is="dom-if" if="[[_regionResults.length]]">
                     <div class="card-content">
-                        <p>We have found multiple regions for the information you supplied. Please review the details and choose one.</p>
-                        <h4>[[_arrayLength(_regionResults)]] Matching Regions</h4>
+                        <p>The administrator <span style="font-style:italic;">[[username]]</span> is registered to [[_arrayLength(_regionResults)]] regions in this account. Select the region you’d like to access.</p>
                         <template is="dom-repeat" items="[[_regionResults]]">
-                            <a on-click="_selectRegion" data-match="{{item}}" style="cursor: pointer;">
-                                <paper-icon-button icon="visibility" title="Show details of this region"
-                                                   data-match="{{item}}"></paper-icon-button>
-                                [[_friendlyResults(item)]]</a><br/>
+                            <paper-button class="regionResultButton" raised on-click="_selectRegion" title="Select this region">[[_friendlyResults(item)]]</paper-button>
                         </template>
                     </div>
                 </template>
