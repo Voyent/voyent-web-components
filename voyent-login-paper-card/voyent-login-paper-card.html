@@ -100,49 +100,68 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
     <div hidden$="{{hidden}}">
         <form is="iron-form" id="loginForm" on-submit="handleLogin">
-          <paper-card heading="{{heading}}" image="{{headerImage}}">
-            <div class="card-content">
-              <paper-input id="username" label="Username" required maxlength="35" value="{{username}}">
-                <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
-              </paper-input>
-              <paper-input id="password" type="password" required label="Password" value="{{password}}">
-                <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1"></paper-icon-button>
-              </paper-input>
-              <content select="forgotten-password"></content>
-              <template is="dom-if" if="[[hideallowed]]">
-                  <div style="text-align: right;">
-                      <button type="button" onclick="toggle('#collapse')" title="Toggle the details panel">...</button>
-                  </div>
-              </template>
-              <iron-collapse id="collapse" opened="[[!hideclosed]]" no-animation="true">
-                  <div id="content">
-                      <template is="dom-if" if="[[showrealminput]]">
-                        <paper-input required label="{{realminputlabel}}" value="{{realm}}">
-                          <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
+            <paper-card heading="{{heading}}" image="{{headerImage}}">
+                <template is="dom-if" if="[[_regionResults.length]]">
+                    <div class="card-content">
+                        <p>We have found multiple regions for the information you supplied. Please review the details and choose one.</p>
+                        <h4>[[_arrayLength(_regionResults)]] Matching Regions</h4>
+                        <template is="dom-repeat" items="[[_regionResults]]">
+                            <a on-click="_selectRegion" data-match="{{item}}" style="cursor: pointer;">
+                                <paper-icon-button icon="visibility" title="Show details of this region"
+                                                   data-match="{{item}}"></paper-icon-button>
+                                [[_friendlyResults(item)]]</a><br/>
+                        </template>
+                    </div>
+                </template>
+                <template is="dom-if" if="[[!_regionResults.length]]">
+                    <div class="card-content">
+                        <paper-input id="username" label="Username" required maxlength="35" value="{{username}}">
+                            <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
                         </paper-input>
-                      </template>
-                      <template is="dom-if" if="[[showaccountinput]]">
-                        <paper-input required label="{{accountinputlabel}}" value="{{account}}">
-                          <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
+                        <paper-input id="password" type="password" required label="Password" value="{{password}}">
+                            <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1"></paper-icon-button>
                         </paper-input>
-                      </template>
-                      <template is="dom-if" if="[[showhostinput]]">
-                        <paper-input required label="Host" value="{{host}}" disabled="{{disablehostinput}}">
-                            <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1"></paper-icon-button>
-                        </paper-input>
-                      </template>
-                  </div>
-              </iron-collapse>
-              <content>
-              </content>
-            </div>
-            <div class="card-actions" style="text-align: right">
-              <div class="loadWrapper"><voyent-loading></voyent-loading></div>
-              <div class="error"><span>{{error}}</span></div>
-              <paper-button raised colored on-click="cancel"><span>{{cancelLabel}}</span></paper-button>
-              <paper-button type="submit" raised colored on-click="handleLogin"><button><span>{{submitLabel}}</span></button></paper-button>
-            </div>
-          </paper-card>
+                        <content select="forgotten-password"></content>
+                        <template is="dom-if" if="[[hideallowed]]">
+                            <div style="text-align: right;">
+                                <button type="button" onclick="toggle('#collapse')" title="Toggle the details panel">...</button>
+                            </div>
+                        </template>
+                        <iron-collapse id="collapse" opened="[[!hideclosed]]" no-animation="true">
+                            <div id="content">
+                                <template is="dom-if" if="[[showrealminput]]">
+                                    <paper-input required label="{{realminputlabel}}" value="{{realm}}">
+                                        <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
+                                    </paper-input>
+                                </template>
+                                <template is="dom-if" if="[[showaccountinput]]">
+                                    <paper-input required label="{{accountinputlabel}}" value="{{account}}">
+                                        <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
+                                    </paper-input>
+                                </template>
+                                <template is="dom-if" if="[[showhostinput]]">
+                                    <paper-input required label="Host" value="{{host}}" disabled="{{disablehostinput}}">
+                                        <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1"></paper-icon-button>
+                                    </paper-input>
+                                </template>
+                            </div>
+                        </iron-collapse>
+                        <content>
+                        </content>
+                    </div>
+                </template>
+                <div class="card-actions" style="text-align: right">
+                    <div class="loadWrapper"><voyent-loading></voyent-loading></div>
+                    <div class="error"><span>{{error}}</span></div>
+                    <template is="dom-if" if="[[_regionResults.length]]">
+                        <paper-button raised colored on-click="_cancelRegionResults">Back</paper-button>
+                    </template>
+                    <template is="dom-if" if="[[!_regionResults.length]]">
+                        <paper-button raised colored on-click="cancel"><span>{{cancelLabel}}</span></paper-button>
+                        <paper-button type="submit" raised colored on-click="handleLogin"><button><span>{{submitLabel}}</span></button></paper-button>
+                    </template>
+                </div>
+            </paper-card>
         </form>
     </div>
   </template>

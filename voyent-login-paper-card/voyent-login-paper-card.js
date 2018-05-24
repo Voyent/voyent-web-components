@@ -89,6 +89,13 @@
                 type: Boolean
             },
             /**
+             * Whether the component should search for the realm details, only relevant if showrealminput is false.
+             */
+            searchforrealm: {
+                notify: true,
+                type: Boolean
+            },
+            /**
              * Determine if we should show an account input field
              */
             showaccountinput: {
@@ -176,6 +183,7 @@
             if (document.getElementById("username")) {
                 document.getElementById("username").focus();
             }
+            this._regionResults = [];
         },
 
         /**
@@ -186,6 +194,7 @@
          */
         handleLogin: function(e){
             var _this = this;
+            e.preventDefault();
             var authProvider = document.querySelector('#' + this.authProvider) ||
                                Polymer.dom(this).parentNode.querySelector('#' + this.authProvider);
             if( !authProvider ){
@@ -193,24 +202,50 @@
                 return;
             }
             this.fire('loading-on');
+            // Pre-process our account to a form understandable by the login
+            var safeAccount = this._getSafeDatabaseName(_this.account);
+            if(_this.showaccountinput) {
+                authProvider.setAttribute("account", safeAccount);
+            }
+            if(_this.showhostinput) {
+                authProvider.setAttribute("host",_this.host)
+            }
             if(_this.showrealminput) {
                 authProvider.setAttribute("realm",_this.realm);
             }
-            if(_this.showaccountinput){
-                // Pre-process our account to a form understandable by the login
-                authProvider.setAttribute("account", this._getSafeDatabaseName(_this.account));
+            else if (_this.searchforrealm) {
+                authProvider.set('error',null);
+                _this._publicLookupUser(_this.username,safeAccount).then(function(res) {
+                    if (!res.matches.length) {
+                        _this.fire('loading-off');
+                        authProvider.set('error','Unauthorized');
+                    }
+                    else if (res.matches.length === 1) {
+                        _this.set('realm',res.matches[0].realm);
+                        authProvider.setAttribute("realm",_this.realm);
+                        _this._login();
+                    }
+                    else {
+                        _this.set('_regionResults',res.matches);
+                        _this.fire('loading-off');
+                    }
+                }).catch(function() {
+                    _this.fire('loading-off');
+                });
+                return;
             }
-            if(_this.showhostinput){
-                authProvider.setAttribute("host",_this.host)
-            }
-            authProvider.login(this.username, this.password, this.loginAsAdmin).then(function(){
+            _this._login();
+        },
+
+        _login: function() {
+            var _this = this;
+            authProvider.login(_this.username, _this.password, _this.loginAsAdmin).then(function() {
                 //clear password
                 _this.password = '';
                 _this.fire('loading-off');
             }).catch(function(){
                 _this.fire('loading-off');
             });
-            e.preventDefault();
         },
         
         _getSafeDatabaseName: function(accountName) {
@@ -269,6 +304,81 @@
         cancel: function(){
             this._clearUsername();
             this._clearPassword();
+            this._regionResults = [];
+        },
+
+        _cancelRegionResults: function() {
+            this._clearPassword();
+            this.set('_regionResults',[]);
+        },
+
+        /**
+         * Lookup a user by username, in any account/realm
+         */
+        _publicLookupUser: function(username, account) {
+            var sourceUrl = this._getHttpProtocol() + this.host + "/vs/vras/realms/public/users/?name=" + username;
+            if (account) {
+                sourceUrl += '&account=' + account;
+            }
+            return new Promise(
+                function(resolve, reject) {
+                    // Try to retrieve the desired JSON
+                    voyent.$.get(sourceUrl).then(function(res) {
+                        if (res) {
+                            try {
+                                resolve(JSON.parse(res));
+                            }
+                            catch(e) {
+                                resolve(res);
+                            }
+                        }
+                    }).catch(function(error) {
+                        reject(error);
+                    });
+                }
+            );
+        },
+
+        _getHttpProtocol: function() {
+            return ('https:' == document.location.protocol ? 'https://' : 'http://');
+        },
+
+        _arrayLength: function(toShow) {
+            return toShow ? toShow.length : 0;
+        },
+
+        /**
+         * Easy to read region match results string
+         * Ideally "display name - description"
+         * Note that description will be temporarily cropped to 100 characters for preview readability
+         */
+        _friendlyResults: function(result) {
+            var toReturn = "Unknown";
+            if (result) {
+                if (result.displayName) {
+                    toReturn = result.displayName;
+                }
+                else if (result.realm) {
+                    toReturn = result.realm;
+                }
+
+                if (result.description) {
+                    // Crop the description if it's too long
+                    if (result.description.length > 100) {
+                        toReturn += " - " + result.description.substring(0, 100) + "...";
+                    }
+                    else {
+                        toReturn += " - " + result.description;
+                    }
+                }
+            }
+            return toReturn;
+        },
+
+        _selectRegion: function(e) {
+            this.set('realm',e.model.item.realm);
+            authProvider.setAttribute("realm",this.realm);
+            this._login();
         }
     });
 })();

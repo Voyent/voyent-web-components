@@ -181,7 +181,7 @@
       return voyent.auth.connect(params).then(function(authResponse) { //jshint ignore:line
         onAfterConnect(authResponse);
       }).catch(function(error) {
-        _this.set('error', 'Login failed ' + JSON.parse(error.responseText).message || error.responseText);
+        _this.set('error', 'Unauthorized');
 
         //if fallbackToAdmin try to login as admin
         if (!_this.admin && _this.fallbackToAdmin) {
