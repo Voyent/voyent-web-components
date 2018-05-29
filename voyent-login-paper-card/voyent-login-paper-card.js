@@ -180,9 +180,11 @@
         },
         
         attached: function() {
-            if (document.getElementById("username")) {
-                document.getElementById("username").focus();
-            }
+            setTimeout(function() {
+                if (document.getElementById("username")) {
+                    document.getElementById("username").focus();
+                }
+            },0);
             this._regionResults = [];
         },
 
