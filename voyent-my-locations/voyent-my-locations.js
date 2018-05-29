@@ -663,11 +663,7 @@ Polymer({
         var _this = this, place;
         var autocompleteInput = this.$$('#autoComplete').querySelector('input');
         //Wait until we have the area region so we can favour results from within that region.
-        function waitForAreaRegion() {
-            if (!_this._areaRegion) {
-                setTimeout(waitForAreaRegion,50);
-                return;
-            }
+        this._areaRegionIsAvailable().then(function() {
             _this._autoComplete = new google.maps.places.Autocomplete(autocompleteInput, {
                 "bounds":_this._areaRegion.bounds, "strictBounds":false
             });
@@ -681,8 +677,7 @@ Polymer({
                 }
                 _this.querySelector('#autoComplete').validate();
             });
-        }
-        waitForAreaRegion();
+        });
     },
 
     /**

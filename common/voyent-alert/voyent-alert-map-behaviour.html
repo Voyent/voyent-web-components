@@ -1759,6 +1759,30 @@
         },
 
         /**
+         * A promise that when resolved indicates that we have loaded our realm region.
+         * @returns {*}
+         * @private
+         */
+        _areaRegionIsAvailable: function() {
+            var _this = this;
+            return new Promise(function (resolve) {
+                if (this._areaRegion) {
+                    resolve();
+                }
+                else {
+                    waitForAreaRegion();
+                    function waitForAreaRegion() {
+                        if (!_this._areaRegion) {
+                            setTimeout(function(){waitForAreaRegion();},100);
+                            return;
+                        }
+                        resolve();
+                    }
+                }
+            });
+        },
+
+        /**
          * Manages component state between realm changes.
          * @param newRealm
          * @private
