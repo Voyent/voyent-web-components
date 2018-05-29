@@ -146,25 +146,6 @@ Polymer({
     },
 
     /**
-     * Previews the currently loaded alert and returns the event that was fired. This will trigger calculations on
-     * the service which will result in a push notification to the browser containing the preview data.
-     * @returns {*}
-     */
-    previewAlert: function() {
-        var _this = this;
-        if (!this._loadedAlert || !this._loadedAlert.template) {
-            return this.fire('message-error', 'Unable to preview alert: No alert loaded');
-        }
-
-        var event = this._buildPreviewEvent();
-        voyent.event.createCustomEvent({event:event}).then(function() {
-        }).catch(function(e) {
-            _this.fire('message-error', 'Unable to preview alert: ' + (e.responseText || e.message || e));
-        });
-        return event;
-    },
-
-    /**
      * Saves the alert currently loaded in the editor as an alert template.
      */
     saveAsAlertTemplate: function() {
@@ -228,18 +209,6 @@ Polymer({
                 _this.fire('message-error', 'Unable to change alert state: ' + (error.responseText || error.message || error));
             });
         });
-    },
-
-    /**
-     * Returns a JSON representation of the currently loaded alert.
-     * @returns {*}
-     */
-    getCurrentAlert: function() {
-        if (this._loadedAlert && this._loadedAlert.template) {
-            this._loadedAlert.template.updateJSON(true);
-            return this._loadedAlert.template.json;
-        }
-        return null;
     },
 
     /**
@@ -576,43 +545,6 @@ Polymer({
         if (!this._loadedAlert) { return; }
         var msg = 'Are you sure you want to delete ' + this._loadedAlert.template.name + '? This cannot be undone!';
         this._openDialog(msg,null,null,false,false,func);
-    },
-
-    /**
-     * Fabricates a location create event so we can generate preview metrics.
-     * @returns Object {}
-     * @private
-     */
-    _buildPreviewEvent: function() {
-        this._loadedAlert.template.updateJSON(true);
-        this._loadedAlert.template.json.state = 'preview';
-
-        var alertId = this._loadedAlert.template.id || 'preview';
-
-        var currentLocation = this._buildAlertLocationJSON().location;
-        if (!currentLocation.properties.alertId) {
-            currentLocation.properties.alertId = alertId;
-        }
-
-        return {
-            "time": new Date().toISOString(),
-            "account": this.account,
-            "realm": this.realm,
-            "service": "locate",
-            "event": "create",
-            "type": "location",
-            "username": voyent.auth.getLastKnownUsername(),
-            "tx": "",
-            "data": {
-                "resourceId": alertId,
-                "origin": window.location.hostname,
-                "previousLocation": {}, //This isn't being used by the modules currently so don't bother including it.
-                "currentLocation": currentLocation,
-                "alert": this._loadedAlert.template.json,
-                "alertId" : alertId,
-                "previewMetricsId":this._generateUid()
-            }
-        };
     },
 
     /**

@@ -386,6 +386,9 @@
          * @private
          */
         _initializeColourPicker: function(zone) {
+            if (this.nodeName === 'VOYENT-MOBILE-ALERT-EDITOR') {
+                return;
+            }
             var _this = this;
             var jsColorId = '#jsColor-'+ (this._fallbackZone === zone ? 'fallbackZone' : this._loadedAlert.selectedStack.getZoneIndex(zone));
             var colorPicker = _this.querySelector(jsColorId);
