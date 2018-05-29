@@ -3,7 +3,7 @@ Polymer({
     behaviors: [Voyent.AlertMapBehaviour,Voyent.AlertBehaviour],
 
     /**
-     *
+     * Load the passed template at the specified coordinates.
      * @param template - The template JSON to be loaded.
      * @param coordinates - The coordinates in object form {lat:{{lat}},lng:{{lng}}}
      */
