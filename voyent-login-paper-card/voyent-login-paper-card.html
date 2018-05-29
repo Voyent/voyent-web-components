@@ -130,7 +130,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     </template>
                     <template is="dom-if" if="[[!_regionResults.length]]">
                         <div class="card-content">
-                            <paper-input id="username" label="Username" required maxlength="35" value="{{username}}">
+                            <paper-input id="username" label="Username" required maxlength="35" value="{{username}}" autofocus>
                                 <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
                             </paper-input>
                             <paper-input id="password" type="password" required label="Password" value="{{password}}">
