@@ -1517,9 +1517,9 @@
             }
             var bounds = new google.maps.LatLngBounds();
             if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations))) {
-                var i;
+                var i, zoneStacks;
                 if (this._loadedAlert) {
-                    var zoneStacks = this._loadedAlert.template.zoneStacks;
+                    zoneStacks = this._loadedAlert.template.zoneStacks;
                     //If we have no zoneStacks and no user locations then we only have a fallback zone so just pan to the region.
                     if (!zoneStacks.length) {
                         //If the view is alert notification detail then don't zoom on the region as we will always have 1 location to pan to.
@@ -1556,7 +1556,9 @@
                         }
                     }
                 }
-                if (this._mobileLocation || (this._myLocations && this._myLocations.length)) {
+                //Only include the locations in the map panning if we have no zone stacks. This prevents the map
+                //from panning further than the region boundary in cases where only a fallback zone is defined.
+                if ((!zoneStacks || zoneStacks.length) && (this._mobileLocation || (this._myLocations && this._myLocations.length))) {
                     if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
                         bounds.extend(this._mobileLocation.marker.getPosition());
                     }
