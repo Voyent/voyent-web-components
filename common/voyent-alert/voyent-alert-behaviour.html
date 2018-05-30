@@ -534,6 +534,7 @@
             if (dialog) {
                 dialog.open();
                 this.set('_categorySearchQuery','');
+                this.set('_filteredTemplateCategories',_this._templateCategories.slice(0));
                 this.set('_selectedCategories',this._loadedAlert ?
                     function(categories) {
                         var selectedCategories = [];
