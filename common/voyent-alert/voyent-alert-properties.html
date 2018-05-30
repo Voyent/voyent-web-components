@@ -729,24 +729,26 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <div class="category-wrapper">
                         <template is="dom-if" if="[[_templateCategories.length]]">
                             <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories">
-                                <div class="category-item no-select" data-editing$="[[categoryObj.editing]]"
-                                     title="[[categoryObj.name]]" on-click="_enableCategoryNameEditing">
-                                    <div class="delete-category-button-wrapper">
-                                        <paper-icon-button class="delete-category-button" icon="close" on-click="_deleteCategory"
-                                                           title="Remove Category"></paper-icon-button>
+                                <template is="dom-if" if="[[categoryObj.editable]]">
+                                    <div class="category-item no-select" data-editing$="[[categoryObj.editing]]"
+                                         title="[[categoryObj.name]]" on-click="_enableCategoryNameEditing">
+                                        <div class="delete-category-button-wrapper">
+                                            <paper-icon-button class="delete-category-button" icon="close" on-click="_deleteCategory"
+                                                               title="Remove Category"></paper-icon-button>
+                                        </div>
+                                        <div class="category-name-wrapper">
+                                            <template is="dom-if" if="[[categoryObj.editing]]">
+                                                <paper-input id$="category-[[categoryObj.id]]" value="{{categoryObj.newName::input}}" no-label-float
+                                                             validator="existingCategoryValidator" on-value-changed="_validateCategoryOnChange"
+                                                             on-keyup="_existingCategoryKeyup" on-blur="_existingCategoryBlur" maxlength="60">
+                                                </paper-input>
+                                            </template>
+                                            <template is="dom-if" if="[[!categoryObj.editing]]">
+                                                [[categoryObj.name]]
+                                            </template>
+                                        </div>
                                     </div>
-                                    <div class="category-name-wrapper">
-                                        <template is="dom-if" if="[[categoryObj.editing]]">
-                                            <paper-input id$="category-[[categoryObj.id]]" value="{{categoryObj.newName::input}}" no-label-float
-                                                         validator="existingCategoryValidator" on-value-changed="_validateCategoryOnChange"
-                                                         on-keyup="_existingCategoryKeyup" on-blur="_existingCategoryBlur" maxlength="60">
-                                            </paper-input>
-                                        </template>
-                                        <template is="dom-if" if="[[!categoryObj.editing]]">
-                                            [[categoryObj.name]]
-                                        </template>
-                                    </div>
-                                </div>
+                                </template>
                             </template>
                         </template>
                         <div class="category-item no-select" data-editing$="[[_addingNewCategory]]"

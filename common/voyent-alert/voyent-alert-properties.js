@@ -287,10 +287,16 @@ Polymer({
     _confirmCategoryDeletion: function() {
         var _this = this;
         //Generate a flat string array of category names, remove the category and save the changes.
-        var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
-            return categoryObj.name;
-        });
-        newTemplateCategories.splice(this._templateCategories.indexOf(this._categoryToRemove),1);
+        var newTemplateCategories = this._templateCategories.reduce(function(result,categoryObj) {
+            //Never persist the mobile category
+            if (categoryObj.name === 'Mobile') {
+                return result;
+            }
+            result.push(categoryObj.name);
+            return result;
+        }, []);
+
+        newTemplateCategories.splice(newTemplateCategories.indexOf(this._categoryToRemove.name),1);
 
         voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
             //If we are currently editing the field that is being deleted then editing will be disabled automatically
@@ -384,9 +390,15 @@ Polymer({
         //Handle persisting the new category or just hiding the input.
         if (persist && this._newTemplateCategory) {
             //Generate a flat string array of category names, add the new category and save the changes.
-            var newTemplateCategories = this._templateCategories.map(function(categoryObj) {
-                return categoryObj.name;
-            });
+            var newTemplateCategories = this._templateCategories.reduce(function(result,categoryObj) {
+                //Never persist the mobile category
+                if (categoryObj.name === 'Mobile') {
+                    return result;
+                }
+                result.push(categoryObj.name);
+                return result;
+            }, []);
+
             newTemplateCategories.push(this._newTemplateCategory);
 
             voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
@@ -394,6 +406,7 @@ Polymer({
                 _this.push('_templateCategories',{
                     "id": _this._generateUid(),
                     "name": _this._newTemplateCategory,
+                    "editable": true,
                     "newName": '',
                     "editing": false
                 });
@@ -579,6 +592,8 @@ Polymer({
             return categoryObj.name;
         });
         newTemplateCategories[indexOfCategoryBeingEdited] = this._categoryToUpdate.newName;
+        //Never persist the mobile category
+        newTemplateCategories.splice(newTemplateCategories.indexOf('Mobile'),1);
 
         voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
             //Update our local lists and state.
@@ -678,6 +693,10 @@ Polymer({
         }
         if (categoryName.trim().toLowerCase() === 'predefined') {
             categoryInput.setAttribute('error-message','Predefined is reserved');
+            return false;
+        }
+        if (categoryName.trim().toLowerCase() === 'mobile') {
+            categoryInput.setAttribute('error-message','Mobile is reserved');
             return false;
         }
         for (var i=0; i<this._templateCategories.length; i++) {

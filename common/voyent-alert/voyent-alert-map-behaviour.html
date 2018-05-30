@@ -586,6 +586,8 @@
         _fetchTemplateCategories: function() {
             var _this = this;
             return new Promise(function (resolve, reject) {
+                _this.set('_templateCategories',[]);
+                _this.set('_filteredTemplateCategories',[]);
                 voyent.scope.getRealmData({"property":"templateCategories"}).then(function (categories) {
                     if (categories && categories.length) {
                         //Build an object array to simplify template logic for category editing.
@@ -593,16 +595,19 @@
                             return {
                                 "id": _this._generateUid(), //This is will be used to find the associated category name input for editing validation
                                 "name": categoryName,
+                                "editable": true,
                                 "newName": '',
                                 "editing": false
                             }
                         }));
-                        _this.set('_filteredTemplateCategories',_this._templateCategories.slice(0));
                     }
-                    else {
-                        _this.set('_templateCategories',[]);
-                        _this.set('_filteredTemplateCategories',[]);
-                    }
+                    //Always add the "Mobile" category but we'll be sure not to persist this.
+                    _this.push('_templateCategories',{
+                        "id": _this._generateUid(),
+                        "name": 'Mobile',
+                        "editable": false
+                    });
+                    _this.set('_filteredTemplateCategories',_this._templateCategories.slice(0));
                     resolve(_this._templateCategories);
                 }).catch(function (error) {
                     reject(error);
