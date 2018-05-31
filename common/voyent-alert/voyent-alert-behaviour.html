@@ -2656,9 +2656,9 @@
                     }
                     this.div.style.backgroundColor = '#'+this.zone.colour;
                     this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-                    //Add the overlay.
-                    _outer._map.controls[google.maps.ControlPosition.TOP_CENTER].clear();
-                    _outer._map.controls[google.maps.ControlPosition.TOP_CENTER].push(this.div);
+                    if (!_outer._map.controls[google.maps.ControlPosition.TOP_CENTER].length) {
+                        _outer._map.controls[google.maps.ControlPosition.TOP_CENTER].push(this.div);
+                    }
                 },
                 /**
                  * Hide the control overlay.
@@ -2760,7 +2760,6 @@
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.backgroundColor = '#'+this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-
             };
             /**
              * Handles drawing and re-drawing of the location overlay on the map.
