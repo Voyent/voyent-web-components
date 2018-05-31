@@ -412,7 +412,10 @@ Polymer({
                 return;
             }
             //Remove the hidden attribute, do this after the controls are rendered so they don't flicker on the page before being positioned.
-            document.querySelector('#customControls').removeAttribute('hidden');
+            var elem = document.querySelector('#customControls');
+            if (elem) {
+                elem.removeAttribute('hidden');
+            }
             //Setup our tooltips after we've added our custom control.
             _this._setupTooltips([{
                     tooltipSelector:'#addLocationTooltip',
