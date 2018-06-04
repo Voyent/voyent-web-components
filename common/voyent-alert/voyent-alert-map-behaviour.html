@@ -64,12 +64,6 @@
              */
             realm: { type: String, observer: '_realmChanged' },
             /**
-             * A boolean indicating whether the component should load the Google Maps API. When `false`
-             * it is expected that the API is included manually in the application.
-             * @default false
-             */
-            loadGoogleMaps: { type: Boolean, value: false },
-            /**
              * The height of the google map to be created, as an integer. If left empty we will default to the height
              * of the parent container. If a height cannot be found then a default minimum of 500 will be used.
              */
@@ -209,25 +203,10 @@
                 _this._overlayView.draw = function() {};
                 _this._overlayView.setMap(_this._map);
             };
-            if (!('google' in window) || !('maps' in window.google)) {
-                if (this.loadGoogleMaps) {
-                    var script = document.createElement('script');
-                    script.type = 'text/javascript';
-                    script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAZVsIO4CmSqqE7qbSO8pB0JPVUkO5bOd8&v=3&' +
-                        'libraries=places,geometry,visualization,drawing&callback=initializeLocationsMap';
-                    this.$.container.appendChild(script);
-                }
-                else {
-                    var msg = 'Error initializing ' + this.nodeName.toLowerCase() + ': The attribute `load-google-maps` ' +
-                              'is false but the Google Maps API cannot be found. Please load the component before ' +
-                              'loading the API or set the attribute to true.';
-                    this.fire('message-error',msg);
-                    console.error(msg);
-                }
-            }
-            else {
+            //We will always depend on loading the map API externally.
+            _this._mapsApiAvailable().then(function() {
                 initializeLocationsMap();
-            }
+            });
         },
 
         /**
@@ -1065,8 +1044,7 @@
          */
         _calcMapSize: function() {
             var _this = this;
-            //Do this async so the container has time to load and properly calculate it's size.
-            setTimeout(function() {
+            this._mapIsReady().then(function() {
                 var height = _this.height;
                 //If we have a valid autoheight specified we override with that
                 if (_this.autoheight && _this.autoheight !== null && _this.autoheight > 0) {
@@ -1117,7 +1095,7 @@
                 if (_this._tooltipsDisplayed) {
                     _this._repositionTooltips();
                 }
-            },0);
+            });
         },
 
         /**
@@ -1750,6 +1728,29 @@
                     _this._map.setOptions({maxZoom: response.zoom});
                 });
             }
+        },
+
+        /**
+         * A promise that when resolved indicates that the Google Maps API is available.
+         * @returns {*}
+         * @private
+         */
+        _mapsApiAvailable: function() {
+            return new Promise(function (resolve) {
+                if (('google' in window) && ('maps' in window.google)) {
+                    resolve();
+                }
+                else {
+                    waitForMapApi();
+                    function waitForMapApi() {
+                        if (!('google' in window) || !('maps' in window.google)) {
+                            setTimeout(function(){waitForMapApi();},100);
+                            return;
+                        }
+                        resolve();
+                    }
+                }
+            });
         },
 
         /**
