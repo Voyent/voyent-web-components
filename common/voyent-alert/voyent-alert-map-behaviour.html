@@ -97,6 +97,7 @@
         ],
 
         ready: function() {
+            var _this = this;
             //Define some constants.
             this._CONTAINER_ID = 'container';
             this._SIDE_PANEL_ID = 'sidePanel';
@@ -105,8 +106,6 @@
             this._CIRCLE_BUTTON_ID = 'circleBttn';
             this._POLYGON_BUTTON_ID = 'polygonBttn';
             this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
-
-            var _this = this;
             //Default to the last realm and account if one is not set.
             if (!this.realm) {
                 this.realm = voyent.auth.getLastKnownRealm();
@@ -114,99 +113,105 @@
             if (!this.account) {
                 this.account = voyent.auth.getLastKnownAccount();
             }
-            window.initializeLocationsMap = function () {
-                var mapOptions = {
-                    zoom: 10,
-                    center: new google.maps.LatLng(51.08427,-114.13062),
-                    streetViewControl: false,
-                    fullscreenControl: false,
-                    scrollwheel: false,
-                    scaleControl: true,
-                    mapTypeControlOptions: {
-                        style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                        position: google.maps.ControlPosition.TOP_LEFT
-                    },
-                    zoomControlOptions: {
-                        style: google.maps.ZoomControlStyle.LARGE,
-                        position: google.maps.ControlPosition.LEFT_TOP
-                    },
-                    keyboardShortcuts: false //VRAS-394
-                };
-                if (_this.nodeName !== 'VOYENT-MY-LOCATIONS') {
-                    mapOptions.clickableIcons = false;
-                }
-                //Alert view map is readonly.
-                if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
-                    mapOptions.mapTypeControl = mapOptions.zoomControl = mapOptions.draggable = false;
-                    mapOptions.disableDoubleClickZoom = true;
-                }
-                //Initialize the map.
-                _this._map = new google.maps.Map(_this.$.map,mapOptions);
-                //Calculate the map size.
-                _this._calcMapSize();
-                if (_this.nodeName !== 'VOYENT-ALERT-VIEW') {
-                    //Setup ui and listeners for adding new marker based entities.
-                    _this._drawingManager = new google.maps.drawing.DrawingManager({
-                        map:_this._map,
-                        drawingControlOptions: {
-                            position: google.maps.ControlPosition.TOP_RIGHT,
-                            drawingModes: []
-                        },
-                        //This settings only apply to entities created with
-                        //the drawing API, not when creating manually.
-                        markerOptions: { draggable:true, zIndex:50 }
-                    });
-                    _this._setupDrawingListeners();
-                    _this._removeStopDrawingButton();
-                }
-                if (_this.nodeName === 'VOYENT-ALERT-EDITOR' || _this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
-                    //Add the fullscreen control.
-                    _this._addFullscreenControl();
-                }
-                _this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
-                _this._manageMaxZoomLevel(); //Ensure we always have imagery in satellite view modes.
-                _this._regionMapping = {}; //Map of region data so we can toggle between them.
-                _this._isLoggedIn = false; //Toggle for side panel.
-                //Custom initialization for each component after login.
-                if (voyent.auth.isLoggedIn()) {
-                    _this._onAfterLogin();
-                }
-                else {
-                    //We only want to do this on initial login and not access_token refreshes so we'll
-                    //save a reference to the listener so we can remove it the first time it fires.
-                    var onAfterLoginListener = function() {
-                        _this._onAfterLogin();
-                        window.removeEventListener('voyent-login-succeeded',onAfterLoginListener);
-                    }.bind(_this);
-                    window.addEventListener('voyent-login-succeeded',onAfterLoginListener);
-                }
-                //Make sure the map is always sized correctly when the window size changes.
-                window.addEventListener('resize', function() {
-                    _this.resizeMap();
-                });
-                //Make sure the map is always sized correctly when the map size changes.
-                new ResizeObserver(function() {
-                    //This ResizeObserver listener sometimes fires when the map
-                    //dimensions have not changed so we will ignore these events.
-                    if (_this._previousMapWidth === _this.querySelector('#map').offsetWidth &&
-                        _this._previousMapHeight === _this.querySelector('#map').offsetHeight) {
-                        return;
-                    }
-                    _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
-                    _this._previousMapHeight = _this.querySelector('#map').offsetHeight;
-                    _this.resizeMap();
-                }).observe(_this.querySelector('#map'));
-                //De-select any selected zone stack on map click.
-                _this._deselectStacksOnClick(_this._map);
-                //Create a general use OverlayView object that so we can access some of its utility functions.
-                _this._overlayView = new google.maps.OverlayView();
-                _this._overlayView.draw = function() {};
-                _this._overlayView.setMap(_this._map);
-            };
             //We will always depend on loading the map API externally.
-            _this._mapsApiAvailable().then(function() {
-                initializeLocationsMap();
+            this._mapsApiAvailable().then(function() {
+                _this._initializeGoogleMap();
             });
+        },
+
+        /**
+         * General function for initializing the Google Map and other required features.
+         * @private
+         */
+        _initializeGoogleMap: function () {
+            var _this = this;
+            var mapOptions = {
+                zoom: 10,
+                center: new google.maps.LatLng(51.08427,-114.13062),
+                streetViewControl: false,
+                fullscreenControl: false,
+                scrollwheel: false,
+                scaleControl: true,
+                mapTypeControlOptions: {
+                    style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                    position: google.maps.ControlPosition.TOP_LEFT
+                },
+                zoomControlOptions: {
+                    style: google.maps.ZoomControlStyle.LARGE,
+                    position: google.maps.ControlPosition.LEFT_TOP
+                },
+                keyboardShortcuts: false //VRAS-394
+            };
+            if (this.nodeName !== 'VOYENT-MY-LOCATIONS') {
+                mapOptions.clickableIcons = false;
+            }
+            //Alert view map is readonly.
+            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                mapOptions.mapTypeControl = mapOptions.zoomControl = mapOptions.draggable = false;
+                mapOptions.disableDoubleClickZoom = true;
+            }
+            //Initialize the map.
+            this._map = new google.maps.Map(this.$.map,mapOptions);
+            //Calculate the map size.
+            this._calcMapSize();
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+                //Setup ui and listeners for adding new marker based entities.
+                this._drawingManager = new google.maps.drawing.DrawingManager({
+                    map:this._map,
+                    drawingControlOptions: {
+                        position: google.maps.ControlPosition.TOP_RIGHT,
+                        drawingModes: []
+                    },
+                    //This settings only apply to entities created with
+                    //the drawing API, not when creating manually.
+                    markerOptions: { draggable:true, zIndex:50 }
+                });
+                this._setupDrawingListeners();
+                this._removeStopDrawingButton();
+            }
+            if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                //Add the fullscreen control.
+                this._addFullscreenControl();
+            }
+            this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
+            this._manageMaxZoomLevel(); //Ensure we always have imagery in satellite view modes.
+            this._regionMapping = {}; //Map of region data so we can toggle between them.
+            this._isLoggedIn = false; //Toggle for side panel.
+            //Custom initialization for each component after login.
+            if (voyent.auth.isLoggedIn()) {
+                this._onAfterLogin();
+            }
+            else {
+                //We only want to do this on initial login and not access_token refreshes so we'll
+                //save a reference to the listener so we can remove it the first time it fires.
+                var onAfterLoginListener = function() {
+                    _this._onAfterLogin();
+                    window.removeEventListener('voyent-login-succeeded',onAfterLoginListener);
+                };
+                window.addEventListener('voyent-login-succeeded',onAfterLoginListener);
+            }
+            //Make sure the map is always sized correctly when the window size changes.
+            window.addEventListener('resize', function() {
+                _this.resizeMap();
+            });
+            //Make sure the map is always sized correctly when the map size changes.
+            new ResizeObserver(function() {
+                //This ResizeObserver listener sometimes fires when the map
+                //dimensions have not changed so we will ignore these events.
+                if (_this._previousMapWidth === _this.querySelector('#map').offsetWidth &&
+                    _this._previousMapHeight === _this.querySelector('#map').offsetHeight) {
+                    return;
+                }
+                _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
+                _this._previousMapHeight = _this.querySelector('#map').offsetHeight;
+                _this.resizeMap();
+            }).observe(this.querySelector('#map'));
+            //De-select any selected zone stack on map click.
+            this._deselectStacksOnClick(this._map);
+            //Create a general use OverlayView object that so we can access some of its utility functions.
+            this._overlayView = new google.maps.OverlayView();
+            this._overlayView.draw = function() {};
+            this._overlayView.setMap(this._map);
         },
 
         /**
