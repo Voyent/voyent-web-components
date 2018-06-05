@@ -313,8 +313,11 @@ Polymer({
      * @private
      */
     _modeChanged: function(mode) {
+        var _this = this;
         if (mode && mode === 'notification' || mode === 'preview') {
-            this._addFullscreenControl();
+            this._mapIsReady().then(function() {
+                _this._addFullscreenControl();
+            });
         }
     },
 
