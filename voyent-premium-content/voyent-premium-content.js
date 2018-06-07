@@ -33,6 +33,10 @@ Polymer({
             this.set('hasPremium', false);
         }
         else {
+            this.set('hasPremium', true);
+        }
+        /* TODO Re-enable service level check once we can work out to do it for non-account owners
+        else {
             var _this = this;
             voyent.admin.getAccount().then(function(res) {
                 if (res && res.serviceLevels && res.serviceLevels.accountType &&
@@ -45,6 +49,7 @@ Polymer({
                 console.error(error);
             });
         }
+        */
     },
     
 	attached: function() {
