@@ -4,7 +4,7 @@ Polymer({
     properties: {
         hasPremium: {
             type: Boolean,
-            value: false,
+            value: true, // We default to having Premium mainly so we don't see a flicker when the check happens
             observer: '_premiumChanged'
         },
         noPremium: {
@@ -32,24 +32,31 @@ Polymer({
         if (this.noPremium === true) {
             this.set('hasPremium', false);
         }
+        // Otherwise check our public service for the service level
         else {
-            this.set('hasPremium', true);
-        }
-        /* TODO Re-enable service level check once we can work out to do it for non-account owners
-        else {
+            var sourceUrl = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                            voyent.auth.getLastKnownHost() +
+                            "/vs/vras/realms/public/serviceLevels?account=" + voyent.auth.getLastKnownAccount();
+            
             var _this = this;
-            voyent.admin.getAccount().then(function(res) {
-                if (res && res.serviceLevels && res.serviceLevels.accountType &&
-                    typeof res.serviceLevels.accountType.code !== 'undefined') {
+            voyent.$.get(sourceUrl).then(function(res) {
+                _this.set('hasPremium', false);
+                    
+                if (res) {
+                    res = JSON.parse(res);
+                    if (res.serviceLevels && res.serviceLevels.accountType &&
+                        typeof res.serviceLevels.accountType.code !== 'undefined') {
                         if (res.serviceLevels.accountType.code === 2) { // Premium
                             _this.set('hasPremium', true);
                         }
                     }
+                }
             }).catch(function(error) {
                 console.error(error);
+                
+                _this.set('hasPremium', false);
             });
         }
-        */
     },
     
 	attached: function() {
