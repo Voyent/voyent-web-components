@@ -5,6 +5,9 @@
                 height: var(--map-height);
                 width:100%;
             }
+            #container[data-is-fullscreen] {
+                height: 0;
+            }
             #map {
                 width: var(--map-width);
                 border-radius: 15px 0 0 15px;
@@ -41,9 +44,13 @@
                 margin: 7px 0 0 0;
             }
             .drag-handle {
+                background-color: white;
                 width: 2px;
                 cursor:ew-resize;
                 display:inline-block;
+            }
+            .drag-handle[data-is-fullscreen] {
+                background-color: rgba(0,0,0,0.5);
             }
             .alert-template-title,
             .alert-zones-label,

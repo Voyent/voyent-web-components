@@ -75,10 +75,11 @@ Example:
             }
         </style>
 
-        <div id="container">
+        <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
             <div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
-                <div class="drag-handle" title="Resize Properties Panel" on-mousedown="_beginResizeOperation" on-mousemove="_doResizeOperation" on-mouseup="_endResizeOperation"></div>
+                <div class="drag-handle" data-is-fullscreen$="[[_isFullscreenMode]]" title="Resize Properties Panel"
+                     on-mousedown="_beginResizeOperation" on-mousemove="_doResizeOperation" on-mouseup="_endResizeOperation"></div>
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <template is="dom-if" if="[[_showTemplateListPane]]">
