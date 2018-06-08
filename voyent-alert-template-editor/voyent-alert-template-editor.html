@@ -50,7 +50,8 @@ Example:
                 <div class="drag-handle" title="Resize Properties Panel" on-mousedown="_beginResizeOperation" on-mousemove="_doResizeOperation" on-mouseup="_endResizeOperation"></div>
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
-                        <voyent-alert-properties hide-alert-name
+                        <voyent-alert-properties parent-is-template-editor
+                                                 hide-alert-name
                                                  hide-badge-chooser
                                                  hide-zone-name-editing
                                                  badgedir="{{badgedir}}"

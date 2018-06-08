@@ -353,8 +353,10 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
         </style>
 
-        <voyent-custom-validator id="newCategoryValidator" validator-name="newCategoryValidator"></voyent-custom-validator>
-        <voyent-custom-validator id="existingCategoryValidator" validator-name="existingCategoryValidator"></voyent-custom-validator>
+        <template is="dom-if" if="[[parentIsTemplateEditor]]">
+            <voyent-custom-validator id="newCategoryValidator" validator-name="newCategoryValidator"></voyent-custom-validator>
+            <voyent-custom-validator id="existingCategoryValidator" validator-name="existingCategoryValidator"></voyent-custom-validator>
+        </template>
 
         <template is="dom-if" if="[[_loadedAlert]]">
             <template is="dom-if" if="[[!hideAlertName]]">

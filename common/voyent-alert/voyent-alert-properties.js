@@ -4,6 +4,14 @@ Polymer({
 
     properties: {
         /**
+         * Indicates whether the parent component is `<voyent-alert-template-editor>`.
+         */
+        parentIsTemplateEditor: { type: Boolean },
+        /**
+         * Indicates whether the parent component is `<voyent-alert-editor>`.
+         */
+        parentIsAlertEditor: { type: Boolean },
+        /**
          * Indicates whether the movement accordion will be shown.
          */
         showMovementAccordion: { type: Boolean, value: false },
@@ -128,8 +136,14 @@ Polymer({
     ],
 
     attached: function() {
-        this.querySelector('#newCategoryValidator').validate = this._validateNewTemplateCategory.bind(this);
-        this.querySelector('#existingCategoryValidator').validate = this._validateExistingTemplateCategory.bind(this);
+        var _this = this;
+        // Async so the template has time to toggle
+        setTimeout(function() {
+            if (_this.parentIsTemplateEditor) {
+                _this.querySelector('#newCategoryValidator').validate = _this._validateNewTemplateCategory.bind(_this);
+                _this.querySelector('#existingCategoryValidator').validate = _this._validateExistingTemplateCategory.bind(_this);
+            }
+        },0);
     },
 
     ready: function() {
