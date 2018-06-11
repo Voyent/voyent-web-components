@@ -728,6 +728,12 @@ Polymer({
         if (this._initializingMyLocations) {
             return;
         }
+        // On Android when focusing on an input field the keyboard opening shrinks the height of the web view which
+        // triggers a map resize event which triggers map panning. As a low impact solution to fix this we will just
+        // skip map panning while the info window is open so the map position will not move when focusing on the input.
+        if (this.isMobile && this._infoWindowOpen) {
+            return;
+        }
         this._map.setOptions({maxZoom:this._maxZoom});
         var bounds = new google.maps.LatLngBounds();
         if (this._myLocations.length) {
