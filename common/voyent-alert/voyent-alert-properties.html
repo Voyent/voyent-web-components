@@ -416,7 +416,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                            on-iron-activate="_alertCardinalDirectionChanged"
                                                            selected="{{_alertCardinalDirection}}"
                                                            attr-for-selected="name">
-                                                <template is="dom-repeat" items="[[_alertCardinalDirections]]">
+                                                <template is="dom-repeat" items="[[_alertCardinalDirections]]" strip-whitespace>
                                                     <paper-item name="[[item.value]]">[[item.label]]</paper-item>
                                                 </template>
                                             </iron-selector>
@@ -484,7 +484,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
             <div class="accordion">
-                <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlert.selectedStack.zones]]" as="zone">
+                <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlert.selectedStack.zones]]" as="zone" strip-whitespace>
                     <div class$="{{_getAccordionClasses('header',zone.active,'')}}">
                         <template is="dom-if" if="[[!zone.renaming]]">
                             <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
@@ -700,7 +700,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                             </div>
                             <div class="category-wrapper">
                                 <iron-selector id="categoryManager" multi selected-values="{{_selectedCategories}}" attr-for-selected="name">
-                                    <template is="dom-repeat" items="[[_filteredTemplateCategories]]" as="categoryObj" sort="_sortCategories">
+                                    <template is="dom-repeat" items="[[_filteredTemplateCategories]]" as="categoryObj" sort="_sortCategories" strip-whitespace>
                                         <div name="[[categoryObj]]" class="category-item no-select" title="[[categoryObj.name]]">
                                             [[categoryObj.name]]
                                         </div>
@@ -729,7 +729,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <div class="category-manager-dialog-wrapper">
                     <div class="category-wrapper">
                         <template is="dom-if" if="[[_templateCategories.length]]">
-                            <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories">
+                            <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories" strip-whitespace>
                                 <template is="dom-if" if="[[categoryObj.editable]]">
                                     <div class="category-item no-select" data-editing$="[[categoryObj.editing]]"
                                          title="[[categoryObj.name]]" on-click="_enableCategoryNameEditing">
