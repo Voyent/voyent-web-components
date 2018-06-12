@@ -61,6 +61,7 @@ Polymer({
             promises.push(_this._fetchMyLocations());
             Promise.all(promises).then(function() {
                 _this._initializingMyLocations = false;
+                console.log('_adjustBoundsAndPan from ready');
                 _this._adjustBoundsAndPan();
             });
         });
@@ -192,6 +193,7 @@ Polymer({
             if (_this._infoWindowOpen) {
                 _this._closeInfoWindow();
                 if (!e.placeId) {
+                    console.log('_adjustBoundsAndPan from _setupInfoWindow');
                     _this._adjustBoundsAndPan();
                 }
             }
@@ -219,6 +221,7 @@ Polymer({
         //When clicking the close button on the infoWindow redisplay the overlay.
         google.maps.event.addListener(_this._infoWindow,'closeclick',function() {
             _this._closeInfoWindow();
+            console.log('_adjustBoundsAndPan from closeclick');
             _this._adjustBoundsAndPan();
         });
     },
@@ -238,6 +241,7 @@ Polymer({
             //If no location was selected or the location that was selected is
             //already selected then just close the info window and pan the map.
             if (!selectedLocation || (selectedLocation && selectedLocation === this._loadedLocation)) {
+                console.log('_adjustBoundsAndPan from _toggleInfoWindow');
                 this._adjustBoundsAndPan();
                 return;
             }
@@ -321,10 +325,12 @@ Polymer({
     _handleInfoWindowKeyPress: function(e) {
         if (e.keyCode === 13) {
             this._closeInfoWindow();
+            console.log('_adjustBoundsAndPan from _handleInfoWindowKeyPress');
             this._adjustBoundsAndPan();
         }
         else if (e.keyCode === 27) {
             this._closeInfoWindow(true);
+            console.log('_adjustBoundsAndPan from _handleInfoWindowKeyPress');
             this._adjustBoundsAndPan();
         }
     },
@@ -341,6 +347,7 @@ Polymer({
         }
         else if (e.keyCode === 27) {
             this._closeInfoWindow(true);
+            console.log('_adjustBoundsAndPan from _handleNewPlaceKeyPress');
             this._adjustBoundsAndPan();
         }
     },
@@ -357,6 +364,7 @@ Polymer({
         }
         else if (e.keyCode === 27) {
             this._closeInfoWindow(true);
+            console.log('_adjustBoundsAndPan from _handleNewPinDropKeyPress');
             this._adjustBoundsAndPan();
         }
     },
@@ -724,14 +732,17 @@ Polymer({
      * @private
      */
     _adjustBoundsAndPan: function() {
+        console.log('_adjustBoundsAndPan');
         var _this = this;
         if (this._initializingMyLocations) {
+            console.log('skipping map bounds adjustment (still initializing)');
             return;
         }
         // On Android when focusing on an input field the keyboard opening shrinks the height of the web view which
         // triggers a map resize event which triggers map panning. As a low impact solution to fix this we will just
         // skip map panning while the info window is open so the map position will not move when focusing on the input.
         if (this.isMobile && this._infoWindowOpen) {
+            console.log('skipping map bounds adjustment (mobile / infoWindow open)');
             return;
         }
         this._map.setOptions({maxZoom:this._maxZoom});
@@ -747,6 +758,7 @@ Polymer({
         }
         else {
             this._skipRegionPanning = false;
+            console.log('_zoomOnRegion from _adjustBoundsAndPan');
             this._zoomOnRegion();
         }
         setTimeout(function() {

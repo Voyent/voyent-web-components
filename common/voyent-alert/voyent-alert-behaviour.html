@@ -167,7 +167,7 @@
                     }
                 }
             }
-            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !this._skipCategoryValidation &&
+            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !this._skipCategoryValidation && !this._loadedAlert.template.isDefaultTemplate &&
                 (!this._loadedAlert.template.categories || !this._loadedAlert.template.categories.length)) {
                 this._openUncategorizedTemplateDialog();
                 return false;
@@ -1100,6 +1100,9 @@
                     var json = this.constructor.getJSONStructure();
                     //Add template-level properties.
                     json.name = this.name;
+                    if (this.isDefaultTemplate) {
+                        json.isDefaultTemplate = true;
+                    }
                     json.badge = 'info.png';
                     json.categories = this.categories;
                     if (this.badge) {
