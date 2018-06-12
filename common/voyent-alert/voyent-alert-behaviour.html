@@ -426,6 +426,7 @@
 
         /**
          * Opens the dialog and sets various properties to be used later.
+         * @param title
          * @param message
          * @param inputVal
          * @param toggleLabel
@@ -435,7 +436,8 @@
          * @param cancelFunc
          * @private
          */
-        _openDialog: function(message,inputVal,toggleLabel,showBadge,showCategoryPicker,confirmFunc,cancelFunc) {
+        _openDialog: function(title,message,inputVal,toggleLabel,showBadge,showCategoryPicker,confirmFunc,cancelFunc) {
+            this._dialogTitle = title;
             this._dialogMessage = message;
             this._dialogInput = inputVal;
             this._showDialogInput = (typeof inputVal !== 'undefined' && inputVal !== null);

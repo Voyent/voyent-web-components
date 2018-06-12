@@ -153,7 +153,7 @@ Polymer({
         if (!this._loadedAlert || !this._loadedAlert.template) {
             return this.fire('message-error', 'Unable to save alert as template: No alert loaded');
         }
-        this._openDialog(null,null,'Save Location With Template?',false,false,function() {
+        this._openDialog('Save Alert As Template',null,null,'Save Location With Template?',false,false,function() {
             _this._loadedAlert.template.setSavePosition(_this._dialogToggle);
             var id = _this._loadedAlert.template.id;
             var parentId = _this._loadedAlert.template.parentId;
@@ -544,7 +544,7 @@ Polymer({
     _promptForRemoval: function(func) {
         if (!this._loadedAlert) { return; }
         var msg = 'Are you sure you want to delete ' + this._loadedAlert.template.name + '? This cannot be undone!';
-        this._openDialog(msg,null,null,false,false,func);
+        this._openDialog('Confirm Delete Alert',msg,null,null,false,false,func);
     },
 
     /**

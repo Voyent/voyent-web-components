@@ -86,10 +86,6 @@ Example:
                 margin: 0;
                 padding: 15px;
             }
-            .dialog-title {
-                font-weight:bold;
-                font-size:17px;
-            }
             .modal-dialog .private-residence,
             .name-input {
                 margin-top:15px !important;
@@ -214,7 +210,12 @@ Example:
         </div>
         <paper-dialog id="modalDialog" class="modal-dialog" modal on-keyup="_dialogKeyUp"
                       on-iron-overlay-opened="_fixModalStacking" always-on-top>
-            <p class="dialog-title">New Location Details</p>
+            <h2 class="dialogH2">New Location Details</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="_closeDialog" title="Close dialog"
+                                   class="dialogCloseButton"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
             <p class="no-margin">Start typing and then select an item from the list...</p>
             <paper-input id="autoComplete" class="autocomplete no-margin" tabindex="1" on-keyup="_handleAutocompleteKeyPress"
                          autocapitalize="words" on-value-changed="_autoCompleteChanged" value="{{_autocompleteValue}}"

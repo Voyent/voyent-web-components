@@ -117,6 +117,7 @@ Example:
                                                      _dialog-toggle="{{_dialogToggle}}"
                                                      _dialog-toggle-label="{{_dialogToggleLabel}}"
                                                      _dialog-badge="{{_dialogBadge}}"
+                                                     _dialog-title="{{_dialogTitle}}"
                                                      _dialog-message="{{_dialogMessage}}"
                                                      _dialog-confirm-func="{{_dialogConfirmFunc}}"
                                                      _dialog-cancel-func="{{_dialogCancelFunc}}"
@@ -168,6 +169,12 @@ Example:
             </div>
         </div>
         <paper-dialog id="newAlertDialog" on-keyup="_submitNewAlertDialog" modal on-iron-overlay-opened="_fixModalStacking">
+            <h2 class="dialogH2">New Alert</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="_cancelNewAlert" title="Close dialog"
+                                   class="dialogCloseButton"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
             <p class="select-template-msg">
                 Choose a template from the list below
             </p>

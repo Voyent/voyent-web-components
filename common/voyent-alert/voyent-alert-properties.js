@@ -41,6 +41,10 @@ Polymer({
          */
         _fallbackZone: { type: Object, value: null, notify: true },
         /**
+         * The modal dialog title.
+         */
+        _dialogTitle: { type: String, value: '', notify: true },
+        /**
          * The modal dialog message.
          */
         _dialogMessage: { type: String, value: '', notify: true },
@@ -1076,7 +1080,7 @@ Polymer({
                 return;
             }
         }
-        this._openDialog('Please enter the zone name','',null,false,false,function() {
+        this._openDialog('Add New Zone','Please enter the zone name','',null,false,false,function() {
             var name = this._dialogInput;
             if (shape === 'circle') {
                 newZone = new _this._CircularAlertZone(null,radius,name,null,null,null,null,zIndex);

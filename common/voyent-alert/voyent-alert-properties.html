@@ -242,33 +242,9 @@ Internal component used to display the properties panel inside Voyent alert comp
                 padding: 0 10px;
             }
             .category-manager-dialog-wrapper {
+                min-width: 650px;
                 max-width: 650px;
                 padding: 0 24px;
-            }
-            .dialog-title-bar {
-                margin: 0;
-                padding: 0;
-                width: 650px;
-                font-size: 17px;
-                font-weight: bold;
-                cursor: default;
-            }
-            .dialog-title-bar .title {
-                display: inline-block;
-                width: 610px;
-                padding: 10px 15px;
-                cursor: default;
-            }
-            .dialog-title-bar .close-button {
-                display: inline-block;
-                text-align: center;
-                width: 25px;
-            }
-            .dialog-title-bar .close-button paper-icon-button {
-                top: -5px;
-                width: 23px;
-                height: 23px;
-                cursor: pointer;
             }
             .category-wrapper {
                 max-height: 135px;
@@ -647,6 +623,12 @@ Internal component used to display the properties panel inside Voyent alert comp
             </div>
         </template>
         <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
+            <h2 class="dialogH2">[[_dialogTitle]]</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="closeDialog" title="Close dialog"
+                                   class="dialogCloseButton"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
             <div>
                 <template is="dom-if" if="[[_dialogMessage]]">
                     <p>[[_dialogMessage]]</p>
@@ -675,12 +657,12 @@ Internal component used to display the properties panel inside Voyent alert comp
         </paper-dialog>
         <paper-dialog id="categoryManager" modal on-iron-overlay-opened="_fixModalStacking">
             <template is="dom-if" if="[[!_showCategoryManager]]">
-                <div class="dialog-title-bar no-select">
-                    <div class="title">Select Categories</div>
-                    <div class="close-button">
-                        <paper-icon-button icon="close" on-click="_confirmCategorySelector" title="Close dialog"></paper-icon-button>
-                    </div>
+                <h2 class="dialogH2">Select Categories</h2>
+                <div class="dialogCloseWrap">
+                    <paper-icon-button icon="close" on-click="_confirmCategorySelector" title="Close dialog"
+                                       class="dialogCloseButton"></paper-icon-button>
                 </div>
+                <div class="dialogEnd"></div>
                 <div class="category-manager-dialog-wrapper">
                     <div class="category-picker">
                         <template is="dom-if" if="[[!_templateCategories.length]]">
@@ -719,13 +701,12 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
             <template is="dom-if" if="[[_showCategoryManager]]">
-                <div class="dialog-title-bar no-select">
-                    <span class="title">Manage Categories</span>
-                    <span class="close-button">
-                        <paper-icon-button icon="close" on-click="_closeCategoryManager"
-                                           title="Close dialog"></paper-icon-button>
-                    </span>
+                <h2 class="dialogH2" style="margin-top:24px;">Manage Categories</h2>
+                <div class="dialogCloseWrap">
+                    <paper-icon-button icon="close" on-click="_closeCategoryManager" title="Close dialog"
+                                       class="dialogCloseButton"></paper-icon-button>
                 </div>
+                <div class="dialogEnd"></div>
                 <div class="category-manager-dialog-wrapper">
                     <div class="category-wrapper">
                         <template is="dom-if" if="[[_templateCategories.length]]">
@@ -774,6 +755,12 @@ Internal component used to display the properties panel inside Voyent alert comp
             </template>
         </paper-dialog>
         <paper-dialog id="confirmCategoryDeletionDialog" modal on-iron-overlay-opened="_fixModalStacking">
+            <h2 class="dialogH2">Confirm Deletion</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="_cancelCategoryDeletion" title="Close dialog"
+                                   class="dialogCloseButton"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
             <p>
                 <template is="dom-if" if="[[_haveOneAssociatedTemplate(_associatedTemplates.length)]]">
                     This category is associated with 1 template.
@@ -790,6 +777,12 @@ Internal component used to display the properties panel inside Voyent alert comp
             </div>
         </paper-dialog>
         <paper-dialog id="confirmCategoryUpdateDialog" modal on-iron-overlay-opened="_fixModalStacking">
+            <h2 class="dialogH2">Confirm Update</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="_cancelCategoryUpdate" title="Close dialog"
+                                   class="dialogCloseButton"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
             <p>
                 <template is="dom-if" if="[[_haveOneAssociatedTemplate(_associatedTemplates.length)]]">
                     This category is associated with 1 template.
