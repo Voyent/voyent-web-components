@@ -114,7 +114,7 @@
         <div id="mainForm" class="formWrap" ondragover="allowDrop(event)" on-drop="dropToReorder">
             <!-- Unfortunate table needed to align anything with a paper-input -->
             <table width="100%" cellpadding="0" cellspacing="0">
-                <template id="formElements" is="dom-repeat" items="{{value.form}}">
+                <template id="formElements" is="dom-repeat" items="{{value.form}}" strip-whitespace>
                     <template is="dom-if" if="{{!isEqual(item.index, editIndex)}}">
                         <tr height="45px" id$="element{{item.index}}">
                             <template is="dom-if" if="{{!readonly}}">

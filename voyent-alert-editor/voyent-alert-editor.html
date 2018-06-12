@@ -195,7 +195,7 @@ Example:
                         </div>
                     </template>
                     <iron-selector id="newAlertCategories" class="alternating-row-parent" selected="{{_selectedAlertTemplateId}}" attr-for-selected="name">
-                        <template id="alertTemplatesList" is="dom-repeat" items="[[_filteredParentTemplatesByCategory]]" as="obj" sort="_sortTemplates">
+                        <template id="alertTemplatesList" is="dom-repeat" items="[[_filteredParentTemplatesByCategory]]" as="obj" sort="_sortTemplates" strip-whitespace>
                             <div name="[[obj.template._id]]" class="table pointer">
                                 <div class="table-col badge-col no-select">
                                     <img class="badge-img" src="[[getBadgeUrl(obj.template.badge)]]"/>
