@@ -41,11 +41,13 @@ Polymer({
                 _this.clearMap();
             }
             var latLng = null;
-            if (template.geo && template.isDefaultTemplate) {
+            if (template.geo && template.categories && template.categories.indexOf('Predefined') > -1) {
                 latLng = _this._areaRegion.bounds.getCenter();
             }
             if (loadAsNew) {
-                delete template.isDefaultTemplate;
+                if (template.categories && template.categories.indexOf('Predefined') > -1) {
+                    template.categories.splice(template.categories.indexOf('Predefined'),1);
+                }
                 delete template.lastUpdated;
                 delete template.lastUpdatedBy;
                 delete template._id;
@@ -74,7 +76,7 @@ Polymer({
                 _this.set('_loadedAlert',{
                     template: new _this._AlertTemplate(
                         null,null,_this._dialogInput,_this._dialogBadge,
-                        null,null,null,false,false,null,[]
+                        null,null,null,false,null,[]
                     ),
                     selectedStack: null
                 });
@@ -116,9 +118,16 @@ Polymer({
      * @private
      */
     _onAfterLogin: function() {
+        var _this = this;
         this._isLoggedIn = true; //Toggle for side panel.
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
+        //Fetch realm-scope property for granting privileged access to predefined templates.
+        voyent.scope.getRealmData({"property":"isVrasAdministratorRealm"}).then(function(value) {
+            _this.set('_isVrasAdministratorRealm',!!value);
+        }).catch(function(){
+            _this.set('_isVrasAdministratorRealm',false);
+        });
     },
 
     /**

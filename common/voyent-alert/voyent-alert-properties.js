@@ -306,8 +306,8 @@ Polymer({
         var _this = this;
         //Generate a flat string array of category names, remove the category and save the changes.
         var newTemplateCategories = this._templateCategories.reduce(function(result,categoryObj) {
-            //Never persist the mobile category
-            if (categoryObj.name === 'Mobile') {
+            //Never persist the mobile or predefined categories
+            if (categoryObj.name === 'Mobile' || categoryObj.name === 'Predefined') {
                 return result;
             }
             result.push(categoryObj.name);
@@ -409,8 +409,8 @@ Polymer({
         if (persist && this._newTemplateCategory) {
             //Generate a flat string array of category names, add the new category and save the changes.
             var newTemplateCategories = this._templateCategories.reduce(function(result,categoryObj) {
-                //Never persist the mobile category
-                if (categoryObj.name === 'Mobile') {
+                //Never persist the mobile or predefined categories
+                if (categoryObj.name === 'Mobile' || categoryObj.name === 'Predefined') {
                     return result;
                 }
                 result.push(categoryObj.name);
@@ -610,8 +610,9 @@ Polymer({
             return categoryObj.name;
         });
         newTemplateCategories[indexOfCategoryBeingEdited] = this._categoryToUpdate.newName;
-        //Never persist the mobile category
+        //Never persist the mobile or predefined categories
         newTemplateCategories.splice(newTemplateCategories.indexOf('Mobile'),1);
+        newTemplateCategories.splice(newTemplateCategories.indexOf('Predefined'),1);
 
         voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
             //Update our local lists and state.

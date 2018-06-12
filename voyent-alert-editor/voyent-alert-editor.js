@@ -281,7 +281,7 @@ Polymer({
             else {
                 templatesDuplicatedByCategory.push({
                     "template": template,
-                    "category": template.isDefaultTemplate ? "Predefined" : "Uncategorized"
+                    "category": "Uncategorized"
                 });
             }
         }

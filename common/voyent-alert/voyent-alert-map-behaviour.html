@@ -604,6 +604,14 @@
                         "name": 'Mobile',
                         "editable": false
                     });
+                    //Add the "Predefined" category if the realm has permission to add new predefined templates.
+                    if (_this._isVrasAdministratorRealm) {
+                        _this.push('_templateCategories',{
+                            "id": _this._generateUid(),
+                            "name": 'Predefined',
+                            "editable": false
+                        });
+                    }
                     _this.set('_filteredTemplateCategories',_this._templateCategories.slice(0));
                     resolve(_this._templateCategories);
                 }).catch(function (error) {
@@ -877,7 +885,7 @@
                 template: new this._AlertTemplate(
                     templateJSON._id, parentId, templateJSON.name, templateJSON.badge,
                     templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center,
-                    !!templateJSON.isDefaultTemplate, templateJSON.schedule, templateJSON.categories
+                    templateJSON.schedule, templateJSON.categories
                 ),
                 selectedStack: zoneStacks.length === 1 ? zoneStacks[0] : null
             });

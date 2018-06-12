@@ -167,7 +167,7 @@
                     }
                 }
             }
-            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !this._skipCategoryValidation && !this._loadedAlert.template.isDefaultTemplate &&
+            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !this._skipCategoryValidation &&
                 (!this._loadedAlert.template.categories || !this._loadedAlert.template.categories.length)) {
                 this._openUncategorizedTemplateDialog();
                 return false;
@@ -776,12 +776,11 @@
              * @param zoneStacks - A list of _AlertZoneStack objects, the list of zone stacks belonging with the template.
              * @param state - The current state of the alert, only relevant for child templates.
              * @param savePosition - Whether the position of the template should be stored in the json.
-             * @param isDefaultTemplate - Whether this is a default (predefined) template provided by Voyent.
              * @param schedule - The schedule details, only relevant for child templates.
              * @param categories - Zero or more categories that this template belongs to.
              * @private
              */
-            this._AlertTemplate = function(id,parentId,name,badge,marker,zoneStacks,state,savePosition,isDefaultTemplate,schedule,categories) {
+            this._AlertTemplate = function(id,parentId,name,badge,marker,zoneStacks,state,savePosition,schedule,categories) {
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setName(name || 'Unnamed');
@@ -790,7 +789,7 @@
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
                 this.setSavePosition(!!savePosition);
-                this.setIsDefaultTemplate(!!isDefaultTemplate);
+                this.setIsPredefinedTemplate(categories && categories.indexOf('Predefined') > -1);
                 this.setSchedule(schedule);
                 this.setCategories(categories || []);
             };
@@ -1001,11 +1000,11 @@
                     this.savePosition = savePosition;
                 },
                 /**
-                 * Sets whether this is a default (predefined) template.
-                 * @param isDefaultTemplate
+                 * Sets whether this is a predefined template.
+                 * @param isPredefinedTemplate
                  */
-                setIsDefaultTemplate: function(isDefaultTemplate) {
-                    this.isDefaultTemplate = isDefaultTemplate;
+                setIsPredefinedTemplate: function(isPredefinedTemplate) {
+                    this.isPredefinedTemplate = isPredefinedTemplate;
                 },
                 /**
                  * Sets the schedule for the alert.
@@ -1100,9 +1099,6 @@
                     var json = this.constructor.getJSONStructure();
                     //Add template-level properties.
                     json.name = this.name;
-                    if (this.isDefaultTemplate) {
-                        json.isDefaultTemplate = true;
-                    }
                     json.badge = 'info.png';
                     json.categories = this.categories;
                     if (this.badge) {
