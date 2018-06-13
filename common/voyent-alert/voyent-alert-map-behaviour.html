@@ -224,7 +224,6 @@
                 _this._calcMapSize();
                 //Async so the new dimensions render first.
                 setTimeout(function() {
-                    console.log('_adjustBoundsAndPan from resizeMap');
                     _this._adjustBoundsAndPan(forceMapPan);
                 },0);
             });
@@ -371,7 +370,6 @@
         clearMap: function() {
             var _this = this;
             this._disableDrawingMode();
-            console.log('_zoomOnRegion from clearMap');
             this._zoomOnRegion();
             //Clear loaded alert template.
             if (this._loadedAlert || this._fallbackZone) {
@@ -766,7 +764,6 @@
             this._areaRegion = {"region":region,"polygon":polygon,"bounds":bounds};
             this._regionMapping[this.realm] = this._areaRegion;
             //Pan the map on the new region.
-            console.log('_zoomOnRegion from _drawRegion');
             this._zoomOnRegion();
         },
 
@@ -775,7 +772,6 @@
          * @private
          */
         _zoomOnRegion: function() {
-            console.log('_zoomOnRegion');
             if (this._areaRegion && this._areaRegion.bounds && !this._skipRegionPanning) {
                 this._map.fitBounds(this._areaRegion.bounds);
                 this._map.panToBounds(this._areaRegion.bounds);
@@ -916,7 +912,6 @@
                 }
             }
             if (this.nodeName !== 'VOYENT-ALERT-VIEW' || this.mode !== 'notification') {
-                console.log('_adjustBoundsAndPan from _drawAndLoadAlertTemplate');
                 this._adjustBoundsAndPan();
             }
         },
@@ -1002,7 +997,6 @@
                         _this._fallbackZone.punchOutOverlay();
                     }
                     _this._disableDrawingMode();
-                    console.log('_adjustBoundsAndPan from _setupDrawingListeners');
                     _this._adjustBoundsAndPan();
                 },function() {
                     oce.overlay.setMap(null);
@@ -1547,7 +1541,6 @@
                             //or template. This fixes an issue where when we load a fallback zone only template after a stacked
                             //template the map wouldn't pan.
                             this._skipRegionPanning = false;
-                            console.log('_zoomOnRegion from _adjustBoundsAndPan');
                             this._zoomOnRegion();
                         }
                     }
@@ -1591,7 +1584,6 @@
                 }
             }
             else {
-                console.log('_zoomOnRegion from _adjustBoundsAndPan');
                 this._zoomOnRegion();
             }
         },
