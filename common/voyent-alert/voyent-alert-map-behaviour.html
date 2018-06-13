@@ -923,84 +923,94 @@
         _setupDrawingListeners: function() {
             var _this = this, zone;
             google.maps.event.addListener(this._drawingManager, 'overlaycomplete', function (oce) {
-                //Check if the new zone overlaps another zone stack.
-                var props = oce.type === 'circle' ?
-                    {"center":oce.overlay.getCenter(),"radius":oce.overlay.getRadius()} :
-                    {"paths":oce.overlay.getPaths()};
-                if (_this._alertHasIntersectingStacks(oce.type,props)) {
-                    _this._displayStackOverlapMsg();
-                    oce.overlay.setMap(null);
-                    return;
-                }
-                //Check if they drew a self-intersecting polygon and if so remove it from the map and notify them.
-                if (oce.type === 'polygon') {
-                    var kinks = turf.kinks({
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(oce.overlay.getPaths())
-                        }
-                    });
-                    if (kinks.features.length) {
-                        _this.fire('message-error','The zone cannot self-intersect');
+                //We do this async so the _drawingCancelled property has time to be applied. This allows
+                //the user to toggle the drawing mode off mid-draw by clicking the draw button.
+                setTimeout(function() {
+                    var drawingCancelled = _this._drawingCancelled;
+                    _this.set('_drawingCancelled',false);
+                    if (drawingCancelled) {
                         oce.overlay.setMap(null);
                         return;
                     }
-                }
-                _this._openDialog('Add New Zone','Please enter the zone name','',null,false,false,function() {
-                    //Build our stack marker, the position will be added later.
-                    var stackMarker = new google.maps.Marker({
-                        map: _this._map, draggable: true, zIndex: 50
-                    });
-                    if (oce.type === 'circle') { //Circular template.
-                        stackMarker.setPosition(oce.overlay.getCenter());
-                        zone = new _this._CircularAlertZone(null, oce.overlay.getRadius(),_this._dialogInput);
+                    //Check if the new zone overlaps another zone stack.
+                    var props = oce.type === 'circle' ?
+                        {"center":oce.overlay.getCenter(),"radius":oce.overlay.getRadius()} :
+                        {"paths":oce.overlay.getPaths()};
+                    if (_this._alertHasIntersectingStacks(oce.type,props)) {
+                        _this._displayStackOverlapMsg();
+                        oce.overlay.setMap(null);
+                        return;
                     }
-                    else { //Polygonal template.
-                        //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
-                        if (_this._drawingCanceled) {
+                    //Check if they drew a self-intersecting polygon and if so remove it from the map and notify them.
+                    if (oce.type === 'polygon') {
+                        var kinks = turf.kinks({
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(oce.overlay.getPaths())
+                            }
+                        });
+                        if (kinks.features.length) {
+                            _this.fire('message-error','The zone cannot self-intersect');
                             oce.overlay.setMap(null);
-                            _this._drawingCanceled = false;
                             return;
                         }
-                        var paths = oce.overlay.getPaths();
-                        stackMarker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
-                        zone = new _this._PolygonalAlertZone(null,paths,_this._dialogInput);
                     }
-                    var zoneStack = new _this._AlertZoneStack(stackMarker, [zone]);
-                    //Add the stack and fire the zone added event.
-                    _this._loadedAlert.template.addZoneStack(zoneStack);
-                    _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"isFallbackZone":false});
-                    //Toggle the accordion closed for the current stack and load the new one.
-                    _this._toggleProperties(-1);
-                    _this.set('_loadedAlert.selectedStack',zoneStack);
-                    _this._toggleProperties(0);
-                    //When we have only one stack we don't have a template marker, just the marker for the zone stack.
-                    //So once we have two zone stacks we need to create the marker and if we have more than two (the
-                    //marker exists already) then we'll update it's position.
-                    if (_this._loadedAlert.template.zoneStacks.length === 2) {
-                        _this._loadedAlert.template.setMarker(new google.maps.Marker({
-                            position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
-                            draggable: true, zIndex: 50,
-                            map: _this._map,
-                            icon: _this.pathtoimages+'/img/alert_marker.png'
-                        }));
-                    }
-                    else if (_this._loadedAlert.template.zoneStacks.length > 2) {
-                        _this._loadedAlert.template.updateJSONAndCentroid();
-                    }
-                    //To keep things simple we'll always use our custom classes for
-                    //drawing the shapes so remove the google-drawn shape from the map.
-                    oce.overlay.setMap(null);
-                    //Re-punch out the fallback zone.
-                    if (_this._fallbackZone) {
-                        _this._fallbackZone.punchOutOverlay();
-                    }
-                    _this._disableDrawingMode();
-                    _this._adjustBoundsAndPan();
-                },function() {
-                    oce.overlay.setMap(null);
-                });
+                    _this._openDialog('Add New Zone','Please enter the zone name','',null,false,false,function() {
+                        //Build our stack marker, the position will be added later.
+                        var stackMarker = new google.maps.Marker({
+                            map: _this._map, draggable: true, zIndex: 50
+                        });
+                        if (oce.type === 'circle') { //Circular template.
+                            stackMarker.setPosition(oce.overlay.getCenter());
+                            zone = new _this._CircularAlertZone(null, oce.overlay.getRadius(),_this._dialogInput);
+                        }
+                        else { //Polygonal template.
+                            //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
+                            if (_this._drawingCanceled) {
+                                oce.overlay.setMap(null);
+                                _this._drawingCanceled = false;
+                                return;
+                            }
+                            var paths = oce.overlay.getPaths();
+                            stackMarker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
+                            zone = new _this._PolygonalAlertZone(null,paths,_this._dialogInput);
+                        }
+                        var zoneStack = new _this._AlertZoneStack(stackMarker, [zone]);
+                        //Add the stack and fire the zone added event.
+                        _this._loadedAlert.template.addZoneStack(zoneStack);
+                        _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"isFallbackZone":false});
+                        //Toggle the accordion closed for the current stack and load the new one.
+                        _this._toggleProperties(-1);
+                        _this.set('_loadedAlert.selectedStack',zoneStack);
+                        _this._toggleProperties(0);
+                        //When we have only one stack we don't have a template marker, just the marker for the zone stack.
+                        //So once we have two zone stacks we need to create the marker and if we have more than two (the
+                        //marker exists already) then we'll update it's position.
+                        if (_this._loadedAlert.template.zoneStacks.length === 2) {
+                            _this._loadedAlert.template.setMarker(new google.maps.Marker({
+                                position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
+                                draggable: true, zIndex: 50,
+                                map: _this._map,
+                                icon: _this.pathtoimages+'/img/alert_marker.png'
+                            }));
+                        }
+                        else if (_this._loadedAlert.template.zoneStacks.length > 2) {
+                            _this._loadedAlert.template.updateJSONAndCentroid();
+                        }
+                        //To keep things simple we'll always use our custom classes for
+                        //drawing the shapes so remove the google-drawn shape from the map.
+                        oce.overlay.setMap(null);
+                        //Re-punch out the fallback zone.
+                        if (_this._fallbackZone) {
+                            _this._fallbackZone.punchOutOverlay();
+                        }
+                        _this._disableDrawingMode();
+                        _this._adjustBoundsAndPan();
+                    },function() {
+                        oce.overlay.setMap(null);
+                    });
+                },0);
             });
             //When the escape key is pressed exit drawing mode.
             window.addEventListener('keydown', function (event) {
@@ -1289,6 +1299,11 @@
          */
         _circleButtonListener: function() {
             this._deselectDrawingButtons();
+            if (this._drawingManager.getDrawingMode() === google.maps.drawing.OverlayType.CIRCLE) {
+                this._drawingManager.setDrawingMode(null);
+                this.set('_drawingCancelled',true);
+                return;
+            }
             this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
             var circleButton = this.querySelector('#'+this._CIRCLE_BUTTON_ID);
             if (circleButton) {
@@ -1302,6 +1317,11 @@
          */
         _polygonButtonListener: function() {
             this._deselectDrawingButtons();
+            if (this._drawingManager.getDrawingMode() === google.maps.drawing.OverlayType.POLYGON) {
+                this._drawingManager.setDrawingMode(null);
+                this.set('_drawingCancelled',true);
+                return;
+            }
             this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
             var polygonButton = this.querySelector('#'+this._POLYGON_BUTTON_ID);
             if (polygonButton) {

@@ -131,7 +131,11 @@ Polymer({
         /**
          * The search query entered by the user to filter categories.
          */
-        _categorySearchQuery: { type: String, value: '', notify: true }
+        _categorySearchQuery: { type: String, value: '', notify: true },
+        /**
+         * Whether drawing mode was just cancelled, used to cancel overlay drawing when the button is toggled mid drawing operation.
+         */
+        _drawingCancelled: { type: Boolean, value: false, notify: true }
     },
 
     observers: [

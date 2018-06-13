@@ -124,7 +124,8 @@ Example:
                                                      _alert-direction="{{_alertDirection}}"
                                                      _alert-speed="{{_alertSpeed}}"
                                                      _alert-speed-unit="{{_alertSpeedUnit}}"
-                                                     _show-movement="{{_showMovement}}">
+                                                     _show-movement="{{_showMovement}}"
+                                                     _drawing-cancelled="{{_drawingCancelled}}">
                             </voyent-alert-properties>
                         </template>
                     </template>
@@ -176,7 +177,7 @@ Example:
             </div>
             <div class="dialogEnd"></div>
             <p class="select-template-msg">
-                Choose a template from the list below
+                Choose a template from the list below:
             </p>
             <div class="search-query-input-wrapper">
                 <paper-input id="categoryQueryInput" label="Filter templates by name or category..." autofocus tabindex="1"
