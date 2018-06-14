@@ -1409,7 +1409,28 @@
                     else {
                         this.zones.splice(zoneIndex,1);
                     }
+                    //Update the JSON so we have a fresh set of coordinates for the punch out logic.
                     this.updateJSON();
+                    if (zone.getShape() === 'polygon') {
+                        //The zoneIndex actually points to the closest outer zone now since the array was just spliced.
+                        var closestOuterZone = this.zones[zoneIndex];
+                        if (zoneIndex === 0) {
+                            if (closestOuterZone) {
+                                //The inner-most zone was removed so we must fill in the hole with the
+                                //closest outer zone. To do this we will take the outer boundary of the
+                                //zone and set it as the only path, producing a geometry with no holes.
+                                closestOuterZone.setPaths(closestOuterZone.shapeOverlay.getPaths().getAt(0));
+                            }
+                        }
+                        else {
+                            //A middle or outer zone was removed so just re-punch out the closest outer zone if there is one.
+                            if (closestOuterZone) {
+                                this._punchOutShape(zoneIndex);
+                            }
+                        }
+                    }
+                    //Refresh the JSON again and update the centroid position in case the outer zone was removed.
+                    this.updateJSONAndCentroid();
                 },
                 /**
                  * Updates the json to reflect the current state of the stack. Also updates
