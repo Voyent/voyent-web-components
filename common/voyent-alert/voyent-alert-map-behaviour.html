@@ -172,6 +172,11 @@
             if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                 //Add the fullscreen control.
                 this._addFullscreenControl();
+                //Maintain the isZoneSelected toggle for updating the UI.
+                this._isZoneSelected = false;
+                document.addEventListener('voyent-alert-zone-selected',function(e) {
+                    _this.set('_isZoneSelected',!!e.detail.id);
+                });
             }
             this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
             this._manageMaxZoomLevel(); //Ensure we always have imagery in satellite view modes.
@@ -1687,10 +1692,12 @@
                 if (_this._loadedAlert &&  _this._loadedAlert.selectedStack) {
                     _this._loadedAlert.selectedStack.deactivateZoneOverlays();
                     _this.set('_loadedAlert.selectedStack',null);
-                    _this.fire('voyent-alert-zone-selected',{
-                        "id": null,
-                        "zone": null
-                    });
+                    if (!_this._fallbackZone || !_this._fallbackZone.active) {
+                        _this.fire('voyent-alert-zone-selected',{
+                            "id": null,
+                            "zone": null
+                        });
+                    }
                 }
             });
         },
