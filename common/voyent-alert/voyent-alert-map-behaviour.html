@@ -1921,7 +1921,11 @@
                         this._loadedAlert.template.zoneStacks[i].marker.setIcon(null);
                     }
                     if (selectedStack) {
-                        selectedStack.marker.setIcon(this.pathtoimages+'/img/green-marker.png');
+                        // Bounce the marker once to indicate selection.
+                        selectedStack.marker.setAnimation(google.maps.Animation.BOUNCE);
+                        setTimeout(function() {
+                            selectedStack.marker.setAnimation(null);
+                        },700);
                     }
                 }
             }
