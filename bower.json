@@ -16,7 +16,7 @@
     "/.*",
     "/tests/"
   ],
-  "version": "0.0.5",
+  "version": "1.0.0-beta3",
   "dependencies": {
     "voyent.js": "https://github.com/Voyent/voyent.js.git#1.0.0-beta3",
     "voyent.notify.js": "https://github.com/Voyent/voyent.notify.js.git#1.0.0-beta3",
