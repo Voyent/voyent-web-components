@@ -89,17 +89,22 @@ Polymer({
                 if (_this._loadedAlert) {
                     _this.clearMap();
                 }
-                //Build our LatLng object using the coordinates of the last location of the alert.
-                var latLng = null;
-                if (alert.geo) {
-                    latLng = new google.maps.LatLng(
-                        alertLocation.location.geometry.coordinates[1],
-                        alertLocation.location.geometry.coordinates[0]
-                    );
+                if (alert) {
+                    //Build our LatLng object using the coordinates of the last location of the alert.
+                    var latLng = null;
+                    if (alert.geo) {
+                        latLng = new google.maps.LatLng(
+                            alertLocation.location.geometry.coordinates[1],
+                            alertLocation.location.geometry.coordinates[0]
+                        );
+                    }
+                    _this._drawAndLoadAlertTemplate(alert,latLng);
+                    _this._templateId = _this._loadedAlert.template.id;
                 }
-                _this._drawAndLoadAlertTemplate(alert,latLng);
+                else {
+                    _this.fire('message-info','Unable to find alert geography');
+                }
                 _this._drawLocations(myLocations);
-                _this._templateId = _this._loadedAlert.template.id;
                 _this._toggleEditableMap(_this.mode === 'view');
                 if (_this.mode === 'notification') {
                     setTimeout(function() {
