@@ -196,9 +196,11 @@ Example:
                             Your search <span class="bold">[[_templateSearchQuery]]</span> does not match any templates.
                         </div>
                     </template>
-                    <iron-selector id="newAlertCategories" class="alternating-row-parent" selected="{{_selectedAlertTemplateId}}" attr-for-selected="name">
-                        <template id="alertTemplatesList" is="dom-repeat" items="[[_filteredParentTemplatesByCategory]]" as="obj" sort="_sortTemplates" strip-whitespace>
-                            <div name="[[obj.template._id]]" class="table pointer">
+                    <iron-selector id="newAlertCategories" class="alternating-row-parent"
+                                   selected="{{_selectedAlertTemplate}}" attr-for-selected="name">
+                        <template id="alertTemplatesList" is="dom-repeat" items="[[_filteredParentTemplatesByCategory]]"
+                                  as="obj" sort="_sortTemplates" strip-whitespace>
+                            <div name="[[obj.template]]" class="table pointer">
                                 <div class="table-col badge-col no-select">
                                     <img class="badge-img" src="[[getBadgeUrl(obj.template.badge)]]"/>
                                 </div>

@@ -250,7 +250,6 @@
             var _this = this, msg;
             return new Promise(function (resolve, reject) {
                 if (_this._savingAlert) { return reject('already saving alert'); }
-                if (!_this._validateTemplate()) { return reject('invalid alert'); }
                 _this._savingAlert = true;
 
                 //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
@@ -569,6 +568,9 @@
                     query: {"_id":id}
                 }).then(function (results) {
                     if (!results || !results.length) {
+                        if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                            return resolve(null);
+                        }
                         _this.fire('message-error', 'Alert template not found');
                         return reject('Alert template not found');
                     }
@@ -648,6 +650,9 @@
                     //Only error out for alerts.
                     if (alertId) {
                         if ((!location || !location[0])) {
+                            if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                                return resolve(null);
+                            }
                             return reject('Alert location cannot be found');
                         }
                     }

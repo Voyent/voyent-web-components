@@ -79,6 +79,39 @@
         },
 
         /**
+         * Validates the currently loaded alert template and returns all errors and warnings in the response.
+         * @returns {Object} - {"errors": [], "warnings": []}
+         */
+        validate: function() {
+            var results = {"errors": [], "warnings": []};
+            if (!this._loadedAlert || !this._loadedAlert.template ||
+                (!this._loadedAlert.template.zoneStacks || !this._loadedAlert.template.zoneStacks.length) &&
+                (!this._fallbackZone || !this._fallbackZone.enabled)) {
+                results.errors.push('Must define at least one zone');
+            }
+            if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+                //Ensure we have both movement parameters or none at all.
+                if (this._alertSpeed && (!this._alertDirection && this._alertDirection !== 0)) {
+                    results.errors.push('Moving alerts must have both a speed and direction defined (direction is missing)');
+                }
+                if (!this._alertSpeed && (this._alertDirection || this._alertDirection === 0)) {
+                    results.errors.push('Moving alerts must have both a speed and direction defined (speed is missing)');
+                }
+                //Restrict moving alerts to a maximum of two zones, excluding the fallback zone.
+                if (this._alertSpeed && (this._alertDirection || this._alertDirection === 0)) {
+                    var zoneCount = 0;
+                    for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
+                        zoneCount += this._loadedAlert.template.zoneStacks[i].zones.length;
+                    }
+                    if (zoneCount > 2) {
+                        results.errors.push('Moving alerts are restricted to a maximum of two zones');
+                    }
+                }
+            }
+            return results;
+        },
+
+        /**
          * Saves or updates the current alert template.
          */
         saveAlertTemplate: function() {
@@ -94,7 +127,12 @@
             var _this = this, msg;
             return new Promise(function (resolve, reject) {
                 if (_this._savingAlertTemplate) { return reject('already saving template'); }
-                if (!_this._validateTemplate()) { return reject('template validation failed'); }
+                //Prompt the user if no categories are defined for the template.
+                if (!_this._skipCategoryValidation &&
+                    (!_this._loadedAlert.template.categories || !_this._loadedAlert.template.categories.length)) {
+                    _this._openUncategorizedTemplateDialog();
+                    return reject('no categories provided');
+                }
                 _this._savingAlertTemplate = true;
 
                 _this._loadedAlert.template.updateJSON(true);
@@ -134,45 +172,6 @@
             this._saveAlertTemplate().then(function() {
                 _this._skipCategoryValidation = false;
             });
-        },
-
-        /**
-         * Validates the currently loaded alert template.
-         * @returns {boolean}
-         * @private
-         */
-        _validateTemplate: function() {
-            if (!this._loadedAlert || !this._loadedAlert.template ||
-                (!this._loadedAlert.template.zoneStacks || !this._loadedAlert.template.zoneStacks.length) &&
-                (!this._fallbackZone || !this._fallbackZone.enabled)) {
-                this.fire('message-error','Please define at least one zone');
-                return false;
-            }
-            if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
-                //Ensure we have both movement parameters or none at all.
-                if ((this._alertSpeed && (!this._alertDirection && this._alertDirection !== 0)) ||
-                    (this._alertDirection || this._alertDirection === 0) && !this._alertSpeed) {
-                    this.fire('message-error', 'Moving alerts must have both a speed and direction defined');
-                    return false;
-                }
-                //Restrict moving alerts to a maximum of two zones, excluding the fallback zone.
-                if (this._alertSpeed && (this._alertDirection || this._alertDirection === 0)) {
-                    var zoneCount = 0;
-                    for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
-                        zoneCount += this._loadedAlert.template.zoneStacks[i].zones.length;
-                    }
-                    if (zoneCount > 2) {
-                        this.fire('message-error', 'Moving alerts are restricted to a maximum of two zones');
-                        return false;
-                    }
-                }
-            }
-            if (this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' && !this._skipCategoryValidation &&
-                (!this._loadedAlert.template.categories || !this._loadedAlert.template.categories.length)) {
-                this._openUncategorizedTemplateDialog();
-                return false;
-            }
-            return true;
         },
 
         /**
