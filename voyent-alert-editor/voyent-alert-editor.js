@@ -89,7 +89,7 @@ Polymer({
     addNew: function() {
         var _this = this;
         //Ensure we start with a clean state.
-        this.set('_selectedAlertTemplateId',null);
+        this.set('_selectedAlertTemplate',null);
         this._sortTemplatesBy = 'name';
         this._lastSortOrderName = 'ascending';
         this._lastSortOrderCategory = 'ascending';
@@ -272,10 +272,11 @@ Polymer({
             var template = templates[i];
             if (template.categories && template.categories.length) {
                 for (var j=template.categories.length-1; j>=0; j--) {
-                    templatesDuplicatedByCategory.push({
+                    //Clone each item to ensure duplicatdd templates can be individually selected in the list.
+                    templatesDuplicatedByCategory.push(JSON.parse(JSON.stringify({
                         "template": template,
                         "category": template.categories[j]
-                    });
+                    })));
                 }
             }
             else {
@@ -368,7 +369,7 @@ Polymer({
         }
         //Automatically select the template if there is only one result from filtering.
         if (this._filteredParentTemplatesByCategory.length === 1) {
-            this.set('_selectedAlertTemplateId',this._filteredParentTemplatesByCategory[0].template._id);
+            this.set('_selectedAlertTemplate',this._filteredParentTemplatesByCategory[0].template);
         }
     },
 
@@ -377,14 +378,14 @@ Polymer({
      * @private
      */
     _createNewAlert: function() {
-        if (!this._selectedAlertTemplateId) {
+        if (!this._selectedAlertTemplate) {
             this.fire('message-error','Must select an alert template');
             return;
         }
         var _this = this;
         //Find and clone the parent template that we will create the child from.
         var childTemplate = JSON.parse(JSON.stringify(this._parentTemplatesByCategory.filter(function(alertTemplateByCategory) {
-            return alertTemplateByCategory.template._id === _this._selectedAlertTemplateId;
+            return alertTemplateByCategory.template._id === _this._selectedAlertTemplate._id;
         })[0].template));
         //Load the template immediately if it has a center position defined or no geo section (fallback zone only).
         if (childTemplate.properties.center || !childTemplate.geo) {
@@ -439,7 +440,7 @@ Polymer({
         //Add some checks here since this function is called on window keydown
         //events, meaning it may fire when the component is not active.
         var dialog = this.querySelector('#newAlertDialog');
-        if ((dialog && dialog.opened) || this._selectedAlertTemplateId) {
+        if ((dialog && dialog.opened) || this._selectedAlertTemplate) {
             this.closeNewAlertDialog();
             setTimeout(function() {
                 _this.fire('voyent-alert-template-cancel',{});
@@ -503,13 +504,13 @@ Polymer({
      * @private
      */
     _revertCursor: function() {
-        if (this._selectedAlertTemplateId) {
+        if (this._selectedAlertTemplate) {
             this._map.setOptions({draggableCursor:''});
             //Clear the listeners to remove the temporary click
             //listener but make sure we re-add the permanent one.
             google.maps.event.clearListeners(this._map,'click');
             this._deselectStacksOnClick(this._map);
-            this._selectedAlertTemplateId = null;
+            this._selectedAlertTemplate = null;
         }
     },
 
