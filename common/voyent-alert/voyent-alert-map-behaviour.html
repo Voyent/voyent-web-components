@@ -203,8 +203,11 @@
             new ResizeObserver(function() {
                 //This ResizeObserver listener sometimes fires when the map
                 //dimensions have not changed so we will ignore these events.
-                if (_this._previousMapWidth === _this.querySelector('#map').offsetWidth &&
-                    _this._previousMapHeight === _this.querySelector('#map').offsetHeight) {
+                var offsetWidth = _this.querySelector('#map').offsetWidth;
+                var offsetHeight = _this.querySelector('#map').offsetHeight;
+                if ((_this._previousMapWidth === offsetWidth &&
+                    _this._previousMapHeight === offsetHeight) ||
+                    (offsetWidth === 0 || offsetHeight === 0)) {
                     return;
                 }
                 _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
