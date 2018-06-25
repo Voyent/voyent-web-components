@@ -418,12 +418,15 @@
                 // Fire an event that the badge changed
                 _this.fire('voyent-alert-badge-changed', {"badge": _this._loadedAlert.template.badge});
                 // If we only have a single zone stack, then update the map marker as well
+                var image = {
+                    url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
+                    scaledSize: new google.maps.Size(32,32)
+                };
                 if (_this._loadedAlert.template.zoneStacks.length === 1) {
-                    var image = {
-                        url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
-                        scaledSize: new google.maps.Size(32,32)
-                    };
                     _this._loadedAlert.template.zoneStacks[0].marker.setIcon(image);
+                }
+                else if (_this._loadedAlert.template.zoneStacks.length > 1) {
+                    _this._loadedAlert.template.marker.setIcon(image)
                 }
             });
         },
