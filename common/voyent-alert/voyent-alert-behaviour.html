@@ -793,11 +793,11 @@
                 this.setCategories(categories || []);
             };
             /**
-             * Used to calculate the centroid of the template's zones using the passed json.
+             * Used to calculate the bounds of the template's zones using the passed json.
              * @param json - The full template json.
              * @static
              */
-            this._AlertTemplate.calculateCentroidFromJSON = function(json) {
+            this._AlertTemplate.calculateBoundsFromJSON = function(json) {
                 var geometries = json.geo.geometries;
                 var coordinates, bounds = new google.maps.LatLngBounds();
                 for (var i=0; i<geometries.length; i++) {
@@ -806,7 +806,26 @@
                         bounds.extend(new google.maps.LatLng(coordinates[j][1],coordinates[j][0]));
                     }
                 }
-                return bounds.getCenter();
+                return bounds;
+            };
+            /**
+             * Used to calculate the centroid of the template's zones using the passed json.
+             * @param json - The full template json.
+             * @static
+             */
+            this._AlertTemplate.calculateCentroidFromJSON = function(json) {
+                return this.calculateBoundsFromJSON(json).getCenter();
+            };
+            /**
+             * Used to calculate the rectangular paths around the provided json.
+             * @param json - The full template json.
+             * @static
+             */
+            this._AlertTemplate.calculateBoundingPathsFromJSON = function(json) {
+                var bounds = this.calculateBoundsFromJSON(json);
+                var ne = bounds.getNorthEast();
+                var sw = bounds.getSouthWest();
+                return [ne,new google.maps.LatLng(sw.lat(),ne.lng()),sw,new google.maps.LatLng(ne.lat(),sw.lng()),ne];
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed paths array.
@@ -1216,12 +1235,20 @@
                         if (_outer._fallbackZone) {
                             _outer._fallbackZone.punchOutOverlay();
                         }
+                        _this.manageAlertBoundary(true);
                     });
                     //Add click listener to marker.
                     google.maps.event.addListener(this.marker, 'click', function () {
                         //Toggle all the accordion panes closed and de-select all stacks.
                         _outer._toggleProperties(-1);
                         _outer.set('_loadedAlert.selectedStack',null);
+                    });
+                    //Add mouseover and mouseout listeners to highlight the alert boundary for multi-stack alerts.
+                    google.maps.event.addListener(this.marker, 'mouseover', function () {
+                        _this.manageAlertBoundary(true);
+                    });
+                    google.maps.event.addListener(this.marker, 'mouseout', function () {
+                        _this.manageAlertBoundary(false);
                     });
                 },
                 /**
@@ -1246,6 +1273,30 @@
                     var position = latLng || this.marker.getPosition();
                     for (var i=0; i<this.zoneStacks.length; i++) {
                         this.zoneStacks[i].moveZonesRelativeToPosition(position);
+                    }
+                },
+                /**
+                 * Handles creating, positioning and toggling the visibility of the alert boundary
+                 * which is displayed on alert marker mouseover for multi-stack alerts.
+                 * @param visible
+                 */
+                manageAlertBoundary: function(visible) {
+                    if (visible) {
+                        this.updateJSON();
+                        if (!this._alertBoundary) {
+                            this._alertBoundary = new google.maps.Polyline({
+                                path: _outer._AlertTemplate.calculateBoundingPathsFromJSON(this.json),
+                                map: _outer._map,
+                                strokeWeight: 1
+                            });
+                        }
+                        else {
+                            this._alertBoundary.setMap(_outer._map);
+                            this._alertBoundary.setPath(_outer._AlertTemplate.calculateBoundingPathsFromJSON(this.json));
+                        }
+                    }
+                    else if (this._alertBoundary) {
+                        this._alertBoundary.setMap(null);
                     }
                 }
             };
