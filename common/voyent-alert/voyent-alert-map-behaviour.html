@@ -1605,7 +1605,7 @@
                 }
                 //Only include the locations in the map panning if we have no zone stacks. This prevents the map
                 //from panning further than the region boundary in cases where only a fallback zone is defined.
-                if ((!zoneStacks || zoneStacks.length) && (this._mobileLocation || (this._myLocations && this._myLocations.length))) {
+                if (!zoneStacks.length && (this._mobileLocation || (this._myLocations && this._myLocations.length))) {
                     if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
                         bounds.extend(this._mobileLocation.marker.getPosition());
                     }
