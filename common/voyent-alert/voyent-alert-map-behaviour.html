@@ -1636,6 +1636,7 @@
          * @private
          */
         _panBoundsForNameOverlays: function(locations, bounds) {
+            return; //TODO - Temporarily disable map panning for name overlays
             if (!locations || !locations.length) { return; }
             var _this = this;
             //Async to ensure the map is panned on the markers before proceeding. This
