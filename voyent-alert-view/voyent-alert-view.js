@@ -254,8 +254,8 @@ Polymer({
         if (!locations || !locations.length) { return; }
         this.set('_myLocations',[]);
         for (var i=0; i<locations.length; i++) {
-            // For notification and view modes we want to render the user icon for the mobile location.
-            if (this.mode !== 'preview' && locations[i].properties.vras.type === 'mobile') {
+            // For notification view we want to render the user icon for the mobile location.
+            if (this.mode === 'notification' && locations[i].properties.vras.type === 'mobile') {
                 this._drawUser(locations[i]);
                 continue;
             }
