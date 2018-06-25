@@ -210,8 +210,8 @@
                     (offsetWidth === 0 || offsetHeight === 0)) {
                     return;
                 }
-                _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
-                _this._previousMapHeight = _this.querySelector('#map').offsetHeight;
+                _this._previousMapWidth = offsetWidth;
+                _this._previousMapHeight = offsetHeight;
                 _this.resizeMap();
             }).observe(this.querySelector('#map'));
             //De-select any selected zone stack on map click.
