@@ -377,7 +377,11 @@
         clearMap: function() {
             var _this = this;
             this._disableDrawingMode();
-            this._zoomOnRegion();
+            //Don't zoom on region when clearing map on alert detail view as
+            //this causes some jerky pan behaviour when viewing an alert.
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+                this._zoomOnRegion();
+            }
             //Clear loaded alert template.
             if (this._loadedAlert || this._fallbackZone) {
                 this._removeAlertTemplateFromMap();
