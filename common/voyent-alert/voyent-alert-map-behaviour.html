@@ -1570,7 +1570,7 @@
                 var bounds = new google.maps.LatLngBounds(), boundsExtended = false, i, zoneStacks, locationsToPanTo = [];
                 if (this._loadedAlert) {
                     zoneStacks = this._loadedAlert.template.zoneStacks;
-                    if ((zoneStacks.length && !this._affectedStackIds.length) || !zoneStacks.length) {
+                    if ((zoneStacks.length && (!this._affectedStackIds || !this._affectedStackIds.length)) || !zoneStacks.length) {
                         //If we don't have any zone stacks or we do and they have no affected
                         //locations then we will include the region boundary in the map bounds.
                         if (this.mode === 'notification') {
