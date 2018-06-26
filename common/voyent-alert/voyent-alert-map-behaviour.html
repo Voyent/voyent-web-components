@@ -203,12 +203,15 @@
             new ResizeObserver(function() {
                 //This ResizeObserver listener sometimes fires when the map
                 //dimensions have not changed so we will ignore these events.
-                if (_this._previousMapWidth === _this.querySelector('#map').offsetWidth &&
-                    _this._previousMapHeight === _this.querySelector('#map').offsetHeight) {
+                var offsetWidth = _this.querySelector('#map').offsetWidth;
+                var offsetHeight = _this.querySelector('#map').offsetHeight;
+                if ((_this._previousMapWidth === offsetWidth &&
+                    _this._previousMapHeight === offsetHeight) ||
+                    (offsetWidth === 0 || offsetHeight === 0)) {
                     return;
                 }
-                _this._previousMapWidth = _this.querySelector('#map').offsetWidth;
-                _this._previousMapHeight = _this.querySelector('#map').offsetHeight;
+                _this._previousMapWidth = offsetWidth;
+                _this._previousMapHeight = offsetHeight;
                 _this.resizeMap();
             }).observe(this.querySelector('#map'));
             //De-select any selected zone stack on map click.
@@ -374,7 +377,11 @@
         clearMap: function() {
             var _this = this;
             this._disableDrawingMode();
-            this._zoomOnRegion();
+            //Don't zoom on region when clearing map on alert detail view as
+            //this causes some jerky pan behaviour when viewing an alert.
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+                this._zoomOnRegion();
+            }
             //Clear loaded alert template.
             if (this._loadedAlert || this._fallbackZone) {
                 this._removeAlertTemplateFromMap();
@@ -418,12 +425,15 @@
                 // Fire an event that the badge changed
                 _this.fire('voyent-alert-badge-changed', {"badge": _this._loadedAlert.template.badge});
                 // If we only have a single zone stack, then update the map marker as well
+                var image = {
+                    url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
+                    scaledSize: new google.maps.Size(32,32)
+                };
                 if (_this._loadedAlert.template.zoneStacks.length === 1) {
-                    var image = {
-                        url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
-                        scaledSize: new google.maps.Size(32,32)
-                    };
                     _this._loadedAlert.template.zoneStacks[0].marker.setIcon(image);
+                }
+                else if (_this._loadedAlert.template.zoneStacks.length > 1) {
+                    _this._loadedAlert.template.marker.setIcon(image)
                 }
             });
         },
@@ -1556,18 +1566,18 @@
                 }
                 return;
             }
-            var bounds = new google.maps.LatLngBounds();
             if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations))) {
-                var i, zoneStacks;
+                var bounds = new google.maps.LatLngBounds(), boundsExtended = false, i, zoneStacks, locationsToPanTo = [];
                 if (this._loadedAlert) {
                     zoneStacks = this._loadedAlert.template.zoneStacks;
-                    //If we have no zoneStacks and no user locations then we only have a fallback zone so just pan to the region.
-                    if (!zoneStacks.length) {
-                        //If the view is alert notification detail then don't zoom on the region as we will always have 1 location to pan to.
+                    if ((zoneStacks.length && (!this._affectedStackIds || !this._affectedStackIds.length)) || !zoneStacks.length) {
+                        //If we don't have any zone stacks or we do and they have no affected
+                        //locations then we will include the region boundary in the map bounds.
                         if (this.mode === 'notification') {
                             if (this._areaRegion && this._areaRegion.bounds) {
                                 bounds.extend(this._areaRegion.bounds.getNorthEast());
                                 bounds.extend(this._areaRegion.bounds.getSouthWest());
+                                boundsExtended = true;
                             }
                         }
                         else {
@@ -1578,39 +1588,45 @@
                             this._zoomOnRegion();
                         }
                     }
-                    else {
+                    //If we have zoneStacks then include them in the map bounds
+                    if (zoneStacks.length) {
                         for (i=0; i<zoneStacks.length; i++) {
                             var largestZone = zoneStacks[i].getLargestZone();
                             if (largestZone) {
                                 if (largestZone.getShape() === 'circle') {
                                     bounds.extend(largestZone.shapeOverlay.getBounds().getNorthEast());
                                     bounds.extend(largestZone.shapeOverlay.getBounds().getSouthWest());
+                                    boundsExtended = true;
                                 }
                                 else {
                                     for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
                                         bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
+                                        boundsExtended = true;
                                     }
                                 }
-                                this._map.fitBounds(bounds);
-                                this._map.panToBounds(bounds);
                             }
                         }
                     }
                 }
-                //Only include the locations in the map panning if we have no zone stacks. This prevents the map
-                //from panning further than the region boundary in cases where only a fallback zone is defined.
-                if ((!zoneStacks || zoneStacks.length) && (this._mobileLocation || (this._myLocations && this._myLocations.length))) {
+                //Only include the locations in the map panning if we have zone stacks and one of those zone stacks
+                //has affected locations. This prevents the map from panning too far from the region boundary and
+                //primary zone when the affected locations notified by a fallback zone are far away.
+                if (zoneStacks && zoneStacks.length && this._affectedStackIds && this._affectedStackIds.length) {
                     if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
                         bounds.extend(this._mobileLocation.marker.getPosition());
+                        boundsExtended = true;
                     }
-                    var locationsToPanTo = [];
                     for (i=0; i<this._myLocations.length; i++) {
                         if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
                             bounds.extend(this._myLocations[i].marker.getPosition());
                             locationsToPanTo.push(this._myLocations[i]);
+                            boundsExtended = true;
                         }
                     }
-                    //Ensure we only do this if the bounds were extended otherwise the map may pan to the middle of the ocean.
+                }
+                //Ensure we only do this if the bounds were extended otherwise
+                //the map may pan to an empty bounds (middle of the ocean).
+                if (boundsExtended) {
                     this._map.fitBounds(bounds);
                     this._map.panToBounds(bounds);
                     //Include the name overlays in the map bounds.
@@ -1630,6 +1646,7 @@
          * @private
          */
         _panBoundsForNameOverlays: function(locations, bounds) {
+            return; //TODO - Temporarily disable map panning for name overlays
             if (!locations || !locations.length) { return; }
             var _this = this;
             //Async to ensure the map is panned on the markers before proceeding. This
