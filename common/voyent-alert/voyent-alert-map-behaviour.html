@@ -1611,7 +1611,7 @@
                 //Only include the locations in the map panning if we have zone stacks and one of those zone stacks
                 //has affected locations. This prevents the map from panning too far from the region boundary and
                 //primary zone when the affected locations notified by a fallback zone are far away.
-                if (zoneStacks && zoneStacks.length && this._affectedStackIds.length) {
+                if (zoneStacks && zoneStacks.length && this._affectedStackIds && this._affectedStackIds.length) {
                     if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
                         bounds.extend(this._mobileLocation.marker.getPosition());
                         boundsExtended = true;
