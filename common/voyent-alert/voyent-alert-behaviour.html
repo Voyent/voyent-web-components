@@ -616,11 +616,20 @@
         },
 
         /**
-         * Fixes an issue with paper-dialog modal stacking context when the dialog is inside an app-drawer.
+         * Fixes dialog centering and an issue with paper-dialog modal stacking context when the dialog is inside an app-drawer.
          * @param e
          * @private
          */
         _fixModalStacking: function (e) {
+            //Center the dialog vertically by factoring in the height of the VRAS app header.
+            e.target.style.marginTop = (64/2) + "px";
+            //Center the dialog horizontally by factoring in the the width of the app-drawer, if available.
+            var appDrawer = document.getElementById('appDrawer');
+            if (appDrawer) {
+                e.target.style.marginLeft = (appDrawer.clientWidth/2) + "px";
+            }
+            //This last part fixes an issue with paper-dialog modal stacking context when the dialog
+            //is inside an app-drawer (https://github.com/PolymerElements/paper-dialog/issues/7).
             if (e.target.withBackdrop) {
                 e.target.parentNode.insertBefore(e.target.backdropElement, e.target);
             }

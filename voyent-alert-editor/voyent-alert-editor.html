@@ -73,6 +73,12 @@ Example:
                 margin-bottom: 0;
                 padding-bottom: 0;
             }
+            #newAlertDialog {
+                /* Subtract the height of the VRAS app header so the 90% calculation is accurate */
+                height: calc(90% - 64px);
+                min-height: 475px;
+                margin: 0;
+            }
         </style>
 
         <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
@@ -174,7 +180,7 @@ Example:
             <h2 class="dialogH2">New Alert</h2>
             <div class="dialogCloseWrap">
                 <paper-icon-button icon="close" on-click="_cancelNewAlert" title="Close dialog"
-                                   class="dialogCloseButton"></paper-icon-button>
+                                   tabindex="4" class="dialogCloseButton"></paper-icon-button>
             </div>
             <div class="dialogEnd"></div>
             <p class="select-template-msg">
@@ -184,13 +190,14 @@ Example:
                 <paper-input id="categoryQueryInput" label="Filter templates by name or category..." autofocus tabindex="1"
                              on-keyup="_templateSearchQueryKeyUp" value="{{_templateSearchQuery}}"></paper-input>
             </div>
-            <div class="table-wrap">
+            <!-- 100% height minus the height of the content above and below the table -->
+            <div class="table-wrap-dynamic" style="height:calc(100% - 244px);">
                 <div class="table">
                     <div class="table-col badge-col table-header no-select"></div>
                     <div class="table-col name-col table-header no-select pointer" on-click="_sortTemplatesByName" title="Click to sort by Alert Name">Name</div>
                     <div class="table-col category-col table-header no-select pointer" on-click="_sortTemplatesByCategory" title="Click to sort by Category">Category</div>
                 </div>
-                <div class="table-scroll">
+                <div class="table-scroll-dynamic">
                     <template is="dom-if" if="[[!_filteredParentTemplatesByCategory.length]]">
                         <div class="no-query-results-msg">
                             Your search <span class="bold">[[_templateSearchQuery]]</span> does not match any templates.
@@ -214,10 +221,10 @@ Example:
                         </template>
                     </iron-selector>
                 </div>
-                <div class="dialog-buttons-wrapper text-center">
-                    <paper-button raised title="Cancel changes" on-click="_cancelNewAlert" tabindex="2">Cancel</paper-button>
-                    <paper-button raised title="Confirm changes" on-click="_createNewAlert" tabindex="3">Confirm</paper-button>
-                </div>
+            </div>
+            <div class="dialog-buttons-wrapper text-center">
+                <paper-button raised title="Cancel changes" on-click="_cancelNewAlert" tabindex="2">Cancel</paper-button>
+                <paper-button raised title="Confirm changes" on-click="_createNewAlert" tabindex="3">Confirm</paper-button>
             </div>
         </paper-dialog>
     </template>
