@@ -34,7 +34,14 @@ Polymer({
     },
     
     _retrieveList: function(setList, folder) {
-        var url = window.location.protocol + "//" + window.location.host + this.badgedir;
+        var url = this.badgedir;
+        
+        // Figure out if badgedir is an absolute URL or not
+        // If it isn't, then we create a URL from our protocol and host
+        if (this.badgedir.toLowerCase().indexOf("https://") === -1 && this.badgedir.toLowerCase().indexOf("http://") === -1) {
+            url = window.location.protocol + "//" + window.location.host + this.badgedir;
+        }
+        
         if (folder) {
             url += folder + "/";
         }
