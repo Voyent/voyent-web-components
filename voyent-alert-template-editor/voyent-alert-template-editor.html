@@ -26,9 +26,6 @@ Example:
                 width: calc(var(--sidePanel-width,200px) - 7px);
                 display:inline-block;
             }
-            .drag-handle {
-                height: calc(var(--map-height) - 45px);
-            }
             .icon-div {
                 width:16px;
                 height:16px;
@@ -47,8 +44,6 @@ Example:
         <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
             <div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
-                <div class="drag-handle" data-is-fullscreen$="[[_isFullscreenMode]]" title="Resize Properties Panel"
-                     on-mousedown="_beginResizeOperation" on-mousemove="_doResizeOperation" on-mouseup="_endResizeOperation"></div>
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <voyent-alert-properties parent-is-template-editor
