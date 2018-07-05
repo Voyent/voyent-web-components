@@ -616,7 +616,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </template>
             </div>
         </template>
-        <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_fixModalStacking">
+        <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_patchOverlay"
+                      on-iron-overlay-closed="_patchOverlayClosed">
             <h2 class="dialogH2">[[_dialogTitle]]</h2>
             <div class="dialogCloseWrap">
                 <paper-icon-button icon="close" on-click="closeDialog" title="Close dialog"
@@ -649,7 +650,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </div>
         </paper-dialog>
-        <paper-dialog id="categoryManager" modal on-iron-overlay-opened="_fixModalStacking">
+        <paper-dialog id="categoryManager" modal on-iron-overlay-opened="_patchOverlay"
+                      on-iron-overlay-closed="_patchOverlayClosed">
             <template is="dom-if" if="[[!_showCategoryManager]]">
                 <h2 class="dialogH2">Select Categories</h2>
                 <div class="dialogCloseWrap">
@@ -748,7 +750,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
         </paper-dialog>
-        <paper-dialog id="confirmCategoryDeletionDialog" modal on-iron-overlay-opened="_fixModalStacking">
+        <paper-dialog id="confirmCategoryDeletionDialog" modal on-iron-overlay-opened="_patchOverlay"
+                      on-iron-overlay-closed="_patchOverlayClosed">
             <h2 class="dialogH2">Confirm Deletion</h2>
             <div class="dialogCloseWrap">
                 <paper-icon-button icon="close" on-click="_cancelCategoryDeletion" title="Close dialog"
@@ -770,7 +773,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <paper-button raised title="Cancel" on-click="_removeCategoryFromTemplates">Yes, Remove Category</paper-button>
             </div>
         </paper-dialog>
-        <paper-dialog id="confirmCategoryUpdateDialog" modal on-iron-overlay-opened="_fixModalStacking">
+        <paper-dialog id="confirmCategoryUpdateDialog" modal on-iron-overlay-opened="_patchOverlay"
+                      on-iron-overlay-closed="_patchOverlayClosed">
             <h2 class="dialogH2">Confirm Update</h2>
             <div class="dialogCloseWrap">
                 <paper-icon-button icon="close" on-click="_cancelCategoryUpdate" title="Close dialog"
