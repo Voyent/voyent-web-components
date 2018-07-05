@@ -668,7 +668,7 @@ Polymer({
         //Wait until we have the area region so we can favour results from within that region.
         this._areaRegionIsAvailable().then(function() {
             _this._autoComplete = new google.maps.places.Autocomplete(autocompleteInput, {
-                "bounds":_this._areaRegion.bounds, "strictBounds":false
+                "bounds":_this._areaRegion.bounds, "strictBounds":false, "componentRestrictions": {"country":"CA"}
             });
             google.maps.event.addListener(_this._autoComplete, 'place_changed', function() {
                 place = _this._autoComplete.getPlace();
