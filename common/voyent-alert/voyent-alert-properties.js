@@ -209,7 +209,11 @@ Polymer({
      * @private
      */
     _openCategoryManager: function() {
+        var _this = this;
         this.set('_showCategoryManager',true);
+        setTimeout(function() {
+            _this.querySelector('#categoryManager').center();
+        },0);
     },
 
     /**
@@ -217,6 +221,7 @@ Polymer({
      * @private
      */
     _closeCategoryManager: function() {
+        var _this = this;
         //If we are currently editing or creating a new category and the user closes the category manager then save the changes.
         if (this._categoryBeingEdited) {
             this._disableCategoryNameEditing(this._categoryBeingEdited,true);
@@ -233,6 +238,9 @@ Polymer({
         //Reset our toggles to ensure any edits before closing don't get applied on blur.
         this.set('_addingNewCategory',false);
         this.set('_categoryBeingEdited',null);
+        setTimeout(function() {
+            _this.querySelector('#categoryManager').center();
+        },0);
     },
 
     /**

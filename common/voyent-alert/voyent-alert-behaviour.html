@@ -455,9 +455,10 @@
             var dialog = this.querySelector('#modalDialog');
             if (dialog) {
                 dialog.open();
-                //Ensure that our dialog is sized correctly
+                //Ensure that our dialog is sized and positioned correctly
                 setTimeout(function() {
                     dialog.notifyResize();
+                    dialog.center();
                 },0);
                 //If there's no input rendered in the dialog then focus on the dialog so
                 //we can capture the user's key presses. The input will focus automatically.
@@ -496,19 +497,19 @@
          */
         closeDialog: function(confirmed) {
             confirmed = typeof confirmed === 'boolean' ? confirmed : false;
-            
+
             //Only call the cancel function if this is triggered by a cancel.
             //We allow passing the confirm function directly or as a string.
             if (!confirmed && this._dialogCancelFunc) {
                 if (typeof this._dialogCancelFunc === 'string') { this[this._dialogCancelFunc](); }
                 else { this._dialogCancelFunc(); }
             }
-            
+
             if (this.querySelector('#modalDialog')) {
                 this.querySelector('#modalDialog').close();
             }
         },
-        
+
         /**
          * Handles enter and escape key presses when the dialog is focused.
          * @param e
@@ -616,22 +617,83 @@
         },
 
         /**
-         * Fixes dialog centering and an issue with paper-dialog modal stacking context when the dialog is inside an app-drawer.
-         * @param e
-         * @private
+         * Force the paper-dialog to modal the entire page properly regardless of stacking context
+         * See https://github.com/PolymerElements/paper-dialog/issues/7
          */
-        _fixModalStacking: function (e) {
-            //Center the dialog vertically by factoring in the height of the VRAS app header.
-            e.target.style.marginTop = (64/2) + "px";
-            //Center the dialog horizontally by factoring in the the width of the app-drawer, if available.
-            var appDrawer = document.getElementById('appDrawer');
-            if (appDrawer) {
-                e.target.style.marginLeft = (appDrawer.clientWidth/2) + "px";
+        _patchOverlay: function (e) {
+            this._patchOverlayCore(e);
+        },
+
+        /**
+         * Fired when a dialog is closed
+         * The intent here is if we created a separate overlay for a higher stacking context in "_patchOverlay" we want to remove that custom overlay
+         */
+        _patchOverlayClosed: function(e) {
+            this._patchOverlayClosedCore(e);
+        },
+
+        _patchOverlayCore: function(e) {
+            // To match our custom overlays below we drop the transition from the central overlay
+            if (e.target.backdropElement) {
+                e.target.backdropElement.style.transitionProperty = 'none';
             }
-            //This last part fixes an issue with paper-dialog modal stacking context when the dialog
-            //is inside an app-drawer (https://github.com/PolymerElements/paper-dialog/issues/7).
+
+            // This is the part where we make an overlay for the non-subview parts of the app, if we have a nested dialog that won't overlay the entire page
+            this._overlayOnComp(document.getElementById('appDrawer'));
+            this._overlayOnComp(document.getElementById('appHeader'));
+
+            // Finally we move the backdrop directly before the dialog
+            // If we don't do this the backdrop can't layer properly and doesn't show up at all
             if (e.target.withBackdrop) {
                 e.target.parentNode.insertBefore(e.target.backdropElement, e.target);
+            }
+        },
+
+        _patchOverlayClosedCore: function(e) {
+            if (e.target.tagName === 'PAPER-DIALOG') {
+                // If we have an open dialog then don't hide the overlays, this is
+                // used for the multiple dialogs created by the category manager
+                var isDialogOpen = false;
+                var paperDialogs = this.querySelectorAll('paper-dialog');
+                for (var i=0; i<paperDialogs.length; i++) {
+                    if (paperDialogs[i].opened) {
+                        isDialogOpen = true;
+                        break;
+                    }
+                }
+                if (!isDialogOpen) {
+                    this._overlayOnComp(document.getElementById('appDrawer'), true);
+                    this._overlayOnComp(document.getElementById('appHeader'), true);
+                }
+            }
+        },
+
+        /**
+         * Create a modal style overlay on the passed component
+         * Alternatively you can pass true for "remove" to remove an existing overlay
+         * No matter what this should only ever create a single overlay on a component, so it can safely be used multiple times in a row
+         */
+        _overlayOnComp: function(component, remove) {
+            if (component) {
+                var overlayId = component.id + '_overlay';
+
+                // If we're removing just try to find an existing overlay and kill it
+                if (remove) {
+                    if (component.querySelector('#' + overlayId)) {
+                        component.removeChild(component.querySelector('#' + overlayId));
+                    }
+                    return;
+                }
+
+                // Create and style the overlay to match the existing iron-overlay style, but with the same size as our target component
+                var overlay = document.createElement('div');
+                overlay.id = overlayId;
+                overlay.style.cssText = "position: absolute; top: 0; background-color: black; opacity: 0.6; z-index: 102; pointer-events: auto; width: 100%; height: 100%;";
+
+                // Only add if we don't already have an overlay
+                if (!component.querySelector('#' + overlay.id)) {
+                    component.appendChild(overlay);
+                }
             }
         },
 
