@@ -324,10 +324,14 @@
             this._loadedAlert.template.json.state = 'preview';
 
             var alertId = this._loadedAlert.template.id || 'preview';
+            var alertFamilyId = this._loadedAlert.template.alertFamilyId || this._generateUid();
 
             var currentLocation = this._buildAlertLocationJSON().location;
             if (!currentLocation.properties.alertId) {
                 currentLocation.properties.alertId = alertId;
+            }
+            if (!this._loadedAlert.template.json.properties.alertFamilyId) {
+                this._loadedAlert.template.json.properties.alertFamilyId = alertFamilyId;
             }
 
             return {
@@ -346,7 +350,7 @@
                     "currentLocation": currentLocation,
                     "alert": this._loadedAlert.template.json,
                     "alertId" : alertId,
-                    "alertFamilyId":this._generateUid()
+                    "alertFamilyId":alertFamilyId
                 }
             };
         },
@@ -911,6 +915,7 @@
             }
 
             var parentId = templateJSON.properties.parentAlertId || null;
+            var alertFamilyId = templateJSON.properties.alertFamilyId || null;
             //We only want to create a template marker if we have more than
             //one stack, otherwise the stack marker will just be used.
             var templateMarker;
@@ -927,7 +932,7 @@
             }
             this.set('_loadedAlert', {
                 template: new this._AlertTemplate(
-                    templateJSON._id, parentId, templateJSON.name, templateJSON.badge,
+                    templateJSON._id, parentId, alertFamilyId, templateJSON.name, templateJSON.badge,
                     templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center,
                     templateJSON.schedule, templateJSON.categories
                 ),
