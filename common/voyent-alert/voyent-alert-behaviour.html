@@ -778,6 +778,7 @@
              * A class that represents an alert template, both the drawn map entity and the json.
              * @param id - The unique identifier.
              * @param parentId - The parent template id, only relevant for child templates.
+             * @param alertFamilyId - The alert family id, only relevant for child templates.
              * @param name - The user-defined name.
              * @param badge - The user chosen alert badge icon.
              * @param marker - The associated map marker for the entire template, centered between the various stacks.
@@ -788,9 +789,10 @@
              * @param categories - Zero or more categories that this template belongs to.
              * @private
              */
-            this._AlertTemplate = function(id,parentId,name,badge,marker,zoneStacks,state,savePosition,schedule,categories) {
+            this._AlertTemplate = function(id,parentId,alertFamilyId,name,badge,marker,zoneStacks,state,savePosition,schedule,categories) {
                 this.setId(id || null);
                 this.setParentId(parentId || null);
+                this.setAlertFamilyId(alertFamilyId || null);
                 this.setName(name || 'Unnamed');
                 this.setBadge(badge || 'info.png');
                 this.setMarker(marker || null);
@@ -960,6 +962,20 @@
                     }
                     if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
                         _outer.set('_loadedAlert.template.parentId', parentId);
+                    }
+                },
+                /**
+                 * Sets the alertFamilyId, updates the json and if the instance is
+                 * currently loaded we'll also notify the polymer path via set.
+                 * @param alertFamilyId
+                 */
+                setAlertFamilyId: function(alertFamilyId) {
+                    this.alertFamilyId = alertFamilyId;
+                    if (this.json && this.json.properties) {
+                        this.json.properties.alertFamilyId = alertFamilyId;
+                    }
+                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
+                        _outer.set('_loadedAlert.template.alertFamilyId', alertFamilyId);
                     }
                 },
                 /**
@@ -1133,6 +1149,9 @@
                     }
                     if (this.parentId) {
                         json.properties.parentAlertId = this.parentId;
+                        if (this.alertFamilyId) {
+                            json.properties.alertFamilyId = this.alertFamilyId;
+                        }
                         if (this.state) {
                             json.state = this.state;
                         }
