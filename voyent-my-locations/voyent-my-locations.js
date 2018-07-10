@@ -781,7 +781,7 @@ Polymer({
     _validatePlacesSearch: function() {
         var elem = this.querySelector('#autoComplete');
         if (!this._autocompleteValue ||!this._autocompleteValue.trim()) {
-            elem.setAttribute('error-message','Please search for a location');
+            elem.setAttribute('error-message','Search for a location');
             return false;
         }
         if (!this._placeCoordinates) {

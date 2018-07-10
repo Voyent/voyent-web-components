@@ -267,7 +267,7 @@ Polymer({
                 _this._confirmCategoryDeletion();
             }
         }).catch(function () {
-            _this.fire('message-error', 'Issue removing category, please try again.');
+            _this.fire('message-error', 'Issue removing category, try again.');
             _this._cancelCategoryDeletion();
         });
     },
@@ -298,7 +298,7 @@ Polymer({
         Promise.all(promises).then(function() {
             if (_this._associatedTemplates.length) {
                 if (isRetry) {
-                    _this.fire('Problem dissociating category from ' + _this._associatedTemplates[i].length + 'template(s), please contact an administrator.');
+                    _this.fire('Problem dissociating category from ' + _this._associatedTemplates[i].length + 'template(s), contact an administrator.');
                     return;
                 }
                 _this._removeCategoryFromTemplates(true);
@@ -345,7 +345,7 @@ Polymer({
             _this._categoryToRemove = null;
             _this._associatedTemplates = [];
         }).catch(function() {
-            _this.fire('message-error', 'Failed to remove category, please try again');
+            _this.fire('message-error', 'Failed to remove category, try again');
             _this._categoryToRemove = null;
             _this._associatedTemplates = [];
         });
@@ -450,7 +450,7 @@ Polymer({
                 }
                 _this._confirmDisableNewCategoryInput();
             }).catch(function() {
-                _this.fire('message-error', 'Failed to add new category, please try again');
+                _this.fire('message-error', 'Failed to add new category, try again');
             });
         }
         else {
@@ -562,7 +562,7 @@ Polymer({
                 _this._confirmCategoryUpdate();
             }
         }).catch(function () {
-            _this.fire('message-error', 'Issue updating category, please try again.');
+            _this.fire('message-error', 'Issue updating category, try again.');
             _this._confirmCategoryUpdate();
         });
     },
@@ -595,7 +595,7 @@ Polymer({
         Promise.all(promises).then(function() {
             if (_this._associatedTemplates.length) {
                 if (isRetry) {
-                    _this.fire('Problem updating category in ' + _this._associatedTemplates[i].length + 'template(s), please contact an administrator.');
+                    _this.fire('Problem updating category in ' + _this._associatedTemplates[i].length + 'template(s), contact an administrator.');
                     return;
                 }
                 _this._updateCategoryInTemplates(true);
@@ -643,7 +643,7 @@ Polymer({
             _this._categoryToUpdate = null;
             _this._associatedTemplates = [];
         }).catch(function() {
-            _this.fire('message-error', 'Failed to update category, please try again');
+            _this.fire('message-error', 'Failed to update category, try again');
             _this._persistingCategories = false;
             _this._categoryToUpdate = null;
             _this._associatedTemplates = [];
@@ -1093,7 +1093,7 @@ Polymer({
                 return;
             }
         }
-        this._openDialog('Add New Zone','Please enter the zone name','',null,false,false,function() {
+        this._openDialog('Add New Zone','Enter the zone name','',null,false,false,function() {
             var name = this._dialogInput;
             if (shape === 'circle') {
                 newZone = new _this._CircularAlertZone(null,radius,name,null,null,null,null,zIndex);
@@ -1116,7 +1116,7 @@ Polymer({
                         }
                 });
                 if (intersects.features.length) {
-                    _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead. Please modify as required');
+                    _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead.');
                     paths = _this._getRectangularPathFromPolygonPath(paths.getAt(0));
                 }
                 //When we add a new zone we don't want to include the full shape so we can

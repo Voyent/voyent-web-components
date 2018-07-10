@@ -110,7 +110,7 @@ Voyent.LocationVector = Polymer({
             this._totalDistance = this._calculateTotalDistance(); //store total distance of path
             var path = _this._generatePath(tracker);
             if (path.length < 2) {
-                this.fire('message-info','The calculated distance is too short, please adjust simulation parameters and try again');
+                this.fire('message-info','The calculated distance is too short, adjust simulation parameters and try again');
                 this._totalDistance = null;
                 return;
             }

@@ -294,16 +294,16 @@ Polymer({
     validateAction: function() {
         //validate handler query
         if (!this._queryEditorRef.validateQuery()) {
-            this.fire('message-error', 'Please enter a valid query.');
-            console.error('Please enter a valid query.');
+            this.fire('message-error', 'Enter a valid query.');
+            console.error('Enter a valid query.');
             return false;
         }
         //validate required fields
         /* This approach fails for unknown reasons when loading multiple actions consecutively
            so reverting back to a plain loop that checks the value of each required field
         if (!this.$$('#actionForm').checkValidity()) {
-            this.fire('message-error', 'Please enter all required fields.');
-            console.error('Please enter all required fields.');
+            this.fire('message-error', 'Enter all required fields.');
+            console.error('Enter all required fields.');
             return false;
         }*/
         var required = Polymer.dom(this.$$('#actionForm')).querySelectorAll('input:required');
@@ -420,8 +420,8 @@ Polymer({
      */
     isUniqueActionId: function(actionId) {
         if (this._actionIds.indexOf(actionId) > -1) {
-            this.fire('message-error', 'This Action ID is already in use, please try a different one');
-            console.error('This Action ID is already in use, please try a different one');
+            this.fire('message-error', 'This Action ID is already in use, try a different one');
+            console.error('This Action ID is already in use, try a different one');
             return false;
         }
         return true;
@@ -715,7 +715,7 @@ Polymer({
      * @private
      */
     _cloneAction: function() {
-        var actionId = window.prompt("Please enter the new action name","");
+        var actionId = window.prompt("Enter the new action name","");
         if (actionId === null) {
             return;
         }

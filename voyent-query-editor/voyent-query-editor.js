@@ -267,7 +267,7 @@ Voyent.QueryEditor = Polymer({
         if (!this.validateQuery()) { return; }
         var queryId;
         if (!this.activeQuery) {
-            queryId = window.prompt("Please enter the new query name","Auto-Named");
+            queryId = window.prompt("Enter the new query name","Auto-Named");
             if (!queryId || queryId === "Auto-Named" || queryId.trim().length === 0) {
                 queryId = null;
             }
@@ -308,7 +308,7 @@ Voyent.QueryEditor = Polymer({
         }
         if (!this.validateQuery()) { return; }
         var queryId;
-        queryId = window.prompt("Please enter the new query name","Auto-Named");
+        queryId = window.prompt("Enter the new query name","Auto-Named");
         if (!queryId || queryId === "Auto-Named" || queryId.trim().length === 0) {
             queryId = null;
         }
@@ -596,8 +596,8 @@ Voyent.QueryEditor = Polymer({
                     }
                 }
                 if (queryExists) {
-                    this.fire('message-error', 'The query name "'+name+'" already exists in this realm, please choose a different one');
-                    console.error('The query name "'+name+'" already exists in this realm, please choose a different one');
+                    this.fire('message-error', 'The query name "'+name+'" already exists in this realm, choose a different one');
+                    console.error('The query name "'+name+'" already exists in this realm, choose a different one');
                 }
                 return queryExists;
             }

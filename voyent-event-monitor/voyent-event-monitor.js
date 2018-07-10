@@ -259,7 +259,7 @@ Polymer({
             vis.call(d3.behavior.drag().on(this._padID("drag"), null));
             
             vis.append("g").attr("class", "axis");
-            vis.append("text").text("No event data was found, please try again.")
+            vis.append("text").text("No event data was found, try again.")
                 .attr("x", this.padding)
                 .attr("y", calcHeight/2)
                 .attr("fill", "red");

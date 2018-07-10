@@ -308,7 +308,7 @@
                     resolve(previewMetrics);
                 }).catch(function(e) {
                     console.error(e);
-                    _this.fire('message-error','Unable to preview alert, please try again later.');
+                    _this.fire('message-error','Unable to preview alert, try again later.');
                     reject(e);
                 });
             });
@@ -1009,7 +1009,7 @@
                             return;
                         }
                     }
-                    _this._openDialog('Add New Zone','Please enter the zone name','',null,false,false,function() {
+                    _this._openDialog('Add New Zone','Enter the zone name','',null,false,false,function() {
                         //Build our stack marker, the position will be added later.
                         var stackMarker = new google.maps.Marker({
                             map: _this._map, draggable: true, zIndex: 50

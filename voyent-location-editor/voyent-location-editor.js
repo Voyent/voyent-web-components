@@ -1557,13 +1557,13 @@ Polymer({
         var newPropKey = _loc.newPropKey;
         var newPropVal = _loc.newPropVal;
         if (!newPropKey || newPropKey.toString().trim().length === 0) {
-            this.fire('message-error', 'Please enter a property name');
-            console.error('Please enter a property name.');
+            this.fire('message-error', 'Enter a property name');
+            console.error('Enter a property name.');
             return;
         }
         if (!newPropVal || newPropVal.toString().trim().length === 0) {
-            this.fire('message-error', 'Please enter a property value');
-            console.error('Please enter a property value.');
+            this.fire('message-error', 'Enter a property value');
+            console.error('Enter a property value.');
             return;
         }
 
@@ -1592,8 +1592,8 @@ Polymer({
     addTag: function () {
         var newTag = _loc.newTag;
         if (!newTag || newTag.toString().trim().length === 0) {
-            this.fire('message-error', 'Please enter a tag');
-            console.error('Please enter a tag.');
+            this.fire('message-error', 'Enter a tag');
+            console.error('Enter a tag.');
             return;
         }
         _loc.push('tags', {name: newTag});
@@ -2223,15 +2223,15 @@ Polymer({
             }
             var radius = _loc.$$(".radiusInput[placeholder='" + place_id + "']").value;
             if (!radius || radius.toString().trim().length === 0) {
-                this.fire('message-error', 'Please enter a radius for location "' + name + '"');
-                console.error('Please enter a radius for location "' + name + '"');
+                this.fire('message-error', 'Enter a radius for location "' + name + '"');
+                console.error('Enter a radius for location "' + name + '"');
                 locations = [];
                 return false;
             }
             radius = Number(radius);
             if (isNaN(radius) || (radius % 1) !== 0 || radius <= 0 || radius > 50000) {
-                this.fire('message-error', 'Radius for location "' + name + '" is invalid. Please enter an integer greater than 0 and less than 50,000');
-                console.error('Radius for location "' + name + '" is invalid. Please enter an integer greater than 0 and less than 50,000');
+                this.fire('message-error', 'Radius for location "' + name + '" is invalid. Enter an integer greater than 0 and less than 50,000');
+                console.error('Radius for location "' + name + '" is invalid. Enter an integer greater than 0 and less than 50,000');
                 locations = [];
                 return false;
             }
@@ -2684,8 +2684,8 @@ Polymer({
         if (window.File && window.FileReader && window.FileList && window.Blob) {
             var files = document.getElementById('geoJSONUploads').files;
             if (!files || files.length === 0) {
-                this.fire('message-error', 'Please select a geojson file to import');
-                console.error('Please select a geojson file to import');
+                this.fire('message-error', 'Select a geojson file to import');
+                console.error('Select a geojson file to import');
                 return;
             }
             var file;

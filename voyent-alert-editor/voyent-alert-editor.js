@@ -96,7 +96,7 @@ Polymer({
         this.set('_templateSearchQuery','');
         //Fetch the list of categories and templates before opening the dialog. Fetch the
         //categories first because we need them to build our list of categorized templates.
-        var errMsg = 'Problem initializing editor, please try again';
+        var errMsg = 'Problem initializing editor, try again';
         this._fetchTemplateCategories().then(function() {
             _this._fetchAlertTemplates().then(function() {
                 _this._openNewAlertDialog();
