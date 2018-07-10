@@ -478,7 +478,7 @@
             //Validate the input.
             if (this._showDialogInput && (!this._dialogInput ||
                     !this._dialogInput.trim())) {
-                this.fire('message-error', 'Please enter a value');
+                this.fire('message-error', 'Enter a value');
                 return;
             }
             //We allow for passing the confirm function directly or as a string.
@@ -497,19 +497,19 @@
          */
         closeDialog: function(confirmed) {
             confirmed = typeof confirmed === 'boolean' ? confirmed : false;
-
+            
             //Only call the cancel function if this is triggered by a cancel.
             //We allow passing the confirm function directly or as a string.
             if (!confirmed && this._dialogCancelFunc) {
                 if (typeof this._dialogCancelFunc === 'string') { this[this._dialogCancelFunc](); }
                 else { this._dialogCancelFunc(); }
             }
-
+            
             if (this.querySelector('#modalDialog')) {
                 this.querySelector('#modalDialog').close();
             }
         },
-
+        
         /**
          * Handles enter and escape key presses when the dialog is focused.
          * @param e

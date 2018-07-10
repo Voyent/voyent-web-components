@@ -117,8 +117,8 @@ Voyent.CodeEditor = Polymer({
             });
         }
         else {
-            this.fire('message-error', 'Please select an email template to load');
-            console.error('Please select an email template to load');
+            this.fire('message-error', 'Select an email template to load');
+            console.error('Select an email template to load');
         }
     },
     
@@ -153,8 +153,8 @@ Voyent.CodeEditor = Polymer({
             });
         }
         else {
-            this.fire('message-error', 'Please select an email template to delete');
-            console.error('Please select an email template to delete');
+            this.fire('message-error', 'Select an email template to delete');
+            console.error('Select an email template to delete');
         }
     },
     

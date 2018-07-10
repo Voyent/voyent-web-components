@@ -1182,7 +1182,7 @@ Polymer({
         var trackerName = '';
         //check that the instance name is valid and not already being used
         var invalid = false;
-        var msg = 'Please enter an incident name';
+        var msg = 'Enter an incident name';
         while (!trackerName || !trackerName.trim().length || invalid) {
             trackerName = prompt(msg, '');
             if (trackerName === null) { //cancel was pressed
@@ -1191,7 +1191,7 @@ Polymer({
             invalid = !!(this._trackerInstances[trackerId+'.'+trackerName] || //check for zoneNamespace being used for parent trackers
                          this._trackerInstances[trackerId+'.'+trackerName+'.'+trackerName]); //check for zoneNamespace being used for child trackers
             if (invalid) {
-                msg = 'Incident name already in use, please try another';
+                msg = 'Incident name already in use, try another';
             }
         }
         return trackerName;
@@ -1702,7 +1702,7 @@ Polymer({
      * @private
      */
     _saveSimulation: function() {
-        var simulation = window.prompt("Please enter the simulation name", "Auto-Named");
+        var simulation = window.prompt("Enter the simulation name", "Auto-Named");
         if (simulation === null) {
             return;
         }

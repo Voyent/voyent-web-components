@@ -152,8 +152,8 @@ Polymer({
      */
     isUniqueRecognizerId: function(recognizerId) {
         if (this._ids.indexOf(recognizerId) > -1) {
-            this.fire('message-error', 'The recognizer "' + recognizerId + '" is already in use, please try a different one');
-            console.error('The recognizer "' + recognizerId + '" is already in use, please try a different one');
+            this.fire('message-error', 'The recognizer "' + recognizerId + '" is already in use, try a different one');
+            console.error('The recognizer "' + recognizerId + '" is already in use, try a different one');
             return false;
         }
         return true;
@@ -193,7 +193,7 @@ Polymer({
      * @private
      */
     _cloneRecognizer: function() {
-        var recognizerId = window.prompt("Please enter the new recognizer name","");
+        var recognizerId = window.prompt("Enter the new recognizer name","");
         if (recognizerId === null) {
             return;
         }
