@@ -859,7 +859,7 @@
                     zIndex = 49;
                     for (var i=0; i<zoneGeometries.length; i++) {
                         properties = templateJSON.properties[zoneGeometries[i].id];
-                        if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode !== 'view') {
+                        if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode !== 'notification') {
                             //For alert detail preview view show the requested zone only.
                             if (this._zoneIdToDisplay) {
                                 if (this._foundZoneIdMatch) {

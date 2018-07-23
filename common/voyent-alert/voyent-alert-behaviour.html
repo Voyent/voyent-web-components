@@ -497,19 +497,19 @@
          */
         closeDialog: function(confirmed) {
             confirmed = typeof confirmed === 'boolean' ? confirmed : false;
-            
+
             //Only call the cancel function if this is triggered by a cancel.
             //We allow passing the confirm function directly or as a string.
             if (!confirmed && this._dialogCancelFunc) {
                 if (typeof this._dialogCancelFunc === 'string') { this[this._dialogCancelFunc](); }
                 else { this._dialogCancelFunc(); }
             }
-            
+
             if (this.querySelector('#modalDialog')) {
                 this.querySelector('#modalDialog').close();
             }
         },
-        
+
         /**
          * Handles enter and escape key presses when the dialog is focused.
          * @param e
@@ -2657,14 +2657,16 @@
              * @param name - The user-defined name.
              * @param isPrivateResidence - Indicates whether the location is a private residence.
              * @param marker - The associated map marker.
+             * @param endpointType - The endpoint type (fcm, apns, etc..) that this location is associated with, if applicable.
              * @private
              */
-            this._MyLocation = function(id,name,isPrivateResidence,marker) {
+            this._MyLocation = function(id,name,isPrivateResidence,marker,endpointType) {
                 this.isPersisted = !!id;
                 this.id = id || _outer._generateUid();
                 this.setName(name || '');
                 this.isPrivateResidence = typeof isPrivateResidence === 'boolean' ? isPrivateResidence : false;
                 this.setMarker(marker);
+                this.endpointType = endpointType;
             };
             this._MyLocation.prototype = {
                 constructor: _outer._MyLocation,

@@ -38,7 +38,7 @@ Polymer({
      * @param templateId - The id of the alert template to be drawn.
      * @param locations - An optional array of location records to be drawn.
      */
-    viewAlert: function(templateId,locations) {
+    viewAlertDetail: function(templateId,locations) {
         var _this = this;
         //Always start the view with a windowed component.
         if (this._isFullscreenMode) {
@@ -54,27 +54,25 @@ Polymer({
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
-            if (_this.mode === 'notification') {
-                //First create a list of affected location ids. We will draw all locations but
-                //will use this list to ensure we only pan the map on the affected locations.
-                _this._affectedLocationIds = [];
-                //Then create a list of affected stack ids. These are the zone stacks which have locations inside
-                //of them. We will use this list to ensure we only draw alert stacks that contain affected locations.
-                //If there are no affected stack ids then it means this notification was triggered by a fallback zone.
-                _this._affectedStackIds = [];
-                if (locations && locations.length) {
-                    _this._affectedLocationIds = locations.map(function(obj) {
-                        return obj.properties.vras.id;
-                    });
-                    _this._affectedStackIds = locations.reduce(function(result, obj) {
-                        if (typeof obj.properties.vras.insideStackId !== 'undefined') {
-                            result.push(obj.properties.vras.insideStackId);
-                        }
-                        return result;
-                    }, []);
-                }
-                promises.push(_this._fetchLocationRecord());
-                promises.push(_this._fetchMyLocations());
+            promises.push(_this._fetchLocationRecord());
+            promises.push(_this._fetchMyLocations());
+            //First create a list of affected location ids. We will draw all locations but
+            //will use this list to ensure we only pan the map on the affected locations.
+            _this._affectedLocationIds = [];
+            //Then create a list of affected stack ids. These are the zone stacks which have locations inside
+            //of them. We will use this list to ensure we only draw alert stacks that contain affected locations.
+            //If there are no affected stack ids then it means this notification was triggered by a fallback zone.
+            _this._affectedStackIds = [];
+            if (locations && locations.length) {
+                _this._affectedLocationIds = locations.map(function(obj) {
+                    return obj.properties.vras.id;
+                });
+                _this._affectedStackIds = locations.reduce(function(result, obj) {
+                    if (typeof obj.properties.vras.insideStackId !== 'undefined') {
+                        result.push(obj.properties.vras.insideStackId);
+                    }
+                    return result;
+                }, []);
             }
             Promise.all(promises).then(function(results) {
                 var alert = results[0];
@@ -105,13 +103,58 @@ Polymer({
                     _this.fire('message-info','Unable to find alert geography');
                 }
                 _this._drawLocations(myLocations);
-                _this._toggleEditableMap(_this.mode === 'view');
-                if (_this.mode === 'notification') {
-                    setTimeout(function() {
-                        _this._adjustBoundsAndPan();
-                    },0);
-                }
+                _this._toggleEditableMap(false);
+                setTimeout(function() {
+                    _this._adjustBoundsAndPan();
+                },0);
             }).catch(function(error) {
+                console.error(error);
+                _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
+            });
+            //Reset the templateId as we'll re-set it later when we're ready.
+            _this._templateId = null;
+        });
+    },
+
+    /**
+     * View the alert associated with the templateId at its last known location.
+     * If location records are included they will be drawn on the map.
+     * @param alert - The alert template to be drawn.
+     * @param locations - An optional array of location records to be drawn.
+     */
+    viewAlert: function(alert,locations) {
+        var _this = this;
+        // Reset some state
+        this._zoneIdToDisplay = null;
+        this._foundZoneIdMatch = false;
+        // Wait for map before proceeding
+        this._mapIsReady().then(function() {
+            if (!alert || typeof alert !== 'object') {
+                _this.fire('message-error','Unable to load template, template not provided.');
+                return;
+            }
+            _this.clearMap();
+            //Fetch the alert template, its current location and the user locations (incl. mobile).
+            _this._fetchLocationRecord(alert._id).then(function(alertLocation) {
+                //First clear the map if we have an alert loaded already.
+                if (_this._loadedAlert) {
+                    _this.clearMap();
+                }
+                //Build our LatLng object using the coordinates of the last location of the alert.
+                var latLng = null;
+                if (alert.geo) {
+                    latLng = new google.maps.LatLng(
+                        alertLocation.location.geometry.coordinates[1],
+                        alertLocation.location.geometry.coordinates[0]
+                    );
+                }
+                _this._drawAndLoadAlertTemplate(alert,latLng);
+                _this._templateId = _this._loadedAlert.template.id;
+                // Draw the locations and ensure the map can be panned
+                _this._drawLocations(locations);
+                _this._toggleEditableMap(true);
+            }).catch(function(error) {
+                console.error(error);
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
             });
             //Reset the templateId as we'll re-set it later when we're ready.
@@ -135,7 +178,7 @@ Polymer({
         this._foundZoneIdMatch = false;
         if (zoneId) {
             if (zoneId === this._FALLBACK_ZONE_ID && template.properties[this._FALLBACK_ZONE_ID].enabled) {
-                //Ensure we don't zoom in to for when panning the map on a location inside the fallback zone.
+                //Ensure we don't zoom in too far when panning the map on a location inside the fallback zone.
                 this._map.setOptions({maxZoom:this._maxZoom});
                 this._zoneIdToDisplay = this._FALLBACK_ZONE_ID;
             }
@@ -214,6 +257,27 @@ Polymer({
         }
     },
 
+    /**
+     * Toggles visibility of locations based on the provided endpoint type.
+     * @param endpointType
+     * @param visible
+     */
+    toggleLocationsForEndpoint: function(endpointType,visible) {
+        if (!this._myLocations || !this._myLocations.length) {
+            return;
+        }
+        for (var i=0; i<this._myLocations.length; i++) {
+            if (this._myLocations[i].endpointType === endpointType) {
+                if (visible) {
+                    this._myLocations[i].removeFromMap();
+                }
+                else {
+                    this._myLocations[i].addToMap();
+                }
+            }
+        }
+    },
+
     //******************PRIVATE API******************
 
     /**
@@ -265,7 +329,7 @@ Polymer({
                 ),
                 map: this._map,
                 draggable: false,
-                icon: this.mode !== 'preview' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByEndpointType(locations[i].endpointType)
+                icon: this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByEndpointType(locations[i].endpointType)
             });
             //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
             this._addFullscreenClickListener(marker);
@@ -273,7 +337,8 @@ Polymer({
                 locations[i].properties.vras.id,
                 locations[i].properties.vras.name,
                 locations[i].properties.vras.type === 'residential',
-                marker
+                marker,
+                locations[i].endpointType || null
             ));
         }
     },
