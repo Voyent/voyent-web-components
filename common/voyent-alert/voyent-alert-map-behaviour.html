@@ -979,10 +979,9 @@
                 //We do this async so the _drawingCancelled property has time to be applied. This allows
                 //the user to toggle the drawing mode off mid-draw by clicking the draw button.
                 setTimeout(function() {
-                    var drawingCancelled = _this._drawingCancelled;
-                    _this.set('_drawingCancelled',false);
-                    if (drawingCancelled) {
+                    if (_this._drawingCancelled) {
                         oce.overlay.setMap(null);
+                        _this.set('_drawingCancelled',false);
                         return;
                     }
                     //Check if the new zone overlaps another zone stack.
@@ -1080,6 +1079,9 @@
                         //to proceed after cancelling a polygon mid-draw.
                         _this._drawingCanceled = true;
                         _this._disableDrawingMode();
+                    }
+                    else if (_this._isFullscreenMode) {
+                        _this._toggleFullscreenContainer(true);
                     }
                 }
             });
@@ -1453,7 +1455,6 @@
                     dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
                 }
                 this.resizeMap(forceMapPan);
-                this._addFullscreenKeydownListener();
             }
         },
 
@@ -1482,7 +1483,6 @@
                 this.querySelector('#'+this._CONTAINER_ID).append(this.querySelector('#'+this._SIDE_PANEL_ID));
             }
             this.resizeMap();
-            this._removeFullscreenKeydownListener();
             // Hide the dialog
             var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
             if (dialog) {
@@ -1505,30 +1505,6 @@
                     _this._toggleFullscreenContainer(true);
                 });
             }
-        },
-
-        /**
-         * Adds a keydown listener on desktop that exits fullscreen mode when the esc key is pressed.
-         * @private
-         */
-        _addFullscreenKeydownListener: function() {
-            if (this.isMobile) { return; }
-            var _this = this;
-            this._dialogKeyListener = function(e) {
-                if (e.which === 27) {
-                    _this._toggleFullscreenContainer(true);
-                }
-            };
-            window.addEventListener('keydown',this._dialogKeyListener);
-        },
-
-        /**
-         * Removes the keydown listener on desktop that exits fullscreen mode when the esc key is pressed.
-         * @private
-         */
-        _removeFullscreenKeydownListener: function() {
-            if (this.isMobile) { return; }
-            window.removeEventListener('keydown',this._dialogKeyListener);
         },
 
         /**
