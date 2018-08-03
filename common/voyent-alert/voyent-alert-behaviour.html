@@ -1205,7 +1205,6 @@
                     //Add template-level properties.
                     json.name = this.name;
                     json.badge = 'info.png';
-                    json.categories = this.categories;
                     if (this.badge) {
                         json.badge = this.badge;
                     }
@@ -1227,6 +1226,9 @@
                             json.properties.speed = Number(_outer._alertSpeed);
                             json.properties.speedUnit = _outer._alertSpeedUnit || 'kph';
                         }
+                    }
+                    else {
+                        json.categories = this.categories;
                     }
                     //Add fallback zone, we'll always add it the properties.
                     json.properties[_outer._FALLBACK_ZONE_ID] = {
