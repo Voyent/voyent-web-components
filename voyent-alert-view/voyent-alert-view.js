@@ -29,8 +29,15 @@ Polymer({
      * @private
      */
     _onAfterLogin: function() {
+        var _this = this;
         this._fetchRealmRegion();
+        // Add fullscreen control + esc listener
         this._addFullscreenControl();
+        window.addEventListener('keydown', function (event) {
+            if (event.which === 27 && _this._isFullscreenMode) {
+                _this._toggleFullscreenContainer(true);
+            }
+        });
     },
 
     /**
@@ -125,6 +132,10 @@ Polymer({
      */
     viewAlert: function(alert,locations) {
         var _this = this;
+        //Always start the view with a windowed component.
+        if (this._isFullscreenMode) {
+            this._toggleFullscreenContainer();
+        }
         // Reset some state
         this._zoneIdToDisplay = null;
         this._foundZoneIdMatch = false;
