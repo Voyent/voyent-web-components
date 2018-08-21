@@ -363,18 +363,18 @@ Polymer({
      */
     _getIconByEndpointType: function(endpointType) {
         if (endpointType === 'fcm') {
-            return this.pathtoimages+'/img/android_triangle.png';
+            return this.pathtoimages+'/img/triangle_down.png';
         }
         else if (endpointType === 'apns') {
-            return this.pathtoimages+'/img/ios_triangle.png';
+            return this.pathtoimages+'/img/triangle_up.png';
         }
         else if (endpointType === 'mailto') {
-            return this.pathtoimages+'/img/email_square.png';
+            return this.pathtoimages+'/img/square.png';
         }
         else if (endpointType === 'sms') {
-            return this.pathtoimages+'/img/sms_circle.png';
+            return this.pathtoimages+'/img/circle.png';
         }
-        return this.pathtoimages+'/img/voice_donut.png';
+        return this.pathtoimages+'/img/donut.png';
     },
 
     /**
