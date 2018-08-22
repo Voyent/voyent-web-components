@@ -270,6 +270,27 @@ Polymer({
     },
 
     /**
+     * Toggles visibility of locations based on the provided location type.
+     * @param locationType
+     * @param visible
+     */
+    toggleLocationsForType: function(locationType,visible) {
+        if (!this._myLocations || !this._myLocations.length) {
+            return;
+        }
+        for (var i=0; i<this._myLocations.length; i++) {
+            if (this._myLocations[i].type === locationType) {
+                if (visible) {
+                    this._myLocations[i].removeFromMap();
+                }
+                else {
+                    this._myLocations[i].addToMap();
+                }
+            }
+        }
+    },
+
+    /**
      * Toggles visibility of locations based on the provided endpoint type.
      * @param endpointType
      * @param visible
@@ -308,7 +329,7 @@ Polymer({
             this._mobileLocation = new this._MyLocation(
                 location.properties.vras.id,
                 null, //No name so the label doesn't render.
-                location.properties.vras.type === 'residential',
+                location.properties.vras.type,
                 new google.maps.Marker({
                     position: new google.maps.LatLng(location.geometry.coordinates[1],location.geometry.coordinates[0]),
                     map: this._map,
@@ -341,18 +362,35 @@ Polymer({
                 ),
                 map: this._map,
                 draggable: false,
-                icon: this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByEndpointType(locations[i].endpointType)
+                icon: this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByLocationType(locations[i].properties.vras.type)
             });
             //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
             this._addFullscreenClickListener(marker);
             this.push('_myLocations',new this._MyLocation(
                 locations[i].properties.vras.id,
                 locations[i].properties.vras.name,
-                locations[i].properties.vras.type === 'residential',
+                locations[i].properties.vras.type,
                 marker,
                 locations[i].endpointType || null
             ));
         }
+    },
+
+    /**
+     * Returns the location marker image to use based on the passed location type.
+     * @param locationType
+     * @returns {string}
+     * @private
+     */
+    _getIconByLocationType: function(locationType) {
+        locationType = locationType.toLowerCase();
+        if (locationType === 'mobile') {
+            return this.pathtoimages+'/img/circle.png';
+        }
+        else if (locationType === 'residential') {
+            return this.pathtoimages+'/img/triangle_up.png';
+        }
+        return this.pathtoimages+'/img/square.png';
     },
 
     /**

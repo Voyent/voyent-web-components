@@ -2586,16 +2586,16 @@
              * A class that represents a user's fixed location record, both the drawn map entity and the json.
              * @param id - The system-generated id.
              * @param name - The user-defined name.
-             * @param isPrivateResidence - Indicates whether the location is a private residence.
+             * @param type - The type of location (`mobile`, `residential`, `other`).
              * @param marker - The associated map marker.
-             * @param endpointType - The endpoint type (fcm, apns, etc..) that this location is associated with, if applicable.
+             * @param endpointType - The endpoint type (`apns`, `fcm`, `mailto`, `sms`, `voice`) that this location is associated with, if applicable.
              * @private
              */
-            this._MyLocation = function(id,name,isPrivateResidence,marker,endpointType) {
+            this._MyLocation = function(id,name,type,marker,endpointType) {
                 this.isPersisted = !!id;
                 this.id = id || _outer._generateUid();
                 this.setName(name || '');
-                this.isPrivateResidence = typeof isPrivateResidence === 'boolean' ? isPrivateResidence : false;
+                this.setType(type || 'other');
                 this.setMarker(marker);
                 this.endpointType = endpointType;
             };
@@ -2623,16 +2623,16 @@
                     }
                 },
                 /**
-                 * Sets whether this location is a private residence and if the instance
-                 * is currently loaded we'll also notify the polymer path via set.
-                 * @param isPrivateResidence
+                 * Sets the type and if the instance is currently loaded
+                 * we'll also notify the polymer path via set.
+                 * @param type
                  */
-                setPrivateResidence: function(isPrivateResidence) {
+                setType: function(type) {
                     if (_outer._loadedLocation === this) {
-                        _outer.set('_loadedLocation.isPrivateResidence',isPrivateResidence);
+                        _outer.set('_loadedLocation.type',type);
                     }
                     else {
-                        this.isPrivateResidence = isPrivateResidence;
+                        this.type = type;
                     }
                 },
                 /**
@@ -2679,7 +2679,7 @@
                                 "vras": {
                                     "id": this.id,
                                     "name": this.name,
-                                    "type": this.isPrivateResidence ? 'residential' : 'other'
+                                    "type": this.type
                                 }
                             }
                         }

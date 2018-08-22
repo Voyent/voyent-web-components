@@ -143,7 +143,8 @@ Polymer({
         this._openDialog(function () {
             _this._closeInfoWindow();
             setTimeout(function() {
-                _this._createLocation(_this._dialogLocationName,_this._isPrivateResidence,
+                _this._createLocation(_this._dialogLocationName,
+                    _this._getTypeFromPrivateResidence(_this._isPrivateResidence),
                     new google.maps.Marker({
                     position: _this._placeCoordinates,
                     map: _this._map,
@@ -168,8 +169,8 @@ Polymer({
                 this._loadedLocation.setName(this._infoWindowLocationName);
                 doUpdate = true;
             }
-            if (this._loadedLocation.isPrivateResidence !== this._inputPrivateResidence) {
-                this._loadedLocation.setPrivateResidence(this._inputPrivateResidence);
+            if (this._getTypeFromPrivateResidence(this._loadedLocation.isPrivateResidence) !== this._getTypeFromPrivateResidence(this._inputPrivateResidence)) {
+                this._loadedLocation.setType(this._getTypeFromPrivateResidence(this._inputPrivateResidence));
                 doUpdate = true;
             }
             if (doUpdate) {
@@ -597,7 +598,8 @@ Polymer({
     _addPinDropToMyLocations: function() {
         if (!this._pinDropLocation) { return; }
         if (!this.querySelector('#pinDropLocationName').validate()) { return; }
-        this._loadedLocation = this._createLocation(this._pinDropLocation.name,this._pinDropLocation.isPrivateResidence,
+        this._loadedLocation = this._createLocation(this._pinDropLocation.name,
+            this._getTypeFromPrivateResidence(this._pinDropLocation.isPrivateResidence),
             new google.maps.Marker({
                 map: this._map,
                 position: this._pinDropLocation.latLng,
@@ -636,7 +638,7 @@ Polymer({
      * @private
      */
     _createLocation: function(name,isPrivateResidence,marker,msgSuffix) {
-        var newLocation = new this._MyLocation(null, name, isPrivateResidence ,marker);
+        var newLocation = new this._MyLocation(null, name, this._getTypeFromPrivateResidence(isPrivateResidence) ,marker);
         this._saveLocation(newLocation,msgSuffix);
         return newLocation;
     },
@@ -771,6 +773,15 @@ Polymer({
             _this._map.setOptions({maxZoom:null});
         },250); //Since Google Maps version 3.32 we must add a slight delay when
                 //resetting the max zoom in order for the map to render correctly.
+    },
+
+    /**
+     * Returns a string of either `residential` or `other` depending on the passed boolean.
+     * @param isPrivateResidence
+     * @returns {string}
+     */
+    _getTypeFromPrivateResidence : function(isPrivateResidence) {
+        return isPrivateResidence ? 'residential' : 'other';
     },
 
     /**

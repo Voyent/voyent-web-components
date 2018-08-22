@@ -750,7 +750,7 @@
                 this.push('_myLocations',new this._MyLocation(
                     locations[i].location.properties.vras.id,
                     locations[i].location.properties.vras.name,
-                    locations[i].location.properties.vras.type === 'residential',
+                    locations[i].location.properties.vras.type,
                     new google.maps.Marker({
                         position: new google.maps.LatLng(
                             locations[i].location.geometry.coordinates[1],
