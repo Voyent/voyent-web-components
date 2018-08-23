@@ -855,12 +855,22 @@ Polymer({
     _validateLocationName: function(elem, locationName) {
         this._locationNameValid = true;
         if (!locationName || !locationName.trim()) {
-            elem.setAttribute('error-message','Location must have a name');
+            elem.setAttribute('error-message','Must have a value');
             this._locationNameValid = false;
             return this._locationNameValid;
         }
         if (locationName.length > 60) {
-            elem.setAttribute('error-message','Location name must not be more than 60 characters');
+            elem.setAttribute('error-message','60 characters maximum');
+            this._locationNameValid = false;
+            return this._locationNameValid;
+        }
+        if (locationName.indexOf('"') > -1) {
+            elem.setAttribute('error-message','Cannot contain the " character');
+            this._locationNameValid = false;
+            return this._locationNameValid;
+        }
+        if (locationName.indexOf('\\') > -1) {
+            elem.setAttribute('error-message','Cannot contain the \\ character');
             this._locationNameValid = false;
             return this._locationNameValid;
         }
