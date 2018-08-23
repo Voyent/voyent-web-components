@@ -11,10 +11,14 @@ Polymer({
             var _this = this;
             window.addEventListener('loading-on',  function(e) {
                 _this.on = true;
+                
+                document.documentElement.style.cursor = 'wait';
             });
             
             window.addEventListener('loading-off',  function(e) {
                 _this.on = false;
+                
+                document.documentElement.style.cursor = 'auto';
             });
         }
     },
