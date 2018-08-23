@@ -43,8 +43,6 @@ Polymer({
         this._mapTooltipPortraitPos = 'centered-bottom';
         this._mapTooltipLandscapePos = 'left-top';
         this._tooltipsDisplayed = true;
-        //A flag used to ignore change listener events for the location name input.
-        this._ignoreLocationNameChanged = false;
         //Initialize other pieces that depend on the map.
         this._mapIsReady().then(function() {
             //Setup the infoWindow.
@@ -250,7 +248,6 @@ Polymer({
                 _this._selectedPlace = null;
                 //Load the location details and open the infoWindow
                 _this._loadedLocation = selectedLocation;
-                _this._ignoreLocationNameChanged = true;
                 _this._infoWindowLocationName = _this._loadedLocation.name;
                 _this._locationNameValid = true;
                 _this._inputPrivateResidence = _this._loadedLocation.isPrivateResidence;
@@ -907,11 +904,6 @@ Polymer({
      * @private
      */
     _infoWindowNameChanged: function() {
-        //We use this rather than an on-change on the paper-input because this does not fire on infoWindow blur on iOS.
-        if (this._ignoreLocationNameChanged) {
-            this._ignoreLocationNameChanged = false;
-            return;
-        }
         var elem = this.querySelector('#infoWindowLocationName');
         if (elem) {
             elem.validate();
