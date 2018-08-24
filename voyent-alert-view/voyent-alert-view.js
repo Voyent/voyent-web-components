@@ -383,7 +383,6 @@ Polymer({
      * @private
      */
     _getIconByLocationType: function(locationType) {
-        locationType = locationType.toLowerCase();
         if (locationType === 'mobile') {
             return this.pathtoimages+'/img/circle.png';
         }
