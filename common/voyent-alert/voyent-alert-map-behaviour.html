@@ -1186,7 +1186,7 @@
          * @private
          */
         _addCircleButton: function(listener,cb) {
-            this._addDrawButton(this._CIRCLE_BUTTON_ID,listener,cb);
+            this._addCustomControl(this._CIRCLE_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT,listener,cb);
         },
 
         /**
@@ -1196,7 +1196,7 @@
          * @private
          */
         _addPolygonButton: function(listener,cb) {
-            this._addDrawButton(this._POLYGON_BUTTON_ID,listener,cb);
+            this._addCustomControl(this._POLYGON_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT,listener,cb);
         },
 
         /**
@@ -1206,7 +1206,7 @@
          * @private
          */
         _addFallbackZoneButton: function(listener,cb) {
-            this._addDrawButton(this._FALLBACK_ZONE_BUTTON_ID,listener,cb);
+            this._addCustomControl(this._FALLBACK_ZONE_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT,listener,cb);
         },
 
         /**
@@ -1228,19 +1228,26 @@
         /**
          * Adds drawing buttons.
          * @param id - The id of the button to create.
+         * @param position - The control position.
          * @param listener - The click listener.
          * @param cb - An optional callback that will be executed after the button has been added.
+         * @param skipClone - Will skip cloning the custom control element when creating.
          * @private
          */
-        _addDrawButton: function(id,listener,cb) {
+        _addCustomControl: function(id,position,listener,cb,skipClone) {
             var _this = this;
             this._mapIsReady().then(function() {
                 //Use our saved button reference to check if the button already exists.
                 if (!_this['_'+id]) {
-                    _this['_'+id] = _this.$$('#'+id).cloneNode(true);
+                    if (skipClone) {
+                        _this['_'+id] = _this.$$('#'+id);
+                    }
+                    else {
+                        _this['_'+id] = _this.$$('#'+id).cloneNode(true);
+                    }
                     //Add the onclick, save and show the button.
                     _this['_'+id].onclick = listener;
-                    _this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(_this['_'+id]);
+                    _this._map.controls[position].push(_this['_'+id]);
                     _this['_'+id].hidden = false;
                     //Call our callback function, if provided.
                     if (cb && typeof cb === 'function') { cb(); }
@@ -1253,7 +1260,7 @@
          * @private
          */
         _removeCircleButton: function() {
-            this._removeDrawButton(this._CIRCLE_BUTTON_ID);
+            this._removeCustomControl(this._CIRCLE_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT);
         },
 
         /**
@@ -1261,7 +1268,7 @@
          * @private
          */
         _removePolygonButton: function() {
-            this._removeDrawButton(this._POLYGON_BUTTON_ID);
+            this._removeCustomControl(this._POLYGON_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT);
         },
 
         /**
@@ -1269,7 +1276,7 @@
          * @private
          */
         _removeFallbackZoneButton: function() {
-            this._removeDrawButton(this._FALLBACK_ZONE_BUTTON_ID);
+            this._removeCustomControl(this._FALLBACK_ZONE_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT);
         },
 
         /**
@@ -1285,13 +1292,14 @@
         /**
          * Removes drawing buttons
          * @param id - The id of the button to remove.
+         * @param position - The control position.
          * @private
          */
-        _removeDrawButton: function(id) {
+        _removeCustomControl: function(id,position) {
             if (!this._map || !this._map.controls) { return; }
-            var index = this._map.controls[google.maps.ControlPosition.TOP_RIGHT].indexOf(this['_'+id]);
+            var index = this._map.controls[position].indexOf(this['_'+id]);
             if (index > -1) {
-                this._map.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(index);
+                this._map.controls[position].removeAt(index);
                 this['_'+id] = null;
             }
         },

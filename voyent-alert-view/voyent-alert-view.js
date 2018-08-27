@@ -19,9 +19,14 @@ Polymer({
 
     },
 
+    observers: [
+        '_alertHistoryChanged(_alertHistory)'
+    ],
+
     ready: function() {
         this._loadedAlert = null;
         this.set('_myLocations',[]);
+        this._LOCATION_TYPE_LEGEND_ID = 'locationTypes';
     },
     
     /**
@@ -129,8 +134,9 @@ Polymer({
      * If location records are included they will be drawn on the map.
      * @param alert - The alert template to be drawn.
      * @param locations - An optional array of location records to be drawn.
+     * @param alertHistory - The notification history of the alert.
      */
-    viewAlert: function(alert,locations) {
+    viewAlert: function(alert,locations,alertHistory) {
         var _this = this;
         //Always start the view with a windowed component.
         if (this._isFullscreenMode) {
@@ -165,6 +171,8 @@ Polymer({
                 // Draw the locations and ensure the map can be panned
                 _this._drawLocations(locations);
                 _this._toggleEditableMap(true);
+                // Set the location types legend history
+                _this.set('_alertHistory',alertHistory);
             }).catch(function(error) {
                 console.error(error);
                 _this.fire('message-error', 'Issue refreshing the view: ' + (error.responseText || error.message || error));
@@ -179,18 +187,19 @@ Polymer({
      * @param template
      * @param zoneId
      * @param locations
+     * @param alertHistory
      */
-    previewZoneFromTemplate: function(template,zoneId,locations) {
+    previewZoneFromTemplate: function(template,zoneId,locations,alertHistory) {
         if (!template || typeof template !== 'object') {
             this.fire('message-error','Unable to load template, template not provided');
             return;
         }
-        //Ensure that the passed zoneId is valid. If not we will fallback to just drawing the inner zone of each stack.
+        // Ensure that the passed zoneId is valid. If not we will fallback to just drawing the inner zone of each stack.
         this._zoneIdToDisplay = null;
         this._foundZoneIdMatch = false;
         if (zoneId) {
             if (zoneId === this._FALLBACK_ZONE_ID && template.properties[this._FALLBACK_ZONE_ID].enabled) {
-                //Ensure we don't zoom in too far when panning the map on a location inside the fallback zone.
+                // Ensure we don't zoom in too far when panning the map on a location inside the fallback zone.
                 this._map.setOptions({maxZoom:this._maxZoom});
                 this._zoneIdToDisplay = this._FALLBACK_ZONE_ID;
             }
@@ -203,10 +212,13 @@ Polymer({
                 }
             }
         }
+        // Draw the alert
         this.clearMap();
         this._drawLocations(locations);
         this._drawAndLoadAlertTemplate(template);
         this._map.setOptions({maxZoom:null});
+        // Set the location types legend history
+        this.set('_alertHistory',alertHistory);
     },
 
     /**
@@ -377,6 +389,22 @@ Polymer({
     },
 
     /**
+     * Adds the location types legend to the map.
+     * @private
+     */
+    _addLocationTypesLegend: function() {
+        this._addCustomControl(this._LOCATION_TYPE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null,true);
+    },
+
+    /**
+     * Removes the location types legend from the map.
+     * @private
+     */
+    _removeLocationTypesLegend: function() {
+        this._removeCustomControl(this._LOCATION_TYPE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM)
+    },
+
+    /**
      * Returns the location marker image to use based on the passed location type.
      * @param locationType
      * @returns {string}
@@ -423,6 +451,22 @@ Polymer({
         this._map.setOptions({mapTypeControl:editable,zoomControl:editable,draggable:editable,disableDoubleClickZoom:!editable});
         if (editable) {
             this._adjustBoundsAndPan();
+        }
+    },
+
+    /**
+     * Monitors the `_alertHistory` property and toggles the visibility of the location types legend.
+     * @param alertHistory
+     * @private
+     */
+    _alertHistoryChanged: function(alertHistory) {
+        if (alertHistory) {
+            if (!this['_locationTypes']) {
+                this._addLocationTypesLegend();
+            }
+        }
+        else {
+            this._removeLocationTypesLegend();
         }
     },
 
