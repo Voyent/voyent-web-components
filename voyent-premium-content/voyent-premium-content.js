@@ -82,7 +82,7 @@ Polymer({
 	    if (element) {
             element.disabled = !this.hasPremium; // Base our disabled state on our flag
             
-            if (element.children.length > 0) {
+            if (element.children && element.children.length > 0) {
                 for (var childLoop = 0; childLoop < element.children.length; childLoop++) {
                     this._disableChildren(element.children[childLoop]);
                 }
