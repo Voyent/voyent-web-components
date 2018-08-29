@@ -285,8 +285,8 @@
         },
 
         /**
-         * Previews the currently loaded alert and returns the event that was fired. This will trigger calculations on
-         * the service which will result in a push notification to the browser containing the preview data.
+         * Returns preview data via a Promise for the currently loaded alert.
+         * @returns {Promise}
          */
         previewAlert: function() {
             var _this = this;
@@ -295,8 +295,9 @@
                     _this.fire('message-error', 'Unable to preview alert: No alert loaded');
                     return reject();
                 }
+                var promises = [];
                 var event = _this._buildPreviewEvent();
-                voyent.action.executeModule({
+                promises.push(voyent.action.executeModule({
                     "id":"alert-moved-notify-for-zones",
                     "params":{
                         "moduleParams": {
@@ -304,7 +305,42 @@
                         },
                         "_eventMessage": event
                     }
-                }).then(function(previewMetrics) {
+                }));
+                promises.push(voyent.action.executeModule({
+                    "id":"alert-moved-notify-social-media",
+                    "params":{
+                        "moduleParams": {
+                            "synchronous": true,
+                            "isPreview": true
+                        },
+                        "_eventMessage": event
+                    }
+                }));
+                Promise.all(promises).then(function(moduleResults) {
+                    var previewMetrics = moduleResults[0];
+                    var socialMediaStatuses = moduleResults[1];
+
+                    if (socialMediaStatuses.summary) {
+                        previewMetrics.summary.facebookWillNotify = !!(socialMediaStatuses.summary.facebookWillNotify);
+                        previewMetrics.summary.twitterWillNotify = !!(socialMediaStatuses.summary.twitterWillNotify);
+                    }
+                    else {
+                        previewMetrics.summary = {
+                            facebookWillNotify: false,
+                            twitterWillNotify: false
+                        };
+                    }
+                    for (var i=0; i<previewMetrics.zoneMetrics.length; i++) {
+                        var currentZone = socialMediaStatuses.zones ? socialMediaStatuses.zones[previewMetrics.zoneMetrics[i].id] : null;
+                        if (currentZone) {
+                            previewMetrics.zoneMetrics[i].facebookWillNotify = !!(currentZone.facebookWillNotify);
+                            previewMetrics.zoneMetrics[i].twitterWillNotify = !!(currentZone.twitterWillNotify);
+                        }
+                        else {
+                            previewMetrics.zoneMetrics[i].facebookWillNotify = false;
+                            previewMetrics.zoneMetrics[i].twitterWillNotify = false;
+                        }
+                    }
                     resolve(previewMetrics);
                 }).catch(function(e) {
                     console.error(e);
@@ -321,7 +357,9 @@
          */
         _buildPreviewEvent: function() {
             this._loadedAlert.template.updateJSON(true);
-            this._loadedAlert.template.json.state = 'preview';
+            var json = this._loadedAlert.template.json;
+
+            json.state = 'preview';
 
             var alertId = this._loadedAlert.template.id || 'preview';
             var alertFamilyId = this._loadedAlert.template.alertFamilyId || this._generateUid();
@@ -330,9 +368,12 @@
             if (!currentLocation.properties.alertId) {
                 currentLocation.properties.alertId = alertId;
             }
-            if (!this._loadedAlert.template.json.properties.alertFamilyId) {
-                this._loadedAlert.template.json.properties.alertFamilyId = alertFamilyId;
+            if (!json.properties.alertFamilyId) {
+                json.properties.alertFamilyId = alertFamilyId;
             }
+
+            // Add the activatedBy property as it's required for the social-media module.
+            json.activatedBy = voyent.auth.getLastKnownUsername();
 
             return {
                 "time": new Date().toISOString(),
@@ -348,7 +389,7 @@
                     "origin": window.location.hostname,
                     "previousLocation": {}, //This isn't being used by the modules currently so don't bother including it.
                     "currentLocation": currentLocation,
-                    "alert": this._loadedAlert.template.json,
+                    "alert": json,
                     "alertId" : alertId,
                     "alertFamilyId":alertFamilyId
                 }
