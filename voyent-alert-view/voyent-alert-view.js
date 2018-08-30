@@ -20,13 +20,15 @@ Polymer({
     },
 
     observers: [
-        '_alertHistoryChanged(_alertHistory)'
+        '_alertHistoryChanged(_alertHistory)',
+        '_notificationFilterChanged(_notificationFilter)'
     ],
 
     ready: function() {
         this._loadedAlert = null;
         this.set('_myLocations',[]);
-        this._LOCATION_TYPE_LEGEND_ID = 'locationTypes';
+        this._LOCATION_TYPE_COUNT_LEGEND_ID = 'locationTypesCount';
+        this._LOCATION_TYPE_STATE_LEGEND_ID = 'locationTypesState';
     },
     
     /**
@@ -188,8 +190,9 @@ Polymer({
      * @param zoneId
      * @param locations
      * @param alertHistory
+     * @param notificationFilter
      */
-    previewZoneFromTemplate: function(template,zoneId,locations,alertHistory) {
+    previewZoneFromTemplate: function(template,zoneId,locations,alertHistory,notificationFilter) {
         if (!template || typeof template !== 'object') {
             this.fire('message-error','Unable to load template, template not provided');
             return;
@@ -217,8 +220,9 @@ Polymer({
         this._drawLocations(locations);
         this._drawAndLoadAlertTemplate(template);
         this._map.setOptions({maxZoom:null});
-        // Set the location types legend history
+        // Set the location types legend history and notification filter
         this.set('_alertHistory',alertHistory);
+        this.set('_notificationFilter',notificationFilter);
     },
 
     /**
@@ -389,19 +393,35 @@ Polymer({
     },
 
     /**
-     * Adds the location types legend to the map.
+     * Adds the location types legend (with count) to the map.
      * @private
      */
-    _addLocationTypesLegend: function() {
-        this._addCustomControl(this._LOCATION_TYPE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null,true);
+    _addLocationTypesCountLegend: function() {
+        this._addCustomControl(this._LOCATION_TYPE_COUNT_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null,true);
     },
 
     /**
-     * Removes the location types legend from the map.
+     * Removes the location types legend (with count) from the map.
      * @private
      */
-    _removeLocationTypesLegend: function() {
-        this._removeCustomControl(this._LOCATION_TYPE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM)
+    _removeLocationTypesCountLegend: function() {
+        this._removeCustomControl(this._LOCATION_TYPE_COUNT_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM)
+    },
+
+    /**
+     * Adds the location types legend (with state) to the map.
+     * @private
+     */
+    _addLocationTypesStateLegend: function() {
+        this._addCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.TOP_LEFT,null,null,true);
+    },
+
+    /**
+     * Removes the location types legend (with state) from the map.
+     * @private
+     */
+    _removeLocationTypesStateLegend: function() {
+        this._removeCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.TOP_LEFT)
     },
 
     /**
@@ -455,18 +475,72 @@ Polymer({
     },
 
     /**
-     * Monitors the `_alertHistory` property and toggles the visibility of the location types legend.
+     * Returns a boolean indicating whether the passed `locationType` is enabled for the current notificationFilter.
+     * @param locationType
+     * @returns {boolean}
+     * @private
+     */
+    _isLocationTypeEnabled: function(locationType) {
+        console.log('_isLocationTypeEnabled',locationType);
+        if (this._notificationFilter) {
+            var locationTypes = this._notificationFilter.locationTypes || ['all'];
+            if (!locationTypes.length) {
+                return false;
+            }
+            else if (locationTypes.indexOf('all') > -1) {
+                return true;
+            }
+
+            if (locationType === 'mobile' && locationTypes.indexOf('mobile') > -1) {
+                return true;
+            }
+            else if (locationType === 'residential' && locationTypes.indexOf('residential') > -1) {
+                return true;
+            }
+            else if (locationType === 'other' && locationTypes.indexOf('other') > -1) {
+                return true;
+            }
+            return false;
+        }
+        return true;
+    },
+
+    /**
+     * Show an info message to the user when they click on the mobile location type help icon.
+     * @private
+     */
+    _showMobileLocationTypeHelp: function() {
+        this.fire('message-info','Mobile locations are not displayed on the map in preview mode because their position cannot be determined until alert activation.');
+    },
+
+    /**
+     * Monitors the `_alertHistory` property and toggles the visibility of the location types legend (with count).
      * @param alertHistory
      * @private
      */
     _alertHistoryChanged: function(alertHistory) {
         if (alertHistory) {
-            if (!this['_locationTypes']) {
-                this._addLocationTypesLegend();
+            if (!this['_'+this._LOCATION_TYPE_COUNT_LEGEND_ID]) {
+                this._addLocationTypesCountLegend();
             }
         }
         else {
-            this._removeLocationTypesLegend();
+            this._removeLocationTypesCountLegend();
+        }
+    },
+
+    /**
+     *Monitors the `_notificationFilter` property and toggles the visibility of the location types legend (with state).
+     * @param notificationFilter
+     * @private
+     */
+    _notificationFilterChanged: function(notificationFilter) {
+        console.log('_notificationFilterChanged',notificationFilter);
+        if (notificationFilter) {
+            this._addLocationTypesStateLegend();
+        }
+        else {
+            this._addLocationTypesStateLegend();
         }
     },
 

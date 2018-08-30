@@ -52,13 +52,42 @@ Example:
                 margin:0;
                 padding:7px;
             }
-            .locationTypes {
+            .locationTypesCountLegend,
+            .locationTypesStateLegend{
                 font-size: 11px;
                 margin:10px;
                 background-color: white;
                 border-radius: 5px;
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
                 padding: 10px 5px 10px 5px;
+            }
+
+            .locationTypesStateLegend {
+                padding: 5px 5px 5px 5px;
+            }
+            .legendCol {
+                float: left;
+                padding-right: 15px;
+            }
+            .defaultText {
+                color: #333333;
+            }
+            .mobileHelp {
+                width: 13px;
+                height: 13px;
+                padding: 0;
+            }
+            .locationTypeState[data-enabled] {
+                color: green;
+            }
+            .locationTypeState[data-enabled]:after {
+                content: '✔';
+            }
+            .locationTypeState[data-disabled] {
+                color: red;
+            }
+            .locationTypeState[data-disabled]:after {
+                content: '✖';
             }
         </style>
         <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
@@ -73,29 +102,58 @@ Example:
                 <paper-button>Exit Fullscreen</paper-button>
             </div>
         </div>
-        <div id$="[[_LOCATION_TYPE_LEGEND_ID]]" class="locationTypes" hidden>
+        <div id$="[[_LOCATION_TYPE_COUNT_LEGEND_ID]]" class="locationTypesCountLegend" hidden>
             <table cellpadding="0" cellspacing="0">
                 <tr>
-                    <td class="metricLabelCol" title="Mobile">
+                    <td title="Mobile">
                         <img src="../common/voyent-alert/img/circle.png">
                         &nbsp;Mobile
                         &nbsp;([[_alertHistory.mobileLocationsCount]])
                     </td>
                 </tr>
                 <tr>
-                    <td class="metricLabelCol" title="Residential">
+                    <td title="Residential">
                         <img src="../common/voyent-alert/img/triangle_up.png">
                         &nbsp;Residential
                         &nbsp;([[_alertHistory.residentialLocationsCount]])
                     </td>
                 </tr>
                 <tr>
-                    <td class="metricLabelCol" title="Other">
+                    <td title="Other">
                         <img src="../common/voyent-alert/img/square.png">
                         &nbsp;Other&nbsp;([[_alertHistory.otherLocationsCount]])
                     </td>
                 </tr>
             </table>
+        </div>
+        <div id$="[[_LOCATION_TYPE_STATE_LEGEND_ID]]" class="locationTypesStateLegend" hidden>
+            <div class="legendCol locationTypeState"
+                 data-enabled$="[[_isLocationTypeEnabled('mobile',_notificationFilter)]]"
+                 data-disabled$="[[!_isLocationTypeEnabled('mobile',_notificationFilter)]]">
+                <span class="defaultText"
+                      title="Mobile locations are not displayed on the map in preview mode because their position cannot be determined until alert activation.">
+                    <paper-icon-button class="mobileHelp" on-click="_showMobileLocationTypeHelp" icon="help"></paper-icon-button>
+                    &nbsp;Mobile&nbsp;
+                </span>
+            </div>
+            <div class="legendCol locationTypeState"
+                 data-enabled$="[[_isLocationTypeEnabled('residential',_notificationFilter)]]"
+                 data-disabled$="[[!_isLocationTypeEnabled('residential',_notificationFilter)]]">
+                <span class="defaultText">
+                    <img src="../common/voyent-alert/img/triangle_up.png">
+                    &nbsp;Residential&nbsp;
+                </span>
+            </div>
+            <div class="legendCol locationTypeState"
+                 data-enabled$="[[_isLocationTypeEnabled('other',_notificationFilter)]]"
+                 data-disabled$="[[!_isLocationTypeEnabled('other',_notificationFilter)]]">
+                <span class="defaultText">
+                    <img src="../common/voyent-alert/img/square.png">
+                    &nbsp;Other&nbsp;
+                </span>
+            </div>
+        </div>
+
         </div>
     </template>
 </dom-module>

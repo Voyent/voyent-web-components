@@ -1287,7 +1287,9 @@
                         _this['_'+id] = _this.$$('#'+id).cloneNode(true);
                     }
                     //Add the onclick, save and show the button.
-                    _this['_'+id].onclick = listener;
+                    if (listener) {
+                        _this['_'+id].onclick = listener;
+                    }
                     _this._map.controls[position].push(_this['_'+id]);
                     _this['_'+id].hidden = false;
                     //Call our callback function, if provided.
