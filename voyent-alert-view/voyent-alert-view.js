@@ -481,7 +481,6 @@ Polymer({
      * @private
      */
     _isLocationTypeEnabled: function(locationType) {
-        console.log('_isLocationTypeEnabled',locationType);
         if (this._notificationFilter) {
             var locationTypes = this._notificationFilter.locationTypes || ['all'];
             if (!locationTypes.length) {
@@ -545,7 +544,6 @@ Polymer({
      * @private
      */
     _notificationFilterChanged: function(notificationFilter) {
-        console.log('_notificationFilterChanged',notificationFilter);
         if (notificationFilter) {
             this._addLocationTypesStateLegend();
         }
