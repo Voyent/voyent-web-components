@@ -61,33 +61,26 @@ Example:
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
                 padding: 10px 5px 10px 5px;
             }
-
             .locationTypesStateLegend {
                 padding: 5px 5px 5px 5px;
             }
-            .legendCol {
+            .legendItem {
                 float: left;
                 padding-right: 15px;
             }
-            .defaultText {
+            .locationTypeState {
                 color: #333333;
+            }
+            .locationTypeState .enabled {
+                color: green;
+            }
+            .locationTypeState .disabled {
+                color: red;
             }
             .mobileHelp {
                 width: 13px;
                 height: 13px;
                 padding: 0;
-            }
-            .locationTypeState[data-enabled] {
-                color: green;
-            }
-            .locationTypeState[data-enabled]:after {
-                content: '✔';
-            }
-            .locationTypeState[data-disabled] {
-                color: red;
-            }
-            .locationTypeState[data-disabled]:after {
-                content: '✖';
             }
         </style>
         <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
@@ -127,29 +120,31 @@ Example:
             </table>
         </div>
         <div id$="[[_LOCATION_TYPE_STATE_LEGEND_ID]]" class="locationTypesStateLegend" hidden>
-            <div class="legendCol locationTypeState"
-                 data-enabled$="[[_isLocationTypeEnabled('mobile',_notificationFilter)]]"
-                 data-disabled$="[[!_isLocationTypeEnabled('mobile',_notificationFilter)]]">
-                <span class="defaultText"
-                      title="Mobile locations are not displayed on the map in preview mode because their position cannot be determined until alert activation.">
-                    <paper-icon-button class="mobileHelp" on-click="_showMobileLocationTypeHelp" icon="help"></paper-icon-button>
-                    &nbsp;Mobile&nbsp;
+            <div class="legendItem locationTypeState">
+                <paper-icon-button class="mobileHelp"
+                                   title="Mobile locations are not displayed on the map in preview mode because their position cannot be determined until alert activation."
+                                   on-click="_showMobileLocationTypeHelp"
+                                   icon="help"></paper-icon-button>
+                &nbsp;Residential&nbsp;
+                <span class$="[[_getLocationTypeClass('mobile',_notificationFilter)]]">
+                    <template is="dom-if" if="[[_isLocationTypeEnabled('mobile',_notificationFilter)]]">✔</template>
+                    <template is="dom-if" if="[[!_isLocationTypeEnabled('mobile',_notificationFilter)]]">✖</template>
                 </span>
             </div>
-            <div class="legendCol locationTypeState"
-                 data-enabled$="[[_isLocationTypeEnabled('residential',_notificationFilter)]]"
-                 data-disabled$="[[!_isLocationTypeEnabled('residential',_notificationFilter)]]">
-                <span class="defaultText">
-                    <img src="../common/voyent-alert/img/triangle_up.png">
-                    &nbsp;Residential&nbsp;
+            <div class="legendItem locationTypeState">
+                <img src="../common/voyent-alert/img/triangle_up.png">
+                &nbsp;Residential&nbsp;
+                <span class$="[[_getLocationTypeClass('residential',_notificationFilter)]]">
+                    <template is="dom-if" if="[[_isLocationTypeEnabled('residential',_notificationFilter)]]">✔</template>
+                    <template is="dom-if" if="[[!_isLocationTypeEnabled('residential',_notificationFilter)]]">✖</template>
                 </span>
             </div>
-            <div class="legendCol locationTypeState"
-                 data-enabled$="[[_isLocationTypeEnabled('other',_notificationFilter)]]"
-                 data-disabled$="[[!_isLocationTypeEnabled('other',_notificationFilter)]]">
-                <span class="defaultText">
-                    <img src="../common/voyent-alert/img/square.png">
-                    &nbsp;Other&nbsp;
+            <div class="legendItem locationTypeState">
+                <img src="../common/voyent-alert/img/square.png">
+                &nbsp;Other&nbsp;
+                <span class$="[[_getLocationTypeClass('other',_notificationFilter)]]">
+                    <template is="dom-if" if="[[_isLocationTypeEnabled('other',_notificationFilter)]]">✔</template>
+                    <template is="dom-if" if="[[!_isLocationTypeEnabled('other',_notificationFilter)]]">✖</template>
                 </span>
             </div>
         </div>

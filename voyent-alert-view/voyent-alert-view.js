@@ -506,6 +506,16 @@ Polymer({
     },
 
     /**
+     * Returns either an `enabled` or `disabled` class to be used for the location type state value.
+     * @param locationType
+     * @returns {string}
+     * @private
+     */
+    _getLocationTypeClass: function(locationType) {
+        return this._isLocationTypeEnabled(locationType) ? 'enabled' : 'disabled';
+    },
+
+    /**
      * Show an info message to the user when they click on the mobile location type help icon.
      * @private
      */
