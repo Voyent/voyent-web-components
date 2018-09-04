@@ -413,7 +413,7 @@ Polymer({
      * @private
      */
     _addLocationTypesStateLegend: function() {
-        this._addCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.TOP_LEFT,null,null,true);
+        this._addCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null,true);
     },
 
     /**
@@ -421,7 +421,7 @@ Polymer({
      * @private
      */
     _removeLocationTypesStateLegend: function() {
-        this._removeCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.TOP_LEFT)
+        this._removeCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM)
     },
 
     /**
