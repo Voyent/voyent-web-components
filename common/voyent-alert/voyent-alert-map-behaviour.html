@@ -320,15 +320,16 @@
                     var previewMetrics = moduleResults[0];
                     var socialMediaStatuses = moduleResults[1];
 
+                    if (!previewMetrics.summary) {
+                        previewMetrics.summary = {};
+                    }
                     if (socialMediaStatuses.summary) {
                         previewMetrics.summary.facebookWillNotify = !!(socialMediaStatuses.summary.facebookWillNotify);
                         previewMetrics.summary.twitterWillNotify = !!(socialMediaStatuses.summary.twitterWillNotify);
                     }
                     else {
-                        previewMetrics.summary = {
-                            facebookWillNotify: false,
-                            twitterWillNotify: false
-                        };
+                        previewMetrics.summary.facebookWillNotify = false;
+                        previewMetrics.summary.twitterWillNotify = false;
                     }
                     for (var i=0; i<previewMetrics.zoneMetrics.length; i++) {
                         var currentZone = socialMediaStatuses.zones ? socialMediaStatuses.zones[previewMetrics.zoneMetrics[i].id] : null;
