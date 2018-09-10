@@ -548,7 +548,7 @@ Polymer({
             this._addLocationTypesStateLegend();
         }
         else {
-            this._addLocationTypesStateLegend();
+            this._removeLocationTypesStateLegend();
         }
     },
 
