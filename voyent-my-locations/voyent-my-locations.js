@@ -167,8 +167,9 @@ Polymer({
                 this._loadedLocation.setName(this._infoWindowLocationName);
                 doUpdate = true;
             }
-            if (this._getTypeFromPrivateResidence(this._loadedLocation.isPrivateResidence) !== this._getTypeFromPrivateResidence(this._inputPrivateResidence)) {
-                this._loadedLocation.setType(this._getTypeFromPrivateResidence(this._inputPrivateResidence));
+            var newType = this._getTypeFromPrivateResidence(this._inputPrivateResidence);
+            if (this._loadedLocation.type !== newType) {
+                this._loadedLocation.setType(newType);
                 doUpdate = true;
             }
             if (doUpdate) {
@@ -251,7 +252,7 @@ Polymer({
                 _this._loadedLocation = selectedLocation;
                 _this._infoWindowLocationName = _this._loadedLocation.name;
                 _this._locationNameValid = true;
-                _this._inputPrivateResidence = _this._loadedLocation.isPrivateResidence;
+                _this._inputPrivateResidence = _this._loadedLocation.type === 'residential';
                 _this._infoWindow.open(_this._map,_this._loadedLocation.marker);
                 //Hide the current location's overlay.
                 _this._loadedLocation.nameOverlay.hide();
@@ -564,9 +565,9 @@ Polymer({
                 _this._mouseHoldOverlay = null;
                 //Reset some values and create a container for our pin drop location data.
                 _this._pinDropLocation = {
-                    "name":'',
-                    "isPrivateResidence":false,
-                    "latLng":e.latLng,
+                    "name": '',
+                    "isPrivateResidence": false,
+                    "latLng": e.latLng,
                     "type": "pindrop"
                 };
                 //Open the info window.
