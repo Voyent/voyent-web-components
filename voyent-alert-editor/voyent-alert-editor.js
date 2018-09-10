@@ -159,6 +159,11 @@ Polymer({
             var parentId = _this._loadedAlert.template.parentId;
             _this._loadedAlert.template.setId(null);
             _this._loadedAlert.template.setParentId(null);
+            var index = _this._loadedAlert.template.categories ? _this._loadedAlert.template.categories.indexOf('Predefined') : -1;
+            if (index > -1) {
+                _this._loadedAlert.template.categories.splice(index,1);
+            }
+            _this._skipCategoryValidation = true;
             _this._saveAlertTemplate().then(function() {
                 done();
                 _this.fire('message-info', 'Successfully saved alert as template');
@@ -172,6 +177,7 @@ Polymer({
                 _this._loadedAlert.template.setSavePosition(false);
                 _this._loadedAlert.template.setId(id);
                 _this._loadedAlert.template.setParentId(parentId);
+                _this._skipCategoryValidation = false;
             }
         });
     },
