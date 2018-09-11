@@ -159,10 +159,6 @@ Polymer({
             var parentId = _this._loadedAlert.template.parentId;
             _this._loadedAlert.template.setId(null);
             _this._loadedAlert.template.setParentId(null);
-            var index = _this._loadedAlert.template.categories ? _this._loadedAlert.template.categories.indexOf('Predefined') : -1;
-            if (index > -1) {
-                _this._loadedAlert.template.categories.splice(index,1);
-            }
             _this._skipCategoryValidation = true;
             _this._saveAlertTemplate().then(function() {
                 done();
@@ -393,6 +389,12 @@ Polymer({
         var childTemplate = JSON.parse(JSON.stringify(this._parentTemplatesByCategory.filter(function(alertTemplateByCategory) {
             return alertTemplateByCategory.template._id === _this._selectedAlertTemplate._id;
         })[0].template));
+        var indexToSplice = childTemplate.categories ? childTemplate.categories.indexOf('Predefined') : -1;
+        if (indexToSplice > -1) {
+            childTemplate.categories.splice(indexToSplice,1);
+        }
+        delete childTemplate.lastUpdated;
+        delete childTemplate.lastUpdatedBy;
         //Load the template immediately if it has a center position defined or no geo section (fallback zone only).
         if (childTemplate.properties.center || !childTemplate.geo) {
             var position = null;
