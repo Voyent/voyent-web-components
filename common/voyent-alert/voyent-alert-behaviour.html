@@ -2911,8 +2911,10 @@
             this._ProximityZoneOverlay.prototype.onRemove =
             this._LocationOverlay.prototype.onRemove =
             this._MouseHoldOverlay.prototype.onRemove = function () {
+                if (this.div && this.div.parentNode) {
                     this.div.parentNode.removeChild(this.div);
                     this.div = null;
+                }
             };
             /**
              * Hide the overlay.
