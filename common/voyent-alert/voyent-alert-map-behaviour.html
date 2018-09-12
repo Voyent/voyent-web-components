@@ -888,14 +888,6 @@
                     return stackGroups;
                 },{});
                 for (var stackId in zoneStackGeometries) {
-                    //For the alert detail notification view we will only render the inner-most zone of a stack if it
-                    //contains an affected location unless no zones contain an affected location. If no zones contain
-                    //an affected location it means the user was notified for a fallback zone so we will render the inner
-                    //zones of each stack so the map has some useful information besides just their locations.
-                    if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'notification' &&
-                        this._affectedStackIds.indexOf(stackId) === -1 && this._affectedStackIds.length) {
-                        continue;
-                    }
                     zoneGeometries = zoneStackGeometries[stackId];
                     zones = [];
                     zIndex = 49;
@@ -951,7 +943,7 @@
                             visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
                         });
 
-                        zoneStacks.push(new this._AlertZoneStack(stackMarker, zones));
+                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones));
                     }
                 }
             }
@@ -1070,7 +1062,7 @@
                             stackMarker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
                             zone = new _this._PolygonalAlertZone(null,paths,_this._dialogInput);
                         }
-                        var zoneStack = new _this._AlertZoneStack(stackMarker, [zone]);
+                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone]);
                         //Add the stack and fire the zone added event.
                         _this._loadedAlert.template.addZoneStack(zoneStack);
                         _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"isFallbackZone":false});
@@ -1606,8 +1598,8 @@
                                 else {
                                     for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
                                         bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
-                                        boundsExtended = true;
                                     }
+                                    boundsExtended = true;
                                 }
                             }
                         }
