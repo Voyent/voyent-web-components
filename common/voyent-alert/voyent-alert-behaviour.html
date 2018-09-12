@@ -411,6 +411,7 @@
         _buildOverlayDiv: function(isZone) {
             var div = document.createElement('div');
             div.style.fontSize = '12px';
+            div.style.fontWeight = 'bold';
             div.style.borderStyle = 'none';
             div.style.borderColor = 'black';
             div.style.borderWidth = '0px';
@@ -2748,11 +2749,9 @@
                     //Configure additional styling.
                     if (this.zone.active) {
                         this.div.style.fontSize = '14px';
-                        this.div.style.fontWeight = 'bold';
                     }
                     else {
                         this.div.style.fontSize = '12px';
-                        this.div.style.fontWeight = '';
                     }
                     this.div.style.backgroundColor = '#'+this.zone.colour;
                     this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
@@ -2849,13 +2848,11 @@
                 //Configure additional styling.
                 if (this.zone.active) {
                     this.div.style.fontSize = '14px';
-                    this.div.style.fontWeight = 'bold';
-                    this.div.style.top = nc.y-25 + 'px';
+                    this.div.style.top = nc.y-28 + 'px';
                 }
                 else {
                     this.div.style.fontSize = '12px';
-                    this.div.style.fontWeight = '';
-                    this.div.style.top = nc.y-23 + 'px';
+                    this.div.style.top = nc.y-26 + 'px';
                 }
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.backgroundColor = '#'+this.zone.colour;
@@ -2948,7 +2945,6 @@
                 this.div.style.top = newTop + 'px';
                 var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) - 1;
                 this.div.style.left = newLeft + 'px';
-                this.div.style.fontWeight = 'bold';
                 // Move the overlay to a pane with a higher stacking priority + adjust marker z-index
                 this.getPanes().overlayMouseTarget.appendChild(this.div);
                 this.loc.marker.setZIndex(100);
@@ -2970,7 +2966,6 @@
                 this.div.style.top = newTop + 'px';
                 var newLeft = parseFloat(this.div.style.left.substr(0,this.div.style.left.indexOf('px'))) + 1;
                 this.div.style.left = newLeft + 'px';
-                this.div.style.fontWeight = '';
                 // Move the overlay to the default pane + adjust marker z-index
                 this.getPanes().floatShadow.appendChild(this.div);
                 this.loc.marker.setZIndex(50);
