@@ -405,9 +405,10 @@
 
         /**
          * Creates and configures the styling for the overlay div, used for zone and location name labels.
+         * @param isZone
          * @private
          */
-        _buildOverlayDiv: function() {
+        _buildOverlayDiv: function(isZone) {
             var div = document.createElement('div');
             div.style.fontSize = '12px';
             div.style.borderStyle = 'none';
@@ -417,7 +418,13 @@
             div.style.padding = '5px';
             div.style.zIndex = '10000';
             div.style.opacity = '1.0';
-            div.style.borderRadius = '25px';
+            // Slightly different styling to distinguish zone and location labels
+            if (isZone) {
+                div.style.borderRadius = '7px';
+            }
+            else {
+                div.style.borderRadius = '25px';
+            }
             div.style.letterSpacing = '1px';
             div.style.whiteSpace = 'nowrap';
             return div;
@@ -1518,7 +1525,7 @@
                         overlay = zone.shapeOverlay;
                         json.properties[zone.id] = {
                             "name": zone.name,
-                            "stackId": this.stackId,
+                            "stackId": this.id,
                             "shape": zone.getShape(),
                             "opacity": zone.opacity,
                             "colour": zone.colour,
@@ -1532,7 +1539,7 @@
                         }
                         json.geo.geometries.push({
                             "id": zone.id,
-                            "stackId": this.stackId,
+                            "stackId": this.id,
                             "type": "Polygon",
                             "coordinates": [[]]
                         });
@@ -2726,7 +2733,7 @@
              */
             this._FallbackZoneOverlay = function(zone) {
                 this.zone = zone;
-                this.div = _outer._buildOverlayDiv();
+                this.div = _outer._buildOverlayDiv(true);
                 if (zone.enabled) {
                     this.draw();
                 }
@@ -2769,7 +2776,7 @@
             this._ProximityZoneOverlay = function(zone) {
                 this.zone = zone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv();
+                this.div = _outer._buildOverlayDiv(true);
             };
             /**
              * A class that represents a location name overlay.
