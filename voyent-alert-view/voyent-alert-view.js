@@ -74,9 +74,9 @@ Polymer({
             //First create a list of affected location ids. We will draw all locations but
             //will use this list to ensure we only pan the map on the affected locations.
             _this._affectedLocationIds = [];
-            //Then create a list of affected stack ids. These are the zone stacks which have locations inside
-            //of them. We will use this list to ensure we only draw alert stacks that contain affected locations.
-            //If there are no affected stack ids then it means this notification was triggered by a fallback zone.
+            //Then create a list of affected stack ids. These are the zone stacks which have locations inside one
+            //of their zones. We will use this list to help determine how the map should be panned. If there
+            //are no affected stack ids then it means the notification was triggered by a fallback zone.
             _this._affectedStackIds = [];
             if (locations && locations.length) {
                 _this._affectedLocationIds = locations.map(function(obj) {

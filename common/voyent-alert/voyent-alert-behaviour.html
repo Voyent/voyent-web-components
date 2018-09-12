@@ -1325,12 +1325,13 @@
 
             /**
              * A class that represents an alert template proximity zone stack.
+             * @param id - The unique id that identifies the zone stack, if one is not provided it will be generated.
              * @param marker - The associated map marker for the stack.
              * @param zones - A list of _AlertZone objects, the list of zones belonging with the stack.
              * @private
              */
-            this._AlertZoneStack = function (marker,zones) {
-                this.stackId = _outer._generateUid();
+            this._AlertZoneStack = function (id,marker,zones) {
+                this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setMarker(marker || null);
                 this.setZones(zones && zones.length ? zones : []);
                 this.updateJSON();
@@ -2148,10 +2149,7 @@
                         this.nameOverlay.draw();
                     }
                     else {
-                        if (_outer.nodeName !== 'VOYENT-ALERT-VIEW' ||
-                            (_outer.nodeName === 'VOYENT-ALERT-VIEW' && _outer.mode !== 'notification')) {
-                            this.nameOverlay = new _outer._ProximityZoneOverlay(this);
-                        }
+                        this.nameOverlay = new _outer._ProximityZoneOverlay(this);
                     }
                 },
                 /**
