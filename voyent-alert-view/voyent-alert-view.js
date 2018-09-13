@@ -40,8 +40,8 @@ Polymer({
         this._fetchRealmRegion();
         // Add fullscreen control + esc listener
         this._addFullscreenControl();
-        window.addEventListener('keydown', function (event) {
-            if (event.which === 27 && _this._isFullscreenMode) {
+        window.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && _this._isFullscreenMode) {
                 _this._toggleFullscreenContainer(true);
             }
         });

@@ -318,11 +318,11 @@ Polymer({
      * @private
      */
     _handleInfoWindowKeyPress: function(e) {
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter') {
             this._closeInfoWindow();
             this._adjustBoundsAndPan();
         }
-        else if (e.keyCode === 27) {
+        else if (e.key === 'Escape') {
             this._closeInfoWindow(true);
             this._adjustBoundsAndPan();
         }
@@ -335,10 +335,10 @@ Polymer({
      */
     _handleNewPlaceKeyPress: function(e) {
         e.stopPropagation();
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter') {
             this._addPlaceToMyLocations();
         }
-        else if (e.keyCode === 27) {
+        else if (e.key === 'Escape') {
             this._closeInfoWindow(true);
             this._adjustBoundsAndPan();
         }
@@ -351,10 +351,10 @@ Polymer({
      */
     _handleNewPinDropKeyPress: function(e) {
         e.stopPropagation();
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter') {
             this._addPinDropToMyLocations();
         }
-        else if (e.keyCode === 27) {
+        else if (e.key === 'Escape') {
             this._closeInfoWindow(true);
             this._adjustBoundsAndPan();
         }
@@ -582,7 +582,7 @@ Polymer({
         });
         //Add a keyup listener so that if the user presses escape while creating a pin drop location the op will be cancelled.
         window.addEventListener('keyup', function(e) {
-            if (_this._mouseHoldOverlay && e.keyCode === 27) {
+            if (_this._mouseHoldOverlay && e.key === 'Escape') {
                 _this._mouseHoldOverlay.setMap(null);
                 _this._mouseHoldOverlay = null;
             }
@@ -712,7 +712,7 @@ Polymer({
         //When an autocomplete list entry was selected on the last keypress then
         //we want to prevent the event from bubbling on any enter or escape key
         //presses after so we don't submit the dialog listener.
-        if (this._autocompleteEntryWasSelected && (e.keyCode === 13 || e.keyCode === 27)) {
+        if (this._autocompleteEntryWasSelected && (e.key === 'Enter' || e.key === 'Escape')) {
             this._autocompleteEntryWasSelected = false;
             e.stopPropagation();
         }

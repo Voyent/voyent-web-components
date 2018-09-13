@@ -812,10 +812,10 @@ Polymer({
     _existingCategoryKeyup: function(e) {
         e.stopPropagation();
         var categoryObj = e.model.get('categoryObj');
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter') {
             this._disableCategoryNameEditing(categoryObj,true);
         }
-        else if (e.keyCode === 27) {
+        else if (e.key === 'Escape') {
             this._disableCategoryNameEditing(categoryObj,false);
         }
     },
@@ -827,10 +827,10 @@ Polymer({
      */
     _newCategoryKeyUp: function(e) {
         e.stopPropagation();
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter') {
             this._disableNewCategoryInput(true);
         }
-        else if (e.keyCode === 27) {
+        else if (e.key === 'Escape') {
             this._disableNewCategoryInput(false);
         }
     },
@@ -913,10 +913,10 @@ Polymer({
     _renameAlertTemplateViaKeydown: function(e) {
         //Prevent the event from bubbling.
         e.stopPropagation();
-        if (e.which === 13) { //Enter
+        if (e.key === 'Enter') {
             this._renameAlertTemplate();
         }
-        else if (e.which === 27) { //Esc
+        else if (e.key === 'Escape') {
             this._toggleAlertTemplateRenaming();
         }
     },
@@ -999,10 +999,10 @@ Polymer({
     _renameProximityZoneViaKeydown: function(e) {
         //Prevent the event from bubbling.
         e.stopPropagation();
-        if (e.which === 13) { //Enter
+        if (e.key === 'Enter') {
             this._renameProximityZone(e);
         }
-        else if (e.which === 27) { //Esc
+        else if (e.key === 'Escape') {
             this._toggleProximityZoneRenaming(e);
         }
     },
@@ -1181,7 +1181,7 @@ Polymer({
     _editPropertyViaKeydown: function(e) {
         //Prevent the event from bubbling.
         e.stopPropagation();
-        if (e.which === 13 || e.which === 27) { //Enter & Escape.
+        if (e.key === 'Enter' || e.key === 'Escape') {
             this._editProperty(e);
             //Close the colour picker.
             if (e.target.getAttribute('data-property') === 'colour') {
