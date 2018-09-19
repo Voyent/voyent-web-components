@@ -465,7 +465,7 @@
          */
         chooseAlertBadge: function() {
             var _this = this;
-            this._openDialog('Choose Alert Badge',null,null,null,true,false,function() {
+            this._openDialog('Choose Alert Badge',null,null,null,null,true,false,function() {
                 // Persist our choice to the template JSON
                 _this._loadedAlert.template.setBadge(_this._dialogBadge);
                 // Fire an event that the badge changed
@@ -1042,7 +1042,7 @@
                             return;
                         }
                     }
-                    _this._openDialog('Add New Zone','Enter the zone name','',null,false,false,function() {
+                    _this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
                         //Build our stack marker, the position will be added later.
                         var stackMarker = new google.maps.Marker({
                             map: _this._map, draggable: true, zIndex: 50
