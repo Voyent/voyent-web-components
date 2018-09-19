@@ -61,6 +61,10 @@ Polymer({
          */
         _dialogInput: { type: String, value: '', notify: true },
         /**
+         * The value of the modal dialog input validation message, if applicable.
+         */
+        _dialogInputMsg: { type: String, value: '', notify: true },
+        /**
          * Whether to show the modal dialog toggle button in the dialog message.
          */
         _showDialogToggle: { type: Boolean, value: false, notify: true },
@@ -1093,7 +1097,7 @@ Polymer({
                 return;
             }
         }
-        this._openDialog('Add New Zone','Enter the zone name','',null,false,false,function() {
+        this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
             var name = this._dialogInput;
             if (shape === 'circle') {
                 newZone = new _this._CircularAlertZone(null,radius,name,null,null,null,null,zIndex);

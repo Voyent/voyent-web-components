@@ -71,7 +71,7 @@ Polymer({
     addNew: function() {
         var _this = this;
         this._fetchTemplateCategories().then(function() {
-            _this._openDialog('New Alert Template','Enter the alert template name','',null,true,true,function() {
+            _this._openDialog('New Alert Template','Enter the alert template name','','Must provide a template name',null,true,true,function() {
                 _this.clearMap();
                 _this.set('_loadedAlert',{
                     template: new _this._AlertTemplate(
@@ -100,7 +100,7 @@ Polymer({
             msg = 'Are you sure you want to cancel creating ' +
                 this._loadedAlert.template.name + '? This action cannot be undone.';
         }
-        this._openDialog('Confirm Cancel',msg,null,null,false,false,'clearMap');
+        this._openDialog('Confirm Cancel',msg,null,null,null,false,false,'clearMap');
     },
 
     /**

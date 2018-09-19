@@ -436,6 +436,7 @@
          * @param title
          * @param message
          * @param inputVal
+         * @param inputMsg
          * @param toggleLabel
          * @param showBadge
          * @param showCategoryPicker
@@ -443,7 +444,7 @@
          * @param cancelFunc
          * @private
          */
-        _openDialog: function(title,message,inputVal,toggleLabel,showBadge,showCategoryPicker,confirmFunc,cancelFunc) {
+        _openDialog: function(title,message,inputVal,inputMsg,toggleLabel,showBadge,showCategoryPicker,confirmFunc,cancelFunc) {
             var dialog = this.querySelector('#modalDialog');
             if (!dialog) { return; }
             // Store all dialog properties so the dialog renders properly
@@ -451,6 +452,7 @@
             this._dialogMessage = message;
             this._dialogInput = inputVal;
             this._showDialogInput = (typeof inputVal !== 'undefined' && inputVal !== null);
+            this._dialogInputMsg = inputMsg || 'Enter a value';
             this._dialogToggleLabel = toggleLabel;
             this._showDialogToggle = !!toggleLabel;
             this._dialogToggle = false;
@@ -497,7 +499,7 @@
             //Validate the input.
             if (this._showDialogInput && (!this._dialogInput ||
                     !this._dialogInput.trim())) {
-                this.fire('message-error', 'Enter a value');
+                this.fire('message-error', this._dialogInputMsg);
                 return;
             }
             //We allow for passing the confirm function directly or as a string.
