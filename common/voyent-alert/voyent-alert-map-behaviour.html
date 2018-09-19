@@ -467,7 +467,7 @@
             var _this = this;
             this._openDialog('Choose Alert Badge',null,null,null,true,false,function() {
                 // Persist our choice to the template JSON
-                _this._loadedAlert.template.setBadge(this._dialogBadge);
+                _this._loadedAlert.template.setBadge(_this._dialogBadge);
                 // Fire an event that the badge changed
                 _this.fire('voyent-alert-badge-changed', {"badge": _this._loadedAlert.template.badge});
                 // If we only have a single zone stack, then update the map marker as well
