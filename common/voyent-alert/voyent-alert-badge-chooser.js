@@ -24,13 +24,16 @@ Polymer({
         criticalList: {
             type: Array,
             value: []
-        },
+        }
     },
     
     ready: function() {
         this._retrieveList('defaultList');
+        /*
+        Commenting these out as only the `defaultList` is being used currently
         this._retrieveList('infoList', 'info');
         this._retrieveList('criticalList', 'critical');
+        */
     },
     
     _retrieveList: function(setList, folder) {
@@ -66,6 +69,7 @@ Polymer({
                             _this.push(setList, currentVal);
                         }
                     }
+                    _this.fire('voyent-alert-badge-chooser-ready');
                 }
             }
             else {

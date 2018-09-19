@@ -444,6 +444,9 @@
          * @private
          */
         _openDialog: function(title,message,inputVal,toggleLabel,showBadge,showCategoryPicker,confirmFunc,cancelFunc) {
+            var dialog = this.querySelector('#modalDialog');
+            if (!dialog) { return; }
+            // Store all dialog properties so the dialog renders properly
             this._dialogTitle = title;
             this._dialogMessage = message;
             this._dialogInput = inputVal;
@@ -457,24 +460,32 @@
                 if (this._loadedAlert && this._loadedAlert.template && this._loadedAlert.template.badge) {
                     this._dialogBadge = this._loadedAlert.template.badge;
                 }
+                // When using the badge chooser we need to be sure to resize and center the dialog
+                // after the badges have loaded so the dialog renders in the correct position
+                if (!this._dialogBadgeListener) {
+                    this._dialogBadgeListener = document.addEventListener('voyent-alert-badge-chooser-ready',function() {
+                        dialog.notifyResize();
+                        dialog.center();
+                    });
+                }
             }
             this._dialogConfirmFunc = confirmFunc;
             this._dialogCancelFunc = cancelFunc;
-            var dialog = this.querySelector('#modalDialog');
-            if (dialog) {
-                dialog.open();
-                //Ensure that our dialog is sized and positioned correctly
+            // Open the dialog
+            dialog.open();
+            // Ensure that our dialog is sized and positioned correctly
+            if (!this._showDialogBadge) {
                 setTimeout(function() {
                     dialog.notifyResize();
                     dialog.center();
                 },0);
-                //If there's no input rendered in the dialog then focus on the dialog so
-                //we can capture the user's key presses. The input will focus automatically.
-                if (!this._showDialogInput) {
-                    setTimeout(function() {
-                        dialog.focus();
-                    },200);
-                }
+            }
+            // If there's no input rendered in the dialog then focus on the dialog so we
+            // can capture the user's key presses. The input will focus automatically
+            if (!this._showDialogInput) {
+                setTimeout(function() {
+                    dialog.focus();
+                },200);
             }
         },
 
