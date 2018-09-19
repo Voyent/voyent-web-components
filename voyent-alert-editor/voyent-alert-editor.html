@@ -47,7 +47,7 @@ Example:
             .name-col {
                 width: 55%;
             }
-            .category-col {
+            .categories-col {
                 width: 40%;
             }
             .badge-img {
@@ -84,14 +84,14 @@ Example:
                 <div id="propertiesPanel">
                     <template is="dom-if" if="[[_isLoggedIn]]">
                         <template is="dom-if" if="[[_showTemplateListPane]]">
-                            <template is="dom-if" if="[[!_parentTemplatesByCategory.length]]">
+                            <template is="dom-if" if="[[!_parentTemplates.length]]">
                                 <div class="alert-template-title">New Alert</div>
                                 <div class="alert-template-desc">
                                     There are no alert templates to create a new alert from.
                                     Create an alert template before using this editor.
                                 </div>
                             </template>
-                            <template is="dom-if" if="[[_parentTemplatesByCategory.length]]">
+                            <template is="dom-if" if="[[_parentTemplates.length]]">
                                 <template is="dom-if" if="[[_displayClickMapMsg]]">
                                     <div class="alert-template-title">New Alert</div>
                                     <div class="alert-template-desc">
@@ -183,7 +183,7 @@ Example:
                 Choose a template from the list below:
             </p>
             <div class="search-query-input-wrapper">
-                <paper-input id="categoryQueryInput" label="Filter templates by name or category..." autofocus tabindex="1"
+                <paper-input id="categoriesQueryInput" label="Filter templates by name or categories..." autofocus tabindex="1"
                              on-keyup="_templateSearchQueryKeyUp" value="{{_templateSearchQuery}}"></paper-input>
             </div>
             <!-- 100% height minus the height of the content above and below the table -->
@@ -191,27 +191,27 @@ Example:
                 <div class="table">
                     <div class="table-col badge-col table-header no-select"></div>
                     <div class="table-col name-col table-header no-select pointer" on-click="_sortTemplatesByName" title="Click to sort by Alert Name">Name</div>
-                    <div class="table-col category-col table-header no-select pointer" on-click="_sortTemplatesByCategory" title="Click to sort by Category">Category</div>
+                    <div class="table-col categories-col table-header no-select pointer" on-click="_sortTemplatesByCategories" title="Click to sort by Categories">Categories</div>
                 </div>
                 <div class="table-scroll-dynamic">
-                    <template is="dom-if" if="[[!_filteredParentTemplatesByCategory.length]]">
+                    <template is="dom-if" if="[[!_filteredParentTemplates.length]]">
                         <div class="no-query-results-msg">
                             Your search <span class="bold">[[_templateSearchQuery]]</span> does not match any templates.
                         </div>
                     </template>
                     <iron-selector id="newAlertCategories" class="alternating-row-parent"
                                    selected="{{_selectedAlertTemplate}}" attr-for-selected="name">
-                        <template id="alertTemplatesList" is="dom-repeat" items="[[_filteredParentTemplatesByCategory]]"
-                                  as="obj" sort="_sortTemplates" strip-whitespace>
-                            <div name="[[obj.template]]" class="table pointer">
+                        <template id="alertTemplatesList" is="dom-repeat" items="[[_filteredParentTemplates]]"
+                                  as="template" sort="_sortTemplates" strip-whitespace>
+                            <div name="[[template]]" class="table pointer">
                                 <div class="table-col badge-col no-select">
-                                    <img class="badge-img" src="[[getBadgeUrl(obj.template.badge)]]"/>
+                                    <img class="badge-img" src="[[getBadgeUrl(template.badge)]]"/>
                                 </div>
                                 <div class="table-col name-col no-select">
-                                    [[obj.template.name]]
+                                    [[template.name]]
                                 </div>
-                                <div class="table-col category-col no-select">
-                                    [[obj.category]]
+                                <div class="table-col categories-col no-select">
+                                    [[template.categoriesString]]
                                 </div>
                             </div>
                         </template>

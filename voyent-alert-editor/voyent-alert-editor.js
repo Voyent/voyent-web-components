@@ -31,7 +31,7 @@ Polymer({
     ready: function() {
         //Initialize parentTemplate list with a fake element so the "no templates found"
         //message won't flicker in the sidebar while we are fetching the templates.
-        this._parentTemplatesByCategory = ['tmp'];
+        this._parentTemplates = ['tmp'];
     },
 
     /**
@@ -92,7 +92,7 @@ Polymer({
         this.set('_selectedAlertTemplate',null);
         this._sortTemplatesBy = 'name';
         this._lastSortOrderName = 'ascending';
-        this._lastSortOrderCategory = 'ascending';
+        this._lastSortOrderCategories = 'ascending';
         this.set('_templateSearchQuery','');
         //Fetch the list of categories and templates before opening the dialog. Fetch the
         //categories first because we need them to build our list of categorized templates.
@@ -247,48 +247,30 @@ Polymer({
             voyent.locate.findAlertTemplates({"realm":_this.realm,"query": {"properties.parentAlertId":{"$exists":false}},
                 "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
                 if (!templates || !templates.length) {
-                    _this.set('_parentTemplatesByCategory',[]);
-                    _this.set('_filteredParentTemplatesByCategory',[]);
+                    _this.set('_parentTemplates',[]);
+                    _this.set('_filteredParentTemplates',[]);
                 }
                 else {
-                    _this.set('_parentTemplatesByCategory',_this._duplicateTemplatesByCategory(templates));
-                    _this.set('_filteredParentTemplatesByCategory',_this._parentTemplatesByCategory.slice(0));
+                    // Add a stringified version of the categories array that will be used for filtering and sorting
+                    for (var i=0; i<templates.length; i++) {
+                        var template = templates[i];
+                        if (template.categories && template.categories.length) {
+                            template.categoriesString = template.categories.join(', ');
+                        }
+                        else {
+                            template.categoriesString = 'Uncategorized'
+                        }
+                    }
+                    _this.set('_parentTemplates',templates);
+                    _this.set('_filteredParentTemplates',templates.slice(0));
                 }
                 _this._isFetchingTemplates = false;
-                resolve(_this._parentTemplatesByCategory);
+                resolve(_this._parentTemplates);
             }).catch(function (error) {
                 _this.fire('message-error', 'Issue fetching alert templates: ' + (error.responseText || error.message || error));
                 reject(error);
             });
         });
-    },
-
-    /**
-     * Creates an object map of templates so that there is one an entry for every valid category they belong to.
-     * @param templates
-     * @private
-     */
-    _duplicateTemplatesByCategory: function(templates) {
-        var templatesDuplicatedByCategory = [];
-        for (var i=0; i<templates.length; i++) {
-            var template = templates[i];
-            if (template.categories && template.categories.length) {
-                for (var j=template.categories.length-1; j>=0; j--) {
-                    //Clone each item to ensure duplicatdd templates can be individually selected in the list.
-                    templatesDuplicatedByCategory.push(JSON.parse(JSON.stringify({
-                        "template": template,
-                        "category": template.categories[j]
-                    })));
-                }
-            }
-            else {
-                templatesDuplicatedByCategory.push({
-                    "template": template,
-                    "category": "Uncategorized"
-                });
-            }
-        }
-        return templatesDuplicatedByCategory;
     },
 
     /**
@@ -343,13 +325,13 @@ Polymer({
     _queryTemplates: function(searchQuery) {
         //Always execute the search query against a complete list so
         //changes made via backspace, copy/paste, etc.. are applied properly.
-        this.set('_filteredParentTemplatesByCategory',this._parentTemplatesByCategory.slice(0));
+        this.set('_filteredParentTemplates',this._parentTemplates.slice(0));
         //Just return the entire template set if no query is specified.
         if (!searchQuery || !searchQuery.trim()) {
             return;
         }
         var searchQueryKeywords = searchQuery.toLowerCase().split(' ');
-        for (var i=this._filteredParentTemplatesByCategory.length-1; i>=0; i--) {
+        for (var i=this._filteredParentTemplates.length-1; i>=0; i--) {
             var matchCount = 0;
             for (var j=0; j<searchQueryKeywords.length; j++) {
                 var keyword = searchQueryKeywords[j];
@@ -358,20 +340,20 @@ Polymer({
                     matchCount++;
                     continue;
                 }
-                //Consider the keyword a match if it is found in either the name or category of the template.
-                if (this._filteredParentTemplatesByCategory[i].template.name.toLowerCase().indexOf(keyword) > -1 ||
-                    this._filteredParentTemplatesByCategory[i].category.toLowerCase().indexOf(keyword) > -1) {
+                //Consider the keyword a match if it is found in either the name or categories of the template.
+                if (this._filteredParentTemplates[i].name.toLowerCase().indexOf(keyword) > -1 ||
+                    this._filteredParentTemplates[i].categoriesString.toLowerCase().indexOf(keyword) > -1) {
                     matchCount++;
                 }
             }
             //All keywords must match in order for the result to be included.
             if (matchCount !== searchQueryKeywords.length) {
-                this.splice('_filteredParentTemplatesByCategory',i,1);
+                this.splice('_filteredParentTemplates',i,1);
             }
         }
         //Automatically select the template if there is only one result from filtering.
-        if (this._filteredParentTemplatesByCategory.length === 1) {
-            this.set('_selectedAlertTemplate',this._filteredParentTemplatesByCategory[0].template);
+        if (this._filteredParentTemplates.length === 1) {
+            this.set('_selectedAlertTemplate',this._filteredParentTemplates[0]);
         }
     },
 
@@ -386,13 +368,14 @@ Polymer({
         }
         var _this = this;
         //Find and clone the parent template that we will create the child from.
-        var childTemplate = JSON.parse(JSON.stringify(this._parentTemplatesByCategory.filter(function(alertTemplateByCategory) {
-            return alertTemplateByCategory.template._id === _this._selectedAlertTemplate._id;
-        })[0].template));
+        var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
+            return alertTemplate._id === _this._selectedAlertTemplate._id;
+        })[0]));
         var indexToSplice = childTemplate.categories ? childTemplate.categories.indexOf('Predefined') : -1;
         if (indexToSplice > -1) {
             childTemplate.categories.splice(indexToSplice,1);
         }
+        delete childTemplate.categoriesString;
         delete childTemplate.lastUpdated;
         delete childTemplate.lastUpdatedBy;
         //Load the template immediately if it has a center position defined or no geo section (fallback zone only).
@@ -467,12 +450,12 @@ Polymer({
     },
 
     /**
-     * Sorts the template list by category.
+     * Sorts the template list by categories.
      * @private
      */
-    _sortTemplatesByCategory: function() {
-        this._sortTemplatesBy = 'category';
-        this._lastSortOrderCategory = this._lastSortOrderCategory === 'ascending' ? 'descending' : 'ascending';
+    _sortTemplatesByCategories: function() {
+        this._sortTemplatesBy = 'categories';
+        this._lastSortOrderCategories = this._lastSortOrderCategories === 'ascending' ? 'descending' : 'ascending';
         this.querySelector('#alertTemplatesList').render();
     },
 
@@ -486,15 +469,15 @@ Polymer({
     _sortTemplates: function(a,b) {
         if (this._sortTemplatesBy === 'name') {
             if (this._lastSortOrderName === 'ascending') {
-                return a.template.name.toLocaleLowerCase().localeCompare(b.template.name.toLocaleLowerCase());
+                return a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase());
             }
-            return b.template.name.toLocaleLowerCase().localeCompare(a.template.name.toLocaleLowerCase());
+            return b.name.toLocaleLowerCase().localeCompare(a.name.toLocaleLowerCase());
         }
         else {
-            if (this._lastSortOrderCategory === 'ascending') {
-                return a.category.toLocaleLowerCase().localeCompare(b.category.toLocaleLowerCase());
+            if (this._lastSortOrderCategories === 'ascending') {
+                return a.categoriesString.toLocaleLowerCase().localeCompare(b.categoriesString.toLocaleLowerCase());
             }
-            return b.category.toLocaleLowerCase().localeCompare(a.category.toLocaleLowerCase());
+            return b.categoriesString.toLocaleLowerCase().localeCompare(a.categoriesString.toLocaleLowerCase());
         }
     },
 
