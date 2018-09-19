@@ -141,8 +141,9 @@ Polymer({
         this._openDialog(function () {
             _this._closeInfoWindow();
             setTimeout(function() {
-                _this._createLocation(_this._dialogLocationName,
-                    _this._getTypeFromPrivateResidence(_this._isPrivateResidence),
+                _this._createLocation(
+                    _this._dialogLocationName,
+                    _this._isPrivateResidence,
                     new google.maps.Marker({
                     position: _this._placeCoordinates,
                     map: _this._map,
@@ -596,8 +597,9 @@ Polymer({
     _addPinDropToMyLocations: function() {
         if (!this._pinDropLocation) { return; }
         if (!this.querySelector('#pinDropLocationName').validate()) { return; }
-        this._loadedLocation = this._createLocation(this._pinDropLocation.name,
-            this._getTypeFromPrivateResidence(this._pinDropLocation.isPrivateResidence),
+        this._loadedLocation = this._createLocation(
+            this._pinDropLocation.name,
+            this._pinDropLocation.isPrivateResidence,
             new google.maps.Marker({
                 map: this._map,
                 position: this._pinDropLocation.latLng,
@@ -615,7 +617,9 @@ Polymer({
     _addPlaceToMyLocations: function() {
         if (!this._selectedPlace) { return; }
         if (!this.querySelector('#placeLocationName').validate()) { return; }
-        this._loadedLocation = this._createLocation(this._selectedPlace.name,false,
+        this._loadedLocation = this._createLocation(
+            this._selectedPlace.name,
+            false,
             new google.maps.Marker({
                 map: this._map,
                 position: this._selectedPlace.latLng,
@@ -636,7 +640,7 @@ Polymer({
      * @private
      */
     _createLocation: function(name,isPrivateResidence,marker,msgSuffix) {
-        var newLocation = new this._MyLocation(null, name, this._getTypeFromPrivateResidence(isPrivateResidence) ,marker);
+        var newLocation = new this._MyLocation(null, name, this._getTypeFromPrivateResidence(isPrivateResidence), marker);
         this._saveLocation(newLocation,msgSuffix);
         return newLocation;
     },
