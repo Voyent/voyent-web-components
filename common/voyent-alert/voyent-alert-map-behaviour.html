@@ -1053,9 +1053,9 @@
                         }
                         else { //Polygonal template.
                             //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
-                            if (_this._drawingCanceled) {
+                            if (_this._drawingCancelled) {
                                 oce.overlay.setMap(null);
-                                _this._drawingCanceled = false;
+                                _this._drawingCancelled = false;
                                 return;
                             }
                             var paths = oce.overlay.getPaths();
@@ -1111,7 +1111,7 @@
                     if (_this._drawingManager.getDrawingMode() !== null) {
                         //Flag so overlaycomplete listener won't be allowed
                         //to proceed after cancelling a polygon mid-draw.
-                        _this._drawingCanceled = true;
+                        _this._drawingCancelled = true;
                         _this._disableDrawingMode();
                     }
                     else if (_this._isFullscreenMode) {
