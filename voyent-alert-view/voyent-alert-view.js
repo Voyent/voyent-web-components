@@ -39,7 +39,7 @@ Polymer({
         var _this = this;
         this._fetchRealmRegion();
         // Add fullscreen control + esc listener
-        this._addFullscreenControl();
+        this._addFullscreenButton();
         window.addEventListener('keydown', function (event) {
             if (event.which === 27 && _this._isFullscreenMode) {
                 _this._toggleFullscreenContainer(true);
@@ -186,11 +186,11 @@ Polymer({
 
     /**
      * Loads the passed template into the view and optionally renders only the specified zone.
-     * @param template
-     * @param zoneId
-     * @param locations
-     * @param alertHistory
-     * @param notificationFilter
+     * @param template - The template JSON.
+     * @param zoneId - The (optional) zone id that will be rendered rather than every zone.
+     * @param locations - An array of locations to be drawn.
+     * @param alertHistory - The notification history for the zone, this OR notificationFilter should be provided.
+     * @param notificationFilter - The notification filter settings for the zone, this OR notificationFilter should be provided.
      */
     previewZoneFromTemplate: function(template,zoneId,locations,alertHistory,notificationFilter) {
         if (!template || typeof template !== 'object') {
@@ -397,7 +397,15 @@ Polymer({
      * @private
      */
     _addLocationTypesCountLegend: function() {
-        this._addCustomControl(this._LOCATION_TYPE_COUNT_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null,true);
+        this._addCustomControl(this._LOCATION_TYPE_COUNT_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null);
+    },
+
+    /**
+     * Redraws the location types legend (with count) to the map.
+     * @private
+     */
+    _redrawLocationTypesCountLegend: function() {
+        this._redrawCustomControl(this._LOCATION_TYPE_COUNT_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null);
     },
 
     /**
@@ -413,7 +421,15 @@ Polymer({
      * @private
      */
     _addLocationTypesStateLegend: function() {
-        this._addCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null,true);
+        this._addCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null);
+    },
+
+    /**
+     * Redraws the location types legend (with state) to the map.
+     * @private
+     */
+    _redrawLocationTypesStateLegend: function() {
+        this._redrawCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null);
     },
 
     /**
@@ -529,7 +545,10 @@ Polymer({
      */
     _alertHistoryChanged: function(alertHistory) {
         if (alertHistory) {
-            if (!this['_'+this._LOCATION_TYPE_COUNT_LEGEND_ID]) {
+            if (this['_'+this._LOCATION_TYPE_COUNT_LEGEND_ID]) {
+                this._redrawLocationTypesCountLegend();
+            }
+            else {
                 this._addLocationTypesCountLegend();
             }
         }
@@ -545,7 +564,12 @@ Polymer({
      */
     _notificationFilterChanged: function(notificationFilter) {
         if (notificationFilter) {
-            this._addLocationTypesStateLegend();
+            if (this['_'+this._LOCATION_TYPE_STATE_LEGEND_ID]) {
+                this._redrawLocationTypesStateLegend();
+            }
+            else {
+                this._addLocationTypesStateLegend();
+            }
         }
         else {
             this._removeLocationTypesStateLegend();

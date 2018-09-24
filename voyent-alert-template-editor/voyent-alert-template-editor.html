@@ -97,12 +97,10 @@ Example:
             </div>
         </div>
         <div id$="[[_FULLSCREEN_CONTAINER_ID]]" hidden></div>
-        <div id$="[[_FULLSCREEN_BUTTON_ID]]" class="custom-control no-select" hidden
-             title$="[[_getFullscreenBttnTitle(_isFullscreenMode)]]"
-             data-loaded-alert$="[[_loadedAlert]]">
+        <div id$="[[_FULLSCREEN_BUTTON_ID]]" class="custom-control fullscreen no-select" title="Enter Fullscreen Mode" hidden>
             <img src="../common/voyent-alert/img/fullscreen_bttn.png">
         </div>
-        <div id$="[[_CIRCLE_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
+        <div id$="[[_CIRCLE_BUTTON_ID]]" class="customMapBttnWrap circleBttn no-select" hidden>
             <div class="customMapBttn" title="Add Circular Zone">
                 <span>
                     <div class="customMapBttnImg">
@@ -111,7 +109,7 @@ Example:
                 </span>
             </div>
         </div>
-        <div id$="[[_POLYGON_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
+        <div id$="[[_POLYGON_BUTTON_ID]]" class="customMapBttnWrap polygonBttn no-select" hidden>
             <div class="customMapBttn" title="Add Polygonal Zone">
                 <span>
                     <div class="customMapBttnImg">
@@ -120,7 +118,7 @@ Example:
                 </span>
             </div>
         </div>
-        <div id$="[[_FALLBACK_ZONE_BUTTON_ID]]" class="customMapBttnWrap no-select" hidden>
+        <div id$="[[_FALLBACK_ZONE_BUTTON_ID]]" class="customMapBttnWrap fallbackZoneBttn no-select" hidden>
             <div class="customMapBttn" title="Enable Entire Region Zone">
                 <span>
                     <div class="customMapBttnImg">
