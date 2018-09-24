@@ -108,27 +108,18 @@
             .customMapBttnImg > img {
                 display: inline;
             }
-            #markerBttn .customMapBttnImg > img,
-            #polygonBttn .customMapBttnImg > img,
-            #circleBttn .customMapBttnImg > img {
+            .polygonBttn .customMapBttnImg > img {
                 position:absolute;
-            }
-            #markerBttn .customMapBttnImg > img {
-                top:-176px;
-            }
-            #polygonBttn .customMapBttnImg > img {
                 top:-64px;
             }
-            #circleBttn .customMapBttnImg > img {
+            .circleBttn .customMapBttnImg > img {
+                position:absolute;
                 top:-160px;
             }
             .custom-control {
                 background-color:transparent;
                 text-align: center;
                 cursor: pointer;
-            }
-            .custom-control[data-loaded-alert] {
-                margin: 10px 5px 0 0;
             }
             .custom-control paper-button {
                 background-color: #FFF;
@@ -146,6 +137,9 @@
                 border-radius:15px;
                 padding:0;
                 margin-left:8px;
+            }
+            .custom-control.fullscreen {
+                margin: 7px 6px 0 0;
             }
             #fullscreenContainer {
                 position: fixed;

@@ -171,7 +171,7 @@
             }
             if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
                 //Add the fullscreen control.
-                this._addFullscreenControl();
+                this._addFullscreenButton();
                 //Maintain the isZoneSelected toggle for updating the UI.
                 this._isZoneSelected = false;
                 document.addEventListener('voyent-alert-zone-selected',function(e) {
@@ -1234,7 +1234,7 @@
         },
 
         /**
-         * Adds adding the button for toggling the fallback zone.
+         * Adds the button for toggling the fallback zone.
          * @param listener
          * @param cb
          * @private
@@ -1260,39 +1260,23 @@
         },
 
         /**
-         * Adds drawing buttons.
-         * @param id - The id of the button to create.
-         * @param position - The control position.
-         * @param listener - The click listener.
-         * @param cb - An optional callback that will be executed after the button has been added.
-         * @param skipClone - Will skip cloning the custom control element when creating.
+         * Adds the button for toggling fullscreen mode.
          * @private
          */
-        _addCustomControl: function(id,position,listener,cb,skipClone) {
-            var _this = this;
-            this._mapIsReady().then(function() {
-                //Use our saved button reference to check if the button already exists.
-                if (!_this['_'+id]) {
-                    if (skipClone) {
-                        _this['_'+id] = _this.$$('#'+id);
-                    }
-                    else {
-                        _this['_'+id] = _this.$$('#'+id).cloneNode(true);
-                    }
-                    //Add the onclick, save and show the button.
-                    if (listener) {
-                        _this['_'+id].onclick = listener;
-                    }
-                    _this._map.controls[position].push(_this['_'+id]);
-                    _this['_'+id].hidden = false;
-                    //Call our callback function, if provided.
-                    if (cb && typeof cb === 'function') { cb(); }
-                }
-            });
+        _addFullscreenButton: function() {
+            this._isFullscreenMode = false;
+            this._addCustomControl(
+                this._FULLSCREEN_BUTTON_ID,
+                google.maps.ControlPosition.RIGHT_TOP,
+                this._fullscreenButtonListener.bind(this),
+                null
+            );
+            //Add click listener to the map so the user can click on the map to enable fullscreen
+            this._addFullscreenClickListener(this._map);
         },
 
         /**
-         * Handles removing the button for creating new circular zone stacks.
+         * Removes the button for creating new circular zone stacks.
          * @private
          */
         _removeCircleButton: function() {
@@ -1300,7 +1284,7 @@
         },
 
         /**
-         * Handles removing the button for creating new polygonal zone stacks.
+         * Removes the button for creating new polygonal zone stacks.
          * @private
          */
         _removePolygonButton: function() {
@@ -1308,7 +1292,7 @@
         },
 
         /**
-         * Handles removing the button for toggling the fallback zone.
+         * Removes the button for toggling the fallback zone.
          * @private
          */
         _removeFallbackZoneButton: function() {
@@ -1316,7 +1300,7 @@
         },
 
         /**
-         * Handles removing the circle, polygon and fallback zone buttons.
+         * Removes the circle, polygon and fallback zone buttons.
          * @private
          */
         _removeAlertTemplateButtons: function() {
@@ -1326,7 +1310,83 @@
         },
 
         /**
-         * Removes drawing buttons
+         * Removes the button for toggling fullscreen mode.
+         * @private
+         */
+        _removeFulscreenButton: function() {
+            this._removeCustomControl(this._FULLSCREEN_BUTTON_ID,google.maps.ControlPosition.RIGHT_TOP);
+        },
+
+        /**
+         * Adds custom controls (draw buttons, legends, etc..).
+         * @param id - The id of the button to create.
+         * @param position - The control position.
+         * @param listener - The click listener.
+         * @param cb - An optional callback that will be executed after the button has been added.
+         * @private
+         */
+        _addCustomControl: function(id,position,listener,cb) {
+            var _this = this;
+            this._mapIsReady().then(function() {
+                // Use the saved button reference to check if the button already exists (eg. this._fullscreenBttn)
+                if (!_this['_'+id]) {
+                    // Clone the node so the control does not flicker on the page before being positioned
+                    _this['_'+id] = _this.$$('#'+id).cloneNode(true);
+                    // Append "_cc" to the id so we can find the custom control easily later
+                    _this['_'+id].setAttribute('id',_this['_'+id].id+'_cc');
+                    // Remove the hidden attribute so the control is displayed when added to the DOM
+                    _this['_'+id].removeAttribute('hidden');
+                    // Add the click listener
+                    if (listener) {
+                        _this['_'+id].onclick = listener;
+                    }
+                    // Add the button to the DOM by adding it to the map controls
+                    _this._map.controls[position].push(_this['_'+id]);
+                    //Call our callback function, if provided.
+                    if (cb && typeof cb === 'function') { cb(); }
+                }
+            });
+        },
+
+        /**
+         * Redraws custom controls (draw buttons, legends, etc..). This function is used when we need to update the state
+         * of the custom control because the data bindings do not apply to the control once positioned since it is cloned.
+         * @param id - The id of the button to create.
+         * @param position - The control position.
+         * @param listener - The click listener.
+         * @param cb - An optional callback that will be executed after the button has been redrawn.
+         * @private
+         */
+        _redrawCustomControl: function(id,position,listener,cb) {
+            var _this = this;
+            // Async so the styling and bindings have time to update before cloning
+            setTimeout(function() {
+                if (_this['_'+id]) {
+                    var oldControl = _this['_'+id];
+                    // Clone the node so the control does not flicker on the page before being positioned
+                    _this['_'+id] = _this.$$('#'+id).cloneNode(true);
+                    // Append "_cc" to the id so we can find the custom control easily later
+                    _this['_'+id].setAttribute('id',_this['_'+id].id+'_cc');
+                    // Remove the hidden attribute so the control is displayed when added to the DOM
+                    _this['_'+id].removeAttribute('hidden');
+                    // Add the click listener
+                    if (listener) {
+                        _this['_'+id].onclick = listener;
+                    }
+                    // Replace the existing button in the in the map controls
+                    var index = _this._map.controls[position].indexOf(oldControl);
+                    if (index > -1) {
+                        _this._map.controls[position].removeAt(index);
+                        _this._map.controls[position].insertAt(index,_this['_'+id]);
+                    }
+                    //Call our callback function, if provided.
+                    if (cb && typeof cb === 'function') { cb(); }
+                }
+            },0);
+        },
+
+        /**
+         * Removes custom controls (draw buttons, legends, etc..).
          * @param id - The id of the button to remove.
          * @param position - The control position.
          * @private
@@ -1352,7 +1412,8 @@
                 return;
             }
             this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
-            var circleButton = this.querySelector('#'+this._CIRCLE_BUTTON_ID);
+            // Select the custom control (+ '_cc')
+            var circleButton = this.querySelector('#'+this._CIRCLE_BUTTON_ID+'_cc');
             if (circleButton) {
                 this.toggleClass('selected', true, circleButton.querySelector('.customMapBttn'));
             }
@@ -1370,7 +1431,8 @@
                 return;
             }
             this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-            var polygonButton = this.querySelector('#'+this._POLYGON_BUTTON_ID);
+            // Select the custom control (+ '_cc')
+            var polygonButton = this.querySelector('#'+this._POLYGON_BUTTON_ID+'_cc');
             if (polygonButton) {
                 this.toggleClass('selected', true, polygonButton.querySelector('.customMapBttn'));
             }
@@ -1395,6 +1457,14 @@
         },
 
         /**
+         * The listener to fire when the fullscreen button is clicked.
+         * @private
+         */
+        _fullscreenButtonListener: function() {
+            this._toggleFullscreenContainer(true);
+        },
+
+        /**
          * Removes Google's "Stop drawing" hand button from the top-right corner.
          * @private
          */
@@ -1412,29 +1482,6 @@
                 }
                 waitForStopDrawingButton();
             }
-        },
-
-        /**
-         * Adds the fullscreen custom control to the map.
-         * @private
-         */
-        _addFullscreenControl: function() {
-            var _this = this;
-            if (this._fullscreenControlAdded) { return; }
-            this._isFullscreenMode = false;
-            var fullscreenButton = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
-            this._map.controls[google.maps.ControlPosition.RIGHT_TOP].push(fullscreenButton);
-            fullscreenButton.onclick = function() {
-                _this._toggleFullscreenContainer(true);
-            };
-            this._fullscreenControlAdded = true;
-            //Add click listener to the map so the user can click on the map to enable fullscreen.
-            this._addFullscreenClickListener(this._map);
-            //Small delay so the fullscreen button doesn't flicker outside
-            //of the map before being rendered in the correct location.
-            setTimeout(function() {
-                fullscreenButton.removeAttribute('hidden');
-            },500);
         },
 
         /**
@@ -1487,11 +1534,14 @@
                     this._beforeFullscreenHeight = this.height;
                     this.height = null;
                 }
-                // Toggle button visibility so that the close button is displayed
+                // Toggle button visibility so that the close button is displayed (select the custom controls (+ '_cc'))
+                var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID+'_cc');
                 if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                    var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
                     buttonContainer.querySelector('#closeButton').removeAttribute('hidden');
                     buttonContainer.querySelector('#openButton').setAttribute('hidden','hidden');
+                }
+                else {
+                    buttonContainer.setAttribute('title','Exit Fullscreen Mode');
                 }
                 // Move the map to the dialog container, adjust the size and add the esc key listener
                 dialog.append(mapDiv);
@@ -1514,11 +1564,14 @@
             if (this._beforeFullscreenHeight) {
                 this.height = this._beforeFullscreenHeight;
             }
+            // Toggle button visiblity so that the fullscreen button is displayed (select the custom controls (+ '_cc'))
+            var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID+'_cc');
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                // Toggle button visiblity so that the fullscreen button is displayed
-                var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID);
                 buttonContainer.querySelector('#openButton').removeAttribute('hidden');
                 buttonContainer.querySelector('#closeButton').setAttribute('hidden','hidden');
+            }
+            else {
+                buttonContainer.setAttribute('title','Enter Fullscreen Mode');
             }
             // Move the map to the inline container, adjust the size and remove the esc key listener
             var mapDiv = this._map.getDiv();
@@ -1746,15 +1799,16 @@
          */
         _deselectDrawingButtons: function() {
             var bttnClass = '.customMapBttn';
-            var polygonButton = this.querySelector('#'+this._POLYGON_BUTTON_ID);
+            // Select the custom controls (+ '_cc')
+            var polygonButton = this.querySelector('#'+this._POLYGON_BUTTON_ID+'_cc');
             if (polygonButton) {
                 this.toggleClass('selected', false, polygonButton.querySelector(bttnClass));
             }
-            var circleButton = this.querySelector('#'+this._CIRCLE_BUTTON_ID);
+            var circleButton = this.querySelector('#'+this._CIRCLE_BUTTON_ID+'_cc');
             if (circleButton) {
                 this.toggleClass('selected', false, circleButton.querySelector(bttnClass));
             }
-            var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_ID);
+            var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_ID+'_cc');
             if (fallbackZoneButton) {
                 this.toggleClass('selected', false, fallbackZoneButton.querySelector(bttnClass));
             }
@@ -1954,7 +2008,8 @@
          * @private
          */
         _fallbackZoneEnabledChanged: function(enabled) {
-            var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_BUTTON_ID);
+            // Select the custom control (+ '_cc')
+            var fallbackZoneButton = this.querySelector('#'+this._FALLBACK_ZONE_BUTTON_ID+'_cc');
             if (fallbackZoneButton) {
                 this.toggleClass('selected', !!enabled, fallbackZoneButton.querySelector('.customMapBttn'));
                 var childDiv = fallbackZoneButton.children[0];
@@ -1962,16 +2017,6 @@
                     childDiv.setAttribute('title',enabled ? 'Disable Entire Region Zone' : 'Enable Entire Region Zone')
                 }
             }
-        },
-
-        /**
-         * Returns the title for the fullscreen button.
-         * @param isFullscreenMode
-         * @returns {string}
-         * @private
-         */
-        _getFullscreenBttnTitle: function(isFullscreenMode) {
-            return isFullscreenMode ? 'Exit Fullscreen Mode' : 'Enter Fullscreen Mode';
         }
     };
 </script>
