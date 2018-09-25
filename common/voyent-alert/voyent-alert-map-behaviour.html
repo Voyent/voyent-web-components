@@ -1098,6 +1098,7 @@
                         _this._adjustBoundsAndPan();
                     },function() {
                         oce.overlay.setMap(null);
+                        _this.set('_drawingCancelled',false);
                     });
                 },0);
             });
@@ -1108,10 +1109,13 @@
                         _this._cancelNewAlert();
                         _this._revertCursor();
                     }
-                    if (_this._drawingManager.getDrawingMode() !== null) {
-                        //Flag so overlaycomplete listener won't be allowed
-                        //to proceed after cancelling a polygon mid-draw.
-                        _this._drawingCancelled = true;
+                    var drawingMode = _this._drawingManager.getDrawingMode();
+                    if (drawingMode !== null) {
+                        // Flag so overlaycomplete listener won't be allowed to proceed after
+                        // cancelling a polygon mid-draw (not relevant for circles).
+                        if (drawingMode === google.maps.drawing.OverlayType.POLYGON) {
+                            _this._drawingCancelled = true;
+                        }
                         _this._disableDrawingMode();
                     }
                     else if (_this._isFullscreenMode) {
@@ -1408,7 +1412,6 @@
             this._deselectDrawingButtons();
             if (this._drawingManager.getDrawingMode() === google.maps.drawing.OverlayType.CIRCLE) {
                 this._drawingManager.setDrawingMode(null);
-                this.set('_drawingCancelled',true);
                 return;
             }
             this._drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
@@ -1427,6 +1430,7 @@
             this._deselectDrawingButtons();
             if (this._drawingManager.getDrawingMode() === google.maps.drawing.OverlayType.POLYGON) {
                 this._drawingManager.setDrawingMode(null);
+                // Indicate that drawing was cancelled because for polygons the overlaycomplete will fire after cancelling
                 this.set('_drawingCancelled',true);
                 return;
             }
