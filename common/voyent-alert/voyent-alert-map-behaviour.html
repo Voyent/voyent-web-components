@@ -617,10 +617,11 @@
 
         /**
          * Fetches the region boundary for the realm.
+         * @param skipMapPanning
          * @returns {Promise}
          * @private
          */
-        _fetchRealmRegion: function() {
+        _fetchRealmRegion: function(skipMapPanning) {
             var _this = this;
             return new Promise(function (resolve, reject) {
                 voyent.locate.findRegions({realm:_this.realm, account:_this.account,
@@ -628,7 +629,7 @@
                 }).then(function (regions) {
                     if (!regions || !regions[0]) { return resolve(); }
                     //Filter out the alert regions and we should only be left with the static area Region.
-                    _this._drawRegion(regions[0]);
+                    _this._drawRegion(regions[0],!!skipMapPanning);
                     resolve();
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching or drawing Region: ' + (error.responseText || error.message || error));
@@ -821,9 +822,10 @@
          * Draws the passed region on the map as an invisible polygon. We'll use the polygon
          * for setting the map bounds or favouring autocomplete results to it's area.
          * @param region - The region to be drawn, in GeoJSON format.
+         * @param skipMapPanning - Whether we should skip zooming on the region.
          * @private
          */
-        _drawRegion: function(region) {
+        _drawRegion: function(region,skipMapPanning) {
             if (!region || !region.location || !region.location.geometry || !region.location.geometry.coordinates) {
                 return;
             }
@@ -857,7 +859,9 @@
             this._areaRegion = {"region":region,"polygon":polygon,"bounds":bounds};
             this._regionMapping[this.realm] = this._areaRegion;
             //Pan the map on the new region.
-            this._zoomOnRegion();
+            if (!skipMapPanning) {
+                this._zoomOnRegion();
+            }
         },
 
         /**

@@ -47,6 +47,6 @@ Polymer({
     //******************PRIVATE API******************
 
     _onAfterLogin: function() {
-        this._fetchRealmRegion();
+        this._fetchRealmRegion(true);
     }
 });
