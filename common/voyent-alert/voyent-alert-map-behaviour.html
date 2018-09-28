@@ -174,8 +174,24 @@
                 this._addFullscreenButton();
                 //Maintain the isZoneSelected toggle for updating the UI.
                 this._isZoneSelected = false;
-                document.addEventListener('voyent-alert-zone-selected',function(e) {
+                this.addEventListener('voyent-alert-zone-selected',function(e) {
                     _this.set('_isZoneSelected',!!e.detail.id);
+                    //When zone's are selected we will bring their name overlay to the top
+                    var selectedZone = e.detail.zone;
+                    for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
+                        var zones = this._loadedAlert.template.zoneStacks[i].zones;
+                        for (var j=0; j<zones.length; j++) {
+                            if (zones[j].nameOverlay) {
+                                if (selectedZone) {
+                                    if (zones[j] === selectedZone) {
+                                        zones[j].nameOverlay.moveToTopPane();
+                                        continue;
+                                    }
+                                }
+                                zones[j].nameOverlay.moveToDefaultPane();
+                            }
+                        }
+                    }
                 });
             }
             this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
