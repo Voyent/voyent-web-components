@@ -402,8 +402,8 @@ Polymer({
 
 
         //if the escape key is pressed then stop drawing
-        window.addEventListener("keydown",function (event) {
-            if (event.which === 27) {
+        window.addEventListener("keydown",function (e) {
+            if (e.key === 'Escape') {
                 if (_loc.drawingManager.getDrawingMode() !== null) {
                     _loc.drawingManager.setDrawingMode(null);
                 }
@@ -1433,8 +1433,8 @@ Polymer({
                 mapQueryAutocomplete.bindTo('bounds', map); //bias the results to the map's viewport, even while that viewport changes.
                 _loc.mapQueryAutocomplete = mapQueryAutocomplete;
             }
-             var enterFunction= function (event) {
-                 if (event.which === 13) {
+             var enterFunction= function (e) {
+                 if (e.key === 'Enter') {
                      _loc.querySearch('');
                  }
              };

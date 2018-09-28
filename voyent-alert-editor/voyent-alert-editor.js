@@ -301,10 +301,10 @@ Polymer({
      */
     _submitNewAlertDialog: function(e) {
         e.stopPropagation();
-        if (e.keyCode === 13) { //Enter
+        if (e.key === 'Enter') { //Enter
             this._createNewAlert();
         }
-        else if (e.keyCode === 27) { //Escape
+        else if (e.key === 'Escape') { //Escape
             this._cancelNewAlert();
         }
     },
