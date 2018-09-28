@@ -2786,9 +2786,17 @@
              * @private
              */
             this._ProximityZoneOverlay = function(zone) {
+                var _this = this;
                 this.zone = zone;
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv(true);
+                // Bring the label to top on mouseover
+                this.div.onmouseover = function () {
+                    _this.moveToTopPane();
+                };
+                this.div.onmouseout = function () {
+                    _this.moveToDefaultPane();
+                };
             };
             /**
              * A class that represents a location name overlay.
@@ -2945,6 +2953,20 @@
             this._LocationOverlay.prototype.displayAndDraw = function() {
                 this.div.style.display = 'block';
                 this.draw();
+            };
+            /**
+             * Moves the zone overlay to a map pane with a higher stacking priority.
+             */
+            this._ProximityZoneOverlay.prototype.moveToTopPane = function() {
+                // Move the overlay to a pane with a higher stacking priority
+                this.getPanes().overlayMouseTarget.appendChild(this.div);
+            };
+            /**
+             * Moves the zone overlay to the default map pane.
+             */
+            this._ProximityZoneOverlay.prototype.moveToDefaultPane = function() {
+                // Move the overlay to the default pane
+                this.getPanes().floatShadow.appendChild(this.div);
             };
             /**
              * Moves the location overlay to a map pane with a higher stacking priority.
