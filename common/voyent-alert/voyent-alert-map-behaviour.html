@@ -634,7 +634,7 @@
                 }).then(function (regions) {
                     if (!regions || !regions[0]) { return resolve(); }
                     //Filter out the alert regions and we should only be left with the static area Region.
-                    _this._drawRegion(regions[0],!!skipMapPanning);
+                    _this._drawRegion(regions[0]);
                     resolve();
                 }).catch(function (error) {
                     _this.fire('message-error', 'Issue fetching or drawing Region: ' + (error.responseText || error.message || error));
@@ -827,10 +827,9 @@
          * Draws the passed region on the map as an invisible polygon. We'll use the polygon
          * for setting the map bounds or favouring autocomplete results to it's area.
          * @param region - The region to be drawn, in GeoJSON format.
-         * @param skipMapPanning - Whether we should skip zooming on the region.
          * @private
          */
-        _drawRegion: function(region,skipMapPanning) {
+        _drawRegion: function(region) {
             if (!region || !region.location || !region.location.geometry || !region.location.geometry.coordinates) {
                 return;
             }
@@ -863,10 +862,6 @@
             //Save a reference to the region JSON and map polygon for later.
             this._areaRegion = {"region":region,"polygon":polygon,"bounds":bounds};
             this._regionMapping[this.realm] = this._areaRegion;
-            //Pan the map on the new region.
-            if (!skipMapPanning) {
-                this._zoomOnRegion();
-            }
         },
 
         /**
