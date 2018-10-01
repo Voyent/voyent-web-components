@@ -486,17 +486,6 @@
                 _this._loadedAlert.template.setBadge(_this._dialogBadge);
                 // Fire an event that the badge changed
                 _this.fire('voyent-alert-badge-changed', {"badge": _this._loadedAlert.template.badge});
-                // If we only have a single zone stack, then update the map marker as well
-                var image = {
-                    url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
-                    scaledSize: new google.maps.Size(32,32)
-                };
-                if (_this._loadedAlert.template.zoneStacks.length === 1) {
-                    _this._loadedAlert.template.zoneStacks[0].marker.setIcon(image);
-                }
-                else if (_this._loadedAlert.template.zoneStacks.length > 1) {
-                    _this._loadedAlert.template.marker.setIcon(image)
-                }
             });
         },
 
@@ -960,7 +949,8 @@
                                 }
                             }),
                             map: this._map, draggable: true, zIndex: 50,
-                            visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
+                            visible: this.nodeName !== 'VOYENT-ALERT-VIEW',
+                            cursor: 'move'
                         });
 
                         zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones));
@@ -977,11 +967,9 @@
                 templateMarker = new google.maps.Marker({
                     position: (latLngCentroid ? latLngCentroid : this._AlertTemplate.calculateCentroidFromJSON(templateJSON)),
                     map: this._map, draggable: true, zIndex: 50,
-                    icon: {
-                        url: this.getBadgeUrl(templateJSON.badge),
-                        scaledSize: new google.maps.Size(32,32)
-                    },
-                    visible: this.nodeName !== 'VOYENT-ALERT-VIEW'
+                    icon: this.pathtoimages+'/img/move_icon.png',
+                    visible: this.nodeName !== 'VOYENT-ALERT-VIEW',
+                    cursor: 'move'
                 });
             }
             this.set('_loadedAlert', {
@@ -1065,7 +1053,7 @@
                     _this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
                         //Build our stack marker, the position will be added later.
                         var stackMarker = new google.maps.Marker({
-                            map: _this._map, draggable: true, zIndex: 50
+                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move'
                         });
                         if (oce.type === 'circle') { //Circular template.
                             stackMarker.setPosition(oce.overlay.getCenter());
@@ -1098,10 +1086,8 @@
                                 position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
                                 draggable: true, zIndex: 50,
                                 map: _this._map,
-                                icon: {
-                                    url: _this.getBadgeUrl(_this._loadedAlert.template.badge),
-                                    scaledSize: new google.maps.Size(32,32)
-                                }
+                                icon: _this.pathtoimages+'/img/move_icon.png',
+                                cursor: 'move'
                             }));
                         }
                         else if (_this._loadedAlert.template.zoneStacks.length > 2) {
@@ -1998,31 +1984,17 @@
         },
 
         /**
-         * Manages the stack marker icons.
+         * Manages the stack marker icon animation.
          * @param selectedStack
          * @private
          */
         _selectedStackChanged: function(selectedStack) {
-            if (this._loadedAlert) {
-                if (this._loadedAlert.template.zoneStacks.length === 1) {
-                    var image = {
-                        url: this.getBadgeUrl(this._loadedAlert.template.badge),
-                        scaledSize: new google.maps.Size(32,32)
-                    };
-                    this._loadedAlert.template.zoneStacks[0].marker.setIcon(image);
-                }
-                else {
-                    for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
-                        this._loadedAlert.template.zoneStacks[i].marker.setIcon(null);
-                    }
-                    if (selectedStack) {
-                        // Bounce the marker once to indicate selection.
-                        selectedStack.marker.setAnimation(google.maps.Animation.BOUNCE);
-                        setTimeout(function() {
-                            selectedStack.marker.setAnimation(null);
-                        },700);
-                    }
-                }
+            if (selectedStack) {
+                // Bounce the marker once to indicate selection.
+                selectedStack.marker.setAnimation(google.maps.Animation.BOUNCE);
+                setTimeout(function() {
+                    selectedStack.marker.setAnimation(null);
+                },700);
             }
         },
 
