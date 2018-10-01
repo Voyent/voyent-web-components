@@ -188,8 +188,8 @@ Example:
             <div class="table-wrap-dynamic" style="height:calc(100% - 244px);">
                 <div class="table">
                     <div class="table-col badge-col table-header no-select"></div>
-                    <div class="table-col name-col table-header no-select pointer text-left" on-click="_sortTemplatesByName" title="Click to sort by Alert Name">Name</div>
-                    <div class="table-col categories-col table-header no-select pointer text-left" on-click="_sortTemplatesByCategories" title="Click to sort by Categories">Categories</div>
+                    <div class="table-col name-col table-header no-select pointer" on-click="_sortTemplatesByName" title="Click to sort by Alert Name">Name</div>
+                    <div class="table-col categories-col table-header no-select pointer" on-click="_sortTemplatesByCategories" title="Click to sort by Categories">Categories</div>
                 </div>
                 <div class="table-scroll-dynamic">
                     <template is="dom-if" if="[[!_filteredParentTemplates.length]]">
