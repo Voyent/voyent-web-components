@@ -1253,7 +1253,7 @@
                     }
                 },
                 /**
-                 * Initializes marker listeners.
+                 * Initializes marker listeners for the alert.
                  * @private
                  */
                 _setupMarkerListeners: function () {
@@ -1722,7 +1722,7 @@
                     }
                 },
                 /**
-                 * Initializes marker listeners.
+                 * Initializes marker listeners for the zone stack.
                  * @private
                  */
                 _setupMarkerListeners: function () {
@@ -1761,12 +1761,20 @@
                         if (_outer._fallbackZone) {
                             _outer._fallbackZone.punchOutOverlay();
                         }
+                        _this.manageStackBoundary(true);
                     });
                     //Add click listener to marker.
                     google.maps.event.addListener(marker, 'click', function () {
                         //Toggle all the accordion panes closed.
                         _outer._toggleProperties(-1);
                         _outer.set('_loadedAlert.selectedStack',_this);
+                    });
+                    //Add mouseover and mouseout listeners to highlight the stack boundary.
+                    google.maps.event.addListener(marker, 'mouseover', function () {
+                        _this.manageStackBoundary(true);
+                    });
+                    google.maps.event.addListener(marker, 'mouseout', function () {
+                        _this.manageStackBoundary(false);
                     });
                 },
                 /**
@@ -2058,6 +2066,30 @@
                     setTimeout(function() {
                         zone.shapeOverlay.setMap(_outer._map);
                     },0);
+                },
+                /**
+                 * Handles creating, positioning and toggling the visibility of the
+                 * zone stack boundary which is displayed on stack marker mouseover.
+                 * @param visible
+                 */
+                manageStackBoundary: function(visible) {
+                    if (visible) {
+                        this.updateJSON();
+                        if (!this._stackBoundary) {
+                            this._stackBoundary = new google.maps.Polyline({
+                                path: _outer._AlertTemplate.calculateBoundingPathsFromJSON(this.json),
+                                map: _outer._map,
+                                strokeWeight: 1
+                            });
+                        }
+                        else {
+                            this._stackBoundary.setMap(_outer._map);
+                            this._stackBoundary.setPath(_outer._AlertTemplate.calculateBoundingPathsFromJSON(this.json));
+                        }
+                    }
+                    else if (this._stackBoundary) {
+                        this._stackBoundary.setMap(null);
+                    }
                 }
             };
             Object.seal(this._AlertZoneStack);
@@ -2705,7 +2737,7 @@
                     }
                 },
                 /**
-                 * Initializes marker listeners.
+                 * Initializes marker listeners for the location.
                  * @private
                  */
                 _setupMarkerListeners: function() {
