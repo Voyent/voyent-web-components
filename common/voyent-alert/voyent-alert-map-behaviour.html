@@ -622,11 +622,10 @@
 
         /**
          * Fetches the region boundary for the realm.
-         * @param skipMapPanning
          * @returns {Promise}
          * @private
          */
-        _fetchRealmRegion: function(skipMapPanning) {
+        _fetchRealmRegion: function() {
             var _this = this;
             return new Promise(function (resolve, reject) {
                 voyent.locate.findRegions({realm:_this.realm, account:_this.account,
@@ -862,6 +861,8 @@
             //Save a reference to the region JSON and map polygon for later.
             this._areaRegion = {"region":region,"polygon":polygon,"bounds":bounds};
             this._regionMapping[this.realm] = this._areaRegion;
+            //Pan the map on the new region.
+            this._zoomOnRegion();
         },
 
         /**
