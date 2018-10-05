@@ -2,6 +2,21 @@ Polymer({
     is: 'voyent-mobile-alert-editor',
     behaviors: [Voyent.AlertMapBehaviour,Voyent.AlertBehaviour],
 
+    properties: {
+        /**
+         * Indicates whether an alert is currently being fetched from database and loaded into the editor.
+         */
+        isAlertLoading: { type: Boolean, value: false, readOnly: true, notify: true, observer: '_isAlertLoading' },
+        /**
+         * Indicates whether an alert is currently loaded in the editor.
+         */
+        isAlertLoaded: { type: Boolean, value: false, readOnly: true, notify: true }
+    },
+
+    observers: [
+        '_loadedAlertChanged(_loadedAlert)'
+    ],
+
     /**
      * Load the passed template at the specified coordinates.
      * @param template - The template JSON to be loaded.
@@ -9,6 +24,7 @@ Polymer({
      */
     loadAlert: function(template,coordinates) {
         var _this = this;
+        this._setIsAlertLoading(true);
         if (!coordinates) {
             if (!this._areaRegion) {
                 this._areaRegionIsAvailable().then(function() {
@@ -38,6 +54,7 @@ Polymer({
         this._ignoreZoneCenterChangedEvent = true;
         this._drawAndLoadAlertTemplate(template,latLng);
         this._loadedAlert.template.setParentId(id);
+        this._setIsAlertLoading(false);
         //Populate the movement pane, async so the properties panel has time to initialize.
         setTimeout(function() {
             _this._ignoreZoneCenterChangedEvent = false;
@@ -47,12 +64,24 @@ Polymer({
     //******************PRIVATE API******************
 
     _onAfterLogin: function() {
-        var _this = this;
-        // Skip panning the region on initial load because this causes the map to
-        // pan on the loading alert and then snap to the region boundary (VRAS-369).
-        this._skipRegionPanning = true;
-        this._fetchRealmRegion().then(function() {
-            _this._skipRegionPanning = false;
-        }).catch(function(){});
+        this._fetchRealmRegion();
+    },
+
+    /**
+     * Listens to whether an alert is loading and toggles the flag for skipping region panning.
+     * @param isAlertLoading
+     * @private
+     */
+    _isAlertLoading: function(isAlertLoading) {
+        this._skipRegionPanning = isAlertLoading;
+    },
+
+    /**
+     * Listens to whether an alert is loaded and toggles the isAlertLoaded flag.
+     * @param loadedAlert
+     * @private
+     */
+    _loadedAlertChanged: function(loadedAlert) {
+        this._setIsAlertLoaded(!!(loadedAlert && loadedAlert.template));
     }
 });

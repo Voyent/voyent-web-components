@@ -161,14 +161,15 @@ Polymer({
      * @private
      */
     _loadedAlertChanged: function(loadedAlert) {
-        if (loadedAlert) {
+        var isAlertLoaded = !!(loadedAlert && loadedAlert.template);
+        if (isAlertLoaded) {
             this._addAlertTemplateButtons();
         }
         //Don't bother removing the buttons if we are loading a template as they will just be added again.
         else if (!this.isTemplateLoading) {
             this._removeAlertTemplateButtons();
         }
-        this._setIsTemplateLoaded(loadedAlert && loadedAlert.template);
+        this._setIsTemplateLoaded(isAlertLoaded);
         this.fire('voyent-alert-template-changed',{
             'alertTemplate': loadedAlert && loadedAlert.template ? loadedAlert.template : null
         });

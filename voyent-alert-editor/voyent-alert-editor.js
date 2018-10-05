@@ -557,6 +557,7 @@ Polymer({
      * @private
      */
     _loadedAlertChanged: function(loadedAlert) {
+        var isAlertLoaded = !!(loadedAlert && loadedAlert.template);
         if (loadedAlert) {
             this._addAlertTemplateButtons();
         }
@@ -564,7 +565,7 @@ Polymer({
         else if (!this.isAlertLoading) {
             this._removeAlertTemplateButtons();
         }
-        this._setIsAlertLoaded(loadedAlert && loadedAlert.template);
+        this._setIsAlertLoaded(isAlertLoaded);
         this.fire('voyent-alert-changed',{
             'alert': loadedAlert || null
         });

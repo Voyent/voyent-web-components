@@ -861,8 +861,13 @@
             //Save a reference to the region JSON and map polygon for later.
             this._areaRegion = {"region":region,"polygon":polygon,"bounds":bounds};
             this._regionMapping[this.realm] = this._areaRegion;
-            //Pan the map on the new region.
-            this._zoomOnRegion();
+            //Pan the map on the new region but only if we haven't already loaded an alert in one of
+            //our editors, otherwise the map will pan to the alert and then snap back to the region.
+            if ((this.nodeName !== 'VOYENT-ALERT-EDITOR' || !this.isAlertLoaded) &&
+                (this.nodeName !== 'VOYENT-ALERT-TEMPLATE-EDITOR' || !this.isTemplateLoaded) &&
+                (this.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR' || !this.isAlertLoaded)) {
+                this._zoomOnRegion();
+            }
         },
 
         /**
@@ -1779,8 +1784,7 @@
         },
 
         /**
-         * Listens to whether are are loading an alert entity and
-         * toggles our flag for skipping region panning accordingly.
+         * Listens to whether an alert is loading and toggles the flag for skipping region panning.
          * @param isAlertLoading
          * @private
          */
