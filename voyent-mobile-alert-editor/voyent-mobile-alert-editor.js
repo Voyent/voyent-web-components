@@ -47,6 +47,12 @@ Polymer({
     //******************PRIVATE API******************
 
     _onAfterLogin: function() {
-        this._fetchRealmRegion(true);
+        var _this = this;
+        // Skip panning the region on initial load because this causes the map to
+        // pan on the loading alert and then snap to the region boundary (VRAS-369).
+        this._skipRegionPanning = true;
+        this._fetchRealmRegion().then(function() {
+            _this._skipRegionPanning = false;
+        }).catch(function(){});
     }
 });
