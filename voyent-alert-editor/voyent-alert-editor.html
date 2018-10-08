@@ -186,12 +186,12 @@ Example:
             </div>
             <!-- 100% height minus the height of the content above and below the table -->
             <div class="table-wrap-dynamic" style="height:calc(100% - 244px);">
-                <div class="table">
+                <div class="table table-header-wrap">
                     <div class="table-col badge-col table-header no-select"></div>
                     <div class="table-col name-col table-header no-select pointer" on-click="_sortTemplatesByName" title="Click to sort by Alert Name">Name</div>
                     <div class="table-col categories-col table-header no-select pointer" on-click="_sortTemplatesByCategories" title="Click to sort by Categories">Categories</div>
                 </div>
-                <div class="table-scroll-dynamic">
+                <div class="table-scroll-dynamic" data-is-edge$="[[_isMsEdge()]]">
                     <template is="dom-if" if="[[!_filteredParentTemplates.length]]">
                         <div class="no-query-results-msg">
                             Your search <span class="bold">[[_templateSearchQuery]]</span> does not match any templates.
