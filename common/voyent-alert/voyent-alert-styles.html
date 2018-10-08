@@ -210,6 +210,9 @@
                 display: flex;
                 flex-direction: column;
             }
+            .table-header-wrap {
+                z-index: 100; /* Required for MS Edge (VRAS-561) */
+            }
             .table-scroll {
                 max-height: 200px;
                 min-height: 200px;
@@ -218,6 +221,9 @@
             .table-scroll-dynamic {
                 min-height: 200px;
                 overflow-y: auto;
+            }
+            .table-scroll-dynamic[data-is-edge] {
+                margin-top: 26px; /* Required for MS Edge (VRAS-561) */
             }
             .table {
                 width: 100%;
