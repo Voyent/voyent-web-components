@@ -550,6 +550,40 @@
         },
 
         /**
+         * Sets the CAP-CP into the zone associated with the stack and zone indices.
+         * @param capcp
+         * @param zoneIndex
+         * @param stackIndex
+         */
+        setCapCp: function(capcp, zoneIndex, stackIndex) {
+            if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
+                if (typeof stackIndex === 'number' && stackIndex >= 0) {
+                    this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].capcp = capcp;
+                }
+                else {
+                    this._loadedAlert.selectedStack.zones[zoneIndex].capcp = capcp;
+                }
+            }
+        },
+
+        /**
+         * Gets the CAP-CP for the zone associated with the stack and zone indices.
+         * @param zoneIndex
+         * @param stackIndex
+         */
+        getCapCp: function(zoneIndex, stackIndex) {
+            if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
+                if (typeof stackIndex === 'number' && stackIndex >= 0) {
+                    return this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].capcp;
+                }
+                else {
+                    return this._loadedAlert.selectedStack.zones[zoneIndex].capcp;
+                }
+            }
+            return null;
+        },
+
+        /**
          * Updates the zone name associated with the stack and zone indices.
          * @param zoneName
          * @param zoneIndex
@@ -600,6 +634,26 @@
         getFallbackNotificationFilter: function() {
             if (this._fallbackZone) {
                 return this._fallbackZone.notificationFilter;
+            }
+            return null;
+        },
+
+        /**
+         * Sets the CAP-CP for the fallback zone.
+         * @param capcp
+         */
+        setFallbackCapCp: function(capcp) {
+            if (this._fallbackZone) {
+                this._fallbackZone.capcp = capcp;
+            }
+        },
+
+        /**
+         * Gets the CAP-CP for the fallback zone.
+         */
+        getFallbackCapCp: function() {
+            if (this._fallbackZone) {
+                return this._fallbackZone.capcp;
             }
             return null;
         },
@@ -923,7 +977,8 @@
                         if (properties.shape === 'circle' && (!this.mode || this.mode === 'notification')) {
                             zones.push(new this._CircularAlertZone(
                                 zoneGeometries[i].id, properties.radius, properties.name, properties.opacity,
-                                properties.colour, properties.messageTemplate, properties.notificationFilter, zIndex
+                                properties.colour, properties.messageTemplate, properties.notificationFilter,
+                                properties.capcp, zIndex
                             ));
                         }
                         else {
@@ -931,7 +986,8 @@
                             zones.push(new this._PolygonalAlertZone(
                                 zoneGeometries[i].id,
                                 this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates), properties.name,
-                                properties.opacity, properties.colour, properties.messageTemplate, properties.notificationFilter, zIndex)
+                                properties.opacity, properties.colour, properties.messageTemplate, properties.notificationFilter,
+                                properties.capcp, zIndex)
                             );
                         }
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
@@ -1003,6 +1059,7 @@
                         fallbackZoneProperties.colour,
                         fallbackZoneProperties.messageTemplate,
                         fallbackZoneProperties.notificationFilter,
+                        fallbackZoneProperties.capcp,
                         fallbackZoneProperties.zIndex
                     );
                 }
