@@ -426,6 +426,17 @@
         },
 
         /**
+         * Returns the id of the currently loaded alert.
+         * @returns {*}
+         */
+        getCurrentAlertId: function() {
+            if (this._loadedAlert && this._loadedAlert.template) {
+                return this._loadedAlert.template.id;
+            }
+            return null;
+        },
+
+        /**
          * Get the coordinates of the the loaded alert's current position in the format [lng,lat].
          * @returns {Array}
          */
