@@ -139,23 +139,7 @@ Polymer({
         /**
          * Whether drawing mode was just cancelled, used to cancel overlay drawing when the button is toggled mid drawing operation.
          */
-        _drawingCancelled: { type: Boolean, value: false, notify: true },
-        /**
-         * The search results returned from the geocode query.
-         */
-        _geocodeSearchResults: { type: Array, value: [], notify: true },
-        /**
-         * The geocode query.
-         */
-        _geocodeSearchQuery: { type: String, value: '', notify: true },
-        /**
-         * The last geocode query that was executed.
-         */
-        _lastGeocodeSearchQuery: { type: String, value: '', notify: true },
-        /**
-         * The selected geocode returned from the search results, the geocode-based shape to import.
-         */
-        _selectedGeocode: { type: Object, value: null, notify: true }
+        _drawingCancelled: { type: Boolean, value: false, notify: true }
     },
 
     observers: [

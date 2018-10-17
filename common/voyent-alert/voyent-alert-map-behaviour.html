@@ -1779,10 +1779,21 @@
                 _this._lastGeocodeSearchQuery = searchQuery;
                 _this.set('_geocodeSearchResults',geocodes);
                 setTimeout(function() {
+                    // If we only have one search result then select it
                     if (_this._geocodeSearchResults.length === 1) {
                         _this.set('_selectedGeocode',_this._geocodeSearchResults[0]);
                     }
+                    // Otherwise just ensure we always maintain our selection when filtering
+                    else if (_this._selectedGeocode) {
+                        for (var i=0; i<_this._geocodeSearchResults.length; i++) {
+                            if (_this._geocodeSearchResults[i].code === _this._selectedGeocode.code) {
+                                _this.set('_selectedGeocode',_this._geocodeSearchResults[i]);
+                                break;
+                            }
+                        }
+                    }
                 },0);
+
             }).catch(function (e) {
                 console.error(e);
                 _this.fire('message-error', 'Unable to complete geocodes search, try again later');
