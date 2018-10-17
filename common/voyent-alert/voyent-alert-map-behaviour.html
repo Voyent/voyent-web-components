@@ -1805,7 +1805,7 @@
             var paths = this._AlertTemplate.calculatePathsFromCoordinates(this._selectedGeocode.geo.coordinates);
             stackMarker.setPosition(this._AlertTemplate.calculateCentroidFromPaths(paths));
             var zone = new this._PolygonalAlertZone(null,paths,this._selectedGeocode.name || this._selectedGeocode.code);
-            var zoneStack = new this._AlertZoneStack(null,stackMarker,[zone]);
+            var zoneStack = new this._AlertZoneStack(null,stackMarker,[zone],true);
             this._loadedAlert.template.addZoneStack(zoneStack);
             this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"isFallbackZone":false});
             //Toggle the accordion closed for the current stack and load the new one

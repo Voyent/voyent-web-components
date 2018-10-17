@@ -234,7 +234,7 @@
 
             for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
                 var currentStack = this._loadedAlert.template.zoneStacks[i];
-                if (stackToIgnore && stackToIgnore === currentStack) {
+                if (stackToIgnore && stackToIgnore === currentStack || currentStack.isCapCp) {
                     continue;
                 }
                 var largestZone = currentStack.getLargestZone();
@@ -1378,12 +1378,14 @@
              * @param id - The unique id that identifies the zone stack, if one is not provided it will be generated.
              * @param marker - The associated map marker for the stack.
              * @param zones - A list of _AlertZone objects, the list of zones belonging with the stack.
+             * @param isCapCp - Whether this stack was initially created from a CAP CP zone.
              * @private
              */
-            this._AlertZoneStack = function (id,marker,zones) {
+            this._AlertZoneStack = function (id,marker,zones,isCapCp) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setMarker(marker || null);
                 this.setZones(zones && zones.length ? zones : []);
+                this.isCapCp = !!isCapCp;
                 this.updateJSON();
             };
             /**
