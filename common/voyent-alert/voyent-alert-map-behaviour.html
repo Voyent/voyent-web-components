@@ -1776,8 +1776,13 @@
                     ]
                 }
             }).then(function(geocodes) {
-                _this.set('_geocodeSearchResults',geocodes);
                 _this._lastGeocodeSearchQuery = searchQuery;
+                _this.set('_geocodeSearchResults',geocodes);
+                setTimeout(function() {
+                    if (_this._geocodeSearchResults.length === 1) {
+                        _this.set('_selectedGeocode',_this._geocodeSearchResults[0]);
+                    }
+                },0);
             }).catch(function (e) {
                 console.error(e);
                 _this.fire('message-error', 'Unable to complete geocodes search, try again later');
