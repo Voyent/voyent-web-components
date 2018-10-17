@@ -55,12 +55,6 @@ Example:
             .dialog-buttons-wrapper {
                 margin-top: 30px;
             }
-            #newAlertDialog {
-                /* Subtract the height of the VRAS app header so the 90% calculation is accurate */
-                height: calc(90% - 64px);
-                min-height: 475px;
-                margin: 0;
-            }
         </style>
 
         <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
@@ -169,7 +163,8 @@ Example:
                 </span>
             </div>
         </div>
-        <paper-dialog id="newAlertDialog" on-keyup="_submitNewAlertDialog" modal on-iron-overlay-opened="_patchOverlay">
+        <paper-dialog id="newAlertDialog" class="full-size-dialog" on-keyup="_submitNewAlertDialog"
+                      modal on-iron-overlay-opened="_patchOverlay">
             <h2 class="dialogH2">New Alert</h2>
             <div class="dialogCloseWrap">
                 <paper-icon-button icon="close" on-click="_cancelNewAlert" title="Close dialog"
@@ -220,7 +215,7 @@ Example:
                 <paper-button raised title="Confirm changes" on-click="_createNewAlert" tabindex="3">Confirm</paper-button>
             </div>
         </paper-dialog>
-        <paper-dialog id="geocodeImport" modal on-iron-overlay-opened="_patchOverlay">
+        <paper-dialog id="geocodeImport" class="full-size-dialog" modal on-iron-overlay-opened="_patchOverlay">
             <h2 class="dialogH2">Import Zone</h2>
             <div class="dialogCloseWrap">
                 <paper-icon-button icon="close" on-click="_closeGeocodeImportDialog" title="Close dialog"
