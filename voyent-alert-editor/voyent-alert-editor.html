@@ -37,10 +37,6 @@ Example:
             .table-wrap {
                 margin-top: 0;
             }
-            .table-col {
-                text-align: center;
-                padding: 5px;
-            }
             .badge-col {
                 width: 10%;
             }
@@ -58,17 +54,6 @@ Example:
             }
             .dialog-buttons-wrapper {
                 margin-top: 30px;
-            }
-            .search-query-input-wrapper {
-                margin-top: 0;
-            }
-            .no-query-results-msg {
-                text-align: center;
-                margin-top: 15px;
-            }
-            .select-template-msg {
-                margin-bottom: 0;
-                padding-bottom: 0;
             }
             #newAlertDialog {
                 /* Subtract the height of the VRAS app header so the 90% calculation is accurate */
@@ -128,7 +113,12 @@ Example:
                                                      _alert-speed-unit="{{_alertSpeedUnit}}"
                                                      _show-movement="{{_showMovement}}"
                                                      _drawing-cancelled="{{_drawingCancelled}}"
-                                                     _is-zone-selected="{{_isZoneSelected}}">
+                                                     _is-zone-selected="{{_isZoneSelected}}"
+                                                     _geocode-search-results="{{_geocodeSearchResults}}"
+                                                     _geocode-search-query="{{_geocodeSearchQuery}}"
+                                                     _last-geocode-search-query="{{_lastGeocodeSearchQuery}}"
+                                                     _selected-geocode="{{_selectedGeocode}}"
+                            >
                             </voyent-alert-properties>
                         </template>
                     </template>
@@ -166,6 +156,15 @@ Example:
                 <span>
                     <div class="customMapBttnImg">
                         <img src="../common/voyent-alert/img/fallback_zone_bttn.png">
+                    </div>
+                </span>
+            </div>
+        </div>
+        <div id$="[[_GEOCODE_BUTTON_ID]]" class="customMapBttnWrap geocodeBttn no-select" hidden>
+            <div class="customMapBttn" title="Geocode Import">
+                <span>
+                    <div class="customMapBttnImg">
+                        <img src="../common/voyent-alert/img/geo_bttn.png">
                     </div>
                 </span>
             </div>
@@ -219,6 +218,52 @@ Example:
             <div class="dialog-buttons-wrapper text-center">
                 <paper-button raised title="Cancel changes" on-click="_cancelNewAlert" tabindex="2">Cancel</paper-button>
                 <paper-button raised title="Confirm changes" on-click="_createNewAlert" tabindex="3">Confirm</paper-button>
+            </div>
+        </paper-dialog>
+        <paper-dialog id="geocodeImport" modal on-iron-overlay-opened="_patchOverlay">
+            <h2 class="dialogH2">Import Zone</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="_closeGeocodeImportDialog" title="Close dialog"
+                                   class="dialogCloseButton"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
+            <p class="select-template-msg">
+                Begin typing to search for an area, then select a match from the list below:
+            </p>
+            <div class="search-query-input-wrapper">
+                <paper-input label="Search for an area by geocode or name..." autofocus tabindex="1"
+                             on-keyup="_geocodeSearchQueryKeyUp" value="{{_geocodeSearchQuery}}"></paper-input>
+            </div>
+            <!-- 100% height minus the height of the content above and below the table -->
+            <div class="table-wrap-dynamic" style="height:calc(100% - 244px);">
+                <div class="table table-header-wrap geocode-header">
+                    <div class="table-col code-col table-header no-select">Code</div>
+                    <div class="table-col name-col table-header no-select">Name</div>
+                </div>
+                <div id="geocodeSearchResults" class="table-scroll-dynamic" data-is-edge$="[[_isMsEdge()]]">
+                    <template is="dom-if" if="[[!_geocodeSearchResults.length]]">
+                        <div class="no-query-results-msg">
+                            Your search <span class="bold">[[_geocodeSearchQuery]]</span> does not match any areas.
+                        </div>
+                    </template>
+                    <iron-selector id="geocodeSelector" class="alternating-row-parent"
+                                   selected="{{_selectedGeocode}}" attr-for-selected="name">
+                        <template is="dom-repeat" items="[[_geocodeSearchResults]]" as="geocode" strip-whitespace>
+                            <div name="[[geocode]]" class="table pointer geocode-item">
+                                <div class="table-col code-col no-select">
+                                    [[geocode.code]]
+                                </div>
+                                <div class="table-col name-col no-select">
+                                    [[geocode.name]]
+                                </div>
+                            </div>
+                        </template>
+                    </iron-selector>
+                </div>
+            </div>
+            <div class="text-center">
+                <paper-button raised title="Cancel import" on-click="_closeGeocodeImportDialog" tabindex="2">Cancel</paper-button>
+                <paper-button raised title="Confirm import" on-click="_importGeocodeToMap" tabindex="3">Confirm</paper-button>
             </div>
         </paper-dialog>
     </template>

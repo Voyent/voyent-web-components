@@ -106,6 +106,7 @@
             this._CIRCLE_BUTTON_ID = 'circleBttn';
             this._POLYGON_BUTTON_ID = 'polygonBttn';
             this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
+            this._GEOCODE_BUTTON_ID = 'geocodeBttn';
             //Default to the last realm and account if one is not set.
             if (!this.realm) {
                 this.realm = voyent.auth.getLastKnownRealm();
@@ -1323,6 +1324,16 @@
         },
 
         /**
+         * Adds the button for opening the geocode import dialog.
+         * @param listener
+         * @param cb
+         * @private
+         */
+        _addGeocodeButton: function(listener,cb) {
+            this._addCustomControl(this._GEOCODE_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT,listener,cb);
+        },
+
+        /**
          * Adds the circle, polygon and fallback zone buttons.
          * @private
          */
@@ -1333,7 +1344,9 @@
             //they end up all stacked up on top of each other, likely because the styling doesn't have time to update.
             this._addCircleButton(this._circleButtonListener.bind(this),function() {
                 _this._addPolygonButton(_this._polygonButtonListener.bind(_this),function() {
-                    _this._addFallbackZoneButton(_this._fallbackZoneButtonListener.bind(_this));
+                    _this._addFallbackZoneButton(_this._fallbackZoneButtonListener.bind(_this),function() {
+                        _this._addGeocodeButton(_this._geocodeButtonListener.bind(_this));
+                    });
                 });
             });
         },
@@ -1379,13 +1392,22 @@
         },
 
         /**
-         * Removes the circle, polygon and fallback zone buttons.
+         * Removes the button for opening the geocode import dialog.
+         * @private
+         */
+        _removeGeocodeButton: function() {
+            this._removeCustomControl(this._GEOCODE_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT);
+        },
+
+        /**
+         * Removes the circle, polygon, fallback and geocode buttons.
          * @private
          */
         _removeAlertTemplateButtons: function() {
             this._removeCircleButton();
             this._removePolygonButton();
             this._removeFallbackZoneButton();
+            this._removeGeocodeButton();
         },
 
         /**
@@ -1536,6 +1558,15 @@
         },
 
         /**
+         * The listener to fire when the geocode button is clicked.
+         * @private
+         */
+        _geocodeButtonListener: function() {
+            this._disableDrawingMode();
+            this._openGeocodeImportDialog();
+        },
+
+        /**
          * The listener to fire when the fullscreen button is clicked.
          * @private
          */
@@ -1681,6 +1712,121 @@
                     _this._toggleFullscreenContainer(true);
                 });
             }
+        },
+
+        /**
+         * Opens the geocode import dialog.
+         * @private
+         */
+        _openGeocodeImportDialog: function() {
+            var dialog = this.querySelector('#geocodeImport');
+            if (dialog) {
+                // Reset our state
+                this.set('_geocodeSearchResults',[]);
+                this.set('_geocodeSearchQuery', '');
+                this.set('_lastGeocodeSearchQuery', '');
+                this.set('_selectedGeocode', null);
+                // Open the dialog
+                setTimeout(function() {
+                    dialog.open();
+                },0);
+            }
+        },
+
+        /**
+         * Closes the geocode import dialog.
+         * @private
+         */
+        _closeGeocodeImportDialog: function() {
+            var dialog = this.querySelector('#geocodeImport');
+            if (dialog) {
+                dialog.close();
+            }
+        },
+
+        /**
+         * Handles searching for geocode regions based on user input.
+         * @private
+         */
+        _geocodeSearchQueryKeyUp: function() {
+            this._queryGeocodes(this._geocodeSearchQuery);
+        },
+
+        /**
+         * Queries the geocodes collection for geocode-based regions.
+         * @private
+         */
+        _queryGeocodes: function(searchQuery) {
+            var _this = this;
+            // Don't search if we have no search query or if it's the same as the last search query
+            if (!searchQuery) {
+                _this.set('_geocodeSearchResults',[]);
+                this._lastGeocodeSearchQuery = '';
+                return;
+            }
+            if (searchQuery === this._lastGeocodeSearchQuery) {
+                return;
+            }
+            // Pull query results directly from the service
+            voyent.locate.findGeocodes({
+                "query": {
+                    "$or": [
+                        {"code" : {"$regex" : searchQuery, "$options": "i"}},
+                        {"name" : {"$regex" : searchQuery, "$options": "i"}}
+                    ]
+                }
+            }).then(function(geocodes) {
+                _this.set('_geocodeSearchResults',geocodes);
+                _this._lastGeocodeSearchQuery = searchQuery;
+            }).catch(function (e) {
+                console.error(e);
+                _this.fire('message-error', 'Unable to complete geocodes search, try again later');
+            });
+        },
+
+        /**
+         * Imports a geocode-based region that is selected from the geocode query dialog.
+         * @private
+         */
+        _importGeocodeToMap: function() {
+            if (!this._selectedGeocode) {
+                this.fire('message-error','Must select a geocode to import');
+                return;
+            }
+            //Build our stack marker, the position will be added later.
+            var stackMarker = new google.maps.Marker({
+                map: this._map, draggable: true, zIndex: 50, cursor: 'move'
+            });
+            var paths = this._AlertTemplate.calculatePathsFromCoordinates(this._selectedGeocode.geo.coordinates);
+            stackMarker.setPosition(this._AlertTemplate.calculateCentroidFromPaths(paths));
+            var zone = new this._PolygonalAlertZone(null,paths,this._selectedGeocode.name || this._selectedGeocode.code);
+            var zoneStack = new this._AlertZoneStack(null,stackMarker,[zone]);
+            this._loadedAlert.template.addZoneStack(zoneStack);
+            this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"isFallbackZone":false});
+            //Toggle the accordion closed for the current stack and load the new one
+            this._toggleProperties(-1);
+            this.set('_loadedAlert.selectedStack',zoneStack);
+            this._toggleProperties(0);
+            //When we have only one stack we don't have a template marker, just the marker for the zone stack.
+            //So once we have two zone stacks we need to create the marker and if we have more than two (the
+            //marker exists already) then we'll update it's position.
+            if (this._loadedAlert.template.zoneStacks.length === 2) {
+                this._loadedAlert.template.setMarker(new google.maps.Marker({
+                    position: this._AlertTemplate.calculateCentroidFromJSON(this._loadedAlert.template.json),
+                    draggable: true, zIndex: 50,
+                    map: this._map,
+                    icon: this.pathtoimages+'/img/move_icon.png',
+                    cursor: 'move'
+                }));
+            }
+            else if (this._loadedAlert.template.zoneStacks.length > 2) {
+                this._loadedAlert.template.updateJSONAndCentroid();
+            }
+            if (this._fallbackZone) {
+                this._fallbackZone.punchOutOverlay();
+            }
+            this._adjustBoundsAndPan();
+            this._closeGeocodeImportDialog();
         },
 
         /**

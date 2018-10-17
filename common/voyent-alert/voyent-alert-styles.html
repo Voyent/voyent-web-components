@@ -241,12 +241,40 @@
                 display: table-cell;
                 vertical-align: middle;
                 overflow: auto;
-                text-align: left;
                 text-overflow: clip;
                 word-break: keep-all;
+                text-align: center;
+                padding: 5px;
             }
             .alternating-row-parent > *:nth-child(even) {
                 background-color: #EDEDED;
+            }
+            .no-query-results-msg {
+                text-align: center;
+                margin-top: 15px;
+            }
+            .select-template-msg {
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+            .code-col {
+                width: 20%;
+            }
+            .name-col {
+                width: 80%;
+            }
+            .geocode-item {
+                line-height: 45px;
+            }
+            .geocode-header {
+                line-height: 25px;
+            }
+            .geocode-item.iron-selected div {
+                background-color: var(--app-primary-color,#2E348E);
+                color: #FFF;
+            }
+            .search-query-input-wrapper {
+                margin-top: 0;
             }
             .pointer {
                 cursor: pointer;

@@ -529,21 +529,6 @@ Polymer({
     },
 
     /**
-     * Returns whether the current browser is MS Edge.
-     * @returns {boolean}
-     * @private
-     */
-    _isMsEdge: function() {
-        if (navigator) {
-            var userAgent = navigator.userAgent;
-            if (userAgent) {
-                return userAgent.indexOf('Edge/') > -1;
-            }
-        }
-        return false;
-    },
-
-    /**
      * Opens a confirmation prompt for removing an alert.
      * @param func
      * @private

@@ -770,6 +770,21 @@
         },
 
         /**
+         * Returns whether the current browser is MS Edge.
+         * @returns {boolean}
+         * @private
+         */
+        _isMsEdge: function() {
+            if (navigator) {
+                var userAgent = navigator.userAgent;
+                if (userAgent) {
+                    return userAgent.indexOf('Edge/') > -1;
+                }
+            }
+            return false;
+        },
+
+        /**
          * Initialize all our custom "classes" that are required for the various components.
          * @private
          */
@@ -857,9 +872,20 @@
              */
             this._AlertTemplate.calculateCentroidFromPaths = function(paths) {
                 var bounds = new google.maps.LatLngBounds();
-                for (var i=0; i<paths.length; i++) {
-                    for (var j=0; j<paths.getAt(i).length; j++) {
-                        bounds.extend(paths.getAt(i).getAt(j));
+                // If the paths were fabricated manually (like calculatePathsFromCoordinates does) then they may not be
+                // of type MVCArray so use getAt or regular array notation depending on what type of "paths" we have.
+                if (paths.getAt) {
+                    for (var i=0; i<paths.length; i++) {
+                        for (var j=0; j<paths.getAt(i).length; j++) {
+                            bounds.extend(paths.getAt(i).getAt(j));
+                        }
+                    }
+                }
+                else {
+                    for (var k=0; k<paths.length; k++) {
+                        for (var l=0; l<paths[k].length; l++) {
+                            bounds.extend(paths[k][l]);
+                        }
                     }
                 }
                 return bounds.getCenter();
