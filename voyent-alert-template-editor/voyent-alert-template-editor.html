@@ -195,6 +195,21 @@ Example:
                 <paper-button raised title="Confirm import" on-click="_importGeocodeToMap" tabindex="3">Confirm</paper-button>
             </div>
         </paper-dialog>
+        <paper-dialog id="geocodeWarning" modal on-iron-overlay-opened="_patchOverlay">
+            <h2 class="dialogH2">Warning - Duplicate Zone</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="_closeGeocodeWarningDialog" title="Close dialog"
+                                   class="dialogCloseButton"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
+            <p class="select-template-msg">
+                The <strong>[[_selectedGeocode.name]]</strong> zone has already been imported. Are you sure you want to import this zone again?
+            </p>
+            <div class="text-center">
+                <paper-button raised title="Cancel import" on-click="_closeGeocodeWarningDialog" tabindex="1">No, Cancel</paper-button>
+                <paper-button raised title="Confirm import" on-click="_confirmGeocodeWarningDialog" tabindex="2">Yes, Import</paper-button>
+            </div>
+        </paper-dialog>
     </template>
 </dom-module>
 

@@ -991,7 +991,7 @@
                             zones.push(new this._CircularAlertZone(
                                 zoneGeometries[i].id, properties.radius, properties.name, properties.opacity,
                                 properties.colour, properties.messageTemplate, properties.notificationFilter,
-                                properties.capcp, zIndex
+                                properties.capcp, null, zIndex
                             ));
                         }
                         else {
@@ -1000,7 +1000,7 @@
                                 zoneGeometries[i].id,
                                 this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates), properties.name,
                                 properties.opacity, properties.colour, properties.messageTemplate, properties.notificationFilter,
-                                properties.capcp, zIndex)
+                                properties.capcp, null, zIndex)
                             );
                         }
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
@@ -1073,6 +1073,7 @@
                         fallbackZoneProperties.messageTemplate,
                         fallbackZoneProperties.notificationFilter,
                         fallbackZoneProperties.capcp,
+                        null,
                         fallbackZoneProperties.zIndex
                     );
                 }
@@ -1746,6 +1747,38 @@
         },
 
         /**
+         * Opens the geocode duplicate import dialog.
+         * @private
+         */
+        _openGeocodeWarningDialog: function() {
+            var dialog = this.querySelector('#geocodeWarning');
+            if (dialog) {
+                dialog.open();
+            }
+        },
+
+        /**
+         * Closes the geocode duplicate import dialog.
+         * @private
+         */
+        _closeGeocodeWarningDialog: function() {
+            var dialog = this.querySelector('#geocodeWarning');
+            if (dialog) {
+                dialog.close();
+            }
+        },
+
+        /**
+         * Confirms the geocode duplicate import dialog.
+         * @private
+         */
+        _confirmGeocodeWarningDialog: function() {
+            this._ignoreDuplicationCheck = true;
+            this._importGeocodeToMap();
+            this._closeGeocodeWarningDialog();
+        },
+
+        /**
          * Handles searching for geocode regions based on user input.
          * @private
          */
@@ -1794,7 +1827,6 @@
                         }
                     }
                 },0);
-
             }).catch(function (e) {
                 console.error(e);
                 _this.fire('message-error', 'Unable to complete geocodes search, try again later');
@@ -1810,14 +1842,32 @@
                 this.fire('message-error','Must select a geocode to import');
                 return;
             }
+            // Don't allow the same zone to be imported again
+            if (this._ignoreDuplicationCheck) {
+                this._ignoreDuplicationCheck = false;
+            }
+            else {
+                for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
+                    var s = this._loadedAlert.template.zoneStacks[i];
+                    if (s.isGeocodeImport) {
+                        for (var j=0; j<s.zones.length; j++) {
+                            var z = s.zones[j];
+                            if (z.geocode === this._selectedGeocode.code) {
+                                this._openGeocodeWarningDialog();
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
             //Build our stack marker, the position will be added later.
             var stackMarker = new google.maps.Marker({
                 map: this._map, draggable: true, zIndex: 50, cursor: 'move'
             });
             var paths = this._AlertTemplate.calculatePathsFromCoordinates(this._selectedGeocode.geo.coordinates);
             stackMarker.setPosition(this._AlertTemplate.calculateCentroidFromPaths(paths));
-            var zone = new this._PolygonalAlertZone(null,paths,this._selectedGeocode.name || this._selectedGeocode.code);
-            var zoneStack = new this._AlertZoneStack(null,stackMarker,[zone]);
+            var zone = new this._PolygonalAlertZone(null,paths,this._selectedGeocode.name || this._selectedGeocode.code,null,null,null,null,null,this._selectedGeocode.code,null);
+            var zoneStack = new this._AlertZoneStack(null,stackMarker,[zone],true);
             this._loadedAlert.template.addZoneStack(zoneStack);
             this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"isFallbackZone":false});
             //Toggle the accordion closed for the current stack and load the new one

@@ -1100,7 +1100,7 @@ Polymer({
         this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
             var name = this._dialogInput;
             if (shape === 'circle') {
-                newZone = new _this._CircularAlertZone(null,radius,name,null,null,null,null,null,zIndex);
+                newZone = new _this._CircularAlertZone(null,radius,name,null,null,null,null,null,null,zIndex);
             }
             else { //polygon
                 // Check if the outer line of each shape overlap each other. If they overlap then we are
@@ -1125,7 +1125,7 @@ Polymer({
                 }
                 //When we add a new zone we don't want to include the full shape so we can
                 //punch it out properly later so just pass the filled outer shape via paths.getAt(0).
-                newZone = new _this._PolygonalAlertZone(null,[paths.getAt(0)],name,null,null,null,null,null,zIndex);
+                newZone = new _this._PolygonalAlertZone(null,[paths.getAt(0)],name,null,null,null,null,null,null,zIndex);
             }
             _this._loadedAlert.selectedStack.addZone(newZone);
             //Re-adjust the centroid for the template.

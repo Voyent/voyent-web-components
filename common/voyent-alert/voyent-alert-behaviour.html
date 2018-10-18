@@ -1380,12 +1380,14 @@
              * @param id - The unique id that identifies the zone stack, if one is not provided it will be generated.
              * @param marker - The associated map marker for the stack.
              * @param zones - A list of _AlertZone objects, the list of zones belonging with the stack.
+             * @param isGeocodeImport - Whether this stack was initially created from a geocode-based zone import.
              * @private
              */
-            this._AlertZoneStack = function (id,marker,zones) {
+            this._AlertZoneStack = function (id,marker,zones,isGeocodeImport) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setMarker(marker || null);
                 this.setZones(zones && zones.length ? zones : []);
+                this.isGeocodeImport = !!isGeocodeImport;
                 this.updateJSON();
             };
             /**
@@ -2137,10 +2139,11 @@
              * @param messageTemplate - The message template associated with this zone.
              * @param notificationFilter - The notification filter associated with this zone.
              * @param capcp - A CAP-CP formatted version of the alert.
+             * @param geocode - The geocode that this zone is based on, if applicable.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @private
              */
-            this._AlertZone = function (id,name,opacity,colour,messageTemplate,notificationFilter,capcp,zIndex) {
+            this._AlertZone = function (id,name,opacity,colour,messageTemplate,notificationFilter,capcp,geocode,zIndex) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
                 this.setOpacity(opacity || 0.25);
@@ -2151,6 +2154,7 @@
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
                 this.capcp = capcp || null;
+                this.geocode = geocode || null;
             };
             /**
              * _AlertZone prototype (instance) functions.
@@ -2295,12 +2299,13 @@
              * @param messageTemplate - The message template associated with this zone.
              * @param notificationFilter - The notification filter associated with this zone.
              * @param capcp - A CAP-CP formatted version of the alert.
+             * @param geocode - The geocode that this zone is based on, if applicable.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @extends _AlertZone
              * @private
              */
-            this._CircularAlertZone = function(id,radius,name,opacity,colour,messageTemplate,notificationFilter,capcp,zIndex) {
-                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,notificationFilter,capcp,zIndex);
+            this._CircularAlertZone = function(id,radius,name,opacity,colour,messageTemplate,notificationFilter,capcp,geocode,zIndex) {
+                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,notificationFilter,capcp,geocode,zIndex);
                 this.setRadius(radius || 500);
                 this.shapeOverlay = (new google.maps.Circle(this._getShapeOverlayOpts()));
             };
@@ -2349,12 +2354,13 @@
              * @param messageTemplate - The message template associated with this zone.
              * @param notificationFilter - The notification filter associated with this zone.
              * @param capcp - A CAP-CP formatted version of the alert.
+             * @param geocode - The geocode that this zone is based on, if applicable.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @extends _AlertZone
              * @private
              */
-            this._PolygonalAlertZone = function(id,paths,name,opacity,colour,messageTemplate,notificationFilter,capcp,zIndex) {
-                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,notificationFilter,capcp,zIndex);
+            this._PolygonalAlertZone = function(id,paths,name,opacity,colour,messageTemplate,notificationFilter,capcp,geocode,zIndex) {
+                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,notificationFilter,capcp,geocode,zIndex);
                 this.setPaths(paths);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };
@@ -2401,10 +2407,11 @@
              * @param messageTemplate - The message template associated with this zone.
              * @param notificationFilter - The notification filter associated with this zone.
              * @param capcp - A CAP-CP formatted version of the alert.
+             * @param geocode - The geocode that this zone is based on, if applicable.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @private
              */
-            this._FallbackAlertZone = function(enabled,name,opacity,colour,messageTemplate,notificationFilter,capcp,zIndex) {
+            this._FallbackAlertZone = function(enabled,name,opacity,colour,messageTemplate,notificationFilter,capcp,geocode,zIndex) {
                 this.id = _outer._FALLBACK_ZONE_ID;
                 this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
@@ -2418,6 +2425,7 @@
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
                 this.capcp = capcp || null;
+                this.geocode = geocode || null;
                 this.nameOverlay = new _outer._FallbackZoneOverlay(this);
                 this.setEnabled(enabled);
             };
