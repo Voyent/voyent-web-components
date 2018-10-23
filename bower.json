@@ -16,10 +16,10 @@
     "/.*",
     "/tests/"
   ],
-  "version": "0.0.5",
+  "version": "1.0.0",
   "dependencies": {
-    "voyent.js": "https://github.com/Voyent/voyent.js.git#1.0.0-maintenance",
-    "voyent.notify.js": "https://github.com/Voyent/voyent.notify.js.git#1.0.0-maintenance",
+    "voyent.js": "https://github.com/Voyent/voyent.js.git#1.0.0",
+    "voyent.notify.js": "https://github.com/Voyent/voyent.notify.js.git#1.0.0",
     "polymer": "^1.1.0",
     "es6-promise": "jakearchibald/es6-promise#~3.0.2",
     "d3": "mbostock/d3#~3.5.6",
