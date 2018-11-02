@@ -1990,6 +1990,10 @@
          */
         _selectedStackChanged: function(selectedStack) {
             if (selectedStack) {
+                // Don't bounce marker on initial load
+                if (this.isAlertLoading || this.isTemplateLoading) {
+                    return;
+                }
                 // Bounce the marker once to indicate selection.
                 selectedStack.marker.setAnimation(google.maps.Animation.BOUNCE);
                 setTimeout(function() {
