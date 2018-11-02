@@ -153,8 +153,13 @@ Polymer({
                 _this._resetDialogProperties();
             },0);
         });
-        //Ensure we initialize the autoComplete.
+        //Initialize and focus on the autocomplete.
         _this._setupAutoComplete();
+        if (!_this.isMobile) {
+            setTimeout(function() {
+                _this.querySelector('#autoComplete').focus();
+            },250);
+        }
     },
 
     /**
@@ -262,6 +267,9 @@ Polymer({
                 setTimeout(function() {
                     _this._panToLatLng(selectedLocation.marker.getPosition());
                     _this.querySelector('#infoWindowLocationName').invalid = false;
+                    if (!_this.isMobile) {
+                        _this.querySelector('#infoWindowLocationName').focus();
+                    }
                 },0);
             }
             else if (selectedLocation.type === 'place') {
@@ -275,6 +283,9 @@ Polymer({
                 setTimeout(function() {
                     _this._panToLatLng(selectedLocation.latLng);
                     _this.querySelector('#placeLocationName').invalid = false;
+                    if (!_this.isMobile) {
+                        _this.querySelector('#placeLocationName').focus();
+                    }
                 },0);
             }
             else if (selectedLocation.type === 'pindrop') {
@@ -288,6 +299,9 @@ Polymer({
                 setTimeout(function() {
                     _this._panToLatLng(selectedLocation.latLng);
                     _this.querySelector('#pinDropLocationName').invalid = false;
+                    if (!_this.isMobile) {
+                        _this.querySelector('#pinDropLocationName').focus();
+                    }
                 },0);
             }
             _this.$.infoWindow.removeAttribute('hidden');
