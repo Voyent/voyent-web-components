@@ -96,6 +96,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     @apply(--voyent-login-image);
                 };
             }
+            
+            .headerImage {
+                display: table;
+                max-width: 300px;
+                width: auto;
+                height: auto;
+                margin: auto;
+                opacity: 0.9;
+                padding-top: 15px;
+            }
 
             .regionResultButton {
                 display: block;
@@ -117,7 +127,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </style>
         <div hidden$="{{hidden}}">
             <form is="iron-form" id="loginForm" on-submit="handleLogin">
-                <paper-card heading="{{heading}}" image="{{headerImage}}">
+                <paper-card heading="{{heading}}">
+                    <template is="dom-if" if="[[headerImage]]">
+                        <img src$="{{headerImage}}" class="headerImage"></img>
+                    </template>
+                
                     <template is="dom-if" if="[[_regionResults.length]]">
                         <div class="card-content">
                             <p>The administrator <span class="bold">[[username]]</span> is registered to [[_arrayLength(_regionResults)]] regions in this account. Select the region you’d like to access.</p>
