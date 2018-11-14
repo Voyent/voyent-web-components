@@ -19,7 +19,11 @@ Polymer({
         /**
          * The currently loaded alert state.
          */
-        alertState: { type: String, value: null, readOnly:true, notify: true }
+        alertState: { type: String, value: null, readOnly:true, notify: true },
+        /**
+         * Whether the user wants to hide the Predefined templates or not
+         */
+        hidePredefined: { type: Boolean, value: false, observer: '_hidePredefinedChanged' },
     },
 
     observers: [
@@ -323,37 +327,48 @@ Polymer({
      * @private
      */
     _queryTemplates: function(searchQuery) {
-        //Always execute the search query against a complete list so
-        //changes made via backspace, copy/paste, etc.. are applied properly.
-        this.set('_filteredParentTemplates',this._parentTemplates.slice(0));
-        //Just return the entire template set if no query is specified.
-        if (!searchQuery || !searchQuery.trim()) {
-            return;
+        // Always execute the search query against a complete list so
+        //  changes made via backspace, copy/paste, etc.. are applied properly
+        this.set('_filteredParentTemplates', this._parentTemplates.slice(0));
+        
+        // Default to no search query, since we still might want to query based on Hide Predefined checkbox
+        var hasQuery = false;
+        var searchQueryKeywords;
+        if (searchQuery && searchQuery.trim()) {
+            hasQuery = true;
+            searchQueryKeywords = searchQuery.toLowerCase().split(' ');
         }
-        var searchQueryKeywords = searchQuery.toLowerCase().split(' ');
-        for (var i=this._filteredParentTemplates.length-1; i>=0; i--) {
+        
+        for (var i = this._filteredParentTemplates.length-1; i >= 0; i--) {
             var matchCount = 0;
-            for (var j=0; j<searchQueryKeywords.length; j++) {
-                var keyword = searchQueryKeywords[j];
-                //Ignore extra spaces.
-                if (!keyword) {
-                    matchCount++;
-                    continue;
-                }
-                //Consider the keyword a match if it is found in either the name or categories of the template.
-                if (this._filteredParentTemplates[i].name.toLowerCase().indexOf(keyword) > -1 ||
-                    this._filteredParentTemplates[i].categoriesString.toLowerCase().indexOf(keyword) > -1) {
-                    matchCount++;
+            
+            if (hasQuery) {
+                for (var j = 0; j < searchQueryKeywords.length; j++) {
+                    var keyword = searchQueryKeywords[j];
+                    // Ignore extra spaces
+                    if (!keyword) {
+                        matchCount++;
+                        continue;
+                    }
+                    // Consider the keyword a match if it is found in either the name or categories of the template
+                    if (this._filteredParentTemplates[i].name.toLowerCase().indexOf(keyword) > -1 ||
+                        this._filteredParentTemplates[i].categoriesString.toLowerCase().indexOf(keyword) > -1) {
+                        matchCount++;
+                    }
                 }
             }
-            //All keywords must match in order for the result to be included.
-            if (matchCount !== searchQueryKeywords.length) {
-                this.splice('_filteredParentTemplates',i,1);
+            
+            // All keywords must match in order for the result to be included
+            // Also we check whether Predefined templates should be hidden
+            if ((hasQuery && matchCount !== searchQueryKeywords.length) ||
+               (this.hidePredefined && (this._filteredParentTemplates[i].categories && this._filteredParentTemplates[i].categories.indexOf('Predefined') > -1))) {
+                this.splice('_filteredParentTemplates', i, 1);
             }
         }
-        //Automatically select the template if there is only one result from filtering.
+        
+        // Automatically select the template if there is only one result from filtering.
         if (this._filteredParentTemplates.length === 1) {
-            this.set('_selectedAlertTemplate',this._filteredParentTemplates[0]);
+            this.set('_selectedAlertTemplate', this._filteredParentTemplates[0]);
         }
     },
 
@@ -593,5 +608,15 @@ Polymer({
      */
     _alertStateChanged: function(state) {
         this._setAlertState(state || null);
-    }
+    },
+    
+    /**
+     * Hide Predefined checkbox changed
+     * We want to re-run our template query to update the list
+     */
+    _hidePredefinedChanged: function(newVal, oldVal) {
+        if (typeof oldVal !== 'undefined' && typeof newVal !== 'undefined') {
+            this._queryTemplates();
+        }
+    },
 });

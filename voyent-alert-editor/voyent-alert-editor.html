@@ -4,6 +4,7 @@
 <link rel="import" href="../common/voyent-alert/voyent-alert-behaviour.html">
 <link rel="import" href="../common/voyent-alert/voyent-alert-properties.html">
 <link rel="import" href="../../paper-dialog/paper-dialog.html">
+<link rel="import" href="../../paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../iron-selector/iron-selector.html">
 <link rel="import" href="../common/voyent-custom-validator.html">
 
@@ -69,6 +70,10 @@ Example:
             .select-template-msg {
                 margin-bottom: 0;
                 padding-bottom: 0;
+            }
+            .checkboxWrap {
+                text-align: center;
+                padding-bottom: 10px;
             }
             #newAlertDialog {
                 /* Subtract the height of the VRAS app header so the 90% calculation is accurate */
@@ -183,9 +188,13 @@ Example:
             <div class="search-query-input-wrapper">
                 <paper-input id="categoriesQueryInput" label="Filter templates by name or categories..." autofocus tabindex="1"
                              on-keyup="_templateSearchQueryKeyUp" value="{{_templateSearchQuery}}"></paper-input>
+                
+                <div class="checkboxWrap">
+                    <paper-checkbox checked="{{hidePredefined}}">Hide Predefined Templates</paper-checkbox>
+                </div>
             </div>
             <!-- 100% height minus the height of the content above and below the table -->
-            <div class="table-wrap-dynamic" style="height:calc(100% - 244px);">
+            <div class="table-wrap-dynamic" style="height:calc(100% - 274px);">
                 <div class="table table-header-wrap">
                     <div class="table-col badge-col table-header no-select"></div>
                     <div class="table-col name-col table-header no-select pointer" on-click="_sortTemplatesByName" title="Click to sort by Alert Name">Name</div>
