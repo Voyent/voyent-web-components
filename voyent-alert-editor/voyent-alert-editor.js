@@ -97,6 +97,7 @@ Polymer({
         this._sortTemplatesBy = 'name';
         this._lastSortOrderName = 'ascending';
         this._lastSortOrderCategories = 'ascending';
+        this.hidePredefined = false;
         this.set('_templateSearchQuery','');
         //Fetch the list of categories and templates before opening the dialog. Fetch the
         //categories first because we need them to build our list of categorized templates.
