@@ -97,7 +97,6 @@ Polymer({
         this._sortTemplatesBy = 'name';
         this._lastSortOrderName = 'ascending';
         this._lastSortOrderCategories = 'ascending';
-        this.hidePredefined = false;
         this.set('_templateSearchQuery','');
         //Fetch the list of categories and templates before opening the dialog. Fetch the
         //categories first because we need them to build our list of categorized templates.
@@ -105,6 +104,7 @@ Polymer({
         this._fetchTemplateCategories().then(function() {
             _this._fetchAlertTemplates().then(function() {
                 _this._openNewAlertDialog();
+                _this._queryTemplates(); // Re-run the query to apply the state of our Hide Predefined checkbox
             }).catch(function() {
                 _this.fire('message-error',errMsg);
                 _this._cancelNewAlert();
