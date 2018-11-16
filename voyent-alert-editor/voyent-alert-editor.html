@@ -71,9 +71,9 @@ Example:
                 margin-bottom: 0;
                 padding-bottom: 0;
             }
-            .checkboxWrap {
-                text-align: center;
-                padding-bottom: 10px;
+            .dialogInline {
+                display: inline-block;
+                width: 49%;
             }
             #newAlertDialog {
                 /* Subtract the height of the VRAS app header so the 90% calculation is accurate */
@@ -187,11 +187,10 @@ Example:
             </p>
             <div class="search-query-input-wrapper">
                 <paper-input id="categoriesQueryInput" label="Filter templates by name or categories..." autofocus tabindex="1"
-                             on-keyup="_templateSearchQueryKeyUp" value="{{_templateSearchQuery}}"></paper-input>
+                             on-keyup="_templateSearchQueryKeyUp" value="{{_templateSearchQuery}}"
+                             class="dialogInline"></paper-input>
                 
-                <div class="checkboxWrap">
-                    <paper-checkbox checked="{{hidePredefined}}">Hide Predefined Templates</paper-checkbox>
-                </div>
+                <paper-checkbox checked="{{hidePredefined}}" class="dialogInline">Hide Predefined Templates</paper-checkbox>
             </div>
             <!-- 100% height minus the height of the content above and below the table -->
             <div class="table-wrap-dynamic" style="height:calc(100% - 274px);">
