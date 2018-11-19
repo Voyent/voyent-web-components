@@ -104,7 +104,7 @@ Polymer({
         this._fetchTemplateCategories().then(function() {
             _this._fetchAlertTemplates().then(function() {
                 _this._openNewAlertDialog();
-                _this._queryTemplates(); // Re-run the query to apply the state of our Hide Sample checkbox
+                _this._queryTemplates(_this._templateSearchQuery); // Re-run the query to apply the state of our Hide Sample checkbox
             }).catch(function() {
                 _this.fire('message-error',errMsg);
                 _this._cancelNewAlert();
@@ -617,7 +617,7 @@ Polymer({
      */
     _hideSampleChanged: function(newVal, oldVal) {
         if (typeof oldVal !== 'undefined' && typeof newVal !== 'undefined') {
-            this._queryTemplates();
+            this._queryTemplates(this._templateSearchQuery);
         }
     },
 });
