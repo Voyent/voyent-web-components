@@ -21,9 +21,9 @@ Polymer({
          */
         alertState: { type: String, value: null, readOnly:true, notify: true },
         /**
-         * Whether the user wants to hide the Predefined templates or not
+         * Whether the user wants to hide the Sample templates or not
          */
-        hidePredefined: { type: Boolean, value: false, observer: '_hidePredefinedChanged' },
+        hideSample: { type: Boolean, value: false, observer: '_hideSampleChanged' },
     },
 
     observers: [
@@ -104,7 +104,7 @@ Polymer({
         this._fetchTemplateCategories().then(function() {
             _this._fetchAlertTemplates().then(function() {
                 _this._openNewAlertDialog();
-                _this._queryTemplates(); // Re-run the query to apply the state of our Hide Predefined checkbox
+                _this._queryTemplates(); // Re-run the query to apply the state of our Hide Sample checkbox
             }).catch(function() {
                 _this.fire('message-error',errMsg);
                 _this._cancelNewAlert();
@@ -332,7 +332,7 @@ Polymer({
         //  changes made via backspace, copy/paste, etc.. are applied properly
         this.set('_filteredParentTemplates', this._parentTemplates.slice(0));
         
-        // Default to no search query, since we still might want to query based on Hide Predefined checkbox
+        // Default to no search query, since we still might want to query based on Hide Sample checkbox
         var hasQuery = false;
         var searchQueryKeywords;
         if (searchQuery && searchQuery.trim()) {
@@ -360,9 +360,9 @@ Polymer({
             }
             
             // All keywords must match in order for the result to be included
-            // Also we check whether Predefined templates should be hidden
+            // Also we check whether Sample templates should be hidden
             if ((hasQuery && matchCount !== searchQueryKeywords.length) ||
-               (this.hidePredefined && (this._filteredParentTemplates[i].categories && this._filteredParentTemplates[i].categories.indexOf('Predefined') > -1))) {
+               (this.hideSample && (this._filteredParentTemplates[i].categories && this._filteredParentTemplates[i].categories.indexOf('Sample') > -1))) {
                 this.splice('_filteredParentTemplates', i, 1);
             }
         }
@@ -387,7 +387,7 @@ Polymer({
         var childTemplate = JSON.parse(JSON.stringify(this._parentTemplates.filter(function(alertTemplate) {
             return alertTemplate._id === _this._selectedAlertTemplate._id;
         })[0]));
-        var indexToSplice = childTemplate.categories ? childTemplate.categories.indexOf('Predefined') : -1;
+        var indexToSplice = childTemplate.categories ? childTemplate.categories.indexOf('Sample') : -1;
         if (indexToSplice > -1) {
             childTemplate.categories.splice(indexToSplice,1);
         }
@@ -612,10 +612,10 @@ Polymer({
     },
     
     /**
-     * Hide Predefined checkbox changed
+     * Hide Sample checkbox changed
      * We want to re-run our template query to update the list
      */
-    _hidePredefinedChanged: function(newVal, oldVal) {
+    _hideSampleChanged: function(newVal, oldVal) {
         if (typeof oldVal !== 'undefined' && typeof newVal !== 'undefined') {
             this._queryTemplates();
         }

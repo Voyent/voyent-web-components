@@ -322,8 +322,8 @@ Polymer({
         var _this = this;
         //Generate a flat string array of category names, remove the category and save the changes.
         var newTemplateCategories = this._templateCategories.reduce(function(result,categoryObj) {
-            //Never persist the mobile or predefined categories
-            if (categoryObj.name === 'Mobile' || categoryObj.name === 'Predefined') {
+            //Never persist the mobile or sample categories
+            if (categoryObj.name === 'Mobile' || categoryObj.name === 'Sample') {
                 return result;
             }
             result.push(categoryObj.name);
@@ -425,8 +425,8 @@ Polymer({
         if (persist && this._newTemplateCategory) {
             //Generate a flat string array of category names, add the new category and save the changes.
             var newTemplateCategories = this._templateCategories.reduce(function(result,categoryObj) {
-                //Never persist the mobile or predefined categories
-                if (categoryObj.name === 'Mobile' || categoryObj.name === 'Predefined') {
+                //Never persist the mobile or sample categories
+                if (categoryObj.name === 'Mobile' || categoryObj.name === 'Sample') {
                     return result;
                 }
                 result.push(categoryObj.name);
@@ -626,9 +626,9 @@ Polymer({
             return categoryObj.name;
         });
         newTemplateCategories[indexOfCategoryBeingEdited] = this._categoryToUpdate.newName;
-        //Never persist the mobile or predefined categories
+        //Never persist the mobile or sample categories
         newTemplateCategories.splice(newTemplateCategories.indexOf('Mobile'),1);
-        newTemplateCategories.splice(newTemplateCategories.indexOf('Predefined'),1);
+        newTemplateCategories.splice(newTemplateCategories.indexOf('Sample'),1);
 
         voyent.scope.createRealmData({data:{"templateCategories":newTemplateCategories}}).then(function() {
             //Update our local lists and state.
@@ -726,8 +726,8 @@ Polymer({
             categoryInput.setAttribute('error-message','60 characters max');
             return false;
         }
-        if (categoryName.trim().toLowerCase() === 'predefined') {
-            categoryInput.setAttribute('error-message','Predefined is reserved');
+        if (categoryName.trim().toLowerCase() === 'sample') {
+            categoryInput.setAttribute('error-message','Sample is reserved');
             return false;
         }
         if (categoryName.trim().toLowerCase() === 'mobile') {

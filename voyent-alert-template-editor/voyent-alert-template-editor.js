@@ -41,12 +41,12 @@ Polymer({
                 _this.clearMap();
             }
             var latLng = null;
-            if (template.geo && template.categories && template.categories.indexOf('Predefined') > -1) {
+            if (template.geo && template.categories && template.categories.indexOf('Sample') > -1) {
                 latLng = _this._areaRegion.bounds.getCenter();
             }
             if (loadAsNew) {
-                if (template.categories && template.categories.indexOf('Predefined') > -1) {
-                    template.categories.splice(template.categories.indexOf('Predefined'),1);
+                if (template.categories && template.categories.indexOf('Sample') > -1) {
+                    template.categories.splice(template.categories.indexOf('Sample'),1);
                 }
                 delete template.lastUpdated;
                 delete template.lastUpdatedBy;
@@ -122,7 +122,7 @@ Polymer({
         this._isLoggedIn = true; //Toggle for side panel.
         //Fetch the regions for the realm so we can populate the map with the current region.
         this._fetchRealmRegion();
-        //Fetch realm-scope property for granting privileged access to predefined templates.
+        //Fetch realm-scope property for granting privileged access to sample templates.
         voyent.scope.getRealmData({"property":"isVrasAdministratorRealm"}).then(function(value) {
             _this.set('_isVrasAdministratorRealm',!!value);
         }).catch(function(){

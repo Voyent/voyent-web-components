@@ -811,7 +811,7 @@
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
                 this.setSavePosition(!!savePosition);
-                this.setIsPredefinedTemplate(categories && categories.indexOf('Predefined') > -1);
+                this.setIsSampleTemplate(categories && categories.indexOf('Sample') > -1);
                 this.setSchedule(schedule);
                 this.setCategories(categories || []);
             };
@@ -1055,11 +1055,11 @@
                     this.savePosition = savePosition;
                 },
                 /**
-                 * Sets whether this is a predefined template.
-                 * @param isPredefinedTemplate
+                 * Sets whether this is a sample template.
+                 * @param isSampleTemplate
                  */
-                setIsPredefinedTemplate: function(isPredefinedTemplate) {
-                    this.isPredefinedTemplate = isPredefinedTemplate;
+                setIsSampleTemplate: function(isSampleTemplate) {
+                    this.isSampleTemplate = isSampleTemplate;
                 },
                 /**
                  * Sets the schedule for the alert.
