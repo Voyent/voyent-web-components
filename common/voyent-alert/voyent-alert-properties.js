@@ -139,7 +139,15 @@ Polymer({
         /**
          * Whether drawing mode was just cancelled, used to cancel overlay drawing when the button is toggled mid drawing operation.
          */
-        _drawingCancelled: { type: Boolean, value: false, notify: true }
+        _drawingCancelled: { type: Boolean, value: false, notify: true },
+        /**
+         * The width set from the previous map size calculation.
+         */
+        _lastWidth: { type: Number, notify: true },
+        /**
+         * The height set from the previous map size calculation.
+         */
+        _lastHeight: { type: Number, notify: true }
     },
 
     observers: [

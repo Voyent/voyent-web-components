@@ -1182,9 +1182,10 @@
         _calcMapSize: function() {
             var _this = this;
             this._mapIsReady().then(function() {
+                //Calculate and set the height
                 var height = _this.height;
                 //If we have a valid autoheight specified we override with that
-                if (_this.autoheight && _this.autoheight !== null && _this.autoheight > 0) {
+                if (_this.autoheight && _this.autoheight > 0) {
                     var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
 
                     if (h) {
@@ -1193,7 +1194,7 @@
                 }
                 else {
                     //If we don't have a height try the parent
-                    if (typeof height === 'undefined' || !height) {
+                    if (typeof height === 'undefined' || !height || height < 0) {
                         if (_this._isFullscreenMode) {
                             height = _this.querySelector('#'+_this._FULLSCREEN_CONTAINER_ID).clientHeight;
                         }
@@ -1201,31 +1202,36 @@
                             height = _this._map.getDiv().parentElement.parentElement.parentElement.clientHeight;
                         }
                     }
-                    //If we still don't have a valid height default to a minimum
+                    //If we still don't have a valid height default to the last valid height or a 400px minimum
                     if (height < 50) {
-                        height = 500;
+                        height = _this._lastHeight > 50 ? _this._lastHeight : 400;
                     }
                 }
                 _this.customStyle['--map-height'] = height + 'px';
+                _this._lastHeight = height;
 
+                //Calculate and set the width
+                var width = _this.width;
                 //If the width is specified then set it
-                if (_this.width && _this.width > 0) {
-                    _this.customStyle['--map-width'] = _this.width + 'px';
-                }
-                else { //Otherwise the map will take up as much space as possible.
+                if (typeof width === 'undefined' || !width || width < 0) {
                     if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' || _this.nodeName === 'VOYENT-ALERT-EDITOR') {
-                        var w = (_this._map.getDiv().parentElement.offsetWidth - _this.querySelector('#'+_this._SIDE_PANEL_ID).offsetWidth);
+                        width = (_this._map.getDiv().parentElement.offsetWidth - _this.querySelector('#'+_this._SIDE_PANEL_ID).offsetWidth);
                         //-20px for map borders and padding when not in fullscreen mode
                         if (!_this._isFullscreenMode) {
-                            w-=20;
+                            width -= 20;
                         }
-                        _this.customStyle['--map-width'] = w + 'px';
                     }
                     else {
-                        _this.customStyle['--map-width'] = _this._map.getDiv().parentElement.offsetWidth + 'px';
+                        width = _this._map.getDiv().parentElement.offsetWidth;
                     }
-
                 }
+                //If we still don't have a valid width default to the last width or a 400px minimum
+                if (width < 50) {
+                    width = _this._lastWidth > 50 ? _this._lastWidth : 400;
+                }
+                _this.customStyle['--map-width'] = width + 'px';
+                _this._lastWidth = width;
+
                 //Apply the styles
                 _this.updateStyles();
                 //Update the position of any displayed tooltips.
