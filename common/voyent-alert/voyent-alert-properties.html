@@ -2,7 +2,6 @@
 <link rel="import" href="../imports/voyent.html">
 <link rel="import" href="./voyent-alert-behaviour.html">
 <link rel="import" href="./voyent-alert-badge-chooser.html">
-<link rel="import" href="../imports/jscolor.html">
 <link rel="import" href="../../../paper-input/paper-input.html">
 <link rel="import" href="../../../paper-slider/paper-slider.html">
 <link rel="import" href="../../../iron-icon/iron-icon.html">
@@ -12,6 +11,7 @@
 <link rel="import" href="../../../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../../iron-selector/iron-selector.html">
 <link rel="import" href="../../../paper-item/paper-item.html">
+<link rel="import" href="../../../paper-swatch-picker/paper-swatch-picker.html">
 <link rel="import" href="../../common/voyent-custom-validator.html">
 <link rel="import" href="../../voyent-premium-content/voyent-premium-content.html">
 <!--
@@ -97,24 +97,30 @@ Internal component used to display the properties panel inside Voyent alert comp
             .buttonCol,
             .inputCol,
             .dropdownCol {
-                padding: 8px 0 8px 0;
                 font-size: 13px;
                 text-align: center;
                 display:inline-block;
                 vertical-align: middle;
             }
+            .inputCol, .dropdownCol {
+                padding: 8px 0 8px 0;
+            }
+            .buttonCol {
+                padding-top: 8px;
+            }
             .dropdownCol.movement,
             .inputCol.movement {
                 padding: 0;
             }
+            .propertyCol,
+            .valueCol {
+                width: 50%;
+            }
             .propertyCol {
-                width: 35%;
+                text-align: right;
             }
             .valueCol {
-                width: 62%;
-            }
-            .valueCol.opacity {
-                padding:0;
+                text-align: left;
             }
             .buttonCol {
                 width:100%;
@@ -160,10 +166,6 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             paper-dropdown-menu {
                 width:100%;
-            }
-            .jscolor {
-                width:100%;
-                text-align:center;
             }
             .alert-zones-label {
                 text-align:center;
@@ -329,6 +331,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             .category-buttons-wrapper {
                 margin-bottom: 24px;
             }
+            paper-swatch-picker {
+                --paper-swatch-picker-color-size: 25px;
+            }
         </style>
 
         <template is="dom-if" if="[[parentIsTemplateEditor]]">
@@ -477,25 +482,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     Colour
                                 </div>
                                 <div class="valueCol">
-                                    <input id="jsColor-fallbackZone" class="jscolor"
-                                           data-jscolor="{onFineChange:'_jsColorFineChange(this)'}"
-                                           tabindex="6"
-                                           data-property="colour"
-                                           on-change="_editProperty"
-                                           on-keydown="_editPropertyViaKeydown"
-                                           value="{{_fallbackZone.colour::change}}">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="propertyCol">
-                                    Opacity
-                                </div>
-                                <div class="valueCol opacity">
-                                    <paper-slider min=0 max=1 step=0.05 pin snaps tabindex="7" data-property="opacity"
-                                                  on-change="_editProperty" value="{{_fallbackZone.opacity}}"
-                                                  on-immediate-value-change="_immediateValueChange"
-                                                  immediate-value="{{_immediateValueOpacity}}">
-                                    </paper-slider>
+                                    <paper-swatch-picker color="{{_fallbackZone.colour}}" color-list='[[zoneColours]]'
+                                                         column-count="7" horizontal-align="center"
+                                                         tabindex="6" on-color-changed="_updateColour">
+                                    </paper-swatch-picker>
                                 </div>
                             </div>
                         </div>
@@ -569,48 +559,32 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </div>
                     <div class$="{{_getAccordionClasses('body',zone.active,'')}}">
                         <div class="table">
-                                <div class="row">
-                                    <div class="buttonCol">
-                                        <template is="dom-if" if="[[_isPointerLocked]]">
-                                            <div class="bold">Zone Resizing Enabled</div>
-                                            Move the mouse up and down to adjust the size of the zone. Click to exit.
-                                        </template>
-                                        <template is="dom-if" if="[[!_isPointerLocked]]">
-                                            <paper-button data-index$="[[index]]"
-                                                          raised title="Adjust Area"
-                                                          on-click="_adjustZoneSize">
-                                                Adjust Area
-                                            </paper-button>
-                                        </template>
-                                    </div>
+                            <div class="row">
+                                <div class="buttonCol">
+                                    <template is="dom-if" if="[[_isPointerLocked]]">
+                                        <div class="bold">Zone Resizing Enabled</div>
+                                        Move the mouse up and down to adjust the size of the zone. Click to exit.
+                                    </template>
+                                    <template is="dom-if" if="[[!_isPointerLocked]]">
+                                        <paper-button data-index$="[[index]]"
+                                                      raised title="Adjust Area"
+                                                      on-click="_adjustZoneSize">
+                                            Adjust Area
+                                        </paper-button>
+                                    </template>
                                 </div>
-                                <div class="row">
-                                    <div class="propertyCol">
-                                        Colour
-                                    </div>
-                                    <div class="valueCol">
-                                        <input id$="jsColor-[[index]]" class="jscolor"
-                                               data-jscolor="{onFineChange:'_jsColorFineChange(this)'}"
-                                               tabindex="6"
-                                               data-property="colour"
-                                               data-index$="[[index]]"
-                                               on-change="_editProperty"
-                                               on-keydown="_editPropertyViaKeydown"
-                                               value="{{zone.colour::change}}">
-                                    </div>
+                            </div>
+                            <div class="row">
+                                <div class="propertyCol">
+                                    Colour
                                 </div>
-                                <div class="row">
-                                    <div class="propertyCol">
-                                        Opacity
-                                    </div>
-                                    <div class="valueCol opacity">
-                                        <paper-slider min="0" max="1" step="0.05" pin snaps tabindex="7" data-property="opacity"
-                                                      on-change="_editProperty" data-index$="[[index]]" value="{{zone.opacity}}"
-                                                      on-immediate-value-change="_immediateValueChange"
-                                                      immediate-value="{{_immediateValueOpacity}}">
-                                        </paper-slider>
-                                    </div>
+                                <div class="valueCol">
+                                    <paper-swatch-picker color="{{zone.colour}}" color-list='[[zoneColours]]'
+                                                         column-count="7" horizontal-align="center"
+                                                         tabindex="6" on-color-changed="_updateColour">
+                                    </paper-swatch-picker>
                                 </div>
+                            </div>
                         </div>
                     </div>
                 </template>

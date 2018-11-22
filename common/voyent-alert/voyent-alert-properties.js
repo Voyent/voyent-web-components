@@ -28,6 +28,10 @@ Polymer({
          */
         hideZoneNameEditing: { type: Boolean, value: false },
         /**
+         * The list of colours to be used in the zone colour swatch picker.
+         */
+        zoneColours: { type: Array, value: ["#FF0000", "#FFB000", "#FFFF00", "#00FF00", "#0000FF", "#00EEFF", "#FF00DD"] },
+        /**
          * Contains currently loaded _AlertTemplate object and the currently selected stack.
          * eg. { template:_AlertTemplate, selectedStack:_AlertZoneStack }
          */
@@ -168,17 +172,6 @@ Polymer({
 
     ready: function() {
         var _this = this;
-        //JsColor uses a non-standard way of handling custom events so we must setup this listener on the window object.
-        window._jsColorFineChange = function(colorPicker) {
-            //Determine whether we have a regular zone or the fallback zone. If we have an index
-            //it means the zone is part of the stack, otherwise it's the fallback zone.
-            var zone = (colorPicker.targetElement.getAttribute('data-index') ?
-                _this._loadedAlert.selectedStack.getZoneAt(colorPicker.targetElement.getAttribute('data-index')) :
-                _this._fallbackZone);
-            if (zone) {
-                zone.setColour(colorPicker.toHEXString().slice(1));
-            }
-        };
         //Initialize various flags.
         this._renamingTemplate = false;
         this._loadPointerLockAPI();
@@ -1186,46 +1179,16 @@ Polymer({
     },
 
     /**
-     * Confirms or cancels the edit of a Proximity Zone property via enter and esc keys.
+     * Updates the zone colour.
      * @param e
      * @private
      */
-    _editPropertyViaKeydown: function(e) {
-        //Prevent the event from bubbling.
-        e.stopPropagation();
-        if (e.key === 'Enter' || e.key === 'Escape') {
-            this._editProperty(e);
-            //Close the colour picker.
-            if (e.target.getAttribute('data-property') === 'colour') {
-                var index = e.model.get('index');
-                //If we have a z-index it means the zone is part of the stack, otherwise it's the fallback zone.
-                var jsColorId = '#jsColor-'+ (typeof index !== 'undefined' ? index : 'fallbackZone');
-                var colorPicker = this.querySelector(jsColorId);
-                if (colorPicker) {
-                    colorPicker.jscolor.hide();
-                }
-            }
-        }
-    },
-
-    /**
-     * Confirms the edit of a Proximity Zone property.
-     * @param e
-     * @private
-     */
-    _editProperty: function(e) {
+    _updateColour: function(e) {
         //If we have a z-index it means the zone is part of the stack, otherwise it's the fallback zone.
         var zone = typeof e.model.get('index') !== 'undefined' ?
             this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')) :
             this._fallbackZone;
-        //The properties are set directly into the properties since they are bound
-        //in the template but to apply the changes we need to call our set functions.
-        if (e.target.getAttribute('data-property') === 'colour') {
-            zone.setColour(zone.colour);
-        }
-        else if (e.target.getAttribute('data-property') === 'opacity') {
-            zone.setOpacity(zone.opacity);
-        }
+        zone.setColour(zone.colour);
     },
 
 
@@ -1498,24 +1461,6 @@ Polymer({
     _adjustZoneSize: function(e) {
         this._zoneToAdjust = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
         this._requestPointerLock();
-    },
-
-    /**
-     * Triggered as the user is dragging the opacity slider.
-     * @param e
-     * @private
-     */
-    _immediateValueChange: function(e) {
-        //Determine whether we have a regular zone or the fallback zone. If we have an index
-        //it means the zone is part of the stack, otherwise it's the fallback zone.
-        var zone = (e.model && typeof e.model.get('index') !== 'undefined' ?
-            this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')) :
-            this._fallbackZone);
-        if (zone) {
-            if (e.target.getAttribute('data-property') === 'opacity') {
-                zone.setOpacity(this._immediateValueOpacity);
-            }
-        }
     },
 
     /**

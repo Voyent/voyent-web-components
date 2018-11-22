@@ -317,7 +317,6 @@
             }
             if (index > -1) {
                 var zone = this._loadedAlert.selectedStack.getZoneAt(index);
-                this._initializeColourPicker(zone);
                 zone.setActive(true);
                 this.fire('voyent-alert-zone-selected',{
                     "id": zone.id,
@@ -353,7 +352,6 @@
                 if (this._loadedAlert && this._loadedAlert.selectedStack) {
                     this._loadedAlert.selectedStack.deactivateZoneOverlays();
                 }
-                this._initializeColourPicker(this._fallbackZone);
                 this._fallbackZone.setActive(true);
                 this.fire('voyent-alert-zone-selected',{
                     "id": this._fallbackZone.id,
@@ -377,30 +375,6 @@
          */
         _toggleBadge: function() {
             this._showBadge = !this._showBadge;
-        },
-
-        /**
-         * Initializes the JSColor colour picker for the passed zone.
-         * @param zone
-         * @private
-         */
-        _initializeColourPicker: function(zone) {
-            if (this.nodeName === 'VOYENT-MOBILE-ALERT-EDITOR') {
-                return;
-            }
-            var _this = this;
-            var jsColorId = '#jsColor-'+ (this._fallbackZone === zone ? 'fallbackZone' : this._loadedAlert.selectedStack.getZoneIndex(zone));
-            var colorPicker = _this.querySelector(jsColorId);
-            //Wait till we have a reference to the input.
-            if (!colorPicker) {
-                setTimeout(function(){_this._initializeColourPicker(zone);},50);
-                return;
-            }
-            //Install the jscolor picker on the input and set the colour.
-            if (!colorPicker.jscolor) {
-                jscolor.installByClassName("jscolor");
-            }
-            colorPicker.jscolor.fromString(zone.colour);
         },
 
         /**
@@ -699,7 +673,7 @@
                     }
                 }
                 //Update the z-indexes so we can always click the zones.
-                _this._adjustZIndexesAndColourPicker();
+                _this._adjustZIndexes();
             },0)
         },
 
@@ -729,15 +703,14 @@
         },
 
         /**
-         * Maintains the correct z-index for each proximity zone and updates the colour picker input to match each zone.
+         * Maintains the correct z-index for each proximity zone.
          * @private
          */
-        _adjustZIndexesAndColourPicker: function() {
+        _adjustZIndexes: function() {
             var zIndex=49, zones = this._loadedAlert.selectedStack.zones;
             for (var i=0; i<zones.length; i++) {
                 zones[i].setZIndex(zIndex);
                 zIndex--;
-                this._initializeColourPicker(zones[i]);
             }
         },
 
@@ -767,6 +740,18 @@
          */
         _generateUid: function() {
             return new Date().getTime()+'-'+Math.floor(Math.random()*(9000000000000)+1000000000000);
+        },
+
+        /**
+         * Prefixes a missing # character to the passed param if it is a valid string.
+         * @param colour
+         * @private
+         */
+        _formatColour: function(colour) {
+            if (colour && typeof colour === 'string' && colour.charAt(0) !== '#') {
+                return '#' + colour;
+            }
+            return colour;
         },
 
         /**
@@ -1365,38 +1350,50 @@
              */
             this._AlertZoneStack.getZoneColourAtIndex = function(index) {
                 if (this._isZoneAtIndexColour(index,'red')) {
-                    return 'FF0000'
+                    return '#FF0000'
+                }
+                else if (this._isZoneAtIndexColour(index,'orange')) {
+                    return '#FFB000';
                 }
                 else if (this._isZoneAtIndexColour(index,'yellow')) {
-                    return 'FFFF00';
-                }
-                else if (this._isZoneAtIndexColour(index,'blue')) {
-                    return '0000FF';
+                    return '#FFFF00';
                 }
                 else if (this._isZoneAtIndexColour(index,'green')) {
-                    return '00FF00';
+                    return '#00FF00';
+                }
+                else if (this._isZoneAtIndexColour(index,'blue')) {
+                    return '#0000FF';
+                }
+                else if (this._isZoneAtIndexColour(index,'cyan')) {
+                    return '#00EEFF';
+                }
+                else if (this._isZoneAtIndexColour(index,'pink')) {
+                    return '#FF00DD';
                 }
             };
             /**
              * Determines if the zone at the index is the colour.
              * @param index - The index of the zone.
-             * @param colour - The colour to check. Valid options are `red`, `yellow`, `blue` and `green`.
+             * @param colour - The colour to check.
              * @static
              * @private
              */
             this._AlertZoneStack._isZoneAtIndexColour = function(index,colour) {
                 var zoneNumber = index+1;
                 //Only generate the minimum amount of numbers in the sequence that we need to determine a match.
-                var count = Math.ceil((zoneNumber)/4);
+                var count = Math.ceil((zoneNumber)/7);
                 //Determine the starting point for our sequence.
                 var sequence = [];
                 if (colour === 'red') { sequence.push(1); }
-                else if (colour === 'yellow') { sequence.push(2); }
-                else if (colour === 'blue') { sequence.push(3); }
-                else { sequence.push(4); }
+                else if (colour === 'orange') { sequence.push(2); }
+                else if (colour === 'yellow') { sequence.push(3); }
+                else if (colour === 'green') { sequence.push(4); }
+                else if (colour === 'blue') { sequence.push(5); }
+                else if (colour === 'cyan') { sequence.push(6); }
+                else { sequence.push(7); }
                 //Generate the sequence and return whether we have a match.
                 for (var i=1; i<=count; i++) {
-                    sequence.push(sequence[sequence.length-1]+4);
+                    sequence.push(sequence[sequence.length-1]+7);
                 }
                 return sequence.indexOf(zoneNumber) > -1;
             };
@@ -2108,7 +2105,7 @@
             this._AlertZone = function (id,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
-                this.setOpacity(opacity || 0.25);
+                this.setOpacity(/*opacity || */0.15); // VRAS-657 - Always use 0.15 opacity
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
@@ -2139,13 +2136,16 @@
                  * @param colour
                  */
                 setColour: function(colour) {
-                    this.colour = colour;
+                    colour = _outer._formatColour(colour);
                     if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
                         _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
                         _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.colour',colour);
                     }
+                    else {
+                        this.colour = colour;
+                    }
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({'fillColor':'#'+colour})
+                        this.shapeOverlay.setOptions({ 'fillColor': colour, 'strokeColor': colour });
                     }
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
@@ -2222,7 +2222,7 @@
                  */
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":1.5});
+                        this.shapeOverlay.setOptions({"strokeWeight":3.0});
                         this.shapeOverlay.setEditable(true);
                     }
                 },
@@ -2231,7 +2231,7 @@
                  */
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":0});
+                        this.shapeOverlay.setOptions({"strokeWeight":1.0});
                         this.shapeOverlay.setEditable(false);
                     }
                 },
@@ -2294,9 +2294,10 @@
             this._CircularAlertZone.prototype._getShapeOverlayOpts = function() {
                 return {
                     draggable: false, editable: false,
-                    fillColor: '#'+this.colour, fillOpacity: this.opacity,
+                    fillColor: this.colour, fillOpacity: this.opacity,
                     map: _outer._map, radius: this.radius,
-                    strokeWeight:0, zIndex: this.zIndex,
+                    strokeWeight:1.0, strokeColor: this.colour,
+                    zIndex: this.zIndex,
                     suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                 };
             };
@@ -2346,9 +2347,10 @@
             this._PolygonalAlertZone.prototype._getShapeOverlayOpts = function() {
                 return {
                     clickable: _outer.nodeName !== 'VOYENT-ALERT-VIEW', draggable: false,
-                    editable: false, fillColor: '#'+this.colour,
+                    editable: false, fillColor: this.colour,
                     fillOpacity: this.opacity, map: _outer._map,
-                    strokeWeight:0, zIndex:this.zIndex, paths:this.paths,
+                    strokeWeight:1.0, strokeColor: this.colour,
+                    zIndex:this.zIndex, paths:this.paths,
                     suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                 };
             };
@@ -2371,7 +2373,7 @@
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
                 this._setupOverlayClickListener();
                 this.setName(name || 'Entire Region');
-                this.setOpacity(opacity || 0.25);
+                this.setOpacity(/*opacity || */0.15); // VRAS-657 - Always use 0.15 opacity
                 this.setColour(colour || '9EAD9E');
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
@@ -2411,6 +2413,7 @@
                  * @param colour
                  */
                 setColour: function(colour) {
+                    colour = _outer._formatColour(colour);
                     if (_outer._fallbackZone && _outer._fallbackZone === this) {
                         _outer.set('_fallbackZone.colour',colour);
                     }
@@ -2418,7 +2421,7 @@
                         this.colour = colour;
                     }
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({'fillColor':'#'+colour})
+                        this.shapeOverlay.setOptions({ 'fillColor': colour });
                     }
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
@@ -2624,9 +2627,9 @@
                 _getShapeOverlayOpts: function() {
                     return {
                         clickable: true, draggable: false,
-                        editable: false, fillColor: '#'+this.colour,
+                        editable: false, fillColor: this.colour,
                         fillOpacity: this.opacity, map: _outer._map,
-                        strokeWeight:0.5, zIndex:this.zIndex, paths:this.paths,
+                        strokeWeight:0, zIndex:this.zIndex, paths:this.paths,
                         suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                     };
                 }
@@ -2798,7 +2801,7 @@
                     else {
                         this.div.style.fontSize = '12px';
                     }
-                    this.div.style.backgroundColor = '#'+this.zone.colour;
+                    this.div.style.backgroundColor = this.zone.colour;
                     this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
                     if (!_outer._map.controls[google.maps.ControlPosition.TOP_CENTER].length) {
                         _outer._map.controls[google.maps.ControlPosition.TOP_CENTER].push(this.div);
@@ -2908,7 +2911,7 @@
                     this.div.style.top = nc.y-26 + 'px';
                 }
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
-                this.div.style.backgroundColor = '#'+this.zone.colour;
+                this.div.style.backgroundColor = this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
             };
             /**
@@ -3048,6 +3051,10 @@
              */
             this._FallbackZoneOverlay.prototype.returnColourBasedOnBackground =
             this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground = function(hex) {
+                // Chop any leading # character
+                if (hex.charAt(0) === '#') {
+                    hex = hex.substr(1);
+                }
                 return (
                     0.213 * parseInt(hex.slice(0, 2), 16) +
                     0.715 * parseInt(hex.slice(2, 4), 16) +

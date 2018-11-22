@@ -36,7 +36,8 @@
     "pikaday": "https://github.com/dbushell/Pikaday.git#1.4.0",
     "randomColor": "https://github.com/davidmerfield/randomColor.git#0.4.1",
     "jscolor": "https://github.com/EastDesire/jscolor.git",
-    "resize-observer-polyfill": "^1.5.0"
+    "resize-observer-polyfill": "^1.5.0",
+    "paper-swatch-picker": "^2.2.1"
   },
   "devDependencies": {
     "web-component-tester": "*"
