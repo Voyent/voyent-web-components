@@ -1170,7 +1170,7 @@
                         json.properties[_outer._FALLBACK_ZONE_ID] = {
                             "enabled":_outer._fallbackZone.enabled,
                             "name": _outer._fallbackZone.name,
-                            "opacity": _outer._fallbackZone.opacity,
+                            /*"opacity": _outer._fallbackZone.opacity,*/ // VRAS-657 - Use fixed opacity
                             "colour": _outer._fallbackZone.colour
                         };
                         if (_outer._fallbackZone.messageTemplate) {
@@ -1522,7 +1522,7 @@
                             "name": zone.name,
                             "stackId": this.id,
                             "shape": zone.isCircle ? 'circle' : 'polygon',
-                            "opacity": zone.opacity,
+                            /*"opacity": zone.opacity,*/ // VRAS-657 - Use fixed opacity
                             "colour": zone.colour,
                             "innermost": i===0
                         };
