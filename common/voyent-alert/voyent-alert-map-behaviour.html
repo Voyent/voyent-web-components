@@ -1032,13 +1032,13 @@
                         return;
                     }
                     var paths;
-                    //Check if the new zone overlaps another zone stack.
                     if (oce.type === 'circle') {
                         paths = _this._AlertTemplate.calculatePathsFromCircleProperties(oce.overlay.getCenter(),oce.overlay.getRadius());
                     }
                     else { //polygon
                         paths = oce.overlay.getPaths();
                     }
+                    //Check if the new zone overlaps another zone stack.
                     if (_this._alertHasIntersectingStacks(paths)) {
                         _this._displayStackOverlapMsg();
                         oce.overlay.setMap(null);

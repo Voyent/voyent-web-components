@@ -646,7 +646,7 @@
         },
 
         /**
-         * Sorts the Proximity Zones based on their radius.
+         * Sorts the Proximity Zones based on their area.
          * @private
          */
         _sortZonesBySize: function() {
@@ -707,7 +707,9 @@
          * @private
          */
         _zonesUpdated: function(length) {
-            if (this.nodeName !== 'VOYENT-ALERT-VIEW' && length) { this._sortZonesBySize(); }
+            if (this.nodeName !== 'VOYENT-ALERT-VIEW' && length) {
+                this._sortZonesBySize();
+            }
         },
 
         /**
@@ -881,23 +883,6 @@
                     outer.push(inner);
                 }
                 return outer;
-                /*var latLng, outer = [], inner;
-                for (var i=0; i<paths.length; i++) {
-                    inner = [];
-                    for (var j=0; j<paths.getAt(i).length; j++) {
-                        //Retrieve each coordinate from the shape and save it.
-                        latLng = paths.getAt(i).getAt(j);
-                        inner.push([latLng.lng(), latLng.lat()]);
-                        if (func) {
-                            func(latLng)
-                        }
-                    }
-                    //In GeoJSON we must copy the first coordinate to the last one
-                    //to complete the shape. Do this for each coordinate array.
-                    inner.push(inner[0]);
-                    outer.push(inner);
-                }
-                return outer;*/
             };
             this._AlertTemplate.calculatePathsFromCircleProperties = function(center, radius) {
                 var latLng, coordinates=[];
@@ -1758,8 +1743,9 @@
                  */
                 initializePolygonPathListeners: function(zone) {
                     if (zone) {
-                        if (zone.isCircle) { return; }
-                        this._setupPolygonPathListeners(zone);
+                        if (!zone.isCircle) {
+                            this._setupPolygonPathListeners(zone);
+                        }
                     }
                     else {
                         for (var i=0; i<this.zones.length; i++) {

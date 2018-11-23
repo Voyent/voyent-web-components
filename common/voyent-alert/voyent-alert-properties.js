@@ -1076,7 +1076,7 @@ Polymer({
     _addProximityZone: function() {
         var _this = this;
         var newZone, paths;
-        //Set the new zone radius as 50% larger than the current largest zone
+        //Set the new zone size as 50% larger than the current largest zone
         //and de-increment the new zone zIndex so it sits behind the other zones.
         var largestZone = _this._loadedAlert.selectedStack.getLargestZone();
         var zIndex = largestZone.zIndex - 1;
@@ -1234,12 +1234,11 @@ Polymer({
      */
     _mouseMoveListener: function(e) {
         this._y += (e.movementY || e.mozMovementY || e.webkitMovementY || 0);
-        //Prevent the user from modifying the size of the shape so it extends into other zones in the stacks.
-        //For circles we will just compare the radius but for polygons we will compare the areas and
-        //then check for any intersections since the polygons in a stack can all be different shapes.
+        // Prevent the user from modifying the size of the shape so it extends into other zones in the stacks. Compare
+        // the areas by checking for any intersections since the polygons in a stack can all be different shapes.
         var innerZone = this._loadedAlert.selectedStack.getZoneAt(this._loadedAlert.selectedStack.getZoneIndex(this._zoneToAdjust)-1);
         var outerZone = this._loadedAlert.selectedStack.getZoneAt(this._loadedAlert.selectedStack.getZoneIndex(this._zoneToAdjust)+1);
-        var newRadius, newPath, intersects, percentage=2;
+        var newPath, intersects, percentage=2;
         if (this._y <= this._previousY) { //The zone size is increasing
             newPath = this._adjustPathsByPercentage(this._zoneToAdjust.shapeOverlay.getPaths(),percentage,true).getAt(0);
             if (outerZone) { //We are resizing an inner zone
