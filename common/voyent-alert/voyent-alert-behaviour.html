@@ -2145,7 +2145,7 @@
                         this.colour = colour;
                     }
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({ 'fillColor': colour, 'strokeColor': colour });
+                        this.shapeOverlay.setOptions({ 'fillColor': colour });
                     }
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
@@ -2231,7 +2231,7 @@
                  */
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":1.0});
+                        this.shapeOverlay.setOptions({"strokeWeight":0});
                         this.shapeOverlay.setEditable(false);
                     }
                 },
@@ -2296,8 +2296,7 @@
                     draggable: false, editable: false,
                     fillColor: this.colour, fillOpacity: this.opacity,
                     map: _outer._map, radius: this.radius,
-                    strokeWeight:1.0, strokeColor: this.colour,
-                    zIndex: this.zIndex,
+                    strokeWeight:0, zIndex: this.zIndex,
                     suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                 };
             };
@@ -2349,8 +2348,7 @@
                     clickable: _outer.nodeName !== 'VOYENT-ALERT-VIEW', draggable: false,
                     editable: false, fillColor: this.colour,
                     fillOpacity: this.opacity, map: _outer._map,
-                    strokeWeight:1.0, strokeColor: this.colour,
-                    zIndex:this.zIndex, paths:this.paths,
+                    strokeWeight:0, zIndex:this.zIndex, paths:this.paths,
                     suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                 };
             };
