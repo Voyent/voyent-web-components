@@ -931,20 +931,13 @@
                                 else { continue; }
                             }
                         }
-                        if (properties.shape === 'circle' && (!this.mode || this.mode === 'notification')) {
-                            zones.push(new this._CircularAlertZone(
-                                zoneGeometries[i].id, properties.radius, properties.name, properties.opacity,
-                                properties.colour, properties.messageTemplate, properties.notificationFilter, zIndex
-                            ));
-                        }
-                        else {
-                            //Generate the ordered sequence of coordinates that completes the Polygon shape.
-                            zones.push(new this._PolygonalAlertZone(
-                                zoneGeometries[i].id,
-                                this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates), properties.name,
-                                properties.opacity, properties.colour, properties.messageTemplate, properties.notificationFilter, zIndex)
-                            );
-                        }
+                        // Generate the ordered sequence of coordinates that completes the Polygon shape.
+                        zones.push(new this._AlertZone(
+                            zoneGeometries[i].id, properties.name,
+                            this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
+                            properties.shape === 'circle', properties.opacity, properties.colour,
+                            properties.messageTemplate, properties.notificationFilter, zIndex)
+                        );
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //Add click listener to the zone so the user can click anywhere on the map to enable fullscreen.
                             this._addFullscreenClickListener(zones[zones.length-1].shapeOverlay);
@@ -1038,11 +1031,15 @@
                         _this.set('_drawingCancelled',false);
                         return;
                     }
+                    var paths;
                     //Check if the new zone overlaps another zone stack.
-                    var props = oce.type === 'circle' ?
-                        {"center":oce.overlay.getCenter(),"radius":oce.overlay.getRadius()} :
-                        {"paths":oce.overlay.getPaths()};
-                    if (_this._alertHasIntersectingStacks(oce.type,props)) {
+                    if (oce.type === 'circle') {
+                        paths = _this._AlertTemplate.calculatePathsFromCircleProperties(oce.overlay.getCenter(),oce.overlay.getRadius());
+                    }
+                    else { //polygon
+                        paths = oce.overlay.getPaths();
+                    }
+                    if (_this._alertHasIntersectingStacks(paths)) {
                         _this._displayStackOverlapMsg();
                         oce.overlay.setMap(null);
                         return;
@@ -1053,7 +1050,7 @@
                             "type": "Feature",
                             "geometry": {
                                 "type": "Polygon",
-                                "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(oce.overlay.getPaths())
+                                "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths)
                             }
                         });
                         if (kinks.features.length) {
@@ -1069,7 +1066,6 @@
                         });
                         if (oce.type === 'circle') { //Circular template.
                             stackMarker.setPosition(oce.overlay.getCenter());
-                            zone = new _this._CircularAlertZone(null, oce.overlay.getRadius(),_this._dialogInput);
                         }
                         else { //Polygonal template.
                             //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
@@ -1078,10 +1074,10 @@
                                 _this._drawingCancelled = false;
                                 return;
                             }
-                            var paths = oce.overlay.getPaths();
                             stackMarker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
-                            zone = new _this._PolygonalAlertZone(null,paths,_this._dialogInput);
                         }
+                        zone = new _this._AlertZone(null,_this._dialogInput,paths,oce.type === 'circle');
+
                         var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone]);
                         //Add the stack and fire the zone added event.
                         _this._loadedAlert.template.addZoneStack(zoneStack);
@@ -1671,17 +1667,10 @@
                         for (i=0; i<zoneStacks.length; i++) {
                             var largestZone = zoneStacks[i].getLargestZone();
                             if (largestZone) {
-                                if (largestZone.getShape() === 'circle') {
-                                    bounds.extend(largestZone.shapeOverlay.getBounds().getNorthEast());
-                                    bounds.extend(largestZone.shapeOverlay.getBounds().getSouthWest());
-                                    boundsExtended = true;
+                                for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
+                                    bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
                                 }
-                                else {
-                                    for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
-                                        bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
-                                    }
-                                    boundsExtended = true;
-                                }
+                                boundsExtended = true;
                             }
                         }
                     }

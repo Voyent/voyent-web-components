@@ -218,19 +218,15 @@
             return new google.maps.MVCArray([new google.maps.MVCArray([ne,new google.maps.LatLng(sw.lat(),ne.lng()),sw,new google.maps.LatLng(ne.lat(),sw.lng())])]);
         },
 
-
         /**
          * Checks if the passed zone overlaps other zones.
-         * @param type - The type of zone, one of `circle` or `polygon`.
-         * @param zoneData - The zone data required for processing, different depending on the type.
+         * @param paths - The polygon paths.
          * @param stackToIgnore - A zone stack that will be ignored in the comparison.
          * @returns {boolean}
          * @private
          */
-        _alertHasIntersectingStacks: function(type,zoneData,stackToIgnore) {
-            var coordinatesToCompare = type === 'circle' ?
-                this._AlertTemplate.calculateCoordinatesFromCircleProperties(zoneData.center,zoneData.radius) :
-                this._AlertTemplate.calculateCoordinatesFromPaths(zoneData.paths);
+        _alertHasIntersectingStacks: function(paths, stackToIgnore) {
+            var coordinatesToCompare = this._AlertTemplate.calculateCoordinatesFromPaths(paths);
 
             for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
                 var currentStack = this._loadedAlert.template.zoneStacks[i];
@@ -238,9 +234,7 @@
                     continue;
                 }
                 var largestZone = currentStack.getLargestZone();
-                var largestZoneCoordinates = largestZone.getShape() === 'circle' ?
-                    this._AlertTemplate.calculateCoordinatesFromCircleProperties(largestZone.shapeOverlay.getCenter(),largestZone.shapeOverlay.getRadius()) :
-                    this._AlertTemplate.calculateCoordinatesFromPaths(largestZone.shapeOverlay.getPaths());
+                var largestZoneCoordinates = this._AlertTemplate.calculateCoordinatesFromPaths(largestZone.shapeOverlay.getPaths());
                 //Check if the passed zone intersects with the largest zone from each stack.
                 var intersects = turf.lineIntersect({
                         "type": "Feature",
@@ -368,7 +362,7 @@
         _toggleMovement: function() {
             this._showMovement = !this._showMovement;
         },
-        
+
         /**
          * Toggles the badge properties section.
          * @private
@@ -684,22 +678,15 @@
          * @private
          */
         _sortZones: function(a,b) {
-            if (a.getShape() === 'circle') {
-                if (a.shapeOverlay.radius < b.shapeOverlay.radius) { return -1; }
-                else if (a.shapeOverlay.radius > b.shapeOverlay.radius) { return 1; }
-                return 0;
+            if (google.maps.geometry.spherical.computeArea(a.shapeOverlay.getPath()) <
+                google.maps.geometry.spherical.computeArea(b.shapeOverlay.getPath())) {
+                return -1;
             }
-            else { //'polygon'
-                if (google.maps.geometry.spherical.computeArea(a.shapeOverlay.getPath()) <
-                    google.maps.geometry.spherical.computeArea(b.shapeOverlay.getPath())) {
-                    return -1;
-                }
-                else if (google.maps.geometry.spherical.computeArea(a.shapeOverlay.getPath()) >
-                         google.maps.geometry.spherical.computeArea(b.shapeOverlay.getPath())) {
-                    return 1;
-                }
-                return 0;
+            else if (google.maps.geometry.spherical.computeArea(a.shapeOverlay.getPath()) >
+                     google.maps.geometry.spherical.computeArea(b.shapeOverlay.getPath())) {
+                return 1;
             }
+            return 0;
         },
 
         /**
@@ -879,6 +866,24 @@
                 var latLng, outer = [], inner;
                 for (var i=0; i<paths.length; i++) {
                     inner = [];
+                    var innerPath = paths.getAt ? paths.getAt(i) : paths[i]; // MVCArray or []
+                    for (var j=0; j<innerPath.length; j++) {
+                        //Retrieve each coordinate from the shape and save it.
+                        latLng = innerPath.getAt ? innerPath.getAt(j) : innerPath[j]; // MVCArray or []
+                        inner.push(latLng.lng ? [latLng.lng(), latLng.lat()] : latLng); // LatLng or [lng,lat]
+                        if (func) {
+                            func(latLng)
+                        }
+                    }
+                    //In GeoJSON we must copy the first coordinate to the last one
+                    //to complete the shape. Do this for each coordinate array.
+                    inner.push(inner[0]);
+                    outer.push(inner);
+                }
+                return outer;
+                /*var latLng, outer = [], inner;
+                for (var i=0; i<paths.length; i++) {
+                    inner = [];
                     for (var j=0; j<paths.getAt(i).length; j++) {
                         //Retrieve each coordinate from the shape and save it.
                         latLng = paths.getAt(i).getAt(j);
@@ -892,25 +897,17 @@
                     inner.push(inner[0]);
                     outer.push(inner);
                 }
-                return outer;
+                return outer;*/
             };
-            /**
-             * Calculate the GeoJSON coordinates using the passed circle properties
-             * @param center
-             * @param radius
-             * @static
-             */
-            this._AlertTemplate.calculateCoordinatesFromCircleProperties = function(center,radius) {
+            this._AlertTemplate.calculatePathsFromCircleProperties = function(center, radius) {
                 var latLng, coordinates=[];
                 for (var k=0; k<_outer._NUM_CIRCULAR_POLY_SIDES; k++) {
                     //Calculate and save the next coordinate.
                     latLng = google.maps.geometry.spherical.computeOffset(
                         center, radius, _outer._CIRCULAR_POLY_DEGREE_STEP * k
                     );
-                    coordinates.push([latLng.lng(), latLng.lat()]);
+                    coordinates.push(latLng);
                 }
-                //In GeoJSON we must copy the first coordinate to the last one to complete the shape.
-                coordinates.push(coordinates[0]);
                 return [coordinates];
             };
             /**
@@ -1124,7 +1121,7 @@
                  */
                 initializePolygonStackPathListeners: function() {
                     for (var i=0; i<this.zoneStacks.length; i++) {
-                        if (this.zoneStacks[i].zones[0].getShape() === 'polygon') {
+                        if (!this.zoneStacks[i].zones[0].isCircle) {
                             this.zoneStacks[i].initializePolygonPathListeners();
                         }
                     }
@@ -1193,11 +1190,6 @@
                             if (this.zoneStacks[i].json.properties.hasOwnProperty(zoneId)) {
                                 json.properties[zoneId] = this.zoneStacks[i].json.properties[zoneId];
                             }
-                        }
-                        //If it's a circular template then punch it out.
-                        if (punchOutCircularStacks &&
-                            this.zoneStacks[i].getZoneAt(0).getShape() === 'circle') {
-                            this.zoneStacks[i].punchOutShapes();
                         }
                     }
                     //Check if this is a "fixed location" template and store it.
@@ -1476,14 +1468,8 @@
                     if (!zone.colour) {
                         zone.setColour(this.constructor.getZoneColourAtIndex(this.zones.length-1));
                     }
-                    if (zone.getShape() === 'polygon') {
-                        this.updateJSONAndCentroid();
-                        this._punchOutShape(this.zones.length-1);
-                    }
-                    else {
-                        this.updateJSON();
-                        zone.shapeOverlay.setCenter(this.marker.getPosition());
-                    }
+                    this.updateJSONAndCentroid();
+                    this._punchOutShape(this.zones.length-1);
                     this._setupZoneListeners(zone);
                 },
                 /**
@@ -1501,22 +1487,20 @@
                     }
                     //Update the JSON so we have a fresh set of coordinates for the punch out logic.
                     this.updateJSON();
-                    if (zone.getShape() === 'polygon') {
-                        //The zoneIndex actually points to the closest outer zone now since the array was just spliced.
-                        var closestOuterZone = this.zones[zoneIndex];
-                        if (zoneIndex === 0) {
-                            if (closestOuterZone) {
-                                //The inner-most zone was removed so we must fill in the hole with the
-                                //closest outer zone. To do this we will take the outer boundary of the
-                                //zone and set it as the only path, producing a geometry with no holes.
-                                closestOuterZone.setPaths(closestOuterZone.shapeOverlay.getPaths().getAt(0));
-                            }
+                    //The zoneIndex actually points to the closest outer zone now since the array was just spliced.
+                    var closestOuterZone = this.zones[zoneIndex];
+                    if (zoneIndex === 0) {
+                        if (closestOuterZone) {
+                            //The inner-most zone was removed so we must fill in the hole with the
+                            //closest outer zone. To do this we will take the outer boundary of the
+                            //zone and set it as the only path, producing a geometry with no holes.
+                            closestOuterZone.setPaths(closestOuterZone.shapeOverlay.getPaths().getAt(0));
                         }
-                        else {
-                            //A middle or outer zone was removed so just re-punch out the closest outer zone if there is one.
-                            if (closestOuterZone) {
-                                this._punchOutShape(zoneIndex);
-                            }
+                    }
+                    else {
+                        //A middle or outer zone was removed so just re-punch out the closest outer zone if there is one.
+                        if (closestOuterZone) {
+                            this._punchOutShape(zoneIndex);
                         }
                     }
                     //Refresh the JSON again and update the centroid position in case the outer zone was removed.
@@ -1537,7 +1521,7 @@
                         json.properties[zone.id] = {
                             "name": zone.name,
                             "stackId": this.id,
-                            "shape": zone.getShape(),
+                            "shape": zone.isCircle ? 'circle' : 'polygon',
                             "opacity": zone.opacity,
                             "colour": zone.colour,
                             "innermost": i===0
@@ -1554,34 +1538,14 @@
                             "type": "Polygon",
                             "coordinates": [[]]
                         });
-                        if (zone.getShape() === 'circle') {
-                            json.properties[zone.id].radius = overlay.getRadius();
-                            var center =  this.marker.getPosition();
-                            for (var k=0; k<_outer._NUM_CIRCULAR_POLY_SIDES; k++) {
-                                //Calculate and save the next coordinate.
-                                latLng = google.maps.geometry.spherical.computeOffset(
-                                    center, json.properties[zone.id].radius, _outer._CIRCULAR_POLY_DEGREE_STEP * k
-                                );
-                                json.geo.geometries[i].coordinates[0].push([latLng.lng(), latLng.lat()]);
-                                //Look for the northern most point of the circle so we know
+                        json.geo.geometries[i].coordinates =
+                            _outer._AlertTemplate.calculateCoordinatesFromPaths(overlay.getPaths(),function(latLng) {
+                                //Look for the northern most point of the polygon so we know
                                 //where to render the Proximity Zone overlay label.
                                 if (latLng.lat() > northernCoordinate[1]) {
                                     northernCoordinate = [latLng.lng(), latLng.lat()];
                                 }
-                            }
-                            //In GeoJSON we must copy the first coordinate to the last one to complete the shape.
-                            json.geo.geometries[i].coordinates[0].push(json.geo.geometries[i].coordinates[0][0]);
-                        }
-                        else {
-                            json.geo.geometries[i].coordinates =
-                                _outer._AlertTemplate.calculateCoordinatesFromPaths(overlay.getPaths(),function(latLng) {
-                                    //Look for the northern most point of the polygon so we know
-                                    //where to render the Proximity Zone overlay label.
-                                    if (latLng.lat() > northernCoordinate[1]) {
-                                        northernCoordinate = [latLng.lng(), latLng.lat()];
-                                    }
-                                });
-                        }
+                            });
                         zone.setNorthernCoordinate(northernCoordinate);
                     }
                     this.json = json;
@@ -1627,13 +1591,11 @@
                         }
                     );
                     var coordinates = doughnut.geometry.coordinates;
-                    if (this.zones[index].getShape() === 'polygon') {
-                        //Calculate and set the new punched out paths so the changes get reflected on the map immediately.
-                        var punchedOutPaths = _outer._AlertTemplate.calculatePathsFromCoordinates(coordinates);
-                        this.zones[index].setPaths(punchedOutPaths);
-                        //Re-initialize the polygon path listeners for the edited zone.
-                        this.initializePolygonPathListeners(this.zones[index]);
-                    }
+                    //Calculate and set the new punched out paths so the changes get reflected on the map immediately.
+                    var punchedOutPaths = _outer._AlertTemplate.calculatePathsFromCoordinates(coordinates);
+                    this.zones[index].setPaths(punchedOutPaths);
+                    //Re-initialize the polygon path listeners for the edited zone.
+                    this.initializePolygonPathListeners(this.zones[index]);
                     //Replace the old json coordinates with our new punched out zone.
                     this.json.geo.geometries[index].coordinates = coordinates;
                 },
@@ -1645,27 +1607,17 @@
                 calculateRelativeZonePositions: function(latLng) {
                     for (var i=0; i<this.zones.length; i++) {
                         var positions=[];
-                        if (this.zones[i].getShape() === 'circle') {
-                            //Calculate the distance and bearing from the position to the center of the zone.
-                            var zoneCenter = this.zones[i].shapeOverlay.getCenter();
-                            positions.push({
-                                "distance":google.maps.geometry.spherical.computeDistanceBetween(latLng,zoneCenter),
-                                "bearing":google.maps.geometry.spherical.computeHeading(latLng,zoneCenter)
-                            });
-                        }
-                        else { //polygon
-                            var paths = this.zones[i].shapeOverlay.getPaths(), innerPositions;
-                            for (var j=0; j<paths.length; j++) {
-                                innerPositions = [];
-                                for (var k=0; k<paths.getAt(j).length; k++) {
-                                    //Calculate the distance and bearing from the position to the each vertex.
-                                    innerPositions.push({
-                                        "distance":google.maps.geometry.spherical.computeDistanceBetween(latLng,paths.getAt(j).getAt(k)),
-                                        "bearing":google.maps.geometry.spherical.computeHeading(latLng,paths.getAt(j).getAt(k))
-                                    });
-                                }
-                                positions.push(innerPositions);
+                        var paths = this.zones[i].shapeOverlay.getPaths(), innerPositions;
+                        for (var j=0; j<paths.length; j++) {
+                            innerPositions = [];
+                            for (var k=0; k<paths.getAt(j).length; k++) {
+                                //Calculate the distance and bearing from the position to the each vertex.
+                                innerPositions.push({
+                                    "distance":google.maps.geometry.spherical.computeDistanceBetween(latLng,paths.getAt(j).getAt(k)),
+                                    "bearing":google.maps.geometry.spherical.computeHeading(latLng,paths.getAt(j).getAt(k))
+                                });
                             }
+                            positions.push(innerPositions);
                         }
                         this.zones[i]._relativePositions = positions;
                     }
@@ -1679,28 +1631,18 @@
                 moveZonesRelativeToPosition: function (latLng) {
                     for (var i=0; i<this.zones.length; i++) {
                         var positions = this.zones[i]._relativePositions, paths = [], path, newCenter;
-                        if (this.zones[i].getShape() === 'circle') {
-                            newCenter = google.maps.geometry.spherical.computeOffset(
-                                latLng,
-                                positions[0].distance,
-                                positions[0].bearing
-                            );
-                            this.zones[i].shapeOverlay.setCenter(newCenter);
-                        }
-                        else { //polygon
-                            for (var j=0; j<positions.length; j++) {
-                                path = [];
-                                for (var k=0; k<positions[j].length; k++) {
-                                    path.push(google.maps.geometry.spherical.computeOffset(
-                                        latLng,
-                                        positions[j][k].distance,
-                                        positions[j][k].bearing)
-                                    );
-                                }
-                                paths.push(path);
+                        for (var j=0; j<positions.length; j++) {
+                            path = [];
+                            for (var k=0; k<positions[j].length; k++) {
+                                path.push(google.maps.geometry.spherical.computeOffset(
+                                    latLng,
+                                    positions[j][k].distance,
+                                    positions[j][k].bearing)
+                                );
                             }
-                            this.zones[i].setPaths(paths);
+                            paths.push(path);
                         }
+                        this.zones[i].setPaths(paths);
                         //Update the centroid.
                         this.marker.setPosition((
                             newCenter || _outer._AlertTemplate.calculateCentroidFromPaths(this.zones[i].shapeOverlay.getPaths())
@@ -1737,10 +1679,7 @@
                         _outer._ignoreZoneCenterChangedEvent = false;
                         //Check if the new stack position overlaps another zone stack.
                         var largestZone = _this.getLargestZone();
-                        var props = largestZone.getShape() === 'circle' ?
-                            {"center":largestZone.shapeOverlay.getCenter(),"radius":largestZone.shapeOverlay.getRadius()} :
-                            {"paths":largestZone.shapeOverlay.getPaths()};
-                        if (_outer._alertHasIntersectingStacks(largestZone.getShape(),props,_this)) {
+                        if (_outer._alertHasIntersectingStacks(largestZone.shapeOverlay.getPaths(), _this)) {
                             _outer._displayStackOverlapMsg();
                             _this.moveZonesRelativeToPosition(_outer._dragStartPosition);
                             _outer._loadedAlert.template.updateJSONAndCentroid();
@@ -1799,79 +1738,9 @@
                             _outer._toggleProperties(zoneIndex);
                         }
                     });
-                    if (zone.getShape() === 'circle') {
-                        /*This listener is used for the special case of dragging by the center editable point of circular
-                        zones. When the user drags by this center point we need to be sure to move all the zones and marker
-                        to their new position after dragging. However, this listener will fire after modifying the positions
-                        of other zones so we will use a flag to ignore these events. Additionally, we use a flag to ignore
-                        when dragging by the marker because the event fires continuously then as well.*/
-                        google.maps.event.addListener(overlay, 'center_changed', function () {
-                            if (_outer._ignoreZoneCenterChangedEvent) {
-                                return;
-                            }
-                            if (_outer._alertHasIntersectingStacks('circle',{"center":this.getCenter(),"radius":this.getRadius()},_this)) {
-                                _outer._displayStackOverlapMsg();
-                                _outer._ignoreZoneCenterChangedEvent = true;
-                                overlay.setCenter(_this.marker.getPosition());
-                                _outer._ignoreZoneCenterChangedEvent = false;
-                                return;
-                            }
-                            _outer._ignoreZoneCenterChangedEvent = true;
-                            _this.marker.setPosition(this.getCenter());
-                            for (var i=0; i<_this.zones.length; i++) {
-                                //This step will fire this listener again which is why we set the flag previously.
-                                _this.zones[i].shapeOverlay.setCenter(this.getCenter());
-                            }
-                            _outer._ignoreZoneCenterChangedEvent = false;
-                            _this.updateJSON();
-                            _outer._loadedAlert.template.updateJSONAndCentroid();
-                        });
-                        //Add resize listener to circle.
-                        google.maps.event.addListener(overlay, 'radius_changed', function () {
-                            if (_outer._ignoreRadiusChangedEvent) {
-                                _outer._ignoreRadiusChangedEvent = false;
-                                return;
-                            }
-                            //Prevent the circle form overlapping the other zones.
-                            var thisZoneIndex = _outer._loadedAlert.selectedStack.getZoneIndex(zone);
-                            var outerZone = _outer._loadedAlert.selectedStack.getZoneAt(thisZoneIndex+1);
-                            //If we are resizing the outer zone check if it overlaps another zone stack
-                            if (!outerZone && _outer._alertHasIntersectingStacks('circle',{"center":this.getCenter(),"radius":this.getRadius()},_outer._loadedAlert.selectedStack)) {
-                                _outer._displayStackOverlapMsg();
-                                _outer._ignoreRadiusChangedEvent = true;
-                                zone.setRadius(zone.radius);
-                                return;
-                            }
-                            //Check if it overlapped the adjacent outer zone.
-                            if (outerZone && this.getRadius() >= outerZone.shapeOverlay.getRadius()) {
-                                _outer._ignoreRadiusChangedEvent = true;
-                                zone.setRadius(zone.radius);
-                                _outer._displayOverlapMsg();
-                                return;
-                            }
-                            //Check if it overlapped the adjacent inner zone.
-                            var innerZone = _outer._loadedAlert.selectedStack.getZoneAt(thisZoneIndex-1);
-                            if (innerZone && this.getRadius() <= innerZone.shapeOverlay.getRadius()) {
-                                _outer._ignoreRadiusChangedEvent = true;
-                                zone.setRadius(zone.shape);
-                                _outer._displayOverlapMsg();
-                                return;
-                            }
-                            _this.updateJSON();
-                            _outer._loadedAlert.template.updateJSONAndCentroid();
-                            if (_outer._fallbackZone) {
-                                //Async so the list sorts first.
-                                setTimeout(function() {
-                                    _outer._fallbackZone.punchOutOverlay();
-                                },0);
-                            }
-                            //Update the radius stored in the zone.
-                            zone.setRadius(this.getRadius(),true);
-                        });
-                    }
-                    else {
-                        //Store the previous vertex position when clicking
-                        //on an existing vertex in case we need to revert.
+                    //Store the previous vertex position when clicking
+                    //on an existing vertex in case we need to revert.
+                    if (!zone.isCircle) {
                         google.maps.event.addListener(overlay, 'mousedown', function(e) {
                             if (typeof e.vertex !== 'undefined') {
                                 _outer._previousVertexPosition = e.latLng;
@@ -1889,12 +1758,12 @@
                  */
                 initializePolygonPathListeners: function(zone) {
                     if (zone) {
-                        if (zone.getShape() === 'circle') { return; }
+                        if (zone.isCircle) { return; }
                         this._setupPolygonPathListeners(zone);
                     }
                     else {
                         for (var i=0; i<this.zones.length; i++) {
-                            if (this.zones[i].getShape() === 'polygon') {
+                            if (!this.zones[i].isCircle) {
                                 this._setupPolygonPathListeners(this.zones[i]);
                             }
                         }
@@ -1953,7 +1822,7 @@
                     if (kinks.features.length) {
                         errorMsg = 'The zone cannot self-intersect';
                     }
-                    if (!errorMsg && largestZone === zone && _outer._alertHasIntersectingStacks('polygon',{"paths":zone.shapeOverlay.getPaths()},this)) {
+                    if (!errorMsg && largestZone === zone && _outer._alertHasIntersectingStacks(zone.shapeOverlay.getPaths(), this)) {
                         errorMsg = _outer._OVERLAP_ANOTHER_STACK_MSG;
                     }
                     if (!errorMsg && _outer._loadedAlert.selectedStack.zones.length > 1) {
@@ -2095,6 +1964,8 @@
              * A class that represents an alert zone, both the drawn map entity and the json.
              * @param id - The unique id that identifies the zone, if one is not provided it will be generated.
              * @param name - The user-defined name.
+             * @param paths - The polygon paths, an array of arrays of LatLng objects.
+             * @param isCircle - The shape of
              * @param opacity - The opacity of the zone, any value from 0 to 1.
              * @param colour - The colour of the zone, any hexadecimal colour without the #.
              * @param messageTemplate - The message template associated with this zone.
@@ -2102,22 +1973,31 @@
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
              * @private
              */
-            this._AlertZone = function (id,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
+            this._AlertZone = function (id,name,paths,isCircle,opacity,colour,messageTemplate,notificationFilter,zIndex) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
-                this.setOpacity(/*opacity || */0.25); // VRAS-657 - Always use fixed opacity
+                this.setPaths(paths);
+                this.isCircle = !!isCircle;
+                this.setOpacity(/*opacity || */0.25); // VRAS-657 - Use fixed opacity
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
                 this.setRenaming(false);
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
+                this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };
             /**
              * _AlertZone prototype (instance) functions.
              */
             this._AlertZone.prototype = {
                 constructor: _outer._AlertZone,
+                /**
+                 * Returns whether this Polygon was originally drawn as a circle.
+                 */
+                isCircle: function() {
+                    return this.isCircle;
+                },
                 /**
                  * Sets the name and if the instance is currently loaded
                  * we'll also notify the polymer path via set.
@@ -2177,6 +2057,16 @@
                     }
                 },
                 /**
+                 * Sets the paths and updates the shape overlay.
+                 * @param paths
+                 */
+                setPaths: function(paths) {
+                    this.paths = paths;
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setPaths(paths);
+                    }
+                },
+                /**
                  * Sets active, updates the overlay and if the instance is currently
                  * loaded we'll also notify the polymer path via set.
                  * @param active
@@ -2222,8 +2112,10 @@
                  */
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":3.0});
-                        this.shapeOverlay.setEditable(true);
+                        this.shapeOverlay.setOptions({ "strokeWeight":3.0});
+                        if (!this.isCircle) {
+                            this.shapeOverlay.setEditable(true);
+                        }
                     }
                 },
                 /**
@@ -2231,8 +2123,10 @@
                  */
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":0.5});
-                        this.shapeOverlay.setEditable(false);
+                        this.shapeOverlay.setOptions({"strokeWeight":0.50});
+                        if (!this.isCircle) {
+                            this.shapeOverlay.setEditable(false);
+                        }
                     }
                 },
                 /**
@@ -2245,114 +2139,23 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.setMap(null);
                     }
+                },
+                /**
+                 * Returns the options for building a google maps polygon.
+                 * @returns {*}
+                 * @private
+                 */
+                _getShapeOverlayOpts: function() {
+                    return {
+                        clickable: _outer.nodeName !== 'VOYENT-ALERT-VIEW', draggable: false,
+                        editable: false, fillColor: this.colour,
+                        fillOpacity: this.opacity, map: _outer._map,
+                        strokeWeight:0.50, zIndex:this.zIndex, paths:this.paths,
+                        suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
+                    };
                 }
             };
             Object.seal(this._AlertZone);
-
-            /**
-             * A class that represents a circular alert zone.
-             * @param id - The unique id that identifies the zone, if one is not provided it will be generated.
-             * @param radius - The circle radius.
-             * @param name - The user-defined name.
-             * @param opacity - The opacity of the zone, any value from 0 to 1.
-             * @param colour - The colour of the zone, any hexadecimal colour without the #.
-             * @param messageTemplate - The message template associated with this zone.
-             * @param notificationFilter - The notification filter associated with this zone.
-             * @param zIndex - The zIndex of the zone, any value between 49 and 0.
-             * @extends _AlertZone
-             * @private
-             */
-            this._CircularAlertZone = function(id,radius,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
-                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,notificationFilter,zIndex);
-                this.setRadius(radius || 500);
-                this.shapeOverlay = (new google.maps.Circle(this._getShapeOverlayOpts()));
-            };
-            //Inherit the prototype of _AlertZone.
-            this._inheritPrototype(this._CircularAlertZone, this._AlertZone);
-            /**
-             * Returns the shape in string format.
-             */
-            this._CircularAlertZone.prototype.getShape = function() {
-                return 'circle';
-            };
-            /**
-             * Sets the radius and conditionally updates the shape overlay.
-             * @param radius
-             * @param skipOverlayUpdate
-             */
-            this._CircularAlertZone.prototype.setRadius = function(radius,skipOverlayUpdate) {
-                this.radius = radius;
-                if (!skipOverlayUpdate && this.shapeOverlay) {
-                    this.shapeOverlay.setRadius(radius);
-                }
-            };
-            /**
-             * Returns the options for building a google maps circle.
-             * @returns {*}
-             * @private
-             */
-            this._CircularAlertZone.prototype._getShapeOverlayOpts = function() {
-                return {
-                    draggable: false, editable: false,
-                    fillColor: this.colour, fillOpacity: this.opacity,
-                    map: _outer._map, radius: this.radius,
-                    strokeWeight:0.5, zIndex: this.zIndex,
-                    suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
-                };
-            };
-            Object.seal(this._CircularAlertZone);
-
-            /**
-             * A class that represents a circular alert zone.
-             * @param id - The unique id that identifies the zone, if one is not provided it will be generated.
-             * @param paths - The polygon paths, an array of arrays of LatLng objects.
-             * @param name - The user-defined name.
-             * @param opacity - The opacity of the zone, any value from 0 to 1.
-             * @param colour - The colour of the zone, any hexadecimal colour without the #.
-             * @param messageTemplate - The message template associated with this zone.
-             * @param notificationFilter - The notification filter associated with this zone.
-             * @param zIndex - The zIndex of the zone, any value between 49 and 0.
-             * @extends _AlertZone
-             * @private
-             */
-            this._PolygonalAlertZone = function(id,paths,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
-                _outer._AlertZone.call(this,id,name,opacity,colour,messageTemplate,notificationFilter,zIndex);
-                this.setPaths(paths);
-                this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
-            };
-            //Inherit the prototype of _AlertZone.
-            this._inheritPrototype(this._PolygonalAlertZone, this._AlertZone);
-            /**
-             * Returns the shape in string format.
-             */
-            this._PolygonalAlertZone.prototype.getShape = function() {
-                return 'polygon';
-            };
-            /**
-             * Sets the paths and updates the shape overlay.
-             * @param paths
-             */
-            this._PolygonalAlertZone.prototype.setPaths = function(paths) {
-                this.paths = paths;
-                if (this.shapeOverlay) {
-                    this.shapeOverlay.setPaths(paths);
-                }
-            };
-            /**
-             * Returns the options for building a google maps polygon.
-             * @returns {*}
-             * @private
-             */
-            this._PolygonalAlertZone.prototype._getShapeOverlayOpts = function() {
-                return {
-                    clickable: _outer.nodeName !== 'VOYENT-ALERT-VIEW', draggable: false,
-                    editable: false, fillColor: this.colour,
-                    fillOpacity: this.opacity, map: _outer._map,
-                    strokeWeight:0.5, zIndex:this.zIndex, paths:this.paths,
-                    suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
-                };
-            };
-            Object.seal(this._PolygonalAlertZone);
 
             /**
              * A class that represents the polygonal fallback alert zone.
@@ -2371,7 +2174,7 @@
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
                 this._setupOverlayClickListener();
                 this.setName(name || 'Entire Region');
-                this.setOpacity(/*opacity || */0.25); // VRAS-657 - Always use fixed opacity
+                this.setOpacity(/*opacity || */0.25); // VRAS-657 - Use fixed opacity
                 this.setColour(colour || '9EAD9E');
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
@@ -2531,59 +2334,43 @@
                     if (_outer._loadedAlert) {
                         for (var i=0; i<_outer._loadedAlert.template.zoneStacks.length; i++) {
                             var largestZone = _outer._loadedAlert.template.zoneStacks[i].getLargestZone();
-                            if (largestZone.getShape() === 'polygon') {
-                                //Ideally we would just push the paths directly from the drawn polygon but Google expects
-                                //a specific "winding order" of the coordinates. Whichever direction the coordinates
-                                //are in for the outer zone, the coordinates for the inner "punched out" zones
-                                //must be in the opposite direction. Google handles this ordering when using the Data Layer
-                                //API, however, this is overly complex for our purposes. Instead we'll use turf to
-                                //reorder the zones by punching them out and returning the newly sorted coordinates.
+                            //Ideally we would just push the paths directly from the drawn polygon but Google expects
+                            //a specific "winding order" of the coordinates. Whichever direction the coordinates
+                            //are in for the outer zone, the coordinates for the inner "punched out" zones
+                            //must be in the opposite direction. Google handles this ordering when using the Data Layer
+                            //API, however, this is overly complex for our purposes. Instead we'll use turf to
+                            //reorder the zones by punching them out and returning the newly sorted coordinates.
 
-                                //Convert the array of fallback zone coordinates to a proper MVC paths array.
-                                var fallbackPaths = [_outer._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([new google.maps.MVCArray(paths[0])])
-                                )[0]];
-                                //Select only the outer ring of the largest zone in the stack.
-                                var largestZonePaths = [_outer._AlertTemplate.calculateCoordinatesFromPaths(
-                                    largestZone.shapeOverlay.getPaths()
-                                )[0]];
-                                //Do the punch out.
-                                var doughnut = turf.difference({
-                                        "type": "Feature",
-                                        "geometry": {
-                                            "type": "Polygon",
-                                            "coordinates": fallbackPaths
-                                        }
-                                    }, {
-                                        "type": "Feature",
-                                        "geometry": {
-                                            "type": "Polygon",
-                                            "coordinates": largestZonePaths
-                                        }
+                            //Convert the array of fallback zone coordinates to a proper MVC paths array.
+                            var fallbackPaths = [_outer._AlertTemplate.calculateCoordinatesFromPaths(
+                                new google.maps.MVCArray([new google.maps.MVCArray(paths[0])])
+                            )[0]];
+                            //Select only the outer ring of the largest zone in the stack.
+                            var largestZonePaths = [_outer._AlertTemplate.calculateCoordinatesFromPaths(
+                                largestZone.shapeOverlay.getPaths()
+                            )[0]];
+                            //Do the punch out.
+                            var doughnut = turf.difference({
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Polygon",
+                                        "coordinates": fallbackPaths
                                     }
-                                );
-                                //The coordinates will now be in the correct order so we want to convert them back to paths
-                                //and then use this to draw the Polygon. In this case, we don't use the punched out
-                                //zone at all. This was only for the purposes of correctly ordering the coordinates list.
-                                var orderedLargestZonePaths = _outer._AlertTemplate.calculatePathsFromCoordinates(
-                                    doughnut.geometry.coordinates
-                                )[1];
-                                paths.push(orderedLargestZonePaths);
-                            }
-                            else {
-                                //Since we can't punch out the circular zones directly
-                                //we'll have to convert it to a many-sided polygon first.
-                                //Loop backwards so we have proper ordering (see above).
-                                var circularPath = [];
-                                for (var k=_outer._NUM_CIRCULAR_POLY_SIDES-1; k>=0; k--) {
-                                    circularPath.push(google.maps.geometry.spherical.computeOffset(
-                                        largestZone.shapeOverlay.getCenter(),
-                                        largestZone.shapeOverlay.getRadius(),
-                                        _outer._CIRCULAR_POLY_DEGREE_STEP * k
-                                    ));
+                                }, {
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Polygon",
+                                        "coordinates": largestZonePaths
+                                    }
                                 }
-                                paths.push(circularPath);
-                            }
+                            );
+                            //The coordinates will now be in the correct order so we want to convert them back to paths
+                            //and then use this to draw the Polygon. In this case, we don't use the punched out
+                            //zone at all. This was only for the purposes of correctly ordering the coordinates list.
+                            var orderedLargestZonePaths = _outer._AlertTemplate.calculatePathsFromCoordinates(
+                                doughnut.geometry.coordinates
+                            )[1];
+                            paths.push(orderedLargestZonePaths);
                         }
                     }
                     //The path at index 0 will be the entire fallback zone and
