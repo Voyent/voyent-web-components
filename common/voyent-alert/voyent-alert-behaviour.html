@@ -1154,9 +1154,9 @@
                     if (_outer._fallbackZone) {
                         json.properties[_outer._FALLBACK_ZONE_ID] = {
                             "enabled":_outer._fallbackZone.enabled,
-                            "name": _outer._fallbackZone.name,
-                            /*"opacity": _outer._fallbackZone.opacity,*/ // VRAS-657 - Use fixed opacity
-                            "colour": _outer._fallbackZone.colour
+                            "name": _outer._fallbackZone.name
+                            /*"opacity": _outer._fallbackZone.opacity,*/ // Fixed opacity
+                            /*"colour": _outer._fallbackZone.colour*/ // Fixed colour
                         };
                         if (_outer._fallbackZone.messageTemplate) {
                             json.properties[_outer._FALLBACK_ZONE_ID].messageTemplate = _outer._fallbackZone.messageTemplate;
@@ -1507,7 +1507,7 @@
                             "name": zone.name,
                             "stackId": this.id,
                             "shape": zone.isCircle ? 'circle' : 'polygon',
-                            /*"opacity": zone.opacity,*/ // VRAS-657 - Use fixed opacity
+                            /*"opacity": zone.opacity,*/ // Fixed opacity
                             "colour": zone.colour,
                             "innermost": i===0
                         };
@@ -1964,7 +1964,7 @@
                 this.setName(name || 'Zone 1');
                 this.setPaths(paths);
                 this.isCircle = !!isCircle;
-                this.setOpacity(/*opacity || */0.25); // VRAS-657 - Use fixed opacity
+                this.setOpacity(/*opacity || */0.25); // Fixed opacity
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
@@ -2160,8 +2160,8 @@
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
                 this._setupOverlayClickListener();
                 this.setName(name || 'Entire Region');
-                this.setOpacity(/*opacity || */0.25); // VRAS-657 - Use fixed opacity
-                this.setColour(colour || '9EAD9E');
+                this.setOpacity(/*opacity || */0.25); // Fixed opacity
+                this.setColour(/*colour || */'9EAD9E'); // Fixed colour
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
                 this.setRenaming(false);

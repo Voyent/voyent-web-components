@@ -223,6 +223,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             .title.zone.fallback.active {
                 font-size:16px;
             }
+            .title.zone.fallback.active {
+                font-weight: bold;
+            }
             .title.zone.active.no-edit {
                 width: calc(100% - 52px);
             }
@@ -378,60 +381,60 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </div>
                         <div class$="{{_getAccordionClasses('body',_showMovement,'')}}">
                             <voyent-premium-content bubble-pos="middle">
-                            <p class="moving-alerts-msg"><strong>Note:</strong> Moving alerts are restricted to a maximum of two zones, excluding the "Entire Region" zone.</p>
-                            <div class="table">
-                                <div class="row">
-                                    <div class="inputCol movement">
-                                        <paper-input value="{{_alertDirection::input}}"
-                                                     class="movement-input"
-                                                     tabindex="2"
-                                                     placeholder="Degrees"
-                                                     type="number" no-label-float
-                                                     step="0.05" min="0" max="360" maxlength="3">
-                                        </paper-input>
+                                <p class="moving-alerts-msg"><strong>Note:</strong> Moving alerts are restricted to a maximum of two zones, excluding the "Entire Region" zone.</p>
+                                <div class="table">
+                                    <div class="row">
+                                        <div class="inputCol movement">
+                                            <paper-input value="{{_alertDirection::input}}"
+                                                         class="movement-input"
+                                                         tabindex="2"
+                                                         placeholder="Degrees"
+                                                         type="number" no-label-float
+                                                         step="0.05" min="0" max="360" maxlength="3">
+                                            </paper-input>
+                                        </div>
+                                        <div class="dropdownCol movement">
+                                            <paper-dropdown-menu tabindex="3"
+                                                                 class="movement-input direction"
+                                                                 placeholder="Direction"
+                                                                 no-label-float>
+                                                <iron-selector id="alertCardinalDirection" class="dropdown-content"
+                                                               on-iron-activate="_alertCardinalDirectionChanged"
+                                                               selected="{{_alertCardinalDirection}}"
+                                                               attr-for-selected="name">
+                                                    <template is="dom-repeat" items="[[_alertCardinalDirections]]" strip-whitespace>
+                                                        <paper-item name="[[item.value]]">[[item.label]]</paper-item>
+                                                    </template>
+                                                </iron-selector>
+                                            </paper-dropdown-menu>
+                                        </div>
                                     </div>
-                                    <div class="dropdownCol movement">
-                                        <paper-dropdown-menu tabindex="3"
-                                                             class="movement-input direction"
-                                                             placeholder="Direction"
-                                                             no-label-float>
-                                            <iron-selector id="alertCardinalDirection" class="dropdown-content"
-                                                           on-iron-activate="_alertCardinalDirectionChanged"
-                                                           selected="{{_alertCardinalDirection}}"
-                                                           attr-for-selected="name">
-                                                <template is="dom-repeat" items="[[_alertCardinalDirections]]" strip-whitespace>
-                                                    <paper-item name="[[item.value]]">[[item.label]]</paper-item>
-                                                </template>
-                                            </iron-selector>
-                                        </paper-dropdown-menu>
+                                    <div class="row">
+                                        <div class="inputCol movement">
+                                            <paper-input value="{{_alertSpeed::input}}"
+                                                         class="movement-input"
+                                                         tabindex="3"
+                                                         placeholder="Speed"
+                                                         type="number" no-label-float
+                                                         step="0.5" min="0" maxlength="5">
+                                            </paper-input>
+                                        </div>
+                                        <div class="dropdownCol movement">
+                                            <paper-dropdown-menu tabindex="4"
+                                                                 class="movement-input"
+                                                                 placeholder="Unit"
+                                                                 no-label-float>
+                                                <iron-selector id="alertSpeedUnit" class="dropdown-content"
+                                                               selected="{{_alertSpeedUnit}}"
+                                                               attr-for-selected="name">
+                                                    <paper-item name="kph">KPH</paper-item>
+                                                    <paper-item name="mph">MPH</paper-item>
+                                                </iron-selector>
+                                            </paper-dropdown-menu>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="inputCol movement">
-                                        <paper-input value="{{_alertSpeed::input}}"
-                                                     class="movement-input"
-                                                     tabindex="3"
-                                                     placeholder="Speed"
-                                                     type="number" no-label-float
-                                                     step="0.5" min="0" maxlength="5">
-                                        </paper-input>
-                                    </div>
-                                    <div class="dropdownCol movement">
-                                        <paper-dropdown-menu tabindex="4"
-                                                             class="movement-input"
-                                                             placeholder="Unit"
-                                                             no-label-float>
-                                            <iron-selector id="alertSpeedUnit" class="dropdown-content"
-                                                           selected="{{_alertSpeedUnit}}"
-                                                           attr-for-selected="name">
-                                                <paper-item name="kph">KPH</paper-item>
-                                                <paper-item name="mph">MPH</paper-item>
-                                            </iron-selector>
-                                        </paper-dropdown-menu>
-                                    </div>
-                                </div>
-                                </voyent-premium-content>
-                            </div>
+                            </voyent-premium-content>
                         </div>
                     </div>
                 </template>
@@ -445,8 +448,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <template is="dom-if" if="[[_fallbackZone.enabled]]">
                     <div class$="{{_getAccordionClasses('header',_fallbackZone.active,'gradient-header')}}">
                         <template is="dom-if" if="[[!_fallbackZone.renaming]]">
-                            <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(_fallbackZone.active)}}"
-                                               on-click="_toggleFallbackZoneProperties"></paper-icon-button>
                             <div class$="{{_getZoneTitleClasses(_fallbackZone.active,hideZoneNameEditing,'fallback')}}"
                                  on-click="_toggleFallbackZoneProperties">
                                 [[_fallbackZone.name]]
@@ -457,10 +458,10 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                        on-click="_toggleProximityZoneRenaming">
                                     </paper-icon-button>
                                 </template>
-                                <paper-icon-button title="Remove Zone" icon="delete"
-                                                   on-click="_removeFallbackZone" tabindex="4">
-                                </paper-icon-button>
                             </div>
+                            <paper-icon-button title="Remove Zone" icon="delete"
+                                               on-click="_removeFallbackZone" tabindex="4">
+                            </paper-icon-button>
                         </template>
                         <template is="dom-if" if="[[_fallbackZone.renaming]]">
                             <paper-input id="zone-fallback" tabindex="5"
@@ -474,21 +475,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                                          disabled="[[!_fallbackZone.renaming]]">>
                             </paper-input>
                         </template>
-                    </div>
-                    <div class$="{{_getAccordionClasses('body',_fallbackZone.active,'')}}">
-                        <div class="table">
-                            <div class="row">
-                                <div class="propertyCol">
-                                    Colour
-                                </div>
-                                <div class="valueCol">
-                                    <paper-swatch-picker color="{{_fallbackZone.colour}}" color-list='[[zoneColours]]'
-                                                         column-count="7" horizontal-align="right"
-                                                         tabindex="6" on-color-changed="_updateColour">
-                                    </paper-swatch-picker>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </template>
             </div>
