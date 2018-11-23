@@ -2105,7 +2105,7 @@
             this._AlertZone = function (id,name,opacity,colour,messageTemplate,notificationFilter,zIndex) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
-                this.setOpacity(/*opacity || */0.15); // VRAS-657 - Always use 0.15 opacity
+                this.setOpacity(/*opacity || */0.25); // VRAS-657 - Always use fixed opacity
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
@@ -2231,7 +2231,7 @@
                  */
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":0});
+                        this.shapeOverlay.setOptions({"strokeWeight":0.5});
                         this.shapeOverlay.setEditable(false);
                     }
                 },
@@ -2296,7 +2296,7 @@
                     draggable: false, editable: false,
                     fillColor: this.colour, fillOpacity: this.opacity,
                     map: _outer._map, radius: this.radius,
-                    strokeWeight:0, zIndex: this.zIndex,
+                    strokeWeight:0.5, zIndex: this.zIndex,
                     suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                 };
             };
@@ -2348,7 +2348,7 @@
                     clickable: _outer.nodeName !== 'VOYENT-ALERT-VIEW', draggable: false,
                     editable: false, fillColor: this.colour,
                     fillOpacity: this.opacity, map: _outer._map,
-                    strokeWeight:0, zIndex:this.zIndex, paths:this.paths,
+                    strokeWeight:0.5, zIndex:this.zIndex, paths:this.paths,
                     suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                 };
             };
@@ -2371,7 +2371,7 @@
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
                 this._setupOverlayClickListener();
                 this.setName(name || 'Entire Region');
-                this.setOpacity(/*opacity || */0.15); // VRAS-657 - Always use 0.15 opacity
+                this.setOpacity(/*opacity || */0.25); // VRAS-657 - Always use fixed opacity
                 this.setColour(colour || '9EAD9E');
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
