@@ -919,6 +919,29 @@ Polymer({
         }
         this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
             var name = this._dialogInput;
+            // If we have a polygon then check if the outer boundary of the new zone overlaps
+            // with the boundary of the inner zone. If they overlap then we are unable to
+            // draw the shape and will instead draw a rectangle matching the bounds of it.
+            if (!isCircle) {
+                intersects = turf.lineIntersect({
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths)[0]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(zoneToInsertAfter.shapeOverlay.getPaths())[0]
+                        }
+                    });
+                if (intersects.features.length) {
+                    _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead.');
+                    paths = _this._getRectangularPathFromPolygonPath(paths.getAt(0));
+                }
+            }
             // De-increment the new zone zIndex so it sits behind the other zones
             var zIndex = zoneToInsertAfter.zIndex - 1;
             // When we add a new zone we don't want to include the full shape so we can punch
@@ -968,7 +991,7 @@ Polymer({
                     "type": "Feature",
                     "geometry": {
                         "type": "Polygon",
-                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(zoneToInsertBefore.paths) // zone which we are inserting the new zone before
+                        "coordinates": [_this._AlertTemplate.calculateCoordinatesFromPaths(zoneToInsertBefore.paths)[0]] // the "whole" version of the zone which we are inserting the new zone before
                     }
                 }
             );
