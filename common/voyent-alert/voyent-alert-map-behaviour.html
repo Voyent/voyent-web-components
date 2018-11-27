@@ -22,17 +22,6 @@
          */
 
         /**
-         * Fires when the alert template name changes. Includes a `name` property that contains the new value.
-         * @event voyent-alert-template-name-changed
-         */
-
-        /**
-         * Fires when an alert zone name changes. Includes a `name` property that contains the new value, an `id` property
-         * which identifies the zone and an `isFallbackZone` property indicating whether the zone is the fallback zone.
-         * @event voyent-alert-zone-name-changed
-         */
-
-        /**
          * Fires when a new alert zone is added to the template. This could be in the form of a completely new stack or
          * adding to an existing stack. Includes an `id` property which identifies the zone, a `zone` property that
          * contains the associated data and an `isFallbackZone` property indicating whether the zone is the fallback zone.
@@ -92,7 +81,6 @@
         },
 
         observers: [
-            '_selectedStackChanged(_loadedAlert.selectedStack)',
             '_fallbackZoneEnabledChanged(_fallbackZone.enabled)'
         ],
 
@@ -1083,9 +1071,9 @@
                         _this._loadedAlert.template.addZoneStack(zoneStack);
                         _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"isFallbackZone":false});
                         //Toggle the accordion closed for the current stack and load the new one.
-                        _this._toggleProperties(-1);
+                        _this._toggleProperties(null);
                         _this.set('_loadedAlert.selectedStack',zoneStack);
-                        _this._toggleProperties(0);
+                        _this._toggleProperties(zone);
                         //When we have only one stack we don't have a template marker, just the marker for the zone stack.
                         //So once we have two zone stacks we need to create the marker and if we have more than two (the
                         //marker exists already) then we'll update it's position.
@@ -1987,25 +1975,6 @@
                 return;
             }
             this.fire('pathtoimagesChanged',{'path':newPath});
-        },
-
-        /**
-         * Manages the stack marker icon animation.
-         * @param selectedStack
-         * @private
-         */
-        _selectedStackChanged: function(selectedStack) {
-            if (selectedStack) {
-                // Don't bounce marker on initial load
-                if (this.isAlertLoading || this.isTemplateLoading) {
-                    return;
-                }
-                // Bounce the marker once to indicate selection.
-                selectedStack.marker.setAnimation(google.maps.Animation.BOUNCE);
-                setTimeout(function() {
-                    selectedStack.marker.setAnimation(null);
-                },700);
-            }
         },
 
         /**

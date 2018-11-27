@@ -30,6 +30,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             .accordion {
                 text-align: left;
             }
+            .accordion.stack {
+                margin-bottom: 10px;
+            }
             .accordion .header {
                 padding: 5px;
                 position: relative;
@@ -94,7 +97,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .propertyCol,
             .valueCol,
-            .buttonCol,
+            .fullWidthCol,
             .inputCol,
             .dropdownCol {
                 font-size: 13px;
@@ -105,8 +108,24 @@ Internal component used to display the properties panel inside Voyent alert comp
             .inputCol, .dropdownCol {
                 padding: 8px 0 8px 0;
             }
-            .buttonCol {
+            .fullWidthCol {
                 padding-top: 8px;
+            }
+            .fullWidthCol.buttonCol {
+                margin-bottom: 5px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid lightgrey;
+                text-align: center;
+            }
+            .fullWidthCol.buttonCol.fallback {
+                border: 0;
+                margin: 0;
+            }
+            .fullWidthCol.buttonCol > paper-icon-button {
+                margin-left: 10px;
+            }
+            .fullWidthCol.buttonCol > paper-icon-button:first-of-type {
+                margin-left: 0;
             }
             .dropdownCol.movement,
             .inputCol.movement {
@@ -122,10 +141,10 @@ Internal component used to display the properties panel inside Voyent alert comp
             .valueCol {
                 text-align: left;
             }
-            .buttonCol {
+            .fullWidthCol {
                 width:100%;
             }
-            .buttonCol paper-button {
+            .fullWidthCol paper-button {
                 font-size: 10px;
                 background-color:white;
             }
@@ -141,9 +160,6 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             paper-input-container {
                 padding:0;
-            }
-            paper-input.rename-input {
-                margin: 0 5px 0 5px;
             }
             paper-icon-button {
                 padding: 0;
@@ -201,8 +217,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             .float-right {
                 float: right;
             }
-            .title,
-            .title-bttns {
+            .title {
                 display:inline-block;
                 cursor:pointer;
             }
@@ -214,26 +229,9 @@ Internal component used to display the properties panel inside Voyent alert comp
                 width: calc(100% - 26px);
                 font-size:14px;
             }
-            .title.zone.active {
-                width: calc(100% - 78px);
-            }
             .title.zone.movement,
-            .title.zone.movement.active,
-            .title.zone.fallback,
-            .title.zone.fallback.active {
+            .title.zone.movement.active {
                 font-size:16px;
-            }
-            .title.zone.fallback.active {
-                font-weight: bold;
-            }
-            .title.zone.active.no-edit {
-                width: calc(100% - 52px);
-            }
-            .title-bttns {
-                width:45px;
-            }
-            .title-bttns.no-edit {
-                width:22px !important;
             }
             .delete-button {
                 text-align:center;
@@ -347,24 +345,115 @@ Internal component used to display the properties panel inside Voyent alert comp
         <template is="dom-if" if="[[_loadedAlert]]">
             <template is="dom-if" if="[[!hideAlertName]]">
                 <div>
-                    <template is="dom-if" if="[[!_renamingTemplate]]">
-                        <div class="alert-template-title">
-                            <div class="title" on-click="_toggleAlertTemplateRenaming">
-                                [[_loadedAlert.template.name]]
+                    <div class="alert-template-title">
+                        <div class="title">
+                            [[_loadedAlert.template.name]]
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <div>
+                <div class="alert-zones-label gradient-header">
+                    Proximity Zones
+                </div>
+            </div>
+            <template is="dom-if" if="[[!hideBadgeChooser]]">
+                <div class="accordion">
+                    <div class$="{{_getAccordionClasses('header',_showBadge,'')}}">
+                        <paper-icon-button title="Toggle Badge Properties" icon="{{_getArrowIcon(_showBadge)}}"
+                                           on-click="_toggleBadge"></paper-icon-button>
+                        <div class$="{{_getZoneTitleClasses(_showBadge,'')}}">
+                           Badge
+                        </div>
+                    </div>
+                    <div class$="{{_getAccordionClasses('body',_showBadge,'')}}">
+                        <div class="row">
+                            <div class="fullWidthCol">
+                                <paper-icon-button src="{{getBadgeUrl(_loadedAlert.template.badge)}}"
+                                                   class="badgeIcon"
+                                                   on-click="chooseAlertBadge"></paper-icon-button>
                             </div>
                         </div>
-                    </template>
-                    <template is="dom-if" if="[[_renamingTemplate]]">
-                        <paper-input id="alertTemplate" tabindex="1"
-                                     class="rename-input"
-                                     label="Alert Template"
-                                     placeholder="New Value"
-                                     maxlength="70"
-                                     on-keydown="_renameAlertTemplateViaKeydown"
-                                     on-blur="_renameAlertTemplateViaBlur"
-                                     value="{{_templateNameVal::input}}"
-                                     disabled="[[!_renamingTemplate]]">
-                        </paper-input>
+                    </div>
+                </div>
+            </template>
+            <template is="dom-if" if="[[_fallbackZone.enabled]]">
+                <div class="accordion stack">
+                    <div class$="{{_getAccordionClasses('header',_fallbackZone.active,'')}}">
+                        <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(_fallbackZone.active)}}"
+                                           on-click="_toggleFallbackZoneProperties"></paper-icon-button>
+                        <div class$="{{_getZoneTitleClasses(_fallbackZone.active,'')}}"
+                             on-click="_toggleFallbackZoneProperties">
+                            [[_fallbackZone.name]]
+                        </div>
+                    </div>
+                    <div class$="{{_getAccordionClasses('body',_fallbackZone.active,'')}}">
+                        <div class="row">
+                            <div class="fullWidthCol buttonCol fallback">
+                                <paper-icon-button title="Copy zone contents and recipients" icon="content-copy"
+                                                   on-click="_triggerZoneCopy"></paper-icon-button>
+                                <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeFallbackZone"
+                                                   tabindex="4"></paper-icon-button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template id="stacks-repeat" is="dom-repeat" items="[[_loadedAlert.template.zoneStacks]]" as="zoneStack" index-as="zoneStackIndex" strip-whitespace>
+                <div class="accordion stack">
+                    <template id="zones-repeat" is="dom-repeat" items="[[zoneStack.zones]]" as="zone" index-as="zoneIndex">
+                        <div class$="{{_getAccordionClasses('header',zone.active,'')}}">
+                            <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
+                                               on-click="_togglePropertiesFromSidePanel"
+                                               data-stack-index$="[[zoneStackIndex]]" data-zone-index$="[[zoneIndex]]"></paper-icon-button>
+                            <div class$="{{_getZoneTitleClasses(zone.active,'')}}"
+                                 data-zone-index$="[[zoneIndex]]" data-stack-index$="[[zoneStackIndex]]"
+                                 on-click="_togglePropertiesFromSidePanel">
+                                [[zone.name]]
+                            </div>
+                        </div>
+                        <div class$="{{_getAccordionClasses('body',zone.active,'')}}">
+                            <div class="table">
+                                <div class="row">
+                                    <div class="fullWidthCol buttonCol">
+                                        <paper-icon-button title="Insert zone after this one" icon="add"
+                                                           on-click="_addProximityZone"></paper-icon-button>
+                                        <paper-icon-button title="Copy zone contents and recipients" icon="content-copy"
+                                                           on-click="_triggerZoneCopy"></paper-icon-button>
+                                        <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeProximityZone"
+                                                           data-stack-index$="[[zoneStackIndex]]" data-zone-index$="[[zoneIndex]]"
+                                                           tabindex="4"></paper-icon-button>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="fullWidthCol">
+                                        <template is="dom-if" if="[[_isPointerLocked]]">
+                                            <div class="bold">Zone Resizing Enabled</div>
+                                            Move the mouse up and down to adjust the size of the zone. Click to exit.
+                                        </template>
+                                        <template is="dom-if" if="[[!_isPointerLocked]]">
+                                            <paper-button data-stack-index$="[[zoneStackIndex]]"
+                                                          data-zone-index$="[[zoneIndex]]"
+                                                          raised title="Adjust Area"
+                                                          on-click="_adjustZoneSize">
+                                                Adjust Area
+                                            </paper-button>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="propertyCol">
+                                        Colour
+                                    </div>
+                                    <div class="valueCol">
+                                        <paper-swatch-picker color="{{zone.colour}}" color-list='[[zoneColours]]'
+                                                             column-count="7" horizontal-align="right"
+                                                             tabindex="6" on-color-changed="_updateColour">
+                                        </paper-swatch-picker>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </template>
                 </div>
             </template>
@@ -373,10 +462,9 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <div class="accordion">
                         <div class$="{{_getAccordionClasses('header',_showMovement,'gradient-header')}}">
                             <paper-icon-button title="Toggle Movement Properties" icon="{{_getArrowIcon(_showMovement)}}"
-                                               on-click="_toggleMovement" data-index$="[[index]]"></paper-icon-button>
-                            <div class$="{{_getZoneTitleClasses(_showMovement,'','movement')}}"
-                                 data-index$="[[index]]" on-click="_toggleMovement">
-                               Alert Movement
+                                               on-click="_toggleMovement"></paper-icon-button>
+                            <div class$="{{_getZoneTitleClasses(_showMovement,'movement')}}" on-click="_toggleMovement">
+                                Alert Movement
                             </div>
                         </div>
                         <div class$="{{_getAccordionClasses('body',_showMovement,'')}}">
@@ -439,142 +527,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </div>
                 </template>
             </template>
-            <template is="dom-if" if="[[!_isZoneSelected]]">
-                <div class="alert-template-desc no-stack">
-                    No zone selected. Select a zone on the map.
-                </div>
-            </template>
-            <div class="accordion">
-                <template is="dom-if" if="[[_fallbackZone.enabled]]">
-                    <div class$="{{_getAccordionClasses('header',_fallbackZone.active,'gradient-header')}}">
-                        <template is="dom-if" if="[[!_fallbackZone.renaming]]">
-                            <div class$="{{_getZoneTitleClasses(_fallbackZone.active,hideZoneNameEditing,'fallback')}}"
-                                 on-click="_toggleFallbackZoneProperties">
-                                [[_fallbackZone.name]]
-                            </div>
-                            <div class$="{{_getZoneTitleButtonClasses(hideZoneNameEditing)}}" hidden="[[!_fallbackZone.active]]">
-                                <template is="dom-if" if="[[!hideZoneNameEditing]]">
-                                    <paper-icon-button icon="create" data-index$="[[index]]"
-                                                       on-click="_toggleProximityZoneRenaming">
-                                    </paper-icon-button>
-                                </template>
-                            </div>
-                            <paper-icon-button title="Remove Zone" icon="delete"
-                                               on-click="_removeFallbackZone" tabindex="4">
-                            </paper-icon-button>
-                        </template>
-                        <template is="dom-if" if="[[_fallbackZone.renaming]]">
-                            <paper-input id="zone-fallback" tabindex="5"
-                                         label="Zone"
-                                         class="rename-input"
-                                         placeholder="New Value"
-                                         on-keydown="_renameProximityZoneViaKeydown"
-                                         on-blur="_renameProximityZoneViaBlur"
-                                         maxlength="70"
-                                         value="{{_zoneNameVal::input}}"
-                                         disabled="[[!_fallbackZone.renaming]]">>
-                            </paper-input>
-                        </template>
-                    </div>
-                </template>
-            </div>
-            <template is="dom-if" if="[[_loadedAlert.selectedStack]]">
-                <div>
-                    <div class="alert-zones-label gradient-header">
-                        Proximity Zones
-                        <paper-icon-button title="Add Zone to Stack" class="float-right"
-                                           icon="add" on-click="_addProximityZone">
-                        </paper-icon-button>
-                    </div>
-                </div>
-            </template>
-            <template is="dom-if" if="[[!hideBadgeChooser]]">
-                <div class="accordion">
-                    <div class$="{{_getAccordionClasses('header',_showBadge,'')}}">
-                        <paper-icon-button title="Toggle Badge Properties" icon="{{_getArrowIcon(_showBadge)}}"
-                                           on-click="_toggleBadge" data-index$="[[index]]"></paper-icon-button>
-                        <div class$="{{_getZoneTitleClasses(_showBadge,'','')}}" data-index$="[[index]]">
-                           Badge
-                        </div>
-                    </div>
-                    <div class$="{{_getAccordionClasses('body',_showBadge,'')}}">
-                        <div class="row">
-                            <div class="buttonCol">
-                                <paper-icon-button src="{{getBadgeUrl(_loadedAlert.template.badge)}}"
-                                                   class="badgeIcon"
-                                                   on-click="chooseAlertBadge"></paper-icon-button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
-            <div class="accordion">
-                <template id="zones-repeat" is="dom-repeat" items="[[_loadedAlert.selectedStack.zones]]" as="zone" strip-whitespace>
-                    <div class$="{{_getAccordionClasses('header',zone.active,'')}}">
-                        <template is="dom-if" if="[[!zone.renaming]]">
-                            <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
-                                               on-click="_toggleProperties" data-index$="[[index]]"></paper-icon-button>
-                            <div class$="{{_getZoneTitleClasses(zone.active,hideZoneNameEditing,'')}}"
-                                 data-index$="[[index]]" on-click="_toggleProperties">
-                                [[zone.name]]
-                            </div>
-                            <div class$="{{_getZoneTitleButtonClasses(hideZoneNameEditing)}}" hidden="[[!zone.active]]">
-                                <template is="dom-if" if="[[!hideZoneNameEditing]]">
-                                    <paper-icon-button icon="create" data-index$="[[index]]" title="Edit Zone Name"
-                                                       on-click="_toggleProximityZoneRenaming">
-                                    </paper-icon-button>
-                                </template>
-                                <paper-icon-button title="Remove Zone" icon="delete" on-click="_removeProximityZone"
-                                                   data-index$="[[index]]" tabindex="4">
-                                </paper-icon-button>
-                            </div>
-                        </template>
-                        <template is="dom-if" if="[[zone.renaming]]">
-                            <paper-input id$="zone-[[index]]" tabindex="5"
-                                         label="Zone"
-                                         class="rename-input"
-                                         placeholder="New Value"
-                                         on-keydown="_renameProximityZoneViaKeydown"
-                                         on-blur="_renameProximityZoneViaBlur"
-                                         maxlength="70"
-                                         data-index$="[[index]]"
-                                         value="{{_zoneNameVal::input}}"
-                                         disabled="[[!zone.renaming]]">>
-                            </paper-input>
-                        </template>
-                    </div>
-                    <div class$="{{_getAccordionClasses('body',zone.active,'')}}">
-                        <div class="table">
-                            <div class="row">
-                                <div class="buttonCol">
-                                    <template is="dom-if" if="[[_isPointerLocked]]">
-                                        <div class="bold">Zone Resizing Enabled</div>
-                                        Move the mouse up and down to adjust the size of the zone. Click to exit.
-                                    </template>
-                                    <template is="dom-if" if="[[!_isPointerLocked]]">
-                                        <paper-button data-index$="[[index]]"
-                                                      raised title="Adjust Area"
-                                                      on-click="_adjustZoneSize">
-                                            Adjust Area
-                                        </paper-button>
-                                    </template>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="propertyCol">
-                                    Colour
-                                </div>
-                                <div class="valueCol">
-                                    <paper-swatch-picker color="{{zone.colour}}" color-list='[[zoneColours]]'
-                                                         column-count="7" horizontal-align="right"
-                                                         tabindex="6" on-color-changed="_updateColour">
-                                    </paper-swatch-picker>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
         </template>
         <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp" on-iron-overlay-opened="_patchOverlay">
             <h2 class="dialogH2">[[_dialogTitle]]</h2>
@@ -664,7 +616,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                 <div class="category-manager-dialog-wrapper">
                     <div class="category-wrapper">
                         <template is="dom-if" if="[[_templateCategories.length]]">
-                            <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]" as="categoryObj" sort="_sortCategories" strip-whitespace>
+                            <template id="editableTemplateCategoriesList" is="dom-repeat" items="[[_templateCategories]]"
+                                      as="categoryObj" sort="_sortCategories" strip-whitespace>
                                 <template is="dom-if" if="[[categoryObj.editable]]">
                                     <div class="category-item no-select" data-editing$="[[categoryObj.editing]]"
                                          title="[[categoryObj.name]]" on-click="_enableCategoryNameEditing">

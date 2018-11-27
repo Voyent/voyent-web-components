@@ -62,10 +62,10 @@
                 if (zone) {
                     if (!zone.active) {
                         if (zoneStack !== this._loadedAlert.selectedStack) {
-                            this._toggleProperties(-1);
+                            this._toggleProperties(null);
                             this.set('_loadedAlert.selectedStack',zoneStack);
                         }
-                        this._toggleProperties(zoneStack.getZoneIndex(zone));
+                        this._toggleProperties(zone);
                         return;
                     }
                 }
@@ -290,27 +290,50 @@
         },
 
         /**
-         * Toggles the zone properties section. This is used to toggle when clicking the accordion pane or the proximity
-         * zone. In addition to toggling the panes this will also trigger styling updates to zones overlays.
-         * on the map.
-         * @param eOrI - The event from the ui or the index from the JS.
+         * Toggles the zone properties section from the side panel.
+         * @param e
          * @private
          */
-        _toggleProperties: function(eOrI) {
-            if (!this._loadedAlert || !this._loadedAlert.selectedStack) { return; }
-            var index = eOrI.model ? eOrI.model.get('index') : eOrI;
-            //If they toggle the currently toggled accordion pane then we'll close it.
-            if (index > -1 && this._loadedAlert.selectedStack.getZoneAt(index).active) {
-                index = -1;
+        _togglePropertiesFromSidePanel: function(e) {
+            var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
+            var zone = zoneStack.getZoneAt(e.model.get('zoneIndex'));
+
+            //If they click a zone for the currently active stack then toggle the accordion.
+            if (this._loadedAlert.selectedStack && this._loadedAlert.selectedStack === zoneStack) {
+                this._toggleProperties(zone);
             }
+            else {
+                //Toggle the accordion for the previously selected stack.
+                this._toggleProperties(null);
+                //Load the selected stack and toggle the selected zone.
+                this.set('_loadedAlert.selectedStack',zoneStack);
+                this._toggleProperties(zone);
+            }
+        },
+
+        /**
+         * Toggles the zone properties section. This is triggered directly when selecting a proximity
+         * zone or from a wrapper function when clicking the accordion pane. In addition to toggling
+         * the panes this will also trigger styling updates to zones overlays on the map.
+         * @param zone - The zone to toggle properties for.
+         * @private
+         */
+        _toggleProperties: function(zone) {
+            if (!this._loadedAlert || !this._loadedAlert.template) { return; }
+
+            // If they toggle the currently toggled accordion pane then we'll close it
+            if (zone && zone.active) {
+                zone = null;
+            }
+            // If the fallback zone is active then deactivate it
             if (this._fallbackZone && this._fallbackZone.active) {
                 this._toggleFallbackZoneProperties(true);
             }
-            else {
-                this._loadedAlert.selectedStack.deactivateZoneOverlays();
+            else { // Otherwise deactivate all zone overlays
+                this._loadedAlert.template.deactivateZoneStackOverlays();
             }
-            if (index > -1) {
-                var zone = this._loadedAlert.selectedStack.getZoneAt(index);
+            // Fire the appropriate events
+            if (zone) {
                 zone.setActive(true);
                 this.fire('voyent-alert-zone-selected',{
                     "id": zone.id,
@@ -334,8 +357,7 @@
         _toggleFallbackZoneProperties: function(skipEvent) {
             if (this._fallbackZone.active) {
                 this._fallbackZone.setActive(false);
-                if (typeof skipEvent !== 'boolean' ||
-                    (typeof skipEvent === 'boolean' && !skipEvent)) {
+                if (typeof skipEvent !== 'boolean' || !skipEvent) {
                     this.fire('voyent-alert-zone-selected',{
                         "id": null,
                         "zone": null
@@ -743,6 +765,42 @@
             return colour;
         },
 
+        _notifyPropertyPathForAlert: function(propName) {
+            if (this._loadedAlert && this._loadedAlert.template) {
+                this.notifyPath('_loadedAlert.template.'+propName);
+            }
+        },
+
+        /*_notifyPropertyPathForZoneStack: function(stack,propName) {
+            if (!stack || !propName) { return; }
+            console.log('_notifyPropertyPathForZoneStack',stack,propName);
+            if (this._loadedAlert && this._loadedAlert.template) {
+                var stackIndex = this._loadedAlert.template.getZoneStackIndex(stack);
+                console.log('stackIndex',stackIndex);
+                if (stackIndex > -1) {
+                    console.log('notifying path:','_loadedAlert.template.zoneStacks.'+stackIndex+'.'+propName);
+                    this.notifyPath('_loadedAlert.template.zoneStacks.'+stackIndex+'.'+propName);
+                }
+            }
+        },*/
+
+        _notifyPropertyPathForZone: function(zone,propName) {
+            if (!zone || !propName) { return; }
+            if (this._loadedAlert && this._loadedAlert.template && this._loadedAlert.selectedStack) {
+                var stackIndex = this._loadedAlert.template.getZoneStackIndex(this._loadedAlert.selectedStack);
+                var zoneIndex = this._loadedAlert.selectedStack.zones.indexOf(zone);
+                if (stackIndex > -1 && zoneIndex > -1) {
+                    this.notifyPath('_loadedAlert.template.zoneStacks.'+stackIndex+'.zones.'+zoneIndex+'.'+propName);
+                }
+            }
+        },
+
+        _notifyPropertyPathForFallbackZone: function(propName) {
+            if (this._fallbackZone) {
+                this.notifyPath('_fallbackZone.'+propName);
+            }
+        },
+
         /**
          * Initialize all our custom "classes" that are required for the various components.
          * @private
@@ -916,74 +974,44 @@
             this._AlertTemplate.prototype = {
                 constructor: _outer._AlertTemplate,
                 /**
-                 * Sets the id, updates the json and if the instance is currently
-                 * loaded we'll also notify the polymer path via set.
+                 * Sets the id and notifies the polymer path.
                  * @param id
                  */
                 setId: function (id) {
                     this.id = id;
-                    if (this.json) {
-                        this.json._id = id;
-                    }
-                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
-                        _outer.set('_loadedAlert.template.id', id);
-                    }
+                    _outer._notifyPropertyPathForAlert('id');
                 },
                 /**
-                 * Sets the parentId, updates the json and if the instance is
-                 * currently loaded we'll also notify the polymer path via set.
+                 * Sets the parentId and notifies the polymer path.
                  * @param parentId
                  */
                 setParentId: function(parentId) {
                     this.parentId = parentId;
-                    if (this.json && this.json.properties) {
-                        this.json.properties.parentAlertId = parentId;
-                    }
-                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
-                        _outer.set('_loadedAlert.template.parentId', parentId);
-                    }
+                    _outer._notifyPropertyPathForAlert('parentId');
                 },
                 /**
-                 * Sets the alertFamilyId, updates the json and if the instance is
-                 * currently loaded we'll also notify the polymer path via set.
+                 * Sets the alertFamilyId and notifies the polymer path.
                  * @param alertFamilyId
                  */
                 setAlertFamilyId: function(alertFamilyId) {
                     this.alertFamilyId = alertFamilyId;
-                    if (this.json && this.json.properties) {
-                        this.json.properties.alertFamilyId = alertFamilyId;
-                    }
-                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
-                        _outer.set('_loadedAlert.template.alertFamilyId', alertFamilyId);
-                    }
+                    _outer._notifyPropertyPathForAlert('alertFamilyId');
                 },
                 /**
-                 * Sets the name, updates the json and if the instance is currently
-                 * loaded we'll also notify the polymer path via set.
+                 * Sets the name and notifies the polymer path.
                  * @param name
                  */
                 setName: function (name) {
                     this.name = name;
-                    if (this.json) {
-                        this.json.name = name;
-                    }
-                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
-                        _outer.set('_loadedAlert.template.name', name);
-                    }
+                    _outer._notifyPropertyPathForAlert('name');
                 },
                 /**
-                 * Sets the alert badge icon, updates the json and if the instance is currently
-                 * loaded we'll also notify the polymer path via set.
+                 * Sets the alert badge icon and notifies the polymer path.
                  * @param badge
                  */
                 setBadge: function(badge) {
                     this.badge = badge;
-                    if (this.json) {
-                        this.json.badge = badge;
-                    }
-                    if (_outer._loadedAlert && _outer._loadedAlert.template === this) {
-                        _outer.set('_loadedAlert.template.badge', badge);
-                    }
+                    _outer._notifyPropertyPathForAlert('badge');
                 },
                 /**
                  * Sets the marker and sets up relevant listeners.
@@ -1100,6 +1128,14 @@
                  */
                 getZoneStackIndex: function (zoneStack) {
                     return this.zoneStacks.indexOf(zoneStack);
+                },
+                /**
+                 * Deactivates all zone overlays for this stack.
+                 */
+                deactivateZoneStackOverlays: function() {
+                    for (var i=0; i<this.zoneStacks.length; i++) {
+                        this.zoneStacks[i].deactivateZoneOverlays();
+                    }
                 },
                 /**
                  * Triggers reinitialization of edit listeners for each polygonal zone stack.
@@ -1244,7 +1280,7 @@
                     //Add click listener to marker.
                     google.maps.event.addListener(this.marker, 'click', function () {
                         //Toggle all the accordion panes closed and de-select all stacks.
-                        _outer._toggleProperties(-1);
+                        _outer._toggleProperties(null);
                         _outer.set('_loadedAlert.selectedStack',null);
                     });
                     //Add mouseover and mouseout listeners to highlight the alert boundary for multi-stack alerts.
@@ -1440,16 +1476,22 @@
                     }
                 },
                 /**
-                 * Add the passed zone.
+                 * Add the passed zone and notifies the polymer path.
                  * @param zone
                  */
                 addZone: function (zone) {
-                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack === this) {
-                        _outer.push('_loadedAlert.selectedStack.zones',zone);
+                    var pushed = false;
+                    if (_outer._loadedAlert && _outer._loadedAlert.template) {
+                        var stackIndex = _outer._loadedAlert.template.getZoneStackIndex(this);
+                        if (stackIndex > -1) {
+                            _outer.push('_loadedAlert.template.zoneStacks.'+stackIndex+'.zones',zone);
+                            pushed = true;
+                        }
                     }
-                    else {
+                    if (!pushed) {
                         this.zones.push(zone);
                     }
+                    // Set the zone colour based on the zone position
                     if (!zone.colour) {
                         zone.setColour(this.constructor.getZoneColourAtIndex(this.zones.length-1));
                     }
@@ -1458,16 +1500,21 @@
                     this._setupZoneListeners(zone);
                 },
                 /**
-                 * Remove the passed zone.
+                 * Remove the passed zone and notifies the polymer path.
                  * @param zone
                  */
                 removeZone: function (zone) {
                     zone.removeFromMap();
                     var zoneIndex = this.getZoneIndex(zone);
-                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack === this) {
-                        _outer.splice('_loadedAlert.selectedStack.zones',zoneIndex,1);
+                    var spliced = false;
+                    if (_outer._loadedAlert && _outer._loadedAlert.template) {
+                        var stackIndex = _outer._loadedAlert.template.getZoneStackIndex(this);
+                        if (stackIndex > -1) {
+                            _outer.splice('_loadedAlert.template.zoneStacks.'+stackIndex+'.zones',zoneIndex,1);
+                            spliced = true;
+                        }
                     }
-                    else {
+                    if (!spliced) {
                         this.zones.splice(zoneIndex,1);
                     }
                     //Update the JSON so we have a fresh set of coordinates for the punch out logic.
@@ -1687,7 +1734,7 @@
                     //Add click listener to marker.
                     google.maps.event.addListener(marker, 'click', function () {
                         //Toggle all the accordion panes closed.
-                        _outer._toggleProperties(-1);
+                        _outer._toggleProperties(null);
                         _outer.set('_loadedAlert.selectedStack',_this);
                     });
                     //Add mouseover and mouseout listeners to highlight the stack boundary.
@@ -1709,18 +1756,17 @@
                     var overlay = zone.shapeOverlay;
                     //Add click listener to shapes.
                     google.maps.event.addListener(overlay, 'click', function () {
-                        var zoneIndex = _this.getZoneIndex(zone);
                         //If they click a zone for the currently active stack then toggle the accordion.
                         if (_outer._loadedAlert.selectedStack &&
                             _outer._loadedAlert.selectedStack === _this) {
-                            _outer._toggleProperties(zoneIndex);
+                            _outer._toggleProperties(zone);
                         }
                         else {
-                            //Toggle the accordion for the previously selected alert template.
-                            _outer._toggleProperties(-1);
+                            //Toggle the accordion for the previously selected stack.
+                            _outer._toggleProperties(null);
                             //Load the selected stack and toggle the selected zone.
                             _outer.set('_loadedAlert.selectedStack',_this);
-                            _outer._toggleProperties(zoneIndex);
+                            _outer._toggleProperties(zone);
                         }
                     });
                     //Store the previous vertex position when clicking
@@ -1968,7 +2014,6 @@
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
-                this.setRenaming(false);
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
@@ -1985,31 +2030,21 @@
                     return this.isCircle;
                 },
                 /**
-                 * Sets the name and if the instance is currently loaded
-                 * we'll also notify the polymer path via set.
+                 * Sets the name and notifies the polymer path.
                  * @param name
                  */
                 setName: function(name) {
                     this.name = name;
-                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
-                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.name',name);
-                    }
+                    _outer._notifyPropertyPathForZone(this,'name');
                 },
                 /**
-                 * Sets the colour, updates the overlay and if the instance is
-                 * currently loaded we'll also notify the polymer path via set.
+                 * Sets the colour and notifies the polymer path.
                  * @param colour
                  */
                 setColour: function(colour) {
                     colour = _outer._formatColour(colour);
-                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
-                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.colour',colour);
-                    }
-                    else {
-                        this.colour = colour;
-                    }
+                    this.colour = colour;
+                    _outer._notifyPropertyPathForZone(this,'colour');
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ 'fillColor': colour });
                     }
@@ -2018,16 +2053,12 @@
                     }
                 },
                 /**
-                 * Sets the opacity, updates the overlay and if the instance is
-                 * currently loaded we'll also notify the polymer path via set.
+                 * Sets the opacity and notifies the polymer path.
                  * @param opacity
                  */
                 setOpacity: function(opacity) {
                     this.opacity = opacity;
-                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
-                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.opacity',opacity);
-                    }
+                    _outer._notifyPropertyPathForZone(this,'opacity');
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({'fillOpacity':opacity});
                     }
@@ -2053,16 +2084,13 @@
                     }
                 },
                 /**
-                 * Sets active, updates the overlay and if the instance is currently
-                 * loaded we'll also notify the polymer path via set.
+                 * Sets active, updates the overlay and if the instance is
+                 * currently loaded we'll also notify the polymer path.
                  * @param active
                  */
                 setActive: function(active) {
                     this.active = active;
-                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
-                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.active',active);
-                    }
+                    _outer._notifyPropertyPathForZone(this,'active');
                     active ? this.activateOverlay() : this.deactivateOverlay();
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
@@ -2079,18 +2107,6 @@
                     }
                     else {
                         this.nameOverlay = new _outer._ProximityZoneOverlay(this);
-                    }
-                },
-                /**
-                 * Sets renaming and if the instance is currently loaded
-                 * we'll also notify the polymer path via set.
-                 * @param renaming
-                 */
-                setRenaming: function(renaming) {
-                    this.renaming = renaming;
-                    if (_outer._loadedAlert && _outer._loadedAlert.selectedStack &&
-                        _outer._loadedAlert.selectedStack.zones.indexOf(this) > -1) {
-                        _outer.set('_loadedAlert.selectedStack.zones.'+_outer._loadedAlert.selectedStack.zones.indexOf(this)+'.renaming',renaming);
                     }
                 },
                 /**
@@ -2164,7 +2180,6 @@
                 this.setColour(/*colour || */'9EAD9E'); // Fixed colour
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
-                this.setRenaming(false);
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
                 this.nameOverlay = new _outer._FallbackZoneOverlay(this);
@@ -2182,31 +2197,21 @@
                     }
                 },
                 /**
-                 * Sets the name and if the instance is currently loaded
-                 * we'll also notify the polymer path via set.
+                 * Sets the name and notifies the polymer path.
                  * @param name
                  */
                 setName: function(name) {
-                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
-                        _outer.set('_fallbackZone.name',name);
-                    }
-                    else {
-                        this.name = name;
-                    }
+                    this.name = name;
+                    _outer._notifyPropertyPathForFallbackZone('name');
                 },
                 /**
-                 * Sets the colour, updates the overlays and if the instance is
-                 * currently loaded we'll also notify the polymer path via set.
+                 * Sets the colour and notifies the polymer path.
                  * @param colour
                  */
                 setColour: function(colour) {
                     colour = _outer._formatColour(colour);
-                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
-                        _outer.set('_fallbackZone.colour',colour);
-                    }
-                    else {
-                        this.colour = colour;
-                    }
+                    this.colour = colour;
+                    _outer._notifyPropertyPathForFallbackZone('colour');
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ 'fillColor': colour });
                     }
@@ -2215,17 +2220,12 @@
                     }
                 },
                 /**
-                 * Sets the opacity, updates the overlay and if the instance is
-                 * currently loaded we'll also notify the polymer path via set.
+                 * Sets the opacity and notifies the polymer path.
                  * @param opacity
                  */
                 setOpacity: function(opacity) {
-                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
-                        _outer.set('_fallbackZone.opacity',opacity);
-                    }
-                    else {
-                        this.opacity = opacity;
-                    }
+                    this.opacity = opacity;
+                    _outer._notifyPropertyPathForFallbackZone('opacity');
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({'fillOpacity':opacity});
                     }
@@ -2241,46 +2241,23 @@
                     }
                 },
                 /**
-                 * Sets active, updates the overlay and if the instance is currently
-                 * loaded we'll also notify the polymer path via set.
+                 * Sets active, updates the overlay and notifies the polymer path.
                  * @param active
                  */
                 setActive: function(active) {
-                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
-                        _outer.set('_fallbackZone.active',active);
-                    }
-                    else {
-                        this.active = active;
-                    }
+                    this.active = active;
+                    _outer._notifyPropertyPathForFallbackZone('active');
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
                 },
                 /**
-                 * Sets renaming and if the instance is currently loaded
-                 * we'll also notify the polymer path via set.
-                 * @param renaming
-                 */
-                setRenaming: function(renaming) {
-                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
-                        _outer.set('_fallbackZone.renaming',renaming);
-                    }
-                    else {
-                        this.renaming = renaming;
-                    }
-                },
-                /**
-                 * Sets enabled, updates the overlays and if the instance is
-                 * currently loaded we'll also notify the polymer path via set.
+                 * Sets enabled, updates the overlays and notifies the polymer path.
                  * @param enabled
                  */
                 setEnabled: function(enabled) {
-                    if (_outer._fallbackZone && _outer._fallbackZone === this) {
-                        _outer.set('_fallbackZone.enabled',enabled);
-                    }
-                    else {
-                        this.enabled = enabled;
-                    }
+                    this.enabled = enabled;
+                    _outer._notifyPropertyPathForFallbackZone('enabled');
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({'visible':enabled});
                     }
@@ -2427,17 +2404,12 @@
             this._MyLocation.prototype = {
                 constructor: _outer._MyLocation,
                 /**
-                 * Sets the name, draws the nameOverlay and if the instance is currently
-                 * loaded we'll also notify the polymer path via set.
+                 * Sets the name, draws the nameOverlay and notifies the polymer path.
                  * @param name
                  */
                 setName: function (name) {
-                    if (_outer._loadedLocation === this) {
-                        _outer.set('_loadedLocation.name',name);
-                    }
-                    else {
-                        this.name = name;
-                    }
+                    this.name = name;
+                    _outer.notifyPath('_loadedLocation.name');
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
@@ -2448,17 +2420,12 @@
                     }
                 },
                 /**
-                 * Sets the type and if the instance is currently loaded
-                 * we'll also notify the polymer path via set.
+                 * Sets the type and notifies the polymer path.
                  * @param type
                  */
                 setType: function(type) {
-                    if (_outer._loadedLocation === this) {
-                        _outer.set('_loadedLocation.type',type);
-                    }
-                    else {
-                        this.type = type;
-                    }
+                    this.type = type;
+                    _outer.notifyPath('_loadedLocation.type');
                 },
                 /**
                  * Sets the marker and sets up relevant listeners.

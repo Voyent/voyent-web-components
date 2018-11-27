@@ -24,10 +24,6 @@ Polymer({
          */
         hideBadgeChooser: { type: Boolean, value: false },
         /**
-         * Indicates whether the alert zone name editing features should be hidden.
-         */
-        hideZoneNameEditing: { type: Boolean, value: false },
-        /**
          * The list of colours to be used in the zone colour swatch picker.
          */
         zoneColours: { type: Array, value: ["#FF0000", "#FFB000", "#FFFF00", "#00FF00", "#0000FF", "#00EEFF", "#FF00DD"] },
@@ -173,7 +169,6 @@ Polymer({
     ready: function() {
         var _this = this;
         //Initialize various flags.
-        this._renamingTemplate = false;
         this._loadPointerLockAPI();
         //Initialize movement variables.
         this._alertSpeedUnit = 'kph';
@@ -894,186 +889,10 @@ Polymer({
     },
 
     /**
-     * Toggles renaming mode for an alert template.
-     * @private
-     */
-    _toggleAlertTemplateRenaming: function() {
-        var _this = this;
-        this.set('_renamingTemplate',!this._renamingTemplate);
-        if (this._renamingTemplate) {
-            //Set the input to our current name value. We use a separate value for the input so we can easily revert.
-            this.set('_templateNameVal',this._loadedAlert.template.name);
-            //Focus on the input.
-            setTimeout(function() {
-                _this.querySelector('#alertTemplate').focus();
-            },0);
-        }
-    },
-
-    /**
-     * Confirms or cancels the renaming of an alert template via enter and esc keys.
-     * @param e
-     * @private
-     */
-    _renameAlertTemplateViaKeydown: function(e) {
-        //Prevent the event from bubbling.
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-            this._renameAlertTemplate();
-        }
-        else if (e.key === 'Escape') {
-            this._toggleAlertTemplateRenaming();
-        }
-    },
-
-    /**
-     * Confirms changes made to the alert template name when losing focus on the input.
-     * @param e
-     * @private
-     */
-    _renameAlertTemplateViaBlur: function(e) {
-        var _this = this;
-        //Always execute this function async so we can correctly determine the activeElement.
-        setTimeout(function() {
-            //Check if we are focused on an iron-input because if we are it means focus is still on the input so we
-            //won't exit editing mode. Additionally we'll check if we are in editing mode because if we are not
-            //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
-            if (document.activeElement.getAttribute('is') === 'iron-input' ||
-                !_this._renamingTemplate) {
-                return;
-            }
-            _this._renameAlertTemplate();
-        },0);
-    },
-
-    /**
-     * Confirms the renaming of an alert template.
-     * @private
-     */
-    _renameAlertTemplate: function() {
-        if (this._templateNameVal.trim() &&
-            this._templateNameVal !== this._loadedAlert.template.name) {
-            this._loadedAlert.template.setName(this._templateNameVal);
-            this.set('_templateNameVal','');
-            this.fire('voyent-alert-template-name-changed', {"name": this._loadedAlert.template.name});
-            //Toggle renaming mode.
-            this._toggleAlertTemplateRenaming();
-        }
-    },
-
-    /**
-     * Toggles renaming mode for Proximity Zones.
-     * @param eOrI - The event from the ui or the index from the JS.
-     * @private
-     */
-    _toggleProximityZoneRenaming: function(eOrI) {
-        //Prevent the event from bubbling.
-        if (eOrI.stopPropagation) { eOrI.stopPropagation(); }
-        var _this = this;
-        //Determine whether we have a regular zone or the fallback zone. If we have a an index
-        //it means the zone is part of the stack, otherwise it's the fallback zone.
-        var i, zone;
-        if ((eOrI.model && typeof eOrI.model.get('index') !== 'undefined') || typeof eOrI === 'number') {
-            i = (typeof eOrI === 'number' ? eOrI : eOrI.model.get('index'));
-            zone = this._loadedAlert.selectedStack.getZoneAt(i);
-        }
-        else {
-            i = 'fallback';
-            zone = this._fallbackZone;
-        }
-        zone.setRenaming(!zone.renaming);
-        if (zone.renaming) {
-            //Set the input to our current name value. We use a separate value for the input so we can easily revert.
-            this.set('_zoneNameVal',zone.name);
-            //Focus on the input.
-            setTimeout(function() {
-                _this.querySelector('#zone-'+i).focus();
-            },0);
-        }
-        else {
-            //Always reset the input value so it updates each time editing mode is entered
-            this.set('_zoneNameVal','');
-        }
-    },
-
-    /**
-     * Confirms or cancels the renaming of a Proximity Zone via enter and esc keys.
-     * @param e
-     * @private
-     */
-    _renameProximityZoneViaKeydown: function(e) {
-        //Prevent the event from bubbling.
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-            this._renameProximityZone(e);
-        }
-        else if (e.key === 'Escape') {
-            this._toggleProximityZoneRenaming(e);
-        }
-    },
-
-    /**
-     * Confirms changes made to the Proximity Zone name when losing focus on the input.
-     * @param e
-     * @private
-     */
-    _renameProximityZoneViaBlur: function(e) {
-        var _this = this;
-        //Determine whether we have a regular zone or the fallback zone. If we have an index
-        //it means the zone is part of the stack, otherwise it's the fallback zone.
-        var zone = (e.model && typeof e.model.get('index') !== 'undefined' ?
-                    this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')) :
-                    this._fallbackZone);
-        //Always execute this function async so we can correctly determine the activeElement.
-        setTimeout(function() {
-            //Check if we are focused on an iron-input because if we are it means focus is still on the input so we
-            //won't exit editing mode. Additionally we'll check if we are in editing mode because if we are not
-            //then it means that focus was removed via the Enter or Esc key press and not just a regular blur.
-            if (document.activeElement.getAttribute('is') === 'iron-input' ||
-                  !zone.renaming) {
-                return;
-            }
-            _this._renameProximityZone(e);
-        },0);
-    },
-
-    /**
-     * Confirms the renaming of a Proximity Zone.
-     * @param e
-     * @private
-     */
-    _renameProximityZone: function(e) {
-        //Determine whether we have a regular zone or the fallback zone. If we have an index
-        //it means the zone is part of the stack, otherwise it's the fallback zone.
-        var i, zone;
-        if (e.model && typeof e.model.get('index') !== 'undefined') {
-            i = e.model.get('index');
-            zone = this._loadedAlert.selectedStack.getZoneAt(i);
-        }
-        else {
-            i = 'fallbackZone';
-            zone = this._fallbackZone;
-        }
-        if (this._zoneNameVal.trim() && this._zoneNameVal !== zone.name) {
-            zone.setName(this._zoneNameVal);
-            this.set('_zoneNameVal','');
-            this.fire('voyent-alert-zone-name-changed',{
-                "id":zone.id,
-                "name":zone.name,
-                "isFallbackZone":i === 'fallbackZone'
-            });
-            //Redraw the overlay since the content changed.
-            zone.nameOverlay.draw();
-            //Toggle renaming mode.
-            this._toggleProximityZoneRenaming(i);
-        }
-    },
-
-    /**
      * Adds a new proximity zone to the alert template. The new zone is 50% larger than the largest existing zone.
      * @private
      */
-    _addProximityZone: function() {
+    _addProximityZone: function(e) {
         var _this = this;
         var newZone, paths;
         //Set the new zone size as 50% larger than the current largest zone
@@ -1125,7 +944,7 @@ Polymer({
                 "isFallbackZone":false
             });
             //Show the properties pane for the new zone.
-            _this._toggleProperties(_this._loadedAlert.selectedStack.zones.length-1);
+            _this._toggleProperties(newZone);
         });
     },
 
@@ -1136,7 +955,7 @@ Polymer({
     _removeProximityZone: function(e) {
         //Prevent the event from bubbling.
         e.stopPropagation();
-        var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
+        var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
         var id = zone.id;
         if (this._loadedAlert.selectedStack.zones.length === 1) {
             this._loadedAlert.template.removeZoneStack(this._loadedAlert.selectedStack);
@@ -1163,18 +982,25 @@ Polymer({
     },
 
     /**
+     * Fires the `voyent-alert-trigger-copy` event so the button can be handled externally.
+     * @private
+     */
+    _triggerZoneCopy: function() {
+        this.fire('voyent-alert-trigger-copy');
+    },
+
+    /**
      * Updates the zone colour.
      * @param e
      * @private
      */
     _updateColour: function(e) {
         //If we have a z-index it means the zone is part of the stack, otherwise it's the fallback zone.
-        var zone = typeof e.model.get('index') !== 'undefined' ?
-            this._loadedAlert.selectedStack.getZoneAt(e.model.get('index')) :
+        var zone = typeof e.model.get('zoneIndex') !== 'undefined' ?
+            this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex')) :
             this._fallbackZone;
         zone.setColour(zone.colour);
     },
-
 
     /**
      * Checks if the browser has support for the Pointer Lock API, saves a reference to the browser
@@ -1397,7 +1223,7 @@ Polymer({
      * @private
      */
     _adjustZoneSize: function(e) {
-        this._zoneToAdjust = this._loadedAlert.selectedStack.getZoneAt(e.model.get('index'));
+        this._zoneToAdjust = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
         this._requestPointerLock();
     },
 
@@ -1504,31 +1330,12 @@ Polymer({
     /**
      * Returns the style classes for the accordion zone label.
      * @param active
-     * @param hideZoneNameEditing
      * @param extraClass
      * @returns {string}
      * @private
      */
-    _getZoneTitleClasses: function(active,hideZoneNameEditing,extraClass) {
-        var classes = (active ? 'title zone active' : 'title zone') + ' ' + extraClass;
-        if (hideZoneNameEditing) {
-            classes = classes + ' no-edit';
-        }
-        return classes;
-    },
-
-    /**
-     * Returns the style classes for the zone title button wrapper.
-     * @param hideZoneNameEditing
-     * @returns {string}
-     * @private
-     */
-    _getZoneTitleButtonClasses: function(hideZoneNameEditing) {
-        var classes = 'title-bttns';
-        if (hideZoneNameEditing) {
-            classes = classes + ' no-edit';
-        }
-        return classes;
+    _getZoneTitleClasses: function(active,extraClass) {
+        return (active ? 'title zone active' : 'title zone') + ' ' + extraClass;
     },
 
     /**
