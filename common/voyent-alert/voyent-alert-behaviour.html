@@ -38,8 +38,6 @@
             this._OVERLAP_ANOTHER_STACK_MSG = 'Notification zones cannot overlap each other';
         },
 
-        observers: ['_zonesUpdated(_loadedAlert.selectedStack.zones.length)'],
-        
         getBadgeUrl: function(badgeName) {
             var url = window.location.protocol + '//' + this.locationHost + '/vras/images/badges/';
             if (badgeName && typeof badgeName === 'string') {
@@ -668,73 +666,6 @@
         },
 
         /**
-         * Sorts the Proximity Zones based on their area.
-         * @private
-         */
-        _sortZonesBySize: function() {
-            var _this = this;
-            //Async so the template updates properly.
-            setTimeout(function() {
-                _this._loadedAlert.selectedStack.zones.sort(_this._sortZones);
-                //Force the template-repeat to re-render.
-                var repeat = document.querySelector('#zones-repeat');
-                if (repeat) { repeat.render(); }
-                //The zoneIndex might have changed for the loaded zone so determine the index and re-fire the event.
-                var selectedZoneIndex = -1;
-                var zones = _this._loadedAlert.selectedStack.zones;
-                for (var i=0;i<zones.length; i++) {
-                    if (zones[i].active) {
-                        selectedZoneIndex = i;
-                        break;
-                    }
-                }
-                //Update the z-indexes so we can always click the zones.
-                _this._adjustZIndexes();
-            },0)
-        },
-
-        /**
-         * Template helper for sorting the Proximity Zones by size and managing the z-index of the zones.
-         * @param a
-         * @param b
-         * @private
-         */
-        _sortZones: function(a,b) {
-            if (google.maps.geometry.spherical.computeArea(a.shapeOverlay.getPath()) <
-                google.maps.geometry.spherical.computeArea(b.shapeOverlay.getPath())) {
-                return -1;
-            }
-            else if (google.maps.geometry.spherical.computeArea(a.shapeOverlay.getPath()) >
-                     google.maps.geometry.spherical.computeArea(b.shapeOverlay.getPath())) {
-                return 1;
-            }
-            return 0;
-        },
-
-        /**
-         * Maintains the correct z-index for each proximity zone.
-         * @private
-         */
-        _adjustZIndexes: function() {
-            var zIndex=49, zones = this._loadedAlert.selectedStack.zones;
-            for (var i=0; i<zones.length; i++) {
-                zones[i].setZIndex(zIndex);
-                zIndex--;
-            }
-        },
-
-        /**
-         * Monitors changes to list of zones from the selected stack for sorting purposes.
-         * @param length
-         * @private
-         */
-        _zonesUpdated: function(length) {
-            if (this.nodeName !== 'VOYENT-ALERT-VIEW' && length) {
-                this._sortZonesBySize();
-            }
-        },
-
-        /**
          * All components need a reference to the classes so once the map is set we'll initialize them.
          */
         _mapChanged: function(map) {
@@ -765,25 +696,23 @@
             return colour;
         },
 
+        /**
+         * Notifies the polymer path for AlertTemplate properties.
+         * @param propName
+         * @private
+         */
         _notifyPropertyPathForAlert: function(propName) {
             if (this._loadedAlert && this._loadedAlert.template) {
                 this.notifyPath('_loadedAlert.template.'+propName);
             }
         },
 
-        /*_notifyPropertyPathForZoneStack: function(stack,propName) {
-            if (!stack || !propName) { return; }
-            console.log('_notifyPropertyPathForZoneStack',stack,propName);
-            if (this._loadedAlert && this._loadedAlert.template) {
-                var stackIndex = this._loadedAlert.template.getZoneStackIndex(stack);
-                console.log('stackIndex',stackIndex);
-                if (stackIndex > -1) {
-                    console.log('notifying path:','_loadedAlert.template.zoneStacks.'+stackIndex+'.'+propName);
-                    this.notifyPath('_loadedAlert.template.zoneStacks.'+stackIndex+'.'+propName);
-                }
-            }
-        },*/
-
+        /**
+         * Notifies the polymer path for AlertZone properties.
+         * @param zone
+         * @param propName
+         * @private
+         */
         _notifyPropertyPathForZone: function(zone,propName) {
             if (!zone || !propName) { return; }
             if (this._loadedAlert && this._loadedAlert.template && this._loadedAlert.selectedStack) {
@@ -795,6 +724,11 @@
             }
         },
 
+        /**
+         * Notifies the polymer path for FallbackAlertZone properties.
+         * @param propName
+         * @private
+         */
         _notifyPropertyPathForFallbackZone: function(propName) {
             if (this._fallbackZone) {
                 this.notifyPath('_fallbackZone.'+propName);
