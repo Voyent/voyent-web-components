@@ -54,6 +54,11 @@ Internal component used to display the properties panel inside Voyent alert comp
                         0px 0px 0px 1px rgba(155,155,155,0.3),
                         1px 0px 0px 0px rgba(255,255,255,0.9) inset,
                         0px 2px 2px rgba(0,0,0,0.1);
+                -webkit-user-select: none !important;
+                -khtml-user-select: none!important;
+                -moz-user-select: none !important;
+                -ms-user-select: none !important;
+                user-select: none !important;
             }
             .accordion .header.active,
             .accordion .header:hover {
@@ -69,6 +74,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .accordion .header.active {
                 background: #c6e1ec;
+                font-weight: bold;
             }
             .accordion .body {
                 background: rgba(255, 255, 255, 0.5);
@@ -193,7 +199,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                 background: -webkit-linear-gradient(top, var(--app-primary-color,#2E348E) 0%, #EEEEEE 100%) !important;
                 background: linear-gradient(to bottom, var(--app-primary-color,#2E348E) 0%, #EEEEEE 100%) !important;
                 padding: 10px !important;
-                border-radius: 5px 5px 0 0 !important;
                 text-shadow: 0 0 5px var(--app-primary-color,#2E348E) !important;
                 -webkit-touch-callout: none !important;
                 -webkit-user-select: none !important;
@@ -420,7 +425,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                            on-click="_addProximityZone"></paper-icon-button>
                                         <paper-icon-button title="Copy message contents and recipients" icon="content-copy"
                                                            on-click="_triggerZoneCopy"></paper-icon-button>
-                                        <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeProximityZone"
+                                        <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeProximityZonePrompt"
                                                            data-stack-index$="[[zoneStackIndex]]" data-zone-index$="[[zoneIndex]]"
                                                            tabindex="4"></paper-icon-button>
                                     </div>

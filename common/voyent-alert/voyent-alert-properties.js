@@ -1030,6 +1030,20 @@ Polymer({
     },
 
     /**
+     * Opens a confirmation prompt for removing a proximity zone.
+     * @param e
+     * @private
+     */
+    _removeProximityZonePrompt: function(e) {
+        var _this = this;
+        var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
+        var msg = 'Are you sure you want to delete ' + zone.name + '? This cannot be undone!';
+        this._openDialog('Confirm Zone Deletion',msg,null,null,null,false,false,function() {
+            _this._removeProximityZone(e);
+        });
+    },
+
+    /**
      * Removes the fallback zone entirely.
      * @private
      */
