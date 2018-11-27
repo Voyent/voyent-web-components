@@ -894,49 +894,50 @@ Polymer({
      */
     _addProximityZone: function(e) {
         var _this = this;
-        var newZone, paths;
-        //Set the new zone size as 50% larger than the current largest zone
-        //and de-increment the new zone zIndex so it sits behind the other zones.
-        var largestZone = _this._loadedAlert.selectedStack.getLargestZone();
-        var zIndex = largestZone.zIndex - 1;
-        //Check if the new zone will overlap another existing zone.
-        paths = this._adjustPathsByPercentage(largestZone.shapeOverlay.getPaths(), 50, this._havePointerLock);
-        if (this._alertHasIntersectingStacks(paths, _this._loadedAlert.selectedStack)) {
-            this._displayStackOverlapMsg();
-            return;
+        var newZone, paths, intersects;
+        var zoneToInsertAfter = e.model.get('zone');
+        var insertAtIndex = e.model.get('zoneIndex')+1;
+        var zoneToInsertBefore = _this._loadedAlert.selectedStack.getZoneAt(insertAtIndex);
+        // Derive the shape of the zone from the zone we're inserting after
+        var isCircle = zoneToInsertAfter.isCircle;
+        // Set the new zone size as 50% larger than the current largest zone
+        var newZonePercentLarger = 50;
+        paths = this._adjustPathsByPercentage(zoneToInsertAfter.shapeOverlay.getPaths(), newZonePercentLarger, this._havePointerLock);
+        // If we're adding the new zone in between zones then we must ensure
+        // that the new zone is fully within the zone at newZoneIndex+1
+        if (zoneToInsertBefore) {
+            if (!adjustNewZoneSizeToFit(newZonePercentLarger)) {
+                return;
+            }
+        }
+        // Otherwise if we're adding the zone to the end of the stack then check if the new zone will overlap another existing zone
+        else {
+            if (this._alertHasIntersectingStacks(paths, _this._loadedAlert.selectedStack)) {
+                this._displayStackOverlapMsg();
+                return;
+            }
         }
         this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
             var name = this._dialogInput;
-            // Check if the outer line of each shape overlap each other. If they overlap then we are
-            // unable to draw the shape and will instead draw a rectangle matching the bounds of it.
-            var intersects = turf.lineIntersect({
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths)[0]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(largestZone.shapeOverlay.getPaths())[0]
-                    }
-            });
-            if (intersects.features.length) {
-                _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead.');
-                paths = _this._getRectangularPathFromPolygonPath(paths.getAt(0));
-            }
-            //When we add a new zone we don't want to include the full shape so we can
-            //punch it out properly later so just pass the filled outer shape via paths.getAt(0).
-            newZone = new _this._AlertZone(null,name,[paths.getAt(0)],largestZone.isCircle,null,null,null,null,zIndex);
+            // De-increment the new zone zIndex so it sits behind the other zones
+            var zIndex = zoneToInsertAfter.zIndex - 1;
+            // When we add a new zone we don't want to include the full shape so we can punch
+            // it out properly later so just pass the filled outer shape via paths.getAt(0)
+            newZone = new _this._AlertZone(null,name,[paths.getAt(0)],isCircle,null,null,null,null,zIndex);
 
-            _this._loadedAlert.selectedStack.addZone(newZone);
-            //Re-adjust the centroid for the template.
-            _this._loadedAlert.template.updateJSONAndCentroid();
-            //Re-punch out the fallback zone.
-            if (_this._fallbackZone) {
-                _this._fallbackZone.punchOutOverlay();
+            // Insert the zone somewhere in the middle of the stack
+            if (zoneToInsertBefore) {
+                _this._loadedAlert.selectedStack.insertZone(newZone, insertAtIndex);
+            }
+            else {
+                // Add the zone to the end of the stack
+                _this._loadedAlert.selectedStack.addZone(newZone);
+                // Re-adjust the centroid for the template
+                _this._loadedAlert.template.updateJSONAndCentroid();
+                // Re-punch out the fallback zone
+                if (_this._fallbackZone) {
+                    _this._fallbackZone.punchOutOverlay();
+                }
             }
             _this.fire('voyent-alert-zone-added',{
                 "id":newZone.id,"zone":newZone,
@@ -946,6 +947,38 @@ Polymer({
             //Show the properties pane for the new zone.
             _this._toggleProperties(newZone);
         });
+
+        function adjustNewZoneSizeToFit(percentage) {
+            // If the percentage is 0 then it means the shape will not fit between the two zones so we'll bail
+            if (percentage === 0) {
+                _this.fire('message-error', 'Unable to fit new zone between ' + zoneToInsertBefore.name + ' and ' + zoneToInsertAfter.name);
+                return false;
+            }
+            // Calculate new paths based on the passed percentage
+            paths = _this._adjustPathsByPercentage(zoneToInsertAfter.shapeOverlay.getPaths(), percentage, _this._havePointerLock);
+            // Determine if the new zone is fully within the closest outer zone
+            var newZoneInsideOuterZone = turf.booleanWithin({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(zoneToInsertBefore.paths) // zone which we are inserting the new zone before
+                    }
+                }
+            );
+            // The new zone is not fully within the outer zone so decrease the size
+            if (!newZoneInsideOuterZone) {
+                return adjustNewZoneSizeToFit(percentage-1);
+            }
+            // The new zone is within the outer zone
+            return true;
+        }
     },
 
     /**

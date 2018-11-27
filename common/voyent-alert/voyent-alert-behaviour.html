@@ -1500,6 +1500,34 @@
                     this._setupZoneListeners(zone);
                 },
                 /**
+                 * Inserts the passed zone at the passed index and notifies the polymer path.
+                 * @param zone
+                 * @param index
+                 */
+                insertZone: function (zone, index) {
+                    var spliced = false;
+                    if (_outer._loadedAlert && _outer._loadedAlert.template) {
+                        var stackIndex = _outer._loadedAlert.template.getZoneStackIndex(this);
+                        if (stackIndex > -1) {
+                            _outer.splice('_loadedAlert.template.zoneStacks.'+stackIndex+'.zones',index,0,zone);
+                            spliced = true;
+                        }
+                    }
+                    if (!spliced) {
+                        this.zones.splice(index,0,zone);
+                    }
+                    // Set the zone colour based on the number of zones
+                    if (!zone.colour) {
+                        zone.setColour(this.constructor.getZoneColourAtIndex(this.zones.length-1));
+                    }
+                    this.updateJSONAndCentroid();
+                    // Punch out our new shape with the next closest inner shape
+                    this._punchOutShape(index);
+                    // Punch out the next closest outer shape
+                    this._punchOutShape(index+1);
+                    this._setupZoneListeners(zone);
+                },
+                /**
                  * Remove the passed zone and notifies the polymer path.
                  * @param zone
                  */
