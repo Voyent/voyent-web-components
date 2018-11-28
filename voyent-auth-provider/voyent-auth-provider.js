@@ -172,6 +172,7 @@
 
             function onAfterConnect(authResponse) {
                 _this.authResponse = authResponse;
+                _this.account = authResponse.safename;
                 voyent.setCurrentRealm(_this.realm);
                 _this.accessToken = voyent.auth.getLastAccessToken();
                 _this.loggedIn = true;

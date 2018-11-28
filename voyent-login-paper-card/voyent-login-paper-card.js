@@ -205,9 +205,8 @@
             }
             this.fire('loading-on');
             // Pre-process our account to a form understandable by the login
-            var safeAccount = this._getSafeDatabaseName(this.account);
             if(this.showaccountinput) {
-                this._authProviderElem.setAttribute("account", safeAccount);
+                this._authProviderElem.setAttribute("account", this.account);
             }
             if(this.showhostinput) {
                 this._authProviderElem.setAttribute("host",this.host)
@@ -217,7 +216,7 @@
             }
             else if (this.searchforrealm) {
                 this._authProviderElem.set('error',null);
-                this._publicLookupUser(this.username,safeAccount).then(function(res) {
+                this._publicLookupUser(this.username,this.account).then(function(res) {
                     if (!res.matches.length) {
                         _this.fire('loading-off');
                         _this._authProviderElem.set('error','Unauthorized');
@@ -250,13 +249,6 @@
             });
         },
         
-        _getSafeDatabaseName: function(accountName) {
-            if (accountName && accountName.trim().length > 0) {
-                return accountName.split(' ').join('_').replace(/[\\\/\.\"]/g, '').substring(0, 63).toLowerCase();
-            }
-            return accountName;
-        },
-
         /**
          * Reset the password
          */
