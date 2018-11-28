@@ -1085,9 +1085,8 @@
                  * Updates the json to reflect the current state of the template. Since each stack of zones maintains
                  * their own json we update their json and then simply merge the geometries and properties section from
                  * each stack into one.
-                 * @param punchOutCircularStacks
                  */
-                updateJSON: function (punchOutCircularStacks) {
+                updateJSON: function () {
                     var json = this.constructor.getJSONStructure();
                     //Add template-level properties.
                     json.name = this.name;
@@ -1505,7 +1504,7 @@
                  * the northernCoordinate which adjusts the position of the zone name overlays.
                  */
                 updateJSON: function () {
-                    var zone, northernCoordinate, latLng, overlay,
+                    var zone, northernCoordinate, overlay,
                         json = _outer._AlertTemplate.getJSONStructure();
 
                     for (var i=0; i<this.zones.length; i++) {
