@@ -493,10 +493,12 @@ Polymer({
                 _this.set('_mobileLocationEnabled',!_this._mobileLocationEnabled);
                 if (_this._mobileLocationEnabled) {
                     vras.getLocation();
+                    _this._startMobileLocationPolling();
                 }
                 else if (_this._mobileLocation) {
                     _this._mobileLocation.removeFromMap();
                     _this._mobileLocation = null;
+                    _this._stopMobileLocationPolling();
                 }
             },function() {
                 _this._mobileLocationEnabled = false;
@@ -522,6 +524,24 @@ Polymer({
             this.toggleClass('selected', !!enabled, currentLocationButton);
             currentLocationButton.setAttribute('title',enabled ? 'Disable Location Tracking' : 'Enable Location Tracking')
         }
+    },
+
+    /**
+     * Starts mobile location polling.
+     * @private
+     */
+    _startMobileLocationPolling: function() {
+        this._mobileLocationPoller = setInterval(function() {
+            vras.getLocation();
+        },10000);
+    },
+
+    /**
+     * Ends mobile location polling.
+     * @private
+     */
+    _stopMobileLocationPolling: function() {
+        clearInterval(this._mobileLocationPoller);
     },
 
     /**
