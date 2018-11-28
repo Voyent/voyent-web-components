@@ -395,8 +395,6 @@ Polymer({
             );
             //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
             this._addFullscreenClickListener(this._mobileLocation.marker);
-            // Adjust the map bounds to include the mobile location
-            this._adjustBoundsAndPan();
         }
     },
 
@@ -492,22 +490,37 @@ Polymer({
             this._addCustomControl(this._CURRENT_LOCATION_BUTTON_ID,google.maps.ControlPosition.RIGHT_BOTTOM,function() {
                 _this.set('_mobileLocationEnabled',!_this._mobileLocationEnabled);
                 if (_this._mobileLocationEnabled) {
+                    // Include the mobile location in the map panning once it's received from the device
+                    _this._includeMobileLocationInPanning = true;
+                    // Get the location
                     vras.getLocation();
+                    // Start polling the location position
                     _this._startMobileLocationPolling();
+                    // Add the location to the map
+                    _this._mobileLocation.addToMap();
                 }
                 else if (_this._mobileLocation) {
+                    // Remove the location from the map
                     _this._mobileLocation.removeFromMap();
                     _this._mobileLocation = null;
+                    // Stop polling the location position
                     _this._stopMobileLocationPolling();
+                    // Pan to the original alert
+                    _this._adjustBoundsAndPan(_this._fullscreenEnabledByUser);
                 }
             },function() {
                 _this._mobileLocationEnabled = false;
                 window._this = {
                     returnCurrentLocation: function(lat,lng) {
                         _this._drawMobileLocation(lat, lng);
-                        _this._mobileLocation.addToMap();
+                        // Pan on the original alert + the mobile location
+                        if (_this._includeMobileLocationInPanning) {
+                            // Adjust the map bounds to include the mobile location
+                            _this._adjustBoundsAndPan(_this._fullscreenEnabledByUser, [_this._mobileLocation.marker.getPosition()]);
+                            _this._includeMobileLocationInPanning = false;
+                        }
                     }
-                }
+                };
             });
         }
     },

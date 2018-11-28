@@ -1618,9 +1618,10 @@
         /**
          * Updates the map bounds so all the map overlays are in view and then pans the map.
          * @param forceMapPan
+         * @param latLngs - LatLng objects that will always be included in the map bounds
          * @private
          */
-        _adjustBoundsAndPan: function(forceMapPan) {
+        _adjustBoundsAndPan: function(forceMapPan, latLngs) {
             if (this._fullscreenEnabledByUser && !forceMapPan) { //VRAS-306
                 if (this._mapCenterBeforeOrientationChange) {
                     this._map.setCenter(this._mapCenterBeforeOrientationChange);
@@ -1664,15 +1665,10 @@
                 }
                 //Only include the locations in the map panning if we have zone stacks and one of those zone stacks
                 //has affected locations. This prevents the map from panning too far from the region boundary and
-                //primary zone when the affected locations notified by a fallback zone are far away. However, when
-                //they have explicitly enabled the mobile location then we will include this in the map bounds.
+                //primary zone when the affected locations notified by a fallback zone are far away.
                 if (zoneStacks && zoneStacks.length && this._affectedStackIds && this._affectedStackIds.length) {
                     if (this._affectedMobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._affectedMobileLocation.id) > -1)) {
                         bounds.extend(this._affectedMobileLocation.marker.getPosition());
-                        boundsExtended = true;
-                    }
-                    if (this._mobileLocation) {
-                        bounds.extend(this._mobileLocation.marker.getPosition());
                         boundsExtended = true;
                     }
                     for (i=0; i<this._myLocations.length; i++) {
@@ -1681,6 +1677,13 @@
                             locationsToPanTo.push(this._myLocations[i]);
                             boundsExtended = true;
                         }
+                    }
+                }
+                // Include all passed LatLng objects in the map bounds
+                if (latLngs && latLngs.length) {
+                    for (i=0; i<latLngs.length; i++) {
+                        bounds.extend(latLngs[i]);
+                        boundsExtended = true;
                     }
                 }
                 //Ensure we only do this if the bounds were extended otherwise
