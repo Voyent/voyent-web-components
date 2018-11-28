@@ -750,6 +750,15 @@
         },
 
         /**
+         * Returns whether the current component is one of the alert editors.
+         * @private
+         */
+        _isAnAlertEditor: function() {
+            return this.nodeName === 'VOYENT-ALERT-EDITOR' |
+                   this.nodeName === 'VOYENT-ALERT-TEMPLATE EDITOR';
+        },
+
+        /**
          * Initialize all our custom "classes" that are required for the various components.
          * @private
          */
@@ -1545,7 +1554,7 @@
                             "type": "Polygon",
                             "coordinates": [[]]
                         });
-                        if (zone.isCircle) {
+                        if (zone.isCircle && _outer._isAnAlertEditor()) {
                             // VRAS-390 - The radius is used to setup circular geofences on mobile so while we no
                             // longer use google.maps.Circle we must still provide a radius for cicular zones
                             var center =  this.marker.getPosition();

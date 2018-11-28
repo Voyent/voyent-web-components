@@ -157,7 +157,7 @@
                 this._setupDrawingListeners();
                 this._removeStopDrawingButton();
             }
-            if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+            if (this._isAnAlertEditor()) {
                 //Add the fullscreen control.
                 this._addFullscreenButton();
                 //Maintain the isZoneSelected toggle for updating the UI.
@@ -457,8 +457,7 @@
                     this._clearMyLocations();
                 }
             }
-            if (this.nodeName === 'VOYENT-ALERT-EDITOR' ||
-                this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+            if (this._isAnAlertEditor()) {
                 //Always start the view with a windowed component.
                 if (this._isFullscreenMode) {
                     this._toggleFullscreenContainer();
@@ -1198,7 +1197,7 @@
                 var width = _this.width;
                 //If the width is specified then set it
                 if (typeof width === 'undefined' || !width || width < 0) {
-                    if (_this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' || _this.nodeName === 'VOYENT-ALERT-EDITOR') {
+                    if (_this._isAnAlertEditor()) {
                         width = (_this._map.getDiv().parentElement.offsetWidth - _this.querySelector('#'+_this._SIDE_PANEL_ID).offsetWidth);
                         //-20px for map borders and padding when not in fullscreen mode
                         if (!_this._isFullscreenMode) {
@@ -1557,7 +1556,7 @@
                 }
                 // Move the map to the dialog container, adjust the size and add the esc key listener
                 dialog.append(mapDiv);
-                if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+                if (this._isAnAlertEditor()) {
                     dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
                 }
                 this.resizeMap(forceMapPan);
@@ -1588,7 +1587,7 @@
             // Move the map to the inline container, adjust the size and remove the esc key listener
             var mapDiv = this._map.getDiv();
             this.querySelector('#'+this._CONTAINER_ID).append(mapDiv);
-            if (this.nodeName === 'VOYENT-ALERT-EDITOR' || this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR') {
+            if (this._isAnAlertEditor()) {
                 this.querySelector('#'+this._CONTAINER_ID).append(this.querySelector('#'+this._SIDE_PANEL_ID));
             }
             this.resizeMap();
