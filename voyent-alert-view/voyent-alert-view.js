@@ -237,22 +237,6 @@ Polymer({
     },
 
     /**
-     * Fetches the latest location of the current user and refreshes their position on the map.
-     */
-    refreshUserLocation: function() {
-        var _this = this;
-        this._mapIsReady().then(function() {
-            _this._fetchLocationRecord().then(function(location) {
-                _this._drawAffectedMobileLocation(location);
-                _this._adjustBoundsAndPan();
-            }).catch(function(error) {
-                _this.fire('message-error', 'Issue drawing user\'s location: ' +
-                                             (error.responseText || error.message || error));
-            });
-        });
-    },
-
-    /**
      * Fetches the latest location of the currently loaded alert and refreshes the position on the map.
      */
     refreshAlertLocation: function() {
