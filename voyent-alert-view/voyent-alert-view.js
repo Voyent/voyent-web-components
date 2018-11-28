@@ -390,7 +390,7 @@ Polymer({
                     position: new google.maps.LatLng(lat,lng),
                     map: this._map,
                     draggable: false,
-                    icon: this.pathtoimages+'/img/donut.png'
+                    icon: this.pathtoimages+'/img/gps.png'
                 })
             );
             //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
