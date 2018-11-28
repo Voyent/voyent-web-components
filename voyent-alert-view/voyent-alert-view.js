@@ -21,7 +21,8 @@ Polymer({
 
     observers: [
         '_alertHistoryChanged(_alertHistory)',
-        '_notificationFilterChanged(_notificationFilter)'
+        '_notificationFilterChanged(_notificationFilter)',
+        '_mobileLocationEnabledChanged(_mobileLocationEnabled)'
     ],
 
     ready: function() {
@@ -29,6 +30,7 @@ Polymer({
         this.set('_myLocations',[]);
         this._LOCATION_TYPE_COUNT_LEGEND_ID = 'locationTypesCount';
         this._LOCATION_TYPE_STATE_LEGEND_ID = 'locationTypesState';
+        this._CURRENT_LOCATION_BUTTON_ID = 'currentLocationButton';
     },
     
     /**
@@ -40,6 +42,8 @@ Polymer({
         this._fetchRealmRegion();
         // Add fullscreen control + esc listener
         this._addFullscreenButton();
+        // Add current location button for notification detail view
+        this._addMobileLocationButton();
         window.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && _this._isFullscreenMode) {
                 _this._toggleFullscreenContainer(true);
@@ -51,9 +55,9 @@ Polymer({
      * View the alert associated with the templateId at its last known location.
      * If location records are included they will be drawn on the map.
      * @param templateId - The id of the alert template to be drawn.
-     * @param locations - An optional array of location records to be drawn.
+     * @param affectedLocations - A list of affected locations.
      */
-    viewAlertDetail: function(templateId,locations) {
+    viewAlertDetail: function(templateId,affectedLocations) {
         var _this = this;
         //Always start the view with a windowed component.
         if (this._isFullscreenMode) {
@@ -69,7 +73,6 @@ Polymer({
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
-            promises.push(_this._fetchLocationRecord());
             promises.push(_this._fetchMyLocations());
             //First create a list of affected location ids. We will draw all locations but
             //will use this list to ensure we only pan the map on the affected locations.
@@ -78,25 +81,33 @@ Polymer({
             //of their zones. We will use this list to help determine how the map should be panned. If there
             //are no affected stack ids then it means the notification was triggered by a fallback zone.
             _this._affectedStackIds = [];
-            if (locations && locations.length) {
-                _this._affectedLocationIds = locations.map(function(obj) {
+            if (affectedLocations && affectedLocations.length) {
+                _this._affectedLocationIds = affectedLocations.map(function(obj) {
                     return obj.properties.vras.id;
                 });
-                _this._affectedStackIds = locations.reduce(function(result, obj) {
+                _this._affectedStackIds = affectedLocations.reduce(function(result, obj) {
                     if (typeof obj.properties.vras.insideStackId !== 'undefined') {
                         result.push(obj.properties.vras.insideStackId);
                     }
                     return result;
                 }, []);
+                // We draw all "my locations" but to get the affected
+                // mobile location we must grab it from passed data
+                var mobileLocation;
+                for (var i=0; i<affectedLocations.length; i++) {
+                    if (affectedLocations[i].properties.vras.type === 'mobile') {
+                        mobileLocation = affectedLocations[i];
+                        break;
+                    }
+                }
             }
             Promise.all(promises).then(function(results) {
                 var alert = results[0];
                 var alertLocation = results[1];
-                var userLocation = results[2];
-                var myLocations = results[3];
+                var myLocations = results[2];
                 //Add the mobile location to our list of locations so it also gets drawn.
-                if (userLocation) {
-                    myLocations.push(userLocation.location);
+                if (mobileLocation) {
+                    myLocations.push(mobileLocation);
                 }
                 //First clear the map if we have an alert loaded already.
                 if (_this._loadedAlert) {
@@ -232,7 +243,7 @@ Polymer({
         var _this = this;
         this._mapIsReady().then(function() {
             _this._fetchLocationRecord().then(function(location) {
-                _this._drawUser(location);
+                _this._drawAffectedMobileLocation(location);
                 _this._adjustBoundsAndPan();
             }).catch(function(error) {
                 _this.fire('message-error', 'Issue drawing user\'s location: ' +
@@ -334,15 +345,15 @@ Polymer({
      * @param location
      * @private
      */
-    _drawUser: function(location) {
+    _drawAffectedMobileLocation: function(location) {
         if (!location) { return; }
         location = location.location || location;
         //Check if we already have a user location drawn on the map.
-        if (this._mobileLocation) { //Update the existing instance.
-            this._mobileLocation.marker.setPosition(new google.maps.LatLng(location.geometry.coordinates[1],location.geometry.coordinates[0]));
+        if (this._affectedMobileLocation) { //Update the existing instance.
+            this._affectedMobileLocation.marker.setPosition(new google.maps.LatLng(location.geometry.coordinates[1],location.geometry.coordinates[0]));
         }
         else {
-            this._mobileLocation = new this._MyLocation(
+            this._affectedMobileLocation = new this._MyLocation(
                 location.properties.vras.id,
                 null, //No name so the label doesn't render.
                 location.properties.vras.type,
@@ -354,8 +365,39 @@ Polymer({
                 })
             );
             //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
+            this._addFullscreenClickListener(this._affectedMobileLocation.marker);
+        }
+    },
+
+    /**
+     * Draws a mobile location marker on the map based on the passed coordinates.
+     * @param lat
+     * @param lng
+     * @private
+     */
+    _drawMobileLocation: function(lat, lng) {
+        if (typeof lat !== 'number' || typeof lng !== 'number') {
+            return;
+        }
+        //Check if we already have a user location drawn on the map.
+        if (this._mobileLocation) { //Update the existing instance.
+            this._mobileLocation.marker.setPosition(new google.maps.LatLng(location.geometry.coordinates[1],location.geometry.coordinates[0]));
+        }
+        else {
+            this._mobileLocation = new this._MyLocation(
+                null, null, 'mobile',
+                new google.maps.Marker({
+                    position: new google.maps.LatLng(lat,lng),
+                    map: this._map,
+                    draggable: false,
+                    icon: this.pathtoimages+'/img/donut.png'
+                })
+            );
+            //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
             this._addFullscreenClickListener(this._mobileLocation.marker);
         }
+        // Adjust the map bounds to include the mobile location
+        this._adjustBoundsAndPan();
     },
 
     /**
@@ -367,9 +409,9 @@ Polymer({
         if (!locations || !locations.length) { return; }
         this.set('_myLocations',[]);
         for (var i=0; i<locations.length; i++) {
-            // For notification view we want to render the user icon for the mobile location.
+            // For notification view we want to render the user icon for the affected mobile location.
             if (this.mode === 'notification' && locations[i].properties.vras.type === 'mobile') {
-                this._drawUser(locations[i]);
+                this._drawAffectedMobileLocation(locations[i]);
                 continue;
             }
             var marker = new google.maps.Marker({
@@ -438,6 +480,48 @@ Polymer({
      */
     _removeLocationTypesStateLegend: function() {
         this._removeCustomControl(this._LOCATION_TYPE_STATE_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM)
+    },
+
+    /**
+     * Adds the GPS/currnet location button to the map.
+     * @private
+     */
+    _addMobileLocationButton: function() {
+        var _this = this;
+        if (this.mode === 'notification' && typeof vras !== 'undefined') {
+            this._addCustomControl(this._CURRENT_LOCATION_BUTTON_ID,google.maps.ControlPosition.RIGHT_BOTTOM,function() {
+                _this.set('_mobileLocationEnabled',!_this._mobileLocationEnabled);
+                if (_this._mobileLocationEnabled) {
+                    vras.getLocation();
+                }
+                else if (_this._mobileLocation) {
+                    _this._mobileLocation.removeFromMap();
+                    _this._mobileLocation = null;
+                }
+            },function() {
+                _this._mobileLocationEnabled = false;
+                window._this = {
+                    returnCurrentLocation: function(lat,lng) {
+                        _this._drawMobileLocation(lat, lng);
+                        _this._mobileLocation.addToMap();
+                    }
+                }
+            });
+        }
+    },
+
+    /**
+     * Manages selected styling on the mobile location button.
+     * @param enabled
+     * @private
+     */
+    _mobileLocationEnabledChanged: function(enabled) {
+        // Select the custom control (+ '_cc')
+        var currentLocationButton = this.querySelector('#'+this._CURRENT_LOCATION_BUTTON_ID+'_cc');
+        if (currentLocationButton) {
+            this.toggleClass('selected', !!enabled, currentLocationButton);
+            currentLocationButton.setAttribute('title',enabled ? 'Disable Location Tracking' : 'Enable Location Tracking')
+        }
     },
 
     /**

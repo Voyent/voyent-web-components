@@ -449,9 +449,9 @@
             }
             //Clear the user marker.
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                if (this._mobileLocation) {
-                    this._mobileLocation.removeFromMap();
-                    this._mobileLocation = null;
+                if (this._affectedMobileLocation) {
+                    this._affectedMobileLocation.removeFromMap();
+                    this._affectedMobileLocation = null;
                 }
                 else if (this._myLocations) {
                     this._clearMyLocations();
@@ -1627,7 +1627,7 @@
                 }
                 return;
             }
-            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._mobileLocation || this._myLocations))) {
+            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._affectedMobileLocation || this._mobileLocation || this._myLocations))) {
                 var bounds = new google.maps.LatLngBounds(), boundsExtended = false, i, zoneStacks, locationsToPanTo = [];
                 if (this._loadedAlert) {
                     zoneStacks = this._loadedAlert.template.zoneStacks;
@@ -1664,9 +1664,14 @@
                 }
                 //Only include the locations in the map panning if we have zone stacks and one of those zone stacks
                 //has affected locations. This prevents the map from panning too far from the region boundary and
-                //primary zone when the affected locations notified by a fallback zone are far away.
+                //primary zone when the affected locations notified by a fallback zone are far away. However, when
+                //they have explicitly enabled the mobile location then we will include this in the map bounds.
                 if (zoneStacks && zoneStacks.length && this._affectedStackIds && this._affectedStackIds.length) {
-                    if (this._mobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._mobileLocation.id) > -1)) {
+                    if (this._affectedMobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._affectedMobileLocation.id) > -1)) {
+                        bounds.extend(this._affectedMobileLocation.marker.getPosition());
+                        boundsExtended = true;
+                    }
+                    if (this._mobileLocation) {
                         bounds.extend(this._mobileLocation.marker.getPosition());
                         boundsExtended = true;
                     }
