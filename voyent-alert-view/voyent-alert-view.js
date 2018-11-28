@@ -395,9 +395,9 @@ Polymer({
             );
             //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
             this._addFullscreenClickListener(this._mobileLocation.marker);
+            // Adjust the map bounds to include the mobile location
+            this._adjustBoundsAndPan();
         }
-        // Adjust the map bounds to include the mobile location
-        this._adjustBoundsAndPan();
     },
 
     /**
