@@ -217,6 +217,20 @@
         },
 
         /**
+         * Returns the bounding box of a specific polygon path.
+         * @param path
+         * @returns {google.maps.LatLngBounds}
+         * @private
+         */
+        _getBoundingBoxFromPolygonPath: function(path) {
+            var bounds = new google.maps.LatLngBounds();
+            path.forEach(function (element) {
+                bounds.extend(element);
+            });
+            return bounds;
+        },
+
+        /**
          * Checks if the passed zone overlaps other zones.
          * @param paths - The polygon paths.
          * @param stackToIgnore - A zone stack that will be ignored in the comparison.
@@ -1531,6 +1545,17 @@
                             "type": "Polygon",
                             "coordinates": [[]]
                         });
+                        if (zone.isCircle) {
+                            // VRAS-390 - The radius is used to setup circular geofences on mobile so while we no
+                            // longer use google.maps.Circle we must still provide a radius for cicular zones
+                            var center =  this.marker.getPosition();
+                            var bounds = _outer._getBoundingBoxFromPolygonPath(overlay.getPaths().getAt(0));
+                            var distance = turf.distance(
+                                turf.point([ bounds.getNorthEast().lng(), center.lat() ]),
+                                turf.point([ bounds.getSouthWest().lng(), center.lat() ])
+                            ) * 1000;
+                            json.properties[zone.id].radius = distance / 2;
+                        }
                         json.geo.geometries[i].coordinates =
                             _outer._AlertTemplate.calculateCoordinatesFromPaths(overlay.getPaths(),function(latLng) {
                                 //Look for the northern most point of the polygon so we know

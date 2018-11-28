@@ -1012,7 +1012,7 @@ Polymer({
                     }
                 }
             );
-            // The new zone is not fully within the outer zone OR the new zone and outer zone share a boundary
+            // The new zone is not fully within the outer zone OR the outer zone overlaps with the new zone
             if (!newZoneInsideOuterZone || outerZoneInsideNewZone) {
                 // Decrease the size
                 return adjustNewZoneSizeToFit(percentage-1);
