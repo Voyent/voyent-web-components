@@ -380,7 +380,18 @@
          * @private
          */
         _toggleMovement: function() {
+            var _this = this;
             this._showMovement = !this._showMovement;
+            // Scroll the panel down so the movement section is in view
+            setTimeout(function() {
+                var parent = document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor');
+                if (parent) {
+                    var propertiesPanel = parent.querySelector('#propertiesPanel');
+                    if (propertiesPanel) {
+                        propertiesPanel.scrollTop = propertiesPanel.scrollHeight;
+                    }
+                }
+            },300); // 300ms to match CSS height transition time
         },
 
         /**
@@ -389,6 +400,28 @@
          */
         _toggleBadge: function() {
             this._showBadge = !this._showBadge;
+        },
+
+        /**
+         * Highlight zone when mousing over it in side panel.
+         * @param e
+         * @private
+         */
+        _mouseoverZoneProperties: function(e) {
+            var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
+            var zone = zoneStack.getZoneAt(e.model.get('zoneIndex'));
+            zone.highlightOverlay();
+        },
+
+        /**
+         * Unhighlight zone when mousing over it in side panel.
+         * @param e
+         * @private
+         */
+        _mouseoutZoneProperties: function(e) {
+            var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
+            var zone = zoneStack.getZoneAt(e.model.get('zoneIndex'));
+            zone.unHighlightOverlay();
         },
 
         /**
@@ -2099,6 +2132,23 @@
                         if (!this.isCircle) {
                             this.shapeOverlay.setEditable(false);
                         }
+                    }
+                },
+                /**
+                 * Highlights the shape overlay by adding a border.
+                 */
+                highlightOverlay: function() {
+                    if (this.shapeOverlay && !this.active) {
+                        this.shapeOverlay.setOptions({ "strokeWeight":2.0});
+
+                    }
+                },
+                /**
+                 * Restores the original shape overlay border.
+                 */
+                unHighlightOverlay: function() {
+                    if (this.shapeOverlay && !this.active) {
+                        this.shapeOverlay.setOptions({"strokeWeight":0.50});
                     }
                 },
                 /**

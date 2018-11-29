@@ -1428,20 +1428,6 @@ Polymer({
     },
 
     /**
-     * Returns the style classes for the accordion stack elements.
-     * @param zoneStack
-     * @returns {string}
-     * @private
-     */
-    _getAccordionStackClasses: function(zoneStack) {
-        var classes = 'accordion stack';
-        if (this._loadedAlert.template.zoneStacks.indexOf(zoneStack) === this._loadedAlert.template.zoneStacks.length -1) {
-            classes += ' last';
-        }
-        return classes;
-    },
-
-    /**
      * Returns the style classes for the accordion zone label.
      * @param active
      * @param extraClass

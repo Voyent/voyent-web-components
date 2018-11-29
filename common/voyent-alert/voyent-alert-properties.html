@@ -30,12 +30,6 @@ Internal component used to display the properties panel inside Voyent alert comp
             .accordion {
                 text-align: left;
             }
-            .accordion.stack {
-                margin-bottom: 10px;
-            }
-            .accordion.stack.last {
-                margin-bottom: 0;
-            }
             .accordion .header {
                 padding: 5px;
                 position: relative;
@@ -241,6 +235,20 @@ Internal component used to display the properties panel inside Voyent alert comp
             .title.zone.movement.active {
                 font-size:16px;
             }
+            .title.zone.fallback {
+                width: calc(100% - 50px);
+            }
+            .fallback-img {
+                display: inline-block;
+                vertical-align: middle;
+                height: 100%;
+            }
+            .fallback-img img {
+                vertical-align: middle;
+                height: 16px;
+                width: 16px;
+                margin-top: -4px;
+            }
             .delete-button {
                 text-align:center;
             }
@@ -390,9 +398,12 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <div class$="{{_getAccordionClasses('header',_fallbackZone.active,'')}}">
                         <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(_fallbackZone.active)}}"
                                            on-click="_toggleFallbackZoneProperties"></paper-icon-button>
-                        <div class$="{{_getZoneTitleClasses(_fallbackZone.active,'')}}"
+                        <div class$="{{_getZoneTitleClasses(_fallbackZone.active,'fallback')}}"
                              on-click="_toggleFallbackZoneProperties">
                             [[_fallbackZone.name]]
+                        </div>
+                        <div class="fallback-img">
+                            <img src="../voyent-alert/img/fallback_zone_bttn.png">
                         </div>
                     </div>
                     <div class$="{{_getAccordionClasses('body',_fallbackZone.active,'')}}">
@@ -408,15 +419,19 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
             <template id="stacks-repeat" is="dom-repeat" items="[[_loadedAlert.template.zoneStacks]]" as="zoneStack" index-as="zoneStackIndex" strip-whitespace>
-                <div class$="[[_getAccordionStackClasses(zoneStack)]]">
+                <div class="accordion stack">
                     <template id="zones-repeat" is="dom-repeat" items="[[zoneStack.zones]]" as="zone" index-as="zoneIndex">
                         <div class$="{{_getAccordionClasses('header',zone.active,'')}}">
                             <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
                                                on-click="_togglePropertiesFromSidePanel"
+                                               on-mouseover="_mouseoverZoneProperties"
+                                               on-mouseout="_mouseoutZoneProperties"
                                                data-stack-index$="[[zoneStackIndex]]" data-zone-index$="[[zoneIndex]]"></paper-icon-button>
                             <div class$="{{_getZoneTitleClasses(zone.active,'')}}"
                                  data-zone-index$="[[zoneIndex]]" data-stack-index$="[[zoneStackIndex]]"
-                                 on-click="_togglePropertiesFromSidePanel">
+                                 on-click="_togglePropertiesFromSidePanel"
+                                 on-mouseover="_mouseoverZoneProperties"
+                                 on-mouseout="_mouseoutZoneProperties">
                                 [[zone.name]]
                             </div>
                         </div>
@@ -475,7 +490,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 Alert Movement
                             </div>
                         </div>
-                        <div class$="{{_getAccordionClasses('body',_showMovement,'alertMovement')}}">
+                        <div class$="{{_getAccordionClasses('body',_showMovement,'')}}">
                             <voyent-premium-content bubble-pos="middle">
                                 <p class="moving-alerts-msg"><strong>Note:</strong> Moving alerts are restricted to a maximum of two zones, excluding the "Entire Region" zone.</p>
                                 <div class="table">
