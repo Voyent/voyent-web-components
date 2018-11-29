@@ -1056,7 +1056,7 @@ Polymer({
     _removeProximityZonePrompt: function(e) {
         var _this = this;
         var zone = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
-        var msg = 'Are you sure you want to delete ' + zone.name + '? This cannot be undone!';
+        var msg = 'Are you sure you want to delete ' + zone.name + '?';
         this._openDialog('Confirm Zone Deletion',msg,null,null,null,false,false,function() {
             _this._removeProximityZone(e);
         });
@@ -1429,6 +1429,20 @@ Polymer({
     },
 
     /**
+     * Returns the style classes for the accordion stack elements.
+     * @param zoneStack
+     * @returns {string}
+     * @private
+     */
+    _getAccordionStackClasses: function(zoneStack) {
+        var classes = 'accordion stack';
+        if (this._loadedAlert.template.zoneStacks.indexOf(zoneStack) === this._loadedAlert.template.zoneStacks.length -1) {
+            classes += ' last';
+        }
+        return classes;
+    },
+
+    /**
      * Returns the style classes for the accordion zone label.
      * @param active
      * @param extraClass
@@ -1437,15 +1451,5 @@ Polymer({
      */
     _getZoneTitleClasses: function(active,extraClass) {
         return (active ? 'title zone active' : 'title zone') + ' ' + extraClass;
-    },
-
-    /**
-     * Returns the arrow icon to use for each accordion.
-     * @param active
-     * @returns {string}
-     * @private
-     */
-    _getArrowIcon: function(active) {
-        return active ? 'expand-more' : 'expand-less';
     }
 });

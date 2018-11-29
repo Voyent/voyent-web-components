@@ -32,39 +32,60 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             .accordion .header {
                 padding: 5px;
+                font-size: 14px;
+                background-color: #F6F6F6;
+            }
+            .main-header {
+                padding: 10px;
+                font-size: 16px;
+                background-color: var(--app-primary-color,#2E348E);
+                color: white;
+            }
+            .accordion .header,
+            .main-header {
                 position: relative;
                 display: block;
-                min-height: 20px;
                 cursor: pointer;
-                color: #777;
-                text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
-                font-size: 16px;
-                background: #ffffff;
-                background: -moz-linear-gradient(top, #ffffff 1%, #eaeaea 100%);
-                background: -webkit-gradient(linear, left top, left bottom, color-stop(1%,#ffffff), color-stop(100%,#eaeaea));
-                background: -webkit-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
-                background: -o-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
-                background: -ms-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
-                background: linear-gradient(top, #ffffff 1%,#eaeaea 100%);
-                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#eaeaea',GradientType=0 );
-                box-shadow:
-                        0px 0px 0px 1px rgba(155,155,155,0.3),
-                        1px 0px 0px 0px rgba(255,255,255,0.9) inset,
-                        0px 2px 2px rgba(0,0,0,0.1);
                 -webkit-user-select: none !important;
                 -khtml-user-select: none!important;
                 -moz-user-select: none !important;
                 -ms-user-select: none !important;
                 user-select: none !important;
             }
+            .main-header {
+                filter: brightness(85%);
+            }
+            .main-header[data-selected] {
+                font-weight: bold;
+                filter: brightness(100%);
+            }
+            .arrowtrue, .arrowfalse {
+                width: 0;
+                height: 0;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 6px solid;
+                margin: 8px 5px 0 2px;
+                float: left;
+                -moz-transition: -moz-transform 200ms;
+                -webkit-transition: -webkit-transform 200ms;
+                -o-transition: -o-transform 200ms;
+                transition: transform 200ms;
+            }
+            .arrowfalse {
+                -moz-transform: rotate(-90deg);
+                -o-transform: rotate(-90deg);
+                -webkit-transform: rotate(-90deg);
+                transform: rotate(-90deg);
+            }
             .accordion .header.active,
             .accordion .header:hover {
                 color: black;
-                text-shadow: 0px 1px 1px rgba(255,255,255, 0.6);
+                text-shadow: none;
                 box-shadow:
                         0px 0px 0px 1px rgba(155,155,155,0.3),
                         0px 2px 2px rgba(0,0,0,0.1);
-                word-wrap: break-word;
+                word-wrap: break-word;''
             }
             .accordion .header:hover {
                 background: #fff;
@@ -93,6 +114,12 @@ Internal component used to display the properties panel inside Voyent alert comp
                 -ms-transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
                 transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
                 box-shadow: 0px 0px 0px 1px rgba(155,155,155,0.3);
+            }
+            .accordion.stack {
+                border-bottom: 4px solid lightgrey;
+            }
+            .accordion.stack.last {
+                border: 0;
             }
             .row {
                 width: 100%;
@@ -185,26 +212,6 @@ Internal component used to display the properties panel inside Voyent alert comp
             }
             paper-dropdown-menu {
                 width:100%;
-            }
-            .alert-zones-label {
-                text-align:center;
-            }
-            .gradient-header {
-                background-color: #EEEEEE !important;
-                color:white !important;
-                background: -moz-linear-gradient(top, var(--app-primary-color,#2E348E) 0%, #EEEEEE 100%) !important;
-                background: -webkit-linear-gradient(top, var(--app-primary-color,#2E348E) 0%, #EEEEEE 100%) !important;
-                background: linear-gradient(to bottom, var(--app-primary-color,#2E348E) 0%, #EEEEEE 100%) !important;
-                padding: 10px !important;
-                text-shadow: 0 0 5px var(--app-primary-color,#2E348E) !important;
-                -webkit-touch-callout: none !important;
-                -webkit-user-select: none !important;
-                -khtml-user-select: none!important;
-                -moz-user-select: none !important;
-                -ms-user-select: none !important;
-                user-select: none !important;
-                font-size: 16px !important;
-                margin: 0 !important;
             }
             .movement-input {
                 --paper-input-container-input: {
@@ -369,15 +376,14 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
             <div>
-                <div class="alert-zones-label gradient-header">
-                    Proximity Zones
+                <div class="main-header text-center" data-selected$="[[_isZoneSelected]]">
+                    Notification Zones
                 </div>
             </div>
             <template is="dom-if" if="[[!hideBadgeChooser]]">
                 <div class="accordion">
                     <div class$="{{_getAccordionClasses('header',_showBadge,'')}}">
-                        <paper-icon-button title="Toggle Badge Properties" icon="{{_getArrowIcon(_showBadge)}}"
-                                           on-click="_toggleBadge"></paper-icon-button>
+                        <div title="Toggle Badge Properties" class$="arrow[[_showBadge]]" on-click="_toggleBadge"></div>
                         <div class$="{{_getZoneTitleClasses(_showBadge,'')}}">
                            Badge
                         </div>
@@ -396,8 +402,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             <template is="dom-if" if="[[_fallbackZone.enabled]]">
                 <div class="accordion stack">
                     <div class$="{{_getAccordionClasses('header',_fallbackZone.active,'')}}">
-                        <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(_fallbackZone.active)}}"
-                                           on-click="_toggleFallbackZoneProperties"></paper-icon-button>
+                        <div title="Toggle Zone Properties" class$="arrow[[_fallbackZone.active]]" on-click="_toggleFallbackZoneProperties"></div>
                         <div class$="{{_getZoneTitleClasses(_fallbackZone.active,'fallback')}}"
                              on-click="_toggleFallbackZoneProperties">
                             [[_fallbackZone.name]]
@@ -418,14 +423,13 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
             <template id="stacks-repeat" is="dom-repeat" items="[[_loadedAlert.template.zoneStacks]]" as="zoneStack" index-as="zoneStackIndex" strip-whitespace>
-                <div class="accordion stack">
+                <div class$="[[_getAccordionStackClasses(zoneStack,_loadedAlert.template.zoneStacks.length)]]">
                     <template id="zones-repeat" is="dom-repeat" items="[[zoneStack.zones]]" as="zone" index-as="zoneIndex">
                         <div class$="{{_getAccordionClasses('header',zone.active,'')}}">
-                            <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
-                                               on-click="_togglePropertiesFromSidePanel"
-                                               on-mouseover="_mouseoverZoneProperties"
-                                               on-mouseout="_mouseoutZoneProperties"
-                                               data-stack-index$="[[zoneStackIndex]]" data-zone-index$="[[zoneIndex]]"></paper-icon-button>
+                            <div title="Toggle Zone Properties" class$="arrow[[zone.active]]"
+                                 data-stack-index$="[[zoneStackIndex]]" data-zone-index$="[[zoneIndex]]"
+                                 on-click="_togglePropertiesFromSidePanel" on-mouseover="_mouseoverZoneProperties"
+                                 on-mouseout="_mouseoutZoneProperties"></div>
                             <div class$="{{_getZoneTitleClasses(zone.active,'')}}"
                                  data-zone-index$="[[zoneIndex]]" data-stack-index$="[[zoneStackIndex]]"
                                  on-click="_togglePropertiesFromSidePanel"
@@ -482,9 +486,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             <template is="dom-if" if="[[showMovementAccordion]]">
                 <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
                     <div class="accordion">
-                        <div class$="{{_getAccordionClasses('header',_showMovement,'gradient-header')}}">
-                            <paper-icon-button title="Toggle Movement Properties" icon="{{_getArrowIcon(_showMovement)}}"
-                                               on-click="_toggleMovement"></paper-icon-button>
+                        <div class="main-header zone-stack text-center" data-selected$="[[_showMovement]]">
+                            <div title="Toggle Movement Properties" class$="arrow[[_showMovement]]" on-click="_toggleMovement"></div>
+
                             <div class$="{{_getZoneTitleClasses(_showMovement,'movement')}}" on-click="_toggleMovement">
                                 Alert Movement
                             </div>

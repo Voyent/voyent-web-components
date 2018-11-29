@@ -29,22 +29,23 @@
                 width: var(--sidePanel-width,200px);
                 border-left:none;
             }
-            #propertiesPanel,
-            #crudPanel {
-                overflow-y: auto;
-                background-color: white;
-                position:relative;
+            #propertiesPanel {
+                overflow-y: scroll;
             }
             #crudPanel {
+                overflow: hidden;
                 height:45px;
                 text-align:center;
-                overflow: hidden;
+            }
+            #propertiesPanel,
+            #crudPanel {
+                background-color: white;
+                position:relative;
             }
             #crudPanel paper-button {
                 margin: 7px 0 0 0;
             }
             .alert-template-title,
-            .alert-zones-label,
             .alert-template-desc {
                 padding: 0 5px 0 5px;
             }
