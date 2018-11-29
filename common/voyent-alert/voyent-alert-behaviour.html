@@ -217,20 +217,6 @@
         },
 
         /**
-         * Returns the bounding box of a specific polygon path.
-         * @param path
-         * @returns {google.maps.LatLngBounds}
-         * @private
-         */
-        _getBoundingBoxFromPolygonPath: function(path) {
-            var bounds = new google.maps.LatLngBounds();
-            path.forEach(function (element) {
-                bounds.extend(element);
-            });
-            return bounds;
-        },
-
-        /**
          * Checks if the passed zone overlaps other zones.
          * @param paths - The polygon paths.
          * @param stackToIgnore - A zone stack that will be ignored in the comparison.
