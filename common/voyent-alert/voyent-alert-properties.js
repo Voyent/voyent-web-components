@@ -965,9 +965,10 @@ Polymer({
                 }
             }
             _this.fire('voyent-alert-zone-added',{
-                "id":newZone.id,"zone":newZone,
-                "stack":_this._loadedAlert.selectedStack,
-                "isFallbackZone":false
+                "id": newZone.id, "zone": newZone,
+                "stack": _this._loadedAlert.selectedStack,
+                "insertIndex": insertAtIndex,
+                "isFallbackZone": false
             });
             //Show the properties pane for the new zone.
             _this._toggleProperties(newZone);
