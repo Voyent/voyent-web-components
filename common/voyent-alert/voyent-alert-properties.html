@@ -34,6 +34,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 padding: 5px;
                 font-size: 14px;
                 background-color: #F6F6F6;
+                color: #777;
             }
             .main-header {
                 padding: 10px;
@@ -59,12 +60,28 @@ Internal component used to display the properties panel inside Voyent alert comp
                 font-weight: bold;
                 filter: brightness(100%);
             }
+            .accordion .header.active,
+            .accordion .header:hover {
+                color: black;
+                text-shadow: none;
+                box-shadow:
+                        0px 0px 0px 1px rgba(155,155,155,0.3),
+                        0px 2px 2px rgba(0,0,0,0.1);
+                word-wrap: break-word;
+            }
+            .accordion .header:hover {
+                background: #fff;
+            }
+            .accordion .header.active {
+                background: #c6e1ec;
+                font-weight: bold;
+            }
             .arrowtrue, .arrowfalse {
                 width: 0;
                 height: 0;
-                border-left: 6px solid transparent;
-                border-right: 6px solid transparent;
-                border-top: 6px solid;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 4px solid;
                 margin: 8px 5px 0 2px;
                 float: left;
                 -moz-transition: -moz-transform 200ms;
@@ -78,21 +95,11 @@ Internal component used to display the properties panel inside Voyent alert comp
                 -webkit-transform: rotate(-90deg);
                 transform: rotate(-90deg);
             }
-            .accordion .header.active,
-            .accordion .header:hover {
-                color: black;
-                text-shadow: none;
-                box-shadow:
-                        0px 0px 0px 1px rgba(155,155,155,0.3),
-                        0px 2px 2px rgba(0,0,0,0.1);
-                word-wrap: break-word;''
-            }
-            .accordion .header:hover {
-                background: #fff;
-            }
-            .accordion .header.active {
-                background: #c6e1ec;
-                font-weight: bold;
+            .main-header .arrowtrue,
+            .main-header .arrowfalse {
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 6px solid;
             }
             .accordion .body {
                 background: rgba(255, 255, 255, 0.5);
@@ -488,7 +495,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <div class="accordion">
                         <div class="main-header zone-stack text-center" data-selected$="[[_showMovement]]">
                             <div title="Toggle Movement Properties" class$="arrow[[_showMovement]]" on-click="_toggleMovement"></div>
-
                             <div class$="{{_getZoneTitleClasses(_showMovement,'movement')}}" on-click="_toggleMovement">
                                 Alert Movement
                             </div>
