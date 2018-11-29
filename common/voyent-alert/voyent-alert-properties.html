@@ -411,8 +411,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                             <div class="fullWidthCol buttonCol fallback">
                                 <paper-icon-button title="Copy message contents and recipients" icon="content-copy"
                                                    on-click="_triggerZoneCopy"></paper-icon-button>
-                                <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeFallbackZone"
-                                                   tabindex="4"></paper-icon-button>
+                                <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeFallbackZone"></paper-icon-button>
                             </div>
                         </div>
                     </div>
@@ -444,8 +443,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         <paper-icon-button title="Copy message contents and recipients" icon="content-copy"
                                                            on-click="_triggerZoneCopy"></paper-icon-button>
                                         <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeProximityZonePrompt"
-                                                           data-stack-index$="[[zoneStackIndex]]" data-zone-index$="[[zoneIndex]]"
-                                                           tabindex="4"></paper-icon-button>
+                                                           data-stack-index$="[[zoneStackIndex]]" data-zone-index$="[[zoneIndex]]">
+                                        </paper-icon-button>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -471,7 +470,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     <div class="valueCol">
                                         <paper-swatch-picker color="{{zone.colour}}" color-list='[[zoneColours]]'
                                                              column-count="7" horizontal-align="right"
-                                                             tabindex="6" on-color-changed="_updateColour">
+                                                             on-color-changed="_updateColour">
                                         </paper-swatch-picker>
                                     </div>
                                 </div>
@@ -498,15 +497,13 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         <div class="inputCol movement">
                                             <paper-input value="{{_alertDirection::input}}"
                                                          class="movement-input"
-                                                         tabindex="2"
                                                          placeholder="Degrees"
                                                          type="number" no-label-float
                                                          step="0.05" min="0" max="360" maxlength="3">
                                             </paper-input>
                                         </div>
                                         <div class="dropdownCol movement">
-                                            <paper-dropdown-menu tabindex="3"
-                                                                 class="movement-input direction"
+                                            <paper-dropdown-menu class="movement-input direction"
                                                                  placeholder="Direction"
                                                                  no-label-float>
                                                 <iron-selector id="alertCardinalDirection" class="dropdown-content"
@@ -524,15 +521,13 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         <div class="inputCol movement">
                                             <paper-input value="{{_alertSpeed::input}}"
                                                          class="movement-input"
-                                                         tabindex="3"
                                                          placeholder="Speed"
                                                          type="number" no-label-float
                                                          step="0.5" min="0" maxlength="5">
                                             </paper-input>
                                         </div>
                                         <div class="dropdownCol movement">
-                                            <paper-dropdown-menu tabindex="4"
-                                                                 class="movement-input"
+                                            <paper-dropdown-menu class="movement-input"
                                                                  placeholder="Unit"
                                                                  no-label-float>
                                                 <iron-selector id="alertSpeedUnit" class="dropdown-content"
