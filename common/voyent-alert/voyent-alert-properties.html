@@ -33,6 +33,9 @@ Internal component used to display the properties panel inside Voyent alert comp
             .accordion.stack {
                 margin-bottom: 10px;
             }
+            .accordion.stack.last {
+                margin-bottom: 0;
+            }
             .accordion .header {
                 padding: 5px;
                 position: relative;
@@ -405,7 +408,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 </div>
             </template>
             <template id="stacks-repeat" is="dom-repeat" items="[[_loadedAlert.template.zoneStacks]]" as="zoneStack" index-as="zoneStackIndex" strip-whitespace>
-                <div class="accordion stack">
+                <div class$="[[_getAccordionStackClasses(zoneStack)]]">
                     <template id="zones-repeat" is="dom-repeat" items="[[zoneStack.zones]]" as="zone" index-as="zoneIndex">
                         <div class$="{{_getAccordionClasses('header',zone.active,'')}}">
                             <paper-icon-button title="Toggle Zone Properties" icon="{{_getArrowIcon(zone.active)}}"
@@ -472,7 +475,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 Alert Movement
                             </div>
                         </div>
-                        <div class$="{{_getAccordionClasses('body',_showMovement,'')}}">
+                        <div class$="{{_getAccordionClasses('body',_showMovement,'alertMovement')}}">
                             <voyent-premium-content bubble-pos="middle">
                                 <p class="moving-alerts-msg"><strong>Note:</strong> Moving alerts are restricted to a maximum of two zones, excluding the "Entire Region" zone.</p>
                                 <div class="table">
@@ -542,7 +545,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             <div class="dialogEnd"></div>
             <div>
                 <template is="dom-if" if="[[_dialogMessage]]">
-                    <p>[[_dialogMessage]]</p>
+                    <p class$="[[_getDialogMessageClasses(_showDialogInput,_showDialogToggle,_showDialogBadge)]]">[[_dialogMessage]]</p>
                 </template>
                 <template is="dom-if" if="[[_showDialogInput]]">
                     <paper-input autofocus no-label-float on-keyup="_dialogKeyUp" maxlength="70" value="{{_dialogInput}}"></paper-input>
@@ -558,7 +561,6 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <br/>
                     <voyent-alert-badge-chooser value="{{_dialogBadge}}" badgedir="{{badgedir}}"></voyent-alert-badge-chooser>
                 </template>
-                
                 <div class="dialog-bttns">
                     <br/>
                     <paper-button raised title="Cancel" on-click="closeDialog">Cancel</paper-button>
