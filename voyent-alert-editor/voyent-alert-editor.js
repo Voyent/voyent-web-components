@@ -36,6 +36,9 @@ Polymer({
         //Initialize parentTemplate list with a fake element so the "no templates found"
         //message won't flicker in the sidebar while we are fetching the templates.
         this._parentTemplates = ['tmp'];
+        
+        // Load any checkbox state
+        this._applyHideSampleDefault();
     },
 
     /**
@@ -616,8 +619,23 @@ Polymer({
      * We want to re-run our template query to update the list
      */
     _hideSampleChanged: function(newVal, oldVal) {
+        // Re-run our query, which accounts for the state of the Hide Sample checkbox
         if (typeof oldVal !== 'undefined' && typeof newVal !== 'undefined') {
             this._queryTemplates(this._templateSearchQuery);
+            
+            if (this.hideSample) {
+                voyent.$.setSessionStorageItem(btoa(voyent.auth.getLastKnownUsername() + 'hideSample'), btoa(this.hideSample));
+            }
+        }
+    },
+    
+    _applyHideSampleDefault: function() {
+        if (voyent.auth.getLastKnownUsername()) {
+            var couldSet = atob(voyent.$.getSessionStorageItem(btoa(voyent.auth.getLastKnownUsername() + 'hideSample')));
+            
+            if (couldSet) {
+                this.set('hideSample', couldSet === 'true' ? true : false);
+            }
         }
     },
 });
