@@ -39,6 +39,7 @@ Internal component used to display the properties panel inside Voyent alert comp
             .main-header {
                 padding: 10px;
                 font-size: 16px;
+                font-weight: bold;
                 background-color: var(--app-primary-color,#2E348E);
                 color: white;
             }
@@ -57,24 +58,14 @@ Internal component used to display the properties panel inside Voyent alert comp
                 filter: brightness(85%);
             }
             .main-header[data-selected] {
-                font-weight: bold;
                 filter: brightness(100%);
             }
             .accordion .header.active,
             .accordion .header:hover {
-                color: black;
-                text-shadow: none;
-                box-shadow:
-                        0px 0px 0px 1px rgba(155,155,155,0.3),
-                        0px 2px 2px rgba(0,0,0,0.1);
-                word-wrap: break-word;
-            }
-            .accordion .header:hover {
-                background: #fff;
-            }
-            .accordion .header.active {
                 background: #c6e1ec;
                 font-weight: bold;
+                color: black;
+                word-wrap: break-word;
             }
             .arrowtrue, .arrowfalse {
                 width: 0;
@@ -121,6 +112,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 -ms-transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
                 transition: max-height 0.5s ease-in-out, box-shadow 0.1s linear;
                 box-shadow: 0px 0px 0px 1px rgba(155,155,155,0.3);
+                border-bottom: 1px solid lightgrey;
             }
             .accordion.stack {
                 border-bottom: 4px solid lightgrey;
@@ -251,7 +243,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 text-align: left;
             }
             .title.zone.fallback {
-                width: calc(100% - 50px);
+                width: calc(100% - 38px);
             }
             .fallback-img {
                 display: inline-block;

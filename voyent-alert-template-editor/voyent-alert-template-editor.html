@@ -98,8 +98,13 @@ Example:
             </div>
         </div>
         <div id$="[[_FULLSCREEN_CONTAINER_ID]]" hidden></div>
-        <div id$="[[_FULLSCREEN_BUTTON_ID]]" class="custom-control fullscreen no-select" title="Enter Fullscreen Mode" hidden>
-            <img src="../common/voyent-alert/img/fullscreen_bttn.png">
+        <div id$="[[_FULLSCREEN_BUTTON_ID]]" class="custom-control fullscreen no-select" hidden>
+            <div id="openButton" title="Enter Fullscreen Mode">
+                <img src="../common/voyent-alert/img/fullscreen_bttn.png">
+            </div>
+            <div id="closeButton" title="Exit Fullscreen Mode" hidden>
+                <paper-button>Exit Fullscreen</paper-button>
+            </div>
         </div>
         <div id$="[[_CIRCLE_BUTTON_ID]]" class="customMapBttnWrap circleBttn no-select" hidden>
             <div class="customMapBttn" title="Add Circular Zone">

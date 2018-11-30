@@ -2177,7 +2177,7 @@
                  */
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({ "strokeWeight":3.0});
+                        this.shapeOverlay.setOptions({ "strokeWeight":3.0, "fillOpacity": 0.30 });
                         if (!this.isCircle) {
                             this.shapeOverlay.setEditable(true);
                         }
@@ -2188,7 +2188,7 @@
                  */
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({"strokeWeight":0.50});
+                        this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
                         if (!this.isCircle) {
                             this.shapeOverlay.setEditable(false);
                         }
@@ -2199,7 +2199,7 @@
                  */
                 highlightOverlay: function() {
                     if (this.shapeOverlay && !this.active) {
-                        this.shapeOverlay.setOptions({ "strokeWeight":2.0});
+                        this.shapeOverlay.setOptions({ "strokeWeight": 2.0, "fillOpacity": 0.30 });
 
                     }
                 },
@@ -2208,7 +2208,7 @@
                  */
                 unHighlightOverlay: function() {
                     if (this.shapeOverlay && !this.active) {
-                        this.shapeOverlay.setOptions({"strokeWeight":0.50});
+                        this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
                     }
                 },
                 /**
