@@ -317,6 +317,7 @@
          * @private
          */
         _toggleProperties: function(zone) {
+            var _this = this;
             if (!this._loadedAlert || !this._loadedAlert.template) { return; }
 
             // If they toggle the currently toggled accordion pane then we'll close it
@@ -338,6 +339,22 @@
                     "zone": zone,
                     "isFallbackZone": false
                 });
+                // Scroll to the selected accordion pane
+                setTimeout(function() {
+                    var parent = document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor');
+                    if (parent) {
+                        var propertiesPanel = parent.querySelector('#propertiesPanel');
+                        if (propertiesPanel) {
+                            var propertiesComp = propertiesPanel.querySelector('voyent-alert-properties');
+                            if (propertiesComp) {
+                                var activeZone = propertiesComp.querySelector('.header.active');
+                                if (activeZone) {
+                                    propertiesPanel.scrollTop = activeZone.offsetTop;
+                                }
+                            }
+                        }
+                    }
+                },300); // 300ms to match CSS height transition time
             }
             else {
                 this.fire('voyent-alert-zone-selected',{
