@@ -480,8 +480,6 @@ Polymer({
                     vras.getLocation();
                     // Start polling the location position
                     _this._startMobileLocationPolling();
-                    // Add the location to the map
-                    _this._mobileLocation.addToMap();
                 }
                 else if (_this._mobileLocation) {
                     // Remove the location from the map
@@ -497,7 +495,8 @@ Polymer({
                 window._this = {
                     returnCurrentLocation: function(lat,lng) {
                         _this._drawMobileLocation(lat, lng);
-                        // Pan on the original alert + the mobile location
+                        // Pan on the original alert + the mobile location, only do
+                        // this when requested so we don't pan the map when polling
                         if (_this._includeMobileLocationInPanning) {
                             // Adjust the map bounds to include the mobile location
                             _this._adjustBoundsAndPan(_this._fullscreenEnabledByUser);
