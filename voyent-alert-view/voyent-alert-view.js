@@ -500,7 +500,7 @@ Polymer({
                         // Pan on the original alert + the mobile location
                         if (_this._includeMobileLocationInPanning) {
                             // Adjust the map bounds to include the mobile location
-                            _this._adjustBoundsAndPan(_this._fullscreenEnabledByUser, [_this._mobileLocation.marker.getPosition()]);
+                            _this._adjustBoundsAndPan(_this._fullscreenEnabledByUser);
                             _this._includeMobileLocationInPanning = false;
                         }
                     }
@@ -529,6 +529,7 @@ Polymer({
      */
     _startMobileLocationPolling: function() {
         this._mobileLocationPoller = setInterval(function() {
+            console.log('polling for new location...');
             vras.getLocation();
         },10000);
     },

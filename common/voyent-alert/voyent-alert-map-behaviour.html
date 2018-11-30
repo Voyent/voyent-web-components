@@ -1618,10 +1618,9 @@
         /**
          * Updates the map bounds so all the map overlays are in view and then pans the map.
          * @param forceMapPan
-         * @param latLngs - LatLng objects that will always be included in the map bounds
          * @private
          */
-        _adjustBoundsAndPan: function(forceMapPan, latLngs) {
+        _adjustBoundsAndPan: function(forceMapPan) {
             if (this._fullscreenEnabledByUser && !forceMapPan) { //VRAS-306
                 if (this._mapCenterBeforeOrientationChange) {
                     this._map.setCenter(this._mapCenterBeforeOrientationChange);
@@ -1679,12 +1678,10 @@
                         }
                     }
                 }
-                // Include all passed LatLng objects in the map bounds
-                if (latLngs && latLngs.length) {
-                    for (i=0; i<latLngs.length; i++) {
-                        bounds.extend(latLngs[i]);
-                        boundsExtended = true;
-                    }
+                // Always include the mobile location in the map bounds if it is available
+                if (this._mobileLocation && this._mobileLocation.marker) {
+                    bounds.extend(this._mobileLocation.marker.getPosition());
+                    boundsExtended = true;
                 }
                 //Ensure we only do this if the bounds were extended otherwise
                 //the map may pan to an empty bounds (middle of the ocean).
