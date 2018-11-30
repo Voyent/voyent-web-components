@@ -317,7 +317,6 @@
          * @private
          */
         _toggleProperties: function(zone) {
-            var _this = this;
             if (!this._loadedAlert || !this._loadedAlert.template) { return; }
 
             // If they toggle the currently toggled accordion pane then we'll close it
@@ -339,22 +338,7 @@
                     "zone": zone,
                     "isFallbackZone": false
                 });
-                // Scroll to the selected accordion pane
-                setTimeout(function() {
-                    var parent = document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor');
-                    if (parent) {
-                        var propertiesPanel = parent.querySelector('#propertiesPanel');
-                        if (propertiesPanel) {
-                            var propertiesComp = propertiesPanel.querySelector('voyent-alert-properties');
-                            if (propertiesComp) {
-                                var activeZone = propertiesComp.querySelector('.header.active');
-                                if (activeZone) {
-                                    propertiesPanel.scrollTop = activeZone.offsetTop;
-                                }
-                            }
-                        }
-                    }
-                },300); // 300ms to match CSS height transition time
+                this._scrollToActivePane();
             }
             else {
                 this.fire('voyent-alert-zone-selected',{
@@ -389,6 +373,7 @@
                     "zone": this._fallbackZone,
                     "isFallbackZone": true
                 });
+                this._scrollToTop();
             }
         },
 
@@ -397,13 +382,72 @@
          * @private
          */
         _toggleMovement: function() {
-            var _this = this;
             this._showMovement = !this._showMovement;
-            // Scroll the panel down so the movement section is in view
+            this._scrollToBottom();
+        },
+
+        /**
+         * Scrolls the properties panel to the currently active pane.
+         * @private
+         */
+        _scrollToActivePane: function() {
+            var _this = this;
             setTimeout(function() {
-                var parent = document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor');
-                if (parent) {
-                    var propertiesPanel = parent.querySelector('#propertiesPanel');
+                // This may be triggered from one of the alert editor component or from the properties
+                // component so determine which one and find the component we need based on that
+                var alertEditorComp = _this.nodeName === 'VOYENT-ALERT-PROPERTIES'
+                    ? document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor')
+                    : _this;
+                if (alertEditorComp) {
+                    var propertiesPanel = alertEditorComp.querySelector('#propertiesPanel');
+                    if (propertiesPanel) {
+                        var propertiesComp = propertiesPanel.querySelector('voyent-alert-properties');
+                        if (propertiesComp) {
+                            var activeZone = propertiesComp.querySelector('.header.active');
+                            if (activeZone) {
+                                propertiesPanel.scrollTop = activeZone.offsetTop;
+                            }
+                        }
+                    }
+                }
+            },300); // 300ms to match CSS height transition time
+        },
+
+        /**
+         * Scrolls the properties panel to the top.
+         * @private
+         */
+        _scrollToTop: function() {
+            var _this = this;
+            setTimeout(function() {
+                // This may be triggered from one of the alert editor component or from the properties
+                // component so determine which one and find the component we need based on that
+                var alertEditorComp = _this.nodeName === 'VOYENT-ALERT-PROPERTIES'
+                    ? document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor')
+                    : _this;
+                if (alertEditorComp) {
+                    var propertiesPanel = alertEditorComp.querySelector('#propertiesPanel');
+                    if (propertiesPanel) {
+                        propertiesPanel.scrollTop = 0;
+                    }
+                }
+            },300); // 300ms to match CSS height transition time
+        },
+
+        /**
+         * Scrolls the properties panel to the bottom.
+         * @private
+         */
+        _scrollToBottom: function() {
+            var _this = this;
+            setTimeout(function() {
+                // This may be triggered from one of the alert editor component or from the properties
+                // component so determine which one and find the component we need based on that
+                var alertEditorComp = _this.nodeName === 'VOYENT-ALERT-PROPERTIES'
+                    ? document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor')
+                    : _this;
+                if (alertEditorComp) {
+                    var propertiesPanel = alertEditorComp.querySelector('#propertiesPanel');
                     if (propertiesPanel) {
                         propertiesPanel.scrollTop = propertiesPanel.scrollHeight;
                     }
