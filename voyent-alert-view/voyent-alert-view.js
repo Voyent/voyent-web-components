@@ -31,8 +31,9 @@ Polymer({
         this._LOCATION_TYPE_COUNT_LEGEND_ID = 'locationTypesCount';
         this._LOCATION_TYPE_STATE_LEGEND_ID = 'locationTypesState';
         this._CURRENT_LOCATION_BUTTON_ID = 'currentLocationButton';
+        this._addNativeAppStateListeners();
     },
-    
+
     /**
      * Finish initializing after login.
      * @private
@@ -481,7 +482,7 @@ Polymer({
                     // Start polling the location position
                     _this._startMobileLocationPolling();
                 }
-                else if (_this._mobileLocation) {
+                else {
                     // Remove the location from the map
                     _this._mobileLocation.removeFromMap();
                     _this._mobileLocation = null;
@@ -498,7 +499,6 @@ Polymer({
                         // Pan on the original alert + the mobile location, only do
                         // this when requested so we don't pan the map when polling
                         if (_this._includeMobileLocationInPanning) {
-                            // Adjust the map bounds to include the mobile location
                             _this._adjustBoundsAndPan(_this._fullscreenEnabledByUser);
                             _this._includeMobileLocationInPanning = false;
                         }
@@ -539,6 +539,27 @@ Polymer({
      */
     _stopMobileLocationPolling: function() {
         clearInterval(this._mobileLocationPoller);
+        this._mobileLocationPoller = null;
+    },
+
+    /**
+     * Listeners for native app pause / resume events.
+     * @private
+     */
+    _addNativeAppStateListeners: function() {
+        var _this = this;
+        window.addEventListener('voyent-pausing-native-app', function() {
+            // Don't continue location polling when the app goes in the background (Android seems to do this)
+            if (_this._mobileLocation && _this._mobileLocationPoller) {
+                _this._stopMobileLocationPolling();
+            }
+        });
+        window.addEventListener('voyent-resuming-native-app', function() {
+            // If we have a mobile location then start polling updates for it again
+            if (_this._mobileLocation) {
+                _this._startMobileLocationPolling();
+            }
+        });
     },
 
     /**
