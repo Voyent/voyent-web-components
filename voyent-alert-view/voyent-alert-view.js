@@ -528,7 +528,6 @@ Polymer({
      */
     _startMobileLocationPolling: function() {
         this._mobileLocationPoller = setInterval(function() {
-            console.log('polling for new location...');
             vras.getLocation();
         },10000);
     },
