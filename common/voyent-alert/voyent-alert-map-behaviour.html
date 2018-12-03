@@ -551,6 +551,40 @@
         },
 
         /**
+         * Sets the acknowledgement property into the zone associated with the stack and zone indices.
+         * @param acknowledgement
+         * @param zoneIndex
+         * @param stackIndex
+         */
+        setAcknowledgement: function(acknowledgement, zoneIndex, stackIndex) {
+            if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
+                if (typeof stackIndex === 'number' && stackIndex >= 0) {
+                    this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].acknowledgement = acknowledgement;
+                }
+                else {
+                    this._loadedAlert.selectedStack.zones[zoneIndex].acknowledgement = acknowledgement;
+                }
+            }
+        },
+
+        /**
+         * Gets the acknowledgement property for the zone associated with the stack and zone indices.
+         * @param zoneIndex
+         * @param stackIndex
+         */
+        getAcknowledgement: function(zoneIndex, stackIndex) {
+            if (typeof zoneIndex === 'number' && zoneIndex >= 0) {
+                if (typeof stackIndex === 'number' && stackIndex >= 0) {
+                    return this._loadedAlert.template.zoneStacks[stackIndex].zones[zoneIndex].acknowledgement;
+                }
+                else {
+                    return this._loadedAlert.selectedStack.zones[zoneIndex].acknowledgement;
+                }
+            }
+            return null;
+        },
+
+        /**
          * Updates the zone name associated with the stack and zone indices.
          * @param zoneName
          * @param zoneIndex
@@ -601,6 +635,26 @@
         getFallbackNotificationFilter: function() {
             if (this._fallbackZone) {
                 return this._fallbackZone.notificationFilter;
+            }
+            return null;
+        },
+
+        /**
+         * Sets the acknowledgement property for the fallback zone.
+         * @param acknowledgement
+         */
+        setFallbackAcknowledgement: function(acknowledgement) {
+            if (this._fallbackZone) {
+                this._fallbackZone.acknowledgement = acknowledgement;
+            }
+        },
+
+        /**
+         * Gets the acknowledgement property for the fallback zone.
+         */
+        getFallbackAcknowledgement: function() {
+            if (this._fallbackZone) {
+                return this._fallbackZone.acknowledgement;
             }
             return null;
         },
@@ -926,7 +980,7 @@
                             zoneGeometries[i].id, properties.name,
                             this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
                             properties.shape === 'circle', properties.opacity, properties.colour,
-                            properties.messageTemplate, properties.notificationFilter, zIndex)
+                            properties.messageTemplate, properties.notificationFilter, properties.acknowledgement, zIndex)
                         );
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //Add click listener to the zone so the user can click anywhere on the map to enable fullscreen.
@@ -997,6 +1051,7 @@
                         fallbackZoneProperties.colour,
                         fallbackZoneProperties.messageTemplate,
                         fallbackZoneProperties.notificationFilter,
+                        fallbackZoneProperties.acknowledgement,
                         fallbackZoneProperties.zIndex
                     );
                 }
