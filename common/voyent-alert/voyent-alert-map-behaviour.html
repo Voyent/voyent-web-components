@@ -209,6 +209,7 @@
                 //dimensions have not changed so we will ignore these events.
                 var offsetWidth = _this.querySelector('#map').offsetWidth;
                 var offsetHeight = _this.querySelector('#map').offsetHeight;
+                console.log('ResizeObserver',offsetWidth,offsetHeight,_this._previousMapWidth,_this._previousMapHeight);
                 if ((_this._previousMapWidth === offsetWidth &&
                     _this._previousMapHeight === offsetHeight) ||
                     (offsetWidth === 0 || offsetHeight === 0)) {
