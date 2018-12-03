@@ -205,18 +205,20 @@
             });
             //Make sure the map is always sized correctly when the map size changes.
             new ResizeObserver(function() {
-                //This ResizeObserver listener sometimes fires when the map
-                //dimensions have not changed so we will ignore these events.
-                var offsetWidth = _this.querySelector('#map').offsetWidth;
-                var offsetHeight = _this.querySelector('#map').offsetHeight;
-                console.log('ResizeObserver',offsetWidth,offsetHeight,_this._previousMapWidth,_this._previousMapHeight);
-                if ((_this._previousMapWidth === offsetWidth &&
-                    _this._previousMapHeight === offsetHeight) ||
-                    (offsetWidth === 0 || offsetHeight === 0)) {
+                var newWidth = _this.querySelector('#map').offsetWidth;
+                var newHeight = _this.querySelector('#map').offsetHeight;
+                var currentObserverTime = new Date().getTime();
+                // The ResizeObserver sometimes fires when the map dimensions have not changed or when the map is not
+                // visible (dimensions of 0) so we will ignore these events. Additionally, ignore any events which were
+                // fired within the last 250ms to prevent the map from resizing recursively (VRAS-650).
+                if ((_this._previousMapWidth === newWidth && _this._previousMapHeight === newHeight) ||
+                    (newWidth === 0 || newHeight === 0) ||
+                    currentObserverTime - _this._previousObserverTime < 250) {
                     return;
                 }
-                _this._previousMapWidth = offsetWidth;
-                _this._previousMapHeight = offsetHeight;
+                _this._previousMapWidth = newWidth;
+                _this._previousMapHeight = newHeight;
+                _this._previousObserverTime = new Date().getTime();
                 _this.resizeMap();
             }).observe(this.querySelector('#map'));
             //De-select any selected zone stack on map click.
