@@ -161,7 +161,7 @@ Polymer({
         if (!this._loadedAlert || !this._loadedAlert.template) {
             return this.fire('message-error', 'Unable to save alert as template: No alert loaded');
         }
-        this._openDialog('Save Alert As Template',null,null,null,'Save Location With Template?',false,false,function() {
+        this._openDialog('Save Alert As Template',null,null,null,'Save Location with Template?',false,false,function() {
             _this._loadedAlert.template.setSavePosition(_this._dialogToggle);
             var id = _this._loadedAlert.template.id;
             var parentId = _this._loadedAlert.template.parentId;

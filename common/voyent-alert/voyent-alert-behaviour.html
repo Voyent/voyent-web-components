@@ -464,24 +464,40 @@
         },
 
         /**
-         * Highlight zone when mousing over it in side panel.
+         * Add mouseover styling to zone when mousing over it in side panel.
          * @param e
          * @private
          */
         _mouseoverZoneProperties: function(e) {
             var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
-            var zone = zoneStack.getZoneAt(e.model.get('zoneIndex'));
+            this._mouseoverZone(zoneStack.getZoneAt(e.model.get('zoneIndex')));
+        },
+
+        /**
+         * Adds mouseover styling for the passed zone.
+         * @param zone
+         * @private
+         */
+        _mouseoverZone: function(zone) {
             zone.highlightOverlay();
         },
 
         /**
-         * Unhighlight zone when mousing over it in side panel.
+         * Removes mouseover styling from a zone when mousing over it in side panel.
          * @param e
          * @private
          */
         _mouseoutZoneProperties: function(e) {
             var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
-            var zone = zoneStack.getZoneAt(e.model.get('zoneIndex'));
+            this._mouseoutZone(zoneStack.getZoneAt(e.model.get('zoneIndex')));
+        },
+
+        /**
+         * Removes mouseover styling from the passed zone.
+         * @param zone
+         * @private
+         */
+        _mouseoutZone: function(zone) {
             zone.unHighlightOverlay();
         },
 
@@ -1831,6 +1847,13 @@
                             _outer.set('_loadedAlert.selectedStack',_this);
                             _outer._toggleProperties(zone);
                         }
+                    });
+                    // Adjust zone styling when hovering over zone with mouse
+                    google.maps.event.addListener(overlay, 'mouseover', function() {
+                        _outer._mouseoverZone(zone);
+                    });
+                    google.maps.event.addListener(overlay, 'mouseout', function() {
+                        _outer._mouseoutZone(zone);
                     });
                     //Store the previous vertex position when clicking
                     //on an existing vertex in case we need to revert.
