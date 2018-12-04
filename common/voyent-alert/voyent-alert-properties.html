@@ -60,10 +60,12 @@ Internal component used to display the properties panel inside Voyent alert comp
             .main-header[data-selected] {
                 filter: brightness(100%);
             }
+            .accordion .header.active {
+                font-weight: bold;
+            }
             .accordion .header.active,
             .accordion .header:hover {
                 background: #c6e1ec;
-                font-weight: bold;
                 color: black;
                 word-wrap: break-word;
             }
