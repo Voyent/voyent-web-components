@@ -1328,6 +1328,9 @@
                         }
                         _this.manageAlertBoundary(true);
                     });
+                    google.maps.event.addListener(this.marker, 'dragend', function () {
+                        _this.manageAlertBoundary(false);
+                    });
                     //Add click listener to marker.
                     google.maps.event.addListener(this.marker, 'click', function () {
                         //Toggle all the accordion panes closed and de-select all stacks.
@@ -1810,6 +1813,9 @@
                         }
                         _this.manageStackBoundary(true);
                     });
+                    google.maps.event.addListener(marker, 'dragend', function () {
+                        _this.manageStackBoundary(false);
+                    });
                     //Add click listener to marker.
                     google.maps.event.addListener(marker, 'click', function () {
                         //Toggle all the accordion panes closed.
@@ -2223,7 +2229,6 @@
                 highlightOverlay: function() {
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ "strokeWeight": 2.0, "fillOpacity": 0.30 });
-
                     }
                 },
                 /**
