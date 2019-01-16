@@ -94,13 +94,13 @@ Example:
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
         </div>
         <div id$="[[_ZOOM_BUTTONS_ID]]" class="zoomBttns no-select" hidden>
-            <div id="zoomInBttn" class="zoomBttnWrap zoomInBttnWrap">
+            <div id="zoomInBttn" class="zoomBttnWrap zoomInBttnWrap" title="Zoom in">
                 <div class="zoomBttn zoomInBttn">
                     <img src="../common/voyent-alert/img/tmapctrl_hdpi.png" class="zoomImg zoomInImg">
                 </div>
             </div>
             <div class="zoomSeparator"></div>
-            <div id="zoomOutBttn" class="zoomBttnWrap zoomOutBttnWrap">
+            <div id="zoomOutBttn" class="zoomBttnWrap zoomOutBttnWrap" title="Zoom out">
                 <div class="zoomBttn zoomOutBttn">
                     <img src="../common/voyent-alert/img/tmapctrl_hdpi.png" class="zoomImg zoomOutImg">
                 </div>
@@ -108,10 +108,11 @@ Example:
         </div>
         <div id$="[[_MAP_TYPE_BUTTONS_ID]]" class="mapTypeBttns no-select" hidden>
             <div class="mapTypeBttnWrap mapTypeRoadBttnWrap">
-                <div id="mapTypeRoadBttn" class="mapTypeBttn mapTypeRoadBttn">
+                <div id="mapTypeRoadBttn" class="mapTypeBttn mapTypeRoadBttn" title="Show street map">
                     Map
                 </div>
-                <div id="mapTypeTerrainBttn" class="mapTypeDropdownBttnWrap mapTypeTerrainBttnWrap">
+                <div id="mapTypeTerrainBttn" class="mapTypeDropdownBttnWrap mapTypeTerrainBttnWrap"
+                     title="Show street map with terrain">
                     <div class="mapTypeDropdownBttn">
                         <span class="mapTypeCheckboxWrap">
                             <div class="mapTypeCheckbox">
@@ -124,10 +125,11 @@ Example:
                 </div>
             </div>
             <div class="mapTypeBttnWrap mapTypeSatBttnWrap">
-                <div id="mapTypeSatBttn" class="mapTypeBttn mapTypeSatBttn">
+                <div id="mapTypeSatBttn" class="mapTypeBttn mapTypeSatBttn" title="Show satellite imagery">
                     Satellite
                 </div>
-                <div id="mapTypeHybridBttn" class="mapTypeDropdownBttnWrap mapTypeHybridBttnWrap">
+                <div id="mapTypeHybridBttn" class="mapTypeDropdownBttnWrap mapTypeHybridBttnWrap"
+                     title="Show satellite imagery with street names">
                     <div class="mapTypeDropdownBttn">
                         <span class="mapTypeCheckboxWrap">
                             <div class="mapTypeCheckbox">

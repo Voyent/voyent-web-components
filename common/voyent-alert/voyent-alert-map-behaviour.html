@@ -137,8 +137,7 @@
             //Initialize the map.
             this._map = new google.maps.Map(this.$.map,mapOptions);
             // Add the map type and zoom buttons (VRAS-671)
-            this._addMapTypeButton();
-            this._addZoomButton();
+            this._addMapControlButtons();
             //Calculate the map size.
             this._calcMapSize();
             if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
@@ -1279,6 +1278,15 @@
                     _this._repositionTooltips();
                 }
             });
+        },
+
+        /**
+         * Add the map type and zoom buttons (VRAS-671).
+         * @private
+         */
+        _addMapControlButtons: function () {
+            this._addZoomButton();
+            this._addMapTypeButton();
         },
 
         /**
