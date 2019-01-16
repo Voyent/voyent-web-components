@@ -61,6 +61,215 @@
             #modalDialog .dialog-bttns {
                 text-align: center;
             }
+
+            .zoomBttns {
+                margin-left: 10px;
+                user-select: none;
+                box-shadow: rgba(0, 0, 0, 0.3) 0 1px 4px -1px;
+                border-radius: 2px;
+                cursor: pointer;
+                background-color: rgb(255, 255, 255);
+                width: 28px;
+                height: 55px;
+            }
+
+            .zoomBttnWrap {
+                background: none;
+                display: block;
+                border: 0;
+                margin: 0;
+                padding: 0;
+                position: relative;
+                cursor: pointer;
+                user-select: none;
+                width: 28px;
+                height: 27px;
+                top: 0;
+                left: 0;
+            }
+
+            .zoomBttn {
+                overflow: hidden;
+                position: absolute;
+                width: 15px;
+                height: 15px;
+                left: 7px;
+                top: 6px;
+            }
+
+            .zoomImg {
+                position: absolute;
+                left: 0;
+                user-select: none;
+                border: 0;
+                padding: 0;
+                margin: 0;
+                max-width: none;
+                width: 120px;
+                height: 54px;
+            }
+
+            .zoomImg.zoomInImg {
+                top: 0;
+            }
+
+            .zoomImg.zoomOutImg {
+                top: -15px;
+            }
+
+            .zoomBttnWrap:hover .zoomBttn .zoomImg,
+            .zoomBttn:hover .zoomImg,
+            .zoomImg:hover {
+                left: -30px;
+            }
+
+            .zoomSeparator {
+                position: relative;
+                overflow: hidden;
+                width: 67%;
+                height: 1px;
+                left: 16%;
+                background-color: #E6E6E6;
+                top: 0;
+            }
+
+            .mapTypeBttns {
+                margin: 10px;
+                z-index: 1 !important;
+                position: absolute;
+                cursor: pointer;
+                left: 0;
+                top: 0;
+            }
+
+            .mapTypeBttnWrap {
+                float: left;
+                position: relative;
+            }
+
+            .mapTypeBttn {
+                direction: ltr;
+                overflow: hidden;
+                text-align: center;
+                position: relative;
+                font-family: Roboto, Arial, sans-serif;
+                user-select: none;
+                font-size: 11px;
+                background-color: rgb(255, 255, 255);
+                padding: 8px;
+                background-clip: padding-box;
+                box-shadow: rgba(0, 0, 0, 0.3) 0 1px 4px -1px;
+            }
+
+            .mapTypeBttn.mapTypeRoadBttn {
+                color: #000000;
+                border-bottom-left-radius: 2px;
+                border-top-left-radius: 2px;
+                min-width: 21px;
+                font-weight: 500;
+            }
+
+            .mapTypeBttn.mapTypeSatBttn {
+                color: #565656;
+                border-bottom-right-radius: 2px;
+                border-top-right-radius: 2px;
+                min-width: 39px;
+                border-left: 0;
+            }
+
+            .mapTypeBttnWrap:hover .mapTypeBttn,
+            .mapTypeBttn:hover,
+            .mapTypeTerrainDropdownWrap:hover .mapTypeDropdownBttn,
+            .mapTypeDropdownBttn:hover {
+                background-color: #EBEBEB;
+                color: black;
+            }
+
+            .mapTypeDropdownBttnWrap:hover .mapTypeCheckboxWrap {
+                border: 1px solid #666666;
+                color: black;
+            }
+
+            .mapTypeRoadBttnWrap:hover .mapTypeTerrainBttnWrap,
+            .mapTypeSatBttnWrap:hover .mapTypeHybridBttnWrap {
+                display: block;
+            }
+
+            .mapTypeDropdownBttnWrap {
+                background-color: white;
+                z-index: -1;
+                padding: 2px;
+                border-bottom-left-radius: 2px;
+                border-bottom-right-radius: 2px;
+                box-shadow: rgba(0, 0, 0, 0.3) 0 1px 4px -1px;
+                position: absolute;
+                top: 29px;
+                text-align: left;
+                display: none;
+            }
+
+            .mapTypeDropdownBttnWrap.mapTypeTerrainBttnWrap {
+                left: 0;
+            }
+
+            .mapTypeDropdownBttnWrap.mapTypeHybridBttnWrap {
+                right: 0;
+            }
+
+            .mapTypeDropdownBttn {
+                color: rgb(0, 0, 0);
+                font-family: Roboto, Arial, sans-serif;
+                user-select: none;
+                font-size: 11px;
+                background-color: rgb(255, 255, 255);
+                padding: 6px 8px 6px 6px;
+                direction: ltr;
+                text-align: left;
+                white-space: nowrap;
+            }
+
+            .mapTypeCheckboxWrap {
+                box-sizing: border-box;
+                position: relative;
+                line-height: 0;
+                font-size: 0;
+                margin: 0 5px 0 0;
+                display: inline-block;
+                background-color: rgb(255, 255, 255);
+                border: 1px solid rgb(198, 198, 198);
+                border-radius: 1px;
+                width: 13px;
+                height: 13px;
+                vertical-align: middle;
+            }
+
+            .mapTypesLabel {
+                vertical-align: middle;
+                cursor: pointer;
+            }
+
+            .mapTypeCheckbox {
+                position: absolute;
+                left: 1px;
+                top: -2px;
+                width: 13px;
+                height: 11px;
+                overflow: hidden;
+            }
+
+            .mapTypeCheckboxImage {
+                position: absolute;
+                left: -52px;
+                top: -44px;
+                user-select: none;
+                border: 0;
+                padding: 0;
+                margin: 0;
+                max-width: none;
+                width: 68px;
+                height: 67px;
+                display: none;
+            }
             .badgeIcon {
                 width: 64px;
                 height: 64px;
@@ -95,7 +304,7 @@
             }
             .customMapBttn.selected,
             .currentLocationButton.selected {
-                background-color: #c5c5c5;
+                background-color: #EBEBEB;
             }
             .customMapBttn > span {
                 display: inline-block;

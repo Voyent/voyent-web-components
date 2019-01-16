@@ -14,6 +14,53 @@
         <div id="container">
             <div id="map"></div>
         </div>
+        <div id$="[[_ZOOM_BUTTONS_ID]]" class="zoomBttns no-select" hidden>
+            <div id="zoomInBttn" class="zoomBttnWrap zoomInBttnWrap">
+                <div class="zoomBttn zoomInBttn">
+                    <img src="../common/voyent-alert/img/tmapctrl_hdpi.png" class="zoomImg zoomInImg">
+                </div>
+            </div>
+            <div class="zoomSeparator"></div>
+            <div id="zoomOutBttn" class="zoomBttnWrap zoomOutBttnWrap">
+                <div class="zoomBttn zoomOutBttn">
+                    <img src="../common/voyent-alert/img/tmapctrl_hdpi.png" class="zoomImg zoomOutImg">
+                </div>
+            </div>
+        </div>
+        <div id$="[[_MAP_TYPE_BUTTONS_ID]]" class="mapTypeBttns no-select" hidden>
+            <div class="mapTypeBttnWrap mapTypeRoadBttnWrap">
+                <div id="mapTypeRoadBttn" class="mapTypeBttn mapTypeRoadBttn">
+                    Map
+                </div>
+                <div id="mapTypeTerrainBttn" class="mapTypeDropdownBttnWrap mapTypeTerrainBttnWrap">
+                    <div class="mapTypeDropdownBttn">
+                        <span class="mapTypeCheckboxWrap">
+                            <div class="mapTypeCheckbox">
+                                <img id="mapTypeTerrainCheckbox" class="mapTypeCheckboxImage"
+                                     src="../common/voyent-alert/img/imgs8.png">
+                            </div>
+                        </span>
+                        <label class="mapTypesLabel">Terrain</label>
+                    </div>
+                </div>
+            </div>
+            <div class="mapTypeBttnWrap mapTypeSatBttnWrap">
+                <div id="mapTypeSatBttn" class="mapTypeBttn mapTypeSatBttn">
+                    Satellite
+                </div>
+                <div id="mapTypeHybridBttn" class="mapTypeDropdownBttnWrap mapTypeHybridBttnWrap">
+                    <div class="mapTypeDropdownBttn">
+                        <span class="mapTypeCheckboxWrap">
+                            <div class="mapTypeCheckbox">
+                                <img id="mapTypeHybridCheckbox" class="mapTypeCheckboxImage"
+                                     src="../common/voyent-alert/img/imgs8.png">
+                            </div>
+                        </span>
+                        <label class="mapTypesLabel">Labels</label>
+                    </div>
+                </div>
+            </div>
+        </div>
     </template>
 </dom-module>
 

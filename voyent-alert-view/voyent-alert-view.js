@@ -605,9 +605,16 @@ Polymer({
      * @private
      */
     _toggleEditableMap: function(editable) {
-        this._map.setOptions({mapTypeControl:editable,zoomControl:editable,draggable:editable,disableDoubleClickZoom:!editable});
+        this._map.setOptions({draggable: editable, disableDoubleClickZoom: !editable});
+        var mapTypeControl = this['_' + this._MAP_TYPE_BUTTONS_ID];
+        var zoomControl = this['_' + this._ZOOM_BUTTONS_ID];
         if (editable) {
+            mapTypeControl.style.display = 'block';
+            zoomControl.style.display = 'block';
             this._adjustBoundsAndPan();
+        } else {
+            mapTypeControl.style.display = 'none';
+            zoomControl.style.display = 'none';
         }
     },
 
