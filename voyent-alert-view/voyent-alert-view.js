@@ -5,7 +5,7 @@ Polymer({
 
     properties: {
         /**
-         * Indicates which mode the component is in. Valid values are `notification`, `view` and `preview`.
+         * Indicates which mode the component is in. Valid values are `notification`, `view`, `preview`, and `response`.
          */
         mode: { type: String },
         /**
@@ -229,7 +229,7 @@ Polymer({
         }
         // Draw the alert
         this.clearMap();
-        this._drawLocations(locations);
+        this._drawLocations(locations, (alertHistory ? alertHistory : null));
         this._drawAndLoadAlertTemplate(template);
         this._map.setOptions({maxZoom:null});
         // Set the location types legend history and notification filter
@@ -257,7 +257,7 @@ Polymer({
                 else { return; }
                 _this._loadedAlert.template.moveStacksRelativeToPosition(pos);
                 // Don't adjust the map in view mode as the user may be panning the map.
-                if (!_this.mode !== 'view') {
+                if (!_this.mode !== 'view' && !_this.mode !== 'response') {
                     _this._adjustBoundsAndPan();
                 }
             }).catch(function(error) {
@@ -386,34 +386,135 @@ Polymer({
     /**
      * Draws user markers on the map based on the passed location data.
      * @param locations
+     * @param alertHistory (optional)
      * @private
      */
-    _drawLocations: function(locations) {
+    _drawLocations: function(locations, alertHistory) {
         if (!locations || !locations.length) { return; }
         this.set('_myLocations',[]);
         for (var i=0; i<locations.length; i++) {
-            // For notification view we want to render the user icon for the affected mobile location.
-            if (this.mode === 'notification' && locations[i].properties.vras.type === 'mobile') {
-                this._drawAffectedMobileLocation(locations[i]);
-                continue;
+            if (locations[i] && locations[i].properties && locations[i].geometry) { // Ensure we have a valid location
+                // For notification view we want to render the user icon for the affected mobile location.
+                if (this.mode === 'notification' && locations[i].properties.vras.type === 'mobile') {
+                    this._drawAffectedMobileLocation(locations[i]);
+                    continue;
+                }
+                
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(
+                        locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
+                    ),
+                    map: this._map,
+                    draggable: false,
+                });
+                
+                // Handle the marker icon and click listener a bit differently based on the view mode we're in
+                // If we're looking at responses we want to use colored icons and add a popup with user details on click
+                if (alertHistory && this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
+                    if (alertHistory.users && alertHistory.users[i]) {
+                        var ourAnswer = 'No Response';
+                        if (alertHistory.acknowledgement && alertHistory.users[i].response && alertHistory.users[i].response.answerId) {
+                            // Choose our color based on the answer
+                            // Available icons from https://sites.google.com/site/gmapsdevelopment/
+                            // Colors: blue, yellow, green, lightblue, orange, pink, purple, red
+                            for (var answerLoop = 0; answerLoop < alertHistory.acknowledgement.answers.length; answerLoop++) {
+                                if (alertHistory.acknowledgement.answers[answerLoop].id ===
+                                     alertHistory.users[i].response.answerId) {
+                                    marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[answerLoop].color ? alertHistory.acknowledgement.answers[answerLoop].color : 'blue') + ".png" });
+                                    
+                                    ourAnswer = alertHistory.acknowledgement.answers[answerLoop].text;
+                                    break;
+                                }
+                            }
+                        }
+                        else {
+                            // Otherwise with no response default to the no response icon
+                            marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/red.png" });
+                        }
+                        
+                        this._addUserDetailsClickListener(marker, alertHistory.users[i], ourAnswer);
+                    }
+                    else {
+                        // Default marker if we don't have user info
+                        marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png" });
+                        
+                        this._addUserDetailsClickListener(marker); // Will at least be clickable and show no details
+                    }
+                }
+                // Otherwise we want to add a full screen click listener
+                else {
+                    marker.setIcon((this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByLocationType(locations[i].properties.vras.type)));
+                    
+                    this._addFullscreenClickListener(marker);
+                }
+                
+                // Store our drawn location
+                this.push('_myLocations',new this._MyLocation(
+                    locations[i].properties.vras.id,
+                    locations[i].properties.vras.name,
+                    locations[i].properties.vras.type,
+                    marker,
+                    locations[i].endpointType || null
+                ));
             }
-            var marker = new google.maps.Marker({
-                position: new google.maps.LatLng(
-                    locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
-                ),
-                map: this._map,
-                draggable: false,
-                icon: this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByLocationType(locations[i].properties.vras.type)
-            });
-            //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
-            this._addFullscreenClickListener(marker);
-            this.push('_myLocations',new this._MyLocation(
-                locations[i].properties.vras.id,
-                locations[i].properties.vras.name,
-                locations[i].properties.vras.type,
-                marker,
-                locations[i].endpointType || null
-            ));
+        }
+    },
+    
+    applyResponseFilter: function(filter) {
+        // Filter the map markers and hide as needed
+        if (this._alertHistory && this._alertHistory.users && this._alertHistory.users.length > 0 && filter) {
+            // First determine if the user has checked NO_RESPONSE, which we'll use later
+            var selectedNoResponse = false;
+            for (var checkLoop = 0; checkLoop < filter.length; checkLoop++) {
+                if (filter[checkLoop].filter === 'NO_RESPONSE') {
+                    selectedNoResponse = true;
+                    break;
+                }
+            }
+            
+            // Now loop through our users and determine if their marker should be shown or not based on the filter
+            for (var userLoop = 0; userLoop < this._alertHistory.users.length; userLoop++) {
+                if (this._alertHistory.users[userLoop].response) {
+                    // Figure out if the user passes the filter or not
+                    var hideMarker = true;
+                    for (var filterLoop = 0; filterLoop < filter.length; filterLoop++) {
+                        if (typeof filter[filterLoop].filter.id !== 'undefined' &&
+                            filter[filterLoop].filter.id === this._alertHistory.users[userLoop].response.answerId) {
+                            hideMarker = false;
+                            break;
+                        }
+                    }
+                    
+                    // Then figure out which location the user has, and hide/show the marker as required
+                    for (var locLoop = 0; locLoop < this._myLocations.length; locLoop++) {
+                        if (this._myLocations[locLoop].id === this._alertHistory.users[userLoop].location.properties.vras.id) {
+                            if (hideMarker) {
+                                this._myLocations[locLoop].removeFromMap();
+                            }
+                            else {
+                                this._myLocations[locLoop].addToMap();
+                            }
+                            
+                            break;
+                        }
+                    }
+                }
+                // If we don't have a user response still consider the chance we want to see that marker
+                else {
+                    for (var locLoop = 0; locLoop < this._myLocations.length; locLoop++) {
+                        if (this._myLocations[locLoop].id === this._alertHistory.users[userLoop].location.properties.vras.id) {
+                            if (selectedNoResponse) {
+                                this._myLocations[locLoop].addToMap();
+                            }
+                            else {
+                                this._myLocations[locLoop].removeFromMap();
+                            }
+                            
+                            break;
+                        }
+                    }
+                }
+            }
         }
     },
 

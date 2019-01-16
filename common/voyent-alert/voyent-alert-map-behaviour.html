@@ -5,6 +5,7 @@
 
 <script>
     var Voyent = Voyent || {};
+    var singletonInfoWindow; // Single copy of our user details info window, to ensure only one is open at a time
     /**
      * Provides common functionality required by map-based `voyent-alert-*` components.
      *
@@ -1676,7 +1677,7 @@
             }
             this._isFullscreenMode = !this._isFullscreenMode;
             // Toggle the editable features of the map
-            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+            if (this.nodeName === 'VOYENT-ALERT-VIEW' && (this.mode !== 'view' && this.mode !== 'response')) {
                 this._toggleEditableMap(this._isFullscreenMode);
             }
         },
@@ -1750,13 +1751,62 @@
          * @private
          */
         _addFullscreenClickListener: function(mapElement) {
-            var _this = this;
             if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'notification') {
+                var _this = this;
                 google.maps.event.addListener(mapElement, 'click', function() {
                     if (_this._isFullscreenMode) {
                         return;
                     }
                     _this._toggleFullscreenContainer(true);
+                });
+            }
+        },
+        
+        _addUserDetailsClickListener: function(mapElement, user, answer) {
+            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
+                var contentString = '<h3>';
+                
+                if (mapElement.icon && mapElement.icon.url) {
+                    contentString += '<img src="' + mapElement.icon.url + '" style="max-height: 18px;"/> ';
+                }
+                
+                contentString += 'User Details</h3>';
+                
+                if (user) {
+                    if (user.location && user.location.properties && user.location.properties.vras) {
+                        contentString += '<p>Location: ' + user.location.properties.vras.name +
+                            (user.location.properties.vras.type ? ' (' + user.location.properties.vras.type + ')</p>' : '</p>'); 
+                    }
+                    if (user.firstname && user.lastname) {
+                        contentString += '<p>Name: ' + user.firstname + ' ' + user.lastname + '</p>';
+                    }
+                    else {
+                        contentString += '<p>Username: ' + user.username + '</p>';
+                    }
+                    
+                    if (answer) {
+                        contentString += '<p>Response: <b>' + answer + '</b></p>';
+                    }
+                    if (answer && user.response && user.response.received) {
+                        contentString += '<p>Response Time: ' + new Date(user.response.received) + '</p>';
+                    }
+                }
+                else {
+                    contentString += '<p>No details found</p>';
+                }
+                
+                var _this = this;
+                google.maps.event.addListener(mapElement, 'click', function(e) {
+                    if (singletonInfoWindow) {
+                        singletonInfoWindow.close();
+                        singletonInfoWindow = null;
+                    }
+                    
+                    singletonInfoWindow = new google.maps.InfoWindow({
+                        content: contentString
+                    });
+                    
+                    singletonInfoWindow.open(_this._map, mapElement);
                 });
             }
         },
