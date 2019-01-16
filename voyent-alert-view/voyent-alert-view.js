@@ -773,7 +773,7 @@ Polymer({
      * @private
      */
     _alertHistoryChanged: function(alertHistory) {
-        if (alertHistory) {
+        if (alertHistory && this.mode !== 'response') {
             if (this['_'+this._LOCATION_TYPE_COUNT_LEGEND_ID]) {
                 this._redrawLocationTypesCountLegend();
             }
