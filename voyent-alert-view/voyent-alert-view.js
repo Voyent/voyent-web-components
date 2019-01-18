@@ -400,9 +400,10 @@ Polymer({
                     continue;
                 }
                 
+                var ourLocation = locations[i];
                 var marker = new google.maps.Marker({
                     position: new google.maps.LatLng(
-                        locations[i].geometry.coordinates[1],locations[i].geometry.coordinates[0]
+                        ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
                     ),
                     map: this._map,
                     draggable: false,
@@ -412,6 +413,14 @@ Polymer({
                 // If we're looking at responses we want to use colored icons and add a popup with user details on click
                 if (alertHistory && this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
                     if (alertHistory.users && alertHistory.users[i]) {
+                        // Check if we have a location from the user and prioritize that
+                        if (alertHistory.users[i].location) {
+                            ourLocation = alertHistory.users[i].location;
+                            
+                            marker.setPosition(new google.maps.LatLng(ourLocation.geometry.coordinates[1],
+                                                                      ourLocation.geometry.coordinates[0]));
+                        }
+                        
                         var ourAnswer = 'No Response';
                         if (alertHistory.acknowledgement && alertHistory.users[i].response && alertHistory.users[i].response.answerId) {
                             // Choose our color based on the answer
@@ -443,24 +452,26 @@ Polymer({
                 }
                 // Otherwise we want to add a full screen click listener
                 else {
-                    marker.setIcon((this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByLocationType(locations[i].properties.vras.type)));
+                    marker.setIcon((this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByLocationType(ourLocation.properties.vras.type)));
                     
                     this._addFullscreenClickListener(marker);
                 }
                 
                 // Store our drawn location
                 this.push('_myLocations',new this._MyLocation(
-                    locations[i].properties.vras.id,
-                    locations[i].properties.vras.name,
-                    locations[i].properties.vras.type,
+                    ourLocation.properties.vras.id,
+                    ourLocation.properties.vras.name,
+                    ourLocation.properties.vras.type,
                     marker,
-                    locations[i].endpointType || null
+                    ourLocation.endpointType || null
                 ));
             }
         }
     },
     
     applyResponseFilter: function(filter) {
+        var filteredUsers = [];
+        
         // Filter the map markers and hide as needed
         if (this._alertHistory && this._alertHistory.users && this._alertHistory.users.length > 0 && filter) {
             // First determine if the user has checked NO_RESPONSE, which we'll use later
@@ -492,6 +503,7 @@ Polymer({
                                 this._myLocations[locLoop].removeFromMap();
                             }
                             else {
+                                filteredUsers.push(this._alertHistory.users[userLoop]);
                                 this._myLocations[locLoop].addToMap();
                             }
                             
@@ -504,6 +516,7 @@ Polymer({
                     for (var locLoop = 0; locLoop < this._myLocations.length; locLoop++) {
                         if (this._myLocations[locLoop].id === this._alertHistory.users[userLoop].location.properties.vras.id) {
                             if (selectedNoResponse) {
+                                filteredUsers.push(this._alertHistory.users[userLoop]);
                                 this._myLocations[locLoop].addToMap();
                             }
                             else {
@@ -516,6 +529,8 @@ Polymer({
                 }
             }
         }
+        
+        return filteredUsers;
     },
 
     /**
