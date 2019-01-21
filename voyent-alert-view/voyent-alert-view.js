@@ -429,7 +429,7 @@ Polymer({
                             for (var answerLoop = 0; answerLoop < alertHistory.acknowledgement.answers.length; answerLoop++) {
                                 if (alertHistory.acknowledgement.answers[answerLoop].id ===
                                      alertHistory.users[i].response.answerId) {
-                                    marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[answerLoop].color ? alertHistory.acknowledgement.answers[answerLoop].color : 'blue') + ".png" });
+                                    marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[answerLoop].color ? alertHistory.acknowledgement.answers[answerLoop].color : 'orange') + ".png" });
                                     
                                     ourAnswer = alertHistory.acknowledgement.answers[answerLoop].text;
                                     break;
