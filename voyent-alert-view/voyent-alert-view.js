@@ -787,8 +787,17 @@ Polymer({
      * @param alertHistory
      * @private
      */
-    _alertHistoryChanged: function(alertHistory) {
-        if (alertHistory && this.mode !== 'response') {
+    _alertHistoryChanged: function() {
+        this.handleMapLegend();
+    },
+    
+    /**
+     * Determine if we should add, redraw, or remove our map legend
+     * If the mode is `response` we will want to remove the legend, otherwise add/redraw
+     * This also leverages alertHistory to determine if we have sufficient data to draw the legend
+     */
+    handleMapLegend: function() {
+        if (this._alertHistory && this.mode !== 'response') {
             if (this['_'+this._LOCATION_TYPE_COUNT_LEGEND_ID]) {
                 this._redrawLocationTypesCountLegend();
             }
