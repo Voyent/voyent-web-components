@@ -391,80 +391,89 @@ Polymer({
      */
     _drawLocations: function(locations, alertHistory) {
         if (!locations || !locations.length) { return; }
+        
         this.set('_myLocations',[]);
-        for (var i=0; i<locations.length; i++) {
-            if (locations[i] && locations[i].properties && locations[i].geometry) { // Ensure we have a valid location
-                // For notification view we want to render the user icon for the affected mobile location.
-                if (this.mode === 'notification' && locations[i].properties.vras.type === 'mobile') {
-                    this._drawAffectedMobileLocation(locations[i]);
-                    continue;
-                }
+        
+        var ourLocation = null;
+        
+        // If we're drawing response section use our alertHistory for the map data
+        // Otherwise use the passed locations
+        if (this.mode === 'response' && this.nodeName === 'VOYENT-ALERT-VIEW' && alertHistory && alertHistory.users) {
+            for (var userLoop = 0; userLoop < alertHistory.users.length; userLoop++) {
+                var currentUser = alertHistory.users[userLoop];
                 
-                var ourLocation = locations[i];
-                var marker = new google.maps.Marker({
-                    position: new google.maps.LatLng(
-                        ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
-                    ),
-                    map: this._map,
-                    draggable: false,
-                });
-                
-                // Handle the marker icon and click listener a bit differently based on the view mode we're in
-                // If we're looking at responses we want to use colored icons and add a popup with user details on click
-                if (alertHistory && this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
-                    if (alertHistory.users && alertHistory.users[i]) {
-                        // Check if we have a location from the user and prioritize that
-                        if (alertHistory.users[i].location) {
-                            ourLocation = alertHistory.users[i].location;
-                            
-                            marker.setPosition(new google.maps.LatLng(ourLocation.geometry.coordinates[1],
-                                                                      ourLocation.geometry.coordinates[0]));
-                        }
-                        
-                        var ourAnswer = 'No Response';
-                        if (alertHistory.acknowledgement && alertHistory.users[i].response && alertHistory.users[i].response.answerId) {
-                            // Choose our color based on the answer
-                            // Available icons from https://sites.google.com/site/gmapsdevelopment/
-                            // Colors: blue, yellow, green, lightblue, orange, pink, purple, red
-                            for (var answerLoop = 0; answerLoop < alertHistory.acknowledgement.answers.length; answerLoop++) {
-                                if (alertHistory.acknowledgement.answers[answerLoop].id ===
-                                     alertHistory.users[i].response.answerId) {
-                                    marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[answerLoop].color ? alertHistory.acknowledgement.answers[answerLoop].color : 'orange') + ".png" });
-                                    
-                                    ourAnswer = alertHistory.acknowledgement.answers[answerLoop].text;
-                                    break;
-                                }
+                if (currentUser.location && currentUser.location.properties && currentUser.location.geometry) {
+                    ourLocation = currentUser.location;
+                    
+                    var marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(
+                            ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
+                        ),
+                        icon: { url: "https://maps.google.com/mapfiles/ms/icons/red.png" }, // Default to red for No Response
+                        map: this._map,
+                        draggable: false,
+                    });
+                    
+                    var ourAnswer = 'No Response';
+                    if (alertHistory.acknowledgement && currentUser.response && currentUser.response.answerId) {
+                        // Choose our color based on the answer
+                        // Available icons from https://sites.google.com/site/gmapsdevelopment/
+                        // Colors: blue, yellow, green, lightblue, orange, pink, purple, red
+                        for (var answerLoop = 0; answerLoop < alertHistory.acknowledgement.answers.length; answerLoop++) {
+                            if (alertHistory.acknowledgement.answers[answerLoop].id ===
+                                 currentUser.response.answerId) {
+                                marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[answerLoop].color ? alertHistory.acknowledgement.answers[answerLoop].color : 'orange') + ".png" });
+                                
+                                ourAnswer = alertHistory.acknowledgement.answers[answerLoop].text;
+                                break;
                             }
                         }
-                        else {
-                            // Otherwise with no response default to the no response icon
-                            marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/red.png" });
-                        }
-                        
-                        this._addUserDetailsClickListener(marker, alertHistory.users[i], ourAnswer);
                     }
-                    else {
-                        // Default marker if we don't have user info
-                        marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png" });
-                        
-                        this._addUserDetailsClickListener(marker); // Will at least be clickable and show no details
-                    }
+                    
+                    this._addUserDetailsClickListener(marker, currentUser, ourAnswer);
+                    
+                    // Store our drawn location
+                    this.push('_myLocations',new this._MyLocation(
+                        ourLocation.properties.vras.id,
+                        ourLocation.properties.vras.name,
+                        ourLocation.properties.vras.type,
+                        marker,
+                        ourLocation.endpointType || null
+                    ));
                 }
-                // Otherwise we want to add a full screen click listener
-                else {
-                    marker.setIcon((this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByLocationType(ourLocation.properties.vras.type)));
+            }
+        }
+        else {
+            for (var i = 0; i < locations.length; i++) {
+                if (locations[i] && locations[i].properties && locations[i].geometry) { // Ensure we have a valid location
+                    var ourLocation = locations[i];
+                    
+                    // For notification view we want to render the user icon for the affected mobile location.
+                    if (this.mode === 'notification' && ourLocation.properties.vras.type === 'mobile') {
+                        this._drawAffectedMobileLocation(ourLocation);
+                        continue;
+                    }
+                    
+                    var marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(
+                            ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
+                        ),
+                        icon: (this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByLocationType(ourLocation.properties.vras.type)),
+                        map: this._map,
+                        draggable: false,
+                    });
                     
                     this._addFullscreenClickListener(marker);
+                    
+                    // Store our drawn location
+                    this.push('_myLocations',new this._MyLocation(
+                        ourLocation.properties.vras.id,
+                        ourLocation.properties.vras.name,
+                        ourLocation.properties.vras.type,
+                        marker,
+                        ourLocation.endpointType || null
+                    ));
                 }
-                
-                // Store our drawn location
-                this.push('_myLocations',new this._MyLocation(
-                    ourLocation.properties.vras.id,
-                    ourLocation.properties.vras.name,
-                    ourLocation.properties.vras.type,
-                    marker,
-                    ourLocation.endpointType || null
-                ));
             }
         }
     },
