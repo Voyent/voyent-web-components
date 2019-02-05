@@ -942,8 +942,9 @@
             this._AlertTemplate.calculateCentroidFromPaths = function(paths) {
                 var bounds = new google.maps.LatLngBounds();
                 for (var i=0; i<paths.length; i++) {
-                    for (var j=0; j<paths.getAt(i).length; j++) {
-                        bounds.extend(paths.getAt(i).getAt(j));
+                    var innerPath = paths.getAt ? paths.getAt(i) : paths[i]; // MVCArray or []
+                    for (var j=0; j<innerPath.length; j++) {
+                        bounds.extend(paths.getAt ? paths.getAt(i).getAt(j) : paths[i][j]); // MVCArray or []
                     }
                 }
                 return bounds.getCenter();
@@ -2102,9 +2103,10 @@
              * @param notificationFilter - The notification data associated with this zone.
              * @param acknowledgement - The acknowledgement property associated with this zone.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
+             * @param isEditable - Whether the shapeOverlay of the zone is editable.
              * @private
              */
-            this._AlertZone = function (id,name,paths,isCircle,opacity,colour,messageTemplate,notificationFilter,acknowledgement,zIndex) {
+            this._AlertZone = function (id,name,paths,isCircle,opacity,colour,messageTemplate,notificationFilter,acknowledgement,zIndex,isEditable) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
                 this.setPaths(paths);
@@ -2116,6 +2118,7 @@
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
                 this.acknowledgement = acknowledgement || null;
+                this.isEditable = typeof isEditable !== 'boolean' ? true : isEditable; // Default to true
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };
             /**
@@ -2215,7 +2218,7 @@
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ "strokeWeight":3.0, "fillOpacity": 0.30 });
-                        if (!this.isCircle) {
+                        if (!this.isCircle && this.isEditable) {
                             this.shapeOverlay.setEditable(true);
                         }
                     }
@@ -2226,7 +2229,7 @@
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
-                        if (!this.isCircle) {
+                        if (!this.isCircle && this.isEditable) {
                             this.shapeOverlay.setEditable(false);
                         }
                     }

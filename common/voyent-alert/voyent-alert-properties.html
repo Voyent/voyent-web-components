@@ -453,22 +453,24 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         </paper-icon-button>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="fullWidthCol">
-                                        <template is="dom-if" if="[[_isPointerLocked]]">
-                                            <div class="bold">Zone Resizing Enabled</div>
-                                            Move the mouse up and down to adjust the size of the zone. Click to exit.
-                                        </template>
-                                        <template is="dom-if" if="[[!_isPointerLocked]]">
-                                            <paper-button data-stack-index$="[[zoneStackIndex]]"
-                                                          data-zone-index$="[[zoneIndex]]"
-                                                          raised title="Adjust Area"
-                                                          on-click="_adjustZoneSize">
-                                                Adjust Area
-                                            </paper-button>
-                                        </template>
+                                <template is="dom-if" if="[[zone.isEditable]]">
+                                    <div class="row">
+                                        <div class="fullWidthCol">
+                                            <template is="dom-if" if="[[_isPointerLocked]]">
+                                                <div class="bold">Zone Resizing Enabled</div>
+                                                Move the mouse up and down to adjust the size of the zone. Click to exit.
+                                            </template>
+                                            <template is="dom-if" if="[[!_isPointerLocked]]">
+                                                <paper-button data-stack-index$="[[zoneStackIndex]]"
+                                                              data-zone-index$="[[zoneIndex]]"
+                                                              raised title="Adjust Area"
+                                                              on-click="_adjustZoneSize">
+                                                    Adjust Area
+                                                </paper-button>
+                                            </template>
+                                        </div>
                                     </div>
-                                </div>
+                                </template>
                                 <div class="row">
                                     <div class="propertyCol">
                                         Colour

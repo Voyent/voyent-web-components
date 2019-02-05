@@ -95,6 +95,7 @@
             this._CIRCLE_BUTTON_ID = 'circleBttn';
             this._POLYGON_BUTTON_ID = 'polygonBttn';
             this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
+            this._IMPORT_BUTTON_ID = 'importBttn';
             this._ZOOM_BUTTONS_ID = 'zoomBttns';
             this._MAP_TYPE_BUTTONS_ID = 'mapTypeBttns';
             //Default to the last realm and account if one is not set.
@@ -159,6 +160,8 @@
             if (this._isAnAlertEditor()) {
                 //Add the fullscreen control.
                 this._addFullscreenButton();
+                // Add the import file input validator
+                this.querySelector('#fileUploadValidator').validate = this._validateFile.bind(this);
                 //Maintain the isZoneSelected toggle for updating the UI.
                 this._isZoneSelected = false;
                 this.addEventListener('voyent-alert-zone-selected',function(e) {
@@ -1394,17 +1397,29 @@
         },
 
         /**
-         * Adds the circle, polygon and fallback zone buttons.
+         * Adds the button for opening the geospatial file import dialog.
+         * @param listener
+         * @param cb
+         * @private
+         */
+        _addImportFileButton: function(listener,cb) {
+            this._addCustomControl(this._IMPORT_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT,listener,cb);
+        },
+
+        /**
+         * Adds the circle, polygon, fallback and import zone buttons.
          * @private
          */
         _addAlertTemplateButtons: function() {
             var _this = this;
-            //The controls API doesn't like it when we try to inject controls too quickly so we'll use a callback chain to
-            //add each button after the other one has been added successfully. Without this Google adds the buttons but
-            //they end up all stacked up on top of each other, likely because the styling doesn't have time to update.
+            // The controls API doesn't behave nicely when we try to inject controls too quickly so we'll use a callback chain
+            // to add each button after the other one has been added successfully. Without this Google adds the buttons but
+            // they end up all stacked up on top of each other, likely because the styling doesn't have time to update.
             this._addCircleButton(this._circleButtonListener.bind(this),function() {
                 _this._addPolygonButton(_this._polygonButtonListener.bind(_this),function() {
-                    _this._addFallbackZoneButton(_this._fallbackZoneButtonListener.bind(_this));
+                    _this._addFallbackZoneButton(_this._fallbackZoneButtonListener.bind(_this),function() {
+                        _this._addImportFileButton(_this._importFileListener.bind(_this));
+                    });
                 });
             });
         },
@@ -1450,13 +1465,22 @@
         },
 
         /**
-         * Removes the circle, polygon and fallback zone buttons.
+         * Removes the button for importing geospatial files.
+         * @private
+         */
+        _removeImportFileButton: function() {
+            this._removeCustomControl(this._IMPORT_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT);
+        },
+
+        /**
+         * Removes the circle, polygon, fallback and import zone buttons.
          * @private
          */
         _removeAlertTemplateButtons: function() {
             this._removeCircleButton();
             this._removePolygonButton();
             this._removeFallbackZoneButton();
+            this._removeImportFileButton();
         },
 
         /**
@@ -1604,6 +1628,15 @@
                 this._fallbackZone = new this._FallbackAlertZone(true);
                 this._deselectStacksOnClick(this._fallbackZone.shapeOverlay);
             }
+        },
+
+        /**
+         * The listener to fire when the import button is clicked.
+         * @private
+         */
+        _importFileListener: function() {
+            this._disableDrawingMode();
+            this._openFileImportDialog();
         },
 
         /**
@@ -1809,6 +1842,104 @@
                     singletonInfoWindow.open(_this._map, mapElement);
                 });
             }
+        },
+
+        /**
+         * Opens the file import dialog.
+         * @private
+         */
+        _openFileImportDialog: function() {
+            var dialog = this.querySelector('#fileImportDialog');
+            if (dialog) {
+                dialog.open();
+            }
+        },
+
+        /**
+         * Closes the file import dialog.
+         * @private
+         */
+        _closeFileImportDialog: function() {
+            // Reset the associacted state
+            var fileUploadInput = this.querySelector('#fileUpload');
+            fileUploadInput.inputElement.value = null;
+            fileUploadInput.invalid = false;
+            // Close the dialog
+            var dialog = this.querySelector('#fileImportDialog');
+            if (dialog) {
+                dialog.close();
+            }
+        },
+
+        /**
+         * Validates the file and uploads it to the relevant module.
+         * @private
+         */
+        _importFile: function() {
+            var _this = this;
+
+            var fileUploadInput = this.querySelector('#fileUpload');
+            if (!fileUploadInput.validate()) {
+                return;
+            }
+
+            voyent.action.uploadFilesToModule({
+                id: 'process-geospatial-file',
+                files: [fileUploadInput.inputElement.files[0]]
+            }).then(function(res) {
+                if (res && res.length) {
+                    for (var i=0; i<res.length; i++) {
+                        // Convert the GeoJSON into the appropriate objects
+                        var paths = _this._AlertTemplate.calculatePathsFromCoordinates(res[i].coordinates);
+                        var zone = new _this._AlertZone(null, res[i].name, paths, false, null, null, null, null, null, null, false);
+
+                        var stackMarker = new google.maps.Marker({
+                            position: _this._AlertTemplate.calculateCentroidFromPaths(paths),
+                            map: _this._map, draggable: false,
+                            zIndex: 50, cursor: 'move', visible: false
+                        });
+                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone]);
+
+                        // Add the stack and fire the zone added event
+                        _this._loadedAlert.template.addZoneStack(zoneStack);
+                        _this.fire('voyent-alert-zone-added',{
+                            id: zone.id,
+                            zone: zone,
+                            stack: zoneStack,
+                            insertIndex: 0,
+                            isFallbackZone: false
+                        });
+
+                        // Adjust the map bounds
+                        _this._adjustBoundsAndPan();
+                        // Close the dialog
+                        _this._closeFileImportDialog();
+                    }
+                }
+            }).catch(function(e) {
+                _this.fire('message-error', 'Failed to process file, try again later or contact a Voyent administrator');
+                console.error(e);
+            });
+        },
+
+        /**
+         * Validates the file the user has selected in the file import dialog.
+         * @returns {boolean}
+         * @private
+         */
+        _validateFile: function() {
+            var elem = this.querySelector('#fileUpload');
+            var file = elem.inputElement.files[0];
+            if (!file) {
+                elem.setAttribute('error-message','Must specify a file to upload');
+                return false;
+            }
+            var ext = file.name.slice(file.name.length-4, file.name.length).toLowerCase();
+            if (['.kml','.kmz'].indexOf(ext) === -1) {
+                elem.setAttribute('error-message','File must be of type KML or KMZ');
+                return false;
+            }
+            return true;
         },
 
         /**

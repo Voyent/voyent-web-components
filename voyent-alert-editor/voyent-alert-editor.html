@@ -82,6 +82,8 @@ Example:
             }
         </style>
 
+        <custom-validator id="fileUploadValidator" validator-name="fileUploadValidator"></custom-validator>
+
         <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
             <div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
@@ -229,6 +231,29 @@ Example:
                 </span>
             </div>
         </div>
+        <div id$="[[_IMPORT_BUTTON_ID]]" class="customMapBttnWrap importBttn no-select" hidden>
+            <div class="customMapBttn" title="Import a KML or KMZ file...">
+                <span>
+                    <div class="customMapBttnImg">
+                        <paper-icon-button class="fileUploadIcon" icon="file-upload"></paper-icon-button>
+                    </div>
+                </span>
+            </div>
+        </div>
+        <paper-dialog id="fileImportDialog" modal on-iron-overlay-opened="_patchOverlay">
+            <h2 class="dialogH2">Import File</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="_closeGeocodeImportDialog" title="Close dialog"
+                                   class="dialogCloseButton" tabindex="4"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
+            <paper-input id="fileUpload" type="file" label="Import a KML or KMZ file..." tabindex="1"
+                         class="fileUploadInput" validator="fileUploadValidator"></paper-input>
+            <div class="text-center">
+                <paper-button raised title="Cancel import" on-click="_closeFileImportDialog" tabindex="2">Cancel</paper-button>
+                <paper-button raised title="Confirm import" on-click="_importFile" tabindex="3">Confirm</paper-button>
+            </div>
+        </paper-dialog>
         <paper-dialog id="newAlertDialog" on-keyup="_submitNewAlertDialog" modal on-iron-overlay-opened="_patchOverlay">
             <h2 class="dialogH2">New Alert</h2>
             <div class="dialogCloseWrap">
