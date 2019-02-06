@@ -444,10 +444,8 @@ Internal component used to display the properties panel inside Voyent alert comp
                             <div class="table">
                                 <div class="row">
                                     <div class="fullWidthCol buttonCol">
-                                        <template is="dom-if" if="[[zone.isEditable]]">
-                                            <paper-icon-button title="Insert zone after this one" icon="add"
-                                                               on-click="_addProximityZone"></paper-icon-button>
-                                        </template>
+                                        <paper-icon-button title="Insert zone after this one" icon="add"
+                                                           on-click="_addProximityZone" hidden$="[[!zone.isEditable]]"></paper-icon-button>
                                         <paper-icon-button title="Copy message contents and recipients" icon="content-copy"
                                                            on-click="_triggerZoneCopy"></paper-icon-button>
                                         <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeProximityZonePrompt"
