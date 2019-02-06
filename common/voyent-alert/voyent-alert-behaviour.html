@@ -1722,24 +1722,24 @@
                         if (_outer._fallbackZone) {
                             _outer._fallbackZone.punchOutOverlay();
                         }
-                        _this.manageStackBoundary(true);
+                        //_this.manageStackBoundary(true);
                     });
-                    google.maps.event.addListener(marker, 'dragend', function () {
+                    /*google.maps.event.addListener(marker, 'dragend', function () {
                         _this.manageStackBoundary(false);
-                    });
+                    });*/
                     //Add click listener to marker.
                     google.maps.event.addListener(marker, 'click', function () {
                         //Toggle all the accordion panes closed.
                         _outer._toggleProperties(null);
                         _outer.set('_loadedAlert.selectedStack',_this);
                     });
-                    //Add mouseover and mouseout listeners to highlight the stack boundary.
+                    /*//Add mouseover and mouseout listeners to highlight the stack boundary.
                     google.maps.event.addListener(marker, 'mouseover', function () {
                         _this.manageStackBoundary(true);
                     });
                     google.maps.event.addListener(marker, 'mouseout', function () {
                         _this.manageStackBoundary(false);
-                    });
+                    });*/
                 },
                 /**
                  * Initializes zone listeners.
