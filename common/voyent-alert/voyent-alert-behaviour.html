@@ -1223,7 +1223,8 @@
                  * @private
                  */
                 _setupMarkerListeners: function () {
-                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    // As of Feb 6, 2019 the marker is invisible so we won't setup these listeners
+                    /*if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     var _this = this;
                     //The proximity zone center_changed listener will fire continuously when
                     //dragging the template marker so we'll add a flag to ignore those events.
@@ -1260,7 +1261,7 @@
                     });
                     google.maps.event.addListener(this.marker, 'mouseout', function () {
                         _this.manageAlertBoundary(false);
-                    });
+                    });*/
                 },
                 /**
                  * Calculates the current zone positions (distance and bearing)

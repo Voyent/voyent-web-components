@@ -1019,8 +1019,7 @@
                     position: (latLngCentroid ? latLngCentroid : this._AlertTemplate.calculateCentroidFromJSON(templateJSON)),
                     map: this._map, draggable: true, zIndex: 50,
                     icon: this.pathtoimages+'/img/move_icon.png',
-                    visible: this.nodeName !== 'VOYENT-ALERT-VIEW',
-                    cursor: 'move'
+                    visible: false, cursor: 'move'
                 });
             }
             this.set('_loadedAlert', {
@@ -1136,7 +1135,7 @@
                                 draggable: true, zIndex: 50,
                                 map: _this._map,
                                 icon: _this.pathtoimages+'/img/move_icon.png',
-                                cursor: 'move'
+                                cursor: 'move', visible: false
                             }));
                         }
                         else if (_this._loadedAlert.template.zoneStacks.length > 2) {
@@ -1909,8 +1908,7 @@
                         if (_this._loadedAlert.template.zoneStacks.length === 2) {
                             _this._loadedAlert.template.setMarker(new google.maps.Marker({
                                 position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
-                                map: _this._map,
-                                visible: false
+                                map: _this._map, visible: false
                             }));
                         }
                         else if (_this._loadedAlert.template.zoneStacks.length > 2) {
