@@ -27,9 +27,11 @@ Polymer({
 
     ready: function() {
         this._loadedAlert = null;
-        this.set('_myLocations',[]);
+        this.set('_myLocations', []);
+        this.set('_answers', []);
         this._LOCATION_TYPE_COUNT_LEGEND_ID = 'locationTypesCount';
         this._LOCATION_TYPE_STATE_LEGEND_ID = 'locationTypesState';
+        this._RESPONSE_ANSWER_LEGEND_ID = 'responseAnswer';
         this._CURRENT_LOCATION_BUTTON_ID = 'currentLocationButton';
         this._addNativeAppStateListeners();
     },
@@ -390,60 +392,67 @@ Polymer({
      * @private
      */
     _drawLocations: function(locations, alertHistory) {
-        if (!locations || !locations.length) { return; }
-        
-        this.set('_myLocations',[]);
+        // Reset our answers and saved locations
+        this.set('_answers', []);
+        this.set('_myLocations', []);
         
         var ourLocation = null;
         
         // If we're drawing response section use our alertHistory for the map data
         // Otherwise use the passed locations
-        if (this.mode === 'response' && this.nodeName === 'VOYENT-ALERT-VIEW' && alertHistory && alertHistory.users) {
-            for (var userLoop = 0; userLoop < alertHistory.users.length; userLoop++) {
-                var currentUser = alertHistory.users[userLoop];
-                
-                if (currentUser.location && currentUser.location.properties && currentUser.location.geometry) {
-                    ourLocation = currentUser.location;
+        if (this.mode === 'response' && this.nodeName === 'VOYENT-ALERT-VIEW' && alertHistory) {
+            // First store our answers for use with the map legend
+            if (alertHistory.acknowledgement && alertHistory.acknowledgement.answers) {
+                for (var answerLoop = 0; answerLoop < alertHistory.acknowledgement.answers.length; answerLoop++) {
+                    if (alertHistory.acknowledgement.answers[answerLoop].requestLocation) {
+                        this.push('_answers', alertHistory.acknowledgement.answers[answerLoop]);
+                    }
+                }
+            }
+            
+            // Then if we have user responses map them out
+            if (alertHistory.users) {
+                for (var userLoop = 0; userLoop < alertHistory.users.length; userLoop++) {
+                    var currentUser = alertHistory.users[userLoop];
                     
-                    var marker = new google.maps.Marker({
-                        position: new google.maps.LatLng(
-                            ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
-                        ),
-                        icon: { url: "https://maps.google.com/mapfiles/ms/icons/red.png" }, // Default to red for No Response
-                        map: this._map,
-                        draggable: false,
-                    });
-                    
-                    var ourAnswer = 'No Response';
-                    if (alertHistory.acknowledgement && currentUser.response && currentUser.response.answerId) {
+                    // Only map users who have a location and response answer that requested said location
+                    if ((currentUser.location && currentUser.location.properties && currentUser.location.geometry) &&
+                        (alertHistory.acknowledgement && currentUser.response && currentUser.response.answerId)) {
                         // Choose our color based on the answer
-                        // Available icons from https://sites.google.com/site/gmapsdevelopment/
-                        // Colors: blue, yellow, green, lightblue, orange, pink, purple, red
                         for (var answerLoop = 0; answerLoop < alertHistory.acknowledgement.answers.length; answerLoop++) {
-                            if (alertHistory.acknowledgement.answers[answerLoop].id ===
-                                 currentUser.response.answerId) {
-                                marker.setIcon({ url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[answerLoop].color ? alertHistory.acknowledgement.answers[answerLoop].color : 'orange') + ".png" });
+                            if (alertHistory.acknowledgement.answers[answerLoop].requestLocation &&
+                                (alertHistory.acknowledgement.answers[answerLoop].id === currentUser.response.answerId)) {
+                                ourLocation = currentUser.location;
                                 
-                                ourAnswer = alertHistory.acknowledgement.answers[answerLoop].text;
-                                break;
+                                var marker = new google.maps.Marker({
+                                    position: new google.maps.LatLng(
+                                        ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
+                                    ),
+                                    icon: { url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[answerLoop].color ? alertHistory.acknowledgement.answers[answerLoop].color : 'orange') + ".png" },
+                                    map: this._map,
+                                    draggable: false,
+                                });
+                                
+                                this._addUserDetailsClickListener(marker, currentUser, alertHistory.acknowledgement.answers[answerLoop].text);
+                                
+                                // Store our drawn location
+                                this.push('_myLocations',new this._MyLocation(
+                                    ourLocation.properties.vras.id,
+                                    ourLocation.properties.vras.name,
+                                    ourLocation.properties.vras.type,
+                                    marker,
+                                    ourLocation.endpointType || null
+                                ));                            
                             }
                         }
                     }
-                    
-                    this._addUserDetailsClickListener(marker, currentUser, ourAnswer);
-                    
-                    // Store our drawn location
-                    this.push('_myLocations',new this._MyLocation(
-                        ourLocation.properties.vras.id,
-                        ourLocation.properties.vras.name,
-                        ourLocation.properties.vras.type,
-                        marker,
-                        ourLocation.endpointType || null
-                    ));
                 }
             }
         }
         else {
+            // If we don't have locations just give up
+            if (!locations || !locations.length) { return; }
+            
             for (var i = 0; i < locations.length; i++) {
                 if (locations[i] && locations[i].properties && locations[i].geometry) { // Ensure we have a valid location
                     var ourLocation = locations[i];
@@ -500,6 +509,8 @@ Polymer({
                     for (var filterLoop = 0; filterLoop < filter.length; filterLoop++) {
                         if (typeof filter[filterLoop].filter.id !== 'undefined' &&
                             filter[filterLoop].filter.id === this._alertHistory.users[userLoop].response.answerId) {
+                            filteredUsers.push(this._alertHistory.users[userLoop]);
+                            
                             hideMarker = false;
                             break;
                         }
@@ -512,7 +523,6 @@ Polymer({
                                 this._myLocations[locLoop].removeFromMap();
                             }
                             else {
-                                filteredUsers.push(this._alertHistory.users[userLoop]);
                                 this._myLocations[locLoop].addToMap();
                             }
                             
@@ -522,10 +532,14 @@ Polymer({
                 }
                 // If we don't have a user response still consider the chance we want to see that marker
                 else {
+                    // We also want to still store the user as they match the filter
+                    if (selectedNoResponse) {
+                        filteredUsers.push(this._alertHistory.users[userLoop]);
+                    }
+                    
                     for (var locLoop = 0; locLoop < this._myLocations.length; locLoop++) {
                         if (this._myLocations[locLoop].id === this._alertHistory.users[userLoop].location.properties.vras.id) {
                             if (selectedNoResponse) {
-                                filteredUsers.push(this._alertHistory.users[userLoop]);
                                 this._myLocations[locLoop].addToMap();
                             }
                             else {
@@ -564,6 +578,30 @@ Polymer({
      */
     _removeLocationTypesCountLegend: function() {
         this._removeCustomControl(this._LOCATION_TYPE_COUNT_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM)
+    },
+    
+    /**
+     * Adds the response answer legend to the map.
+     * @private
+     */
+    _addResponseAnswerLegend: function() {
+        this._addCustomControl(this._RESPONSE_ANSWER_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null);
+    },
+
+    /**
+     * Redraws the response answer legend on the map.
+     * @private
+     */
+    _redrawResponseAnswerLegend: function() {
+        this._redrawCustomControl(this._RESPONSE_ANSWER_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM,null,null);
+    },
+
+    /**
+     * Removes the response answer from the map.
+     * @private
+     */
+    _removeResponseAnswerLegend: function() {
+        this._removeCustomControl(this._RESPONSE_ANSWER_LEGEND_ID,google.maps.ControlPosition.RIGHT_BOTTOM)
     },
 
     /**
@@ -807,6 +845,8 @@ Polymer({
      */
     handleMapLegend: function() {
         if (this._alertHistory && this.mode !== 'response') {
+            this._removeResponseAnswerLegend();
+            
             if (this['_'+this._LOCATION_TYPE_COUNT_LEGEND_ID]) {
                 this._redrawLocationTypesCountLegend();
             }
@@ -816,7 +856,27 @@ Polymer({
         }
         else {
             this._removeLocationTypesCountLegend();
+            
+            // Only draw the legend if we have content for it
+            if (this._answers && this._answers.length > 0) {
+                if (this['_'+this._RESPONSE_ANSWER_LEGEND_ID]) {
+                    this._redrawResponseAnswerLegend();
+                }
+                else {
+                    this._addResponseAnswerLegend();
+                }
+            }
+            else {
+                this._removeResponseAnswerLegend();
+            }
         }
+    },
+    
+    _getMarkerColorUrl: function(color) {
+        if (!color) {
+            color = 'orange';
+        }
+        return "https://maps.google.com/mapfiles/ms/icons/" + color + ".png";
     },
 
     /**

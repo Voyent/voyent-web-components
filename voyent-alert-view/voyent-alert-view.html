@@ -45,13 +45,20 @@ Example:
                 border-radius: 5px;
             }
             .locationTypesCountLegend,
-            .locationTypesStateLegend{
+            .locationTypesStateLegend,
+            .responseAnswersLegend{
                 font-size: 11px;
                 margin:10px;
                 background-color: white;
                 border-radius: 5px;
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
                 padding: 10px 5px 10px 5px;
+            }
+            .responseAnswersLegend {
+                max-width: 200px;
+            }
+            .responseAnswersLegend img {
+                max-height: 19px;
             }
             .locationTypesStateLegend {
                 padding: 5px 5px 5px 5px;
@@ -173,6 +180,18 @@ Example:
                         &nbsp;Other&nbsp;([[_alertHistory.otherLocationsCount]])
                     </td>
                 </tr>
+            </table>
+        </div>
+        <div id$="[[_RESPONSE_ANSWER_LEGEND_ID]]" class="responseAnswersLegend" hidden>
+            <table cellpadding="0" cellspacing="0">
+                <template is="dom-repeat" strip-whitespace items="[[_answers]]" as="current">
+                    <tr>
+                        <td title$="[[current.text]]">
+                            <img src$="[[_getMarkerColorUrl(current.color)]]"></img>
+                            &nbsp;[[current.text]]
+                        </td>
+                    </tr>
+                </template>
             </table>
         </div>
         <div id$="[[_LOCATION_TYPE_STATE_LEGEND_ID]]" class="locationTypesStateLegend" hidden>
