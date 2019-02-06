@@ -999,9 +999,7 @@
                                     "geometries": zoneGeometries
                                 }
                             }),
-                            map: this._map, draggable: true, zIndex: 50,
-                            visible: this.nodeName !== 'VOYENT-ALERT-VIEW',
-                            cursor: 'move'
+                            map: this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
 
                         zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones));
@@ -1102,7 +1100,7 @@
                     _this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
                         //Build our stack marker, the position will be added later.
                         var stackMarker = new google.maps.Marker({
-                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move'
+                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
                         if (oce.type === 'circle') { //Circular template.
                             stackMarker.setPosition(oce.overlay.getCenter());
@@ -1887,7 +1885,7 @@
 
                         var stackMarker = new google.maps.Marker({
                             position: _this._AlertTemplate.calculateCentroidFromPaths(paths),
-                            map: _this._map, visible: false
+                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
                         var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone]);
 

@@ -2142,6 +2142,17 @@
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ "strokeWeight": 2.0, "fillOpacity": 0.30 });
                     }
+                    // Show the stack marker
+                    if (this.isEditable) {
+                        if (_outer._loadedAlert && _outer._loadedAlert.template && _outer._loadedAlert.template.zoneStacks) {
+                            for (var i=0; i<_outer._loadedAlert.template.zoneStacks.length; i++) {
+                                var stack = _outer._loadedAlert.template.zoneStacks[i];
+                                if (stack.getZoneIndex(this) > -1 && stack.marker) {
+                                    stack.marker.setOptions( { visible: true } );
+                                }
+                            }
+                        }
+                    }
                 },
                 /**
                  * Restores the original shape overlay border.
@@ -2149,6 +2160,17 @@
                 unHighlightOverlay: function() {
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
+                    }
+                    // Hide the stack marker
+                    if (this.isEditable) {
+                        if (_outer._loadedAlert && _outer._loadedAlert.template && _outer._loadedAlert.template.zoneStacks) {
+                            for (var i=0; i<_outer._loadedAlert.template.zoneStacks.length; i++) {
+                                var stack = _outer._loadedAlert.template.zoneStacks[i];
+                                if (stack.getZoneIndex(this) > -1 && stack.marker) {
+                                    stack.marker.setOptions( { visible: false } );
+                                }
+                            }
+                        }
                     }
                 },
                 /**
