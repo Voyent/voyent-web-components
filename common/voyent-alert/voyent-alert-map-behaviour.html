@@ -190,6 +190,9 @@
                         _this._adjustBoundsAndPan();
                     }
                 });
+                this.addEventListener('voyent-alert-zone-removed',function() {
+                    _this._adjustBoundsAndPan();
+                });
             }
             this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
             this._manageMaxZoomLevel(); //Ensure we always have imagery in satellite view modes.
