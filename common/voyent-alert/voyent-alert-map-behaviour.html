@@ -1904,6 +1904,10 @@
                             insertIndex: 0,
                             isFallbackZone: false
                         });
+                        //Toggle the accordion closed for the current stack and load the new one.
+                        _this._toggleProperties(null);
+                        _this.set('_loadedAlert.selectedStack',zoneStack);
+                        _this._toggleProperties(zone);
 
                         //When we have only one stack we don't have a template marker, just the marker for the zone stack.
                         //So once we have two zone stacks we need to create the marker and if we have more than two (the
@@ -1920,8 +1924,6 @@
                             _this._loadedAlert.template.updateJSONAndCentroid();
                         }
 
-                        // Adjust the map bounds
-                        _this._adjustBoundsAndPan();
                         // Close the dialog
                         _this._closeFileImportDialog();
                     }
