@@ -1895,8 +1895,7 @@
 
                         var stackMarker = new google.maps.Marker({
                             position: _this._AlertTemplate.calculateCentroidFromPaths(paths),
-                            map: _this._map, draggable: false,
-                            zIndex: 50, cursor: 'move', visible: false
+                            map: _this._map, visible: false
                         });
                         var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone]);
 
@@ -1909,6 +1908,20 @@
                             insertIndex: 0,
                             isFallbackZone: false
                         });
+
+                        //When we have only one stack we don't have a template marker, just the marker for the zone stack.
+                        //So once we have two zone stacks we need to create the marker and if we have more than two (the
+                        //marker exists already) then we'll update it's position.
+                        if (_this._loadedAlert.template.zoneStacks.length === 2) {
+                            _this._loadedAlert.template.setMarker(new google.maps.Marker({
+                                position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
+                                map: _this._map,
+                                visible: false
+                            }));
+                        }
+                        else if (_this._loadedAlert.template.zoneStacks.length > 2) {
+                            _this._loadedAlert.template.updateJSONAndCentroid();
+                        }
 
                         // Adjust the map bounds
                         _this._adjustBoundsAndPan();
