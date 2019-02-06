@@ -2023,6 +2023,22 @@
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };
             /**
+             * Returns the LatLngBounds for the passed zone.
+             * @param zone
+             * @static
+             */
+            this._AlertZone.getBoundingBox = function(zone) {
+                if (zone && zone.shapeOverlay) {
+                    var bounds = new google.maps.LatLngBounds();
+                    var outerPath = zone.shapeOverlay.getPaths().getAt(0);
+                    outerPath.forEach(function (latLng) {
+                        bounds.extend(latLng);
+                    });
+                    return bounds;
+                }
+                return null;
+            };
+            /**
              * _AlertZone prototype (instance) functions.
              */
             this._AlertZone.prototype = {

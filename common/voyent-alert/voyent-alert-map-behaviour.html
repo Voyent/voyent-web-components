@@ -182,6 +182,13 @@
                             }
                         }
                     }
+                    // Pan the map automatically based on whether a zone is selected
+                    if (selectedZone) {
+                        _this._panToZone(selectedZone);
+                    }
+                    else {
+                        _this._adjustBoundsAndPan();
+                    }
                 });
             }
             this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
@@ -2026,6 +2033,17 @@
             else {
                 this._zoomOnRegion();
             }
+        },
+
+        /**
+         * Updates the map bounds so that only the passed zone is in view and then pans the map.
+         * @param zone
+         * @private
+         */
+        _panToZone: function(zone) {
+            var bounds = this._AlertZone.getBoundingBox(zone);
+            this._map.fitBounds(bounds);
+            this._map.panToBounds(bounds);
         },
 
         /**
