@@ -914,10 +914,6 @@ Polymer({
         // Otherwise if we're adding the zone to the end of the stack then check if the new zone will overlap another existing zone
         else {
             paths = this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), newZonePercentLarger, this._havePointerLock);
-            if (this._alertHasIntersectingStacks(paths, _this._loadedAlert.selectedStack)) {
-                this._displayStackOverlapMsg();
-                return;
-            }
         }
         this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
             var name = this._dialogInput;
@@ -1190,14 +1186,6 @@ Polymer({
                         this._y = this._previousY;
                         return;
                     }
-                }
-            }
-            else { //We are resizing an outer zone
-                //Check if it overlaps another zone stack
-                if (this._alertHasIntersectingStacks(new google.maps.MVCArray([newPath]), this._loadedAlert.selectedStack)) {
-                    this._displayStackOverlapMsg();
-                    this._y = this._previousY;
-                    return;
                 }
             }
             this._zoneToAdjust.setPaths([newPath]);

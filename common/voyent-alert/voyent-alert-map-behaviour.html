@@ -1085,12 +1085,6 @@
                     else { //polygon
                         paths = oce.overlay.getPaths();
                     }
-                    //Check if the new zone overlaps another zone stack.
-                    if (_this._alertHasIntersectingStacks(paths)) {
-                        _this._displayStackOverlapMsg();
-                        oce.overlay.setMap(null);
-                        return;
-                    }
                     //Check if they drew a self-intersecting polygon and if so remove it from the map and notify them.
                     if (oce.type === 'polygon') {
                         var kinks = turf.kinks({
