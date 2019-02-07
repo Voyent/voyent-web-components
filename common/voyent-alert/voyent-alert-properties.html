@@ -445,7 +445,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 <div class="row">
                                     <div class="fullWidthCol buttonCol">
                                         <paper-icon-button title="Insert zone after this one" icon="add"
-                                                           on-click="_addProximityZone" hidden$="[[!zone.isEditable]]"></paper-icon-button>
+                                                           on-click="_addProximityZone" hidden$="[[zone.fromFile]]"></paper-icon-button>
                                         <paper-icon-button title="Copy message contents and recipients" icon="content-copy"
                                                            on-click="_triggerZoneCopy"></paper-icon-button>
                                         <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeProximityZonePrompt"
@@ -453,7 +453,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         </paper-icon-button>
                                     </div>
                                 </div>
-                                <template is="dom-if" if="[[zone.isEditable]]">
+                                <template is="dom-if" if="[[!zone.fromFile]]">
                                     <div class="row">
                                         <div class="fullWidthCol">
                                             <template is="dom-if" if="[[_isPointerLocked]]">
