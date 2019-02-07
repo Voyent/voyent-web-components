@@ -944,7 +944,7 @@ Polymer({
             var zIndex = closestSmallerZone.zIndex - 1;
             // When we add a new zone we don't want to include the full shape so we can punch
             // it out properly later so just pass the filled outer shape via paths.getAt(0)
-            newZone = new _this._AlertZone(null,name,[paths.getAt(0)],isCircle,null,null,null,null,null,zIndex);
+            newZone = new _this._AlertZone(null,name,[paths.getAt(0)],isCircle,null,null,null,null,null,zIndex,false);
 
             // Insert the zone somewhere in the middle of the stack
             if (closestLargerZone) {

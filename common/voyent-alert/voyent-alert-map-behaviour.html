@@ -997,7 +997,8 @@
                             zoneGeometries[i].id, properties.name,
                             this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
                             properties.shape === 'circle', properties.opacity, properties.colour,
-                            properties.messageTemplate, properties.notificationFilter, properties.acknowledgement, zIndex)
+                            properties.messageTemplate, properties.notificationFilter,
+                            properties.acknowledgement, zIndex, false)
                         );
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //Add click listener to the zone so the user can click anywhere on the map to enable fullscreen.
@@ -1017,7 +1018,7 @@
                             map: this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
 
-                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones));
+                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones, false));
                     }
                 }
             }
@@ -1131,7 +1132,7 @@
                         }
                         zone = new _this._AlertZone(null,_this._dialogInput,paths,oce.type === 'circle');
 
-                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone]);
+                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone], false);
                         //Add the stack and fire the zone added event.
                         _this._loadedAlert.template.addZoneStack(zoneStack);
                         _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"insertIndex":0,"isFallbackZone":false});
@@ -1895,13 +1896,15 @@
                     for (var i=0; i<res.length; i++) {
                         // Convert the GeoJSON into the appropriate objects
                         var paths = _this._AlertTemplate.calculatePathsFromCoordinates(res[i].coordinates);
-                        var zone = new _this._AlertZone(null, res[i].name, paths, false, null, null, null, null, null, null, false);
+                        var zone = new _this._AlertZone(
+                            null, res[i].name, paths, false, null, null, null, null, null, null, true
+                        );
 
                         var stackMarker = new google.maps.Marker({
                             position: _this._AlertTemplate.calculateCentroidFromPaths(paths),
                             map: _this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
-                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone]);
+                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone], true);
 
                         // Add the stack and fire the zone added event
                         _this._loadedAlert.template.addZoneStack(zoneStack);

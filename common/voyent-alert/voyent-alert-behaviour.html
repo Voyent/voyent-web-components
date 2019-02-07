@@ -1110,6 +1110,19 @@
                     return this.zoneStacks.indexOf(zoneStack);
                 },
                 /**
+                 * Returns the zone stack that the specified zone belongs to.
+                 * @param zone
+                 */
+                getStackForZone: function(zone) {
+                    for (var i=0; i<this.zoneStacks.length; i++) {
+                        var stack = this.zoneStacks[i];
+                        if (stack.getZoneIndex(zone) > -1) {
+                            return stack;
+                        }
+                    }
+                    return null;
+                },
+                /**
                  * Deactivates all zone overlays for this stack.
                  */
                 deactivateZoneStackOverlays: function() {
@@ -1333,12 +1346,14 @@
              * @param id - The unique id that identifies the zone stack, if one is not provided it will be generated.
              * @param marker - The associated map marker for the stack.
              * @param zones - A list of _AlertZone objects, the list of zones belonging with the stack.
+             * @param fromFile - Whether this stack was derived from an imported file.
              * @private
              */
-            this._AlertZoneStack = function (id,marker,zones) {
+            this._AlertZoneStack = function (id,marker,zones,fromFile) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setMarker(marker || null);
                 this.setZones(zones && zones.length ? zones : []);
+                this.fromFile = !!fromFile;
                 this.updateJSON();
             };
             /**
@@ -2018,10 +2033,10 @@
              * @param notificationFilter - The notification data associated with this zone.
              * @param acknowledgement - The acknowledgement property associated with this zone.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
-             * @param isEditable - Whether the shapeOverlay of the zone is editable.
+             * @param fromFile - Whether this zone was derived from an imported file.
              * @private
              */
-            this._AlertZone = function (id,name,paths,isCircle,opacity,colour,messageTemplate,notificationFilter,acknowledgement,zIndex,isEditable) {
+            this._AlertZone = function (id,name,paths,isCircle,opacity,colour,messageTemplate,notificationFilter,acknowledgement,zIndex,fromFile) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
                 this.setPaths(paths);
@@ -2033,7 +2048,7 @@
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
                 this.acknowledgement = acknowledgement || null;
-                this.isEditable = typeof isEditable !== 'boolean' ? true : isEditable; // Default to true
+                this.fromFile = !!fromFile;
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };
             /**
@@ -2149,7 +2164,7 @@
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ "strokeWeight":3.0, "fillOpacity": 0.30 });
-                        if (!this.isCircle && this.isEditable) {
+                        if (!this.isCircle && !this.fromFile) {
                             this.shapeOverlay.setEditable(true);
                         }
                     }
@@ -2160,7 +2175,7 @@
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
-                        if (!this.isCircle && this.isEditable) {
+                        if (!this.isCircle && !this.fromFile) {
                             this.shapeOverlay.setEditable(false);
                         }
                     }
@@ -2172,15 +2187,11 @@
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ "strokeWeight": 2.0, "fillOpacity": 0.30 });
                     }
-                    // Show the stack marker
-                    if (this.isEditable) {
-                        if (_outer._loadedAlert && _outer._loadedAlert.template && _outer._loadedAlert.template.zoneStacks) {
-                            for (var i=0; i<_outer._loadedAlert.template.zoneStacks.length; i++) {
-                                var stack = _outer._loadedAlert.template.zoneStacks[i];
-                                if (stack.getZoneIndex(this) > -1 && stack.marker) {
-                                    stack.marker.setOptions( { visible: true } );
-                                }
-                            }
+                    // Show the stack marker if the zone and stack were not derived from a file import
+                    if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
+                        var stack = _outer._loadedAlert.template.getStackForZone(this);
+                        if (stack && stack.marker && !stack.fromFile) {
+                            stack.marker.setOptions( { visible: true } );
                         }
                     }
                 },
@@ -2191,15 +2202,11 @@
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
                     }
-                    // Hide the stack marker
-                    if (this.isEditable) {
-                        if (_outer._loadedAlert && _outer._loadedAlert.template && _outer._loadedAlert.template.zoneStacks) {
-                            for (var i=0; i<_outer._loadedAlert.template.zoneStacks.length; i++) {
-                                var stack = _outer._loadedAlert.template.zoneStacks[i];
-                                if (stack.getZoneIndex(this) > -1 && stack.marker) {
-                                    stack.marker.setOptions( { visible: false } );
-                                }
-                            }
+                    // Hide the stack marker if the zone and stack were not derived from a file import
+                    if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
+                        var stack = _outer._loadedAlert.template.getStackForZone(this);
+                        if (stack && stack.marker && !stack.fromFile) {
+                            stack.marker.setOptions( { visible: false } );
                         }
                     }
                 },
