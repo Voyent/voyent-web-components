@@ -1239,6 +1239,8 @@ Polymer({
             this._fallbackZone.punchOutOverlay();
         }
         this._previousY = this._y;
+        // Adjust the map bounds while adjusting the size of the zone so the zone is always focused
+        this._panToZone(this._zoneToAdjust);
     },
 
     /**
@@ -1247,7 +1249,6 @@ Polymer({
      * @private
      */
     _mouseClickListener: function(e) {
-        var _this = this;
         document.exitPointerLock();
     },
 

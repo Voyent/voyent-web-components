@@ -182,8 +182,13 @@
                             }
                         }
                     }
-                    // Pan the map automatically based on whether a zone is selected
+                    // Pan the map automatically based on zone selection
                     if (selectedZone) {
+                        // Zoom to alert when selecting fallback zone
+                        if (selectedZone === this._fallbackZone) {
+                            _this._adjustBoundsAndPan();
+                            return;
+                        }
                         _this._panToZone(selectedZone);
                     }
                     else {
@@ -2037,17 +2042,6 @@
             else {
                 this._zoomOnRegion();
             }
-        },
-
-        /**
-         * Updates the map bounds so that only the passed zone is in view and then pans the map.
-         * @param zone
-         * @private
-         */
-        _panToZone: function(zone) {
-            var bounds = this._AlertZone.getBoundingBox(zone);
-            this._map.fitBounds(bounds);
-            this._map.panToBounds(bounds);
         },
 
         /**
