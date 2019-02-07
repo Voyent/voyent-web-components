@@ -312,9 +312,6 @@ Polymer({
         if (e.key === 'Enter') { //Enter
             this._createNewAlert();
         }
-        else if (e.key === 'Escape') { //Escape
-            this._cancelNewAlert();
-        }
     },
 
     /**
