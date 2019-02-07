@@ -184,14 +184,11 @@
                     }
                     // Pan the map automatically based on zone selection
                     if (selectedZone) {
-                        // Zoom to alert when selecting fallback zone
-                        if (selectedZone === this._fallbackZone) {
-                            _this._adjustBoundsAndPan();
-                            return;
+                        if (selectedZone !== this._fallbackZone) {
+                            _this._panToZone(selectedZone);
                         }
-                        _this._panToZone(selectedZone);
-                    }
-                    else {
+                    } // Don't pan when deselecting fallback zone because using double-click zoom triggers this behaviour
+                    else if (!e.detail.isFallbackZone) {
                         _this._adjustBoundsAndPan();
                     }
                 });

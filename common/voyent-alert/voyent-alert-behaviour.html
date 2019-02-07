@@ -271,7 +271,8 @@
             else {
                 this.fire('voyent-alert-zone-selected',{
                     "id": null,
-                    "zone": null
+                    "zone": null,
+                    "isFallbackZone": false
                 });
             }
         },
@@ -287,7 +288,8 @@
                 if (typeof skipEvent !== 'boolean' || !skipEvent) {
                     this.fire('voyent-alert-zone-selected',{
                         "id": null,
-                        "zone": null
+                        "zone": null,
+                        "isFallbackZone": true
                     });
                 }
             }
