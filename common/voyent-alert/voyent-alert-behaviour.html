@@ -723,11 +723,12 @@
          * Updates the map bounds so that only the passed zone is in view and then pans the map.
          * Restricts the panning to every 500ms to avoid excessive map panning while resizing zones.
          * @param zone
+         * @param forcePan
          * @private
          */
-        _panToZone: function(zone) {
+        _panToZone: function(zone, forcePan) {
             var currentTime = new Date().getTime();
-            if (!this._lastPanZoneTime || currentTime - this._lastPanZoneTime > 500) {
+            if (forcePan || !this._lastPanZoneTime || currentTime - this._lastPanZoneTime > 500) {
                 var bounds = this._AlertZone.getBoundingBox(zone);
                 this._map.fitBounds(bounds);
                 this._map.panToBounds(bounds);

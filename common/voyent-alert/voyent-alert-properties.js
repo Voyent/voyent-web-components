@@ -1250,6 +1250,8 @@ Polymer({
      */
     _mouseClickListener: function(e) {
         document.exitPointerLock();
+        // Adjust the map bounds after adjusting the size of the zone to ensure the zone is fully in view
+        this._panToZone(this._zoneToAdjust, true);
     },
 
     /**
