@@ -781,7 +781,7 @@
                     stack.punchOutShapes();
                     //Update the centroid for the template.
                     this._loadedAlert.template.updateJSONAndCentroid();
-                    if (this._fallbackZone && this._zoneToReshape === stack.zones.getLargestZone()) {
+                    if (this._fallbackZone && this._zoneToReshape === stack.getLargestZone()) {
                         this._fallbackZone.punchOutOverlay();
                     }
                 }
