@@ -155,7 +155,11 @@ Polymer({
         /**
          * The keydown listener for zone reshaping.
          */
-        _zoneReshapeEscapeListener: { type: Function, value: null, notify: true }
+        _zoneReshapeEscapeListener: { type: Function, value: null, notify: true },
+        /**
+         * The element containing the global wait cursor styling rule.
+         */
+        _cursorStylingRule: { type: Object, value: null, notify: true }
     },
 
     observers: [

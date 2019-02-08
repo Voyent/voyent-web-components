@@ -767,29 +767,60 @@
          * @private
          */
         _disableZoneReshaping: function() {
+            var _this = this;
             if (this._zoneToReshape) {
-                // If we were editing a stacked zone then we punch out the shape when they are
-                // done editing. This is because we only allow them to edit the outer path of
-                // the zone so we can control whether the inner zone is editable or not.
-                var stack = this._loadedAlert.template.getStackForZone(this._zoneToReshape);
-                if (stack.zones.indexOf(this._zoneToReshape) > 0) {
-                    // Now that editing is done we must punch the shape out again
-                    //Update the stack JSON and adjust the centroid position.
-                    stack.updateJSONAndCentroid();
-                    //Always re-punch out the shapes. This will handle cases like filling
-                    //in gaps when the outer boundary of an inner zone is pulled inwards.
-                    stack.punchOutShapes();
-                    //Update the centroid for the template.
-                    this._loadedAlert.template.updateJSONAndCentroid();
-                    if (this._fallbackZone && this._zoneToReshape === stack.getLargestZone()) {
-                        this._fallbackZone.punchOutOverlay();
+                // Enable the wait cursor since the setPaths operation (in punchOutShapes) may take a long time
+                this._enableGlobalWaitCursor();
+                // Proceed after a small delay so the wait cursor is displayed
+                setTimeout(function() {
+                    // If we were editing a stacked zone then we punch out the shape when they are
+                    // done editing. This is because we only allow them to edit the outer path of
+                    // the zone so we can control whether the inner zone is editable or not.
+                    var stack = _this._loadedAlert.template.getStackForZone(_this._zoneToReshape);
+                    if (stack.zones.indexOf(_this._zoneToReshape) > 0) {
+                        // Now that editing is done we must punch the shape out again
+                        //Update the stack JSON and adjust the centroid position.
+                        stack.updateJSONAndCentroid();
+                        //Always re-punch out the shapes. This will handle cases like filling
+                        //in gaps when the outer boundary of an inner zone is pulled inwards.
+                        stack.punchOutShapes();
+                        //Update the centroid for the template.
+                        _this._loadedAlert.template.updateJSONAndCentroid();
+                        if (_this._fallbackZone && _this._zoneToReshape === stack.getLargestZone()) {
+                            _this._fallbackZone.punchOutOverlay();
+                        }
                     }
-                }
-                // Disable editing
-                this._zoneToReshape.setEditable(false);
-                window.removeEventListener('keydown', this._zoneReshapeEscapeListener);
-                this._zoneToReshape = null;
+                    // Disable editing
+                    _this._zoneToReshape.setEditable(false);
+                    window.removeEventListener('keydown', _this._zoneReshapeEscapeListener);
+                    _this._zoneToReshape = null;
+                    // Disable the wait cursor, again after a delay to ensure it persists for the entire reshape operation
+                    setTimeout(function() {
+                        _this._disableGlobalWaitCursor();
+                    },0);
+                },50);
             }
+        },
+
+        /**
+         * Enables a wait cursor for all elements on the page.
+         * @private
+         */
+        _enableGlobalWaitCursor: function() {
+            document.querySelector('html').style.cursor = 'wait !important';
+            this._cursorStylingRule = document.createElement('div');
+            this._cursorStylingRule.innerHTML = '<style>html * { cursor: wait !important; }</style>'
+            document.querySelector('body').appendChild(this._cursorStylingRule);
+        },
+
+        /**
+         * Disables the wait cursor for all elements on the page (restores default cursors).
+         * @private
+         */
+        _disableGlobalWaitCursor: function() {
+            document.querySelector('html').style.cursor = null;
+            document.querySelector('body').removeChild(this._cursorStylingRule);
+            this._cursorStylingRule = null;
         },
 
         /**
