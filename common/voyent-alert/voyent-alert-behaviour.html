@@ -935,6 +935,7 @@
                 this.setIsSampleTemplate(categories && categories.indexOf('Sample') > -1);
                 this.setSchedule(schedule);
                 this.setCategories(categories || []);
+                this.forceSavePosition = false;
             };
             /**
              * Used to calculate the bounds of the template's zones using the passed json.
@@ -1138,6 +1139,7 @@
                  */
                 setSavePosition: function(savePosition) {
                     this.savePosition = savePosition;
+                    _outer._notifyPropertyPathForAlert('savePosition');
                 },
                 /**
                  * Sets whether this is a sample template.
@@ -1249,6 +1251,22 @@
                             this.zoneStacks[i].initializePolygonPathListeners();
                         }
                     }
+                },
+                /**
+                 * Accepts a parameter that toggles whether we should force the position to be saved
+                 * with the template. This is generally used for imported zones so the user cannot
+                 * later create an alert from the template and reposition the imported zone.
+                 * @param force
+                 */
+                forceSavePositionWithTemplate: function(force) {
+                    if (force) {
+                        this.setSavePosition(true);
+                        this.forceSavePosition = true;
+                    }
+                    else {
+                        this.forceSavePosition = false;
+                    }
+                    _outer._notifyPropertyPathForAlert('forceSavePosition');
                 },
                 /**
                  * Updates the json to reflect the current state of the template. Since each stack of zones maintains

@@ -958,7 +958,7 @@
          * @private
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
-            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker, stackFromFile;
+            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker, haveStackFromFile, currentStackFromFile;
             //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
             if (templateJSON.geo) {
                 var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
@@ -970,11 +970,12 @@
                     zoneGeometries = zoneStackGeometries[stackId];
                     zones = [];
                     zIndex = 49;
-                    stackFromFile = false;
+                    currentStackFromFile = false;
                     for (var i=0; i<zoneGeometries.length; i++) {
                         properties = templateJSON.properties[zoneGeometries[i].id];
                         if (zoneGeometries[i].fromFile) {
-                            stackFromFile = zoneGeometries[i].fromFile;
+                            currentStackFromFile = zoneGeometries[i].fromFile;
+                            haveStackFromFile = true;
                         }
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //For alert detail notification view show the inner zone of each relevant stack.
@@ -1019,7 +1020,7 @@
                             map: this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
 
-                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones, stackFromFile));
+                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones, currentStackFromFile));
                     }
                 }
             }
@@ -1045,6 +1046,9 @@
                 ),
                 selectedStack: zoneStacks.length === 1 ? zoneStacks[0] : null
             });
+            // If the template has one or more stacks that were created from a file import
+            // then we will always force the position to be saved with the template
+            this._loadedAlert.template.forceSavePositionWithTemplate(haveStackFromFile);
             //If we were provided a centroid for the template then we need to move the centroid of the zones from the current
             //position to the new one. To do this we will first calculate their current position based on the template and then
             //move them to the new coordinate while maintaining the distance and bearing they were from the original position.
@@ -1935,6 +1939,9 @@
                         else if (_this._loadedAlert.template.zoneStacks.length > 2) {
                             _this._loadedAlert.template.updateJSONAndCentroid();
                         }
+                        // Always force the position to be saved with the template
+                        // when we have a zone derived from an imported file
+                        _this._loadedAlert.template.forceSavePositionWithTemplate(true);
 
                         // Close the dialog
                         _this._closeFileImportDialog();

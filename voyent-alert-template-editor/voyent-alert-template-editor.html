@@ -95,7 +95,8 @@ Example:
                             <div class="text-center" style="font-size:12px;">
                                 Save Location with Template?
                                 <paper-toggle-button class="inline" style="width:150px;"
-                                                     checked="{{_loadedAlert.template.savePosition}}">
+                                                     checked="{{_loadedAlert.template.savePosition}}"
+                                                     disabled="[[_loadedAlert.template.forceSavePosition]]">
                                 </paper-toggle-button>
                             </div>
                         </template>

@@ -1053,6 +1053,20 @@ Polymer({
                 this._fallbackZone.punchOutOverlay();
             }
         }
+
+        // When removing a zone we need to check whether we need to force saving the position
+        // with the template since it's possible that the user will remove the only zone
+        // they imported from a file, removing the requirement of force saving the position
+        var haveStackFromFile = false;
+        var zoneStacks = this._loadedAlert.template.zoneStacks;
+        for (var i=0; i<zoneStacks.length; i++) {
+            if (zoneStacks[i].fromFile) {
+                haveStackFromFile = true;
+                break;
+            }
+        }
+        this._loadedAlert.template.forceSavePositionWithTemplate(haveStackFromFile);
+
         this.fire('voyent-alert-zone-removed',{"id":id,"isFallbackZone":false});
     },
 
