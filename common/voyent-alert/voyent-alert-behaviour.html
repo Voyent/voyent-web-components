@@ -400,16 +400,17 @@
          */
         _mouseoverZoneProperties: function(e) {
             var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
-            this._mouseoverZone(zoneStack.getZoneAt(e.model.get('zoneIndex')));
+            this._mouseoverZone(zoneStack.getZoneAt(e.model.get('zoneIndex'),false));
         },
 
         /**
          * Adds mouseover styling for the passed zone.
          * @param zone
+         * @param showMarker
          * @private
          */
-        _mouseoverZone: function(zone) {
-            zone.highlightOverlay();
+        _mouseoverZone: function(zone,showMarker) {
+            zone.highlightOverlay(showMarker);
         },
 
         /**
@@ -1848,7 +1849,7 @@
                     });
                     // Adjust zone styling when hovering over zone with mouse
                     google.maps.event.addListener(overlay, 'mouseover', function() {
-                        _outer._mouseoverZone(zone);
+                        _outer._mouseoverZone(zone,true);
                     });
                     google.maps.event.addListener(overlay, 'mouseout', function() {
                         _outer._mouseoutZone(zone);
@@ -2249,13 +2250,14 @@
                 },
                 /**
                  * Highlights the shape overlay by adding a border.
+                 * @param showMarker - Whether to show the marker for moving the stack.
                  */
-                highlightOverlay: function() {
+                highlightOverlay: function(showMarker) {
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ strokeWeight: 2.0, fillOpacity: 0.30 });
                     }
                     // Show the stack marker if the zone and stack were not derived from a file import
-                    if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
+                    if (showMarker && _outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
                         var stack = _outer._loadedAlert.template.getStackForZone(this);
                         if (stack && stack.marker && !stack.fromFile) {
                             stack.marker.setOptions( { visible: true } );
