@@ -918,7 +918,7 @@ Polymer({
         // If we're adding the new zone in between zones then we must ensure
         // that the new zone is fully within the zone at newZoneIndex+1
         if (closestLargerZone) {
-            paths = adjustNewZoneSizeToFit(newZonePercentLarger);
+            paths = this._adjustNewZoneSizeToFit(closestSmallerZone, closestLargerZone, newZonePercentLarger);
             if (!paths) {
                 return;
             }
@@ -981,54 +981,62 @@ Polymer({
             //Show the properties pane for the new zone.
             _this._toggleProperties(newZone);
         });
+    },
 
-        function adjustNewZoneSizeToFit(percentage) {
-            // If the percentage is 0 then it means the shape will not fit between the two zones so we'll bail
-            if (percentage === 0) {
-                _this.fire('message-error', 'Unable to fit new zone between ' + closestSmallerZone.name + ' and ' + closestLargerZone.name);
-                return null;
-            }
-            // Calculate new paths based on the passed percentage
-            var paths = _this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), percentage, _this._havePointerLock);
-            // Determine if the new zone is fully within the closest outer zone
-            var newZoneInsideOuterZone = turf.booleanWithin({
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [_this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the "whole" version of the next largest zone
-                    }
-                }
-            );
-            var outerZoneInsideNewZone = turf.booleanContains({
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [_this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the "whole" version of the next largest zone
-                    }
-                }
-            );
-            // The new zone is not fully within the outer zone OR the outer zone overlaps with the new zone
-            if (!newZoneInsideOuterZone || outerZoneInsideNewZone) {
-                // Decrease the size
-                return adjustNewZoneSizeToFit(percentage-1);
-            }
-            // The new zone is within the outer zone
-            return paths;
+    /**
+     *
+     * @param closestSmallerZone
+     * @param closestLargerZone
+     * @param percentage
+     * @returns {*}
+     * @private
+     */
+    _adjustNewZoneSizeToFit: function(closestSmallerZone,closestLargerZone,percentage) {
+        // If the percentage is 0 then it means the shape will not fit between the two zones so we'll bail
+        if (percentage === 0) {
+            this.fire('message-error', 'Unable to fit new zone between ' + closestSmallerZone.name + ' and ' + closestLargerZone.name);
+            return null;
         }
+        // Calculate new paths based on the passed percentage
+        var paths = this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), percentage, this._havePointerLock);
+        // Determine if the new zone is fully within the closest outer zone
+        var newZoneInsideOuterZone = turf.booleanWithin({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
+                }
+            },
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the "whole" version of the next largest zone
+                }
+            }
+        );
+        var outerZoneInsideNewZone = turf.booleanContains({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
+                }
+            },
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the "whole" version of the next largest zone
+                }
+            }
+        );
+        // The new zone is not fully within the outer zone OR the outer zone overlaps with the new zone
+        if (!newZoneInsideOuterZone || outerZoneInsideNewZone) {
+            // Decrease the size
+            return this._adjustNewZoneSizeToFit(closestSmallerZone,closestLargerZone,percentage-1);
+        }
+        // The new zone is within the outer zone
+        return paths;
     },
 
     /**
