@@ -147,7 +147,15 @@ Polymer({
         /**
          * The height set from the previous map size calculation.
          */
-        _lastHeight: { type: Number, notify: true }
+        _lastHeight: { type: Number, notify: true },
+        /**
+         * The zone being reshaped.
+         */
+        _zoneToReshape: { type: Object, value: null, notify: true },
+        /**
+         * The keydown listener for zone reshaping.
+         */
+        _zoneReshapeEscapeListener: { type: Function, value: null, notify: true }
     },
 
     observers: [
@@ -1305,6 +1313,17 @@ Polymer({
     _adjustZoneSize: function(e) {
         this._zoneToAdjust = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
         this._requestPointerLock();
+    },
+
+    /**
+     * Returns whether we want to show the resizing button.
+     * @param fromFile
+     * @param editable
+     * @returns {boolean}
+     * @private
+     */
+    _showResizingButton: function(fromFile,editable) {
+        return !fromFile && !editable;
     },
 
     /**

@@ -445,7 +445,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                 <div class="row">
                                     <div class="fullWidthCol buttonCol">
                                         <paper-icon-button title="Insert zone after this one" icon="add"
-                                                           on-click="_addProximityZone" hidden$="[[zone.fromFile]]"></paper-icon-button>
+                                                           on-click="_addProximityZone"></paper-icon-button>
                                         <paper-icon-button title="Copy message contents and recipients" icon="content-copy"
                                                            on-click="_triggerZoneCopy"></paper-icon-button>
                                         <paper-icon-button title="Remove this zone" icon="delete" on-click="_removeProximityZonePrompt"
@@ -453,7 +453,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         </paper-icon-button>
                                     </div>
                                 </div>
-                                <template is="dom-if" if="[[!zone.fromFile]]">
+                                <template is="dom-if" if="[[_showResizingButton(zone.fromFile,zone.editable)]]">
                                     <div class="row">
                                         <div class="fullWidthCol">
                                             <template is="dom-if" if="[[_isPointerLocked]]">
@@ -466,6 +466,29 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                               raised title="Adjust Area"
                                                               on-click="_adjustZoneSize">
                                                     Adjust Area
+                                                </paper-button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template is="dom-if" if="[[_showReshapableButton(zone.isCircle,zone.fromFile,_isPointerLocked)]]">
+                                    <div class="row">
+                                        <div class="fullWidthCol">
+                                            <template is="dom-if" if="[[zone.editable]]">
+                                                <div class="bold">Zone Reshaping Enabled</div>
+                                                Use the vertices to edit the shape. Click done or press the Esc key to exit.
+                                                <paper-button raised title="Done Reshaping"
+                                                              on-click="_disableZoneReshaping"
+                                                              style="margin-top: 5px;">
+                                                    Done
+                                                </paper-button>
+                                            </template>
+                                            <template is="dom-if" if="[[!zone.editable]]">
+                                                <paper-button data-stack-index$="[[zoneStackIndex]]"
+                                                              data-zone-index$="[[zoneIndex]]"
+                                                              raised title="Adjust Shape"
+                                                              on-click="_enableZoneReshaping">
+                                                    Adjust Shape
                                                 </paper-button>
                                             </template>
                                         </div>

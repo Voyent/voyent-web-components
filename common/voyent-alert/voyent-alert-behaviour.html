@@ -736,6 +736,48 @@
         },
 
         /**
+         * Enables zone reshaping for the currently active zone.
+         * @param e
+         * @private
+         */
+        _enableZoneReshaping: function(e) {
+            this._zoneToReshape = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
+            if (this._zoneToReshape && !this._zoneToReshape.isCircle && !this._zoneToReshape.fromFile) {
+                this._zoneToReshape.setEditable(true);
+                this._zoneReshapeEscapeListener = function (e) {
+                    if (e.key === 'Escape') {
+                        this._disableZoneReshaping();
+                    }
+                }.bind(this);
+                window.addEventListener('keydown', this._zoneReshapeEscapeListener);
+            }
+        },
+
+        /**
+         * Disables zone reshaping for the currently active zone.
+         * @private
+         */
+        _disableZoneReshaping: function() {
+            if (this._zoneToReshape) {
+                this._zoneToReshape.setEditable(false);
+                window.removeEventListener('keydown', this._zoneReshapeEscapeListener);
+                this._zoneToReshape = null;
+            }
+        },
+
+        /**
+         * Returns whether tos how the reshapable button.
+         * @param isCircle
+         * @param fromFile
+         * @param isPointerLocked
+         * @returns {boolean}
+         * @private
+         */
+        _showReshapableButton: function(isCircle,fromFile,isPointerLocked) {
+            return !isCircle && !fromFile && !isPointerLocked;
+        },
+
+        /**
          * Notifies the polymer path for AlertTemplate properties.
          * @param propName
          * @private
@@ -2043,6 +2085,7 @@
                 this.setName(name || 'Zone 1');
                 this.setPaths(paths);
                 this.isCircle = !!isCircle;
+                this.setEditable(false); // Editing must be toggled by the user
                 this.setOpacity(/*opacity || */0.25); // Fixed opacity
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
@@ -2087,6 +2130,17 @@
                 setName: function(name) {
                     this.name = name;
                     _outer._notifyPropertyPathForZone(this,'name');
+                },
+                /**
+                 * Sets the editable property and notifies the polymer path.
+                 * @param editable
+                 */
+                setEditable: function(editable) {
+                    this.editable = editable;
+                    _outer._notifyPropertyPathForZone(this,'editable');
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setOptions({ editable: !!editable });
+                    }
                 },
                 /**
                  * Sets the colour and notifies the polymer path.
@@ -2165,10 +2219,7 @@
                  */
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({ "strokeWeight":3.0, "fillOpacity": 0.30 });
-                        if (!this.isCircle && !this.fromFile) {
-                            this.shapeOverlay.setEditable(true);
-                        }
+                        this.shapeOverlay.setOptions({ strokeWeight:3.0, fillOpacity: 0.30 });
                     }
                 },
                 /**
@@ -2176,18 +2227,17 @@
                  */
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
-                        if (!this.isCircle && !this.fromFile) {
-                            this.shapeOverlay.setEditable(false);
-                        }
+                        this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
                     }
+                    // Whenever they de-select a zone we will disable editing
+                    _outer._disableZoneReshaping();
                 },
                 /**
                  * Highlights the shape overlay by adding a border.
                  */
                 highlightOverlay: function() {
                     if (this.shapeOverlay && !this.active) {
-                        this.shapeOverlay.setOptions({ "strokeWeight": 2.0, "fillOpacity": 0.30 });
+                        this.shapeOverlay.setOptions({ strokeWeight: 2.0, fillOpacity: 0.30 });
                     }
                     // Show the stack marker if the zone and stack were not derived from a file import
                     if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
@@ -2202,7 +2252,7 @@
                  */
                 unHighlightOverlay: function() {
                     if (this.shapeOverlay && !this.active) {
-                        this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
+                        this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
                     }
                     // Hide the stack marker if the zone and stack were not derived from a file import
                     if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
