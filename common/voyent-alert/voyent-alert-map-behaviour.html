@@ -958,7 +958,7 @@
          * @private
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
-            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker;
+            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker, stackFromFile;
             //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
             if (templateJSON.geo) {
                 var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
@@ -970,8 +970,12 @@
                     zoneGeometries = zoneStackGeometries[stackId];
                     zones = [];
                     zIndex = 49;
+                    stackFromFile = false;
                     for (var i=0; i<zoneGeometries.length; i++) {
                         properties = templateJSON.properties[zoneGeometries[i].id];
+                        if (zoneGeometries[i].fromFile) {
+                            stackFromFile = zoneGeometries[i].fromFile;
+                        }
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //For alert detail notification view show the inner zone of each relevant stack.
                             if (this.mode === 'notification') {
@@ -995,7 +999,7 @@
                             this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
                             properties.shape === 'circle', properties.opacity, properties.colour,
                             properties.messageTemplate, properties.notificationFilter,
-                            properties.acknowledgement, zIndex, false)
+                            properties.acknowledgement, zIndex, properties.fromFile)
                         );
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //Add click listener to the zone so the user can click anywhere on the map to enable fullscreen.
@@ -1015,7 +1019,7 @@
                             map: this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
 
-                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones, false));
+                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones, stackFromFile));
                     }
                 }
             }

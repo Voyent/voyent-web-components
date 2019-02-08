@@ -85,8 +85,9 @@ Polymer({
                     _this.set('_alertSpeedUnit',template.properties.speedUnit || 'kph');
                 }
             },0);
-        }).catch(function(error) {
-            _this.fire('message-error', 'Issue loading saved alert: ' + (error.responseText || error.message || error));
+        }).catch(function(e) {
+            _this.fire('message-error', 'Issue loading saved alert, try again or contact a Voyent administrator');
+            console.error('e',e);
         });
     },
 

@@ -1397,7 +1397,7 @@
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setMarker(marker || null);
                 this.setZones(zones && zones.length ? zones : []);
-                this.fromFile = !!fromFile;
+                this.setFromFile(fromFile);
                 this.updateJSON();
             };
             /**
@@ -1479,6 +1479,12 @@
                     for (var i=0; i<zones.length; i++) {
                         this.addZone(zones[i]);
                     }
+                },
+                /**
+                 * Sets whether this stack was derived from a file.
+                 */
+                setFromFile: function(fromFile) {
+                    this.fromFile = !!fromFile;
                 },
                 /**
                  * Returns the zone at the specified index.
@@ -1629,7 +1635,8 @@
                             "shape": zone.isCircle ? 'circle' : 'polygon',
                             /*"opacity": zone.opacity,*/ // Fixed opacity
                             "colour": zone.colour,
-                            "innermost": i===0
+                            "innermost": i===0,
+                            "fromFile": !!zone.fromFile
                         };
                         if (zone.messageTemplate) {
                             json.properties[zone.id].messageTemplate = zone.messageTemplate;
@@ -1643,6 +1650,7 @@
                         json.geo.geometries.push({
                             "id": zone.id,
                             "stackId": this.id,
+                            "fromFile": !!this.fromFile,
                             "type": "Polygon",
                             "coordinates": [[]]
                         });
@@ -2093,7 +2101,7 @@
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
                 this.acknowledgement = acknowledgement || null;
-                this.fromFile = !!fromFile;
+                this.setFromFile(fromFile);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
             };
             /**
@@ -2200,6 +2208,13 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
+                },
+                /**
+                 * Sets whether this zone was derived from a file.
+                 */
+                setFromFile: function(fromFile) {
+                    this.fromFile = !!fromFile;
+                    _outer._notifyPropertyPathForZone(this,'fromFile');
                 },
                 /**
                  * Sets the northern coordinate and draws the nameOverlay.
