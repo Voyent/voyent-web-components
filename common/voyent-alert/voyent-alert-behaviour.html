@@ -743,7 +743,15 @@
          */
         _enableZoneReshaping: function(e) {
             this._zoneToReshape = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
-            if (this._zoneToReshape && !this._zoneToReshape.isCircle && !this._zoneToReshape.fromFile) {
+            if (this._zoneToReshape) {
+                // We only want to allow editing the outer boundary of a zone so we can control whether
+                // the inner zone is editable. So set the shape to the outer path only and when they
+                // are done editing we will punch out the shape again to recreate the inner path.
+                var stack = this._loadedAlert.template.getStackForZone(this._zoneToReshape);
+                if (stack.zones.indexOf(this._zoneToReshape) > 0) {
+                    this._zoneToReshape.setPaths([this._zoneToReshape.shapeOverlay.getPaths().getAt(0)]);
+                }
+                // Enable editing
                 this._zoneToReshape.setEditable(true);
                 this._zoneReshapeEscapeListener = function (e) {
                     if (e.key === 'Escape') {
@@ -760,6 +768,24 @@
          */
         _disableZoneReshaping: function() {
             if (this._zoneToReshape) {
+                // If we were editing a stacked zone then we punch out the shape when they are
+                // done editing. This is because we only allow them to edit the outer path of
+                // the zone so we can control whether the inner zone is editable or not.
+                var stack = this._loadedAlert.template.getStackForZone(this._zoneToReshape);
+                if (stack.zones.indexOf(this._zoneToReshape) > 0) {
+                    // Now that editing is done we must punch the shape out again
+                    //Update the stack JSON and adjust the centroid position.
+                    stack.updateJSONAndCentroid();
+                    //Always re-punch out the shapes. This will handle cases like filling
+                    //in gaps when the outer boundary of an inner zone is pulled inwards.
+                    stack.punchOutShapes();
+                    //Update the centroid for the template.
+                    this._loadedAlert.template.updateJSONAndCentroid();
+                    if (this._fallbackZone) {
+                        this._fallbackZone.punchOutOverlay();
+                    }
+                }
+                // Disable editing
                 this._zoneToReshape.setEditable(false);
                 window.removeEventListener('keydown', this._zoneReshapeEscapeListener);
                 this._zoneToReshape = null;
@@ -1929,6 +1955,12 @@
                     //Check if the polygon intersects itself. To do this we will use the turf library but we
                     //must first extract the new zone coordinates so they can be interpreted by turf as GeoJSON.
                     var newZoneCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
+                    var closestInnerZoneCoordinates;
+                    if (_outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1)) {
+                        closestInnerZoneCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(
+                            _outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1).shapeOverlay.getPaths()
+                        );
+                    }
                     var kinks = turf.kinks({
                         "type": "Feature",
                         "geometry": {
@@ -1953,25 +1985,20 @@
                             //Check that the outer-most zone is touching it's closest inner zone. This
                             //handles the case where they drag a vertex on the outer-most zone to the
                             //opposite side of the shape, detaching it from the stack.
-                            var outerBoundaryPolygonCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(
-                                zone.shapeOverlay.getPaths()
-                            );
                             var intersects = turf.intersect({
                                 "type": "Feature",
                                 "geometry": {
                                     "type": "Polygon",
                                     //The zone isn't punched out yet which means the previous inner zone boundary
                                     //will exist as a filled polygon so make sure we only select the edited zone.
-                                    "coordinates": [outerBoundaryPolygonCoordinates[0]]
+                                    "coordinates": [newZoneCoordinates[0]]
                                 }
                             },
                             {
                                 "type": "Feature",
                                 "geometry": {
                                     "type": "Polygon",
-                                    "coordinates": _outer._AlertTemplate.calculateCoordinatesFromPaths(
-                                        _outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1).shapeOverlay.getPaths()
-                                    )
+                                    "coordinates": closestInnerZoneCoordinates
                                 }
                             });
                             if (!intersects.geometry) {
@@ -2001,6 +2028,30 @@
                                 }
                             }
                         }
+                        // If we are editing an outer zone (a zone which has an inner zone) then we will not punch out
+                        // the shape until the user completes the editing operation so we must check if the outer zone
+                        // completely contains the inner zone to prevent the user from intersecting with it.
+                        if (!errorMsg && zoneIndex > 0) {
+                            var zoneContainsClosestInnerZone = turf.booleanContains({
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Polygon",
+                                        "coordinates": [newZoneCoordinates[0]] // Select the outer path of the zone we're editing
+                                    }
+                                },
+                                {
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Polygon",
+                                        "coordinates": closestInnerZoneCoordinates
+                                    }
+                                }
+                            );
+                            if (!zoneContainsClosestInnerZone) {
+                                errorMsg = _outer._OVERLAP_WITHIN_STACK_MSG;
+                            }
+                        }
+
                     }
                     //Revert the position if there was a problem and display a message to the user.
                     if (errorMsg) {
@@ -2014,30 +2065,28 @@
                         _outer.fire('message-error',errorMsg);
                         return;
                     }
-                    if (pathIndex > 0) {
-                        //The inner boundary of a zone was pulled inwards or outwards so we must adjust the shape inside
-                        //of it to fill the gap. To do this we will take the inner boundary of the adjusted shape and set
-                        //it as the outer boundary of the inner shape. We must clone the boundary array so the two overlays
-                        //will not be linked by reference.
-                        var pathClone = [];
-                        for (var j=0; j<zone.shapeOverlay.getPaths().getAt(pathIndex).length; j++) {
-                            pathClone.push(zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(j));
-                        }
-                        var editedZone = _outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1);
-                        editedZone.setPaths(new google.maps.MVCArray(pathClone));
-                        //Re-initialize the polygon path listeners for the edited zone.
-                        _outer._loadedAlert.selectedStack.initializePolygonPathListeners(editedZone);
-                    }
                     //Update the stack JSON and adjust the centroid position.
                     this.updateJSONAndCentroid();
-                    //Always re-punch out the shapes. This will handle cases like filling
-                    //in gaps when the outer boundary of an inner zone is pulled inwards.
-                    this.punchOutShapes();
+
+                    // If we are editing an inner zone (a zone which has an outer zone) then punch out the outer zone
+                    // immediately since if the inner zone is editable then so is the outer one. If the zone is
+                    // the outer zone then it will be punched out when the user completes the editing operation.
+                    if (_outer._loadedAlert.selectedStack.getZoneAt(zoneIndex+1)) {
+                        //Punch out the outer zone
+                        this._punchOutShape(zoneIndex+1);
+                    }
+
                     //Update the centroid for the template.
                     _outer._loadedAlert.template.updateJSONAndCentroid();
-                    if (_outer._fallbackZone) {
-                        _outer._fallbackZone.punchOutOverlay();
+
+                    // If we are editing the outer zone then punch out the fallback zone immediately
+                    if (zone === largestZone) {
+                        //Punch out the fallback zone
+                        if (_outer._fallbackZone) {
+                            _outer._fallbackZone.punchOutOverlay();
+                        }
                     }
+
                     //Quickly toggle the overlay to fix a couple bugs with correctly displaying the polygons:
                     //1) Dragging a multi-zone polygon stack after editing will leave a line
                     //   where the edited vertex connects to its neighbouring vertices.
