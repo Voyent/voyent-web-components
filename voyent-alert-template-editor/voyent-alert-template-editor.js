@@ -154,6 +154,22 @@ Polymer({
     },
 
     /**
+     * Returns the title property for the save position button.
+     * @param savePosition
+     * @param forceSavePosition
+     * @returns {string}
+     * @private
+     */
+    _getSavePositionButtonTitle: function(savePosition,forceSavePosition) {
+        if (forceSavePosition) {
+            return 'The location of this template will be remembered because this template contains one or more zones created from an imported file';
+        }
+        return savePosition
+            ? 'The location of this template will be remembered'
+            : 'The location of this template will not be remembered';
+    },
+
+    /**
      * Manages the templateLoaded property state, drawing button visibility
      * and fires the `voyent-alert-template-changed` event.
      * Manages the drawing button states based on whether an alert is loaded.

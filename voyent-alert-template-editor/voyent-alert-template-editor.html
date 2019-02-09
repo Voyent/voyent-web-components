@@ -92,7 +92,8 @@ Example:
                 </div><div id="crudPanel">
                     <template is="dom-if" if="[[_loadedAlert]]">
                         <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
-                            <div class="text-center" style="font-size:12px;">
+                            <div class="text-center" style="font-size:12px;"
+                                 title="[[_getSavePositionButtonTitle(_loadedAlert.template.savePosition,_loadedAlert.template.forceSavePosition)]]">
                                 Save Location with Template?
                                 <paper-toggle-button class="inline" style="width:150px;"
                                                      checked="{{_loadedAlert.template.savePosition}}"
