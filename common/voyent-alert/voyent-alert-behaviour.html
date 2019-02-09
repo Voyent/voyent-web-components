@@ -769,6 +769,12 @@
         _disableZoneReshaping: function() {
             var _this = this;
             if (this._zoneToReshape) {
+                // Due to the "asynchronous" nature of this function we will immediately reset the
+                // zoneToReshape property to prevent this function from executing more than once. This
+                // becomes an issue when completing editing by selecting another zone stack or fallback
+                // zone since the each of selection events will try to disable zone reshaping
+                var zoneToReshape = this._zoneToReshape;
+                this._zoneToReshape = null;
                 // Enable the wait cursor since the setPaths operation (in punchOutShapes) may take a long time
                 this._enableGlobalWaitCursor();
                 // Proceed after a small delay so the wait cursor is displayed
@@ -776,8 +782,8 @@
                     // If we were editing a stacked zone then we punch out the shape when they are
                     // done editing. This is because we only allow them to edit the outer path of
                     // the zone so we can control whether the inner zone is editable or not.
-                    var stack = _this._loadedAlert.template.getStackForZone(_this._zoneToReshape);
-                    if (stack.zones.indexOf(_this._zoneToReshape) > 0) {
+                    var stack = _this._loadedAlert.template.getStackForZone(zoneToReshape);
+                    if (stack.zones.indexOf(zoneToReshape) > 0) {
                         // Now that editing is done we must punch the shape out again
                         //Update the stack JSON and adjust the centroid position.
                         stack.updateJSONAndCentroid();
@@ -786,14 +792,13 @@
                         stack.punchOutShapes();
                         //Update the centroid for the template.
                         _this._loadedAlert.template.updateJSONAndCentroid();
-                        if (_this._fallbackZone && _this._zoneToReshape === stack.getLargestZone()) {
+                        if (_this._fallbackZone && zoneToReshape === stack.getLargestZone()) {
                             _this._fallbackZone.punchOutOverlay();
                         }
                     }
                     // Disable editing
-                    _this._zoneToReshape.setEditable(false);
+                    zoneToReshape.setEditable(false);
                     window.removeEventListener('keydown', _this._zoneReshapeEscapeListener);
-                    _this._zoneToReshape = null;
                     // Disable the wait cursor, again after a delay to ensure it persists for the entire reshape operation
                     setTimeout(function() {
                         _this._disableGlobalWaitCursor();
@@ -2335,6 +2340,9 @@
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ strokeWeight:3.0, fillOpacity: 0.30 });
                     }
+                    // Notify the polymer path for editable so the properties sheet properly toggles off
+                    // the zone reshaping message if the zone was deselected while reshaping was enabled
+                    _outer._notifyPropertyPathForZone(this,'editable');
                 },
                 /**
                  * Deactivates the shape overlay.
@@ -2343,8 +2351,10 @@
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
                     }
-                    // Whenever they de-select a zone we will disable editing
-                    _outer._disableZoneReshaping();
+                    // If reshaping is enabled then disable it since the zone was deselected
+                    if (_outer._zoneToReshape === this) {
+                        _outer._disableZoneReshaping();
+                    }
                 },
                 /**
                  * Highlights the shape overlay by adding a border.
