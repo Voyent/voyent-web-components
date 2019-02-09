@@ -927,31 +927,36 @@ Polymer({
         else {
             paths = this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), newZonePercentLarger, this._havePointerLock);
         }
-        this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
-            var name = this._dialogInput;
-            // If we have a polygon then check if the outer boundary of the new zone overlaps
-            // with the boundary of the inner zone. If they overlap then we are unable to
-            // draw the shape and will instead draw a rectangle matching the bounds of it.
-            if (!isCircle) {
-                intersects = turf.lineIntersect({
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths)[0]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(closestSmallerZone.shapeOverlay.getPaths())[0]
-                        }
-                    });
-                if (intersects.features.length) {
-                    _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead.');
+        // If we have a polygon then check if the outer boundary of the new zone overlaps with the boundary
+        // of the inner zone. If they overlap then we are unable to draw the shape and will instead
+        // try to draw a rectangle matching the bounds of the zone we are inserting after
+        if (!isCircle) {
+            if (_this._lineIntersect(
+                _this._AlertTemplate.calculateCoordinatesFromPaths(paths)[0],
+                _this._AlertTemplate.calculateCoordinatesFromPaths(closestSmallerZone.shapeOverlay.getPaths())[0])
+            ) {
+                // The zone intersected so try to create a rectangular zone instead. If we are adding the zone to
+                // the middle of the stack then we will create the rectangle as small as possible (1% larger)
+                // otherwise just use the bounding box of new zone that we originally tried to create
+                if (closestLargerZone) {
+                    paths = _this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), 1, _this._havePointerLock);
+                    paths = _this._getRectangularPathFromPolygonPath(paths.getAt(0));
+                    if (_this._lineIntersect(
+                        _this._AlertTemplate.calculateCoordinatesFromPaths(paths)[0],
+                        _this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0])
+                    ) {
+                        _this.fire('message-error', 'Unable to fit new zone between ' + closestSmallerZone.name + ' and ' + closestLargerZone.name);
+                        return;
+                    }
+                }
+                else {
                     paths = _this._getRectangularPathFromPolygonPath(paths.getAt(0));
                 }
+                //_this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead');
             }
+        }
+        this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
+            var name = _this._dialogInput;
             // De-increment the new zone zIndex so it sits behind the other zones
             var zIndex = closestSmallerZone.zIndex - 1;
             // When we add a new zone we don't want to include the full shape so we can punch
@@ -984,7 +989,7 @@ Polymer({
     },
 
     /**
-     *
+     * Recursive function that tries to create a zone that will fit within the boundaries of the outer zone.
      * @param closestSmallerZone
      * @param closestLargerZone
      * @param percentage
@@ -1000,43 +1005,69 @@ Polymer({
         // Calculate new paths based on the passed percentage
         var paths = this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), percentage, this._havePointerLock);
         // Determine if the new zone is fully within the closest outer zone
-        var newZoneInsideOuterZone = turf.booleanWithin({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
-                }
-            },
-            {
-                "type": "Feature",
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the "whole" version of the next largest zone
-                }
-            }
+        var newZoneInsideOuterZone = this._booleanWithin(
+            this._AlertTemplate.calculateCoordinatesFromPaths(paths), // new zone, {{percentage}}% larger
+            [this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the non-punched out version of the next largest zone
         );
-        var outerZoneInsideNewZone = turf.booleanContains({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
-                }
-            },
-            {
-                "type": "Feature",
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the "whole" version of the next largest zone
-                }
-            }
-        );
-        // The new zone is not fully within the outer zone OR the outer zone overlaps with the new zone
-        if (!newZoneInsideOuterZone || outerZoneInsideNewZone) {
-            // Decrease the size
+        // The new zone is not fully within the outer zone so decrease the size
+        if (!newZoneInsideOuterZone) {
             return this._adjustNewZoneSizeToFit(closestSmallerZone,closestLargerZone,percentage-1);
         }
         // The new zone is within the outer zone
         return paths;
+    },
+
+    /**
+     * Wrapper for turf.booleanWithin.
+     * @param innerZoneCoordinates
+     * @param outerZoneCoordinates
+     * @returns {*}
+     * @private
+     */
+    _booleanWithin: function(innerZoneCoordinates, outerZoneCoordinates) {
+        return turf.booleanWithin(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": innerZoneCoordinates
+                }
+            },
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": outerZoneCoordinates
+                }
+            }
+        );
+    },
+
+    /**
+     * Wrapper for turf.lineIntersect
+     * @param lineCoordinatesA
+     * @param lineCoordinatesB
+     * @returns {boolean}
+     * @private
+     */
+    _lineIntersect: function(lineCoordinatesA,lineCoordinatesB) {
+        var intersects = turf.lineIntersect(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": lineCoordinatesA
+                }
+            },
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": lineCoordinatesB
+                }
+            }
+        );
+        return !!intersects.features.length
     },
 
     /**
@@ -1197,25 +1228,15 @@ Polymer({
                 }
                 else {
                     //Check if it overlaps its next closest outer zone
-                    intersects = turf.lineIntersect({
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([newPath])
-                                )[0]
-                            }
-                        },
-                        {
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([outerZonePath])
-                                )[0]
-                            }
-                        });
-                    if (intersects.features.length) {
+                    intersects = this._lineIntersect(
+                        this._AlertTemplate.calculateCoordinatesFromPaths(
+                            new google.maps.MVCArray([newPath])
+                        )[0],
+                        this._AlertTemplate.calculateCoordinatesFromPaths(
+                            new google.maps.MVCArray([outerZonePath])
+                        )[0]
+                    );
+                    if (intersects) {
                         this._displayOverlapMsg();
                         this._y = this._previousY;
                         return;
@@ -1237,25 +1258,15 @@ Polymer({
                 }
                 else {
                     //Check if it overlaps its next closest inner zone
-                    intersects = turf.lineIntersect({
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([newPath])
-                                )[0]
-                            }
-                        },
-                        {
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([innerZonePath])
-                                )[0]
-                            }
-                        });
-                    if (intersects.features.length) {
+                    intersects = this._lineIntersect(
+                        this._AlertTemplate.calculateCoordinatesFromPaths(
+                            new google.maps.MVCArray([newPath])
+                        )[0],
+                        this._AlertTemplate.calculateCoordinatesFromPaths(
+                            new google.maps.MVCArray([innerZonePath])
+                        )[0]
+                    );
+                    if (intersects) {
                         this._displayOverlapMsg();
                         this._y = this._previousY;
                         return;
