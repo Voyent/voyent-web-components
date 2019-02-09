@@ -215,10 +215,15 @@
             }
             //Make sure the map is always sized correctly when the window size changes.
             window.addEventListener('resize', function() {
-                _this.resizeMap();
+                _this._resizeMapAndAdjustBounds();
             });
             //Make sure the map is always sized correctly when the map size changes.
             new ResizeObserver(function() {
+                // If we have a center coordinate for the map then it means we are toggling fullscreen mode and
+                // want to maintain that position so we'll skip this listener and manage the map bounds manually
+                if (_this._mapCenterPosition) {
+                    return;
+                }
                 var newWidth = _this.querySelector('#map').offsetWidth;
                 var newHeight = _this.querySelector('#map').offsetHeight;
                 var currentObserverTime = new Date().getTime();
@@ -233,7 +238,7 @@
                 _this._previousMapWidth = newWidth;
                 _this._previousMapHeight = newHeight;
                 _this._previousObserverTime = new Date().getTime();
-                _this.resizeMap();
+                _this._resizeMapAndAdjustBounds();
             }).observe(this.querySelector('#map'));
             //De-select any selected zone stack on map click.
             this._deselectStacksOnClick(this._map);
@@ -241,20 +246,6 @@
             this._overlayView = new google.maps.OverlayView();
             this._overlayView.draw = function() {};
             this._overlayView.setMap(this._map);
-        },
-
-        /**
-         * Recalculates the map size and pans the map.
-         */
-        resizeMap: function() {
-            var _this = this;
-            this._mapIsReady().then(function() {
-                _this._calcMapSize();
-                // Delay so the new dimensions render first
-                setTimeout(function() {
-                    _this._adjustBoundsAndPan();
-                },0);
-            });
         },
 
         /**
@@ -1743,7 +1734,10 @@
                 if (this._isAnAlertEditor()) {
                     dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
                 }
-                this.resizeMap();
+                // Resize the map
+                this.nodeName === 'VOYENT-ALERT-VIEW'
+                    ? this._resizeMapAndAdjustBounds()
+                    : this._resizeMapAndMaintainCenter();
             }
         },
 
@@ -1759,7 +1753,7 @@
             if (this._beforeFullscreenHeight) {
                 this.height = this._beforeFullscreenHeight;
             }
-            // Toggle button visiblity so that the fullscreen button is displayed (select the custom controls (+ '_cc'))
+            // Toggle button visibility so that the fullscreen button is displayed (select the custom controls (+ '_cc'))
             var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID+'_cc');
             buttonContainer.querySelector('#openButton').removeAttribute('hidden');
             buttonContainer.querySelector('#closeButton').setAttribute('hidden','hidden');
@@ -1769,7 +1763,10 @@
             if (this._isAnAlertEditor()) {
                 this.querySelector('#'+this._CONTAINER_ID).append(this.querySelector('#'+this._SIDE_PANEL_ID));
             }
-            this.resizeMap();
+            // Resize the map
+            this.nodeName === 'VOYENT-ALERT-VIEW'
+                ? this._resizeMapAndAdjustBounds()
+                : this._resizeMapAndMaintainCenter();
             // Hide the dialog
             var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
             if (dialog) {
@@ -1998,6 +1995,50 @@
             }
             // If we never panned the map then just zoom on the region
             this._zoomOnRegion();
+        },
+
+        /**
+         * Returns a Promise which resolves after recalculating the map size.
+         * @returns {Promise}
+         * @private
+         */
+        _resizeMap: function() {
+            var _this = this;
+            return new Promise(function (resolve) {
+                _this._mapIsReady().then(function() {
+                    _this._calcMapSize();
+                    // Delay so the new dimensions render first
+                    setTimeout(function() {
+                        return resolve();
+                    },0);
+                });
+            });
+        },
+
+        /**
+         * Recalculates the map size and adjusts the map bounds.
+         * @private
+         */
+        _resizeMapAndAdjustBounds: function() {
+            var _this = this;
+            this._resizeMap().then(function() {
+                _this._adjustBoundsAndPan();
+            });
+        },
+
+        /**
+         * Recalculates the map size and ensures the map center position is maintained.
+         * @private
+         */
+        _resizeMapAndMaintainCenter: function() {
+            var _this = this;
+            this._mapCenterPosition = this._map.getCenter();
+            this._resizeMap().then(function() {
+                if (_this._mapCenterPosition) {
+                    _this._map.setCenter(_this._mapCenterPosition);
+                    _this._mapCenterPosition = null;
+                }
+            });
         },
 
         /**

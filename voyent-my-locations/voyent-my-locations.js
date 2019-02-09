@@ -488,7 +488,7 @@ Polymer({
             }
             //Ensure the map resizes correctly after orientation changes.
             setTimeout(function() {
-                _this.resizeMap();
+                _this._resizeMapAndAdjustBounds();
             },500);
         },400);
     },
