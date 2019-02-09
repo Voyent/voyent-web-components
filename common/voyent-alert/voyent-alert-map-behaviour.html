@@ -183,10 +183,12 @@
                                 if (selectedZone) {
                                     if (zones[j] === selectedZone) {
                                         zones[j].nameOverlay.moveToTopPane();
+                                        zones[j].shapeOverlay.setOptions( { zIndex: 50 });
                                         continue;
                                     }
                                 }
                                 zones[j].nameOverlay.moveToDefaultPane();
+                                zones[j].shapeOverlay.setOptions( { zIndex: zones[j].zIndex });
                             }
                         }
                     }
