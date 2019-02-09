@@ -184,11 +184,11 @@
                     }
                     // Pan the map automatically based on zone selection
                     if (selectedZone) {
-                        if (selectedZone !== this._fallbackZone) {
-                            _this._panToZone(selectedZone);
-                        }
-                    } // Don't pan when deselecting fallback zone because using double-click zoom triggers this behaviour
-                    else if (!e.detail.isFallbackZone) {
+                        selectedZone === this._fallbackZone
+                            ? _this._adjustBoundsAndPan(true)
+                            : _this._panToZone(selectedZone);
+                    }
+                    else {
                         _this._adjustBoundsAndPan();
                     }
                 });
@@ -1963,10 +1963,12 @@
         },
 
         /**
-         * Updates the map bounds to include all zone stacks otherwise zooms on the region geography.
+         * Updates the map bounds to include all zone stacks and conditionally includes the region geography.
+         * Falls back to zooming on the region if there is nothing to include in the map bounds.
+         * @param includeRegionGeography
          * @private
          */
-        _adjustBoundsAndPan: function() {
+        _adjustBoundsAndPan: function(includeRegionGeography) {
             var zoneStacks = this._loadedAlert && this._loadedAlert.template
                 ? this._loadedAlert.template.zoneStacks
                 : [];
@@ -1981,13 +1983,18 @@
                         }
                     }
                 }
-                // Only pan the map if the bounds were extended otherwise it
-                // will try to pan to an empty bounds (middle of the sea)
-                if (boundsExtended) {
-                    this._map.fitBounds(bounds);
-                    this._map.panToBounds(bounds);
-                    return;
-                }
+            }
+            if (includeRegionGeography && this._areaRegion && this._areaRegion.bounds) {
+                bounds.extend(this._areaRegion.bounds.getNorthEast());
+                bounds.extend(this._areaRegion.bounds.getSouthWest());
+                boundsExtended = true;
+            }
+            // Only pan the map if the bounds were extended otherwise it
+            // will try to pan to an empty bounds (middle of the sea)
+            if (boundsExtended) {
+                this._map.fitBounds(bounds);
+                this._map.panToBounds(bounds);
+                return;
             }
             // If we never panned the map then just zoom on the region
             this._zoomOnRegion();
