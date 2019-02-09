@@ -244,16 +244,15 @@
         },
 
         /**
-         * Recalculates the map size, fires the Google Map resize event and pans the map.
-         * @param forceMapPan
+         * Recalculates the map size and pans the map.
          */
-        resizeMap: function(forceMapPan) {
+        resizeMap: function() {
             var _this = this;
             this._mapIsReady().then(function() {
                 _this._calcMapSize();
-                //Async so the new dimensions render first.
+                // Delay so the new dimensions render first
                 setTimeout(function() {
-                    _this._adjustBoundsAndPan(forceMapPan);
+                    _this._adjustBoundsAndPan();
                 },0);
             });
         },
@@ -1190,7 +1189,7 @@
                         _this._disableDrawingMode();
                     }
                     else if (_this._isFullscreenMode) {
-                        _this._toggleFullscreenContainer(true);
+                        _this._toggleFullscreenContainer();
                     }
                 }
             });
@@ -1654,7 +1653,7 @@
          * @private
          */
         _fullscreenButtonListener: function() {
-            this._toggleFullscreenContainer(true);
+            this._toggleFullscreenContainer();
         },
 
         /**
@@ -1697,18 +1696,9 @@
 
         /**
          * Toggles the modal fullscreen dialog.
-         * @param toggledByUser - A flag indicating whether the fullscreen container is being toggled by the user
-         * via page interaction or whether the component itself toggled the fullscreen container. We use
-         * this flag to manage the map panning behaviour when switching mobile orientation (VRAS-306).
          * @private
          */
-        _toggleFullscreenContainer: function(toggledByUser) {
-            if (toggledByUser) {
-                this._fullscreenEnabledByUser = !this._isFullscreenMode;
-                if (!this._fullscreenEnabledByUser) {
-                    this._mapCenterBeforeOrientationChange = null;
-                }
-            }
+        _toggleFullscreenContainer: function() {
             // Open or close the dialog depending on the current state
             if (this._isFullscreenMode) {
                 this._closeFullscreenContainer();
@@ -1716,7 +1706,7 @@
             else {
                 // Ensure that when the fullscreen container is opened by the user that we force the map pan operation
                 // for the initial load rather than skipping it which we will do afterwards until they close it (VRAS-306).
-                this._openFullscreenContainer(toggledByUser);
+                this._openFullscreenContainer();
             }
             this._isFullscreenMode = !this._isFullscreenMode;
             // Toggle the editable features of the map
@@ -1727,10 +1717,9 @@
 
         /**
          * Opens the fullscreen modal dialog.
-         * @param forceMapPan
          * @private
          */
-        _openFullscreenContainer: function(forceMapPan) {
+        _openFullscreenContainer: function() {
             var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
             if (dialog) {
                 // Display the dialog
@@ -1754,7 +1743,7 @@
                 if (this._isAnAlertEditor()) {
                     dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
                 }
-                this.resizeMap(forceMapPan);
+                this.resizeMap();
             }
         },
 
@@ -1800,7 +1789,7 @@
                     if (_this._isFullscreenMode) {
                         return;
                     }
-                    _this._toggleFullscreenContainer(true);
+                    _this._toggleFullscreenContainer();
                 });
             }
         },
@@ -1974,148 +1963,34 @@
         },
 
         /**
-         * Updates the map bounds so all the map overlays are in view and then pans the map.
-         * @param forceMapPan
+         * Updates the map bounds to include all zone stacks otherwise zooms on the region geography.
          * @private
          */
-        _adjustBoundsAndPan: function(forceMapPan) {
-            if (this._fullscreenEnabledByUser && !forceMapPan) { //VRAS-306
-                if (this._mapCenterBeforeOrientationChange) {
-                    this._map.setCenter(this._mapCenterBeforeOrientationChange);
-                }
-                return;
-            }
-            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._affectedMobileLocation || this._mobileLocation || this._myLocations))) {
-                var bounds = new google.maps.LatLngBounds(), boundsExtended = false, i, zoneStacks, locationsToPanTo = [];
-                if (this._loadedAlert) {
-                    zoneStacks = this._loadedAlert.template.zoneStacks;
-                    if ((zoneStacks.length && (!this._affectedStackIds || !this._affectedStackIds.length)) || !zoneStacks.length) {
-                        //If we don't have any zone stacks or we do and they have no affected
-                        //locations then we will include the region boundary in the map bounds.
-                        if (this.mode === 'notification') {
-                            if (this._areaRegion && this._areaRegion.bounds) {
-                                bounds.extend(this._areaRegion.bounds.getNorthEast());
-                                bounds.extend(this._areaRegion.bounds.getSouthWest());
-                                boundsExtended = true;
-                            }
-                        }
-                        else {
-                            //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
-                            //or template. This fixes an issue where when we load a fallback zone only template after a stacked
-                            //template the map wouldn't pan.
-                            this._skipRegionPanning = false;
-                            this._zoomOnRegion();
-                        }
-                    }
-                    //If we have zoneStacks then include them in the map bounds
-                    if (zoneStacks.length) {
-                        for (i=0; i<zoneStacks.length; i++) {
-                            var largestZone = zoneStacks[i].getLargestZone();
-                            if (largestZone) {
-                                for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
-                                    bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
-                                }
-                                boundsExtended = true;
-                            }
-                        }
-                    }
-                }
-                //Only include the locations in the map panning if we have zone stacks and one of those zone stacks
-                //has affected locations. This prevents the map from panning too far from the region boundary and
-                //primary zone when the affected locations notified by a fallback zone are far away.
-                if (zoneStacks && zoneStacks.length && this._affectedStackIds && this._affectedStackIds.length) {
-                    if (this._affectedMobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._affectedMobileLocation.id) > -1)) {
-                        bounds.extend(this._affectedMobileLocation.marker.getPosition());
-                        boundsExtended = true;
-                    }
-                    for (i=0; i<this._myLocations.length; i++) {
-                        if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
-                            bounds.extend(this._myLocations[i].marker.getPosition());
-                            locationsToPanTo.push(this._myLocations[i]);
+        _adjustBoundsAndPan: function() {
+            var zoneStacks = this._loadedAlert && this._loadedAlert.template
+                ? this._loadedAlert.template.zoneStacks
+                : [];
+            if (this._loadedAlert && zoneStacks.length) {
+                var bounds = new google.maps.LatLngBounds(), boundsExtended = false;
+                for (var i=0; i<zoneStacks.length; i++) {
+                    var largestZone = zoneStacks[i].getLargestZone();
+                    if (largestZone) {
+                        for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
+                            bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
                             boundsExtended = true;
                         }
                     }
                 }
-                // Always include the mobile location in the map bounds if it is available
-                if (this._mobileLocation && this._mobileLocation.marker) {
-                    bounds.extend(this._mobileLocation.marker.getPosition());
-                    boundsExtended = true;
-                }
-                //Ensure we only do this if the bounds were extended otherwise
-                //the map may pan to an empty bounds (middle of the ocean).
+                // Only pan the map if the bounds were extended otherwise it
+                // will try to pan to an empty bounds (middle of the sea)
                 if (boundsExtended) {
                     this._map.fitBounds(bounds);
                     this._map.panToBounds(bounds);
-                    //Include the name overlays in the map bounds.
-                    this._panBoundsForNameOverlays(locationsToPanTo,bounds);
+                    return;
                 }
             }
-            else {
-                this._zoomOnRegion();
-            }
-        },
-
-        /**
-         * Pans the map bounds so that it includes all of the location name overlays in the view. This must be called after the map bounds
-         * is already set on the locations so that we can determine the coordinates of the name overlays at the correct zoom level.
-         * @param locations
-         * @param bounds
-         * @private
-         */
-        _panBoundsForNameOverlays: function(locations, bounds) {
-            return; //TODO - Temporarily disable map panning for name overlays
-            if (!locations || !locations.length) { return; }
-            var _this = this;
-            //Async to ensure the map is panned on the markers before proceeding. This
-            //is so we can correctly calculate the pixel positions of the name overlays.
-            setTimeout(function() {
-                var panBounds = false;
-                for (var i=0; i<locations.length; i++) {
-                    if (_this._extendBoundsForNameOverlay(locations[i],bounds)) {
-                        panBounds = true;
-                    }
-                }
-                if (panBounds) {
-                    _this._map.fitBounds(bounds);
-                    _this._map.panToBounds(bounds);
-                }
-            },0);
-        },
-
-        /**
-         * Checks if the map bounds needs to be extended to include the
-         * location name overlay in the view and returns whether it was.
-         * @param location
-         * @param bounds
-         * @returns {boolean}
-         * @private
-         */
-        _extendBoundsForNameOverlay: function(location, bounds) {
-            var boundsExtended = false;
-            if (location.nameOverlay) {
-                var overlayProjection = this._overlayView.getProjection();
-                //Get the pixel coordinates of the marker position.
-                var nc = overlayProjection.fromLatLngToDivPixel(location.marker.getPosition());
-                //Include the location name overlay in the map bounds by extending the bounds to include
-                //the NW and SE coordinate of the overlay. This will ensure the entire label is in view.
-                var nwCoordinate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
-                    nc.x - location.nameOverlay.div.offsetWidth/2,
-                    nc.y-64
-                ));
-                if (!this._map.getBounds().contains(nwCoordinate)) {
-                    bounds.extend(nwCoordinate);
-                    boundsExtended = true;
-                }
-                var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
-                    nc.x + location.nameOverlay.div.offsetWidth/2,
-                    nc.y-64+location.nameOverlay.div.offsetHeight
-                ));
-                if (!this._map.getBounds().contains(seCoordindate)) {
-                    bounds.extend(seCoordindate);
-                    boundsExtended = true;
-                }
-            }
-            return boundsExtended;
+            // If we never panned the map then just zoom on the region
+            this._zoomOnRegion();
         },
 
         /**

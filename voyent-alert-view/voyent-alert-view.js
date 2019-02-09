@@ -49,7 +49,7 @@ Polymer({
         this._addMobileLocationButton();
         window.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && _this._isFullscreenMode) {
-                _this._toggleFullscreenContainer(true);
+                _this._toggleFullscreenContainer();
             }
         });
     },
@@ -557,6 +557,77 @@ Polymer({
     },
 
     /**
+     * Updates the map bounds to include all zone stacks otherwise zooms on the region geography.
+     * @private
+     */
+    _adjustBoundsAndPan: function() {
+        var bounds = new google.maps.LatLngBounds(), boundsExtended = false;
+        var zoneStacks = this._loadedAlert && this._loadedAlert.template
+            ? this._loadedAlert.template.zoneStacks
+            : [];
+        if (this._loadedAlert && zoneStacks.length) {
+            for (var i=0; i<zoneStacks.length; i++) {
+                var largestZone = zoneStacks[i].getLargestZone();
+                if (largestZone) {
+                    for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
+                        bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
+                        boundsExtended = true;
+                    }
+                }
+            }
+        }
+        if (this.mode === 'notification' && this._extendBoundsForNotificationMode(bounds)) {
+            boundsExtended = true;
+        }
+        // Only pan the map if the bounds were extended otherwise it
+        // will try to pan to an empty bounds (middle of the sea)
+        if (boundsExtended) {
+            this._map.fitBounds(bounds);
+            this._map.panToBounds(bounds);
+            return;
+        }
+        // If we never panned the map then just zoom on the region
+        this._zoomOnRegion();
+    },
+
+    /**
+     * Adjusts the bounds further for the alert details view (mode === 'notification').
+     * @param bounds
+     * @returns {boolean} - Whether the bounds were extended.
+     * @private
+     */
+    _extendBoundsForNotificationMode: function(bounds) {
+        var boundsExtended = false;
+        // If we were notified by a non-fallback zone then include the affected locations in
+        // the map panning. We don't include them when being notified by a fallback zone to
+        // prevent the map from panning too far from the region boundary and primary zone
+        if (this._affectedStackIds.length) {
+            if (this._affectedMobileLocation && this._affectedLocationIds.indexOf(this._affectedMobileLocation.id) > -1) {
+                bounds.extend(this._affectedMobileLocation.marker.getPosition());
+                boundsExtended = true;
+            }
+            for (var i=0; i<this._myLocations.length; i++) {
+                if (this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
+                    bounds.extend(this._myLocations[i].marker.getPosition());
+                    boundsExtended = true;
+                }
+            }
+        }
+        else if (this._areaRegion && this._areaRegion.bounds) {
+            // If we were notified by a fallback zone then include the region boundary in the map bounds
+            bounds.extend(this._areaRegion.bounds.getNorthEast());
+            bounds.extend(this._areaRegion.bounds.getSouthWest());
+            boundsExtended = true;
+        }
+        // Include the mobile location in the map bounds if it is available
+        if (this._mobileLocation && this._mobileLocation.marker) {
+            bounds.extend(this._mobileLocation.marker.getPosition());
+            boundsExtended = true;
+        }
+        return boundsExtended;
+    },
+
+    /**
      * Adds the location types legend (with count) to the map.
      * @private
      */
@@ -629,7 +700,7 @@ Polymer({
     },
 
     /**
-     * Adds the GPS/currnet location button to the map.
+     * Adds the GPS/current location button to the map.
      * @private
      */
     _addMobileLocationButton: function() {
@@ -652,7 +723,7 @@ Polymer({
                     // Stop polling the location position
                     _this._stopMobileLocationPolling();
                     // Pan to the original alert
-                    _this._adjustBoundsAndPan(_this._fullscreenEnabledByUser);
+                    _this._adjustBoundsAndPan();
                 }
             },function() {
                 _this._mobileLocationEnabled = false;
@@ -662,7 +733,7 @@ Polymer({
                         // Pan on the original alert + the mobile location, only do
                         // this when requested so we don't pan the map when polling
                         if (_this._includeMobileLocationInPanning) {
-                            _this._adjustBoundsAndPan(_this._fullscreenEnabledByUser);
+                            _this._adjustBoundsAndPan();
                             _this._includeMobileLocationInPanning = false;
                         }
                     }
@@ -899,19 +970,9 @@ Polymer({
     },
 
     /**
-     * Monitors the `isPortrait` property and hides and shows the fullscreen modal dialog if it
-     * is currently visible. This ensures that the styling will be correct when the orientation
-     * changes.  We will also try to maintain the user-defined map position and zoom level.
+     * Monitors the `isPortrait` property. Landscape mode is no longer supported so this is not used.
+     * If we do restore landscape mode then the changes made for VRAS-306 should be restored.
      * @private
      */
-    _isPortraitChanged: function() {
-        var _this = this;
-        if (this.isMobile && this._isFullscreenMode) {
-            this._mapCenterBeforeOrientationChange = this._map.getCenter();
-            this._toggleFullscreenContainer();
-            setTimeout(function() {
-                _this._toggleFullscreenContainer();
-            },400);
-        }
-    }
+    _isPortraitChanged: function() {}
 });
