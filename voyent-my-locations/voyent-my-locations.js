@@ -145,11 +145,11 @@ Polymer({
                     _this._dialogLocationName,
                     _this._isPrivateResidence,
                     new google.maps.Marker({
-                    position: _this._placeCoordinates,
-                    map: _this._map,
-                    draggable: true,
-                    icon: _this._MY_LOCATION_ICON_INACTIVE
-                }),'created');
+                        position: _this._placeCoordinates,
+                        map: _this._map,
+                        draggable: true,
+                        icon: _this._MY_LOCATION_ICON_INACTIVE
+                    }),'created');
                 _this._resetDialogProperties();
             },0);
         });
@@ -421,7 +421,7 @@ Polymer({
         //Since Google Maps version 3.32 we must explicitly wait for the map controls to be visible before rendering the tooltips.
         //Unfortunately, we don't have a better way to check that the controls are visible other than searching for one of them.
         function waitForControls() {
-            if (!document.querySelector('[title="Show street map"]')) {
+            if (!document.querySelector('#map #customControls')) {
                 setTimeout(waitForControls,100);
                 return;
             }
