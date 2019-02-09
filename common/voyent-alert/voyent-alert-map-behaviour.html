@@ -122,11 +122,7 @@
                 center: new google.maps.LatLng(51.08427,-114.13062),
                 streetViewControl: false,
                 fullscreenControl: false,
-                // Disabled so double clicking zones doesn't toggle selection on them, the
-                // alternative is a dblclick listener on each zone and a delay in the click
-                // listener to ignore click events if they were actually a dblclick
-                disableDoubleClickZoom: true,
-                gestureHandling: 'cooperative',
+                scrollwheel: false,
                 scaleControl: true,
                 mapTypeControl: false,
                 zoomControl: false,
@@ -137,8 +133,16 @@
             }
             //Alert view map is readonly.
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                mapOptions.scrollwheel = mapOptions.draggable = false;
+                mapOptions.draggable = false;
                 mapOptions.disableDoubleClickZoom = true;
+            }
+            if (this._isAnAlertEditor()) {
+                // Disabled so double clicking zones doesn't toggle selection on them, the
+                // alternative is a dblclick listener on each zone and a delay in the click
+                // listener to ignore click events if they were actually a dblclick
+                mapOptions.disableDoubleClickZoom = true;
+                mapOptions.gestureHandling = 'cooperative';
+                delete mapOptions.scrollwheel;
             }
             //Initialize the map.
             this._map = new google.maps.Map(this.$.map,mapOptions);
