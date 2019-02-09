@@ -1353,6 +1353,14 @@ Polymer({
     },
 
     /**
+     * Returns whether we are currently showing the zone adjustment helper text.
+     * @private
+     */
+    _showingAdjustmentHelperText: function(editable,isPointerLocked) {
+        return editable || isPointerLocked;
+    },
+
+    /**
      * Validates the alert movement direction value and manages the value of the direction dropdown.
      * @private
      */

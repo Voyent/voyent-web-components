@@ -151,8 +151,18 @@ Internal component used to display the properties panel inside Voyent alert comp
                 border: 0;
                 margin: 0;
             }
-            .fullWidthCol.buttonCol > paper-icon-button {
+            .fullWidthCol.buttonCol > paper-icon-button,
+            .fullWidthCol.editingButtonCol > paper-icon-button {
                 margin-left: 10px;
+            }
+            .fullWidthCol.editingButtonCol > paper-swatch-picker {
+                margin-left: -6px;
+            }
+            .fullWidthCol.editingButtonCol {
+                margin: -22px 0 -7px 7px
+            }
+            .fullWidthCol.editingButtonCol[data-showing-helper-text] {
+                margin: 0 0 15px 0;
             }
             .fullWidthCol.buttonCol > paper-icon-button:first-of-type {
                 margin-left: 0;
@@ -351,7 +361,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 margin-bottom: 24px;
             }
             paper-swatch-picker {
-                --paper-swatch-picker-color-size: 25px;
+                --paper-swatch-picker-color-size: 24px;
             }
         </style>
 
@@ -446,29 +456,24 @@ Internal component used to display the properties panel inside Voyent alert comp
                                         </paper-icon-button>
                                     </div>
                                 </div>
-                                <template is="dom-if" if="[[_showAllAdjustButtons(zone.fromFile,zone.editable,zone.isCircle,_isPointerLocked)]]">
-                                    <div class="row">
-                                        <div class="fullWidthCol" style="margin-bottom: 8px;">
-                                            <div class="bold">Adjust...</div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="halfWidthCol text-right">
+                                <div class="row">
+                                    <div class="fullWidthCol editingButtonCol text-center"
+                                                data-showing-helper-text$="[[_showingAdjustmentHelperText(zone.editable,_isPointerLocked)]]">
+                                        <template is="dom-if" if="[[_showResizingButton(zone.fromFile,zone.editable)]]">
                                             <template is="dom-if" if="[[_isPointerLocked]]">
                                                 <div class="bold">Zone Resizing Enabled</div>
                                                 Move the mouse up and down to adjust the size of the zone. Click to exit.
                                             </template>
                                             <template is="dom-if" if="[[!_isPointerLocked]]">
-                                                <paper-button data-stack-index$="[[zoneStackIndex]]"
+                                                <paper-icon-button src="../voyent-alert/img/adjust_area.png"
+                                                              data-stack-index$="[[zoneStackIndex]]"
                                                               data-zone-index$="[[zoneIndex]]"
                                                               raised title="Adjust Area"
-                                                              on-click="_adjustZoneSize"
-                                                              style="margin-right: 5px;">
-                                                        ...Area
-                                                </paper-button>
+                                                              on-click="_adjustZoneSize">
+                                                </paper-icon-button>
                                             </template>
-                                        </div>
-                                        <div class="halfWidthCol text-left">
+                                        </template>
+                                        <template is="dom-if" if="[[_showReshapableButton(zone.isCircle,zone.fromFile,_isPointerLocked)]]">
                                             <template is="dom-if" if="[[zone.editable]]">
                                                 <div class="bold">Zone Reshaping Enabled</div>
                                                 Use the vertices to edit the shape. Click done or press the Esc key to exit.
@@ -476,74 +481,26 @@ Internal component used to display the properties panel inside Voyent alert comp
                                                 <paper-button raised title="Done Reshaping"
                                                               on-click="_disableZoneReshaping"
                                                               style="margin-top: 5px;">
-                                                    ...Done
+                                                    Done
                                                 </paper-button>
                                             </template>
                                             <template is="dom-if" if="[[!zone.editable]]">
-                                                <paper-button data-stack-index$="[[zoneStackIndex]]"
+                                                <paper-icon-button src="../voyent-alert/img/adjust_shape.png"
+                                                              data-stack-index$="[[zoneStackIndex]]"
                                                               data-zone-index$="[[zoneIndex]]"
                                                               raised title="Adjust Shape"
-                                                              on-click="_enableZoneReshaping"
-                                                              style="margin-left: 5px;">
-                                                        ...Shape
-                                                </paper-button>
+                                                              on-click="_enableZoneReshaping">
+                                                </paper-icon-button>
                                             </template>
-                                        </div>
-                                    </div>
-                                </template>
-                                <template is="dom-if" if="[[!_showAllAdjustButtons(zone.fromFile,zone.editable,zone.isCircle,_isPointerLocked)]]">
-                                    <template is="dom-if" if="[[_showResizingButton(zone.fromFile,zone.editable)]]">
-                                        <div class="row">
-                                            <div class="fullWidthCol">
-                                                <template is="dom-if" if="[[_isPointerLocked]]">
-                                                    <div class="bold">Zone Resizing Enabled</div>
-                                                    Move the mouse up and down to adjust the size of the zone. Click to exit.
-                                                </template>
-                                                <template is="dom-if" if="[[!_isPointerLocked]]">
-                                                    <paper-button data-stack-index$="[[zoneStackIndex]]"
-                                                                  data-zone-index$="[[zoneIndex]]"
-                                                                  raised title="Adjust Area"
-                                                                  on-click="_adjustZoneSize">
-                                                            Adjust Area
-                                                    </paper-button>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </template>
-                                    <template is="dom-if" if="[[_showReshapableButton(zone.isCircle,zone.fromFile,_isPointerLocked)]]">
-                                        <div class="row">
-                                            <div class="fullWidthCol">
-                                                <template is="dom-if" if="[[zone.editable]]">
-                                                    <div class="bold">Zone Reshaping Enabled</div>
-                                                    Use the vertices to edit the shape. Click done or press the Esc key to exit.
-                                                    <br/>
-                                                    <paper-button raised title="Done Reshaping"
-                                                                  on-click="_disableZoneReshaping"
-                                                                  style="margin-top: 5px;">
-                                                        Done
-                                                    </paper-button>
-                                                </template>
-                                                <template is="dom-if" if="[[!zone.editable]]">
-                                                    <paper-button data-stack-index$="[[zoneStackIndex]]"
-                                                                  data-zone-index$="[[zoneIndex]]"
-                                                                  raised title="Adjust Shape"
-                                                                  on-click="_enableZoneReshaping">
-                                                            Adjust Shape
-                                                    </paper-button>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </template>
-                                <div class="row">
-                                    <div class="halfWidthCol text-right">
-                                        Colour
-                                    </div>
-                                    <div class="halfWidthCol text-left">
-                                        <paper-swatch-picker color="{{zone.colour}}" color-list='[[zoneColours]]'
-                                                             column-count="7" horizontal-align="right"
-                                                             on-color-changed="_updateColour">
-                                        </paper-swatch-picker>
+                                        </template>
+                                        <template is="dom-if" if="[[!_showingAdjustmentHelperText(zone.editable,_isPointerLocked)]]">
+                                            <paper-swatch-picker color="{{zone.colour}}" color-list='[[zoneColours]]'
+                                                                 column-count="7" horizontal-align="right"
+                                                                 on-color-changed="_updateColour" title="Adjust colour"
+                                                                 data-stack-index$="[[zoneStackIndex]]"
+                                                                 data-zone-index$="[[zoneIndex]]">
+                                            </paper-swatch-picker>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
