@@ -136,14 +136,6 @@
                 mapOptions.draggable = false;
                 mapOptions.disableDoubleClickZoom = true;
             }
-            if (this._isAnAlertEditor()) {
-                // Disabled so double clicking zones doesn't toggle selection on them, the
-                // alternative is a dblclick listener on each zone and a delay in the click
-                // listener to ignore click events if they were actually a dblclick
-                mapOptions.disableDoubleClickZoom = true;
-                mapOptions.gestureHandling = 'cooperative';
-                delete mapOptions.scrollwheel;
-            }
             //Initialize the map.
             this._map = new google.maps.Map(this.$.map,mapOptions);
             // Add the map type and zoom buttons (VRAS-671)

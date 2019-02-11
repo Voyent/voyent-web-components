@@ -1923,7 +1923,10 @@
                         //If they click a zone for the currently active stack then toggle the accordion.
                         if (_outer._loadedAlert.selectedStack &&
                             _outer._loadedAlert.selectedStack === _this) {
-                            _outer._toggleProperties(zone);
+                            // Don't allow de-selecting the zone
+                            if (!zone.active) {
+                                _outer._toggleProperties(zone);
+                            }
                         }
                         else {
                             //Toggle the accordion for the previously selected stack.
@@ -2645,7 +2648,10 @@
                 _setupOverlayClickListener: function () {
                     if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     google.maps.event.addListener(this.shapeOverlay, 'click', function () {
-                        _outer._toggleFallbackZoneProperties();
+                        // Don't allow de-selecting the zone
+                        if (!_outer._fallbackZone.active) {
+                            _outer._toggleFallbackZoneProperties();
+                        }
                     });
                 },
                 /**
