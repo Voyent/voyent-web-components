@@ -150,7 +150,10 @@
             this._addMapControlButtons();
             //Calculate the map size.
             this._calcMapSize();
-            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+            if (this.nodeName === 'VOYENT-MY-LOCATIONS') {
+                this._setupMapListeners();
+            }
+            if (this._isAnAlertEditor()) {
                 //Setup ui and listeners for adding new marker based entities.
                 this._drawingManager = new google.maps.drawing.DrawingManager({
                     map:this._map,
@@ -164,8 +167,6 @@
                 });
                 this._setupDrawingListeners();
                 this._removeStopDrawingButton();
-            }
-            if (this._isAnAlertEditor()) {
                 //Add the fullscreen control.
                 this._addFullscreenButton();
                 // Add the import file input validator
@@ -454,17 +455,20 @@
          */
         clearMap: function() {
             var _this = this;
-            this._disableDrawingMode();
-            //Don't zoom on region when clearing map on alert detail view as
-            //this causes some jerky pan behaviour when viewing an alert.
+            // Always leave the view as a windowed component
+            if (this._isFullscreenMode) {
+                this._toggleFullscreenContainer();
+            }
+            // Don't zoom on region when clearing map on alert detail view as
+            // this causes some jerky pan behaviour when viewing an alert
             if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
                 this._zoomOnRegion();
             }
-            //Clear loaded alert template.
+            // Clear loaded alert template
             if (this._loadedAlert || this._fallbackZone) {
                 this._removeAlertTemplateFromMap();
             }
-            //Clear the user marker.
+            // Clear the user marker and locations
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                 if (this._affectedMobileLocation) {
                     this._affectedMobileLocation.removeFromMap();
@@ -475,14 +479,12 @@
                 }
             }
             if (this._isAnAlertEditor()) {
-                //Always start the view with a windowed component.
-                if (this._isFullscreenMode) {
-                    this._toggleFullscreenContainer();
-                }
+                // Disable drawing mode for alert editors
+                this._disableDrawingMode();
                 if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                     this._enableDefaultPane();
                     this._showMovement = false;
-                    //Clear the movement inputs, async so the side panel has time to render.
+                    // Clear the movement inputs, async so the side panel has time to render
                     setTimeout(function() {
                         _this._alertDirection = _this._alertSpeed = null;
                         _this._alertSpeedUnit = 'kph';

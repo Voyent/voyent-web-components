@@ -561,7 +561,7 @@ Polymer({
      * Initialize the listeners required to pin drop a location by holding the mouse down on the map.
      * @private
      */
-    _setupDrawingListeners: function () {
+    _setupMapListeners: function () {
         var _this = this;
         google.maps.event.addListener(this._map, 'mousedown', function(e) {
             //Ensure we only setup one interval. Mousedown will fire twice on mobile for pinch events.
