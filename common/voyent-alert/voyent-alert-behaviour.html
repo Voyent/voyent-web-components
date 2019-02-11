@@ -2690,7 +2690,7 @@
                     }
                     else {
                         // Don't show the floating name overlay label when Viewing an Alert in certain modes
-                        if (name && _outer.nodeName !== 'VOYENT-ALERT-VIEW' && (_outer.mode !== 'preview' || _outer.mode !== 'view' || _outer.mode !== 'response')) {
+                        if (name && (_outer.nodeName !== 'VOYENT-ALERT-VIEW' || _outer.mode === 'notification')) {
                             this.nameOverlay = new _outer._LocationOverlay(this);
                         }
                     }
