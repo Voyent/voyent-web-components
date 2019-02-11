@@ -277,8 +277,8 @@
                 if (_this._savingAlert) { return reject('already saving alert'); }
                 _this._savingAlert = true;
 
-                //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
-                _this._loadedAlert.template.updateJSON(true);
+                //Pull the latest JSON from each of the stacks
+                _this._loadedAlert.template.updateJSON();
                 var requestOpts = {
                     realm: _this.realm,
                     account: _this.account,
@@ -379,7 +379,7 @@
          * @private
          */
         _buildPreviewEvent: function() {
-            this._loadedAlert.template.updateJSON(true);
+            this._loadedAlert.template.updateJSON();
             var json = this._loadedAlert.template.json;
 
             json.state = 'preview';
@@ -425,7 +425,7 @@
          */
         getCurrentAlert: function() {
             if (this._loadedAlert && this._loadedAlert.template) {
-                this._loadedAlert.template.updateJSON(true);
+                this._loadedAlert.template.updateJSON();
                 return this._loadedAlert.template.json;
             }
             return null;
@@ -1968,6 +1968,10 @@
                 elem.setAttribute('error-message','File must be of type KML or KMZ');
                 return false;
             }
+            if (file.size > 250000) {
+                elem.setAttribute('error-message','File must be less than 250KB in size');
+                return false;
+            }
             return true;
         },
 
@@ -1978,11 +1982,11 @@
          * @private
          */
         _adjustBoundsAndPan: function(includeRegionGeography) {
+            var bounds = new google.maps.LatLngBounds(), boundsExtended = false;
             var zoneStacks = this._loadedAlert && this._loadedAlert.template
                 ? this._loadedAlert.template.zoneStacks
                 : [];
             if (this._loadedAlert && zoneStacks.length) {
-                var bounds = new google.maps.LatLngBounds(), boundsExtended = false;
                 for (var i=0; i<zoneStacks.length; i++) {
                     var largestZone = zoneStacks[i].getLargestZone();
                     if (largestZone) {

@@ -80,11 +80,18 @@
          * @returns {Object} - {"errors": [], "warnings": []}
          */
         validate: function() {
-            var results = {"errors": [], "warnings": []};
+            var results = { errors: [], warnings: [] };
             if (!this._loadedAlert || !this._loadedAlert.template ||
-                (!this._loadedAlert.template.zoneStacks || !this._loadedAlert.template.zoneStacks.length) &&
-                (!this._fallbackZone || !this._fallbackZone.enabled)) {
+                (!this._loadedAlert.template.zoneStacks.length && (!this._fallbackZone || !this._fallbackZone.enabled))) {
                 results.errors.push('Must define at least one zone');
+            }
+            else {
+                // Restrict JSON size to 250KB
+                this._loadedAlert.template.updateJSON();
+                if (JSON.stringify(this._loadedAlert.template.json).length > 250000) {
+                    var templateTxt = this.nodeName === 'VOYENT-ALERT-EDITOR' ? '' : 'template';
+                    results.errors.push('This alert ' + templateTxt + ' is too large, try reducing the size of the message contents or complexity of zones');
+                }
             }
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 //Ensure we have both movement parameters or none at all.
@@ -131,8 +138,7 @@
                     return reject('no categories provided');
                 }
                 _this._savingAlertTemplate = true;
-
-                _this._loadedAlert.template.updateJSON(true);
+                _this._loadedAlert.template.updateJSON();
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
                 var func = 'createAlertTemplate';
                 if (_this._loadedAlert.template.id) {
@@ -2733,7 +2739,6 @@
                 },
                 /**
                  * Updates the JSON to reflect the current state of the template.
-                 * @private
                  */
                 updateJSON: function() {
                     var markerPosition = this.marker.getPosition();
