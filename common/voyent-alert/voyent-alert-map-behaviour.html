@@ -443,14 +443,22 @@
         },
 
         /**
+         * Disables fullscreen mode if it is enabled.
+         */
+        disableFullscreenMode: function() {
+            // Always leave the view as a windowed component
+            if (this._isFullscreenMode) {
+                this._toggleFullscreenContainer();
+            }
+        },
+
+        /**
          * Clears the map entirely. In the case of alert editor the list of templates will also be refreshed.
          */
         clearMap: function() {
             var _this = this;
             // Always leave the view as a windowed component
-            if (this._isFullscreenMode) {
-                this._toggleFullscreenContainer();
-            }
+            this.disableFullscreenMode();
             // Don't zoom on region when clearing map on alert detail view as
             // this causes some jerky pan behaviour when viewing an alert
             if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
@@ -1783,10 +1791,9 @@
             if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'notification') {
                 var _this = this;
                 google.maps.event.addListener(mapElement, 'click', function() {
-                    if (_this._isFullscreenMode) {
-                        return;
+                    if (!_this._isFullscreenMode) {
+                        _this._toggleFullscreenContainer();
                     }
-                    _this._toggleFullscreenContainer();
                 });
             }
         },

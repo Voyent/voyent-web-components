@@ -48,10 +48,7 @@ Polymer({
     loadAlert: function(id) {
         var _this = this;
         this._setIsAlertLoading(true);
-        //Always start the view with a windowed component.
-        if (this._isFullscreenMode) {
-            this._toggleFullscreenContainer();
-        }
+        this.disableFullscreenMode(); // Always load the map as a windowed component
         var promises = [];
         promises.push(this._fetchAlertTemplate(id));
         promises.push(this._fetchLocationRecord(id));

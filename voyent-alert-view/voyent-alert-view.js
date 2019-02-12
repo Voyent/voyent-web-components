@@ -62,10 +62,7 @@ Polymer({
      */
     viewAlertDetail: function(templateId,affectedLocations) {
         var _this = this;
-        //Always start the view with a windowed component.
-        if (this._isFullscreenMode) {
-            this._toggleFullscreenContainer();
-        }
+        this.disableFullscreenMode(); // Always load the map as a windowed component
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
                 _this.fire('message-error','Unable to load template, id not provided');
@@ -141,10 +138,7 @@ Polymer({
      */
     viewAlert: function(alert,locations,alertHistory) {
         var _this = this;
-        //Always start the view with a windowed component.
-        if (this._isFullscreenMode) {
-            this._toggleFullscreenContainer();
-        }
+        this.disableFullscreenMode(); // Always load the map as a windowed component
         // Reset some state
         this._zoneIdToDisplay = null;
         this._foundZoneIdMatch = false;
