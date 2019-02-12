@@ -7,6 +7,7 @@
 <link rel="import" href="../../paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../iron-selector/iron-selector.html">
 <link rel="import" href="../common/voyent-custom-validator.html">
+<link rel="import" href="../voyent-premium-content/voyent-premium-content.html">
 
 <!--
 Displays a map-based tool for creating new alert templates.
@@ -246,16 +247,20 @@ Example:
         <paper-dialog id="fileImportDialog" modal on-iron-overlay-opened="_patchOverlay">
             <h2 class="dialogH2">Import File</h2>
             <div class="dialogCloseWrap">
-                <paper-icon-button icon="close" on-click="_closeGeocodeImportDialog" title="Close dialog"
+                <paper-icon-button icon="close" on-click="_closeFileImportDialog" title="Close dialog"
                                    class="dialogCloseButton" tabindex="4"></paper-icon-button>
             </div>
             <div class="dialogEnd"></div>
-            <paper-input id="fileUpload" type="file" label="Import a KML or KMZ file..." tabindex="1"
-                         class="fileUploadInput" validator="fileUploadValidator"></paper-input>
-            <div class="text-center">
-                <paper-button raised title="Cancel import" on-click="_closeFileImportDialog" tabindex="2">Cancel</paper-button>
-                <paper-button raised title="Confirm import" on-click="_importFile" tabindex="3">Confirm</paper-button>
-            </div>
+            <voyent-premium-content>
+                <div class="premiumContent">
+                    <paper-input id="fileUpload" type="file" label="Import a KML or KMZ file..." tabindex="1"
+                                 class="fileUploadInput" validator="fileUploadValidator"></paper-input>
+                    <div class="buttonWrapper text-center">
+                        <paper-button raised title="Cancel import" on-click="_closeFileImportDialog" tabindex="2">Cancel</paper-button>
+                        <paper-button raised title="Confirm import" on-click="_importFile" tabindex="3">Confirm</paper-button>
+                    </div>
+                </div>
+            </voyent-premium-content>
         </paper-dialog>
         <paper-dialog id="newAlertDialog" on-keyup="_submitNewAlertDialog" modal on-iron-overlay-opened="_patchOverlay">
             <h2 class="dialogH2">New Alert</h2>
