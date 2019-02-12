@@ -462,11 +462,7 @@
             }
             // Clear the user marker and locations
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                if (this._affectedMobileLocation) {
-                    this._affectedMobileLocation.removeFromMap();
-                    this._affectedMobileLocation = null;
-                }
-                else if (this._myLocations) {
+                if (this._myLocations) {
                     this._clearMyLocations();
                 }
             }

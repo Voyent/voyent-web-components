@@ -72,17 +72,17 @@ Polymer({
                 return;
             }
             _this.clearMap();
-            //Fetch the alert template, its current location and the user locations (incl. mobile).
+            // Fetch the alert template, its current location and the user's "my locations"
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
             promises.push(_this._fetchMyLocations());
-            //First create a list of affected location ids. We will draw all locations but
-            //will use this list to ensure we only pan the map on the affected locations.
+            // First create a list of affected location ids. We will draw all locations but
+            // will use this list to ensure we only pan the map on the affected locations
             _this._affectedLocationIds = [];
-            //Then create a list of affected stack ids. These are the zone stacks which have locations inside one
-            //of their zones. We will use this list to help determine how the map should be panned. If there
-            //are no affected stack ids then it means the notification was triggered by a fallback zone.
+            // Then create a list of affected stack ids. These are the zone stacks which have locations inside one
+            // of their zones. We will use this list to help determine how the map should be panned. If there
+            // are no affected stack ids then it means the notification was triggered by a fallback zone.
             _this._affectedStackIds = [];
             if (affectedLocations && affectedLocations.length) {
                 _this._affectedLocationIds = affectedLocations.map(function(obj) {
@@ -94,24 +94,11 @@ Polymer({
                     }
                     return result;
                 }, []);
-                // We draw all "my locations" but to get the affected
-                // mobile location we must grab it from passed data
-                var mobileLocation;
-                for (var i=0; i<affectedLocations.length; i++) {
-                    if (affectedLocations[i].properties.vras.type === 'mobile') {
-                        mobileLocation = affectedLocations[i];
-                        break;
-                    }
-                }
             }
             Promise.all(promises).then(function(results) {
                 var alert = results[0];
                 var alertLocation = results[1];
                 var myLocations = results[2];
-                //Add the mobile location to our list of locations so it also gets drawn.
-                if (mobileLocation) {
-                    myLocations.push(mobileLocation);
-                }
                 //First clear the map if we have an alert loaded already.
                 if (_this._loadedAlert) {
                     _this.clearMap();
@@ -328,35 +315,6 @@ Polymer({
     //******************PRIVATE API******************
 
     /**
-     * Draws a user marker on the map based on the passed location data.
-     * @param location
-     * @private
-     */
-    _drawAffectedMobileLocation: function(location) {
-        if (!location) { return; }
-        location = location.location || location;
-        //Check if we already have a user location drawn on the map.
-        if (this._affectedMobileLocation) { //Update the existing instance.
-            this._affectedMobileLocation.marker.setPosition(new google.maps.LatLng(location.geometry.coordinates[1],location.geometry.coordinates[0]));
-        }
-        else {
-            this._affectedMobileLocation = new this._MyLocation(
-                location.properties.vras.id,
-                null, //No name so the label doesn't render.
-                location.properties.vras.type,
-                new google.maps.Marker({
-                    position: new google.maps.LatLng(location.geometry.coordinates[1],location.geometry.coordinates[0]),
-                    map: this._map,
-                    draggable: false,
-                    icon: this.pathtoimages+'/img/user_marker.png'
-                })
-            );
-            //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
-            this._addFullscreenClickListener(this._affectedMobileLocation.marker);
-        }
-    },
-
-    /**
      * Draws a mobile location marker on the map based on the passed coordinates.
      * @param lat
      * @param lng
@@ -396,16 +354,16 @@ Polymer({
         this.set('_answers', []);
         this.set('_myLocations', []);
         
-        var ourLocation = null;
+        var ourLocation, marker, i;
         
         // If we're drawing response section use our alertHistory for the map data
         // Otherwise use the passed locations
-        if (this.mode === 'response' && this.nodeName === 'VOYENT-ALERT-VIEW' && alertHistory) {
+        if (this.mode === 'response' && alertHistory) {
             // First store our answers for use with the map legend
             if (alertHistory.acknowledgement && alertHistory.acknowledgement.answers) {
-                for (var answerLoop = 0; answerLoop < alertHistory.acknowledgement.answers.length; answerLoop++) {
-                    if (alertHistory.acknowledgement.answers[answerLoop].requestLocation) {
-                        this.push('_answers', alertHistory.acknowledgement.answers[answerLoop]);
+                for (i = 0; i < alertHistory.acknowledgement.answers.length; i++) {
+                    if (alertHistory.acknowledgement.answers[i].requestLocation) {
+                        this.push('_answers', alertHistory.acknowledgement.answers[i]);
                     }
                 }
             }
@@ -419,21 +377,21 @@ Polymer({
                     if ((currentUser.location && currentUser.location.properties && currentUser.location.geometry) &&
                         (alertHistory.acknowledgement && currentUser.response && currentUser.response.answerId)) {
                         // Choose our color based on the answer
-                        for (var answerLoop = 0; answerLoop < alertHistory.acknowledgement.answers.length; answerLoop++) {
-                            if (alertHistory.acknowledgement.answers[answerLoop].requestLocation &&
-                                (alertHistory.acknowledgement.answers[answerLoop].id === currentUser.response.answerId)) {
+                        for (i = 0; i < alertHistory.acknowledgement.answers.length; i++) {
+                            if (alertHistory.acknowledgement.answers[i].requestLocation &&
+                                (alertHistory.acknowledgement.answers[i].id === currentUser.response.answerId)) {
                                 ourLocation = currentUser.location;
                                 
-                                var marker = new google.maps.Marker({
+                                marker = new google.maps.Marker({
                                     position: new google.maps.LatLng(
                                         ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
                                     ),
-                                    icon: { url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[answerLoop].color ? alertHistory.acknowledgement.answers[answerLoop].color : 'orange') + ".png" },
+                                    icon: { url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[i].color ? alertHistory.acknowledgement.answers[i].color : 'orange') + ".png" },
                                     map: this._map,
                                     draggable: false,
                                 });
                                 
-                                this._addUserDetailsClickListener(marker, currentUser, alertHistory.acknowledgement.answers[answerLoop].text);
+                                this._addUserDetailsClickListener(marker, currentUser, alertHistory.acknowledgement.answers[i].text);
                                 
                                 // Store our drawn location
                                 this.push('_myLocations',new this._MyLocation(
@@ -449,21 +407,12 @@ Polymer({
                 }
             }
         }
-        else {
-            // If we don't have locations just give up
-            if (!locations || !locations.length) { return; }
-            
-            for (var i = 0; i < locations.length; i++) {
+        else if (locations && locations.length) {
+            for (i = 0; i < locations.length; i++) {
                 if (locations[i] && locations[i].properties && locations[i].geometry) { // Ensure we have a valid location
-                    var ourLocation = locations[i];
+                    ourLocation = locations[i];
                     
-                    // For notification view we want to render the user icon for the affected mobile location.
-                    if (this.mode === 'notification' && ourLocation.properties.vras.type === 'mobile') {
-                        this._drawAffectedMobileLocation(ourLocation);
-                        continue;
-                    }
-                    
-                    var marker = new google.maps.Marker({
+                    marker = new google.maps.Marker({
                         position: new google.maps.LatLng(
                             ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
                         ),
@@ -602,10 +551,6 @@ Polymer({
         // the map panning. We don't include them when being notified by a fallback zone to
         // prevent the map from panning too far from the region boundary and primary zone
         if (this._affectedStackIds.length) {
-            if (this._affectedMobileLocation && this._affectedLocationIds.indexOf(this._affectedMobileLocation.id) > -1) {
-                bounds.extend(this._affectedMobileLocation.marker.getPosition());
-                boundsExtended = true;
-            }
             for (var i=0; i<this._myLocations.length; i++) {
                 if (this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
                     bounds.extend(this._myLocations[i].marker.getPosition());
