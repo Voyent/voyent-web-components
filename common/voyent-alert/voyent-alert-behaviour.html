@@ -674,8 +674,67 @@
          * See https://github.com/PolymerElements/paper-dialog/issues/7
          */
         _patchOverlay: function (e) {
+            // To match our custom overlays below we drop the transition from the central overlay
+            if (e.target.backdropElement) {
+                e.target.backdropElement.style.transitionProperty = 'none';
+                e.target.backdropElement.style.transition = 'all 0s ease 0s';
+            }
+
+            // So some real complexity here for paper-dialog because of stacking context:
+            // Dialogs defined at the top level (like in app-view itself) will work as desired
+            // But if we use a dialog without any changes that is defined in a subview (so out of context from the main <body>)
+            //  then the modal will overlay the entire page, BUT the dialog will be underneath it
+            // So then below we do "insertBefore" to move the overlay to directly before the dialog that it belongs to
+            // This introduces another problem because the overlay is now on a subpage, so it doesn't block the menu navigation that is at a higher stacking context
+            // So to work around this we create a similar looking overlay if the appDrawer and app-header are present, and then remove these when closing the dialog
+
+            // This is the part where we make an overlay for the non-subview
+            // parts of the app, which in the case of web components is always
+            this._overlayOnComp(document.getElementById('appHeader'));
+
+            // Finally we move the backdrop directly before the dialog
+            // If we don't do this the backdrop can't layer properly and doesn't show up at all
             if (e.target.withBackdrop) {
                 e.target.parentNode.insertBefore(e.target.backdropElement, e.target);
+            }
+        },
+
+        /**
+         * Fired when a dialog is closed
+         * The intent here is if we created a separate overlay for a higher stacking context in "_patchOverlay" we want to remove that custom overlay
+         */
+        _patchOverlayClosed: function(e) {
+            if (e.target.tagName === 'PAPER-DIALOG') {
+                this._overlayOnComp(document.getElementById('appHeader'), true);
+            }
+        },
+
+        /**
+         * Create a modal style overlay on the passed component
+         * Alternatively you can pass true for "remove" to remove an existing overlay
+         * No matter what this should only ever create a single overlay on a component, so it can safely be used multiple times in a row
+         */
+        _overlayOnComp: function(component, remove) {
+            if (component) {
+                var overlayId = component.id + '_overlay';
+
+                // If we're removing just try to find an existing overlay and kill it
+                if (remove) {
+                    if (component.querySelector('#' + overlayId)) {
+                        component.removeChild(component.querySelector('#' + overlayId));
+                    }
+                    return;
+                }
+
+                // Create and style the overlay to match the existing iron-overlay style, but with the same size as our target component
+                var overlay = document.createElement('div');
+                overlay.id = overlayId;
+                overlay.style.cssText = "position: absolute; top: 0; background-color: black; opacity: 0.6; z-index: 102; pointer-events: auto; width: 100%; height: 100%;";
+
+                // Only add if we don't already have an overlay
+                if (!component.querySelector('#' + overlay.id)) {
+                    component.appendChild(overlay);
+                }
             }
         },
 

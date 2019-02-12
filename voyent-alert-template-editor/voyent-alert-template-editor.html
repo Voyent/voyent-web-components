@@ -200,7 +200,8 @@ Example:
                 </span>
             </div>
         </div>
-        <paper-dialog id="fileImportDialog" modal on-iron-overlay-opened="_patchOverlay">
+        <paper-dialog id="fileImportDialog" modal
+                      on-iron-overlay-opened="_patchOverlay" on-iron-overlay-closed="_patchOverlayClosed">
             <h2 class="dialogH2">Import File</h2>
             <div class="dialogCloseWrap">
                 <paper-icon-button icon="close" on-click="_closeFileImportDialog" title="Close dialog"
@@ -218,7 +219,8 @@ Example:
                 </div>
             </voyent-premium-content>
         </paper-dialog>
-        <paper-dialog id="uncategorizedTemplate" modal on-iron-overlay-opened="_patchOverlay">
+        <paper-dialog id="uncategorizedTemplate" modal
+                      on-iron-overlay-opened="_patchOverlay" on-iron-overlay-closed="_patchOverlayClosed">
             <h2 class="dialogH2">Confirm Categories</h2>
             <div class="dialogCloseWrap">
                 <paper-icon-button icon="close" on-click="_openCategorySelectorBeforeSave" title="Close dialog"
