@@ -2959,18 +2959,34 @@
                 this.div.style.webkitTransition = 'opacity 0.5s';
                 this.div.style.transition = 'opacity 0.5s';
             };
+            /**
+             * A class that represents the current mobile location icon overlay.
+             * @param latLng - A google.maps.LatLng object indicating the position of the overlay.
+             * @extends google.maps.OverlayView
+             * @private
+             */
+            this._MobileLocationOverlay = function(latLng) {
+                this.latLng = latLng;
+                this.div = _outer._buildOverlayDiv();
+                this.setMap(_outer._map);
+            };
             //Inherit the prototype of google.maps.OverlayView.
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
             this._LocationOverlay.prototype = new google.maps.OverlayView();
             this._MouseHoldOverlay.prototype = new google.maps.OverlayView();
+            this._MobileLocationOverlay.prototype = new google.maps.OverlayView();
             /**
              * Called automatically when the map is ready for the overlay to be attached.
              */
             this._ProximityZoneOverlay.prototype.onAdd =
             this._LocationOverlay.prototype.onAdd =
-            this._MouseHoldOverlay.prototype.onAdd = function () {
+            this._MouseHoldOverlay.prototype.onAdd = function() {
                 //Add the div to the floatShadow pane so it renders above the markers.
                 this.getPanes().floatShadow.appendChild(this.div);
+            };
+            this._MobileLocationOverlay.prototype.onAdd = function() {
+                // Add the div to the floatPane pane so it renders above everything
+                this.getPanes().floatPane.appendChild(this.div);
             };
             /**
              * Handles drawing and re-drawing of the proximity zone overlay on the map.
@@ -3050,11 +3066,24 @@
                 this.div.style.padding = '5px';
             };
             /**
+             * Handles drawing the mobile location icon overlay.
+             */
+            this._MobileLocationOverlay.prototype.draw = function () {
+                // Convert the lat/lng coordinates to pixel coordinates
+                var nc = this.getProjection().fromLatLngToDivPixel(this.latLng);
+                // Set the div content
+                this.div.innerHTML = '<img src="'+_outer.pathtoimages+'/img/gps.png'+'">';
+                // Center the content at the exact coordinate
+                this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
+                this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
+            };
+            /**
              * Cleans up the overlay whenever the overlays map property is set to null.
              */
             this._ProximityZoneOverlay.prototype.onRemove =
             this._LocationOverlay.prototype.onRemove =
-            this._MouseHoldOverlay.prototype.onRemove = function () {
+            this._MouseHoldOverlay.prototype.onRemove =
+            this._MobileLocationOverlay.prototype.onRemove = function () {
                 if (this.div && this.div.parentNode) {
                     this.div.parentNode.removeChild(this.div);
                     this.div = null;
@@ -3063,13 +3092,15 @@
             /**
              * Hide the overlay.
              */
-            this._LocationOverlay.prototype.hide = function() {
+            this._LocationOverlay.prototype.hide =
+            this._MobileLocationOverlay.prototype.hide = function() {
                 this.div.style.display = 'none';
             };
             /**
              * Re-display the overlay.
              */
-            this._LocationOverlay.prototype.displayAndDraw = function() {
+            this._LocationOverlay.prototype.displayAndDraw =
+            this._MobileLocationOverlay.prototype.displayAndDraw = function() {
                 this.div.style.display = 'block';
                 this.draw();
             };
@@ -3086,6 +3117,13 @@
             this._ProximityZoneOverlay.prototype.moveToDefaultPane = function() {
                 // Move the overlay to the default pane
                 this.getPanes().floatShadow.appendChild(this.div);
+            };
+            /**
+             * Update the latLng object associated with the mobile location overlay instance and draws the overlay.
+             */
+            this._MobileLocationOverlay.prototype.setLatLng = function (latLng) {
+                this.latLng = latLng;
+                this.displayAndDraw();
             };
             /**
              * Moves the location overlay to a map pane with a higher stacking priority.
@@ -3150,6 +3188,7 @@
             Object.seal(this._ProximityZoneOverlay);
             Object.seal(this._LocationOverlay);
             Object.seal(this._MouseHoldOverlay);
+            Object.seal(this._MobileLocationOverlay);
         }
     };
 </script>

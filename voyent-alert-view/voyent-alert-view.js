@@ -315,25 +315,13 @@ Polymer({
      * @private
      */
     _drawMobileLocation: function(lat, lng) {
-        if (typeof lat !== 'number' || typeof lng !== 'number') {
-            return;
-        }
-        //Check if we already have a user location drawn on the map.
-        if (this._mobileLocation) { //Update the existing instance.
-            this._mobileLocation.marker.setPosition(new google.maps.LatLng(lat, lng));
-        }
-        else {
-            this._mobileLocation = new this._MyLocation(
-                null, null, 'mobile',
-                new google.maps.Marker({
-                    position: new google.maps.LatLng(lat,lng),
-                    map: this._map,
-                    draggable: false,
-                    icon: this.pathtoimages+'/img/gps.png'
-                })
-            );
-            //Add click listener to the marker so the user can click anywhere on the map to enable fullscreen.
-            this._addFullscreenClickListener(this._mobileLocation.marker);
+        if (typeof lat === 'number' && typeof lng === 'number') {
+            if (this._mobileLocation) {
+                this._mobileLocation.setLatLng(new google.maps.LatLng(lat, lng));
+            }
+            else {
+                this._mobileLocation = new this._MobileLocationOverlay(new google.maps.LatLng(lat, lng));
+            }
         }
     },
 
@@ -559,8 +547,8 @@ Polymer({
             boundsExtended = true;
         }
         // Include the mobile location in the map bounds if it is available
-        if (this._mobileLocation && this._mobileLocation.marker) {
-            bounds.extend(this._mobileLocation.marker.getPosition());
+        if (this._mobileLocation && this._mobileLocation.latLng) {
+            bounds.extend(this._mobileLocation.latLng);
             boundsExtended = true;
         }
         return boundsExtended;
@@ -649,8 +637,8 @@ Polymer({
             lat: 51.177010,
             lng: -115.567665,
             getLocation: function() {
-                /!*this.lat = this.lat + 0.00010;
-                this.lng = this.lng + 0.00010;*!/
+                this.lat = this.lat + 0.00010;
+                this.lng = this.lng + 0.00010;
                 window._this.returnCurrentLocation(this.lat, this.lng );
             },
         };*/
@@ -694,9 +682,8 @@ Polymer({
             this._startMobileLocationPolling();
         }
         else {
-            // Remove the location from the map
-            this._mobileLocation.removeFromMap();
-            this._mobileLocation = null;
+            // Hide the location from the map
+            this._mobileLocation.hide();
             // Stop polling the location position
             this._stopMobileLocationPolling();
             // Pan to the original alert
