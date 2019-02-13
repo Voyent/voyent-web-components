@@ -749,7 +749,7 @@ Polymer({
         });
         window.addEventListener('voyent-resuming-native-app', function() {
             // If we have a mobile location then start polling updates for it again
-            if (_this._mobileLocation) {
+            if (_this._mobileLocation && _this._mobileLocation.visible) {
                 _this._startMobileLocationPolling();
             }
         });
