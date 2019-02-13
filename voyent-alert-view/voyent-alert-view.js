@@ -697,12 +697,23 @@ Polymer({
      * @private
      */
     _mobileLocationEnabledChanged: function(enabled) {
+        var _this = this;
         // Select the custom control (+ '_cc')
         var currentLocationButton = this.querySelector('#'+this._CURRENT_LOCATION_BUTTON_ID+'_cc');
-        if (currentLocationButton) {
-            this.toggleClass('selected', !!enabled, currentLocationButton);
-            currentLocationButton.setAttribute('title',enabled ? 'Disable Location Tracking' : 'Enable Location Tracking')
-        }
+        // Wait for the button as it's not available when we first toggle the mobile location
+        this._waitForCondition(
+            function() {
+                return !!_this.querySelector('#'+_this._CURRENT_LOCATION_BUTTON_ID+'_cc')
+            },
+            5000
+        ).then(function() {
+            currentLocationButton = _this.querySelector('#'+_this._CURRENT_LOCATION_BUTTON_ID+'_cc');
+            if (currentLocationButton) {
+                _this.toggleClass('selected', !!enabled, currentLocationButton);
+                currentLocationButton.setAttribute('title',enabled ? 'Disable Location Tracking' : 'Enable Location Tracking')
+            }
+        }).catch(function() {});
+
     },
 
     /**
