@@ -547,7 +547,7 @@ Polymer({
             boundsExtended = true;
         }
         // Include the mobile location in the map bounds if it is available
-        if (this._mobileLocation && this._mobileLocation.latLng) {
+        if (this._mobileLocation && this._mobileLocation.visible && this._mobileLocation.latLng) {
             bounds.extend(this._mobileLocation.latLng);
             boundsExtended = true;
         }
