@@ -544,7 +544,7 @@ Polymer({
         // If we were notified by a non-fallback zone then include the affected locations in
         // the map panning. We don't include them when being notified by a fallback zone to
         // prevent the map from panning too far from the region boundary and primary zone
-        if (this._affectedStackIds.length) {
+        if (this._affectedStackIds && this._affectedStackIds.length) {
             for (var i=0; i<this._myLocations.length; i++) {
                 if (this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
                     bounds.extend(this._myLocations[i].marker.getPosition());
@@ -644,40 +644,63 @@ Polymer({
      */
     _addMobileLocationButton: function() {
         var _this = this;
+        /*// Can be used for testing this button on desktop
+        window.vras = {
+            lat: 51.177010,
+            lng: -115.567665,
+            getLocation: function() {
+                /!*this.lat = this.lat + 0.00010;
+                this.lng = this.lng + 0.00010;*!/
+                window._this.returnCurrentLocation(this.lat, this.lng );
+            },
+        };*/
         if (this.mode === 'notification' && typeof vras !== 'undefined') {
-            this._addCustomControl(this._CURRENT_LOCATION_BUTTON_ID,google.maps.ControlPosition.RIGHT_BOTTOM,function() {
-                _this.set('_mobileLocationEnabled',!_this._mobileLocationEnabled);
-                if (_this._mobileLocationEnabled) {
-                    // Include the mobile location in the map panning once it's received from the device
-                    _this._includeMobileLocationInPanning = true;
-                    // Get the location
-                    vras.getLocation();
-                    // Start polling the location position
-                    _this._startMobileLocationPolling();
-                }
-                else {
-                    // Remove the location from the map
-                    _this._mobileLocation.removeFromMap();
-                    _this._mobileLocation = null;
-                    // Stop polling the location position
-                    _this._stopMobileLocationPolling();
-                    // Pan to the original alert
-                    _this._adjustBoundsAndPan();
-                }
-            },function() {
-                _this._mobileLocationEnabled = false;
-                window._this = {
-                    returnCurrentLocation: function(lat,lng) {
-                        _this._drawMobileLocation(lat, lng);
-                        // Pan on the original alert + the mobile location, only do
-                        // this when requested so we don't pan the map when polling
-                        if (_this._includeMobileLocationInPanning) {
-                            _this._adjustBoundsAndPan();
-                            _this._includeMobileLocationInPanning = false;
+            this._addCustomControl(
+                this._CURRENT_LOCATION_BUTTON_ID,
+                google.maps.ControlPosition.RIGHT_BOTTOM,
+                this._toggleMobileLocationTracking.bind(this),
+            function() {
+                    _this._mobileLocationEnabled = false;
+                    window._this = {
+                        returnCurrentLocation: function(lat,lng) {
+                            _this._drawMobileLocation(lat, lng);
+                            // Pan on the original alert + the mobile location, only do
+                            // this when requested so we don't pan the map when polling
+                            if (_this._includeMobileLocationInPanning) {
+                                _this._adjustBoundsAndPan();
+                                _this._includeMobileLocationInPanning = false;
+                            }
                         }
-                    }
-                };
-            });
+                    };
+                    // Start with mobile location tracking enabled
+                    _this._toggleMobileLocationTracking();
+                }
+            );
+        }
+    },
+
+    /**
+     * Toggles mobile location tracking on the map.
+     * @private
+     */
+    _toggleMobileLocationTracking: function() {
+        this.set('_mobileLocationEnabled',!this._mobileLocationEnabled);
+        if (this._mobileLocationEnabled) {
+            // Include the mobile location in the map panning once it's received from the device
+            this._includeMobileLocationInPanning = true;
+            // Get the location
+            vras.getLocation();
+            // Start polling the location position
+            this._startMobileLocationPolling();
+        }
+        else {
+            // Remove the location from the map
+            this._mobileLocation.removeFromMap();
+            this._mobileLocation = null;
+            // Stop polling the location position
+            this._stopMobileLocationPolling();
+            // Pan to the original alert
+            this._adjustBoundsAndPan();
         }
     },
 
