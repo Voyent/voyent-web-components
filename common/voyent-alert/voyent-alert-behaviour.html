@@ -497,6 +497,9 @@
                 if (e.key === 'Enter') {
                     var currentStack = _this._loadedAlert.selectedStack;
                     var newRadius = this.value;
+                    if (parseInt(this.value) < 5) {
+                        newRadius = 5;
+                    }
                     var zoneIndex = currentStack.getZoneIndex(zone);
                     var smallerZone = currentStack.getZoneAt(zoneIndex - 1);
                     var largerZone = currentStack.getZoneAt(zoneIndex + 1);
