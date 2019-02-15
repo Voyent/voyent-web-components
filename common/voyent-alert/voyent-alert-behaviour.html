@@ -439,31 +439,130 @@
         },
 
         /**
-         * Creates and configures the styling for the overlay div, used for zone and location name labels.
-         * @param isZone
+         * Creates and configures the styling for a generic overlay div, used for various labels.
+         * @param extraRound
+         * @param noFontStyling
          * @private
          */
-        _buildOverlayDiv: function(isZone) {
+        _buildOverlayDiv: function(extraRound, noFontStyling) {
             var div = document.createElement('div');
-            div.style.fontSize = '12px';
-            div.style.fontWeight = 'bold';
-            div.style.borderStyle = 'none';
-            div.style.borderColor = 'black';
-            div.style.borderWidth = '0px';
+            if (!noFontStyling) {
+                div.style.fontSize = '12px';
+                div.style.fontWeight = 'bold';
+            }
             div.style.position = 'absolute';
             div.style.padding = '5px';
             div.style.zIndex = '10000';
-            div.style.opacity = '1.0';
-            // Slightly different styling to distinguish zone and location labels
-            if (isZone) {
-                div.style.borderRadius = '7px';
-            }
-            else {
-                div.style.borderRadius = '25px';
-            }
+            div.style.borderRadius =  (extraRound ? '25' : '7') + 'px';
             div.style.letterSpacing = '1px';
             div.style.whiteSpace = 'nowrap';
             return div;
+        },
+
+        /**
+         * Creates and configures the styling and listeners for the radius overlay.
+         * @param zone - The zone that the overlay is being created for.
+         * @private
+         */
+        _buildRadiusOverlayDiv: function(zone) {
+            var _this = this;
+
+            var div = this._buildOverlayDiv(false, true);
+            var input = document.createElement('input');
+            var span = document.createElement('span');
+
+            // Prevent the event form bubbling so the zone is not de-selected and the map zoomed
+            div.onclick = div.ondblclick = function(e) {
+                e.stopPropagation();
+                input.focus();
+            };
+
+            // Set some styling on the input
+            input.style.borderRadius = '7px';
+            input.style.padding = '3px 6px 3px 0px';
+            input.style.border = 'none';
+            input.style.outline = 'none';
+            input.oninput = function(e) {
+                this.style.width = this.value.length + 'ch';
+            };
+            // Prevent the user from entering non-numerical keys
+            input.onkeypress = function(e) {
+                if (['0','1','2','3','4','5','6','7','8','9'].indexOf(e.key) === -1) {
+                    e.preventDefault();
+                    return false;
+                }
+            };
+            // Submit the new radius value on enter key presses
+            input.onkeyup = function(e) {
+                if (e.key === 'Enter') {
+                    var currentStack = _this._loadedAlert.selectedStack;
+                    var newRadius = this.value;
+                    var zoneIndex = currentStack.getZoneIndex(zone);
+                    var smallerZone = currentStack.getZoneAt(zoneIndex - 1);
+                    var largerZone = currentStack.getZoneAt(zoneIndex + 1);
+                    if (smallerZone) {
+                        var smallerZoneRadius = smallerZone.getRadiusInMeters();
+                        if (newRadius <= smallerZoneRadius) {
+                            _this.fire('message-error', 'Zone radius cannot be smaller than ' + parseInt((smallerZoneRadius+1)) + 'm');
+                            zone.radiusOverlay.draw();
+                            return;
+                        }
+                    }
+                    if (largerZone) {
+                        var largerZoneRadius = largerZone.getRadiusInMeters();
+                        if (newRadius >= largerZoneRadius) {
+                            _this.fire('message-error', 'Zone radius cannot be larger than ' + parseInt((largerZoneRadius-1)) + 'm');
+                            zone.radiusOverlay.draw();
+                            return;
+                        }
+                    }
+
+                    // Set the new paths and adjust the position of the overlay
+                    zone.setPaths(_this._adjustDistanceFromCentroid(zone.shapeOverlay.getPaths(),newRadius));
+                    zone.manageRadiusOverlay();
+                    zone.radiusOverlay.draw();
+                    // Since we set the paths of the zone to a non-punched out shape we must punch out the zones again
+                    _this._loadedAlert.selectedStack.updateJSONAndCentroid();
+                    _this._loadedAlert.selectedStack.punchOutShapes();
+                    // Since we adjusted the size of the larger zone we'll update
+                    // the template JSON and punch out the fallback zone
+                    if (!largerZone) {
+                        _this._loadedAlert.template.updateJSONAndCentroid();
+                        if (_this._fallbackZone) {
+                            _this._fallbackZone.punchOutOverlay();
+                        }
+                    }
+                }
+            };
+            div.appendChild(input);
+
+            // Add the "meters" abbreviation after the input
+            span.style.marginLeft = '-6px';
+            span.innerText = 'm';
+            div.appendChild(span);
+
+            return div;
+        },
+
+        /**
+         * Adjusts the distance from the centroid for every coordinate to be the passed distance. This must only be used
+         * for circles since all of the coordinates will be the same distance from the centroid. Only does the outer path,
+         * the shape must be punched out again after.
+         * @param paths
+         * @param distance
+         * @returns {google.maps.MVCArray}
+         * @private
+         */
+        _adjustDistanceFromCentroid: function(paths,distance) {
+            var centroid = this._AlertTemplate.calculateCentroidFromPaths(paths);
+            var bearing, newPath = [];
+            for (var j=0; j<paths.getAt(0).length; j++) {
+                // Calculate the bearing from the center to each point
+                bearing = google.maps.geometry.spherical.computeHeading(centroid,paths.getAt(0).getAt(j));
+                // Calculate the new coordinate
+                newPath.push(google.maps.geometry.spherical.computeOffset(centroid,distance,bearing));
+            }
+            return new google.maps.MVCArray([new google.maps.MVCArray(newPath)])
         },
 
         /**
@@ -1068,6 +1167,21 @@
                 var ne = bounds.getNorthEast();
                 var sw = bounds.getSouthWest();
                 return [ne,new google.maps.LatLng(sw.lat(),ne.lng()),sw,new google.maps.LatLng(ne.lat(),sw.lng()),ne];
+            };
+            /**
+             * Used to calculate the bounds of the passed zone paths.
+             * @param paths - An array of LatLng object arrays that define the zone.
+             * @static
+             */
+            this._AlertTemplate.calculateBoundsFromPaths = function(paths) {
+                var bounds = new google.maps.LatLngBounds();
+                for (var i=0; i<paths.length; i++) {
+                    var innerPath = paths.getAt ? paths.getAt(i) : paths[i]; // MVCArray or []
+                    for (var j=0; j<innerPath.length; j++) {
+                        bounds.extend(paths.getAt ? paths.getAt(i).getAt(j) : paths[i][j]); // MVCArray or []
+                    }
+                }
+                return bounds;
             };
             /**
              * Used to calculate the centroid of the template's zones using the passed paths array.
@@ -1984,6 +2098,8 @@
                         if (_outer._fallbackZone) {
                             _outer._fallbackZone.punchOutOverlay();
                         }
+                        // Update the position of the radius polyline
+                        _this.manageZoneRadiusOverlays();
                         //_this.manageStackBoundary(true);
                     });
                     /*google.maps.event.addListener(marker, 'dragend', function () {
@@ -2254,6 +2370,16 @@
                     },0);
                 },
                 /**
+                 * Manages the position of the radius overlays for all zones associated with this stack.
+                 */
+                manageZoneRadiusOverlays: function() {
+                    for (var i=0; i<this.zones.length; i++) {
+                        if (this.zones[i].active) {
+                            this.zones[i].manageRadiusOverlay();
+                        }
+                    }
+                },
+                /**
                  * Handles creating, positioning and toggling the visibility of the
                  * zone stack boundary which is displayed on stack marker mouseover.
                  * @param visible
@@ -2371,6 +2497,9 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
+                    if (this.radiusOverlay) {
+                        this.radiusOverlay.draw();
+                    }
                 },
                 /**
                  * Sets the opacity and notifies the polymer path.
@@ -2415,6 +2544,8 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
+                    // Update the visibility of the radius overlay
+                    this.manageRadiusOverlay();
                 },
                 /**
                  * Sets whether this zone was derived from a file.
@@ -2500,6 +2631,72 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.setMap(null);
                     }
+                    if (this.radiusOverlay) {
+                        this.radiusOverlay.setMap(null);
+                    }
+                    if (this.polyline) {
+                        this.polyline.setMap(null);
+                    }
+                    this.polylineEastCoordinate = null;
+                },
+                /**
+                 * Manages the state and position of the radius polyline and associated overlay.
+                 */
+                manageRadiusOverlay: function() {
+                    if (this.isCircle) {
+                        if (this.active) {
+                            var bounds = _outer._AlertTemplate.calculateBoundsFromPaths(this.shapeOverlay.getPaths());
+                            var center = bounds.getCenter();
+                            this.polylineEastCoordinate = { lat: center.lat(), lng: bounds.getNorthEast().lng() };
+
+                            if (!this.polyline) {
+                                this.polyline = new google.maps.Polyline({
+                                    map: _outer._map, strokeOpacity: 0.65, strokeWeight: 3
+                                });
+                                this.radiusOverlay = new _outer._RadiusOverlay(this);
+                            }
+                            else {
+                                this.polyline.setMap(_outer._map);
+                                this.radiusOverlay.displayAndDraw();
+                            }
+
+                            this.polyline.setPath([
+                                { lat: center.lat(), lng: center.lng() },
+                                this.polylineEastCoordinate
+                            ]);
+                        }
+                        else {
+                            if (this.polyline) {
+                                this.polyline.setMap(null);
+                            }
+                            if (this.radiusOverlay) {
+                                this.radiusOverlay.hide();
+                            }
+                        }
+                    }
+                },
+                /**
+                 * Returns this zone's radius in meters or 0 if this zone is not a circle.
+                 */
+                getRadiusInMeters: function() {
+                    var length = 0;
+                    if (this.isCircle) {
+                        if (this.polyline) {
+                            var path = this.polyline.getPath();
+                            for (var i = 0; i < path.getLength() - 1; i++) {
+                                length += google.maps.geometry.spherical.computeDistanceBetween(path.getAt(i), path.getAt(i + 1));
+                            }
+                        }
+                        else {
+                            var bounds = _outer._AlertTemplate.calculateBoundsFromPaths(this.shapeOverlay.getPaths());
+                            var center = bounds.getCenter();
+                            length = google.maps.geometry.spherical.computeDistanceBetween(
+                                center,
+                                new google.maps.LatLng(center.lat(), bounds.getNorthEast().lng())
+                            );
+                        }
+                    }
+                    return Math.round(length);
                 },
                 /**
                  * Returns the options for building a google maps polygon.
@@ -2901,7 +3098,7 @@
              */
             this._FallbackZoneOverlay = function(zone) {
                 this.zone = zone;
-                this.div = _outer._buildOverlayDiv(true);
+                this.div = _outer._buildOverlayDiv();
                 if (zone.enabled) {
                     this.draw();
                 }
@@ -2943,7 +3140,7 @@
                 var _this = this;
                 this.zone = zone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv(true);
+                this.div = _outer._buildOverlayDiv();
                 // Bring the label to top on mouseover
                 this.div.onmouseover = function () {
                     _this.moveToTopPane();
@@ -2962,7 +3159,7 @@
                 var _this = this;
                 this.loc = location;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv();
+                this.div = _outer._buildOverlayDiv(true);
                 this.div.style.cursor = 'pointer';
                 if (_outer.nodeName === 'VOYENT-MY-LOCATIONS') {
                     // Add some listeners to support info window toggling via label selection
@@ -2988,7 +3185,7 @@
                 this.latLng = latLng;
                 this.pixelCoordinates = pixelCoordinates;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv();
+                this.div = _outer._buildOverlayDiv(true);
                 //Setup our transition and opacity so we can fade this overlay in.
                 this.div.style.opacity = '0';
                 this.div.style.webkitTransition = 'opacity 0.5s';
@@ -3002,21 +3199,33 @@
              */
             this._MobileLocationOverlay = function(latLng) {
                 this.latLng = latLng;
-                this.div = _outer._buildOverlayDiv();
+                this.div = _outer._buildOverlayDiv(true);
                 this.visible = true;
                 this.setMap(_outer._map);
             };
-            //Inherit the prototype of google.maps.OverlayView.
+            /**
+             * A class representing the radius overlay displayed for circular zones.
+             * @extends google.maps.OverlayView
+             * @private
+             */
+            this._RadiusOverlay = function(zone) {
+                this.zone = zone;
+                this.setMap(_outer._map);
+                this.div = _outer._buildRadiusOverlayDiv(zone);
+            };
+            // Inherit the prototype of google.maps.OverlayView
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
             this._LocationOverlay.prototype = new google.maps.OverlayView();
             this._MouseHoldOverlay.prototype = new google.maps.OverlayView();
             this._MobileLocationOverlay.prototype = new google.maps.OverlayView();
+            this._RadiusOverlay.prototype = new google.maps.OverlayView();
             /**
              * Called automatically when the map is ready for the overlay to be attached.
              */
             this._ProximityZoneOverlay.prototype.onAdd =
             this._LocationOverlay.prototype.onAdd =
-            this._MouseHoldOverlay.prototype.onAdd = function() {
+            this._MouseHoldOverlay.prototype.onAdd =
+            this._RadiusOverlay.prototype.onAdd = function() {
                 //Add the div to the floatShadow pane so it renders above the markers.
                 this.getPanes().floatShadow.appendChild(this.div);
             };
@@ -3114,12 +3323,35 @@
                 this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
             };
             /**
+             * Handles drawing the radius overlay for circular zones.
+             */
+            this._RadiusOverlay.prototype.draw = function() {
+                // Convert the lat/lng coordinates to pixel coordinates
+                var nc = this.getProjection().fromLatLngToDivPixel(
+                    new google.maps.LatLng(
+                        this.zone.polylineEastCoordinate.lat,
+                        this.zone.polylineEastCoordinate.lng
+                    )
+                );
+                // Update the radius value
+                var input = this.div.querySelector('input');
+                input.value = this.zone.getRadiusInMeters();
+                input.style.width = input.value.length + 'ch';
+                // Position the input
+                this.div.style.left = (nc.x + 3) + 'px';
+                this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
+                // Additional zone-specific styling
+                this.div.style.backgroundColor = input.style.backgroundColor = this.zone.colour;
+                this.div.style.color = input.style.color = this.returnColourBasedOnBackground(this.zone.colour);
+            };
+            /**
              * Cleans up the overlay whenever the overlays map property is set to null.
              */
             this._ProximityZoneOverlay.prototype.onRemove =
             this._LocationOverlay.prototype.onRemove =
             this._MouseHoldOverlay.prototype.onRemove =
-            this._MobileLocationOverlay.prototype.onRemove = function () {
+            this._MobileLocationOverlay.prototype.onRemove =
+            this._RadiusOverlay.prototype.onRemove = function () {
                 if (this.div && this.div.parentNode) {
                     this.div.parentNode.removeChild(this.div);
                     this.div = null;
@@ -3129,7 +3361,8 @@
              * Hide the overlay.
              */
             this._LocationOverlay.prototype.hide =
-            this._MobileLocationOverlay.prototype.hide = function() {
+            this._MobileLocationOverlay.prototype.hide =
+            this._RadiusOverlay.prototype.hide = function() {
                 this.div.style.display = 'none';
                 this.visible = false;
             };
@@ -3137,7 +3370,8 @@
              * Re-display the overlay.
              */
             this._LocationOverlay.prototype.displayAndDraw =
-            this._MobileLocationOverlay.prototype.displayAndDraw = function() {
+            this._MobileLocationOverlay.prototype.displayAndDraw =
+            this._RadiusOverlay.prototype.displayAndDraw = function() {
                 this.div.style.display = 'block';
                 this.visible = true;
                 this.draw();
@@ -3210,7 +3444,8 @@
              * Returns a font colour of black or white based on the zone colour.
              */
             this._FallbackZoneOverlay.prototype.returnColourBasedOnBackground =
-            this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground = function(hex) {
+            this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground =
+            this._RadiusOverlay.prototype.returnColourBasedOnBackground = function(hex) {
                 // Chop any leading # character
                 if (hex.charAt(0) === '#') {
                     hex = hex.substr(1);
