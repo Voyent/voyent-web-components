@@ -1820,6 +1820,19 @@
                 contentString += 'Recipient Details</h3>';
                 
                 if (user) {
+                    contentString += '<p>Contact: ' + user.username + '</p>';
+                    
+                    if (user.firstname && user.lastname) {
+                        contentString += '<p>Name: ' + user.firstname + ' ' + user.lastname + '</p>';
+                    }
+                    
+                    if (answer) {
+                        contentString += '<p>Response: <b>' + answer + '</b></p>';
+                    }
+                    if (answer && user.response && user.response.received) {
+                        contentString += '<p>Response Time: ' + new Date(user.response.received).toLocaleString() + '</p>';
+                    }
+                    
                     if (user.location && user.location.properties && user.location.properties.vras) {
                         var locationRes = '<p>Location: ' + user.location.properties.vras.name;
                         if (user.location.properties.vras.type) {
@@ -1831,19 +1844,6 @@
                         
                         locationRes += '</p>';
                         contentString += locationRes;
-                    }
-                    if (user.firstname && user.lastname) {
-                        contentString += '<p>Name: ' + user.firstname + ' ' + user.lastname + '</p>';
-                    }
-                    else {
-                        contentString += '<p>Username: ' + user.username + '</p>';
-                    }
-                    
-                    if (answer) {
-                        contentString += '<p>Response: <b>' + answer + '</b></p>';
-                    }
-                    if (answer && user.response && user.response.received) {
-                        contentString += '<p>Response Time: ' + new Date(user.response.received) + '</p>';
                     }
                 }
                 else {
