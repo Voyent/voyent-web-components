@@ -387,6 +387,9 @@ Polymer({
                         }
                     }
                 }
+                
+                // Add a global map listener to close any info window when clicking outside the popup
+                this._addUserDetailsCloseListener();
             }
         }
         else if (locations && locations.length) {

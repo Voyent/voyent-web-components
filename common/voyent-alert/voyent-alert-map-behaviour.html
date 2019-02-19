@@ -1798,6 +1798,17 @@
             }
         },
         
+        _addUserDetailsCloseListener: function() {
+            if (this.$.map && this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
+                this.$.map.addEventListener('click', function(e) {
+                    if (singletonInfoWindow) {
+                        singletonInfoWindow.close();
+                        singletonInfoWindow = null;
+                    }
+                }, true);
+            }
+        },
+        
         _addUserDetailsClickListener: function(mapElement, user, answer) {
             if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
                 var contentString = '<h3>';
@@ -1810,8 +1821,16 @@
                 
                 if (user) {
                     if (user.location && user.location.properties && user.location.properties.vras) {
-                        contentString += '<p>Location: ' + user.location.properties.vras.name +
-                            (user.location.properties.vras.type ? ' (' + user.location.properties.vras.type + ')</p>' : '</p>'); 
+                        var locationRes = '<p>Location: ' + user.location.properties.vras.name;
+                        if (user.location.properties.vras.type) {
+                            locationRes += ' (' + user.location.properties.vras.type + ')';
+                        }
+                        if (user.location.geometry && user.location.geometry.coordinates) {
+                            locationRes += ' at ' + user.location.geometry.coordinates[1] + ", " + user.location.geometry.coordinates[0];
+                        }
+                        
+                        locationRes += '</p>';
+                        contentString += locationRes;
                     }
                     if (user.firstname && user.lastname) {
                         contentString += '<p>Name: ' + user.firstname + ' ' + user.lastname + '</p>';
