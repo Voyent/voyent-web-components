@@ -460,11 +460,11 @@
         },
 
         /**
-         * Creates and configures the styling and listeners for the radius overlay.
+         * Creates and configures the styling and listeners for the distance between points overlay.
          * @param zone - The zone that the overlay is being created for.
          * @private
          */
-        _buildRadiusOverlayDiv: function(zone) {
+        _buildDistanceBetweenPointsOverlayDiv: function(zone) {
             var _this = this;
 
             var div = this._buildOverlayDiv(false, true);
@@ -472,71 +472,75 @@
             var span = document.createElement('span');
 
             // Prevent the event form bubbling so the zone is not de-selected and the map zoomed
-            div.onclick = div.ondblclick = function(e) {
-                e.stopPropagation();
-                input.focus();
-            };
+            if (zone.isCircle) {
+                div.onclick = div.ondblclick = function(e) {
+                    e.stopPropagation();
+                    input.focus();
+                };
+            }
 
             // Set some styling on the input
             input.style.borderRadius = '7px';
             input.style.padding = '3px 6px 3px 0px';
             input.style.border = 'none';
             input.style.outline = 'none';
-            input.oninput = function(e) {
-                this.style.width = this.value.length + 'ch';
-            };
-            // Prevent the user from entering non-numerical keys
-            input.onkeypress = function(e) {
-                if (['0','1','2','3','4','5','6','7','8','9'].indexOf(e.key) === -1) {
-                    e.preventDefault();
-                    return false;
-                }
-            };
-            // Submit the new radius value on enter key presses
-            input.onkeyup = function(e) {
-                if (e.key === 'Enter') {
-                    var currentStack = _this._loadedAlert.selectedStack;
-                    var newRadius = this.value;
-                    if (parseInt(this.value) < 5) {
-                        newRadius = 5;
+            if (zone.isCircle) {
+                input.oninput = function() {
+                    this.style.width = this.value.length + 'ch';
+                };
+                // Prevent the user from entering non-numerical keys
+                input.onkeypress = function(e) {
+                    if (['0','1','2','3','4','5','6','7','8','9'].indexOf(e.key) === -1) {
+                        e.preventDefault();
+                        return false;
                     }
-                    var zoneIndex = currentStack.getZoneIndex(zone);
-                    var smallerZone = currentStack.getZoneAt(zoneIndex - 1);
-                    var largerZone = currentStack.getZoneAt(zoneIndex + 1);
-                    if (smallerZone) {
-                        var smallerZoneRadius = smallerZone.getRadiusInMeters();
-                        if (newRadius <= smallerZoneRadius) {
-                            _this.fire('message-error', 'Zone radius cannot be smaller than ' + parseInt((smallerZoneRadius+1)) + 'm');
-                            zone.radiusOverlay.draw();
-                            return;
+                };
+                // Submit the new radius value on enter key presses
+                input.onkeyup = function(e) {
+                    if (e.key === 'Enter') {
+                        var currentStack = _this._loadedAlert.selectedStack;
+                        var newRadius = this.value;
+                        if (parseInt(this.value) < 5) {
+                            newRadius = 5;
                         }
-                    }
-                    if (largerZone) {
-                        var largerZoneRadius = largerZone.getRadiusInMeters();
-                        if (newRadius >= largerZoneRadius) {
-                            _this.fire('message-error', 'Zone radius cannot be larger than ' + parseInt((largerZoneRadius-1)) + 'm');
-                            zone.radiusOverlay.draw();
-                            return;
+                        var zoneIndex = currentStack.getZoneIndex(zone);
+                        var smallerZone = currentStack.getZoneAt(zoneIndex - 1);
+                        var largerZone = currentStack.getZoneAt(zoneIndex + 1);
+                        if (smallerZone) {
+                            var smallerZoneRadius = smallerZone.getPolylineLengthInMeters();
+                            if (newRadius <= smallerZoneRadius) {
+                                _this.fire('message-error', 'Zone radius cannot be smaller than ' + parseInt((smallerZoneRadius+1)) + 'm');
+                                zone.distanceBetweenPointsOverlay.draw();
+                                return;
+                            }
                         }
-                    }
+                        if (largerZone) {
+                            var largerZoneRadius = largerZone.getPolylineLengthInMeters();
+                            if (newRadius >= largerZoneRadius) {
+                                _this.fire('message-error', 'Zone radius cannot be larger than ' + parseInt((largerZoneRadius-1)) + 'm');
+                                zone.distanceBetweenPointsOverlay.draw();
+                                return;
+                            }
+                        }
 
-                    // Set the new paths and adjust the position of the overlay
-                    zone.setPaths(_this._adjustDistanceFromCentroid(zone.shapeOverlay.getPaths(),newRadius));
-                    zone.manageRadiusOverlay();
-                    zone.radiusOverlay.draw();
-                    // Since we set the paths of the zone to a non-punched out shape we must punch out the zones again
-                    _this._loadedAlert.selectedStack.updateJSONAndCentroid();
-                    _this._loadedAlert.selectedStack.punchOutShapes();
-                    // Since we adjusted the size of the larger zone we'll update
-                    // the template JSON and punch out the fallback zone
-                    if (!largerZone) {
-                        _this._loadedAlert.template.updateJSONAndCentroid();
-                        if (_this._fallbackZone) {
-                            _this._fallbackZone.punchOutOverlay();
+                        // Set the new paths and adjust the position of the overlay
+                        zone.setPaths(_this._adjustDistanceFromCentroid(zone.shapeOverlay.getPaths(),newRadius));
+                        zone.manageCircleDistanceBetweenPointsOverlay();
+                        zone.distanceBetweenPointsOverlay.draw();
+                        // Since we set the paths of the zone to a non-punched out shape we must punch out the zones again
+                        _this._loadedAlert.selectedStack.updateJSONAndCentroid();
+                        _this._loadedAlert.selectedStack.punchOutShapes();
+                        // Since we adjusted the size of the larger zone we'll update
+                        // the template JSON and punch out the fallback zone
+                        if (!largerZone) {
+                            _this._loadedAlert.template.updateJSONAndCentroid();
+                            if (_this._fallbackZone) {
+                                _this._fallbackZone.punchOutOverlay();
+                            }
                         }
                     }
-                }
-            };
+                };
+            }
             div.appendChild(input);
 
             // Add the "meters" abbreviation after the input
@@ -1247,6 +1251,12 @@
                 }
                 return outer;
             };
+            /**
+             * Calculates the circular shape overlay paths using the passed center coordinate and radius.
+             * @param center
+             * @param radius
+             * @static
+             */
             this._AlertTemplate.calculatePathsFromCircleProperties = function(center, radius) {
                 var latLng, coordinates=[];
                 for (var k=0; k<_outer._NUM_CIRCULAR_POLY_SIDES; k++) {
@@ -2150,12 +2160,18 @@
                             _outer._toggleProperties(zone);
                         }
                     });
-                    // Adjust zone styling when hovering over zone with mouse
-                    google.maps.event.addListener(overlay, 'mouseover', function() {
+                    // Adjust zone styling on zone hover and toggle the polygon distance overlay on vertex hover
+                    google.maps.event.addListener(overlay, 'mouseover', function(e) {
                         _outer._mouseoverZone(zone,true);
+                        if (!zone.isCircle && typeof e.path !== 'undefined') {
+                            zone.managePolygonDistanceBetweenPointsOverlay(true, _this.marker.getPosition(), e.latLng);
+                        }
                     });
-                    google.maps.event.addListener(overlay, 'mouseout', function() {
+                    google.maps.event.addListener(overlay, 'mouseout', function(e) {
                         _outer._mouseoutZone(zone);
+                        if (!zone.isCircle && typeof e.path !== 'undefined') {
+                            zone.managePolygonDistanceBetweenPointsOverlay(false, _this.marker.getPosition(), e.latLng);
+                        }
                     });
                     //Store the previous vertex position when clicking
                     //on an existing vertex in case we need to revert.
@@ -2379,7 +2395,7 @@
                 manageZoneRadiusOverlays: function() {
                     for (var i=0; i<this.zones.length; i++) {
                         if (this.zones[i].active) {
-                            this.zones[i].manageRadiusOverlay();
+                            this.zones[i].manageCircleDistanceBetweenPointsOverlay();
                         }
                     }
                 },
@@ -2501,8 +2517,8 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
-                    if (this.radiusOverlay) {
-                        this.radiusOverlay.draw();
+                    if (this.distanceBetweenPointsOverlay) {
+                        this.distanceBetweenPointsOverlay.draw();
                     }
                 },
                 /**
@@ -2549,7 +2565,7 @@
                         this.nameOverlay.draw();
                     }
                     // Update the visibility of the radius overlay
-                    this.manageRadiusOverlay();
+                    this.manageCircleDistanceBetweenPointsOverlay();
                 },
                 /**
                  * Sets whether this zone was derived from a file.
@@ -2635,72 +2651,103 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.setMap(null);
                     }
-                    if (this.radiusOverlay) {
-                        this.radiusOverlay.setMap(null);
+                    if (this.distanceBetweenPointsOverlay) {
+                        this.distanceBetweenPointsOverlay.setMap(null);
                     }
                     if (this.polyline) {
                         this.polyline.setMap(null);
                     }
-                    this.polylineEastCoordinate = null;
+                    this.polylineOuterCoordinate = null;
                 },
                 /**
-                 * Manages the state and position of the radius polyline and associated overlay.
+                 * Manages the state and position of the distance between
+                 * points (radius) polyline and associated overlay for circles.
                  */
-                manageRadiusOverlay: function() {
+                manageCircleDistanceBetweenPointsOverlay: function() {
                     if (this.isCircle) {
+                        var path;
                         if (this.active) {
                             var bounds = _outer._AlertTemplate.calculateBoundsFromPaths(this.shapeOverlay.getPaths());
                             var center = bounds.getCenter();
-                            this.polylineEastCoordinate = { lat: center.lat(), lng: bounds.getNorthEast().lng() };
-
-                            if (!this.polyline) {
-                                this.polyline = new google.maps.Polyline({
-                                    map: _outer._map, strokeOpacity: 0.65, strokeWeight: 3
-                                });
-                                this.radiusOverlay = new _outer._RadiusOverlay(this);
-                            }
-                            else {
-                                this.polyline.setMap(_outer._map);
-                                this.radiusOverlay.displayAndDraw();
-                            }
-
-                            this.polyline.setPath([
+                            this.polylineOuterCoordinate = { lat: center.lat(), lng: bounds.getNorthEast().lng() };
+                            path = [
                                 { lat: center.lat(), lng: center.lng() },
-                                this.polylineEastCoordinate
-                            ]);
+                                this.polylineOuterCoordinate
+                            ];
+                        }
+                        this._manageDistanceBetweenPointsOverlay(this.active, path);
+                    }
+                },
+                /**
+                 * Manages the state and position of the distance between
+                 * points polyline and associated overlay for polygons.
+                 * @param enabled
+                 * @param centroid
+                 * @param vertex
+                 */
+                managePolygonDistanceBetweenPointsOverlay: function(enabled, centroid, vertex) {
+                    if (!this.isCircle) {
+                        var path;
+                        if (enabled) {
+                            this.polylineOuterCoordinate = { lat: vertex.lat(), lng: vertex.lng() };
+                            path = [centroid, vertex];
+                        }
+                        this._manageDistanceBetweenPointsOverlay(enabled, path);
+                    }
+                },
+                /**
+                 * General function for managing the distance between points overlay for all shapes.
+                 * @param enabled
+                 * @param path
+                 */
+                _manageDistanceBetweenPointsOverlay: function(enabled, path) {
+                    if (enabled) {
+                        if (!this.polyline) {
+                            this.polyline = new google.maps.Polyline({
+                                path: path, map: _outer._map, strokeOpacity: 0.65, strokeWeight: 3
+                            });
+                            this.distanceBetweenPointsOverlay = new _outer._DistanceBetweenPointsOverlay(this);
                         }
                         else {
-                            if (this.polyline) {
-                                this.polyline.setMap(null);
-                            }
-                            if (this.radiusOverlay) {
-                                this.radiusOverlay.hide();
-                            }
+                            this.polyline.setMap(_outer._map);
+                            this.polyline.setPath(path);
+                            this.distanceBetweenPointsOverlay.displayAndDraw();
+                        }
+                    }
+                    else {
+                        if (this.polyline) {
+                            this.polyline.setMap(null);
+                        }
+                        if (this.distanceBetweenPointsOverlay) {
+                            this.distanceBetweenPointsOverlay.hide();
                         }
                     }
                 },
                 /**
-                 * Returns this zone's radius in meters or 0 if this zone is not a circle.
+                 * Returns the length, in meters, of this zone's polyline (radius
+                 * for circles, distance between center and vertex for polygons).
                  */
-                getRadiusInMeters: function() {
-                    var length = 0;
-                    if (this.isCircle) {
-                        if (this.polyline) {
-                            var path = this.polyline.getPath();
-                            for (var i = 0; i < path.getLength() - 1; i++) {
-                                length += google.maps.geometry.spherical.computeDistanceBetween(path.getAt(i), path.getAt(i + 1));
-                            }
+                getPolylineLengthInMeters: function() {
+                    var distance = 0;
+                    if (this.polyline) {
+                        var path = this.polyline.getPath();
+                        for (var i = 0; i < path.getLength() - 1; i++) {
+                            distance += google.maps.geometry.spherical.computeDistanceBetween(path.getAt(i), path.getAt(i + 1));
                         }
-                        else {
+                    }
+                    else {
+                        // Since the polyline for circles is drawn lazily and we need to know the length of it for
+                        // validating the radius input then we need to provide a fallback which calculates it manually
+                        if (this.isCircle) {
                             var bounds = _outer._AlertTemplate.calculateBoundsFromPaths(this.shapeOverlay.getPaths());
                             var center = bounds.getCenter();
-                            length = google.maps.geometry.spherical.computeDistanceBetween(
+                            distance = google.maps.geometry.spherical.computeDistanceBetween(
                                 center,
                                 new google.maps.LatLng(center.lat(), bounds.getNorthEast().lng())
                             );
                         }
                     }
-                    return Math.round(length);
+                    return Math.round(distance);
                 },
                 /**
                  * Returns the options for building a google maps polygon.
@@ -3208,28 +3255,28 @@
                 this.setMap(_outer._map);
             };
             /**
-             * A class representing the radius overlay displayed for circular zones.
+             * A class representing the overlay displayed for showing the distance between two points.
              * @extends google.maps.OverlayView
              * @private
              */
-            this._RadiusOverlay = function(zone) {
+            this._DistanceBetweenPointsOverlay = function(zone) {
                 this.zone = zone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildRadiusOverlayDiv(zone);
+                this.div = _outer._buildDistanceBetweenPointsOverlayDiv(zone);
             };
             // Inherit the prototype of google.maps.OverlayView
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
             this._LocationOverlay.prototype = new google.maps.OverlayView();
             this._MouseHoldOverlay.prototype = new google.maps.OverlayView();
             this._MobileLocationOverlay.prototype = new google.maps.OverlayView();
-            this._RadiusOverlay.prototype = new google.maps.OverlayView();
+            this._DistanceBetweenPointsOverlay.prototype = new google.maps.OverlayView();
             /**
              * Called automatically when the map is ready for the overlay to be attached.
              */
             this._ProximityZoneOverlay.prototype.onAdd =
             this._LocationOverlay.prototype.onAdd =
             this._MouseHoldOverlay.prototype.onAdd =
-            this._RadiusOverlay.prototype.onAdd = function() {
+            this._DistanceBetweenPointsOverlay.prototype.onAdd = function() {
                 //Add the div to the floatShadow pane so it renders above the markers.
                 this.getPanes().floatShadow.appendChild(this.div);
             };
@@ -3327,23 +3374,29 @@
                 this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
             };
             /**
-             * Handles drawing the radius overlay for circular zones.
+             * Handles drawing the distance between points overlay.
              */
-            this._RadiusOverlay.prototype.draw = function() {
+            this._DistanceBetweenPointsOverlay.prototype.draw = function() {
                 // Convert the lat/lng coordinates to pixel coordinates
                 var nc = this.getProjection().fromLatLngToDivPixel(
                     new google.maps.LatLng(
-                        this.zone.polylineEastCoordinate.lat,
-                        this.zone.polylineEastCoordinate.lng
+                        this.zone.polylineOuterCoordinate.lat,
+                        this.zone.polylineOuterCoordinate.lng
                     )
                 );
-                // Update the radius value
+                // Update the distance value
                 var input = this.div.querySelector('input');
-                input.value = this.zone.getRadiusInMeters();
+                input.value = this.zone.getPolylineLengthInMeters();
                 input.style.width = input.value.length + 'ch';
-                // Position the input
-                this.div.style.left = (nc.x + 3) + 'px';
-                this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
+                // Position the input to the right for circles and centered below for polygons
+                if (this.zone.isCircle) {
+                    this.div.style.left = (nc.x + 3) + 'px';
+                    this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
+                }
+                else {
+                    this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
+                    this.div.style.top = (nc.y + 15) + 'px';
+                }
                 // Additional zone-specific styling
                 this.div.style.backgroundColor = input.style.backgroundColor = this.zone.colour;
                 this.div.style.color = input.style.color = this.returnColourBasedOnBackground(this.zone.colour);
@@ -3355,7 +3408,7 @@
             this._LocationOverlay.prototype.onRemove =
             this._MouseHoldOverlay.prototype.onRemove =
             this._MobileLocationOverlay.prototype.onRemove =
-            this._RadiusOverlay.prototype.onRemove = function () {
+            this._DistanceBetweenPointsOverlay.prototype.onRemove = function () {
                 if (this.div && this.div.parentNode) {
                     this.div.parentNode.removeChild(this.div);
                     this.div = null;
@@ -3366,7 +3419,7 @@
              */
             this._LocationOverlay.prototype.hide =
             this._MobileLocationOverlay.prototype.hide =
-            this._RadiusOverlay.prototype.hide = function() {
+            this._DistanceBetweenPointsOverlay.prototype.hide = function() {
                 this.div.style.display = 'none';
                 this.visible = false;
             };
@@ -3375,7 +3428,7 @@
              */
             this._LocationOverlay.prototype.displayAndDraw =
             this._MobileLocationOverlay.prototype.displayAndDraw =
-            this._RadiusOverlay.prototype.displayAndDraw = function() {
+            this._DistanceBetweenPointsOverlay.prototype.displayAndDraw = function() {
                 this.div.style.display = 'block';
                 this.visible = true;
                 this.draw();
@@ -3449,7 +3502,7 @@
              */
             this._FallbackZoneOverlay.prototype.returnColourBasedOnBackground =
             this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground =
-            this._RadiusOverlay.prototype.returnColourBasedOnBackground = function(hex) {
+            this._DistanceBetweenPointsOverlay.prototype.returnColourBasedOnBackground = function(hex) {
                 // Chop any leading # character
                 if (hex.charAt(0) === '#') {
                     hex = hex.substr(1);
