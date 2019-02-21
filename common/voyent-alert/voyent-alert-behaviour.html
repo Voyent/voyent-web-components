@@ -552,6 +552,66 @@
         },
 
         /**
+         * Creates and configures the styling and listeners for the coordinate overlay.
+         * @param stack - The stack that the overlay is for.
+         * @private
+         */
+        _buildCoordinateOverlayDiv: function(stack) {
+            var _this = this;
+
+            var div = this._buildOverlayDiv(false, true);
+            var latInput = document.createElement('input');
+            latInput.className = 'lat';
+            var lngInput = document.createElement('input');
+            lngInput.className = 'lng';
+
+            // Prevent the event form bubbling so the map doesn't zoom
+            latInput.onclick = latInput.ondblclick =
+            lngInput.onclick = lngInput.ondblclick = function(e) {
+                e.stopPropagation();
+            };
+
+            // Set some styling on the inputs
+            latInput.style.border = lngInput.style.border = 'none';
+            latInput.style.outline = lngInput.style.outline = 'none';
+
+            // Prevent the user from entering non-numerical keys
+            latInput.onkeypress = lngInput.onkeypress = function(e) {
+                if (['0','1','2','3','4','5','6','7','8','9'].indexOf(e.key) === -1) {
+                    e.preventDefault();
+                    return false;
+                }
+            };
+            // Submit the new lat/lng value on enter key presses
+            latInput.onkeyup = lngInput.onkeyup = function(e) {
+                if (e.key === 'Enter') {
+                    if (this.className === 'lat') {
+                        if (this.value > 90 || this.value < -90) {
+                            _this.fire('message-error', 'Latitude cannot be less than or greater than 90');
+                            this.value = stack.lat;
+                            return;
+                        }
+                        stack.updateMarkerPosition(parseFloat(this.value), null);
+                    }
+                    else {
+                        if (this.value > 180 || this.value < -180) {
+                            _this.fire('message-error', 'Longitude cannot be less than or greater than 180');
+                            this.value = stack.lng;
+                            return;
+                        }
+                        stack.updateMarkerPosition(null, parseFloat(this.value));
+                    }
+                    stack.updateLatLngFromMarker();
+                }
+            };
+
+            div.appendChild(latInput);
+            div.appendChild(lngInput);
+
+            return div;
+        },
+
+        /**
          * Adjusts the distance from the centroid for every coordinate to be the passed distance. This must only be used
          * for circles since all of the coordinates will be the same distance from the centroid. Only does the outer path,
          * the shape must be punched out again after.
@@ -1035,6 +1095,22 @@
                 var zoneIndex = this._loadedAlert.selectedStack.zones.indexOf(zone);
                 if (stackIndex > -1 && zoneIndex > -1) {
                     this.notifyPath('_loadedAlert.template.zoneStacks.'+stackIndex+'.zones.'+zoneIndex+'.'+propName);
+                }
+            }
+        },
+
+        /**
+         * Notifies the polymer path for AlertZoneStack properties.
+         * @param stack
+         * @param propName
+         * @private
+         */
+        _notifyPropertyPathForStack: function(stack,propName) {
+            if (!stack || !propName) { return; }
+            if (this._loadedAlert && this._loadedAlert.template) {
+                var stackIndex = this._loadedAlert.template.getZoneStackIndex(stack);
+                if (stackIndex > -1) {
+                    this.notifyPath('_loadedAlert.template.zoneStacks.'+stackIndex+'.'+propName);
                 }
             }
         },
@@ -1776,6 +1852,57 @@
                     this.marker = marker;
                     if (marker) {
                         this._setupMarkerListeners();
+                        this.updateLatLngFromMarker();
+                    }
+                },
+                /**
+                 * Updates the lat/lng properties using the current position of the marker.
+                 */
+                updateLatLngFromMarker: function() {
+                    var markerPos = this.marker && this.marker.getPosition();
+                    if (markerPos) {
+                        this.setLat(markerPos.lat());
+                        this.setLng(markerPos.lng());
+                    }
+                    if (!this.coordinateOverlay) {
+                        this.coordinateOverlay = new _outer._CoordinateOverlay(this);
+                        this.coordinateOverlay.hide();
+                    }
+                    else {
+                        this.coordinateOverlay.displayAndDraw();
+                    }
+                },
+                /**
+                 * Updates the marker position using the passed lat/lng, and updates the position of the stack.
+                 * @param lat
+                 * @param lng
+                 */
+                updateMarkerPosition: function(lat, lng) {
+                    if (this.marker) {
+                        this.calculateRelativeZonePositions(this.marker.getPosition());
+                        lat = lat || this.marker.getPosition().lat();
+                        lng = lng || this.marker.getPosition().lng();
+                        this.marker.setPosition({lat: lat, lng: lng});
+                        this._moveStackToNewPosition();
+                    }
+                },
+                /**
+                 * Set the latitude coordinate of the stack.
+                 * @param lat
+                 */
+                setLat: function(lat) {
+                    if (lat && typeof lat === 'number') {
+                        this.lat = lat.toFixed(5);
+                        _outer._notifyPropertyPathForStack(this, 'lat');
+                    }
+                },
+                /**
+                 * Set the longitude coordinate of the stack.
+                 */
+                setLng: function(lng) {
+                    if (lng && typeof lng === 'number') {
+                        this.lng = lng.toFixed(5);
+                        _outer._notifyPropertyPathForStack(this, 'lng');
                     }
                 },
                 /**
@@ -1825,6 +1952,12 @@
                  */
                 getLargestZone: function() {
                     return this.getZoneAt(this.zones.length-1);
+                },
+                /**
+                 * Returns the innnermost zone.
+                 */
+                getInnermostZone: function() {
+                    return this.getZoneAt(0);
                 },
                 /**
                  * Deactivates all zones.
@@ -2107,13 +2240,10 @@
                     });
                     //Continuously re-draw the overlay as the template is dragged.
                     google.maps.event.addListener(marker, 'drag', function () {
-                        _this.moveZonesRelativeToPosition(_this.marker.getPosition());
-                        _outer._loadedAlert.template.updateJSONAndCentroid();
-                        if (_outer._fallbackZone) {
-                            _outer._fallbackZone.punchOutOverlay();
-                        }
-                        // Update the position of the radius polyline
-                        _this.manageZoneRadiusOverlays();
+                        // Update the position of the stack
+                        _this._moveStackToNewPosition();
+                        // Update the stored lat/lng coordinates
+                        _this.updateLatLngFromMarker();
                         //_this.manageStackBoundary(true);
                     });
                     /*google.maps.event.addListener(marker, 'dragend', function () {
@@ -2132,6 +2262,24 @@
                     google.maps.event.addListener(marker, 'mouseout', function () {
                         _this.manageStackBoundary(false);
                     });*/
+                },
+                /**
+                 * Moves the stack to the current position of the marker.
+                 * @private
+                 */
+                _moveStackToNewPosition: function() {
+                    // Move the stack
+                    this.moveZonesRelativeToPosition(this.marker.getPosition());
+                    // Update the JSON and punch out the fallback zone
+                    _outer._loadedAlert.template.updateJSONAndCentroid();
+                    if (_outer._fallbackZone) {
+                        _outer._fallbackZone.punchOutOverlay();
+                    }
+                    // Update the position of the radius polyline
+                    this.manageZoneRadiusOverlays();
+                    if (this.coordinateOverlay) {
+                        this.coordinateOverlay.displayAndDraw();
+                    }
                 },
                 /**
                  * Initializes zone listeners.
@@ -2564,8 +2712,9 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
-                    // Update the visibility of the radius overlay
+                    // Update the visibility of the radius overlay and stack marker
                     this.manageCircleDistanceBetweenPointsOverlay();
+                    this.toggleStackMarker(active);
                 },
                 /**
                  * Sets whether this zone was derived from a file.
@@ -2609,6 +2758,8 @@
                     if (_outer._zoneToReshape === this) {
                         _outer._disableZoneReshaping();
                     }
+                    // Hide the stack marker
+                    this.toggleStackMarker(false);
                 },
                 /**
                  * Highlights the shape overlay by adding a border.
@@ -2618,12 +2769,9 @@
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ strokeWeight: 2.0, fillOpacity: 0.30 });
                     }
-                    // Show the stack marker if the zone and stack were not derived from a file import
-                    if (showMarker && _outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
-                        var stack = _outer._loadedAlert.template.getStackForZone(this);
-                        if (stack && stack.marker && !stack.fromFile) {
-                            stack.marker.setOptions( { visible: true } );
-                        }
+                    // Show the stack marker, if requested
+                    if (showMarker) {
+                        this.toggleStackMarker(true);
                     }
                 },
                 /**
@@ -2634,10 +2782,30 @@
                         this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
                     }
                     // Hide the stack marker if the zone and stack were not derived from a file import
+                    this.toggleStackMarker(false);
+                },
+                /**
+                 * Toggles the visibility of the stack marker.
+                 */
+                toggleStackMarker: function(visible) {
+                    // Show the stack marker if the zone and stack were not derived from a file import
                     if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
                         var stack = _outer._loadedAlert.template.getStackForZone(this);
                         if (stack && stack.marker && !stack.fromFile) {
-                            stack.marker.setOptions( { visible: false } );
+                            if (visible) {
+                                stack.marker.setOptions( { visible: true } );
+                                stack.coordinateOverlay.displayAndDraw();
+                            }
+                            else {
+                                // Continue to show the stack marker if we have an active zone within the stack
+                                for (var i=0; i<stack.zones.length; i++) {
+                                    if (stack.zones[i].active) {
+                                        return;
+                                    }
+                                }
+                                stack.marker.setOptions( { visible: false } );
+                                stack.coordinateOverlay.hide();
+                            }
                         }
                     }
                 },
@@ -3264,19 +3432,29 @@
                 this.setMap(_outer._map);
                 this.div = _outer._buildDistanceBetweenPointsOverlayDiv(zone);
             };
+            /**
+             * A class representing the stack coordinate overlay.
+             */
+            this._CoordinateOverlay = function(stack) {
+                this.stack = stack;
+                this.setMap(_outer._map);
+                this.div = _outer._buildCoordinateOverlayDiv(stack);
+            };
             // Inherit the prototype of google.maps.OverlayView
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
             this._LocationOverlay.prototype = new google.maps.OverlayView();
             this._MouseHoldOverlay.prototype = new google.maps.OverlayView();
             this._MobileLocationOverlay.prototype = new google.maps.OverlayView();
             this._DistanceBetweenPointsOverlay.prototype = new google.maps.OverlayView();
+            this._CoordinateOverlay.prototype = new google.maps.OverlayView();
             /**
              * Called automatically when the map is ready for the overlay to be attached.
              */
             this._ProximityZoneOverlay.prototype.onAdd =
             this._LocationOverlay.prototype.onAdd =
             this._MouseHoldOverlay.prototype.onAdd =
-            this._DistanceBetweenPointsOverlay.prototype.onAdd = function() {
+            this._DistanceBetweenPointsOverlay.prototype.onAdd =
+            this._CoordinateOverlay.prototype.onAdd = function() {
                 //Add the div to the floatShadow pane so it renders above the markers.
                 this.getPanes().floatShadow.appendChild(this.div);
             };
@@ -3402,13 +3580,43 @@
                 this.div.style.color = input.style.color = this.returnColourBasedOnBackground(this.zone.colour);
             };
             /**
+             * Handles drawng the stack coordinate overlay.
+             */
+            this._CoordinateOverlay.prototype.draw = function() {
+                // Convert the lat/lng coordinates to pixel coordinates
+                var nc = this.getProjection().fromLatLngToDivPixel(
+                    new google.maps.LatLng(
+                        this.stack.lat,
+                        this.stack.lng
+                    )
+                );
+                // Update the coordinate inputs
+                var latInput = this.div.querySelector('input.lat');
+                latInput.value = this.stack.lat;
+                latInput.style.width = latInput.value.length - 1 + 'ch';
+
+                var lngInput = this.div.querySelector('input.lng');
+                lngInput.value = this.stack.lng;
+                lngInput.style.width = lngInput.value.length - 1 + 'ch';
+
+                // Position the coordinate overlay 3px below the stack marker and horizontally centered
+                this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
+                this.div.style.top = (nc.y + 3) + 'px';
+
+                // Styling the overlay based on the innermost zone
+                var innermostZone = this.stack.getInnermostZone();
+                this.div.style.backgroundColor = latInput.style.backgroundColor = lngInput.style.backgroundColor = innermostZone.colour;
+                this.div.style.color = latInput.style.color = lngInput.style.color = this.returnColourBasedOnBackground(innermostZone.colour);
+            };
+            /**
              * Cleans up the overlay whenever the overlays map property is set to null.
              */
             this._ProximityZoneOverlay.prototype.onRemove =
             this._LocationOverlay.prototype.onRemove =
             this._MouseHoldOverlay.prototype.onRemove =
             this._MobileLocationOverlay.prototype.onRemove =
-            this._DistanceBetweenPointsOverlay.prototype.onRemove = function () {
+            this._DistanceBetweenPointsOverlay.prototype.onRemove =
+            this._CoordinateOverlay.prototype.onRemove = function () {
                 if (this.div && this.div.parentNode) {
                     this.div.parentNode.removeChild(this.div);
                     this.div = null;
@@ -3419,7 +3627,8 @@
              */
             this._LocationOverlay.prototype.hide =
             this._MobileLocationOverlay.prototype.hide =
-            this._DistanceBetweenPointsOverlay.prototype.hide = function() {
+            this._DistanceBetweenPointsOverlay.prototype.hide =
+            this._CoordinateOverlay.prototype.hide = function() {
                 this.div.style.display = 'none';
                 this.visible = false;
             };
@@ -3428,7 +3637,8 @@
              */
             this._LocationOverlay.prototype.displayAndDraw =
             this._MobileLocationOverlay.prototype.displayAndDraw =
-            this._DistanceBetweenPointsOverlay.prototype.displayAndDraw = function() {
+            this._DistanceBetweenPointsOverlay.prototype.displayAndDraw =
+            this._CoordinateOverlay.prototype.displayAndDraw = function() {
                 this.div.style.display = 'block';
                 this.visible = true;
                 this.draw();
@@ -3502,7 +3712,8 @@
              */
             this._FallbackZoneOverlay.prototype.returnColourBasedOnBackground =
             this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground =
-            this._DistanceBetweenPointsOverlay.prototype.returnColourBasedOnBackground = function(hex) {
+            this._DistanceBetweenPointsOverlay.prototype.returnColourBasedOnBackground =
+            this._CoordinateOverlay.prototype.returnColourBasedOnBackground = function(hex) {
                 // Chop any leading # character
                 if (hex.charAt(0) === '#') {
                     hex = hex.substr(1);
