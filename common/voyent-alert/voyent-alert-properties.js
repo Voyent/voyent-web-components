@@ -1086,9 +1086,9 @@ Polymer({
             }
         }
         else {
-            var isLargestZone = this._loadedAlert.selectedStack.getLargestZone() === zone;
+            var isOuterZone = this._loadedAlert.selectedStack.getOutermostZone() === zone;
             this._loadedAlert.selectedStack.removeZone(zone);
-            if (this._fallbackZone && isLargestZone) {
+            if (this._fallbackZone && isOuterZone) {
                 this._fallbackZone.punchOutOverlay();
             }
         }

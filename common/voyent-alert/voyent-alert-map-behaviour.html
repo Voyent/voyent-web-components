@@ -2002,10 +2002,10 @@
                 : [];
             if (this._loadedAlert && zoneStacks.length) {
                 for (var i=0; i<zoneStacks.length; i++) {
-                    var largestZone = zoneStacks[i].getLargestZone();
-                    if (largestZone) {
-                        for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
-                            bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
+                    var outerZone = zoneStacks[i].getOutermostZone();
+                    if (outerZone) {
+                        for (var j=0; j<outerZone.shapeOverlay.getPath().length; j++) {
+                            bounds.extend(outerZone.shapeOverlay.getPath().getAt(j));
                             boundsExtended = true;
                         }
                     }

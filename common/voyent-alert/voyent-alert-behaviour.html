@@ -582,26 +582,28 @@
                     return false;
                 }
             };
+
             // Submit the new lat/lng value on enter key presses
-            latInput.onkeyup = lngInput.onkeyup = function(e) {
+            latInput.onkeyup = function(e) {
                 if (e.key === 'Enter') {
-                    if (this.className === 'lat') {
-                        if (this.value > 90 || this.value < -90) {
-                            _this.fire('message-error', 'Latitude cannot be less than or greater than 90');
-                            this.value = stack.lat;
-                            return;
-                        }
-                        stack.updateMarkerPosition(parseFloat(this.value), null);
+                    var latVal = parseFloat(this.value);
+                    if (latVal > 90 || latVal < -90) {
+                        _this.fire('message-error', 'Latitude cannot be less than or greater than 90');
+                        this.value = stack.lat;
+                        return;
                     }
-                    else {
-                        if (this.value > 180 || this.value < -180) {
-                            _this.fire('message-error', 'Longitude cannot be less than or greater than 180');
-                            this.value = stack.lng;
-                            return;
-                        }
-                        stack.updateMarkerPosition(null, parseFloat(this.value));
+                    stack.updateMarkerPosition(latVal, null);
+                }
+            };
+            lngInput.onkeyup = function(e) {
+                if (e.key === 'Enter') {
+                    var lngVal = parseFloat(this.value);
+                    if (lngVal > 180 || lngVal < -180) {
+                        _this.fire('message-error', 'Longitude cannot be less than or greater than 180');
+                        this.value = stack.lng;
+                        return;
                     }
-                    stack.updateLatLngFromMarker();
+                    stack.updateMarkerPosition(null, lngVal);
                 }
             };
 
@@ -1023,7 +1025,7 @@
                         stack.punchOutShapes();
                         //Update the centroid for the template.
                         _this._loadedAlert.template.updateJSONAndCentroid();
-                        if (_this._fallbackZone && zoneToReshape === stack.getLargestZone()) {
+                        if (_this._fallbackZone && zoneToReshape === stack.getOutermostZone()) {
                             _this._fallbackZone.punchOutOverlay();
                         }
                     }
@@ -1856,7 +1858,8 @@
                     }
                 },
                 /**
-                 * Updates the lat/lng properties using the current position of the marker.
+                 * Updates the lat/lng properties using the current position of
+                 * the marker and creates or updates the coordinate overlay.
                  */
                 updateLatLngFromMarker: function() {
                     var markerPos = this.marker && this.marker.getPosition();
@@ -1865,15 +1868,18 @@
                         this.setLng(markerPos.lng());
                     }
                     if (!this.coordinateOverlay) {
+                        // Create the coordinate overlay but start with it hidden
                         this.coordinateOverlay = new _outer._CoordinateOverlay(this);
                         this.coordinateOverlay.hide();
                     }
                     else {
+                        // Update the coordinate overlay
                         this.coordinateOverlay.displayAndDraw();
                     }
                 },
                 /**
-                 * Updates the marker position using the passed lat/lng, and updates the position of the stack.
+                 * Updates the marker position using the passed lat/lng, and updates
+                 * the position of the stack and related overlays to match.
                  * @param lat
                  * @param lng
                  */
@@ -1948,13 +1954,13 @@
                     return null;
                 },
                 /**
-                 * Returns the largest zone.
+                 * Returns the outermost zone.
                  */
-                getLargestZone: function() {
+                getOutermostZone: function() {
                     return this.getZoneAt(this.zones.length-1);
                 },
                 /**
-                 * Returns the innnermost zone.
+                 * Returns the innermost zone.
                  */
                 getInnermostZone: function() {
                     return this.getZoneAt(0);
@@ -2242,8 +2248,6 @@
                     google.maps.event.addListener(marker, 'drag', function () {
                         // Update the position of the stack
                         _this._moveStackToNewPosition();
-                        // Update the stored lat/lng coordinates
-                        _this.updateLatLngFromMarker();
                         //_this.manageStackBoundary(true);
                     });
                     /*google.maps.event.addListener(marker, 'dragend', function () {
@@ -2277,9 +2281,12 @@
                     }
                     // Update the position of the radius polyline
                     this.manageZoneRadiusOverlays();
+                    // Update the position of the coordinate overlay
                     if (this.coordinateOverlay) {
                         this.coordinateOverlay.displayAndDraw();
                     }
+                    // Update the stored lat/lng coordinates
+                    this.updateLatLngFromMarker();
                 },
                 /**
                  * Initializes zone listeners.
@@ -2392,7 +2399,7 @@
                 _polyAtListener: function (eventName,zone,pathIndex,vertexIndex) {
                     var errorMsg = null;
                     var zoneIndex = _outer._loadedAlert.selectedStack.getZoneIndex(zone);
-                    var largestZone = _outer._loadedAlert.selectedStack.getLargestZone();
+                    var outerZone = _outer._loadedAlert.selectedStack.getOutermostZone();
                     //Check if the polygon intersects itself. To do this we will use the turf library but we
                     //must first extract the new zone coordinates so they can be interpreted by turf as GeoJSON.
                     var newZoneCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
@@ -2416,9 +2423,9 @@
                         var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
                         //Check that the vertex is within our zone boundary. This handles the case
                         //where they drag an inner zone vertex past the boundaries of the stack.
-                        if (zoneIndex !== _outer._loadedAlert.selectedStack.getZoneIndex(largestZone)) {
+                        if (zoneIndex !== _outer._loadedAlert.selectedStack.getZoneIndex(outerZone)) {
                             if (!google.maps.geometry.poly.containsLocation(vertex,new google.maps.Polygon({
-                                    paths: [largestZone.shapeOverlay.getPaths().getAt(pathIndex)]}))) {
+                                    paths: [outerZone.shapeOverlay.getPaths().getAt(pathIndex)]}))) {
                                 errorMsg = _outer._OVERLAP_WITHIN_STACK_MSG;
                             }
                         }
@@ -2519,9 +2526,11 @@
 
                     //Update the centroid for the template.
                     _outer._loadedAlert.template.updateJSONAndCentroid();
+                    // Update the position of the coordinate overlay
+                    _outer._loadedAlert.selectedStack.updateLatLngFromMarker();
 
                     // If we are editing the outer zone then punch out the fallback zone immediately
-                    if (zone === largestZone) {
+                    if (zone === outerZone) {
                         //Punch out the fallback zone
                         if (_outer._fallbackZone) {
                             _outer._fallbackZone.punchOutOverlay();
@@ -2781,23 +2790,23 @@
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
                     }
-                    // Hide the stack marker if the zone and stack were not derived from a file import
+                    // Hide the stack marker
                     this.toggleStackMarker(false);
                 },
                 /**
                  * Toggles the visibility of the stack marker.
                  */
                 toggleStackMarker: function(visible) {
-                    // Show the stack marker if the zone and stack were not derived from a file import
                     if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
                         var stack = _outer._loadedAlert.template.getStackForZone(this);
+                        // Toggle the stack marker if the zone and stack were not derived from a file import
                         if (stack && stack.marker && !stack.fromFile) {
                             if (visible) {
                                 stack.marker.setOptions( { visible: true } );
                                 stack.coordinateOverlay.displayAndDraw();
                             }
                             else {
-                                // Continue to show the stack marker if we have an active zone within the stack
+                                // Prevent hiding the stack marker if we have an active zone within the stack
                                 for (var i=0; i<stack.zones.length; i++) {
                                     if (stack.zones[i].active) {
                                         return;
@@ -3090,7 +3099,7 @@
                     var paths = this._buildWorldPolygon();
                     if (_outer._loadedAlert) {
                         for (var i=0; i<_outer._loadedAlert.template.zoneStacks.length; i++) {
-                            var largestZone = _outer._loadedAlert.template.zoneStacks[i].getLargestZone();
+                            var outerZone = _outer._loadedAlert.template.zoneStacks[i].getOutermostZone();
                             //Ideally we would just push the paths directly from the drawn polygon but Google expects
                             //a specific "winding order" of the coordinates. Whichever direction the coordinates
                             //are in for the outer zone, the coordinates for the inner "punched out" zones
@@ -3102,9 +3111,9 @@
                             var fallbackPaths = [_outer._AlertTemplate.calculateCoordinatesFromPaths(
                                 new google.maps.MVCArray([new google.maps.MVCArray(paths[0])])
                             )[0]];
-                            //Select only the outer ring of the largest zone in the stack.
+                            //Select only the outer ring of the outermost zone in the stack.
                             var largestZonePaths = [_outer._AlertTemplate.calculateCoordinatesFromPaths(
-                                largestZone.shapeOverlay.getPaths()
+                                outerZone.shapeOverlay.getPaths()
                             )[0]];
                             //Do the punch out.
                             var doughnut = turf.difference({
@@ -3604,9 +3613,8 @@
                 this.div.style.top = (nc.y + 3) + 'px';
 
                 // Styling the overlay based on the innermost zone
-                var innermostZone = this.stack.getInnermostZone();
-                this.div.style.backgroundColor = latInput.style.backgroundColor = lngInput.style.backgroundColor = innermostZone.colour;
-                this.div.style.color = latInput.style.color = lngInput.style.color = this.returnColourBasedOnBackground(innermostZone.colour);
+                this.div.style.backgroundColor = latInput.style.backgroundColor = lngInput.style.backgroundColor = 'grey';
+                this.div.style.color = latInput.style.color = lngInput.style.color = 'white';
             };
             /**
              * Cleans up the overlay whenever the overlays map property is set to null.
@@ -3712,8 +3720,7 @@
              */
             this._FallbackZoneOverlay.prototype.returnColourBasedOnBackground =
             this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground =
-            this._DistanceBetweenPointsOverlay.prototype.returnColourBasedOnBackground =
-            this._CoordinateOverlay.prototype.returnColourBasedOnBackground = function(hex) {
+            this._DistanceBetweenPointsOverlay.prototype.returnColourBasedOnBackground = function(hex) {
                 // Chop any leading # character
                 if (hex.charAt(0) === '#') {
                     hex = hex.substr(1);
