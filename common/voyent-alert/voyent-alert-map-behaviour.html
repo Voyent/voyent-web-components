@@ -94,6 +94,8 @@
             this._CIRCLE_BUTTON_ID = 'circleBttn';
             this._POLYGON_BUTTON_ID = 'polygonBttn';
             this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
+            this._ZOOM_BUTTONS_ID = 'zoomBttns';
+            this._MAP_TYPE_BUTTONS_ID = 'mapTypeBttns';
             //Default to the last realm and account if one is not set.
             if (!this.realm) {
                 this.realm = voyent.auth.getLastKnownRealm();
@@ -120,14 +122,8 @@
                 fullscreenControl: false,
                 scrollwheel: false,
                 scaleControl: true,
-                mapTypeControlOptions: {
-                    style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                    position: google.maps.ControlPosition.TOP_LEFT
-                },
-                zoomControlOptions: {
-                    style: google.maps.ZoomControlStyle.LARGE,
-                    position: google.maps.ControlPosition.LEFT_TOP
-                },
+                mapTypeControl: false,
+                zoomControl: false,
                 keyboardShortcuts: false //VRAS-394
             };
             if (this.nodeName !== 'VOYENT-MY-LOCATIONS') {
@@ -135,11 +131,13 @@
             }
             //Alert view map is readonly.
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                mapOptions.mapTypeControl = mapOptions.zoomControl = mapOptions.draggable = false;
+                mapOptions.draggable = false;
                 mapOptions.disableDoubleClickZoom = true;
             }
             //Initialize the map.
             this._map = new google.maps.Map(this.$.map,mapOptions);
+            // Add the map type and zoom buttons (VRAS-671)
+            this._addMapControlButtons();
             //Calculate the map size.
             this._calcMapSize();
             if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
@@ -1228,6 +1226,86 @@
         },
 
         /**
+         * Add the map type and zoom buttons (VRAS-671).
+         * @private
+         */
+        _addMapControlButtons: function () {
+            this._addZoomButton();
+            this._addMapTypeButton();
+        },
+
+        /**
+         * Adds the custom control for adjusting the zoom level.
+         * @private
+         */
+        _addZoomButton: function () {
+            var _this = this;
+            // Since we have multiple buttons in a single control we'll add event
+            // listeners to the desired elements after the button has been added
+            this._addCustomControl(this._ZOOM_BUTTONS_ID, google.maps.ControlPosition.LEFT_TOP, null, function () {
+                var newControl = _this['_' + _this._ZOOM_BUTTONS_ID];
+                // Alert view map is readonly, so start with the control hidden
+                if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                    newControl.style.display = 'none';
+                }
+                // Zoom in button
+                newControl.querySelector('#zoomInBttn').onclick = function () {
+                    _this._map.setZoom(_this._map.getZoom() + 1);
+                };
+                // Zoom out button
+                newControl.querySelector('#zoomOutBttn').onclick = function () {
+                    _this._map.setZoom(_this._map.getZoom() - 1);
+                };
+            });
+        },
+        /**
+         * Adds the custom control for selecting the map type.
+         * @private
+         */
+        _addMapTypeButton: function () {
+            var _this = this;
+            // Since we have multiple buttons in a single control we'll add event
+            // listeners to the desired elements after the button has been added
+            this._addCustomControl(this._MAP_TYPE_BUTTONS_ID, google.maps.ControlPosition.TOP_LEFT, null, function () {
+                var newControl = _this['_' + _this._MAP_TYPE_BUTTONS_ID];
+                // Alert view map is readonly, so start with the control hidden
+                if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                    newControl.style.display = 'none';
+                }
+                // Map button
+                newControl.querySelector('#mapTypeRoadBttn').onclick = function () {
+                    _this._map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                    _this._toggleMapTypeCheckboxButtons();
+                };
+                // Map > Terrain button
+                newControl.querySelector('#mapTypeTerrainBttn').onclick = function () {
+                    if (_this._map.getMapTypeId() === google.maps.MapTypeId.TERRAIN) {
+                        _this._map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                        _this._toggleMapTypeCheckboxButtons();
+                        return;
+                    }
+                    _this._map.setMapTypeId(google.maps.MapTypeId.TERRAIN);
+                    _this._toggleMapTypeCheckboxButtons(true, false);
+                };
+                // Satellite button
+                newControl.querySelector('#mapTypeSatBttn').onclick = function () {
+                    _this._map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+                    _this._toggleMapTypeCheckboxButtons();
+                };
+                // Satellite > Labels button
+                newControl.querySelector('#mapTypeHybridBttn').onclick = function () {
+                    if (_this._map.getMapTypeId() === google.maps.MapTypeId.HYBRID) {
+                        _this._map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+                        _this._toggleMapTypeCheckboxButtons();
+                        return;
+                    }
+                    _this._map.setMapTypeId(google.maps.MapTypeId.HYBRID);
+                    _this._toggleMapTypeCheckboxButtons(false, true);
+                };
+            });
+        },
+
+        /**
          * Adds the button for creating new circular zone stacks.
          * @param listener
          * @param cb
@@ -1495,6 +1573,24 @@
                     _this._stopDrawingButtonRemoved = true;
                 }
                 waitForStopDrawingButton();
+            }
+        },
+
+        /**
+         * Manages checkbox state for the map type buttons.
+         * @param toggleTerrainButton
+         * @param toggleLabelsButton
+         * @private
+         */
+        _toggleMapTypeCheckboxButtons: function (toggleTerrainButton, toggleLabelsButton) {
+            var checkboxImgTerrain = this['_' + this._MAP_TYPE_BUTTONS_ID].querySelector('#mapTypeTerrainCheckbox');
+            var checkboxImgHybrid = this['_' + this._MAP_TYPE_BUTTONS_ID].querySelector('#mapTypeHybridCheckbox');
+            checkboxImgTerrain.style.display = 'none';
+            checkboxImgHybrid.style.display = 'none';
+            if (toggleTerrainButton) {
+                checkboxImgTerrain.style.display = 'block';
+            } else if (toggleLabelsButton) {
+                checkboxImgHybrid.style.display = 'block';
             }
         },
 
