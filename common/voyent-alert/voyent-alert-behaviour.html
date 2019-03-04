@@ -35,7 +35,6 @@
             this._MY_LOCATION_ICON_ACTIVE = this.pathtoimages+'/img/green_marker_star.png';
             //Messages.
             this._OVERLAP_WITHIN_STACK_MSG = 'The zone cannot overlap other zones in the stack';
-            this._OVERLAP_ANOTHER_STACK_MSG = 'Notification zones cannot overlap each other';
         },
 
         getBadgeUrl: function(badgeName) {
@@ -81,11 +80,18 @@
          * @returns {Object} - {"errors": [], "warnings": []}
          */
         validate: function() {
-            var results = {"errors": [], "warnings": []};
+            var results = { errors: [], warnings: [] };
             if (!this._loadedAlert || !this._loadedAlert.template ||
-                (!this._loadedAlert.template.zoneStacks || !this._loadedAlert.template.zoneStacks.length) &&
-                (!this._fallbackZone || !this._fallbackZone.enabled)) {
+                (!this._loadedAlert.template.zoneStacks.length && (!this._fallbackZone || !this._fallbackZone.enabled))) {
                 results.errors.push('Must define at least one zone');
+            }
+            else {
+                // Restrict JSON size to 250KB
+                this._loadedAlert.template.updateJSON();
+                if (JSON.stringify(this._loadedAlert.template.json).length > 250000) {
+                    var templateTxt = this.nodeName === 'VOYENT-ALERT-EDITOR' ? '' : 'template';
+                    results.errors.push('This alert ' + templateTxt + ' is too large, try reducing the size of the message contents or complexity of zones');
+                }
             }
             if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
                 //Ensure we have both movement parameters or none at all.
@@ -133,7 +139,7 @@
                 }
                 _this._savingAlertTemplate = true;
 
-                _this._loadedAlert.template.updateJSON(true);
+                _this._loadedAlert.template.updateJSON();
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
                 var func = 'createAlertTemplate';
                 if (_this._loadedAlert.template.id) {
@@ -217,77 +223,6 @@
         },
 
         /**
-         * Checks if the passed zone overlaps other zones.
-         * @param paths - The polygon paths.
-         * @param stackToIgnore - A zone stack that will be ignored in the comparison.
-         * @returns {boolean}
-         * @private
-         */
-        _alertHasIntersectingStacks: function(paths, stackToIgnore) {
-            var coordinatesToCompare = this._AlertTemplate.calculateCoordinatesFromPaths(paths);
-
-            for (var i=0; i<this._loadedAlert.template.zoneStacks.length; i++) {
-                var currentStack = this._loadedAlert.template.zoneStacks[i];
-                if (stackToIgnore && stackToIgnore === currentStack) {
-                    continue;
-                }
-                var largestZone = currentStack.getLargestZone();
-                var largestZoneCoordinates = this._AlertTemplate.calculateCoordinatesFromPaths(largestZone.shapeOverlay.getPaths());
-                //Check if the passed zone intersects with the largest zone from each stack.
-                var intersects = turf.lineIntersect({
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": coordinatesToCompare[0]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": largestZoneCoordinates[0]
-                        }
-                    }
-                );
-                if (intersects.features.length) {
-                    return true;
-                }
-                //Check if the passed zone is inside of the largest zone from each
-                //stack or the passed zone engulfs the largest zone from each stack.
-                if (turf.booleanWithin({
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": largestZoneCoordinates
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": coordinatesToCompare
-                        }
-                    }) || turf.booleanContains({
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": largestZoneCoordinates
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": coordinatesToCompare
-                        }
-                    })) {
-                    return true;
-                }
-            }
-            return false;
-        },
-
-        /**
          * Toggles the zone properties section from the side panel.
          * @param e
          * @private
@@ -343,7 +278,8 @@
             else {
                 this.fire('voyent-alert-zone-selected',{
                     "id": null,
-                    "zone": null
+                    "zone": null,
+                    "isFallbackZone": false
                 });
             }
         },
@@ -359,7 +295,8 @@
                 if (typeof skipEvent !== 'boolean' || !skipEvent) {
                     this.fire('voyent-alert-zone-selected',{
                         "id": null,
-                        "zone": null
+                        "zone": null,
+                        "isFallbackZone": true
                     });
                 }
             }
@@ -470,16 +407,17 @@
          */
         _mouseoverZoneProperties: function(e) {
             var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
-            this._mouseoverZone(zoneStack.getZoneAt(e.model.get('zoneIndex')));
+            this._mouseoverZone(zoneStack.getZoneAt(e.model.get('zoneIndex'),false));
         },
 
         /**
          * Adds mouseover styling for the passed zone.
          * @param zone
+         * @param showMarker
          * @private
          */
-        _mouseoverZone: function(zone) {
-            zone.highlightOverlay();
+        _mouseoverZone: function(zone,showMarker) {
+            zone.highlightOverlay(showMarker);
         },
 
         /**
@@ -761,21 +699,6 @@
         },
 
         /**
-         * Handles displaying the stack overlap message and ensuring we don't display it too frequently.
-         * @private
-         */
-        _displayStackOverlapMsg: function() {
-            var currentTime = new Date().getTime();
-            //Only allow displaying this message once every 5 seconds.
-            if (this._displayedStackOverlapMsgAt &&
-                currentTime - this._displayedStackOverlapMsgAt <= 5000) {
-                return;
-            }
-            this.fire('message-error',this._OVERLAP_ANOTHER_STACK_MSG);
-            this._displayedStackOverlapMsgAt = new Date().getTime();
-        },
-
-        /**
          * All components need a reference to the classes so once the map is set we'll initialize them.
          */
         _mapChanged: function(map) {
@@ -804,6 +727,127 @@
                 return '#' + colour;
             }
             return colour;
+        },
+
+        /**
+         * Updates the map bounds so that only the passed zone is in view and then pans the map.
+         * Restricts the panning to every 500ms to avoid excessive map panning while resizing zones.
+         * @param zone
+         * @param forcePan
+         * @private
+         */
+        _panToZone: function(zone, forcePan) {
+            var currentTime = new Date().getTime();
+            if (forcePan || !this._lastPanZoneTime || currentTime - this._lastPanZoneTime > 500) {
+                var bounds = this._AlertZone.getBoundingBox(zone);
+                this._map.fitBounds(bounds);
+                this._map.panToBounds(bounds);
+                this._lastPanZoneTime = new Date().getTime();
+            }
+        },
+
+        /**
+         * Enables zone reshaping for the currently active zone.
+         * @param e
+         * @private
+         */
+        _enableZoneReshaping: function(e) {
+            this._zoneToReshape = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
+            if (this._zoneToReshape) {
+                // We only want to allow editing the outer boundary of a zone so we can control whether
+                // the inner zone is editable. So set the shape to the outer path only and when they
+                // are done editing we will punch out the shape again to recreate the inner path.
+                var stack = this._loadedAlert.template.getStackForZone(this._zoneToReshape);
+                if (stack.zones.indexOf(this._zoneToReshape) > 0) {
+                    this._zoneToReshape.setPaths([this._zoneToReshape.shapeOverlay.getPaths().getAt(0)]);
+                }
+                // Enable editing
+                this._zoneToReshape.setEditable(true);
+                this._zoneReshapeEscapeListener = function (e) {
+                    if (e.key === 'Escape') {
+                        this._disableZoneReshaping();
+                    }
+                }.bind(this);
+                window.addEventListener('keydown', this._zoneReshapeEscapeListener);
+            }
+        },
+
+        /**
+         * Disables zone reshaping for the currently active zone.
+         * @private
+         */
+        _disableZoneReshaping: function() {
+            var _this = this;
+            if (this._zoneToReshape) {
+                // Due to the "asynchronous" nature of this function we will immediately reset the
+                // zoneToReshape property to prevent this function from executing more than once. This
+                // becomes an issue when completing editing by selecting another zone stack or fallback
+                // zone since the each of selection events will try to disable zone reshaping
+                var zoneToReshape = this._zoneToReshape;
+                this._zoneToReshape = null;
+                // Enable the wait cursor since the setPaths operation (in punchOutShapes) may take a long time
+                this._enableGlobalWaitCursor();
+                // Proceed after a small delay so the wait cursor is displayed
+                setTimeout(function() {
+                    // If we were editing a stacked zone then we punch out the shape when they are
+                    // done editing. This is because we only allow them to edit the outer path of
+                    // the zone so we can control whether the inner zone is editable or not.
+                    var stack = _this._loadedAlert.template.getStackForZone(zoneToReshape);
+                    if (stack.zones.indexOf(zoneToReshape) > 0) {
+                        // Now that editing is done we must punch the shape out again
+                        //Update the stack JSON and adjust the centroid position.
+                        stack.updateJSONAndCentroid();
+                        //Always re-punch out the shapes. This will handle cases like filling
+                        //in gaps when the outer boundary of an inner zone is pulled inwards.
+                        stack.punchOutShapes();
+                        //Update the centroid for the template.
+                        _this._loadedAlert.template.updateJSONAndCentroid();
+                        if (_this._fallbackZone && zoneToReshape === stack.getLargestZone()) {
+                            _this._fallbackZone.punchOutOverlay();
+                        }
+                    }
+                    // Disable editing
+                    zoneToReshape.setEditable(false);
+                    window.removeEventListener('keydown', _this._zoneReshapeEscapeListener);
+                    // Disable the wait cursor, again after a delay to ensure it persists for the entire reshape operation
+                    setTimeout(function() {
+                        _this._disableGlobalWaitCursor();
+                    },0);
+                },50);
+            }
+        },
+
+        /**
+         * Enables a wait cursor for all elements on the page.
+         * @private
+         */
+        _enableGlobalWaitCursor: function() {
+            document.querySelector('html').style.cursor = 'wait !important';
+            this._cursorStylingRule = document.createElement('div');
+            this._cursorStylingRule.innerHTML = '<style>html * { cursor: wait !important; }</style>'
+            document.querySelector('body').appendChild(this._cursorStylingRule);
+        },
+
+        /**
+         * Disables the wait cursor for all elements on the page (restores default cursors).
+         * @private
+         */
+        _disableGlobalWaitCursor: function() {
+            document.querySelector('html').style.cursor = null;
+            document.querySelector('body').removeChild(this._cursorStylingRule);
+            this._cursorStylingRule = null;
+        },
+
+        /**
+         * Returns whether tos how the reshapable button.
+         * @param isCircle
+         * @param fromFile
+         * @param isPointerLocked
+         * @returns {boolean}
+         * @private
+         */
+        _showReshapableButton: function(isCircle,fromFile,isPointerLocked) {
+            return !isCircle && !fromFile && !isPointerLocked;
         },
 
         /**
@@ -898,6 +942,7 @@
                 this.setIsSampleTemplate(categories && categories.indexOf('Sample') > -1);
                 this.setSchedule(schedule);
                 this.setCategories(categories || []);
+                this.forceSavePosition = false;
             };
             /**
              * Used to calculate the bounds of the template's zones using the passed json.
@@ -942,8 +987,9 @@
             this._AlertTemplate.calculateCentroidFromPaths = function(paths) {
                 var bounds = new google.maps.LatLngBounds();
                 for (var i=0; i<paths.length; i++) {
-                    for (var j=0; j<paths.getAt(i).length; j++) {
-                        bounds.extend(paths.getAt(i).getAt(j));
+                    var innerPath = paths.getAt ? paths.getAt(i) : paths[i]; // MVCArray or []
+                    for (var j=0; j<innerPath.length; j++) {
+                        bounds.extend(paths.getAt ? paths.getAt(i).getAt(j) : paths[i][j]); // MVCArray or []
                     }
                 }
                 return bounds.getCenter();
@@ -1100,6 +1146,7 @@
                  */
                 setSavePosition: function(savePosition) {
                     this.savePosition = savePosition;
+                    _outer._notifyPropertyPathForAlert('savePosition');
                 },
                 /**
                  * Sets whether this is a sample template.
@@ -1182,6 +1229,19 @@
                     return this.zoneStacks.indexOf(zoneStack);
                 },
                 /**
+                 * Returns the zone stack that the specified zone belongs to.
+                 * @param zone
+                 */
+                getStackForZone: function(zone) {
+                    for (var i=0; i<this.zoneStacks.length; i++) {
+                        var stack = this.zoneStacks[i];
+                        if (stack.getZoneIndex(zone) > -1) {
+                            return stack;
+                        }
+                    }
+                    return null;
+                },
+                /**
                  * Deactivates all zone overlays for this stack.
                  */
                 deactivateZoneStackOverlays: function() {
@@ -1198,6 +1258,22 @@
                             this.zoneStacks[i].initializePolygonPathListeners();
                         }
                     }
+                },
+                /**
+                 * Accepts a parameter that toggles whether we should force the position to be saved
+                 * with the template. This is generally used for imported zones so the user cannot
+                 * later create an alert from the template and reposition the imported zone.
+                 * @param force
+                 */
+                forceSavePositionWithTemplate: function(force) {
+                    if (force) {
+                        this.setSavePosition(true);
+                        this.forceSavePosition = true;
+                    }
+                    else {
+                        this.forceSavePosition = false;
+                    }
+                    _outer._notifyPropertyPathForAlert('forceSavePosition');
                 },
                 /**
                  * Updates the json to reflect the current state of the template. Since each stack of zones maintains
@@ -1306,7 +1382,8 @@
                  * @private
                  */
                 _setupMarkerListeners: function () {
-                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    // As of Feb 6, 2019 the marker is invisible so we won't setup these listeners
+                    /*if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     var _this = this;
                     //The proximity zone center_changed listener will fire continuously when
                     //dragging the template marker so we'll add a flag to ignore those events.
@@ -1343,7 +1420,7 @@
                     });
                     google.maps.event.addListener(this.marker, 'mouseout', function () {
                         _this.manageAlertBoundary(false);
-                    });
+                    });*/
                 },
                 /**
                  * Calculates the current zone positions (distance and bearing)
@@ -1401,12 +1478,14 @@
              * @param id - The unique id that identifies the zone stack, if one is not provided it will be generated.
              * @param marker - The associated map marker for the stack.
              * @param zones - A list of _AlertZone objects, the list of zones belonging with the stack.
+             * @param fromFile - Whether this stack was derived from an imported file.
              * @private
              */
-            this._AlertZoneStack = function (id,marker,zones) {
+            this._AlertZoneStack = function (id,marker,zones,fromFile) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setMarker(marker || null);
                 this.setZones(zones && zones.length ? zones : []);
+                this.setFromFile(fromFile);
                 this.updateJSON();
             };
             /**
@@ -1488,6 +1567,12 @@
                     for (var i=0; i<zones.length; i++) {
                         this.addZone(zones[i]);
                     }
+                },
+                /**
+                 * Sets whether this stack was derived from a file.
+                 */
+                setFromFile: function(fromFile) {
+                    this.fromFile = !!fromFile;
                 },
                 /**
                  * Returns the zone at the specified index.
@@ -1638,7 +1723,8 @@
                             "shape": zone.isCircle ? 'circle' : 'polygon',
                             /*"opacity": zone.opacity,*/ // Fixed opacity
                             "colour": zone.colour,
-                            "innermost": i===0
+                            "innermost": i===0,
+                            "fromFile": !!zone.fromFile
                         };
                         if (zone.messageTemplate) {
                             json.properties[zone.id].messageTemplate = zone.messageTemplate;
@@ -1649,6 +1735,7 @@
                         json.geo.geometries.push({
                             "id": zone.id,
                             "stackId": this.id,
+                            "fromFile": !!this.fromFile,
                             "type": "Polygon",
                             "coordinates": [[]]
                         });
@@ -1791,16 +1878,6 @@
                     });
                     google.maps.event.addListener(marker, 'dragend', function () {
                         _outer._ignoreZoneCenterChangedEvent = false;
-                        //Check if the new stack position overlaps another zone stack.
-                        var largestZone = _this.getLargestZone();
-                        if (_outer._alertHasIntersectingStacks(largestZone.shapeOverlay.getPaths(), _this)) {
-                            _outer._displayStackOverlapMsg();
-                            _this.moveZonesRelativeToPosition(_outer._dragStartPosition);
-                            _outer._loadedAlert.template.updateJSONAndCentroid();
-                            if (_outer._fallbackZone) {
-                                _outer._fallbackZone.punchOutOverlay();
-                            }
-                        }
                         //Re-initialize the polygon path listeners for all zones.
                         _this.initializePolygonPathListeners();
                     });
@@ -1811,24 +1888,24 @@
                         if (_outer._fallbackZone) {
                             _outer._fallbackZone.punchOutOverlay();
                         }
-                        _this.manageStackBoundary(true);
+                        //_this.manageStackBoundary(true);
                     });
-                    google.maps.event.addListener(marker, 'dragend', function () {
+                    /*google.maps.event.addListener(marker, 'dragend', function () {
                         _this.manageStackBoundary(false);
-                    });
+                    });*/
                     //Add click listener to marker.
                     google.maps.event.addListener(marker, 'click', function () {
                         //Toggle all the accordion panes closed.
                         _outer._toggleProperties(null);
                         _outer.set('_loadedAlert.selectedStack',_this);
                     });
-                    //Add mouseover and mouseout listeners to highlight the stack boundary.
+                    /*//Add mouseover and mouseout listeners to highlight the stack boundary.
                     google.maps.event.addListener(marker, 'mouseover', function () {
                         _this.manageStackBoundary(true);
                     });
                     google.maps.event.addListener(marker, 'mouseout', function () {
                         _this.manageStackBoundary(false);
-                    });
+                    });*/
                 },
                 /**
                  * Initializes zone listeners.
@@ -1844,7 +1921,10 @@
                         //If they click a zone for the currently active stack then toggle the accordion.
                         if (_outer._loadedAlert.selectedStack &&
                             _outer._loadedAlert.selectedStack === _this) {
-                            _outer._toggleProperties(zone);
+                            // Don't allow de-selecting the zone
+                            if (!zone.active) {
+                                _outer._toggleProperties(zone);
+                            }
                         }
                         else {
                             //Toggle the accordion for the previously selected stack.
@@ -1856,7 +1936,7 @@
                     });
                     // Adjust zone styling when hovering over zone with mouse
                     google.maps.event.addListener(overlay, 'mouseover', function() {
-                        _outer._mouseoverZone(zone);
+                        _outer._mouseoverZone(zone,true);
                     });
                     google.maps.event.addListener(overlay, 'mouseout', function() {
                         _outer._mouseoutZone(zone);
@@ -1936,6 +2016,12 @@
                     //Check if the polygon intersects itself. To do this we will use the turf library but we
                     //must first extract the new zone coordinates so they can be interpreted by turf as GeoJSON.
                     var newZoneCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
+                    var closestInnerZoneCoordinates;
+                    if (_outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1)) {
+                        closestInnerZoneCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(
+                            _outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1).shapeOverlay.getPaths()
+                        );
+                    }
                     var kinks = turf.kinks({
                         "type": "Feature",
                         "geometry": {
@@ -1945,9 +2031,6 @@
                     });
                     if (kinks.features.length) {
                         errorMsg = 'The zone cannot self-intersect';
-                    }
-                    if (!errorMsg && largestZone === zone && _outer._alertHasIntersectingStacks(zone.shapeOverlay.getPaths(), this)) {
-                        errorMsg = _outer._OVERLAP_ANOTHER_STACK_MSG;
                     }
                     if (!errorMsg && _outer._loadedAlert.selectedStack.zones.length > 1) {
                         var vertex = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
@@ -1963,25 +2046,20 @@
                             //Check that the outer-most zone is touching it's closest inner zone. This
                             //handles the case where they drag a vertex on the outer-most zone to the
                             //opposite side of the shape, detaching it from the stack.
-                            var outerBoundaryPolygonCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(
-                                zone.shapeOverlay.getPaths()
-                            );
                             var intersects = turf.intersect({
                                 "type": "Feature",
                                 "geometry": {
                                     "type": "Polygon",
                                     //The zone isn't punched out yet which means the previous inner zone boundary
                                     //will exist as a filled polygon so make sure we only select the edited zone.
-                                    "coordinates": [outerBoundaryPolygonCoordinates[0]]
+                                    "coordinates": [newZoneCoordinates[0]]
                                 }
                             },
                             {
                                 "type": "Feature",
                                 "geometry": {
                                     "type": "Polygon",
-                                    "coordinates": _outer._AlertTemplate.calculateCoordinatesFromPaths(
-                                        _outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1).shapeOverlay.getPaths()
-                                    )
+                                    "coordinates": closestInnerZoneCoordinates
                                 }
                             });
                             if (!intersects.geometry) {
@@ -2011,6 +2089,29 @@
                                 }
                             }
                         }
+                        // If we are editing an outer zone (a zone which has an inner zone) then we will not punch out
+                        // the shape until the user completes the editing operation so we must check if the outer zone
+                        // completely contains the inner zone to prevent the user from intersecting with it.
+                        if (!errorMsg && zoneIndex > 0) {
+                            var zoneContainsClosestInnerZone = turf.booleanContains({
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Polygon",
+                                        "coordinates": [newZoneCoordinates[0]] // Select the outer path of the zone we're editing
+                                    }
+                                },
+                                {
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Polygon",
+                                        "coordinates": closestInnerZoneCoordinates
+                                    }
+                                }
+                            );
+                            if (!zoneContainsClosestInnerZone) {
+                                errorMsg = _outer._OVERLAP_WITHIN_STACK_MSG;
+                            }
+                        }
                     }
                     //Revert the position if there was a problem and display a message to the user.
                     if (errorMsg) {
@@ -2024,29 +2125,23 @@
                         _outer.fire('message-error',errorMsg);
                         return;
                     }
-                    if (pathIndex > 0) {
-                        //The inner boundary of a zone was pulled inwards or outwards so we must adjust the shape inside
-                        //of it to fill the gap. To do this we will take the inner boundary of the adjusted shape and set
-                        //it as the outer boundary of the inner shape. We must clone the boundary array so the two overlays
-                        //will not be linked by reference.
-                        var pathClone = [];
-                        for (var j=0; j<zone.shapeOverlay.getPaths().getAt(pathIndex).length; j++) {
-                            pathClone.push(zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(j));
-                        }
-                        var editedZone = _outer._loadedAlert.selectedStack.getZoneAt(zoneIndex-1);
-                        editedZone.setPaths(new google.maps.MVCArray(pathClone));
-                        //Re-initialize the polygon path listeners for the edited zone.
-                        _outer._loadedAlert.selectedStack.initializePolygonPathListeners(editedZone);
-                    }
                     //Update the stack JSON and adjust the centroid position.
                     this.updateJSONAndCentroid();
-                    //Always re-punch out the shapes. This will handle cases like filling
-                    //in gaps when the outer boundary of an inner zone is pulled inwards.
-                    this.punchOutShapes();
+                    // If we are editing an inner zone (a zone which has an outer zone) then punch out the outer zone
+                    // immediately since if the inner zone is editable then so is the outer one. If the zone is
+                    // the outer zone then it will be punched out when the user completes the editing operation.
+                    if (_outer._loadedAlert.selectedStack.getZoneAt(zoneIndex+1)) {
+                        //Punch out the outer zone
+                        this._punchOutShape(zoneIndex+1);
+                    }
                     //Update the centroid for the template.
                     _outer._loadedAlert.template.updateJSONAndCentroid();
-                    if (_outer._fallbackZone) {
-                        _outer._fallbackZone.punchOutOverlay();
+                    // If we are editing the outer zone then punch out the fallback zone immediately
+                    if (zone === largestZone) {
+                        //Punch out the fallback zone
+                        if (_outer._fallbackZone) {
+                            _outer._fallbackZone.punchOutOverlay();
+                        }
                     }
                     //Quickly toggle the overlay to fix a couple bugs with correctly displaying the polygons:
                     //1) Dragging a multi-zone polygon stack after editing will leave a line
@@ -2095,20 +2190,39 @@
              * @param messageTemplate - The message template associated with this zone.
              * @param notificationFilter - The notification filter associated with this zone.
              * @param zIndex - The zIndex of the zone, any value between 49 and 0.
+             * @param fromFile - Whether this zone was derived from an imported file.
              * @private
              */
-            this._AlertZone = function (id,name,paths,isCircle,opacity,colour,messageTemplate,notificationFilter,zIndex) {
+            this._AlertZone = function (id,name,paths,isCircle,opacity,colour,messageTemplate,notificationFilter,zIndex,fromFile) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setName(name || 'Zone 1');
                 this.setPaths(paths);
                 this.isCircle = !!isCircle;
+                this.setEditable(false); // Editing must be toggled by the user
                 this.setOpacity(/*opacity || */0.25); // Fixed opacity
                 this.setColour(colour || null); //Default to null so the stack can manage the colours based on the number of zones.
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
+                this.setFromFile(fromFile);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
+            };
+            /**
+             * Returns the LatLngBounds for the passed zone.
+             * @param zone
+             * @static
+             */
+            this._AlertZone.getBoundingBox = function(zone) {
+                if (zone && zone.shapeOverlay) {
+                    var bounds = new google.maps.LatLngBounds();
+                    var outerPath = zone.shapeOverlay.getPaths().getAt(0);
+                    outerPath.forEach(function (latLng) {
+                        bounds.extend(latLng);
+                    });
+                    return bounds;
+                }
+                return null;
             };
             /**
              * _AlertZone prototype (instance) functions.
@@ -2128,6 +2242,17 @@
                 setName: function(name) {
                     this.name = name;
                     _outer._notifyPropertyPathForZone(this,'name');
+                },
+                /**
+                 * Sets the editable property and notifies the polymer path.
+                 * @param editable
+                 */
+                setEditable: function(editable) {
+                    this.editable = editable;
+                    _outer._notifyPropertyPathForZone(this,'editable');
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setOptions({ editable: !!editable });
+                    }
                 },
                 /**
                  * Sets the colour and notifies the polymer path.
@@ -2189,6 +2314,13 @@
                     }
                 },
                 /**
+                 * Sets whether this zone was derived from a file.
+                 */
+                setFromFile: function(fromFile) {
+                    this.fromFile = !!fromFile;
+                    _outer._notifyPropertyPathForZone(this,'fromFile');
+                },
+                /**
                  * Sets the northern coordinate and draws the nameOverlay.
                  * @param northernCoordinate
                  */
@@ -2206,29 +2338,40 @@
                  */
                 activateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({ "strokeWeight":3.0, "fillOpacity": 0.30 });
-                        if (!this.isCircle) {
-                            this.shapeOverlay.setEditable(true);
-                        }
+                        this.shapeOverlay.setOptions({ strokeWeight:3.0, fillOpacity: 0.30 });
                     }
+                    // Notify the polymer path for editable so the properties sheet properly toggles off
+                    // the zone reshaping message if the zone was deselected while reshaping was enabled
+                    _outer._notifyPropertyPathForZone(this,'editable');
                 },
                 /**
                  * Deactivates the shape overlay.
                  */
                 deactivateOverlay: function() {
                     if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
-                        if (!this.isCircle) {
-                            this.shapeOverlay.setEditable(false);
-                        }
+                        this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
+                    }
+                    // Whenever they de-select a zone we will disable editing
+                    _outer._disableZoneReshaping();
+                    // If reshaping is enabled then disable it since the zone was deselected
+                    if (_outer._zoneToReshape === this) {
+                        _outer._disableZoneReshaping();
                     }
                 },
                 /**
                  * Highlights the shape overlay by adding a border.
+                 * @param showMarker - Whether to show the marker for moving the stack.
                  */
-                highlightOverlay: function() {
+                highlightOverlay: function(showMarker) {
                     if (this.shapeOverlay && !this.active) {
-                        this.shapeOverlay.setOptions({ "strokeWeight": 2.0, "fillOpacity": 0.30 });
+                        this.shapeOverlay.setOptions({ strokeWeight: 2.0, fillOpacity: 0.30 });
+                    }
+                    // Show the stack marker if the zone and stack were not derived from a file import
+                    if (showMarker && _outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
+                        var stack = _outer._loadedAlert.template.getStackForZone(this);
+                        if (stack && stack.marker && !stack.fromFile) {
+                            stack.marker.setOptions( { visible: true } );
+                        }
                     }
                 },
                 /**
@@ -2236,7 +2379,14 @@
                  */
                 unHighlightOverlay: function() {
                     if (this.shapeOverlay && !this.active) {
-                        this.shapeOverlay.setOptions({ "strokeWeight":0.50, "fillOpacity": 0.25 });
+                        this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
+                    }
+                    // Hide the stack marker if the zone and stack were not derived from a file import
+                    if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
+                        var stack = _outer._loadedAlert.template.getStackForZone(this);
+                        if (stack && stack.marker && !stack.fromFile) {
+                            stack.marker.setOptions( { visible: false } );
+                        }
                     }
                 },
                 /**
@@ -2355,6 +2505,7 @@
                 setActive: function(active) {
                     this.active = active;
                     _outer._notifyPropertyPathForFallbackZone('active');
+                    active ? this.activateOverlay() : this.deactivateOverlay();
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
@@ -2381,6 +2532,22 @@
                         if (this.nameOverlay) {
                             this.nameOverlay.hide();
                         }
+                    }
+                },
+                /**
+                 * Activates the shape overlay.
+                 */
+                activateOverlay: function() {
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setOptions({ fillOpacity: 0.40 });
+                    }
+                },
+                /**
+                 * Deactivates the shape overlay.
+                 */
+                deactivateOverlay: function() {
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setOptions({ fillOpacity: 0.25 });
                     }
                 },
                 /**
@@ -2472,7 +2639,10 @@
                 _setupOverlayClickListener: function () {
                     if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     google.maps.event.addListener(this.shapeOverlay, 'click', function () {
-                        _outer._toggleFallbackZoneProperties();
+                        // Don't allow de-selecting the zone
+                        if (!_outer._fallbackZone.active) {
+                            _outer._toggleFallbackZoneProperties();
+                        }
                     });
                 },
                 /**
@@ -2565,7 +2735,6 @@
                 },
                 /**
                  * Updates the JSON to reflect the current state of the template.
-                 * @private
                  */
                 updateJSON: function() {
                     var markerPosition = this.marker.getPosition();

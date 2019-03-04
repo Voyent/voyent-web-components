@@ -126,8 +126,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 width: 100%;
                 padding:0 10px;
             }
-            .propertyCol,
-            .valueCol,
+            .halfWidthCol,
             .fullWidthCol,
             .inputCol,
             .dropdownCol {
@@ -152,8 +151,18 @@ Internal component used to display the properties panel inside Voyent alert comp
                 border: 0;
                 margin: 0;
             }
-            .fullWidthCol.buttonCol > paper-icon-button {
+            .fullWidthCol.buttonCol > paper-icon-button,
+            .fullWidthCol.editingButtonCol > paper-icon-button {
                 margin-left: 10px;
+            }
+            .fullWidthCol.editingButtonCol > paper-swatch-picker {
+                margin-left: -6px;
+            }
+            .fullWidthCol.editingButtonCol {
+                margin: -22px 0 -7px 7px
+            }
+            .fullWidthCol.editingButtonCol[data-showing-helper-text] {
+                margin: 0 0 15px 0;
             }
             .fullWidthCol.buttonCol > paper-icon-button:first-of-type {
                 margin-left: 0;
@@ -162,20 +171,14 @@ Internal component used to display the properties panel inside Voyent alert comp
             .inputCol.movement {
                 padding: 0;
             }
-            .propertyCol,
-            .valueCol {
+            .halfWidthCol {
                 width: 50%;
-            }
-            .propertyCol {
-                text-align: right;
-            }
-            .valueCol {
-                text-align: left;
             }
             .fullWidthCol {
                 width:100%;
             }
-            .fullWidthCol paper-button {
+            .fullWidthCol paper-button,
+            .halfWidthCol paper-button {
                 font-size: 10px;
                 background-color:white;
             }
@@ -358,7 +361,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                 margin-bottom: 24px;
             }
             paper-swatch-picker {
-                --paper-swatch-picker-color-size: 25px;
+                --paper-swatch-picker-color-size: 24px;
             }
         </style>
 
@@ -387,7 +390,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                     <div class$="{{_getAccordionClasses('header',_showBadge,'')}}">
                         <div title="Toggle Badge Properties" class$="arrow[[_showBadge]]" on-click="_toggleBadge"></div>
                         <div class$="{{_getZoneTitleClasses(_showBadge,'')}}">
-                           Badge
+                            Badge
                         </div>
                     </div>
                     <div class$="{{_getAccordionClasses('body',_showBadge,'')}}">
@@ -454,30 +457,50 @@ Internal component used to display the properties panel inside Voyent alert comp
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="fullWidthCol">
-                                        <template is="dom-if" if="[[_isPointerLocked]]">
-                                            <div class="bold">Zone Resizing Enabled</div>
-                                            Move the mouse up and down to adjust the size of the zone. Click to exit.
+                                    <div class="fullWidthCol editingButtonCol text-center"
+                                         data-showing-helper-text$="[[_showingAdjustmentHelperText(zone.editable,_isPointerLocked)]]">
+                                        <template is="dom-if" if="[[_showResizingButton(zone.fromFile,zone.editable)]]">
+                                            <template is="dom-if" if="[[_isPointerLocked]]">
+                                                <div class="bold">Zone Resizing Enabled</div>
+                                                Move the mouse up and down to adjust the size of the zone. Click to exit.
+                                            </template>
+                                            <template is="dom-if" if="[[!_isPointerLocked]]">
+                                                <paper-icon-button src="../voyent-alert/img/adjust_area.png"
+                                                                   data-stack-index$="[[zoneStackIndex]]"
+                                                                   data-zone-index$="[[zoneIndex]]"
+                                                                   raised title="Adjust Area"
+                                                                   on-click="_adjustZoneSize">
+                                                </paper-icon-button>
+                                            </template>
                                         </template>
-                                        <template is="dom-if" if="[[!_isPointerLocked]]">
-                                            <paper-button data-stack-index$="[[zoneStackIndex]]"
-                                                          data-zone-index$="[[zoneIndex]]"
-                                                          raised title="Adjust Area"
-                                                          on-click="_adjustZoneSize">
-                                                Adjust Area
-                                            </paper-button>
+                                        <template is="dom-if" if="[[_showReshapableButton(zone.isCircle,zone.fromFile,_isPointerLocked)]]">
+                                            <template is="dom-if" if="[[zone.editable]]">
+                                                <div class="bold">Zone Reshaping Enabled</div>
+                                                Use the vertices to edit the shape. Click done or press the Esc key to exit.
+                                                <br/>
+                                                <paper-button raised title="Done Reshaping"
+                                                              on-click="_disableZoneReshaping"
+                                                              style="margin-top: 5px;">
+                                                    Done
+                                                </paper-button>
+                                            </template>
+                                            <template is="dom-if" if="[[!zone.editable]]">
+                                                <paper-icon-button src="../voyent-alert/img/adjust_shape.png"
+                                                                   data-stack-index$="[[zoneStackIndex]]"
+                                                                   data-zone-index$="[[zoneIndex]]"
+                                                                   raised title="Adjust Shape"
+                                                                   on-click="_enableZoneReshaping">
+                                                </paper-icon-button>
+                                            </template>
                                         </template>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="propertyCol">
-                                        Colour
-                                    </div>
-                                    <div class="valueCol">
-                                        <paper-swatch-picker color="{{zone.colour}}" color-list='[[zoneColours]]'
-                                                             column-count="7" horizontal-align="right"
-                                                             on-color-changed="_updateColour">
-                                        </paper-swatch-picker>
+                                        <template is="dom-if" if="[[!_showingAdjustmentHelperText(zone.editable,_isPointerLocked)]]">
+                                            <paper-swatch-picker color="{{zone.colour}}" color-list='[[zoneColours]]'
+                                                                 column-count="7" horizontal-align="right"
+                                                                 on-color-changed="_updateColour" title="Adjust colour"
+                                                                 data-stack-index$="[[zoneStackIndex]]"
+                                                                 data-zone-index$="[[zoneIndex]]">
+                                            </paper-swatch-picker>
+                                        </template>
                                     </div>
                                 </div>
                             </div>

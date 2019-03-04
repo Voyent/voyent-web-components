@@ -488,7 +488,7 @@ Polymer({
             }
             //Ensure the map resizes correctly after orientation changes.
             setTimeout(function() {
-                _this.resizeMap();
+                _this._resizeMapAndAdjustBounds();
             },500);
         },400);
     },
@@ -760,8 +760,6 @@ Polymer({
             }
             this._map.fitBounds(bounds);
             this._map.panToBounds(bounds);
-            //Include the name overlays in the map bounds.
-            this._panBoundsForNameOverlays(this._myLocations,bounds);
         }
         else {
             this._skipRegionPanning = false;

@@ -147,7 +147,19 @@ Polymer({
         /**
          * The height set from the previous map size calculation.
          */
-        _lastHeight: { type: Number, notify: true }
+        _lastHeight: { type: Number, notify: true },
+        /**
+         * The zone being reshaped.
+         */
+        _zoneToReshape: { type: Object, value: null, notify: true },
+        /**
+         * The keydown listener for zone reshaping.
+         */
+        _zoneReshapeEscapeListener: { type: Function, value: null, notify: true },
+        /**
+         * The element containing the global wait cursor styling rule.
+         */
+        _cursorStylingRule: { type: Object, value: null, notify: true }
     },
 
     observers: [
@@ -906,7 +918,7 @@ Polymer({
         // If we're adding the new zone in between zones then we must ensure
         // that the new zone is fully within the zone at newZoneIndex+1
         if (closestLargerZone) {
-            paths = adjustNewZoneSizeToFit(newZonePercentLarger);
+            paths = this._adjustNewZoneSizeToFit(closestSmallerZone, closestLargerZone, newZonePercentLarger);
             if (!paths) {
                 return;
             }
@@ -914,41 +926,42 @@ Polymer({
         // Otherwise if we're adding the zone to the end of the stack then check if the new zone will overlap another existing zone
         else {
             paths = this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), newZonePercentLarger, this._havePointerLock);
-            if (this._alertHasIntersectingStacks(paths, _this._loadedAlert.selectedStack)) {
-                this._displayStackOverlapMsg();
-                return;
+        }
+        // If we have a polygon then check if the outer boundary of the new zone overlaps with the boundary
+        // of the inner zone. If they overlap then we are unable to draw the shape and will instead
+        // try to draw a rectangle matching the bounds of the zone we are inserting after
+        if (!isCircle) {
+            if (_this._lineIntersect(
+                _this._AlertTemplate.calculateCoordinatesFromPaths(paths)[0],
+                _this._AlertTemplate.calculateCoordinatesFromPaths(closestSmallerZone.shapeOverlay.getPaths())[0])
+            ) {
+                // The zone intersected so try to create a rectangular zone instead. If we are adding the zone to
+                // the middle of the stack then we will create the rectangle as small as possible (1% larger)
+                // otherwise just use the bounding box of new zone that we originally tried to create
+                if (closestLargerZone) {
+                    paths = _this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), 1, _this._havePointerLock);
+                    paths = _this._getRectangularPathFromPolygonPath(paths.getAt(0));
+                    if (_this._lineIntersect(
+                        _this._AlertTemplate.calculateCoordinatesFromPaths(paths)[0],
+                        _this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0])
+                    ) {
+                        _this.fire('message-error', 'Unable to fit new zone between ' + closestSmallerZone.name + ' and ' + closestLargerZone.name);
+                        return;
+                    }
+                }
+                else {
+                    paths = _this._getRectangularPathFromPolygonPath(paths.getAt(0));
+                }
+                //_this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead');
             }
         }
         this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
-            var name = this._dialogInput;
-            // If we have a polygon then check if the outer boundary of the new zone overlaps
-            // with the boundary of the inner zone. If they overlap then we are unable to
-            // draw the shape and will instead draw a rectangle matching the bounds of it.
-            if (!isCircle) {
-                intersects = turf.lineIntersect({
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths)[0]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(closestSmallerZone.shapeOverlay.getPaths())[0]
-                        }
-                    });
-                if (intersects.features.length) {
-                    _this.fire('message-info','Unable to produce scaled polygon, drawing rectangle instead.');
-                    paths = _this._getRectangularPathFromPolygonPath(paths.getAt(0));
-                }
-            }
+            var name = _this._dialogInput;
             // De-increment the new zone zIndex so it sits behind the other zones
             var zIndex = closestSmallerZone.zIndex - 1;
             // When we add a new zone we don't want to include the full shape so we can punch
             // it out properly later so just pass the filled outer shape via paths.getAt(0)
-            newZone = new _this._AlertZone(null,name,[paths.getAt(0)],isCircle,null,null,null,null,zIndex);
+            newZone = new _this._AlertZone(null,name,[paths.getAt(0)],isCircle,null,null,null,null,null,zIndex,false);
 
             // Insert the zone somewhere in the middle of the stack
             if (closestLargerZone) {
@@ -973,54 +986,88 @@ Polymer({
             //Show the properties pane for the new zone.
             _this._toggleProperties(newZone);
         });
+    },
 
-        function adjustNewZoneSizeToFit(percentage) {
-            // If the percentage is 0 then it means the shape will not fit between the two zones so we'll bail
-            if (percentage === 0) {
-                _this.fire('message-error', 'Unable to fit new zone between ' + closestSmallerZone.name + ' and ' + closestLargerZone.name);
-                return null;
-            }
-            // Calculate new paths based on the passed percentage
-            var paths = _this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), percentage, _this._havePointerLock);
-            // Determine if the new zone is fully within the closest outer zone
-            var newZoneInsideOuterZone = turf.booleanWithin({
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [_this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the "whole" version of the next largest zone
-                    }
-                }
-            );
-            var outerZoneInsideNewZone = turf.booleanContains({
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": _this._AlertTemplate.calculateCoordinatesFromPaths(paths) // new zone
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [_this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the "whole" version of the next largest zone
-                    }
-                }
-            );
-            // The new zone is not fully within the outer zone OR the outer zone overlaps with the new zone
-            if (!newZoneInsideOuterZone || outerZoneInsideNewZone) {
-                // Decrease the size
-                return adjustNewZoneSizeToFit(percentage-1);
-            }
-            // The new zone is within the outer zone
-            return paths;
+    /**
+     * Recursive function that tries to create a zone that will fit within the boundaries of the outer zone.
+     * @param closestSmallerZone
+     * @param closestLargerZone
+     * @param percentage
+     * @returns {*}
+     * @private
+     */
+    _adjustNewZoneSizeToFit: function(closestSmallerZone,closestLargerZone,percentage) {
+        // If the percentage is 0 then it means the shape will not fit between the two zones so we'll bail
+        if (percentage === 0) {
+            this.fire('message-error', 'Unable to fit new zone between ' + closestSmallerZone.name + ' and ' + closestLargerZone.name);
+            return null;
         }
+        // Calculate new paths based on the passed percentage
+        var paths = this._adjustPathsByPercentage(closestSmallerZone.shapeOverlay.getPaths(), percentage, this._havePointerLock);
+        // Determine if the new zone is fully within the closest outer zone
+        var newZoneInsideOuterZone = this._booleanWithin(
+            this._AlertTemplate.calculateCoordinatesFromPaths(paths), // new zone, {{percentage}}% larger
+            [this._AlertTemplate.calculateCoordinatesFromPaths(closestLargerZone.paths)[0]] // the non-punched out version of the next largest zone
+        );
+        // The new zone is not fully within the outer zone so decrease the size
+        if (!newZoneInsideOuterZone) {
+            return this._adjustNewZoneSizeToFit(closestSmallerZone,closestLargerZone,percentage-1);
+        }
+        // The new zone is within the outer zone
+        return paths;
+    },
+
+    /**
+     * Wrapper for turf.booleanWithin.
+     * @param innerZoneCoordinates
+     * @param outerZoneCoordinates
+     * @returns {*}
+     * @private
+     */
+    _booleanWithin: function(innerZoneCoordinates, outerZoneCoordinates) {
+        return turf.booleanWithin(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": innerZoneCoordinates
+                }
+            },
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": outerZoneCoordinates
+                }
+            }
+        );
+    },
+
+    /**
+     * Wrapper for turf.lineIntersect
+     * @param lineCoordinatesA
+     * @param lineCoordinatesB
+     * @returns {boolean}
+     * @private
+     */
+    _lineIntersect: function(lineCoordinatesA,lineCoordinatesB) {
+        var intersects = turf.lineIntersect(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": lineCoordinatesA
+                }
+            },
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": lineCoordinatesB
+                }
+            }
+        );
+        return !!intersects.features.length
     },
 
     /**
@@ -1045,6 +1092,20 @@ Polymer({
                 this._fallbackZone.punchOutOverlay();
             }
         }
+
+        // When removing a zone we need to check whether we need to force saving the position
+        // with the template since it's possible that the user will remove the only zone
+        // they imported from a file, removing the requirement of force saving the position
+        var haveStackFromFile = false;
+        var zoneStacks = this._loadedAlert.template.zoneStacks;
+        for (var i=0; i<zoneStacks.length; i++) {
+            if (zoneStacks[i].fromFile) {
+                haveStackFromFile = true;
+                break;
+            }
+        }
+        this._loadedAlert.template.forceSavePositionWithTemplate(haveStackFromFile);
+
         this.fire('voyent-alert-zone-removed',{"id":id,"isFallbackZone":false});
     },
 
@@ -1100,17 +1161,17 @@ Polymer({
         this._isPointerLocked = false;
         //Check if the API is available.
         this._havePointerLock = 'pointerLockElement' in document ||
-                                'mozPointerLockElement' in document ||
-                                'webkitPointerLockElement' in document;
+            'mozPointerLockElement' in document ||
+            'webkitPointerLockElement' in document;
         if (!this._havePointerLock) { return; }
         this._bindPointerLockListeners();
         //Initialize our enable and disable functions using the specific browser prefixes.
         this._requestPointerLock = this.requestPointerLock ||
-                                   this.mozRequestPointerLock ||
-                                   this.webkitRequestPointerLock;
+            this.mozRequestPointerLock ||
+            this.webkitRequestPointerLock;
         document.exitPointerLock = document.exitPointerLock ||
-                                document.mozExitPointerLock ||
-                                document.webkitExitPointerLock;
+            document.mozExitPointerLock ||
+            document.webkitExitPointerLock;
         //Hook pointer lock state change events.
         document.addEventListener('pointerlockchange', this._boundPointerLockChangeListener, false);
         document.addEventListener('mozpointerlockchange', this._boundPointerLockChangeListener, false);
@@ -1167,37 +1228,19 @@ Polymer({
                 }
                 else {
                     //Check if it overlaps its next closest outer zone
-                    intersects = turf.lineIntersect({
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([newPath])
-                                )[0]
-                            }
-                        },
-                        {
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([outerZonePath])
-                                )[0]
-                            }
-                        });
-                    if (intersects.features.length) {
+                    intersects = this._lineIntersect(
+                        this._AlertTemplate.calculateCoordinatesFromPaths(
+                            new google.maps.MVCArray([newPath])
+                        )[0],
+                        this._AlertTemplate.calculateCoordinatesFromPaths(
+                            new google.maps.MVCArray([outerZonePath])
+                        )[0]
+                    );
+                    if (intersects) {
                         this._displayOverlapMsg();
                         this._y = this._previousY;
                         return;
                     }
-                }
-            }
-            else { //We are resizing an outer zone
-                //Check if it overlaps another zone stack
-                if (this._alertHasIntersectingStacks(new google.maps.MVCArray([newPath]), this._loadedAlert.selectedStack)) {
-                    this._displayStackOverlapMsg();
-                    this._y = this._previousY;
-                    return;
                 }
             }
             this._zoneToAdjust.setPaths([newPath]);
@@ -1215,25 +1258,15 @@ Polymer({
                 }
                 else {
                     //Check if it overlaps its next closest inner zone
-                    intersects = turf.lineIntersect({
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([newPath])
-                                )[0]
-                            }
-                        },
-                        {
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": this._AlertTemplate.calculateCoordinatesFromPaths(
-                                    new google.maps.MVCArray([innerZonePath])
-                                )[0]
-                            }
-                        });
-                    if (intersects.features.length) {
+                    intersects = this._lineIntersect(
+                        this._AlertTemplate.calculateCoordinatesFromPaths(
+                            new google.maps.MVCArray([newPath])
+                        )[0],
+                        this._AlertTemplate.calculateCoordinatesFromPaths(
+                            new google.maps.MVCArray([innerZonePath])
+                        )[0]
+                    );
+                    if (intersects) {
                         this._displayOverlapMsg();
                         this._y = this._previousY;
                         return;
@@ -1251,16 +1284,18 @@ Polymer({
             this._fallbackZone.punchOutOverlay();
         }
         this._previousY = this._y;
+        // Adjust the map bounds while adjusting the size of the zone so the zone is always focused
+        this._panToZone(this._zoneToAdjust);
     },
 
     /**
      * Listens for mouse clicks while the pointer is locked and exits pointer lock mode when encountered.
-     * @param e
      * @private
      */
-    _mouseClickListener: function(e) {
-        var _this = this;
+    _mouseClickListener: function() {
         document.exitPointerLock();
+        // Adjust the map bounds after adjusting the size of the zone to ensure the zone is fully in view
+        this._panToZone(this._zoneToAdjust, true);
     },
 
     /**
@@ -1314,6 +1349,25 @@ Polymer({
     _adjustZoneSize: function(e) {
         this._zoneToAdjust = this._loadedAlert.selectedStack.getZoneAt(e.model.get('zoneIndex'));
         this._requestPointerLock();
+    },
+
+    /**
+     * Returns whether we want to show the resizing button.
+     * @param fromFile
+     * @param editable
+     * @returns {boolean}
+     * @private
+     */
+    _showResizingButton: function(fromFile,editable) {
+        return !fromFile && !editable;
+    },
+
+    /**
+     * Returns whether we are currently showing the zone adjustment helper text.
+     * @private
+     */
+    _showingAdjustmentHelperText: function(editable,isPointerLocked) {
+        return editable || isPointerLocked;
     },
 
     /**

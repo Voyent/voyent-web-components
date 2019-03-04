@@ -94,6 +94,7 @@
             this._CIRCLE_BUTTON_ID = 'circleBttn';
             this._POLYGON_BUTTON_ID = 'polygonBttn';
             this._FALLBACK_ZONE_BUTTON_ID = 'fallbackZoneBttn';
+            this._IMPORT_BUTTON_ID = 'importBttn';
             this._ZOOM_BUTTONS_ID = 'zoomBttns';
             this._MAP_TYPE_BUTTONS_ID = 'mapTypeBttns';
             //Default to the last realm and account if one is not set.
@@ -131,6 +132,7 @@
             }
             //Alert view map is readonly.
             if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                mapOptions.scrollwheel = mapOptions.draggable = false;
                 mapOptions.draggable = false;
                 mapOptions.disableDoubleClickZoom = true;
             }
@@ -158,6 +160,8 @@
             if (this._isAnAlertEditor()) {
                 //Add the fullscreen control.
                 this._addFullscreenButton();
+                // Add the import file input validator
+                this.querySelector('#fileUploadValidator').validate = this._validateFile.bind(this);
                 //Maintain the isZoneSelected toggle for updating the UI.
                 this._isZoneSelected = false;
                 this.addEventListener('voyent-alert-zone-selected',function(e) {
@@ -171,13 +175,27 @@
                                 if (selectedZone) {
                                     if (zones[j] === selectedZone) {
                                         zones[j].nameOverlay.moveToTopPane();
+                                        zones[j].shapeOverlay.setOptions( { zIndex: 50 });
                                         continue;
                                     }
                                 }
                                 zones[j].nameOverlay.moveToDefaultPane();
+                                zones[j].shapeOverlay.setOptions( { zIndex: zones[j].zIndex });
                             }
                         }
                     }
+                    // Pan the map automatically based on zone selection
+                    if (selectedZone) {
+                        selectedZone === this._fallbackZone
+                            ? _this._adjustBoundsAndPan(true)
+                            : _this._panToZone(selectedZone);
+                    }
+                    else {
+                        _this._adjustBoundsAndPan();
+                    }
+                });
+                this.addEventListener('voyent-alert-zone-removed',function() {
+                    _this._adjustBoundsAndPan();
                 });
             }
             this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
@@ -199,10 +217,15 @@
             }
             //Make sure the map is always sized correctly when the window size changes.
             window.addEventListener('resize', function() {
-                _this.resizeMap();
+                _this._resizeMapAndAdjustBounds();
             });
             //Make sure the map is always sized correctly when the map size changes.
             new ResizeObserver(function() {
+                // If we have a center coordinate for the map then it means we are toggling fullscreen mode and
+                // want to maintain that position so we'll skip this listener and manage the map bounds manually
+                if (_this._mapCenterPosition) {
+                    return;
+                }
                 var newWidth = _this.querySelector('#map').offsetWidth;
                 var newHeight = _this.querySelector('#map').offsetHeight;
                 var currentObserverTime = new Date().getTime();
@@ -217,7 +240,7 @@
                 _this._previousMapWidth = newWidth;
                 _this._previousMapHeight = newHeight;
                 _this._previousObserverTime = new Date().getTime();
-                _this.resizeMap();
+                _this._resizeMapAndAdjustBounds();
             }).observe(this.querySelector('#map'));
             //De-select any selected zone stack on map click.
             this._deselectStacksOnClick(this._map);
@@ -225,21 +248,6 @@
             this._overlayView = new google.maps.OverlayView();
             this._overlayView.draw = function() {};
             this._overlayView.setMap(this._map);
-        },
-
-        /**
-         * Recalculates the map size, fires the Google Map resize event and pans the map.
-         * @param forceMapPan
-         */
-        resizeMap: function(forceMapPan) {
-            var _this = this;
-            this._mapIsReady().then(function() {
-                _this._calcMapSize();
-                //Async so the new dimensions render first.
-                setTimeout(function() {
-                    _this._adjustBoundsAndPan(forceMapPan);
-                },0);
-            });
         },
 
         /**
@@ -260,8 +268,8 @@
                 if (_this._savingAlert) { return reject('already saving alert'); }
                 _this._savingAlert = true;
 
-                //Pull the latest JSON from each of the stacks and specify that we want to punch out the circular templates.
-                _this._loadedAlert.template.updateJSON(true);
+                //Pull the latest JSON from each of the stacks
+                _this._loadedAlert.template.updateJSON();
                 var requestOpts = {
                     realm: _this.realm,
                     account: _this.account,
@@ -362,7 +370,7 @@
          * @private
          */
         _buildPreviewEvent: function() {
-            this._loadedAlert.template.updateJSON(true);
+            this._loadedAlert.template.updateJSON();
             var json = this._loadedAlert.template.json;
 
             json.state = 'preview';
@@ -408,7 +416,7 @@
          */
         getCurrentAlert: function() {
             if (this._loadedAlert && this._loadedAlert.template) {
-                this._loadedAlert.template.updateJSON(true);
+                this._loadedAlert.template.updateJSON();
                 return this._loadedAlert.template.json;
             }
             return null;
@@ -888,7 +896,7 @@
          * @private
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
-            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker;
+            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker, haveStackFromFile, currentStackFromFile;
             //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
             if (templateJSON.geo) {
                 var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
@@ -900,8 +908,13 @@
                     zoneGeometries = zoneStackGeometries[stackId];
                     zones = [];
                     zIndex = 49;
+                    currentStackFromFile = false;
                     for (var i=0; i<zoneGeometries.length; i++) {
                         properties = templateJSON.properties[zoneGeometries[i].id];
+                        if (zoneGeometries[i].fromFile) {
+                            currentStackFromFile = zoneGeometries[i].fromFile;
+                            haveStackFromFile = true;
+                        }
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //For alert detail notification view show the inner zone of each relevant stack.
                             if (this.mode === 'notification') {
@@ -924,7 +937,8 @@
                             zoneGeometries[i].id, properties.name,
                             this._AlertTemplate.calculatePathsFromCoordinates(zoneGeometries[i].coordinates),
                             properties.shape === 'circle', properties.opacity, properties.colour,
-                            properties.messageTemplate, properties.notificationFilter, zIndex)
+                            properties.messageTemplate, properties.notificationFilter,
+                            zIndex, properties.fromFile)
                         );
                         if (this.nodeName === 'VOYENT-ALERT-VIEW') {
                             //Add click listener to the zone so the user can click anywhere on the map to enable fullscreen.
@@ -941,12 +955,10 @@
                                     "geometries": zoneGeometries
                                 }
                             }),
-                            map: this._map, draggable: true, zIndex: 50,
-                            visible: this.nodeName !== 'VOYENT-ALERT-VIEW',
-                            cursor: 'move'
+                            map: this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
 
-                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones));
+                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones, currentStackFromFile));
                     }
                 }
             }
@@ -961,8 +973,7 @@
                     position: (latLngCentroid ? latLngCentroid : this._AlertTemplate.calculateCentroidFromJSON(templateJSON)),
                     map: this._map, draggable: true, zIndex: 50,
                     icon: this.pathtoimages+'/img/move_icon.png',
-                    visible: this.nodeName !== 'VOYENT-ALERT-VIEW',
-                    cursor: 'move'
+                    cursor: 'move', visible: false
                 });
             }
             this.set('_loadedAlert', {
@@ -973,6 +984,9 @@
                 ),
                 selectedStack: zoneStacks.length === 1 ? zoneStacks[0] : null
             });
+            // If the template has one or more stacks that were created from a file import
+            // then we will always force the position to be saved with the template
+            this._loadedAlert.template.forceSavePositionWithTemplate(haveStackFromFile);
             //If we were provided a centroid for the template then we need to move the centroid of the zones from the current
             //position to the new one. To do this we will first calculate their current position based on the template and then
             //move them to the new coordinate while maintaining the distance and bearing they were from the original position.
@@ -1026,12 +1040,6 @@
                     else { //polygon
                         paths = oce.overlay.getPaths();
                     }
-                    //Check if the new zone overlaps another zone stack.
-                    if (_this._alertHasIntersectingStacks(paths)) {
-                        _this._displayStackOverlapMsg();
-                        oce.overlay.setMap(null);
-                        return;
-                    }
                     //Check if they drew a self-intersecting polygon and if so remove it from the map and notify them.
                     if (oce.type === 'polygon') {
                         var kinks = turf.kinks({
@@ -1050,7 +1058,7 @@
                     _this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
                         //Build our stack marker, the position will be added later.
                         var stackMarker = new google.maps.Marker({
-                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move'
+                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
                         });
                         if (oce.type === 'circle') { //Circular template.
                             stackMarker.setPosition(oce.overlay.getCenter());
@@ -1066,7 +1074,7 @@
                         }
                         zone = new _this._AlertZone(null,_this._dialogInput,paths,oce.type === 'circle');
 
-                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone]);
+                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone], false);
                         //Add the stack and fire the zone added event.
                         _this._loadedAlert.template.addZoneStack(zoneStack);
                         _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"insertIndex":0,"isFallbackZone":false});
@@ -1080,10 +1088,9 @@
                         if (_this._loadedAlert.template.zoneStacks.length === 2) {
                             _this._loadedAlert.template.setMarker(new google.maps.Marker({
                                 position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
-                                draggable: true, zIndex: 50,
-                                map: _this._map,
+                                map: _this._map, draggable: true, zIndex: 50,
                                 icon: _this.pathtoimages+'/img/move_icon.png',
-                                cursor: 'move'
+                                cursor: 'move', visible: false
                             }));
                         }
                         else if (_this._loadedAlert.template.zoneStacks.length > 2) {
@@ -1097,7 +1104,6 @@
                             _this._fallbackZone.punchOutOverlay();
                         }
                         _this._disableDrawingMode();
-                        _this._adjustBoundsAndPan();
                     },function() {
                         oce.overlay.setMap(null);
                         _this.set('_drawingCancelled',false);
@@ -1121,7 +1127,7 @@
                         _this._disableDrawingMode();
                     }
                     else if (_this._isFullscreenMode) {
-                        _this._toggleFullscreenContainer(true);
+                        _this._toggleFullscreenContainer();
                     }
                 }
             });
@@ -1336,17 +1342,29 @@
         },
 
         /**
-         * Adds the circle, polygon and fallback zone buttons.
+         * Adds the button for opening the geospatial file import dialog.
+         * @param listener
+         * @param cb
+         * @private
+         */
+        _addImportFileButton: function(listener,cb) {
+            this._addCustomControl(this._IMPORT_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT,listener,cb);
+        },
+
+        /**
+         * Adds the circle, polygon, fallback and import zone buttons.
          * @private
          */
         _addAlertTemplateButtons: function() {
             var _this = this;
-            //The controls API doesn't like it when we try to inject controls too quickly so we'll use a callback chain to
-            //add each button after the other one has been added successfully. Without this Google adds the buttons but
-            //they end up all stacked up on top of each other, likely because the styling doesn't have time to update.
+            // The controls API doesn't behave nicely when we try to inject controls too quickly so we'll use a callback chain
+            // to add each button after the other one has been added successfully. Without this Google adds the buttons but
+            // they end up all stacked up on top of each other, likely because the styling doesn't have time to update.
             this._addCircleButton(this._circleButtonListener.bind(this),function() {
                 _this._addPolygonButton(_this._polygonButtonListener.bind(_this),function() {
-                    _this._addFallbackZoneButton(_this._fallbackZoneButtonListener.bind(_this));
+                    _this._addFallbackZoneButton(_this._fallbackZoneButtonListener.bind(_this),function() {
+                        _this._addImportFileButton(_this._importFileListener.bind(_this));
+                    });
                 });
             });
         },
@@ -1392,6 +1410,14 @@
         },
 
         /**
+         * Removes the button for importing geospatial files.
+         * @private
+         */
+        _removeImportFileButton: function() {
+            this._removeCustomControl(this._IMPORT_BUTTON_ID,google.maps.ControlPosition.TOP_RIGHT);
+        },
+
+        /**
          * Removes the circle, polygon and fallback zone buttons.
          * @private
          */
@@ -1399,6 +1425,7 @@
             this._removeCircleButton();
             this._removePolygonButton();
             this._removeFallbackZoneButton();
+            this._removeImportFileButton();
         },
 
         /**
@@ -1549,11 +1576,20 @@
         },
 
         /**
+         * The listener to fire when the import button is clicked.
+         * @private
+         */
+        _importFileListener: function() {
+            this._disableDrawingMode();
+            this._openFileImportDialog();
+        },
+
+        /**
          * The listener to fire when the fullscreen button is clicked.
          * @private
          */
         _fullscreenButtonListener: function() {
-            this._toggleFullscreenContainer(true);
+            this._toggleFullscreenContainer();
         },
 
         /**
@@ -1596,18 +1632,9 @@
 
         /**
          * Toggles the modal fullscreen dialog.
-         * @param toggledByUser - A flag indicating whether the fullscreen container is being toggled by the user
-         * via page interaction or whether the component itself toggled the fullscreen container. We use
-         * this flag to manage the map panning behaviour when switching mobile orientation (VRAS-306).
          * @private
          */
-        _toggleFullscreenContainer: function(toggledByUser) {
-            if (toggledByUser) {
-                this._fullscreenEnabledByUser = !this._isFullscreenMode;
-                if (!this._fullscreenEnabledByUser) {
-                    this._mapCenterBeforeOrientationChange = null;
-                }
-            }
+        _toggleFullscreenContainer: function() {
             // Open or close the dialog depending on the current state
             if (this._isFullscreenMode) {
                 this._closeFullscreenContainer();
@@ -1615,21 +1642,19 @@
             else {
                 // Ensure that when the fullscreen container is opened by the user that we force the map pan operation
                 // for the initial load rather than skipping it which we will do afterwards until they close it (VRAS-306).
-                this._openFullscreenContainer(toggledByUser);
+                this._openFullscreenContainer();
             }
             this._isFullscreenMode = !this._isFullscreenMode;
             // Toggle the editable features of the map
-            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+            if (this.nodeName === 'VOYENT-ALERT-VIEW' && (this.mode !== 'view' && this.mode !== 'response')) {
                 this._toggleEditableMap(this._isFullscreenMode);
             }
         },
-
         /**
          * Opens the fullscreen modal dialog.
-         * @param forceMapPan
          * @private
          */
-        _openFullscreenContainer: function(forceMapPan) {
+        _openFullscreenContainer: function() {
             var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
             if (dialog) {
                 // Display the dialog
@@ -1653,10 +1678,12 @@
                 if (this._isAnAlertEditor()) {
                     dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
                 }
-                this.resizeMap(forceMapPan);
+                // Resize the map
+                this.nodeName === 'VOYENT-ALERT-VIEW'
+                    ? this._resizeMapAndAdjustBounds()
+                    : this._resizeMapAndMaintainCenter();
             }
         },
-
         /**
          * Closes the fullscreen modal dialog.
          * @private
@@ -1669,7 +1696,7 @@
             if (this._beforeFullscreenHeight) {
                 this.height = this._beforeFullscreenHeight;
             }
-            // Toggle button visiblity so that the fullscreen button is displayed (select the custom controls (+ '_cc'))
+            // Toggle button visibility so that the fullscreen button is displayed (select the custom controls (+ '_cc'))
             var buttonContainer = this.querySelector('#'+this._FULLSCREEN_BUTTON_ID+'_cc');
             buttonContainer.querySelector('#openButton').removeAttribute('hidden');
             buttonContainer.querySelector('#closeButton').setAttribute('hidden','hidden');
@@ -1679,7 +1706,10 @@
             if (this._isAnAlertEditor()) {
                 this.querySelector('#'+this._CONTAINER_ID).append(this.querySelector('#'+this._SIDE_PANEL_ID));
             }
-            this.resizeMap();
+            // Resize the map
+            this.nodeName === 'VOYENT-ALERT-VIEW'
+                ? this._resizeMapAndAdjustBounds()
+                : this._resizeMapAndMaintainCenter();
             // Hide the dialog
             var dialog = this.querySelector('#'+this._FULLSCREEN_CONTAINER_ID);
             if (dialog) {
@@ -1705,148 +1735,202 @@
         },
 
         /**
-         * Updates the map bounds so all the map overlays are in view and then pans the map.
-         * @param forceMapPan
+         * Opens the file import dialog.
          * @private
          */
-        _adjustBoundsAndPan: function(forceMapPan) {
-            if (this._fullscreenEnabledByUser && !forceMapPan) { //VRAS-306
-                if (this._mapCenterBeforeOrientationChange) {
-                    this._map.setCenter(this._mapCenterBeforeOrientationChange);
-                }
+        _openFileImportDialog: function() {
+            var dialog = this.querySelector('#fileImportDialog');
+            if (dialog) {
+                dialog.open();
+            }
+        },
+        /**
+         * Closes the file import dialog.
+         * @private
+         */
+        _closeFileImportDialog: function() {
+            // Reset the associacted state
+            var fileUploadInput = this.querySelector('#fileUpload');
+            fileUploadInput.inputElement.value = null;
+            fileUploadInput.invalid = false;
+            // Close the dialog
+            var dialog = this.querySelector('#fileImportDialog');
+            if (dialog) {
+                dialog.close();
+            }
+        },
+        /**
+         * Validates the file and uploads it to the relevant module.
+         * @private
+         */
+        _importFile: function() {
+            var _this = this;
+            var fileUploadInput = this.querySelector('#fileUpload');
+            if (!fileUploadInput.validate()) {
                 return;
             }
-            if (this._loadedAlert || (this.nodeName === 'VOYENT-ALERT-VIEW' && (this._affectedMobileLocation || this._mobileLocation || this._myLocations))) {
-                var bounds = new google.maps.LatLngBounds(), boundsExtended = false, i, zoneStacks, locationsToPanTo = [];
-                if (this._loadedAlert) {
-                    zoneStacks = this._loadedAlert.template.zoneStacks;
-                    if ((zoneStacks.length && (!this._affectedStackIds || !this._affectedStackIds.length)) || !zoneStacks.length) {
-                        //If we don't have any zone stacks or we do and they have no affected
-                        //locations then we will include the region boundary in the map bounds.
-                        if (this.mode === 'notification') {
-                            if (this._areaRegion && this._areaRegion.bounds) {
-                                bounds.extend(this._areaRegion.bounds.getNorthEast());
-                                bounds.extend(this._areaRegion.bounds.getSouthWest());
-                                boundsExtended = true;
-                            }
+
+            voyent.action.uploadFilesToModule({
+                id: 'process-geospatial-file',
+                files: [fileUploadInput.inputElement.files[0]]
+            }).then(function(res) {
+                if (res && res.length) {
+                    for (var i=0; i<res.length; i++) {
+                        // Convert the GeoJSON into the appropriate objects
+                        var paths = _this._AlertTemplate.calculatePathsFromCoordinates(res[i].coordinates);
+                        var zone = new _this._AlertZone(
+                            null, res[i].name, paths, false, null, null, null, null, null, true
+                        );
+                        var stackMarker = new google.maps.Marker({
+                            position: _this._AlertTemplate.calculateCentroidFromPaths(paths),
+                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
+                        });
+                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone], true);
+                        // Add the stack and fire the zone added event
+                        _this._loadedAlert.template.addZoneStack(zoneStack);
+                        _this.fire('voyent-alert-zone-added',{
+                            id: zone.id,
+                            zone: zone,
+                            stack: zoneStack,
+                            insertIndex: 0,
+                            isFallbackZone: false
+                        });
+                        //Toggle the accordion closed for the current stack and load the new one.
+                        _this._toggleProperties(null);
+                        _this.set('_loadedAlert.selectedStack',zoneStack);
+                        _this._toggleProperties(zone);
+
+                        //When we have only one stack we don't have a template marker, just the marker for the zone stack.
+                        //So once we have two zone stacks we need to create the marker and if we have more than two (the
+                        //marker exists already) then we'll update it's position.
+                        if (_this._loadedAlert.template.zoneStacks.length === 2) {
+                            _this._loadedAlert.template.setMarker(new google.maps.Marker({
+                                position: _this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json),
+                                map: _this._map, draggable: true, zIndex: 50,
+                                icon: _this.pathtoimages+'/img/move_icon.png',
+                                cursor: 'move', visible: false
+                            }));
                         }
-                        else {
-                            //Make sure we force pan the region as this flag will be true in cases such as when loading an alert
-                            //or template. This fixes an issue where when we load a fallback zone only template after a stacked
-                            //template the map wouldn't pan.
-                            this._skipRegionPanning = false;
-                            this._zoomOnRegion();
+                        else if (_this._loadedAlert.template.zoneStacks.length > 2) {
+                            _this._loadedAlert.template.updateJSONAndCentroid();
                         }
-                    }
-                    //If we have zoneStacks then include them in the map bounds
-                    if (zoneStacks.length) {
-                        for (i=0; i<zoneStacks.length; i++) {
-                            var largestZone = zoneStacks[i].getLargestZone();
-                            if (largestZone) {
-                                for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
-                                    bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
-                                }
-                                boundsExtended = true;
-                            }
-                        }
+                        // Always force the position to be saved with the template
+                        // when we have a zone derived from an imported file
+                        _this._loadedAlert.template.forceSavePositionWithTemplate(true);
+
+                        // Close the dialog
+                        _this._closeFileImportDialog();
                     }
                 }
-                //Only include the locations in the map panning if we have zone stacks and one of those zone stacks
-                //has affected locations. This prevents the map from panning too far from the region boundary and
-                //primary zone when the affected locations notified by a fallback zone are far away.
-                if (zoneStacks && zoneStacks.length && this._affectedStackIds && this._affectedStackIds.length) {
-                    if (this._affectedMobileLocation && (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._affectedMobileLocation.id) > -1)) {
-                        bounds.extend(this._affectedMobileLocation.marker.getPosition());
-                        boundsExtended = true;
-                    }
-                    for (i=0; i<this._myLocations.length; i++) {
-                        if (this.mode !== 'notification' || this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
-                            bounds.extend(this._myLocations[i].marker.getPosition());
-                            locationsToPanTo.push(this._myLocations[i]);
+            }).catch(function(e) {
+                _this.fire('message-error', 'Failed to process file, try again later or contact a Voyent administrator');
+                console.error(e);
+            });
+        },
+        /**
+         * Validates the file the user has selected in the file import dialog.
+         * @returns {boolean}
+         * @private
+         */
+        _validateFile: function() {
+            var elem = this.querySelector('#fileUpload');
+            var file = elem.inputElement.files[0];
+            if (!file) {
+                elem.setAttribute('error-message','Must specify a file to upload');
+                return false;
+            }
+            var ext = file.name.slice(file.name.length-4, file.name.length).toLowerCase();
+            if (['.kml','.kmz'].indexOf(ext) === -1) {
+                elem.setAttribute('error-message','File must be of type KML or KMZ');
+                return false;
+            }
+            if (file.size > 250000) {
+                elem.setAttribute('error-message','File must be less than 250KB in size');
+                return false;
+            }
+            return true;
+        },
+
+        /**
+         * Updates the map bounds to include all zone stacks and conditionally includes the region geography.
+         * Falls back to zooming on the region if there is nothing to include in the map bounds.
+         * @param includeRegionGeography
+         * @private
+         */
+        _adjustBoundsAndPan: function(includeRegionGeography) {
+            var bounds = new google.maps.LatLngBounds(), boundsExtended = false;
+            var zoneStacks = this._loadedAlert && this._loadedAlert.template
+                ? this._loadedAlert.template.zoneStacks
+                : [];
+            if (this._loadedAlert && zoneStacks.length) {
+                for (var i=0; i<zoneStacks.length; i++) {
+                    var largestZone = zoneStacks[i].getLargestZone();
+                    if (largestZone) {
+                        for (var j=0; j<largestZone.shapeOverlay.getPath().length; j++) {
+                            bounds.extend(largestZone.shapeOverlay.getPath().getAt(j));
                             boundsExtended = true;
                         }
                     }
                 }
-                // Always include the mobile location in the map bounds if it is available
-                if (this._mobileLocation && this._mobileLocation.marker) {
-                    bounds.extend(this._mobileLocation.marker.getPosition());
-                    boundsExtended = true;
-                }
-                //Ensure we only do this if the bounds were extended otherwise
-                //the map may pan to an empty bounds (middle of the ocean).
-                if (boundsExtended) {
-                    this._map.fitBounds(bounds);
-                    this._map.panToBounds(bounds);
-                    //Include the name overlays in the map bounds.
-                    this._panBoundsForNameOverlays(locationsToPanTo,bounds);
-                }
             }
-            else {
-                this._zoomOnRegion();
+            if (includeRegionGeography && this._areaRegion && this._areaRegion.bounds) {
+                bounds.extend(this._areaRegion.bounds.getNorthEast());
+                bounds.extend(this._areaRegion.bounds.getSouthWest());
+                boundsExtended = true;
             }
+            // Only pan the map if the bounds were extended otherwise it
+            // will try to pan to an empty bounds (middle of the sea)
+            if (boundsExtended) {
+                this._map.fitBounds(bounds);
+                this._map.panToBounds(bounds);
+                return;
+            }
+            // If we never panned the map then just zoom on the region
+            this._zoomOnRegion();
         },
 
         /**
-         * Pans the map bounds so that it includes all of the location name overlays in the view. This must be called after the map bounds
-         * is already set on the locations so that we can determine the coordinates of the name overlays at the correct zoom level.
-         * @param locations
-         * @param bounds
+         * Returns a Promise which resolves after recalculating the map size.
+         * @returns {Promise}
          * @private
          */
-        _panBoundsForNameOverlays: function(locations, bounds) {
-            return; //TODO - Temporarily disable map panning for name overlays
-            if (!locations || !locations.length) { return; }
+        _resizeMap: function() {
             var _this = this;
-            //Async to ensure the map is panned on the markers before proceeding. This
-            //is so we can correctly calculate the pixel positions of the name overlays.
-            setTimeout(function() {
-                var panBounds = false;
-                for (var i=0; i<locations.length; i++) {
-                    if (_this._extendBoundsForNameOverlay(locations[i],bounds)) {
-                        panBounds = true;
-                    }
-                }
-                if (panBounds) {
-                    _this._map.fitBounds(bounds);
-                    _this._map.panToBounds(bounds);
-                }
-            },0);
+            return new Promise(function (resolve) {
+                _this._mapIsReady().then(function() {
+                    _this._calcMapSize();
+                    // Delay so the new dimensions render first
+                    setTimeout(function() {
+                        return resolve();
+                    },0);
+                });
+            });
         },
 
         /**
-         * Checks if the map bounds needs to be extended to include the
-         * location name overlay in the view and returns whether it was.
-         * @param location
-         * @param bounds
-         * @returns {boolean}
+         * Recalculates the map size and adjusts the map bounds.
          * @private
          */
-        _extendBoundsForNameOverlay: function(location, bounds) {
-            var boundsExtended = false;
-            if (location.nameOverlay) {
-                var overlayProjection = this._overlayView.getProjection();
-                //Get the pixel coordinates of the marker position.
-                var nc = overlayProjection.fromLatLngToDivPixel(location.marker.getPosition());
-                //Include the location name overlay in the map bounds by extending the bounds to include
-                //the NW and SE coordinate of the overlay. This will ensure the entire label is in view.
-                var nwCoordinate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
-                    nc.x - location.nameOverlay.div.offsetWidth/2,
-                    nc.y-64
-                ));
-                if (!this._map.getBounds().contains(nwCoordinate)) {
-                    bounds.extend(nwCoordinate);
-                    boundsExtended = true;
+        _resizeMapAndAdjustBounds: function() {
+            var _this = this;
+            this._resizeMap().then(function() {
+                _this._adjustBoundsAndPan();
+            });
+        },
+
+        /**
+         * Recalculates the map size and ensures the map center position is maintained.
+         * @private
+         */
+        _resizeMapAndMaintainCenter: function() {
+            var _this = this;
+            this._mapCenterPosition = this._map.getCenter();
+            this._resizeMap().then(function() {
+                if (_this._mapCenterPosition) {
+                    _this._map.setCenter(_this._mapCenterPosition);
+                    _this._mapCenterPosition = null;
                 }
-                var seCoordindate = overlayProjection.fromDivPixelToLatLng(new google.maps.Point(
-                    nc.x + location.nameOverlay.div.offsetWidth/2,
-                    nc.y-64+location.nameOverlay.div.offsetHeight
-                ));
-                if (!this._map.getBounds().contains(seCoordindate)) {
-                    bounds.extend(seCoordindate);
-                    boundsExtended = true;
-                }
-            }
-            return boundsExtended;
+            });
         },
 
         /**

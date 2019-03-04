@@ -5,6 +5,7 @@
 <link rel="import" href="../common/voyent-alert/voyent-alert-properties.html">
 <link rel="import" href="../../paper-dialog/paper-dialog.html">
 <link rel="import" href="../../paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../voyent-premium-content/voyent-premium-content.html">
 
 <!--
 Displays a map-based tool for creating new alert templates.
@@ -41,6 +42,9 @@ Example:
                 margin: -5px 5px 0 0;
             }
         </style>
+
+        <custom-validator id="fileUploadValidator" validator-name="fileUploadValidator"></custom-validator>
+
         <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
             <div id$="[[_SIDE_PANEL_ID]]" data-is-fullscreen$="[[_isFullscreenMode]]">
@@ -76,7 +80,10 @@ Example:
                                                  _drawing-cancelled="{{_drawingCancelled}}"
                                                  _is-zone-selected="{{_isZoneSelected}}"
                                                  _last-width="{{_lastWidth}}"
-                                                 _last-height="{{_lastHeight}}">
+                                                 _last-height="{{_lastHeight}}"
+                                                 _zone-to-reshape="{{_zoneToReshape}}"
+                                                 _zone-reshape-escape-listener="{{_zoneReshapeEscapeListener}}"
+                                                 _cursor-styling-rule="{{_cursorStylingRule}}">
                         </voyent-alert-properties>
                     </template>
                     <template is="dom-if" if="[[!_isLoggedIn]]">
@@ -86,10 +93,12 @@ Example:
                 </div><div id="crudPanel">
                     <template is="dom-if" if="[[_loadedAlert]]">
                         <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
-                            <div class="text-center" style="font-size:12px;">
+                            <div class="text-center" style="font-size:12px;"
+                                 title="[[_getSavePositionButtonTitle(_loadedAlert.template.savePosition,_loadedAlert.template.forceSavePosition)]]">
                                 Save Location with Template?
                                 <paper-toggle-button class="inline" style="width:150px;"
-                                                     checked="{{_loadedAlert.template.savePosition}}">
+                                                     checked="{{_loadedAlert.template.savePosition}}"
+                                                     disabled="[[_loadedAlert.template.forceSavePosition]]">
                                 </paper-toggle-button>
                             </div>
                         </template>
@@ -182,6 +191,33 @@ Example:
                 </span>
             </div>
         </div>
+        <div id$="[[_IMPORT_BUTTON_ID]]" class="customMapBttnWrap importBttn no-select" hidden>
+            <div class="customMapBttn" title="Import a KML or KMZ file...">
+                <span>
+                    <div class="customMapBttnImg">
+                        <paper-icon-button class="fileUploadIcon" icon="file-upload"></paper-icon-button>
+                    </div>
+                </span>
+            </div>
+        </div>
+        <paper-dialog id="fileImportDialog" modal on-iron-overlay-opened="_patchOverlay">
+            <h2 class="dialogH2">Import File</h2>
+            <div class="dialogCloseWrap">
+                <paper-icon-button icon="close" on-click="_closeFileImportDialog" title="Close dialog"
+                                   class="dialogCloseButton" tabindex="4"></paper-icon-button>
+            </div>
+            <div class="dialogEnd"></div>
+            <voyent-premium-content>
+                <div class="premiumContent">
+                    <paper-input id="fileUpload" type="file" label="Import a KML or KMZ file..." tabindex="1"
+                                 class="fileUploadInput" validator="fileUploadValidator"></paper-input>
+                    <div class="buttonWrapper text-center">
+                        <paper-button raised title="Cancel import" on-click="_closeFileImportDialog" tabindex="2">Cancel</paper-button>
+                        <paper-button raised title="Confirm import" on-click="_importFile" tabindex="3">Confirm</paper-button>
+                    </div>
+                </div>
+            </voyent-premium-content>
+        </paper-dialog>
         <paper-dialog id="uncategorizedTemplate" modal on-iron-overlay-opened="_patchOverlay">
             <h2 class="dialogH2">Confirm Categories</h2>
             <div class="dialogCloseWrap">
