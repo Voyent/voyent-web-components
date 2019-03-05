@@ -2351,8 +2351,6 @@
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
                     }
-                    // Whenever they de-select a zone we will disable editing
-                    _outer._disableZoneReshaping();
                     // If reshaping is enabled then disable it since the zone was deselected
                     if (_outer._zoneToReshape === this) {
                         _outer._disableZoneReshaping();
