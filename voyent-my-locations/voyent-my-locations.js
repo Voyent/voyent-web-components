@@ -421,7 +421,7 @@ Polymer({
         //Since Google Maps version 3.32 we must explicitly wait for the map controls to be visible before rendering the tooltips.
         //Unfortunately, we don't have a better way to check that the controls are visible other than searching for one of them.
         function waitForControls() {
-            if (!document.querySelector('[title="Show street map"]')) {
+            if (!document.querySelector('#map #customControls')) {
                 setTimeout(waitForControls,100);
                 return;
             }
