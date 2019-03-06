@@ -956,7 +956,7 @@
          * @private
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
-            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, stackMarker, haveStackFromFile, currentStackFromFile;
+            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, haveStackFromFile, currentStackFromFile;
             //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
             if (templateJSON.geo) {
                 var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
@@ -1008,17 +1008,7 @@
                     }
                     //Build the stack marker, calculate the position using by building JSON that represents only the stack.
                     if (zones.length) {
-                        stackMarker = new google.maps.Marker({
-                            position: this._AlertTemplate.calculateCentroidFromJSON({
-                                "geo": {
-                                    "type": "GeometryCollection",
-                                    "geometries": zoneGeometries
-                                }
-                            }),
-                            map: this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
-                        });
-
-                        zoneStacks.push(new this._AlertZoneStack(stackId, stackMarker, zones, currentStackFromFile));
+                        zoneStacks.push(new this._AlertZoneStack(stackId, zones, currentStackFromFile));
                     }
                 }
             }
@@ -1117,25 +1107,16 @@
                         }
                     }
                     _this._openDialog('Add New Zone','Enter the zone name','','Must provide a zone name',null,false,false,function() {
-                        //Build our stack marker, the position will be added later.
-                        var stackMarker = new google.maps.Marker({
-                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
-                        });
-                        if (oce.type === 'circle') { //Circular template.
-                            stackMarker.setPosition(oce.overlay.getCenter());
-                        }
-                        else { //Polygonal template.
-                            //If cancelled via esc, Google will still draw the polygon so we need to remove it from the map.
-                            if (_this._drawingCancelled) {
-                                oce.overlay.setMap(null);
-                                _this._drawingCancelled = false;
-                                return;
-                            }
-                            stackMarker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
+                        if (oce.type === 'polygon' && _this._drawingCancelled) {
+                            // If cancelled via esc, Google will still draw the
+                            // polygon so we need to remove it from the map
+                            oce.overlay.setMap(null);
+                            _this._drawingCancelled = false;
+                            return;
                         }
                         zone = new _this._AlertZone(null,_this._dialogInput,paths,oce.type === 'circle');
 
-                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone], false);
+                        var zoneStack = new _this._AlertZoneStack(null, [zone], false);
                         //Add the stack and fire the zone added event.
                         _this._loadedAlert.template.addZoneStack(zoneStack);
                         _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"insertIndex":0,"isFallbackZone":false});
@@ -1916,12 +1897,7 @@
                         var zone = new _this._AlertZone(
                             null, res[i].name, paths, false, null, null, null, null, null, null, true
                         );
-
-                        var stackMarker = new google.maps.Marker({
-                            position: _this._AlertTemplate.calculateCentroidFromPaths(paths),
-                            map: _this._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
-                        });
-                        var zoneStack = new _this._AlertZoneStack(null, stackMarker, [zone], true);
+                        var zoneStack = new _this._AlertZoneStack(null, [zone], true);
 
                         // Add the stack and fire the zone added event
                         _this._loadedAlert.template.addZoneStack(zoneStack);

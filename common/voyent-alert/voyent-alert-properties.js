@@ -159,7 +159,15 @@ Polymer({
         /**
          * The element containing the global wait cursor styling rule.
          */
-        _cursorStylingRule: { type: Object, value: null, notify: true }
+        _cursorStylingRule: { type: Object, value: null, notify: true },
+        /**
+         * Contains properties associated with a vertex modification operation.
+         */
+        _activeVertexDetails: { type: Object, value: null, notify: true },
+        /**
+         * Whether the last vertex modification triggered an error.
+         */
+        _haveVertexError: { type: Boolean, value: false, notify: true }
     },
 
     observers: [
