@@ -490,6 +490,8 @@
 
             mainDiv.style.textAlign = 'center';
             mainDiv.style.minWidth = '51px';
+            mainDiv.style.borderWidth = '2px';
+            mainDiv.style.borderStyle = 'none';
             // Prevent the event form bubbling so the zone is not de-selected and the map zoomed
             mainDiv.onclick = mainDiv.ondblclick = function(e) {
                 e.stopPropagation();
@@ -524,7 +526,11 @@
             };
             // Ensure the cancel / confirm buttons are displayed when the input is focused
             distanceInput.onfocus = function() {
-                buttonDiv.style.display = 'block';
+                if (buttonDiv.style.display !== 'block') {
+                    buttonDiv.style.display = 'block';
+                    mainDiv.style.borderStyle = 'solid';
+                    adjustPositionBy(-2);
+                }
             };
             mainDiv.appendChild(distanceInput);
 
@@ -554,6 +560,7 @@
             buttonDiv.appendChild(confirmButton);
             mainDiv.appendChild(buttonDiv);
 
+            // Submits the new distance value
             function submitDistanceValue() {
                 var stack = _this._loadedAlert.selectedStack;
                 var zoneIndex = stack.getZoneIndex(zone);
@@ -609,6 +616,7 @@
                 disableEditing();
             }
 
+            // Reverts the distance value to the current one
             function revertDistanceValue() {
                 // Revert the value
                 distanceInput.value = zone.getPolylineLengthInMeters();
@@ -616,15 +624,24 @@
                 disableEditing();
             }
 
+            // Disables editing mode styling
             function disableEditing() {
                 // setTimeout so the overlay has time to redraw after value change
                 setTimeout(function() {
                     // Disable editing mode by blurring the input and hiding the buttons
                     distanceInput.blur();
-                    buttonDiv.style.display = 'none';
+                    buttonDiv.style.display = mainDiv.style.borderStyle = 'none';
+                    adjustPositionBy(2);
                     // Reposition the overlay since the height will change
                     zone.distanceBetweenPointsOverlay.displayAndDraw();
                 },0);
+            }
+
+            // Adjusts the position of the overlay by num pixels. We use this
+            // to prevent movement of the overlay when toggling the border
+            function adjustPositionBy(num) {
+                mainDiv.style.top = (parseFloat(mainDiv.style.top.substring(0,mainDiv.style.top.indexOf('px'))) + num) + 'px';
+                mainDiv.style.left = (parseFloat(mainDiv.style.left.substring(0,mainDiv.style.left.indexOf('px'))) + num) + 'px';
             }
 
             return mainDiv;
@@ -3758,17 +3775,18 @@
                 input.value = this.zone.getPolylineLengthInMeters();
                 input.style.width = input.value.length + 'ch';
                 // Position the input to the right for circles and centered below for polygons
+                var borderWidth = this.div.style.borderStyle === 'none' ? 0 : 2;
                 if (this.zone.isCircle) {
-                    this.div.style.left = (nc.x + 3) + 'px';
+                    this.div.style.left = (nc.x + 7 - borderWidth) + 'px';
                     this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
                 }
                 else {
                     this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
-                    this.div.style.top = (nc.y + 15) + 'px';
+                    this.div.style.top = (nc.y + 15 - borderWidth) + 'px';
                 }
                 // Additional zone-specific styling
                 this.div.style.backgroundColor = this.zone.colour;
-                this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
+                this.div.style.color = this.div.style.borderColor = this.returnColourBasedOnBackground(this.zone.colour);
             };
             /**
              * Handles drawng the stack coordinate overlay.
@@ -3822,7 +3840,7 @@
                 this.div.style.display = 'none';
                 var buttons = this.div.querySelector('.buttons');
                 if (buttons) {
-                    buttons.style.display = 'none';
+                    this.div.style.borderStyle = buttons.style.display = 'none';
                 }
                 this.visible = false;
             };
