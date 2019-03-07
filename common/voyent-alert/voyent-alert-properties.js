@@ -167,7 +167,11 @@ Polymer({
         /**
          * Whether the last vertex modification triggered an error.
          */
-        _haveVertexError: { type: Boolean, value: false, notify: true }
+        _haveVertexError: { type: Boolean, value: false, notify: true },
+        /**
+         * The polygonal zone which a vertex is being actively moved.
+         */
+        _movingVertexZone: { type: Object, value: false, notify: true }
     },
 
     observers: [

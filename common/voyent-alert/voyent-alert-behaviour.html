@@ -439,6 +439,20 @@
         },
 
         /**
+         * Converts the passed mouse event to a latLng coordinate on the map.
+         * @param e
+         * @private
+         */
+        _fromMouseEventToLatLng: function(e) {
+            if (e && typeof e.clientX === 'number' && typeof e.clientY === 'number' && this._map && this._map.getProjection) {
+                var rect = this._map.getDiv().getBoundingClientRect();
+                var x = e.clientX - rect.left;
+                var y = e.clientY - rect.top;
+                return this._overlayView.getProjection().fromContainerPixelToLatLng(new google.maps.Point(x, y));
+            }
+        },
+
+        /**
          * Creates and configures the styling for a generic overlay div, used for various labels.
          * @param extraRound
          * @param noFontStyling
@@ -2406,16 +2420,24 @@
                                 index: typeof e.edge === 'number' ? (e.edge+1) : e.vertex,
                                 type: typeof e.edge === 'number' ? 'insertAt' : 'setAt'
                             });
-
                             zone.managePolygonDistanceBetweenPointsOverlay(true, e.latLng);
                         }
                     });
                     google.maps.event.addListener(overlay, 'mouseout', function(e) {
                         _outer._mouseoutZone(zone);
                     });
-                    // Handle polygon edits
                     if (!zone.isCircle) {
+                        // Handle polygon edits
                         _this.initializePolygonPathListeners(zone);
+                        // Stores the zone whose vertex is being being actively dragged
+                        google.maps.event.addListener(overlay, 'mousedown', function(e) {
+                            if (typeof e.path !== 'undefined') {
+                                _outer._movingVertexZone = zone;
+                            }
+                        });
+                        google.maps.event.addListener(overlay, 'mouseup', function(e) {
+                            _outer._movingVertexZone = null;
+                        });
                     }
                 },
                 /**

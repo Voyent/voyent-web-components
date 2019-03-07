@@ -142,9 +142,7 @@
             this._addMapControlButtons();
             //Calculate the map size.
             this._calcMapSize();
-            if (this.nodeName === 'VOYENT-MY-LOCATIONS') {
-                this._setupMapListeners();
-            }
+            this._setupMapListeners();
             if (this._isAnAlertEditor()) {
                 //Setup ui and listeners for adding new marker based entities.
                 this._drawingManager = new google.maps.drawing.DrawingManager({
@@ -249,6 +247,30 @@
             this._overlayView = new google.maps.OverlayView();
             this._overlayView.draw = function() {};
             this._overlayView.setMap(this._map);
+        },
+
+        /**
+         * Initializes map listeners that track the position of vertices while they are
+         * dragged and updates the polygon distance-to-center overlay in real time.
+         * @private
+         */
+        _setupMapListeners: function() {
+            var _this = this;
+            if (this._isAnAlertEditor()) {
+                var mapDiv = this._map.getDiv();
+                if (mapDiv) {
+                    mapDiv.addEventListener('mousemove', function(e) {
+                        if (_this._movingVertexZone) {
+                            var latLng = _this._fromMouseEventToLatLng(e);
+                            console.log('setting latLng from mousemove',latLng.lat(), latLng.lng());
+                            _this._movingVertexZone.managePolygonDistanceBetweenPointsOverlay(true, latLng);
+                        }
+                    });
+                    google.maps.event.addListener(this._map, 'mouseup', function() {
+                        _this._movingVertexZone = null;
+                    });
+                }
+            }
         },
 
         /**
