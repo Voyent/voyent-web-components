@@ -489,6 +489,7 @@
             var confirmButton = document.createElement('button');
 
             mainDiv.style.textAlign = 'center';
+            mainDiv.style.minWidth = '51px';
             // Prevent the event form bubbling so the zone is not de-selected and the map zoomed
             mainDiv.onclick = mainDiv.ondblclick = function(e) {
                 e.stopPropagation();
@@ -517,6 +518,9 @@
                 if (e.key === 'Enter') {
                     submitDistanceValue();
                 }
+                else if (e.key === 'Escape') {
+                    revertDistanceValue();
+                }
             };
             // Ensure the cancel / confirm buttons are displayed when the input is focused
             distanceInput.onfocus = function() {
@@ -544,7 +548,7 @@
                 submitDistanceValue();
             };
             cancelButton.onclick = function() {
-                distanceInput.value = zone.getPolylineLengthInMeters();
+                revertDistanceValue();
             };
             buttonDiv.appendChild(cancelButton);
             buttonDiv.appendChild(confirmButton);
@@ -599,6 +603,28 @@
                         stack, zone, stack.marker.getPosition(), null, null, parseInt(newDistance), !smallerZone
                     );
                 }
+                // Keep the zoom level appropriate for the size of the zone
+                _this._panToZone(zone);
+                // Disable editing mode
+                disableEditing();
+            }
+
+            function revertDistanceValue() {
+                // Revert the value
+                distanceInput.value = zone.getPolylineLengthInMeters();
+                // Disable editing mode
+                disableEditing();
+            }
+
+            function disableEditing() {
+                // setTimeout so the overlay has time to redraw after value change
+                setTimeout(function() {
+                    // Disable editing mode by blurring the input and hiding the buttons
+                    distanceInput.blur();
+                    buttonDiv.style.display = 'none';
+                    // Reposition the overlay since the height will change
+                    zone.distanceBetweenPointsOverlay.displayAndDraw();
+                },0);
             }
 
             return mainDiv;
