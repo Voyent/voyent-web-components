@@ -2494,6 +2494,7 @@
                             // Store the previous vertex position when hovering
                             // an existing vertex in case we need to revert
                             _outer.set('_activeVertexDetails', {
+                                zone: zone,
                                 latLng: e.latLng,
                                 index: typeof e.edge === 'number' ? (e.edge+1) : e.vertex,
                                 type: typeof e.edge === 'number' ? 'insertAt' : 'setAt'
@@ -2507,14 +2508,11 @@
                     if (!zone.isCircle) {
                         // Handle polygon edits
                         _this.initializePolygonPathListeners(zone);
-                        // Stores the zone whose vertex is being being actively dragged
+                        // Stores whether a vertex is actively being dragged
                         google.maps.event.addListener(overlay, 'mousedown', function(e) {
                             if (typeof e.path !== 'undefined') {
-                                _outer._movingVertexZone = zone;
+                                _outer._activelyMovingVertex = true;
                             }
-                        });
-                        google.maps.event.addListener(overlay, 'mouseup', function(e) {
-                            _outer._movingVertexZone = null;
                         });
                     }
                 },
@@ -2695,6 +2693,16 @@
                             _outer._revertedVertex = true;
                             zone.shapeOverlay.getPaths().getAt(pathIndex).removeAt(vertexIndex);
                         }
+
+                        // If we reverted the vertex operation of the innermost zone then the marker and coordinate
+                        // overlay position may have changed while we were dragging so we must reset them
+                        if (zone === this.getInnermostZone()) {
+                            this.marker.setPosition(_outer._AlertTemplate.calculateCentroidFromPaths(zone.shapeOverlay.getPaths()));
+                            this.updateLatLngFromMarker();
+                        }
+                        // Redraw the distance overlay since it moves with the vertex as we drag it
+                        zone.managePolygonDistanceBetweenPointsOverlay(true, _outer._activeVertexDetails.latLng);
+
                         _outer.fire('message-error',errorMsg);
                         return;
                     }

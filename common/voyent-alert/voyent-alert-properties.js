@@ -169,9 +169,9 @@ Polymer({
          */
         _haveVertexError: { type: Boolean, value: false, notify: true },
         /**
-         * The polygonal zone which a vertex is being actively moved.
+         * Whether a vertex is actively being dragged.
          */
-        _movingVertexZone: { type: Object, value: false, notify: true }
+        _activelyMovingVertex: { type: Boolean, value: false, notify: true }
     },
 
     observers: [

@@ -260,14 +260,27 @@
                 var mapDiv = this._map.getDiv();
                 if (mapDiv) {
                     mapDiv.addEventListener('mousemove', function(e) {
-                        if (_this._movingVertexZone) {
+                        if (_this._activelyMovingVertex) {
                             var latLng = _this._fromMouseEventToLatLng(e);
-                            console.log('setting latLng from mousemove',latLng.lat(), latLng.lng());
-                            _this._movingVertexZone.managePolygonDistanceBetweenPointsOverlay(true, latLng);
+                            var stack = _this._loadedAlert.template.getStackForZone(_this._activeVertexDetails.zone);
+                            // For the innermost zone we must consider that the position
+                            // of the marker may change as the vertex is dragged
+                            if (_this._activeVertexDetails.zone === stack.getInnermostZone()) {
+                                // Clone the paths of the zone so we can calculate the new centroid
+                                var paths = new google.maps.MVCArray([new google.maps.MVCArray(_this._activeVertexDetails.zone.shapeOverlay.getPaths().getAt(0).getArray().slice(0))]);
+                                // Adjusted the paths to include the new vertex position
+                                paths.getAt(0)[_this._activeVertexDetails.type](_this._activeVertexDetails.index, latLng);
+                                // Update the marker position and update the coordinate overlay
+                                stack.marker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
+                                stack.updateLatLngFromMarker();
+                            }
+                            _this._activeVertexDetails.zone.managePolygonDistanceBetweenPointsOverlay(true, latLng);
                         }
                     });
-                    google.maps.event.addListener(this._map, 'mouseup', function() {
-                        _this._movingVertexZone = null;
+                    // Disable the vertex drag operation if the user mouses up anywhere so
+                    // it catches all cases (inside or outside the map, over an overlay, etc...)
+                    document.addEventListener('mouseup', function() {
+                        _this._activelyMovingVertex = false;
                     });
                 }
             }
