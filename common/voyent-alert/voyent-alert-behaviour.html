@@ -481,93 +481,127 @@
         _buildDistanceBetweenPointsOverlayDiv: function(zone) {
             var _this = this;
 
-            var div = this._buildOverlayDiv(false, true);
-            var input = document.createElement('input');
-            var span = document.createElement('span');
+            var mainDiv = this._buildOverlayDiv(false, true);
+            var distanceInput = document.createElement('input');
+            var metersSpan = document.createElement('span');
+            var buttonDiv = document.createElement('div');
+            var cancelButton = document.createElement('button');
+            var confirmButton = document.createElement('button');
 
+            mainDiv.style.textAlign = 'center';
             // Prevent the event form bubbling so the zone is not de-selected and the map zoomed
-            div.onclick = div.ondblclick = function(e) {
+            mainDiv.onclick = mainDiv.ondblclick = function(e) {
                 e.stopPropagation();
-                input.focus();
+                distanceInput.focus();
             };
 
             // Set some styling on the input
-            input.style.borderRadius = '7px';
-            input.style.padding = '3px 6px 3px 0px';
-            input.style.border = 'none';
-            input.style.outline = 'none';
-            input.style.backgroundColor = 'transparent';
-            input.oninput = function() {
+            distanceInput.style.color = 'inherit';
+            distanceInput.style.borderRadius = '7px';
+            distanceInput.style.padding = '3px 6px 3px 0px';
+            distanceInput.style.border = 'none';
+            distanceInput.style.outline = 'none';
+            distanceInput.style.backgroundColor = 'transparent';
+            distanceInput.oninput = function() {
                 this.style.width = this.value.length + 'ch';
             };
             // Prevent the user from entering non-numerical keys
-            input.onkeypress = function(e) {
+            distanceInput.onkeypress = function(e) {
                 if (['0','1','2','3','4','5','6','7','8','9'].indexOf(e.key) === -1) {
                     e.preventDefault();
                     return false;
                 }
             };
             // Submit the new radius value on enter key presses
-            input.onkeyup = function(e) {
+            distanceInput.onkeyup = function(e) {
                 if (e.key === 'Enter') {
-                    var stack = _this._loadedAlert.selectedStack;
-                    var zoneIndex = stack.getZoneIndex(zone);
-                    var smallerZone = stack.getZoneAt(zoneIndex - 1);
-                    var largerZone = stack.getZoneAt(zoneIndex + 1);
-                    var newDistance = this.value;
-                    if (parseInt(this.value) < 5) {
-                        newDistance = 5;
-                    }
-                    var paths = zone.shapeOverlay.getPaths();
-                    if (zone.isCircle) {
-                        if (smallerZone) {
-                            var smallerZoneRadius = smallerZone.getPolylineLengthInMeters();
-                            if (newDistance <= smallerZoneRadius) {
-                                _this.fire('message-error', 'Zone radius cannot be smaller than ' + parseInt((smallerZoneRadius+1)) + 'm');
-                                zone.distanceBetweenPointsOverlay.draw();
-                                return;
-                            }
-                        }
-                        if (largerZone) {
-                            var largerZoneRadius = largerZone.getPolylineLengthInMeters();
-                            if (newDistance >= largerZoneRadius) {
-                                _this.fire('message-error', 'Zone radius cannot be larger than ' + parseInt((largerZoneRadius-1)) + 'm');
-                                zone.distanceBetweenPointsOverlay.draw();
-                                return;
-                            }
-                        }
-
-                        // Set the new paths and adjust the position of the overlay
-                        zone.setPaths(_this._adjustDistanceFromCentroid(paths, newDistance));
-                        zone.manageCircleDistanceBetweenPointsOverlay();
-                        zone.distanceBetweenPointsOverlay.draw();
-                        // Since we set the paths of the zone to a non-punched out shape we must punch out the zones again
-                        stack.updateJSONAndCentroid();
-                        stack.punchOutShapes();
-                        // Since we adjusted the size of the larger zone we'll update
-                        // the template JSON and punch out the fallback zone
-                        if (!largerZone) {
-                            _this._loadedAlert.template.updateJSONAndCentroid();
-                            if (_this._fallbackZone) {
-                                _this._fallbackZone.punchOutOverlay();
-                            }
-                        }
-                    }
-                    else {
-                        _this._expandDistanceFromCenter(
-                            stack, zone, stack.marker.getPosition(), null, null, parseInt(newDistance), !smallerZone
-                        );
-                    }
+                    submitDistanceValue();
                 }
             };
-            div.appendChild(input);
+            // Ensure the cancel / confirm buttons are displayed when the input is focused
+            distanceInput.onfocus = function() {
+                buttonDiv.style.display = 'block';
+            };
+            mainDiv.appendChild(distanceInput);
 
             // Add the "meters" abbreviation after the input
-            span.style.marginLeft = '-6px';
-            span.innerText = 'm';
-            div.appendChild(span);
+            metersSpan.style.marginLeft = '-6px';
+            metersSpan.innerText = 'm';
+            mainDiv.appendChild(metersSpan);
 
-            return div;
+            // Add the confirm / cancel buttons below the input
+            buttonDiv.className = 'buttons';
+            buttonDiv.style.marginTop = '5px';
+            buttonDiv.style.display = 'none';
+            confirmButton.innerHTML = '✔';
+            cancelButton.innerHTML = '✖';
+            cancelButton.style.backgroundColor = confirmButton.style.backgroundColor = 'transparent';
+            cancelButton.style.border = confirmButton.style.border = 'none';
+            cancelButton.style.color = confirmButton.style.color = 'inherit';
+            cancelButton.style.cursor = confirmButton.style.cursor = 'pointer';
+            confirmButton.style.marginLeft = '5px';
+            confirmButton.onclick = function() {
+                submitDistanceValue();
+            };
+            cancelButton.onclick = function() {
+                distanceInput.value = zone.getPolylineLengthInMeters();
+            };
+            buttonDiv.appendChild(cancelButton);
+            buttonDiv.appendChild(confirmButton);
+            mainDiv.appendChild(buttonDiv);
+
+            function submitDistanceValue() {
+                var stack = _this._loadedAlert.selectedStack;
+                var zoneIndex = stack.getZoneIndex(zone);
+                var smallerZone = stack.getZoneAt(zoneIndex - 1);
+                var largerZone = stack.getZoneAt(zoneIndex + 1);
+                var newDistance = distanceInput.value;
+                if (parseInt(newDistance) < 5) {
+                    newDistance = 5;
+                }
+                var paths = zone.shapeOverlay.getPaths();
+                if (zone.isCircle) {
+                    if (smallerZone) {
+                        var smallerZoneRadius = smallerZone.getPolylineLengthInMeters();
+                        if (newDistance <= smallerZoneRadius) {
+                            _this.fire('message-error', 'Zone radius cannot be smaller than ' + parseInt((smallerZoneRadius+1)) + 'm');
+                            zone.distanceBetweenPointsOverlay.draw();
+                            return;
+                        }
+                    }
+                    if (largerZone) {
+                        var largerZoneRadius = largerZone.getPolylineLengthInMeters();
+                        if (newDistance >= largerZoneRadius) {
+                            _this.fire('message-error', 'Zone radius cannot be larger than ' + parseInt((largerZoneRadius-1)) + 'm');
+                            zone.distanceBetweenPointsOverlay.draw();
+                            return;
+                        }
+                    }
+
+                    // Set the new paths and adjust the position of the overlay
+                    zone.setPaths(_this._adjustDistanceFromCentroid(paths, newDistance));
+                    zone.manageCircleDistanceBetweenPointsOverlay();
+                    zone.distanceBetweenPointsOverlay.draw();
+                    // Since we set the paths of the zone to a non-punched out shape we must punch out the zones again
+                    stack.updateJSONAndCentroid();
+                    stack.punchOutShapes();
+                    // Since we adjusted the size of the larger zone we'll update
+                    // the template JSON and punch out the fallback zone
+                    if (!largerZone) {
+                        _this._loadedAlert.template.updateJSONAndCentroid();
+                        if (_this._fallbackZone) {
+                            _this._fallbackZone.punchOutOverlay();
+                        }
+                    }
+                }
+                else {
+                    _this._expandDistanceFromCenter(
+                        stack, zone, stack.marker.getPosition(), null, null, parseInt(newDistance), !smallerZone
+                    );
+                }
+            }
+
+            return mainDiv;
         },
 
         /**
@@ -658,6 +692,7 @@
             latInput.style.border = lngInput.style.border = 'none';
             latInput.style.outline = lngInput.style.outline = 'none';
             latInput.style.backgroundColor = lngInput.style.backgroundColor = 'transparent';
+            latInput.style.color = lngInput.style.color = 'inherit';
 
             // Prevent the user from entering non-numerical keys
             latInput.onkeypress = lngInput.onkeypress = function(e) {
@@ -2522,7 +2557,6 @@
                         }
                     });
                     if (kinks.features.length) {
-                        console.log('kinks.features',kinks.features);
                         errorMsg = 'The zone cannot self-intersect';
                     }
                     if (!errorMsg && this.zones.length > 1) {
@@ -3708,7 +3742,7 @@
                 }
                 // Additional zone-specific styling
                 this.div.style.backgroundColor = this.zone.colour;
-                this.div.style.color = input.style.color = this.returnColourBasedOnBackground(this.zone.colour);
+                this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
             };
             /**
              * Handles drawng the stack coordinate overlay.
@@ -3736,7 +3770,7 @@
 
                 // Styling the overlay based on the innermost zone
                 this.div.style.backgroundColor = 'grey';
-                this.div.style.color = latInput.style.color = lngInput.style.color = 'white';
+                this.div.style.color = 'white';
             };
             /**
              * Cleans up the overlay whenever the overlays map property is set to null.
@@ -3760,6 +3794,10 @@
             this._DistanceBetweenPointsOverlay.prototype.hide =
             this._CoordinateOverlay.prototype.hide = function() {
                 this.div.style.display = 'none';
+                var buttons = this.div.querySelector('.buttons');
+                if (buttons) {
+                    buttons.style.display = 'none';
+                }
                 this.visible = false;
             };
             /**
