@@ -2687,9 +2687,9 @@
                         if (eventName === 'set_at' && _outer._activeVertexDetails.type !== 'insertAt') {
                             _outer._revertedVertex = true;
                             zone.shapeOverlay.getPaths().getAt(pathIndex).setAt(vertexIndex, _outer._activeVertexDetails.latLng);
+                            _outer._revertedVertex = false;
                         }
                         else { // Otherwise completely remove the vertex
-                            _outer._revertedVertex = true;
                             zone.shapeOverlay.getPaths().getAt(pathIndex).removeAt(vertexIndex);
                         }
 
