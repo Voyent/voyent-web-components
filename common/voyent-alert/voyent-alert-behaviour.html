@@ -702,9 +702,10 @@
 
             // Store the previous vertex position in case we need to revert
             this.set('_activeVertexDetails', {
+                zone: zone,
                 latLng: newLatLng,
-                type: 'setAt',
-                index: vertexIndex
+                index: vertexIndex,
+                type: 'setAt'
             });
         },
 
@@ -2542,22 +2543,20 @@
                  */
                 _setupPolygonPathListeners: function(zone) {
                     var _this = this;
-                    //Just to be sure we don't duplicate listeners we will always clear existing ones first.
+                    // To ensure we don't duplicate listeners we will always clear existing ones first
                     for (var i=0; i<zone.shapeOverlay.getPaths().length; i++) {
                         (function(pathIndex) {
                             google.maps.event.clearListeners(zone.shapeOverlay.getPaths().getAt(pathIndex),'insert_at');
                             google.maps.event.addListener(zone.shapeOverlay.getPaths().getAt(pathIndex), 'insert_at', function (vertexIndex) {
-                                //Async so the vertex gets inserted before we operate on it.
+                                // setTimeout so the vertex gets inserted before we operate on it
                                 setTimeout(function() {
-                                    if (_outer._revertedVertex) {
-                                        _outer._revertedVertex = false;
-                                        return;
-                                    }
                                     _this._polyAtListener('insert_at',zone,pathIndex,vertexIndex);
                                 },0);
                             });
                             google.maps.event.clearListeners(zone.shapeOverlay.getPaths().getAt(pathIndex),'set_at');
                             google.maps.event.addListener(zone.shapeOverlay.getPaths().getAt(pathIndex), 'set_at', function (vertexIndex) {
+                                // The setAt operation will be triggered when we are
+                                // reverting a vertex so don't process these events
                                 if (_outer._revertedVertex) {
                                     _outer._revertedVertex = false;
                                     return;
@@ -2580,6 +2579,13 @@
                     var zoneIndex = this.getZoneIndex(zone);
                     var outerZone = this.getOutermostZone();
                     var newVertexPosition = zone.shapeOverlay.getPaths().getAt(pathIndex).getAt(vertexIndex);
+                    // Check if the vertex exists because in the recursive expandDistanceFromCenter processing a
+                    // vertex may be inserted (insertAt), updated (setAt), and then removed (removeAt) by this
+                    // listener because validation fails. When this happens the vertex can no longer be found
+                    // because the insertAt event triggers after the setAt and removeAt operations.
+                    if (!newVertexPosition) {
+                        return;
+                    }
                     //Check if the polygon intersects itself. To do this we will use the turf library but we
                     //must first extract the new zone coordinates so they can be interpreted by turf as GeoJSON.
                     var newZoneCoordinates = _outer._AlertTemplate.calculateCoordinatesFromPaths(zone.shapeOverlay.getPaths());
