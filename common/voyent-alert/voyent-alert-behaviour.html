@@ -584,7 +584,6 @@
                     // Set the new paths and adjust the position of the overlay
                     zone.setPaths(_this._adjustDistanceFromCentroid(paths, newDistance));
                     zone.manageCircleDistanceBetweenPointsOverlay();
-                    zone.distanceBetweenPointsOverlay.draw();
                     // Since we set the paths of the zone to a non-punched out shape we must punch out the zones again
                     stack.updateJSONAndCentroid();
                     stack.punchOutShapes();
@@ -2482,9 +2481,10 @@
                                 index: typeof e.edge === 'number' ? (e.edge+1) : e.vertex,
                                 type: typeof e.edge === 'number' ? 'insertAt' : 'setAt'
                             };
-                            // Disable editing mode when switching which vertex is active
+                            // Disable editing mode when switching the active vertex
                             if (zone.distanceBetweenPointsOverlay && _outer._activeVertexDetails &&
-                                _outer._activeVertexDetails.index !== activeVertexDetails.index) {
+                                (_outer._activeVertexDetails.index !== activeVertexDetails.index ||
+                                _outer._activeVertexDetails.type !== activeVertexDetails.type)) {
                                 zone.distanceBetweenPointsOverlay.disableEditingMode();
                             }
                             _outer.set('_activeVertexDetails', activeVertexDetails);
@@ -3780,7 +3780,7 @@
                 // Position the input to the right for circles and centered below for polygons
                 if (this.zone.isCircle) {
                     this.div.style.left = (nc.x + 7) + 'px';
-                    this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
+                    this.div.style.top = (nc.y - 17) + 'px';
                 }
                 else {
                     this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
