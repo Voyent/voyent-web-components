@@ -487,8 +487,7 @@
 
             mainDiv.style.textAlign = 'center';
             mainDiv.style.minWidth = '51px';
-            mainDiv.style.borderWidth = '2px';
-            mainDiv.style.borderStyle = 'none';
+            mainDiv.style.border = '2px solid transparent';
             // Prevent the event form bubbling so the zone is not de-selected and the map zoomed
             mainDiv.onclick = mainDiv.ondblclick = function(e) {
                 e.stopPropagation();
@@ -523,11 +522,7 @@
             };
             // Ensure the cancel / confirm buttons are displayed when the input is focused
             distanceInput.onfocus = function() {
-                if (buttonDiv.style.display !== 'block') {
-                    buttonDiv.style.display = 'block';
-                    mainDiv.style.borderStyle = 'solid';
-                    adjustPositionBy(-2);
-                }
+                zone.distanceBetweenPointsOverlay.enableEditingMode();
             };
             mainDiv.appendChild(distanceInput);
 
@@ -563,8 +558,8 @@
                 var zoneIndex = stack.getZoneIndex(zone);
                 var smallerZone = stack.getZoneAt(zoneIndex - 1);
                 var largerZone = stack.getZoneAt(zoneIndex + 1);
-                var newDistance = distanceInput.value;
-                if (parseInt(newDistance) < 5) {
+                var newDistance = parseInt(distanceInput.value);
+                if (newDistance < 5) {
                     newDistance = 5;
                 }
                 var paths = zone.shapeOverlay.getPaths();
@@ -604,7 +599,7 @@
                 }
                 else {
                     _this._expandDistanceFromCenter(
-                        stack, zone, stack.marker.getPosition(), null, null, parseInt(newDistance), !smallerZone
+                        stack, zone, stack.marker.getPosition(), null, null, newDistance, !smallerZone
                     );
                 }
                 // Keep the zoom level appropriate for the size of the zone
@@ -616,29 +611,17 @@
             // Reverts the distance value to the current one
             function revertDistanceValue() {
                 // Revert the value
-                distanceInput.value = zone.getPolylineLengthInMeters();
+                zone.distanceBetweenPointsOverlay.draw();
                 // Disable editing mode
                 disableEditing();
             }
 
             // Disables editing mode styling
             function disableEditing() {
-                // setTimeout so the overlay has time to redraw after value change
+                // setTimeout so the overlay redraws first after value change
                 setTimeout(function() {
-                    // Disable editing mode by blurring the input and hiding the buttons
-                    distanceInput.blur();
-                    buttonDiv.style.display = mainDiv.style.borderStyle = 'none';
-                    adjustPositionBy(2);
-                    // Reposition the overlay since the height will change
-                    zone.distanceBetweenPointsOverlay.displayAndDraw();
+                    zone.distanceBetweenPointsOverlay.disableEditingMode();
                 },0);
-            }
-
-            // Adjusts the position of the overlay by num pixels. We use this
-            // to prevent movement of the overlay when toggling the border
-            function adjustPositionBy(num) {
-                mainDiv.style.top = (parseFloat(mainDiv.style.top.substring(0,mainDiv.style.top.indexOf('px'))) + num) + 'px';
-                mainDiv.style.left = (parseFloat(mainDiv.style.left.substring(0,mainDiv.style.left.indexOf('px'))) + num) + 'px';
             }
 
             return mainDiv;
@@ -2493,12 +2476,18 @@
                         if (!zone.isCircle && typeof e.path !== 'undefined') {
                             // Store the previous vertex position when hovering
                             // an existing vertex in case we need to revert
-                            _outer.set('_activeVertexDetails', {
+                            var activeVertexDetails = {
                                 zone: zone,
                                 latLng: e.latLng,
                                 index: typeof e.edge === 'number' ? (e.edge+1) : e.vertex,
                                 type: typeof e.edge === 'number' ? 'insertAt' : 'setAt'
-                            });
+                            };
+                            // Disable editing mode when switching which vertex is active
+                            if (zone.distanceBetweenPointsOverlay && _outer._activeVertexDetails &&
+                                _outer._activeVertexDetails.index !== activeVertexDetails.index) {
+                                zone.distanceBetweenPointsOverlay.disableEditingMode();
+                            }
+                            _outer.set('_activeVertexDetails', activeVertexDetails);
                             zone.managePolygonDistanceBetweenPointsOverlay(true, e.latLng);
                         }
                     });
@@ -3652,6 +3641,7 @@
                 this.zone = zone;
                 this.setMap(_outer._map);
                 this.div = _outer._buildDistanceBetweenPointsOverlayDiv(zone);
+                this.editing = false;
             };
             /**
              * A class representing the stack coordinate overlay.
@@ -3788,18 +3778,18 @@
                 input.value = this.zone.getPolylineLengthInMeters();
                 input.style.width = input.value.length + 'ch';
                 // Position the input to the right for circles and centered below for polygons
-                var borderWidth = this.div.style.borderStyle === 'none' ? 0 : 2;
                 if (this.zone.isCircle) {
-                    this.div.style.left = (nc.x + 7 - borderWidth) + 'px';
+                    this.div.style.left = (nc.x + 7) + 'px';
                     this.div.style.top = (nc.y - this.div.offsetHeight/2) + 'px';
                 }
                 else {
                     this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
-                    this.div.style.top = (nc.y + 15 - borderWidth) + 'px';
+                    this.div.style.top = (nc.y + 15) + 'px';
                 }
                 // Additional zone-specific styling
                 this.div.style.backgroundColor = this.zone.colour;
-                this.div.style.color = this.div.style.borderColor = this.returnColourBasedOnBackground(this.zone.colour);
+                this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
+                this.div.style.borderColor = this.editing ? this.div.style.color : 'transparent';
             };
             /**
              * Handles drawng the stack coordinate overlay.
@@ -3851,9 +3841,8 @@
             this._DistanceBetweenPointsOverlay.prototype.hide =
             this._CoordinateOverlay.prototype.hide = function() {
                 this.div.style.display = 'none';
-                var buttons = this.div.querySelector('.buttons');
-                if (buttons) {
-                    this.div.style.borderStyle = buttons.style.display = 'none';
+                if (this.disableEditingMode) {
+                    this.disableEditingMode();
                 }
                 this.visible = false;
             };
@@ -3867,6 +3856,32 @@
                 this.div.style.display = 'block';
                 this.visible = true;
                 this.draw();
+            };
+            /**
+             * Enables editing mode styling for the distance overlay.
+             */
+            this._DistanceBetweenPointsOverlay.prototype.enableEditingMode = function() {
+                var buttons = this.div.querySelector('.buttons');
+                if (buttons) {
+                    this.div.style.borderColor = this.div.style.color;
+                    buttons.style.display = 'block';
+                }
+                this.editing = true;
+            };
+            /**
+             * Disables editing styling for the distance overlay.
+             */
+            this._DistanceBetweenPointsOverlay.prototype.disableEditingMode = function() {
+                var buttons = this.div.querySelector('.buttons');
+                if (buttons) {
+                    this.div.style.borderColor = 'transparent';
+                    buttons.style.display = 'none'
+                }
+                var input = this.div.querySelector('input');
+                if (input) {
+                    input.blur();
+                }
+                this.editing = false;
             };
             /**
              * Moves the zone overlay to a map pane with a higher stacking priority.
