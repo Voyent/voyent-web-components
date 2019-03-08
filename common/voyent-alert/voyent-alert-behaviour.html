@@ -183,14 +183,11 @@
          */
         _buildAlertLocationJSON: function() {
             var pos;
-            //If we have a template with at least two stacks it means we have a template centroid.
-            if (this._loadedAlert.template.zoneStacks.length >= 2) {
-                pos = this._loadedAlert.template.marker.getPosition();
-            } //One stack means we only have a stack centroid.
-            else if (this._loadedAlert.template.zoneStacks.length === 1) {
-                pos = this._loadedAlert.template.zoneStacks[0].marker.getPosition()
+            if (this._loadedAlert.template.zoneStacks.length > 0) {
+                pos = this._AlertTemplate.calculateCentroidFromJSON(this._loadedAlert.template.json);
             }
-            else { //No stacks means we have no centroid, fallback zone only.
+            else {
+                // No stacks means we have no centroid, fallback zone only
                 pos = new google.maps.LatLng(0,0);
             }
             return {
@@ -1805,12 +1802,7 @@
                     //Check if this is a "fixed location" template and store it.
                     delete json.properties.center;
                     if (!this.parentId && this.savePosition) {
-                        if (this.marker) {
-                            json.properties.center = this.marker.getPosition().toJSON();
-                        }
-                        else if (this.zoneStacks.length && this.zoneStacks[0].marker) {
-                            json.properties.center = this.zoneStacks[0].marker.getPosition().toJSON();
-                        }
+                        json.properties.center = _outer._AlertTemplate.calculateCentroidFromJSON(json).toJSON();
                     }
                     //If we have no geometries defined then delete the geo property entirely.
                     if (!json.geo.geometries.length) { delete json.geo; }
@@ -1901,11 +1893,15 @@
                  * the distance and bearing calculated by `calculateRelativeZonePositions`.
                  * @param latLng - The LatLng object representing the position
                  *                 in which the zones will be to.
+                 * @param updateStackMarker - Whether the stack marker position should also be updated.
                  */
-                moveStacksRelativeToPosition: function (latLng) {
+                moveStacksRelativeToPosition: function (latLng, updateStackMarker) {
                     var position = latLng || this.marker.getPosition();
                     for (var i=0; i<this.zoneStacks.length; i++) {
                         this.zoneStacks[i].moveZonesRelativeToPosition(position);
+                        if (updateStackMarker) {
+                            this.zoneStacks[i].updateMarker();
+                        }
                     }
                 },
                 /**
@@ -1945,7 +1941,7 @@
             this._AlertZoneStack = function (id,zones,fromFile) {
                 this.id = id && typeof id === 'string' ? id : _outer._generateUid();
                 this.setZones(zones && zones.length ? zones : []);
-                this.buildMarker();
+                this.updateMarker();
                 this.setFromFile(fromFile);
                 this.updateJSON();
             };
@@ -2012,19 +2008,22 @@
                 /**
                  * Sets the marker and sets up relevant listeners.
                  */
-                buildMarker: function () {
-                    if (!this.marker) {
-                        var paths = this.zones[0] && this.zones[0].shapeOverlay && this.zones[0].shapeOverlay.getPaths();
-                        if (paths) {
-                            var position = _outer._AlertTemplate.calculateCentroidFromPaths(paths);
+                updateMarker: function () {
+                    var paths = this.zones[0] && this.zones[0].shapeOverlay && this.zones[0].shapeOverlay.getPaths();
+                    if (paths) {
+                        var position = _outer._AlertTemplate.calculateCentroidFromPaths(paths);
+                        if (!this.marker) {
                             this.marker = new google.maps.Marker({
                                 position: position, map: _outer._map,
                                 draggable: true, zIndex: 50,
                                 cursor: 'move', visible: false
                             });
                             this._setupMarkerListeners();
-                            this.updateLatLngFromMarker();
                         }
+                        else {
+                            this.marker.setPosition(position);
+                        }
+                        this.updateLatLngFromMarker();
                     }
                 },
                 /**
@@ -2042,7 +2041,7 @@
                         this.coordinateOverlay = new _outer._CoordinateOverlay(this);
                         this.coordinateOverlay.hide();
                     }
-                    else {
+                    else if (this.marker.visible) {
                         // Update the coordinate overlay
                         this.coordinateOverlay.displayAndDraw();
                     }
@@ -2059,7 +2058,7 @@
                         lat = lat || this.marker.getPosition().lat();
                         lng = lng || this.marker.getPosition().lng();
                         this.marker.setPosition({lat: lat, lng: lng});
-                        this._moveStackToNewPosition();
+                        this._moveStackToMarkerPosition();
                     }
                 },
                 /**
@@ -2419,7 +2418,7 @@
                     //Continuously re-draw the overlay as the template is dragged.
                     google.maps.event.addListener(marker, 'drag', function () {
                         // Update the position of the stack
-                        _this._moveStackToNewPosition();
+                        _this._moveStackToMarkerPosition();
                         //_this.manageStackBoundary(true);
                     });
                     /*google.maps.event.addListener(marker, 'dragend', function () {
@@ -2443,7 +2442,7 @@
                  * Moves the stack to the current position of the marker.
                  * @private
                  */
-                _moveStackToNewPosition: function() {
+                _moveStackToMarkerPosition: function() {
                     // Move the stack
                     this.moveZonesRelativeToPosition(this.marker.getPosition());
                     // Update the JSON and punch out the fallback zone

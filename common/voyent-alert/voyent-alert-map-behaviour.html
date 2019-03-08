@@ -474,7 +474,11 @@
          * @returns {Array}
          */
         getCurrentCoordinates: function() {
-            return this._buildAlertLocationJSON().location.geometry.coordinates;
+            if (this._loadedAlert && this._loadedAlert.template) {
+                this._loadedAlert.template.updateJSON();
+                return this._buildAlertLocationJSON().location.geometry.coordinates;
+            }
+            return null;
         },
 
         /**
@@ -1077,7 +1081,7 @@
             //move them to the new coordinate while maintaining the distance and bearing they were from the original position.
             if (latLngCentroid) {
                 this._loadedAlert.template.calculateRelativeStackPositions(this._AlertTemplate.calculateCentroidFromJSON(templateJSON));
-                this._loadedAlert.template.moveStacksRelativeToPosition(latLngCentroid);
+                this._loadedAlert.template.moveStacksRelativeToPosition(latLngCentroid, true);
                 //Re-initialize the polygon path listeners for all stacks of polygonal zones.
                 this._loadedAlert.template.initializePolygonStackPathListeners();
             }

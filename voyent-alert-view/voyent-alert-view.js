@@ -228,17 +228,18 @@ Polymer({
         this._mapIsReady().then(function() {
             if (!_this._templateId) { return; }
             _this._fetchLocationRecord(_this._templateId).then(function(location) {
+                // Fallback zone only alert
+                if (!_this._loadedAlert.template.zoneStacks.length) {
+                    return;
+                }
                 //Update the template coordinates, the label's position and adjust the bounds.
                 var pos = new google.maps.LatLng(location.location.geometry.coordinates[1],location.location.geometry.coordinates[0]);
+                _this._loadedAlert.template.updateJSON();
+                _this._loadedAlert.template.calculateRelativeStackPositions(_this._AlertTemplate.calculateCentroidFromJSON(_this._loadedAlert.template.json));
                 if (_this._loadedAlert.template.marker) {
-                    _this._loadedAlert.template.calculateRelativeStackPositions(_this._loadedAlert.template.marker.getPosition());
                     _this._loadedAlert.template.marker.setPosition(pos);
                 }
-                else if (_this._loadedAlert.template.zoneStacks.length && _this._loadedAlert.template.zoneStacks[0].marker) {
-                    _this._loadedAlert.template.calculateRelativeStackPositions(_this._loadedAlert.template.zoneStacks[0].marker.getPosition());
-                }
-                else { return; }
-                _this._loadedAlert.template.moveStacksRelativeToPosition(pos);
+                _this._loadedAlert.template.moveStacksRelativeToPosition(pos, true);
                 // Don't adjust the map in view mode as the user may be panning the map.
                 if (!_this.mode !== 'view' && !_this.mode !== 'response') {
                     _this._adjustBoundsAndPan();
@@ -255,12 +256,9 @@ Polymer({
      * @returns {lat: Number, lng: Number}
      */
     getAlertCenter: function() {
-        if (!this._loadedAlert || !this._loadedAlert.template) { return; }
-        if (this._loadedAlert.template.marker) {
-            return this._loadedAlert.template.marker.getPosition().toJSON();
-        }
-        else if (this._loadedAlert.template.zoneStacks.length && this._loadedAlert.template.zoneStacks[0].marker) {
-            return this._loadedAlert.template.zoneStacks[0].marker.getPosition().toJSON();
+        if (this._loadedAlert && this._loadedAlert.template) {
+            this._loadedAlert.template.updateJSON();
+            return this._AlertTemplate.calculateCentroidFromJSON(this._loadedAlert.template.json).toJSON();
         }
     },
 
