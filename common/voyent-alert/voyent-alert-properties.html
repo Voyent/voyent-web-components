@@ -298,11 +298,14 @@ Internal component used to display the properties panel inside Voyent alert comp
                 padding-top: 2px;
             }
             .category-item {
+                transition: border 0.3s, color 0.3s, background-color 0.3s;
+                background-color: white;
+                color: #333333;
                 max-width: 500px;
                 border: 2px black solid;
                 height: 40px;
-                cursor: pointer;
                 line-height: 36px;
+                cursor: pointer;
                 text-align: center;
                 display: inline-block;
                 margin: -2px 4px 0 0;
@@ -315,11 +318,9 @@ Internal component used to display the properties panel inside Voyent alert comp
                 position:relative;
             }
             .category-item.iron-selected {
-                background-color: var(--app-primary-color,#2E348E);
-                border: none;
+                background-color: var(--app-primary-color, #2E348E);
+                border: 2px var(--app-primary-color, #2E348E) solid;
                 color: white;
-                line-height: 40px;
-                padding: 0 22px;
             }
             .category-item[data-editing] {
                 height: 80px;
