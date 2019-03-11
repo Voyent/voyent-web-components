@@ -3735,8 +3735,8 @@
             this._MouseHoldOverlay.prototype.onAdd =
             this._DistanceBetweenPointsOverlay.prototype.onAdd =
             this._CoordinateOverlay.prototype.onAdd = function() {
-                //Add the div to the floatShadow pane so it renders above the markers.
-                this.getPanes().floatShadow.appendChild(this.div);
+                // Add the div to the overlayMouseTarget pane so it renders above the markers
+                this.getPanes().overlayMouseTarget.appendChild(this.div);
             };
             this._MobileLocationOverlay.prototype.onAdd = function() {
                 // Add the div to the floatPane pane so it renders above everything
