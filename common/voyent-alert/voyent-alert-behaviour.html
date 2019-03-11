@@ -403,7 +403,7 @@
          */
         _mouseoverZoneProperties: function(e) {
             var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
-            this._mouseoverZone(zoneStack.getZoneAt(e.model.get('zoneIndex'),false));
+            this._mouseoverZone(zoneStack.getZoneAt(e.model.get('zoneIndex'), false));
         },
 
         /**
@@ -412,8 +412,8 @@
          * @param showMarker
          * @private
          */
-        _mouseoverZone: function(zone,showMarker) {
-            zone.highlightOverlay(showMarker);
+        _mouseoverZone: function(zone, showMarker) {
+            zone.highlightOverlay(!!showMarker);
         },
 
         /**
@@ -481,9 +481,6 @@
             var mainDiv = this._buildOverlayDiv(false, true);
             var distanceInput = document.createElement('input');
             var metersSpan = document.createElement('span');
-            var buttonDiv = document.createElement('div');
-            var cancelButton = document.createElement('button');
-            var confirmButton = document.createElement('button');
 
             mainDiv.style.textAlign = 'center';
             mainDiv.style.minWidth = '51px';
@@ -531,26 +528,8 @@
             metersSpan.innerText = 'm';
             mainDiv.appendChild(metersSpan);
 
-            // Add the confirm / cancel buttons below the input
-            buttonDiv.className = 'buttons';
-            buttonDiv.style.marginTop = '5px';
-            buttonDiv.style.display = 'none';
-            confirmButton.innerHTML = '✔';
-            cancelButton.innerHTML = '✖';
-            cancelButton.style.backgroundColor = confirmButton.style.backgroundColor = 'transparent';
-            cancelButton.style.border = confirmButton.style.border = 'none';
-            cancelButton.style.color = confirmButton.style.color = 'inherit';
-            cancelButton.style.cursor = confirmButton.style.cursor = 'pointer';
-            confirmButton.style.marginLeft = '5px';
-            confirmButton.onclick = function() {
-                submitDistanceValue();
-            };
-            cancelButton.onclick = function() {
-                revertDistanceValue();
-            };
-            buttonDiv.appendChild(cancelButton);
-            buttonDiv.appendChild(confirmButton);
-            mainDiv.appendChild(buttonDiv);
+            // Add the cancel / confirm buttons
+            mainDiv.appendChild(this._buildButtonsDiv(submitDistanceValue, revertDistanceValue));
 
             // Submits the new distance value
             function submitDistanceValue() {
@@ -699,60 +678,110 @@
         _buildCoordinateOverlayDiv: function(stack) {
             var _this = this;
 
-            var div = this._buildOverlayDiv(false, true);
+            var mainDiv = this._buildOverlayDiv(false, true);
+            var latDivWrapper = document.createElement('div');
+            var latSpan = document.createElement('span');
             var latInput = document.createElement('input');
-            latInput.className = 'lat';
+            var lngDivWrapper = document.createElement('div');
+            var lngSpan = document.createElement('span');
             var lngInput = document.createElement('input');
+
+            // Set some styling
+            mainDiv.style.border = '2px solid transparent';
+            latDivWrapper.style.cursor = lngDivWrapper.style.cursor = 'text';
+            latInput.className = 'lat';
             lngInput.className = 'lng';
-
-            // Prevent the event form bubbling so the map doesn't zoom
-            latInput.onclick = latInput.ondblclick =
-            lngInput.onclick = lngInput.ondblclick = function(e) {
-                e.stopPropagation();
-            };
-
-            // Set some styling on the inputs
             latInput.style.border = lngInput.style.border = 'none';
             latInput.style.outline = lngInput.style.outline = 'none';
             latInput.style.backgroundColor = lngInput.style.backgroundColor = 'transparent';
             latInput.style.color = lngInput.style.color = 'inherit';
 
-            // Prevent the user from entering non-numerical keys
+            // Prevent the event form bubbling so the map doesn't zoom, focus the
+            // input, and ensure the cancel / confirm buttons are displayed
+            latDivWrapper.onclick = latDivWrapper.ondblclick = latSpan.onclick =
+            latSpan.ondblclick = latInput.onclick = latInput.ondblclick = function(e) {
+                e.stopPropagation();
+                latInput.focus();
+                stack.coordinateOverlay.enableEditingMode();
+            };
+            lngDivWrapper.onclick = lngDivWrapper.ondblclick = lngSpan.onclick =
+            lngSpan.ondblclick = lngInput.onclick = lngInput.ondblclick = function(e) {
+                e.stopPropagation();
+                lngInput.focus();
+                stack.coordinateOverlay.enableEditingMode();
+            };
+
+            // Prevent the user from entering unsupported keys
             latInput.onkeypress = lngInput.onkeypress = function(e) {
-                if (['0','1','2','3','4','5','6','7','8','9'].indexOf(e.key) === -1) {
+                if (['0','1','2','3','4','5','6','7','8','9','.','-'].indexOf(e.key) === -1) {
                     e.preventDefault();
                     return false;
                 }
             };
 
             // Submit the new lat/lng value on enter key presses
-            latInput.onkeyup = function(e) {
+            latInput.onkeyup = lngInput.onkeyup = function(e) {
                 if (e.key === 'Enter') {
-                    var latVal = parseFloat(this.value);
-                    if (latVal > 90 || latVal < -90) {
-                        _this.fire('message-error', 'Latitude cannot be less than or greater than 90');
-                        this.value = stack.lat;
-                        return;
-                    }
-                    stack.updateMarkerPosition(latVal, null);
+                    submitCoordinateValues();
                 }
-            };
-            lngInput.onkeyup = function(e) {
-                if (e.key === 'Enter') {
-                    var lngVal = parseFloat(this.value);
-                    if (lngVal > 180 || lngVal < -180) {
-                        _this.fire('message-error', 'Longitude cannot be less than or greater than 180');
-                        this.value = stack.lng;
-                        return;
-                    }
-                    stack.updateMarkerPosition(null, lngVal);
+                else if (e.key === 'Escape') {
+                    revertCoordinateValues();
                 }
             };
 
-            div.appendChild(latInput);
-            div.appendChild(lngInput);
+            // Add the "Lat" label before the input
+            latSpan.innerText = 'Lat: ';
+            latDivWrapper.appendChild(latSpan);
+            latDivWrapper.appendChild(latInput);
+            mainDiv.appendChild(latDivWrapper);
 
-            return div;
+            // Add the "Lng" label before the input
+            lngSpan.innerText = 'Lng: ';
+            lngDivWrapper.appendChild(lngSpan);
+            lngDivWrapper.appendChild(lngInput);
+            mainDiv.appendChild(lngDivWrapper);
+
+            // Add the cancel / confirm buttons
+            mainDiv.appendChild(this._buildButtonsDiv(submitCoordinateValues, revertCoordinateValues));
+
+            // Submits the new coordinate values
+            function submitCoordinateValues() {
+                var latVal = parseFloat(latInput.value);
+                if (latVal > 90 || latVal < -90) {
+                    _this.fire('message-error', 'Latitude cannot be less than or greater than 90');
+                    latInput.value = stack.lat;
+                    return;
+                }
+                var lngVal = parseFloat(lngInput.value);
+                if (lngVal > 180 || lngVal < -180) {
+                    _this.fire('message-error', 'Longitude cannot be less than or greater than 180');
+                    lngInput.value = stack.lng;
+                    return;
+                }
+                stack.updateMarkerPosition(latVal, lngVal);
+
+                // Keep the stack in view
+                _this._panToZone(stack.getOutermostZone());
+                // Disable editing mode
+                disableEditing();
+            }
+
+            // Reverts the coordinate values to the the current ones
+            function revertCoordinateValues() {
+                // Revert the value
+                stack.coordinateOverlay.draw();
+                // Disable editing mode
+                disableEditing();
+            }
+
+            // Disables editing mode styling
+            function disableEditing() {
+                // setTimeout so the overlay redraws first after value change
+                setTimeout(function() {
+                    stack.coordinateOverlay.disableEditingMode();
+                },0);
+            }
+            return mainDiv;
         },
 
         /**
@@ -774,6 +803,45 @@
                 newPath.push(google.maps.geometry.spherical.computeOffset(centroid,distance,bearing));
             }
             return new google.maps.MVCArray([new google.maps.MVCArray(newPath)])
+        },
+
+        /**
+         * Builds and returns a div containing ✔ and ✖ buttons.
+         * @param confirmListener
+         * @param cancelListener
+         */
+        _buildButtonsDiv: function(confirmListener, cancelListener) {
+            var buttonsDiv = document.createElement('div');
+            var cancelButton = document.createElement('button');
+            var confirmButton = document.createElement('button');
+
+            buttonsDiv.className = 'buttons';
+            buttonsDiv.style.marginTop = '5px';
+            buttonsDiv.style.display = 'none';
+            buttonsDiv.style.textAlign = 'center';
+            confirmButton.innerHTML = '✔';
+            cancelButton.innerHTML = '✖';
+            cancelButton.style.backgroundColor = confirmButton.style.backgroundColor = 'transparent';
+            cancelButton.style.border = confirmButton.style.border = 'none';
+            cancelButton.style.color = confirmButton.style.color = 'inherit';
+            cancelButton.style.cursor = confirmButton.style.cursor = 'pointer';
+            confirmButton.style.marginLeft = '5px';
+            confirmButton.onclick = function(e) {
+                e.stopPropagation();
+                if (typeof confirmListener === 'function') {
+                    confirmListener(e);
+                }
+            };
+            cancelButton.onclick = function(e) {
+                e.stopPropagation();
+                if (typeof cancelListener === 'function') {
+                    cancelListener(e);
+                }
+            };
+            buttonsDiv.appendChild(cancelButton);
+            buttonsDiv.appendChild(confirmButton);
+
+            return buttonsDiv;
         },
 
         /**
@@ -2019,15 +2087,6 @@
                         this.setLat(markerPos.lat());
                         this.setLng(markerPos.lng());
                     }
-                    if (!this.coordinateOverlay) {
-                        // Create the coordinate overlay but start with it hidden
-                        this.coordinateOverlay = new _outer._CoordinateOverlay(this);
-                        this.coordinateOverlay.hide();
-                    }
-                    else if (this.marker.visible) {
-                        // Update the coordinate overlay
-                        this.coordinateOverlay.displayAndDraw();
-                    }
                 },
                 /**
                  * Updates the marker position using the passed lat/lng, and updates
@@ -2404,15 +2463,20 @@
                         _this._moveStackToMarkerPosition();
                         //_this.manageStackBoundary(true);
                     });
+
+                    google.maps.event.addListener(marker, 'mouseover', function () {
+                        // Create the coordinate overlay or if we have one
+                        // then redraw it if it is not already visible
+                        if (!_this.coordinateOverlay) {
+                            _this.coordinateOverlay = new _outer._CoordinateOverlay(_this);
+                        }
+                        else if (!_this.coordinateOverlay.visible) {
+                            _this.coordinateOverlay.displayAndDraw();
+                        }
+                    });
                     /*google.maps.event.addListener(marker, 'dragend', function () {
                         _this.manageStackBoundary(false);
                     });*/
-                    //Add click listener to marker.
-                    google.maps.event.addListener(marker, 'click', function () {
-                        //Toggle all the accordion panes closed.
-                        _outer._toggleProperties(null);
-                        _outer.set('_loadedAlert.selectedStack',_this);
-                    });
                     /*//Add mouseover and mouseout listeners to highlight the stack boundary.
                     google.maps.event.addListener(marker, 'mouseover', function () {
                         _this.manageStackBoundary(true);
@@ -2435,10 +2499,6 @@
                     }
                     // Update the position of the radius polyline
                     this.manageZoneRadiusOverlays();
-                    // Update the position of the coordinate overlay
-                    if (this.coordinateOverlay) {
-                        this.coordinateOverlay.displayAndDraw();
-                    }
                     // Update the stored lat/lng coordinates
                     this.updateLatLngFromMarker();
                 },
@@ -2471,7 +2531,11 @@
                     });
                     // Adjust zone styling on zone hover and toggle the polygon distance overlay on vertex hover
                     google.maps.event.addListener(overlay, 'mouseover', function(e) {
-                        _outer._mouseoverZone(zone,true);
+                        _outer._mouseoverZone(zone, true);
+                        // Store which zone the mouse is over so we can use it to determine whether the mouse
+                        // is still over a zone within the stack or if it has moved outside of the stack
+                        _this.activeZoneOnMouseover = zone;
+                        // Process mouseover on the vertices
                         if (!zone.isCircle && typeof e.path !== 'undefined') {
                             // Store the previous vertex position when hovering
                             // an existing vertex in case we need to revert
@@ -2492,7 +2556,21 @@
                         }
                     });
                     google.maps.event.addListener(overlay, 'mouseout', function(e) {
-                        _outer._mouseoutZone(zone);
+                        if (typeof e.path === 'undefined') {
+                            _outer._mouseoutZone(zone);
+                            _this.activeZoneOnMouseout = _this.activeZoneOnMouseover;
+                            setTimeout(function() {
+                                // If the `activeZoneOnMouseover` property has not changed then it means a mouseover
+                                // event was not fired after this mouseout event was received. This indicates
+                                // that the mouse was moved outside of the stack rather than just to another
+                                // zone within the stack, so we will hide the coordinate overlay
+                                if (_this.activeZoneOnMouseout === _this.activeZoneOnMouseover) {
+                                    if (_this.coordinateOverlay) {
+                                        _this.coordinateOverlay.hide();
+                                    }
+                                }
+                            });
+                        }
                     });
                     if (!zone.isCircle) {
                         // Handle polygon edits
@@ -2923,9 +3001,8 @@
                     if (this.nameOverlay) {
                         this.nameOverlay.draw();
                     }
-                    // Update the visibility of the radius overlay and stack marker
+                    // Update the visibility of the radius overlay
                     this.manageCircleDistanceBetweenPointsOverlay();
-                    this.toggleStackMarker(active);
                 },
                 /**
                  * Sets whether this zone was derived from a file.
@@ -2969,8 +3046,6 @@
                     if (_outer._zoneToReshape === this) {
                         _outer._disableZoneReshaping();
                     }
-                    // Hide the stack marker
-                    this.toggleStackMarker(false);
                 },
                 /**
                  * Highlights the shape overlay by adding a border.
@@ -3005,17 +3080,9 @@
                         if (stack && stack.marker && !stack.fromFile) {
                             if (visible) {
                                 stack.marker.setOptions( { visible: true } );
-                                stack.coordinateOverlay.displayAndDraw();
                             }
                             else {
-                                // Prevent hiding the stack marker if we have an active zone within the stack
-                                for (var i=0; i<stack.zones.length; i++) {
-                                    if (stack.zones[i].active) {
-                                        return;
-                                    }
-                                }
                                 stack.marker.setOptions( { visible: false } );
-                                stack.coordinateOverlay.hide();
                             }
                         }
                     }
@@ -3650,6 +3717,8 @@
                 this.stack = stack;
                 this.setMap(_outer._map);
                 this.div = _outer._buildCoordinateOverlayDiv(stack);
+                this.editing = false;
+                this.visible = true;
             };
             // Inherit the prototype of google.maps.OverlayView
             this._ProximityZoneOverlay.prototype = new google.maps.OverlayView();
@@ -3818,6 +3887,7 @@
                 // Styling the overlay based on the innermost zone
                 this.div.style.backgroundColor = 'grey';
                 this.div.style.color = 'white';
+                this.div.style.borderColor = this.editing ? this.div.style.color : 'transparent';
             };
             /**
              * Cleans up the overlay whenever the overlays map property is set to null.
@@ -3858,9 +3928,10 @@
                 this.draw();
             };
             /**
-             * Enables editing mode styling for the distance overlay.
+             * Enables editing mode styling for the distance and coordinate overlays.
              */
-            this._DistanceBetweenPointsOverlay.prototype.enableEditingMode = function() {
+            this._DistanceBetweenPointsOverlay.prototype.enableEditingMode =
+            this._CoordinateOverlay.prototype.enableEditingMode = function() {
                 var buttons = this.div.querySelector('.buttons');
                 if (buttons) {
                     this.div.style.borderColor = this.div.style.color;
@@ -3869,17 +3940,20 @@
                 this.editing = true;
             };
             /**
-             * Disables editing styling for the distance overlay.
+             * Disables editing styling for the distance and coordinate overlays.
              */
-            this._DistanceBetweenPointsOverlay.prototype.disableEditingMode = function() {
+            this._DistanceBetweenPointsOverlay.prototype.disableEditingMode =
+            this._CoordinateOverlay.prototype.disableEditingMode = function() {
                 var buttons = this.div.querySelector('.buttons');
                 if (buttons) {
                     this.div.style.borderColor = 'transparent';
                     buttons.style.display = 'none'
                 }
-                var input = this.div.querySelector('input');
-                if (input) {
-                    input.blur();
+                var inputs = this.div.querySelectorAll('input');
+                if (inputs && inputs.length) {
+                    for (var i=0; i<inputs.length; i++) {
+                        inputs[i].blur();
+                    }
                 }
                 this.editing = false;
             };
