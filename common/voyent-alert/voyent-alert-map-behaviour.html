@@ -257,24 +257,50 @@
         _setupMapListeners: function() {
             var _this = this;
             if (this._isAnAlertEditor()) {
-                var mapDiv = this._map.getDiv();
+                var mapDiv = this._map.getDiv(), stack;
                 if (mapDiv) {
                     mapDiv.addEventListener('mousemove', function(e) {
+                        var mouseLatLng = _this._fromMouseEventToLatLng(e);
                         if (_this._activelyMovingVertex) {
-                            var latLng = _this._fromMouseEventToLatLng(e);
-                            var stack = _this._loadedAlert.template.getStackForZone(_this._activeVertexDetails.zone);
+                            stack = _this._loadedAlert.template.getStackForZone(_this._activeVertexDetails.zone);
                             // For the innermost zone we must consider that the position
                             // of the marker may change as the vertex is dragged
                             if (_this._activeVertexDetails.zone === stack.getInnermostZone()) {
                                 // Clone the paths of the zone so we can calculate the new centroid
                                 var paths = new google.maps.MVCArray([new google.maps.MVCArray(_this._activeVertexDetails.zone.shapeOverlay.getPaths().getAt(0).getArray().slice(0))]);
                                 // Adjusted the paths to include the new vertex position
-                                paths.getAt(0)[_this._activeVertexDetails.type](_this._activeVertexDetails.index, latLng);
+                                paths.getAt(0)[_this._activeVertexDetails.type](_this._activeVertexDetails.index, mouseLatLng);
                                 // Update the marker position and update the coordinate overlay
                                 stack.marker.setPosition(_this._AlertTemplate.calculateCentroidFromPaths(paths));
                                 stack.updateLatLngFromMarker();
                             }
-                            _this._activeVertexDetails.zone.managePolygonDistanceBetweenPointsOverlay(true, latLng);
+                            _this._activeVertexDetails.zone.managePolygonDistanceBetweenPointsOverlay(true, mouseLatLng);
+                        }
+                        else {
+                            var zoneStacks = _this._loadedAlert && _this._loadedAlert.template && _this._loadedAlert.template.zoneStacks;
+                            if (mouseLatLng && zoneStacks) {
+                                for (var i=0; i<zoneStacks.length; i++) {
+                                    stack = zoneStacks[i];
+                                    if (!stack.fromFile) {
+                                        var stackBounds = _this._AlertZone.getBoundingBox(stack.getOutermostZone());
+                                        var ne = stackBounds.getNorthEast();
+                                        var sw = stackBounds.getSouthWest();
+                                        var boundingPolygon = new google.maps.Polygon({
+                                            paths: [ne, new google.maps.LatLng(sw.lat(), ne.lng()), sw, new google.maps.LatLng(ne.lat(), sw.lng()), ne]
+                                        });
+
+                                        if (google.maps.geometry.poly.containsLocation(mouseLatLng,boundingPolygon)) {
+                                            stack.marker.setOptions( { visible: true } );
+                                        }
+                                        else {
+                                            stack.marker.setOptions( { visible: false } );
+                                            if (stack.coordinateOverlay) {
+                                                stack.coordinateOverlay.hide();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     });
                     // Disable the vertex drag operation if the user mouses up anywhere so
