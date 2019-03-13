@@ -486,6 +486,26 @@
         },
 
         /**
+         * Waits up to 5 seconds for an alert to be loaded and then resolves with the response from getSortedZoneIds.
+         * @returns {Promise}
+         */
+        getSortedZoneIdsWhenReady: function() {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                _this._waitForCondition(
+                    function() {
+                        return !!(_this._loadedAlert && _this._loadedAlert.template);
+                    },
+                    5000
+                ).then(function() {
+                    resolve(_this.getSortedZoneIds());
+                }).catch(function() {
+                    reject();
+                });
+            });
+        },
+
+        /**
          * Returns a JSON representation of the currently loaded alert.
          * @returns {*}
          */
