@@ -447,6 +447,45 @@
         },
 
         /**
+         * Returns a list of zone ids sorted by stack from west to east and then from
+         * innermost to outermost zone within each stack. Excludes the fallback zone.
+         * @returns []
+         */
+        getSortedZoneIds: function() {
+            var sortedZoneIds = [];
+            var zoneStacks = this._loadedAlert && this._loadedAlert.template && this._loadedAlert.template.zoneStacks;
+            if (zoneStacks && zoneStacks.length) {
+                var stackData = [];
+                for (var i=0; i<zoneStacks.length; i++) {
+                    var zoneData = [];
+                    for (var j=0; j<zoneStacks[i].zones.length; j++) {
+                        var zone = zoneStacks[i].zones[j];
+                        zoneData.push({
+                            id: zone.id,
+                            lng: this._AlertZone.getBoundingBox(zone).getSouthWest().lng()
+                        })
+                    }
+                    stackData.push(zoneData);
+                }
+                // Sort the stacks from west to east. Since the zones within each stack are already
+                // sorted by innermost to outermost we will get the outermost zone by selecting
+                // the last one and use that to determine the order of the stacks. This also
+                // means that we don't need to sort the list of zones further since they will
+                // already be sorted by stack from west to east and innermost to outermost
+                stackData.sort(function(a, b) {
+                    return a[a.length-1].lng - b[b.length-1].lng;
+                });
+                // Flatten the arrays to a simple list of zone ids
+                sortedZoneIds = stackData.map(function(zonesForStack) {
+                    return zonesForStack.map(function(zoneObj) {
+                        return zoneObj.id;
+                    });
+                }).flat();
+            }
+            return sortedZoneIds;
+        },
+
+        /**
          * Returns a JSON representation of the currently loaded alert.
          * @returns {*}
          */
