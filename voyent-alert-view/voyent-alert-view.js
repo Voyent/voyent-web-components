@@ -633,14 +633,14 @@ Polymer({
      */
     _addMobileLocationButton: function() {
         var _this = this;
-        /*// Can be used for testing this button on desktop
-        window.vras = {
-            lat: 51.177010,
-            lng: -115.567665,
+        // Can be used for testing this button on desktop
+        /*window.vras = {
+            lat: 51.08427,
+            lng: -114.13062,
             getLocation: function() {
                 this.lat = this.lat + 0.00010;
                 this.lng = this.lng + 0.00010;
-                window._this.returnCurrentLocation(this.lat, this.lng );
+                util.fire('returnCurrentLocation', { lat: this.lat, lng: this.lng });
             },
         };*/
         if (this.mode === 'notification' && typeof vras !== 'undefined') {
@@ -650,17 +650,15 @@ Polymer({
                 this._toggleMobileLocationTracking.bind(this),
             function() {
                     _this._mobileLocationEnabled = false;
-                    window._this = {
-                        returnCurrentLocation: function(lat,lng) {
-                            _this._drawMobileLocation(lat, lng);
-                            // Pan on the original alert + the mobile location, only do
-                            // this when requested so we don't pan the map when polling
-                            if (_this._includeMobileLocationInPanning) {
-                                _this._adjustBoundsAndPan();
-                                _this._includeMobileLocationInPanning = false;
-                            }
+                    window.addEventListener('returnCurrentLocation', function(e) {
+                        _this._drawMobileLocation(e.detail.lat, e.detail.lng);
+                        // Pan on the original alert + the mobile location, only do
+                        // this when requested so we don't pan the map when polling
+                        if (_this._includeMobileLocationInPanning) {
+                            _this._adjustBoundsAndPan();
+                            _this._includeMobileLocationInPanning = false;
                         }
-                    };
+                    });
                     // Start with mobile location tracking enabled
                     _this._toggleMobileLocationTracking();
                 }
