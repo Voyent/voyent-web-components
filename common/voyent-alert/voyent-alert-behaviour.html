@@ -1192,7 +1192,7 @@
                 // We only want to allow editing the outer boundary of a zone so we can control whether
                 // the inner zone is editable. So set the shape to the outer path only and when they
                 // are done editing we will punch out the shape again to recreate the inner path.
-                var stack = this._loadedAlert.template.getStackForZone(this._zoneToReshape);
+                var stack = this._zoneToReshape.getParentStack();
                 if (stack.zones.indexOf(this._zoneToReshape) > 0) {
                     this._zoneToReshape.setPaths([this._zoneToReshape.shapeOverlay.getPaths().getAt(0)]);
                 }
@@ -1227,7 +1227,7 @@
                     // If we were editing a stacked zone then we punch out the shape when they are
                     // done editing. This is because we only allow them to edit the outer path of
                     // the zone so we can control whether the inner zone is editable or not.
-                    var stack = _this._loadedAlert.template.getStackForZone(zoneToReshape);
+                    var stack = zoneToReshape.getParentStack();
                     if (stack.zones.indexOf(zoneToReshape) > 0) {
                         // Now that editing is done we must punch the shape out again
                         //Update the stack JSON and adjust the centroid position.
@@ -1997,6 +1997,7 @@
                 this.updateMarker();
                 this.setFromFile(fromFile);
                 this.updateJSON();
+                this.forceDisplayMarker = false;
             };
             /**
              * Returns the colour of the zone at the passed index, assuming
@@ -2436,6 +2437,55 @@
                     }
                 },
                 /**
+                 * Manages the visibility of the stack marker on zone selection for the rare case where
+                 * the marker does not live within the boundary of the innermost zone (VRAS-774).
+                 * @param visible
+                 * @private
+                 */
+                _forceToggleStackMarkerOnZoneActivation: function(visible) {
+                    if (this && !this.fromFile) {
+                        var markerWithinStack = google.maps.geometry.poly.containsLocation(
+                            this.marker.getPosition(), this.getInnermostZone().shapeOverlay
+                        );
+                        if (!visible || (visible && !markerWithinStack)) {
+                            this._forceToggleStackMarker(visible);
+                        }
+                    }
+                },
+                /**
+                 * Manages the visibility of the stack marker after polygon edits for the rare case where
+                 * the marker does not live within the boundary of the innermost zone (VRAS-774).
+                 */
+                _forceToggleStackMarkerAfterPolygonEdit: function() {
+                    if (this && !this.fromFile) {
+                        var markerWithinStack = google.maps.geometry.poly.containsLocation(
+                            this.marker.getPosition(), this.getInnermostZone().shapeOverlay
+                        );
+                        var visible;
+                        if (markerWithinStack && this.forceDisplayMarker) {
+                            visible = false;
+                        }
+                        else if (!markerWithinStack && !this.forceDisplayMarker) {
+                            visible = true;
+                        }
+                        if (typeof visible === 'boolean') {
+                            this._forceToggleStackMarker(visible);
+                        }
+                    }
+                },
+                /**
+                 * Manages force toggling the stack marker and associated coordinate overlay.
+                 * @param visible
+                 * @private
+                 */
+                _forceToggleStackMarker: function(visible) {
+                    this.forceDisplayMarker = visible;
+                    this.marker.setOptions( { visible: visible } );
+                    if (!visible && this.coordinateOverlay) {
+                        this.coordinateOverlay.hide();
+                    }
+                },
+                /**
                  * Initializes marker listeners for the zone stack.
                  * @private
                  */
@@ -2560,7 +2610,8 @@
                                 // event was not fired after this mouseout event was received. This indicates
                                 // that the mouse was moved outside of the stack rather than just to another
                                 // zone within the stack, so we will hide the coordinate overlay
-                                if (_this.activeZoneOnMouseout === _this.activeZoneOnMouseover && _this.coordinateOverlay) {
+                                if (_this.activeZoneOnMouseout === _this.activeZoneOnMouseover &&
+                                    _this.coordinateOverlay && !_this.forceDisplayMarker) {
                                     _this.coordinateOverlay.hide();
                                 }
                             });
@@ -2811,6 +2862,9 @@
                     // Update the position of the distance overlay
                     zone.managePolygonDistanceBetweenPointsOverlay(true, newVertexPosition);
 
+                    // Manage the visibility of the stack marker to ensure it can always be accessed
+                    this._forceToggleStackMarkerAfterPolygonEdit();
+
                     // Quickly toggle the overlay to fix a couple bugs with correctly displaying the polygons:
                     // 1) Dragging a multi-zone polygon stack after editing will leave a line
                     //    where the edited vertex connects to its neighbouring vertices.
@@ -2910,12 +2964,6 @@
             this._AlertZone.prototype = {
                 constructor: _outer._AlertZone,
                 /**
-                 * Returns whether this Polygon was originally drawn as a circle.
-                 */
-                isCircle: function() {
-                    return this.isCircle;
-                },
-                /**
                  * Sets the name and notifies the polymer path.
                  * @param name
                  */
@@ -2997,6 +3045,10 @@
                     }
                     // Update the visibility of the radius overlay
                     this.manageCircleDistanceBetweenPointsOverlay();
+                    // Handle the special case where we want to force display the stack marker on zone selection
+                    if (!this.isCircle && this.getParentStack()) {
+                        this.getParentStack()._forceToggleStackMarkerOnZoneActivation(active);
+                    }
                 },
                 /**
                  * Sets whether this zone was derived from a file.
@@ -3069,17 +3121,26 @@
                  */
                 toggleStackMarker: function(visible) {
                     if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
-                        var stack = _outer._loadedAlert.template.getStackForZone(this);
+                        var stack = this.getParentStack();
                         // Toggle the stack marker if the zone and stack were not derived from a file import
                         if (stack && stack.marker && !stack.fromFile) {
                             if (visible) {
                                 stack.marker.setOptions( { visible: true } );
                             }
-                            else {
+                            else if (!stack.forceDisplayMarker) {
                                 stack.marker.setOptions( { visible: false } );
                             }
                         }
                     }
+                },
+                /**
+                 * Returns the zone stack that this zone belongs to.
+                 */
+                getParentStack: function() {
+                    if (!this.parentStack) {
+                        this.parentStack = _outer._loadedAlert && _outer._loadedAlert.template && _outer._loadedAlert.template.getStackForZone(this);
+                    }
+                    return this.parentStack;
                 },
                 /**
                  * Removes the shape overlay from the map.
@@ -3129,7 +3190,7 @@
                         var path;
                         if (enabled) {
                             this.polylineOuterCoordinate = { lat: vertex.lat(), lng: vertex.lng() };
-                            path = [_outer._loadedAlert.template.getStackForZone(this).marker.getPosition(), vertex];
+                            path = [this.getParentStack().marker.getPosition(), vertex];
                         }
                         this._manageDistanceBetweenPointsOverlay(enabled, path);
                     }

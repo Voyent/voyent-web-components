@@ -262,7 +262,7 @@
                     mapDiv.addEventListener('mousemove', function(e) {
                         var mouseLatLng = _this._fromMouseEventToLatLng(e);
                         if (_this._activelyMovingVertex) {
-                            stack = _this._loadedAlert.template.getStackForZone(_this._activeVertexDetails.zone);
+                            stack = _this._activeVertexDetails.zone.getParentStack();
                             // For the innermost zone we must consider that the position
                             // of the marker may change as the vertex is dragged
                             if (_this._activeVertexDetails.zone === stack.getInnermostZone()) {
