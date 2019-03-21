@@ -37,6 +37,7 @@ Polymer({
             else {
                 if (template.properties.center) {
                     coordinates = template.properties.center;
+                    delete template.properties.center;
                 }
                 else {
                     var center = _this._areaRegion.bounds.getCenter();
