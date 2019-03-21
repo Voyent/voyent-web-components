@@ -24,6 +24,8 @@ Polymer({
      */
     loadAlert: function(template,coordinates) {
         var _this = this;
+        // Clone the template since we will modify the record
+        template = JSON.parse(JSON.stringify(template));
         this._setIsAlertLoading(true);
         if (!coordinates) {
             if (!this._areaRegion) {
@@ -33,8 +35,13 @@ Polymer({
                 return;
             }
             else {
-                var center = _this._areaRegion.bounds.getCenter();
-                coordinates = {"lat":center.lat(),"lng":center.lng()};
+                if (template.properties.center) {
+                    coordinates = template.properties.center;
+                }
+                else {
+                    var center = _this._areaRegion.bounds.getCenter();
+                    coordinates = {"lat":center.lat(),"lng":center.lng()};
+                }
             }
         }
         // Clear the map of any loaded alert template before drawing
@@ -44,10 +51,10 @@ Polymer({
         // Remove the parent's id from the record as we'll generate a new one
         var id = template._id;
         delete template._id;
-        // If we have a geometry and this is not a fixed location
-        // template then use the provided location as the alert center
+        // If we have a geometry then use either the passed coordinates, the fixed
+        // template location or the center of the region (determined above)
         var latLng = null;
-        if (template.geo && !template.properties.center) {
+        if (template.geo) {
             latLng = new google.maps.LatLng(coordinates);
         }
         template.state = 'draft'; //Default to draft
