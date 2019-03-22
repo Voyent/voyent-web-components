@@ -2068,7 +2068,7 @@
                         var position = _outer._AlertTemplate.calculateCentroidFromPaths(paths);
                         if (!this.marker) {
                             this.marker = new google.maps.Marker({
-                                map: _outer._map, draggable: true, zIndex: 50, cursor: 'move', visible: false
+                                map: _outer._map, draggable: true, zIndex: 50, cursor: 'move', visible: _outer.nodeName === 'VOYENT-MOBILE-ALERT-EDITOR'
                             });
                             this._setupMarkerListeners();
                         }
@@ -2443,7 +2443,7 @@
                  * @private
                  */
                 _forceToggleStackMarkerOnZoneActivation: function(visible) {
-                    if (this && !this.fromFile) {
+                    if (_outer.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR' && this && !this.fromFile) {
                         var markerWithinStack = google.maps.geometry.poly.containsLocation(
                             this.marker.getPosition(), this.getInnermostZone().shapeOverlay
                         );
@@ -2554,78 +2554,79 @@
                  * @private
                  */
                 _setupZoneListeners: function (zone) {
-                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     var _this = this;
-                    var overlay = zone.shapeOverlay;
-                    //Add click listener to shapes.
-                    google.maps.event.addListener(overlay, 'click', function () {
-                        //If they click a zone for the currently active stack then toggle the accordion.
-                        if (_outer._loadedAlert.selectedStack &&
-                            _outer._loadedAlert.selectedStack === _this) {
-                            // Don't allow de-selecting the zone
-                            if (!zone.active) {
+                    if (_outer.nodeName !== 'VOYENT-ALERT-VIEW' && _outer.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR') {
+                        var overlay = zone.shapeOverlay;
+                        //Add click listener to shapes.
+                        google.maps.event.addListener(overlay, 'click', function () {
+                            //If they click a zone for the currently active stack then toggle the accordion.
+                            if (_outer._loadedAlert.selectedStack &&
+                                _outer._loadedAlert.selectedStack === _this) {
+                                // Don't allow de-selecting the zone
+                                if (!zone.active) {
+                                    _outer._toggleProperties(zone);
+                                }
+                            }
+                            else {
+                                //Toggle the accordion for the previously selected stack.
+                                _outer._toggleProperties(null);
+                                //Load the selected stack and toggle the selected zone.
+                                _outer.set('_loadedAlert.selectedStack',_this);
                                 _outer._toggleProperties(zone);
                             }
-                        }
-                        else {
-                            //Toggle the accordion for the previously selected stack.
-                            _outer._toggleProperties(null);
-                            //Load the selected stack and toggle the selected zone.
-                            _outer.set('_loadedAlert.selectedStack',_this);
-                            _outer._toggleProperties(zone);
-                        }
-                    });
-                    // Adjust zone styling on zone hover and toggle the polygon distance overlay on vertex hover
-                    google.maps.event.addListener(overlay, 'mouseover', function(e) {
-                        _outer._mouseoverZone(zone, true);
-                        // Store which zone the mouse is over so we can use it to determine whether the mouse
-                        // is still over a zone within the stack or if it has moved outside of the stack
-                        _this.activeZoneOnMouseover = zone;
-                        // Process mouseover on the vertices
-                        if (!zone.isCircle && typeof e.path !== 'undefined') {
-                            // Store the previous vertex position when hovering
-                            // an existing vertex in case we need to revert
-                            var activeVertexDetails = {
-                                zone: zone,
-                                latLng: e.latLng,
-                                index: typeof e.edge === 'number' ? (e.edge+1) : e.vertex,
-                                type: typeof e.edge === 'number' ? 'insertAt' : 'setAt'
-                            };
-                            // Disable editing mode when switching the active vertex
-                            if (zone.distanceBetweenPointsOverlay && _outer._activeVertexDetails &&
-                                (_outer._activeVertexDetails.index !== activeVertexDetails.index ||
-                                _outer._activeVertexDetails.type !== activeVertexDetails.type)) {
-                                zone.distanceBetweenPointsOverlay.disableEditingMode();
+                        });
+                        // Adjust zone styling on zone hover and toggle the polygon distance overlay on vertex hover
+                        google.maps.event.addListener(overlay, 'mouseover', function(e) {
+                            _outer._mouseoverZone(zone, true);
+                            // Store which zone the mouse is over so we can use it to determine whether the mouse
+                            // is still over a zone within the stack or if it has moved outside of the stack
+                            _this.activeZoneOnMouseover = zone;
+                            // Process mouseover on the vertices
+                            if (!zone.isCircle && typeof e.path !== 'undefined') {
+                                // Store the previous vertex position when hovering
+                                // an existing vertex in case we need to revert
+                                var activeVertexDetails = {
+                                    zone: zone,
+                                    latLng: e.latLng,
+                                    index: typeof e.edge === 'number' ? (e.edge+1) : e.vertex,
+                                    type: typeof e.edge === 'number' ? 'insertAt' : 'setAt'
+                                };
+                                // Disable editing mode when switching the active vertex
+                                if (zone.distanceBetweenPointsOverlay && _outer._activeVertexDetails &&
+                                    (_outer._activeVertexDetails.index !== activeVertexDetails.index ||
+                                    _outer._activeVertexDetails.type !== activeVertexDetails.type)) {
+                                    zone.distanceBetweenPointsOverlay.disableEditingMode();
+                                }
+                                _outer.set('_activeVertexDetails', activeVertexDetails);
+                                zone.managePolygonDistanceBetweenPointsOverlay(true, e.latLng);
                             }
-                            _outer.set('_activeVertexDetails', activeVertexDetails);
-                            zone.managePolygonDistanceBetweenPointsOverlay(true, e.latLng);
-                        }
-                    });
-                    google.maps.event.addListener(overlay, 'mouseout', function(e) {
-                        if (typeof e.path === 'undefined') {
-                            _outer._mouseoutZone(zone);
-                            _this.activeZoneOnMouseout = _this.activeZoneOnMouseover;
-                            setTimeout(function() {
-                                // If the `activeZoneOnMouseover` property has not changed then it means a mouseover
-                                // event was not fired after this mouseout event was received. This indicates
-                                // that the mouse was moved outside of the stack rather than just to another
-                                // zone within the stack, so we will hide the coordinate overlay
-                                if (_this.activeZoneOnMouseout === _this.activeZoneOnMouseover &&
-                                    _this.coordinateOverlay && !_this.forceDisplayMarker) {
-                                    _this.coordinateOverlay.hide();
+                        });
+                        google.maps.event.addListener(overlay, 'mouseout', function(e) {
+                            if (typeof e.path === 'undefined') {
+                                _outer._mouseoutZone(zone);
+                                _this.activeZoneOnMouseout = _this.activeZoneOnMouseover;
+                                setTimeout(function() {
+                                    // If the `activeZoneOnMouseover` property has not changed then it means a mouseover
+                                    // event was not fired after this mouseout event was received. This indicates
+                                    // that the mouse was moved outside of the stack rather than just to another
+                                    // zone within the stack, so we will hide the coordinate overlay
+                                    if (_this.activeZoneOnMouseout === _this.activeZoneOnMouseover &&
+                                        _this.coordinateOverlay && !_this.forceDisplayMarker) {
+                                        _this.coordinateOverlay.hide();
+                                    }
+                                });
+                            }
+                        });
+                        if (!zone.isCircle) {
+                            // Handle polygon edits
+                            _this.initializePolygonPathListeners(zone);
+                            // Stores whether a vertex is actively being dragged
+                            google.maps.event.addListener(overlay, 'mousedown', function(e) {
+                                if (typeof e.path !== 'undefined') {
+                                    _outer._activelyMovingVertex = true;
                                 }
                             });
                         }
-                    });
-                    if (!zone.isCircle) {
-                        // Handle polygon edits
-                        _this.initializePolygonPathListeners(zone);
-                        // Stores whether a vertex is actively being dragged
-                        google.maps.event.addListener(overlay, 'mousedown', function(e) {
-                            if (typeof e.path !== 'undefined') {
-                                _outer._activelyMovingVertex = true;
-                            }
-                        });
                     }
                 },
                 /**
@@ -3120,7 +3121,8 @@
                  * Toggles the visibility of the stack marker.
                  */
                 toggleStackMarker: function(visible) {
-                    if (_outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
+                    if (_outer.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR' &&
+                        _outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
                         var stack = this.getParentStack();
                         // Toggle the stack marker if the zone and stack were not derived from a file import
                         if (stack && stack.marker && !stack.fromFile) {
@@ -3201,25 +3203,27 @@
                  * @param path
                  */
                 _manageDistanceBetweenPointsOverlay: function(enabled, path) {
-                    if (enabled) {
-                        if (!this.polyline) {
-                            this.polyline = new google.maps.Polyline({
-                                path: path, map: _outer._map, strokeOpacity: 0.65, strokeWeight: 1.5
-                            });
-                            this.distanceBetweenPointsOverlay = new _outer._DistanceBetweenPointsOverlay(this);
+                    if (_outer.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR') {
+                        if (enabled) {
+                            if (!this.polyline) {
+                                this.polyline = new google.maps.Polyline({
+                                    path: path, map: _outer._map, strokeOpacity: 0.65, strokeWeight: 1.5
+                                });
+                                this.distanceBetweenPointsOverlay = new _outer._DistanceBetweenPointsOverlay(this);
+                            }
+                            else {
+                                this.polyline.setMap(_outer._map);
+                                this.polyline.setPath(path);
+                                this.distanceBetweenPointsOverlay.displayAndDraw();
+                            }
                         }
                         else {
-                            this.polyline.setMap(_outer._map);
-                            this.polyline.setPath(path);
-                            this.distanceBetweenPointsOverlay.displayAndDraw();
-                        }
-                    }
-                    else {
-                        if (this.polyline) {
-                            this.polyline.setMap(null);
-                        }
-                        if (this.distanceBetweenPointsOverlay) {
-                            this.distanceBetweenPointsOverlay.hide();
+                            if (this.polyline) {
+                                this.polyline.setMap(null);
+                            }
+                            if (this.distanceBetweenPointsOverlay) {
+                                this.distanceBetweenPointsOverlay.hide();
+                            }
                         }
                     }
                 },
