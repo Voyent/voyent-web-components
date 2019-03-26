@@ -487,12 +487,20 @@
             mainDiv.style.textAlign = 'center';
             mainDiv.style.minWidth = '51px';
             mainDiv.style.border = '2px solid transparent';
+            mainDiv.style.cursor = 'pointer';
             // Prevent the event form bubbling so the zone is not de-selected and the map zoomed
             mainDiv.onclick = mainDiv.ondblclick = function(e) {
                 e.stopPropagation();
                 distanceInput.focus();
             };
-
+            // Add some highlight styling to the overlay on mouseover
+            mainDiv.onmouseover = function(e) {
+                zone.distanceBetweenPointsOverlay.highlightOverlay();
+            };
+            // Restore original overlay styling on mouseout
+            mainDiv.onmouseout = function(e) {
+                zone.distanceBetweenPointsOverlay.unHighlightOverlay();
+            };
             // Set some styling on the input
             distanceInput.style.color = 'inherit';
             distanceInput.style.borderRadius = '7px';
@@ -690,6 +698,7 @@
 
             // Set some styling
             mainDiv.style.border = '2px solid transparent';
+            mainDiv.style.cursor = 'pointer';
             latDivWrapper.style.cursor = lngDivWrapper.style.cursor = 'text';
             latInput.className = 'lat';
             lngInput.className = 'lng';
@@ -697,6 +706,15 @@
             latInput.style.outline = lngInput.style.outline = 'none';
             latInput.style.backgroundColor = lngInput.style.backgroundColor = 'transparent';
             latInput.style.color = lngInput.style.color = 'inherit';
+
+            // Add some highlight styling to the overlay on mouseover
+            mainDiv.onmouseover  = function(e) {
+                stack.coordinateOverlay.highlightOverlay();
+            };
+            // Restore original overlay styling on mouseout
+            mainDiv.onmouseout = function(e) {
+                stack.coordinateOverlay.unHighlightOverlay();
+            };
 
             // Prevent the event form bubbling so the map doesn't zoom, focus the
             // input, and ensure the cancel / confirm buttons are displayed
@@ -3768,6 +3786,7 @@
                 this.setMap(_outer._map);
                 this.div = _outer._buildDistanceBetweenPointsOverlayDiv(zone);
                 this.editing = false;
+                this.active = false;
             };
             /**
              * A class representing the stack coordinate overlay.
@@ -3777,6 +3796,7 @@
                 this.setMap(_outer._map);
                 this.div = _outer._buildCoordinateOverlayDiv(stack);
                 this.editing = false;
+                this.active = false;
                 this.visible = true;
             };
             // Inherit the prototype of google.maps.OverlayView
@@ -3915,9 +3935,9 @@
                     this.div.style.top = (nc.y + 15) + 'px';
                 }
                 // Additional zone-specific styling
-                this.div.style.backgroundColor = this.zone.colour;
-                this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-                this.div.style.borderColor = this.editing ? this.div.style.color : 'transparent';
+                this.div.style.backgroundColor = 'grey';
+                this.div.style.color = 'white';
+                this.div.style.borderColor = this.editing || this.active ? this.div.style.color : 'transparent';
             };
             /**
              * Handles drawng the stack coordinate overlay.
@@ -3946,7 +3966,7 @@
                 // Styling the overlay based on the innermost zone
                 this.div.style.backgroundColor = 'grey';
                 this.div.style.color = 'white';
-                this.div.style.borderColor = this.editing ? this.div.style.color : 'transparent';
+                this.div.style.borderColor = this.editing  || this.active ? this.div.style.color : 'transparent';
             };
             /**
              * Cleans up the overlay whenever the overlays map property is set to null.
@@ -4017,6 +4037,26 @@
                 this.editing = false;
             };
             /**
+             * Highlights the distance and coordinate overlays by adding a border.
+             */
+            this._DistanceBetweenPointsOverlay.prototype.highlightOverlay =
+            this._CoordinateOverlay.prototype.highlightOverlay = function() {
+                if (!this.editing) {
+                    this.div.style.borderColor = this.div.style.color;
+                    this.active = true;
+                }
+            };
+            /**
+             * Restores the original border styling for the distance and coordinate overlays.
+             */
+            this._DistanceBetweenPointsOverlay.prototype.unHighlightOverlay =
+            this._CoordinateOverlay.prototype.unHighlightOverlay = function() {
+                if (!this.editing) {
+                    this.div.style.borderColor = 'transparent';
+                    this.active = false;
+                }
+            };
+            /**
              * Moves the zone overlay to a map pane with a higher stacking priority.
              */
             this._ProximityZoneOverlay.prototype.moveToTopPane = function() {
@@ -4084,8 +4124,7 @@
              * Returns a font colour of black or white based on the zone colour.
              */
             this._FallbackZoneOverlay.prototype.returnColourBasedOnBackground =
-            this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground =
-            this._DistanceBetweenPointsOverlay.prototype.returnColourBasedOnBackground = function(hex) {
+            this._ProximityZoneOverlay.prototype.returnColourBasedOnBackground = function(hex) {
                 // Chop any leading # character
                 if (hex.charAt(0) === '#') {
                     hex = hex.substr(1);
