@@ -455,9 +455,10 @@
          * Creates and configures the styling for a generic overlay div, used for various labels.
          * @param extraRound
          * @param noFontStyling
+         * @param translucent
          * @private
          */
-        _buildOverlayDiv: function(extraRound, noFontStyling) {
+        _buildOverlayDiv: function(extraRound, noFontStyling, translucent) {
             var div = document.createElement('div');
             if (!noFontStyling) {
                 div.style.fontSize = '12px';
@@ -469,6 +470,9 @@
             div.style.borderRadius =  (extraRound ? '25' : '7') + 'px';
             div.style.letterSpacing = '1px';
             div.style.whiteSpace = 'nowrap';
+            if (translucent) {
+                div.style.opacity = '0.25';
+            }
             return div;
         },
 
@@ -494,12 +498,12 @@
                 distanceInput.focus();
             };
             // Add some highlight styling to the overlay on mouseover
-            mainDiv.onmouseover = function(e) {
-                zone.distanceBetweenPointsOverlay.highlightOverlay();
+            mainDiv.onmouseover = function() {
+                zone.distanceBetweenPointsOverlay.highlight();
             };
             // Restore original overlay styling on mouseout
-            mainDiv.onmouseout = function(e) {
-                zone.distanceBetweenPointsOverlay.unHighlightOverlay();
+            mainDiv.onmouseout = function() {
+                zone.distanceBetweenPointsOverlay.unHighlight();
             };
             // Set some styling on the input
             distanceInput.style.color = 'inherit';
@@ -708,12 +712,12 @@
             latInput.style.color = lngInput.style.color = 'inherit';
 
             // Add some highlight styling to the overlay on mouseover
-            mainDiv.onmouseover  = function(e) {
-                stack.coordinateOverlay.highlightOverlay();
+            mainDiv.onmouseover  = function() {
+                stack.coordinateOverlay.highlight();
             };
             // Restore original overlay styling on mouseout
-            mainDiv.onmouseout = function(e) {
-                stack.coordinateOverlay.unHighlightOverlay();
+            mainDiv.onmouseout = function() {
+                stack.coordinateOverlay.unHighlight();
             };
 
             // Prevent the event form bubbling so the map doesn't zoom, focus the
@@ -2960,6 +2964,7 @@
                 this.acknowledgement = acknowledgement || null;
                 this.setFromFile(fromFile);
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
+                this.overlayHighlighted = false;
             };
             /**
              * Returns the LatLngBounds for the passed zone.
@@ -3117,8 +3122,13 @@
                  * @param showMarker - Whether to show the marker for moving the stack.
                  */
                 highlightOverlay: function(showMarker) {
+                    this.overlayHighlighted = true;
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ strokeWeight: 2.0, fillOpacity: 0.30 });
+                    }
+                    // Redraw the overlay so the highlight styling updates
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
                     }
                     // Show the stack marker, if requested
                     if (showMarker) {
@@ -3129,8 +3139,13 @@
                  * Restores the original shape overlay border.
                  */
                 unHighlightOverlay: function() {
+                    this.overlayHighlighted = false;
                     if (this.shapeOverlay && !this.active) {
                         this.shapeOverlay.setOptions({ strokeWeight:0.50, fillOpacity: 0.25 });
+                    }
+                    // Redraw the overlay so the highlight styling updates
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
                     }
                     // Hide the stack marker
                     this.toggleStackMarker(false);
@@ -3671,7 +3686,7 @@
              */
             this._FallbackZoneOverlay = function(zone) {
                 this.zone = zone;
-                this.div = _outer._buildOverlayDiv();
+                this.div = _outer._buildOverlayDiv(false, false, true);
                 if (zone.enabled) {
                     this.draw();
                 }
@@ -3713,7 +3728,7 @@
                 var _this = this;
                 this.zone = zone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv();
+                this.div = _outer._buildOverlayDiv(false, false, true);
                 // Bring the label to top on mouseover
                 this.div.onmouseover = function () {
                     _this.moveToTopPane();
@@ -3846,6 +3861,7 @@
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.backgroundColor = this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
+                this.div.style.opacity = this.zone.active || this.zone.overlayHighlighted ? '1' : '0.25';
             };
             /**
              * Handles drawing and re-drawing of the location overlay on the map.
@@ -4039,8 +4055,8 @@
             /**
              * Highlights the distance and coordinate overlays by adding a border.
              */
-            this._DistanceBetweenPointsOverlay.prototype.highlightOverlay =
-            this._CoordinateOverlay.prototype.highlightOverlay = function() {
+            this._DistanceBetweenPointsOverlay.prototype.highlight =
+            this._CoordinateOverlay.prototype.highlight = function() {
                 if (!this.editing) {
                     this.div.style.borderColor = this.div.style.color;
                     this.active = true;
@@ -4049,8 +4065,8 @@
             /**
              * Restores the original border styling for the distance and coordinate overlays.
              */
-            this._DistanceBetweenPointsOverlay.prototype.unHighlightOverlay =
-            this._CoordinateOverlay.prototype.unHighlightOverlay = function() {
+            this._DistanceBetweenPointsOverlay.prototype.unHighlight =
+            this._CoordinateOverlay.prototype.unHighlight = function() {
                 if (!this.editing) {
                     this.div.style.borderColor = 'transparent';
                     this.active = false;
