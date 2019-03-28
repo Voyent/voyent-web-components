@@ -3686,7 +3686,7 @@
              */
             this._FallbackZoneOverlay = function(zone) {
                 this.zone = zone;
-                this.div = _outer._buildOverlayDiv(false, false, true);
+                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor());
                 if (zone.enabled) {
                     this.draw();
                 }
@@ -3707,6 +3707,9 @@
                     }
                     this.div.style.backgroundColor = this.zone.colour;
                     this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
+                    this.div.style.opacity = !_outer._isAnAlertEditor() || this.zone.active
+                        ? '1'
+                        : '0.25';
                     if (!_outer._map.controls[google.maps.ControlPosition.TOP_CENTER].length) {
                         _outer._map.controls[google.maps.ControlPosition.TOP_CENTER].push(this.div);
                     }
@@ -3728,7 +3731,7 @@
                 var _this = this;
                 this.zone = zone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv(false, false, true);
+                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor());
                 // Bring the label to top on mouseover
                 this.div.onmouseover = function () {
                     _this.moveToTopPane();
@@ -3861,7 +3864,9 @@
                 this.div.style.left = (nc.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.backgroundColor = this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-                this.div.style.opacity = this.zone.active || this.zone.overlayHighlighted ? '1' : '0.25';
+                this.div.style.opacity = !_outer._isAnAlertEditor()  || (this.zone.active || this.zone.overlayHighlighted)
+                    ? '1'
+                    : '0.25';
             };
             /**
              * Handles drawing and re-drawing of the location overlay on the map.
