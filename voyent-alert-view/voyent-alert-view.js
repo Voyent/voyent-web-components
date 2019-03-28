@@ -450,7 +450,8 @@ Polymer({
                     
                     // Then figure out which location the user has, and hide/show the marker as required
                     for (var locLoop = 0; locLoop < this._myLocations.length; locLoop++) {
-                        if (this._alertHistory.users[userLoop].location.properties &&
+                        if (this._alertHistory.users[userLoop].location &&
+                            this._alertHistory.users[userLoop].location.properties &&
                             this._alertHistory.users[userLoop].location.properties.vras &&
                             this._alertHistory.users[userLoop].location.properties.vras.id &&
                             this._myLocations[locLoop].id === this._alertHistory.users[userLoop].location.properties.vras.id) {
@@ -473,7 +474,8 @@ Polymer({
                     }
                     
                     for (var locLoop = 0; locLoop < this._myLocations.length; locLoop++) {
-                        if (this._alertHistory.users[userLoop].location.properties &&
+                        if (this._alertHistory.users[userLoop].location &&
+                            this._alertHistory.users[userLoop].location.properties &&
                             this._alertHistory.users[userLoop].location.properties.vras &&
                             this._alertHistory.users[userLoop].location.properties.vras.id &&
                             this._myLocations[locLoop].id === this._alertHistory.users[userLoop].location.properties.vras.id) {
