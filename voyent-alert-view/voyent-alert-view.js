@@ -641,14 +641,14 @@ Polymer({
      */
     _addMobileLocationButton: function() {
         var _this = this;
-        // Can be used for testing this button on desktop
-        /*window.vras = {
+        /*// Can be used for testing this button on desktop
+        window.vras = {
             lat: 51.08427,
             lng: -114.13062,
             getLocation: function() {
                 this.lat = this.lat + 0.00010;
                 this.lng = this.lng + 0.00010;
-                util.fire('returnCurrentLocation', { lat: this.lat, lng: this.lng });
+                window.vrasApp.returnCurrentLocation(this.lat, this.lng);
             },
         };*/
         if (this.mode === 'notification' && typeof vras !== 'undefined') {
@@ -656,7 +656,7 @@ Polymer({
                 this._CURRENT_LOCATION_BUTTON_ID,
                 google.maps.ControlPosition.RIGHT_BOTTOM,
                 this._toggleMobileLocationTracking.bind(this),
-            function() {
+                function() {
                     _this._mobileLocationEnabled = false;
                     window.addEventListener('returnCurrentLocation', function(e) {
                         _this._drawMobileLocation(e.detail.lat, e.detail.lng);
