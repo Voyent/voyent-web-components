@@ -3163,7 +3163,7 @@
                             if (visible) {
                                 stack.marker.setOptions( { visible: true } );
                             }
-                            else if (!stack.forceDisplayMarker && !stack.coordinateOverlay.editing) {
+                            else if (!stack.forceDisplayMarker && (!stack.coordinateOverlay || !stack.coordinateOverlay.editing)) {
                                 stack.marker.setOptions( { visible: false } );
                             }
                         }
