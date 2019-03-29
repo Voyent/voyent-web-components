@@ -17,7 +17,7 @@ Polymer({
          */
         isPortrait: { type: Boolean, value: false, observer: '_isPortraitChanged' },
         /**
-         * Indicates whether the component is currently visible, must be managed externally.
+         * Bind to this property to indicate whether the component is currently visible so state can be properly managed.
          */
         visible: { type: Boolean, value: false, observer: '_visibleChanged' }
     },
@@ -661,19 +661,26 @@ Polymer({
                 this._toggleMobileLocationTracking.bind(this),
                 function() {
                     _this._mobileLocationEnabled = false;
-                    window.addEventListener('returnCurrentLocation', function(e) {
-                        _this._drawMobileLocation(e.detail.lat, e.detail.lng);
-                        // Pan on the original alert + the mobile location, only do
-                        // this when requested so we don't pan the map when polling
-                        if (_this._includeMobileLocationInPanning) {
-                            _this._adjustBoundsAndPan();
-                            _this._includeMobileLocationInPanning = false;
-                        }
-                    });
                     // Start with mobile location tracking enabled
                     _this._toggleMobileLocationTracking();
                 }
             );
+        }
+    },
+
+    /**
+     * Handles the response from the `vras.getLocation` function.
+     * @param e
+     */
+    vrasReturnCurrentLocationListener: function(e) {
+        if (this._mobileLocationEnabled) {
+            this._drawMobileLocation(e.detail.lat, e.detail.lng);
+            // Pan on the original alert + the mobile location, only do
+            // this when requested so we don't pan the map when polling
+            if (this._includeMobileLocationInPanning) {
+                this._adjustBoundsAndPan();
+                this._includeMobileLocationInPanning = false;
+            }
         }
     },
 
@@ -924,7 +931,22 @@ Polymer({
     },
 
     /**
-     *Monitors the `_notificationFilter` property and toggles the visibility of the location types legend (with state).
+     * Manages the event listener which is triggered by the `vras.getLocation` callback.
+     */
+    _manageVrasGetLocationListener: function() {
+        if (this.visible) {
+            // Store the listener so we can remove it later
+            this.returnCurrentLocationListener = this.vrasReturnCurrentLocationListener.bind(this);
+            window.addEventListener('returnCurrentLocation', this.returnCurrentLocationListener);
+        }
+        else {
+            // Remove the listener so it doesn't fire when the component is not visible
+            window.removeEventListener('returnCurrentLocation', this.returnCurrentLocationListener);
+        }
+    },
+
+    /**
+     * Monitors the `_notificationFilter` property and toggles the visibility of the location types legend (with state).
      * @param notificationFilter
      * @private
      */
@@ -943,16 +965,19 @@ Polymer({
     },
 
     /**
-     * Monitors the `visible` property and manages the location polling
-     * so the component doesn't continue to poll while not visible.
+     * Monitors the `visible` property and manages the `vras.getLocation` listener and the associated
+     * "current location" polling so the component doesn't continue to poll while not visible.
      * @param visible
      * @private
      */
     _visibleChanged: function(visible) {
-        if (this._mobileLocationEnabled) {
-            visible
-                ? this._startMobileLocationPolling()
-                : this._stopMobileLocationPolling();
+        if (typeof vras !== 'undefined' && this.mode === 'notification') {
+            this._manageVrasGetLocationListener();
+            if (this._mobileLocationEnabled) {
+                visible
+                    ? this._startMobileLocationPolling()
+                    : this._stopMobileLocationPolling();
+            }
         }
     },
 
