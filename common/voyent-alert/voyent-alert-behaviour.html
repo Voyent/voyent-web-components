@@ -2633,7 +2633,8 @@
                                     // that the mouse was moved outside of the stack rather than just to another
                                     // zone within the stack, so we will hide the coordinate overlay
                                     if (_this.activeZoneOnMouseout === _this.activeZoneOnMouseover &&
-                                        _this.coordinateOverlay && !_this.forceDisplayMarker) {
+                                        _this.coordinateOverlay && !_this.forceDisplayMarker &&
+                                        !_this.coordinateOverlay.editing) {
                                         _this.coordinateOverlay.hide();
                                     }
                                 });
@@ -3162,7 +3163,7 @@
                             if (visible) {
                                 stack.marker.setOptions( { visible: true } );
                             }
-                            else if (!stack.forceDisplayMarker) {
+                            else if (!stack.forceDisplayMarker && !stack.coordinateOverlay.editing) {
                                 stack.marker.setOptions( { visible: false } );
                             }
                         }
