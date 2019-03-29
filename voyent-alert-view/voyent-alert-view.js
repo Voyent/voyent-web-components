@@ -15,8 +15,11 @@ Polymer({
         /**
          * Indicates whether the component is in portrait mode. Applicable only when isMobile is true.
          */
-        isPortrait: { type: Boolean, value: false, observer: '_isPortraitChanged' }
-
+        isPortrait: { type: Boolean, value: false, observer: '_isPortraitChanged' },
+        /**
+         * Indicates whether the component is currently visible, must be managed externally.
+         */
+        visible: { type: Boolean, value: false, observer: '_visibleChanged' }
     },
 
     observers: [
@@ -936,6 +939,20 @@ Polymer({
         }
         else {
             this._removeLocationTypesStateLegend();
+        }
+    },
+
+    /**
+     * Monitors the `visible` property and manages the location polling
+     * so the component doesn't continue to poll while not visible.
+     * @param visible
+     * @private
+     */
+    _visibleChanged: function(visible) {
+        if (this._mobileLocationEnabled) {
+            visible
+                ? this._startMobileLocationPolling()
+                : this._stopMobileLocationPolling();
         }
     },
 
