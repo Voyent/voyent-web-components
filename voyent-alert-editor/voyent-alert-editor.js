@@ -24,6 +24,10 @@ Polymer({
          * Whether the user wants to hide the Sample templates or not
          */
         hideSample: { type: Boolean, value: false, observer: '_hideSampleChanged' },
+        /**
+         * Bind to this property to indicate whether the component is currently visible so state can be properly managed.
+         */
+        visible: { type: Boolean, value: false }
     },
 
     observers: [

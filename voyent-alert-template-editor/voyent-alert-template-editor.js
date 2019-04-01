@@ -16,7 +16,11 @@ Polymer({
         /**
          * Indicates whether a template is currently loaded in the editor.
          */
-        isTemplateLoaded: { type: Boolean, value: false, readOnly:true, notify: true }
+        isTemplateLoaded: { type: Boolean, value: false, readOnly:true, notify: true },
+        /**
+         * Bind to this property to indicate whether the component is currently visible so state can be properly managed.
+         */
+        visible: { type: Boolean, value: false }
     },
 
     observers: [
