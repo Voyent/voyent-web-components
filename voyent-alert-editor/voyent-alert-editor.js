@@ -105,7 +105,7 @@ Polymer({
         this.set('_templateSearchQuery','');
         //Fetch the list of categories and templates before opening the dialog. Fetch the
         //categories first because we need them to build our list of categorized templates.
-        var errMsg = 'Problem initializing editor, try again';
+        var errMsg = 'Problem initializing alert editor, try again later or contact a Voyent Alert! Administrator';
         this._fetchTemplateCategories().then(function() {
             _this._fetchAlertTemplates().then(function() {
                 _this._openNewAlertDialog();
@@ -446,14 +446,17 @@ Polymer({
      */
     _cancelNewAlert: function() {
         var _this = this;
-        //Add some checks here since this function is called on window keydown
-        //events, meaning it may fire when the component is not active.
-        var dialog = this.querySelector('#newAlertDialog');
-        if ((dialog && dialog.opened) || this._selectedAlertTemplate) {
-            this.closeNewAlertDialog();
-            setTimeout(function() {
-                _this.fire('voyent-alert-template-cancel',{});
-            },0);
+        // While this should only ever fire when the template editor is visible and the
+        // dialog open we will add an extra check in here just in case (VRAS-836)
+        if (this.visible) {
+            var dialog = this.querySelector('#newAlertDialog');
+            if (dialog && dialog.opened) {
+                this._revertCursor();
+                this.closeNewAlertDialog();
+                setTimeout(function() {
+                    _this.fire('voyent-alert-template-cancel',{});
+                },0);
+            }
         }
     },
 

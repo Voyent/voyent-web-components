@@ -82,7 +82,14 @@ Polymer({
                     selectedStack: null
                 });
             },function() {
-                _this.fire('voyent-alert-template-cancel',{});
+                // While this should only ever fire when the template editor is visible and the
+                // dialog open we will add an extra check in here just in case (VRAS-836)
+                if (_this.visible) {
+                    var dialog = _this.querySelector('#modalDialog');
+                    if (dialog && dialog.opened) {
+                        _this.fire('voyent-alert-template-cancel',{});
+                    }
+                }
             });
         });
     },

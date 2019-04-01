@@ -1252,11 +1252,8 @@
             });
             //When the escape key is pressed exit drawing mode.
             window.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    if (_this.nodeName === 'VOYENT-ALERT-EDITOR' && _this._showTemplateListPane) {
-                        _this._cancelNewAlert();
-                        _this._revertCursor();
-                    }
+                // Ensure we only process the listener if the component is visible
+                if (_this.visible && e.key === 'Escape') {
                     var drawingMode = _this._drawingManager.getDrawingMode();
                     if (drawingMode !== null) {
                         // Flag so overlaycomplete listener won't be allowed to proceed after
