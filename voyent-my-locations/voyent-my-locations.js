@@ -772,24 +772,6 @@ Polymer({
     },
 
     /**
-     * Pans the map bounds to the provided LatLng coordinates.
-     * @param latLng
-     * @private
-     */
-    _panToLatLng: function(latLng) {
-        var _this = this;
-        this._map.setOptions({maxZoom:this._maxZoom});
-        var bounds = new google.maps.LatLngBounds();
-        bounds.extend(latLng);
-        this._map.fitBounds(bounds);
-        this._map.panToBounds(bounds);
-        setTimeout(function() {
-            _this._map.setOptions({maxZoom:null});
-        },250); //Since Google Maps version 3.32 we must add a slight delay when
-                //resetting the max zoom in order for the map to render correctly.
-    },
-
-    /**
      * Returns a string of either `residential` or `other` depending on the passed boolean.
      * @param isPrivateResidence
      * @returns {string}

@@ -1876,10 +1876,14 @@
         
         _addUserDetailsCloseListener: function() {
             if (this.$.map && this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
+                var _this = this;
                 this.$.map.addEventListener('click', function(e) {
                     if (singletonInfoWindow) {
                         singletonInfoWindow.close();
                         singletonInfoWindow = null;
+                        
+                        // Reset the map zoom level and area
+                        _this._adjustBoundsAndPan();
                     }
                 }, true);
             }
@@ -1938,8 +1942,28 @@
                     });
                     
                     singletonInfoWindow.open(_this._map, mapElement);
+                    
+                    _this._panToLatLng(mapElement.getPosition());
                 });
             }
+        },
+        
+        /**
+         * Pans the map bounds to the provided LatLng coordinates.
+         * @param latLng
+         * @private
+         */
+        _panToLatLng: function(latLng) {
+            var _this = this;
+            this._map.setOptions({maxZoom:this._maxZoom});
+            var bounds = new google.maps.LatLngBounds();
+            bounds.extend(latLng);
+            this._map.fitBounds(bounds);
+            this._map.panToBounds(bounds);
+            setTimeout(function() {
+                _this._map.setOptions({maxZoom:null});
+            },250); //Since Google Maps version 3.32 we must add a slight delay when
+                    //resetting the max zoom in order for the map to render correctly.
         },
 
         /**
