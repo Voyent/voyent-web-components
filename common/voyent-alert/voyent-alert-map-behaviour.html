@@ -119,6 +119,9 @@
             var _this = this;
             var mapOptions = {
                 zoom: 10,
+                // Restrict the min zoom level since less than 3 is meaningless and causes
+                // issues with calculating the map area in the zoom changed listener
+                minZoom: 3,
                 center: new google.maps.LatLng(51.08427,-114.13062),
                 streetViewControl: false,
                 fullscreenControl: false,
@@ -196,6 +199,8 @@
                 this.addEventListener('voyent-alert-zone-removed',function() {
                     _this._adjustBoundsAndPan();
                 });
+                // Listen for map zoom level changes
+                this._addZoomChangedListener();
             }
             this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
             this._manageMaxZoomLevel(); //Ensure we always have imagery in satellite view modes.
@@ -595,6 +600,13 @@
             this._openDialog('Choose Alert Badge',null,null,null,null,true,false,function() {
                 // Persist our choice to the template JSON
                 _this._loadedAlert.template.setBadge(_this._dialogBadge);
+                // Update the badge icon for any image overlays
+                var zoneStacks = _this._loadedAlert.template.zoneStacks;
+                for (var i=0; i<zoneStacks.length; i++) {
+                    if (zoneStacks[i].badgeOverlay) {
+                        zoneStacks[i].badgeOverlay.updateImgUrl(_this.getBadgeUrl(_this._loadedAlert.template.badge));
+                    }
+                }
                 // Fire an event that the badge changed
                 _this.fire('voyent-alert-badge-changed', {"badge": _this._loadedAlert.template.badge});
             });
@@ -1218,10 +1230,8 @@
                         //Add the stack and fire the zone added event.
                         _this._loadedAlert.template.addZoneStack(zoneStack);
                         _this.fire('voyent-alert-zone-added',{"id":zone.id,"zone":zone,"stack":zoneStack,"insertIndex":0,"isFallbackZone":false});
-                        //Toggle the accordion closed for the current stack and load the new one.
-                        _this._toggleProperties(null);
-                        _this.set('_loadedAlert.selectedStack',zoneStack);
-                        _this._toggleProperties(zone);
+                        // Load the new stack / zone
+                        _this._selectZone(zoneStack, zone);
                         //When we have only one stack we don't have a template marker, just the marker for the zone stack.
                         //So once we have two zone stacks we need to create the marker and if we have more than two (the
                         //marker exists already) then we'll update it's position.
@@ -2027,10 +2037,8 @@
                             insertIndex: 0,
                             isFallbackZone: false
                         });
-                        //Toggle the accordion closed for the current stack and load the new one.
-                        _this._toggleProperties(null);
-                        _this.set('_loadedAlert.selectedStack',zoneStack);
-                        _this._toggleProperties(zone);
+                        // Load the new stack / zone
+                        _this._selectZone(zoneStack, zone);
 
                         //When we have only one stack we don't have a template marker, just the marker for the zone stack.
                         //So once we have two zone stacks we need to create the marker and if we have more than two (the
@@ -2226,6 +2234,59 @@
             if (fallbackZoneButton) {
                 this.toggleClass('selected', false, fallbackZoneButton.querySelector(bttnClass));
             }
+        },
+
+        /**
+         * Listens to change to the map zoom and overlays zone stacks with the badge icons
+         * if the zones are small in relation to the boundaries of the map (VRAS-837).
+         * @private
+         */
+        _addZoomChangedListener: function() {
+            var _this = this;
+            google.maps.event.addListener(this._map, 'zoom_changed', function () {
+                var zoneStacks = _this._loadedAlert && _this._loadedAlert.template && _this._loadedAlert.template.zoneStacks;
+                if (zoneStacks && zoneStacks.length) {
+                    for (var i=0; i<zoneStacks.length; i++) {
+                        var zoneStack = zoneStacks[i];
+                        var outerZone = zoneStack.getOutermostZone();
+                        var zoneArea = google.maps.geometry.spherical.computeArea(outerZone.shapeOverlay.getPaths().getAt(0));
+                        var mapBounds = _this._map.getBounds();
+                        var n = mapBounds.getNorthEast().lat(), e = mapBounds.getNorthEast().lng();
+                        var s = mapBounds.getSouthWest().lat(), w = mapBounds.getSouthWest().lng();
+                        var mapArea = google.maps.geometry.spherical.computeArea(new google.maps.MVCArray([
+                                    new google.maps.LatLng(n, e),
+                                    new google.maps.LatLng(s, e),
+                                    new google.maps.LatLng(s, w),
+                                    new google.maps.LatLng(n, w),
+                                    new google.maps.LatLng(n, e)
+                                ]
+                        ));
+
+                        var percentageOfMapZoneFills = (zoneArea / mapArea) * 100;
+                        // Show a badge icon for the zone if the area of the outermost zone is less than 0.1% of the size of the map
+                        if (percentageOfMapZoneFills < 0.1) {
+                            if (!zoneStack.badgeOverlay) {
+                                (function(zoneStack) {
+                                    zoneStack.badgeOverlay = new _this._ImageOverlay(
+                                        zoneStack,
+                                        _this.getBadgeUrl(_this._loadedAlert.template.badge),
+                                        { height: '32px', width: '32px' },
+                                        function() {
+                                            _this._selectZone(zoneStack, zoneStack.getInnermostZone());
+                                        }
+                                    )
+                                })(zoneStack);
+                            }
+                            else {
+                                zoneStack.badgeOverlay.displayAndDraw();
+                            }
+                        }
+                        else if (zoneStack.badgeOverlay) {
+                            zoneStack.badgeOverlay.hide();
+                        }
+                    }
+                }
+            });
         },
 
         /**

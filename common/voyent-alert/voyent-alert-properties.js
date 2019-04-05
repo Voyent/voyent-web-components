@@ -995,8 +995,8 @@ Polymer({
                 "insertIndex": insertAtIndex,
                 "isFallbackZone": false
             });
-            //Show the properties pane for the new zone.
-            _this._toggleProperties(newZone);
+            // Show the properties pane for the new zone
+            _this._selectZone(_this._loadedAlert.selectedStack, newZone);
         });
     },
 
