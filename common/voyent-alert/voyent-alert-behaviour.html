@@ -2490,6 +2490,32 @@
                     this.updateJSON();
                 },
                 /**
+                 * Hides this stack and all of its associated zones and overlays.
+                 */
+                hide: function() {
+                    this.marker.setVisible(false);
+                    if (this.coordinateOverlay && this.coordinateOverlay.visible) {
+                        this.coordinateOverlay.div.style.display = 'none';
+                    }
+                    for (var i=0; i<this.zones.length; i++) {
+                        this.zones[i].hide();
+                    }
+                },
+                /**
+                 * Shows this stack and all of its associated zones and overlays.
+                 */
+                show: function() {
+                    if (this.forceDisplayMarker) {
+                        this.marker.setVisible(true);
+                    }
+                    if (this.coordinateOverlay && this.coordinateOverlay.visible) {
+                        this.coordinateOverlay.displayAndDraw();
+                    }
+                    for (var i=0; i<this.zones.length; i++) {
+                        this.zones[i].show();
+                    }
+                },
+                /**
                  * Removes the stack of zones from the map.
                  */
                 removeFromMap: function() {
@@ -3208,6 +3234,40 @@
                     return this.parentStack;
                 },
                 /**
+                 * Hides this zone and all of its associated overlays.
+                 */
+                hide: function() {
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setVisible(false);
+                    }
+                    if (this.nameOverlay) {
+                        this.nameOverlay.hide();
+                    }
+                    if (this.distanceBetweenPointsOverlay && this.distanceBetweenPointsOverlay.visible) {
+                        this.distanceBetweenPointsOverlay.div.style.display = 'none';
+                        if (this.polyline) {
+                            this.polyline.setVisible(false);
+                        }
+                    }
+                },
+                /**
+                 * Shows this zone and all of its associated overlays.
+                 */
+                show: function() {
+                    if (this.shapeOverlay) {
+                        this.shapeOverlay.setVisible(true);
+                    }
+                    if (this.nameOverlay) {
+                        this.nameOverlay.displayAndDraw();
+                    }
+                    if (this.distanceBetweenPointsOverlay && this.distanceBetweenPointsOverlay.visible) {
+                        this.distanceBetweenPointsOverlay.displayAndDraw();
+                        if (this.polyline) {
+                            this.polyline.setVisible(true);
+                        }
+                    }
+                },
+                /**
                  * Removes the shape overlay from the map.
                  */
                 removeFromMap: function() {
@@ -3833,6 +3893,7 @@
                 this.zone = zone;
                 this.setMap(_outer._map);
                 this.div = _outer._buildDistanceBetweenPointsOverlayDiv(zone);
+                this.visible = true;
                 this.editing = false;
                 this.active = false;
             };
@@ -4038,6 +4099,10 @@
              * Handles drawing the image overlay.
              */
             this._ImageOverlay.prototype.draw = function() {
+                // This may be called before it's ready so return if the prototype isn't initialized
+                if (!this.getProjection()) {
+                    return;
+                }
                 if (this.visible) {
                     // Convert the lat/lng coordinates to pixel coordinates
                     var northWestPixelPosition = this.getProjection().fromLatLngToDivPixel(
@@ -4048,13 +4113,8 @@
                     // Adjust the image position so the center of it located at the center of the outermost zone
                     this.div.style.left = (northWestPixelPosition.x - (this.img.clientWidth/2)) + 'px';
                     this.div.style.top = (northWestPixelPosition.y - (this.img.clientHeight/2)) + 'px';
-
-                    // Hide the zone labels
-                    for (var i=0; i<this.stack.zones.length; i++) {
-                        if (this.stack.zones[i].nameOverlay) {
-                            this.stack.zones[i].nameOverlay.hide();
-                        }
-                    }
+                    // Hide the stack
+                    this.stack.hide();
                 }
             };
             /**
@@ -4086,16 +4146,13 @@
                 }
                 this.visible = false;
             };
+            /**
+             * Hide the overlay and show the associated stack.
+             */
             this._ImageOverlay.prototype.hide = function() {
                 this.div.style.display = 'none';
                 this.visible = false;
-
-                // Show the zone labels
-                for (var i=0; i<this.stack.zones.length; i++) {
-                    if (this.stack.zones[i].nameOverlay) {
-                        this.stack.zones[i].nameOverlay.displayAndDraw();
-                    }
-                }
+                this.stack.show();
             };
             /**
              * Re-display the overlay.
