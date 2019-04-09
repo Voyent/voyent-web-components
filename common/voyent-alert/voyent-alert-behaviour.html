@@ -3825,13 +3825,15 @@
                 this.zone = zone;
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor());
-                // Bring the label to top on mouseover
-                this.div.onmouseover = function () {
-                    _this.moveToTopPane();
-                };
-                this.div.onmouseout = function () {
-                    _this.moveToDefaultPane();
-                };
+                if (!_outer._isAnAlertEditor()) {
+                    // Bring the label to top on mouseover
+                    this.div.onmouseover = function () {
+                        _this.moveToTopPane();
+                    };
+                    this.div.onmouseout = function () {
+                        _this.moveToDefaultPane();
+                    };
+                }
             };
             /**
              * A class that represents a location name overlay.
@@ -3933,7 +3935,6 @@
             /**
              * Called automatically when the map is ready for the overlay to be attached.
              */
-            this._ProximityZoneOverlay.prototype.onAdd =
             this._LocationOverlay.prototype.onAdd =
             this._MouseHoldOverlay.prototype.onAdd =
             this._DistanceBetweenPointsOverlay.prototype.onAdd =
@@ -3945,6 +3946,15 @@
             this._ImageOverlay.prototype.onAdd = function() {
                 // Add the div to the floatPane pane so it renders above everything
                 this.getPanes().floatPane.appendChild(this.div);
+            };
+            this._ProximityZoneOverlay.prototype.onAdd = function() {
+                // If this is an alert editor then add the div to the overlayLayer pane so it renders below the markers
+                if (_outer._isAnAlertEditor()) {
+                    this.getPanes().overlayLayer.appendChild(this.div);
+                }
+                else { // Otherwise add the div to the overlayMouseTarget pane so it renders above the markers
+                    this.getPanes().overlayMouseTarget.appendChild(this.div);
+                }
             };
             /**
              * Handles drawing and re-drawing of the proximity zone overlay on the map.
@@ -4227,15 +4237,19 @@
              * Moves the zone overlay to a map pane with a higher stacking priority.
              */
             this._ProximityZoneOverlay.prototype.moveToTopPane = function() {
-                // Move the overlay to a pane with a higher stacking priority
-                this.getPanes().overlayMouseTarget.appendChild(this.div);
+                if (!_outer._isAnAlertEditor()) {
+                    // Move the overlay to a pane with a higher stacking priority
+                    this.getPanes().overlayMouseTarget.appendChild(this.div);
+                }
             };
             /**
              * Moves the zone overlay to the default map pane.
              */
             this._ProximityZoneOverlay.prototype.moveToDefaultPane = function() {
-                // Move the overlay to the default pane
-                this.getPanes().floatShadow.appendChild(this.div);
+                if (!_outer._isAnAlertEditor()) {
+                    // Move the overlay to the default pane
+                    this.getPanes().floatShadow.appendChild(this.div);
+                }
             };
             /**
              * Update the latLng object associated with the mobile location overlay instance and draws the overlay.
