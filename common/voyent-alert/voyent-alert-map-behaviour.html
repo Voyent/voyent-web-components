@@ -1066,10 +1066,16 @@
          * @private
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
+            var _this = this;
             var properties, zoneGeometries, zones, zoneStacks = [], zIndex, haveStackFromFile, currentStackFromFile;
-            //Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined.
+            // Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined
             if (templateJSON.geo) {
                 var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
+                    // For alert detail notification mode we only keep the stack/zone that is affected
+                    if (_this.mode === 'notification' &&
+                        (_this._affectedStackId !== item.stackId || _this._affectedZoneId !== item.id)) {
+                        return stackGroups;
+                    }
                     stackGroups[item.stackId] = stackGroups[item.stackId] || [];
                     stackGroups[item.stackId].push(item);
                     return stackGroups;
@@ -1085,22 +1091,16 @@
                             currentStackFromFile = zoneGeometries[i].fromFile;
                             haveStackFromFile = true;
                         }
-                        if (this.nodeName === 'VOYENT-ALERT-VIEW') {
-                            //For alert detail notification view show the inner zone of each relevant stack.
-                            if (this.mode === 'notification') {
-                                if (i >= 1) { break; }
+                        // For alert detail view and preview modes only show the requested zone, if available
+                        if (this.nodeName === 'VOYENT-ALERT-VIEW' && ['view','preview'].indexOf(this.mode) > -1 && this._zoneIdToDisplay) {
+                            if (this._foundZoneIdMatch) {
+                                this._foundZoneIdMatch = false;
+                                break;
                             }
-                            //For alert detail view and preview show the requested zone only, if available.
-                            else if (this._zoneIdToDisplay) {
-                                if (this._foundZoneIdMatch) {
-                                    this._foundZoneIdMatch = false;
-                                    break;
-                                }
-                                if (this._zoneIdToDisplay === zoneGeometries[i].id) {
-                                    this._foundZoneIdMatch = true;
-                                }
-                                else { continue; }
+                            if (this._zoneIdToDisplay === zoneGeometries[i].id) {
+                                this._foundZoneIdMatch = true;
                             }
+                            else { continue; }
                         }
                         // Generate the ordered sequence of coordinates that completes the Polygon shape.
                         zones.push(new this._AlertZone(

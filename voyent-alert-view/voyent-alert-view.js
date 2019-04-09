@@ -66,39 +66,43 @@ Polymer({
     viewAlertDetail: function(templateId,affectedLocations) {
         var _this = this;
         this.disableFullscreenMode(); // Always load the map as a windowed component
+        this._disableMobileLocationTracking(); // Default to location tracking disabled
         this._mapIsReady().then(function() {
             if (!templateId || typeof templateId !== 'string') {
                 _this.fire('message-error','Unable to load template, id not provided');
                 return;
             }
             _this.clearMap();
-            // Fetch the alert template, its current location and the user's "my locations"
+            // Fetch the alert template and its current location
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
-            promises.push(_this._fetchMyLocations());
-            // First create a list of affected location ids. We will draw all locations but
-            // will use this list to ensure we only pan the map on the affected locations
-            _this._affectedLocationIds = [];
-            // Then create a list of affected stack ids. These are the zone stacks which have locations inside one
-            // of their zones. We will use this list to help determine how the map should be panned. If there
-            // are no affected stack ids then it means the notification was triggered by a fallback zone.
-            _this._affectedStackIds = [];
+            // As of VRAS-854 we only want to draw the affected zone on the map so we
+            // will store the id of the affected stack/zone so we know which one to
+            // draw. We will also use the affected stack id to help determine how the
+            // map should be panned. If there is no affected stack id then it means that
+            // a fallback zone triggered the notification
+            _this._affectedStackId = null; _this._affectedZoneId = null;
             if (affectedLocations && affectedLocations.length) {
-                _this._affectedLocationIds = affectedLocations.map(function(obj) {
-                    return obj.properties.vras.id;
-                });
-                _this._affectedStackIds = affectedLocations.reduce(function(result, obj) {
-                    if (typeof obj.properties.vras.insideStackId !== 'undefined') {
-                        result.push(obj.properties.vras.insideStackId);
+                var locProperties = affectedLocations[0].properties && affectedLocations[0].properties.vras;
+                if (locProperties) {
+                    _this._affectedStackId = locProperties.insideStackId;
+                    _this._affectedZoneId = locProperties.insideZoneId;
+                }
+                // As of VRAS-854 we want to enable mobile location tracking
+                // when one of the affected locations is of type mobile
+                for (var i=0; i<affectedLocations.length; i++) {
+                    var locationType = affectedLocations[i].properties &&
+                        affectedLocations[i].properties.vras && affectedLocations[i].properties.vras.type;
+                    if (locationType && locationType.toLowerCase() === 'mobile') {
+                        _this._enableMobileLocationTracking();
+                        break;
                     }
-                    return result;
-                }, []);
+                }
             }
             Promise.all(promises).then(function(results) {
                 var alert = results[0];
                 var alertLocation = results[1];
-                var myLocations = results[2];
                 //First clear the map if we have an alert loaded already.
                 if (_this._loadedAlert) {
                     _this.clearMap();
@@ -118,7 +122,7 @@ Polymer({
                 else {
                     _this.fire('message-info','Unable to find alert geography');
                 }
-                _this._drawLocations(myLocations);
+                _this._drawLocations(affectedLocations);
                 _this._toggleEditableMap(false);
                 setTimeout(function() {
                     _this._adjustBoundsAndPan();
@@ -544,12 +548,10 @@ Polymer({
         // If we were notified by a non-fallback zone then include the affected locations in
         // the map panning. We don't include them when being notified by a fallback zone to
         // prevent the map from panning too far from the region boundary and primary zone
-        if (this._affectedStackIds && this._affectedStackIds.length) {
+        if (this._affectedStackId) {
             for (var i=0; i<this._myLocations.length; i++) {
-                if (this._affectedLocationIds.indexOf(this._myLocations[i].id) > -1) {
-                    bounds.extend(this._myLocations[i].marker.getPosition());
-                    boundsExtended = true;
-                }
+                bounds.extend(this._myLocations[i].marker.getPosition());
+                boundsExtended = true;
             }
         }
         else if (this._areaRegion && this._areaRegion.bounds) {
@@ -661,8 +663,6 @@ Polymer({
                 this._toggleMobileLocationTracking.bind(this),
                 function() {
                     _this._mobileLocationEnabled = false;
-                    // Start with mobile location tracking enabled
-                    _this._toggleMobileLocationTracking();
                 }
             );
         }
@@ -690,7 +690,17 @@ Polymer({
      */
     _toggleMobileLocationTracking: function() {
         this.set('_mobileLocationEnabled',!this._mobileLocationEnabled);
-        if (this._mobileLocationEnabled) {
+        this._mobileLocationEnabled
+            ? this._enableMobileLocationTracking()
+            : this._disableMobileLocationTracking();
+    },
+
+    /**
+     * Enables mobile location tracking on the map.
+     * @private
+     */
+    _enableMobileLocationTracking: function() {
+        if (this['_'+this._CURRENT_LOCATION_BUTTON_ID]) {
             // Include the mobile location in the map panning once it's received from the device
             this._includeMobileLocationInPanning = true;
             // Get the location
@@ -698,7 +708,14 @@ Polymer({
             // Start polling the location position
             this._startMobileLocationPolling();
         }
-        else {
+    },
+
+    /**
+     * Disables mobile location tracking on the map.
+     * @private
+     */
+    _disableMobileLocationTracking: function() {
+        if (this['_'+this._CURRENT_LOCATION_BUTTON_ID] && this._mobileLocation) {
             // Hide the location from the map
             this._mobileLocation.hide();
             // Stop polling the location position
