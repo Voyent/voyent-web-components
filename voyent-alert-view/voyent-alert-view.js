@@ -51,7 +51,7 @@ Polymer({
         // Add current location button for notification detail view
         this._addMobileLocationButton();
         window.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && _this._isFullscreenMode) {
+            if (_this.visible && e.key === 'Escape' && _this._isFullscreenMode) {
                 _this._toggleFullscreenContainer();
             }
         });
@@ -760,13 +760,13 @@ Polymer({
         var _this = this;
         window.addEventListener('voyent-pausing-native-app', function() {
             // Don't continue location polling when the app goes in the background (Android seems to do this)
-            if (_this._mobileLocation && _this._mobileLocationPoller) {
+            if (_this.visible && _this._mobileLocation && _this._mobileLocationPoller) {
                 _this._stopMobileLocationPolling();
             }
         });
         window.addEventListener('voyent-resuming-native-app', function() {
             // If we have a mobile location then start polling updates for it again
-            if (_this._mobileLocation && _this._mobileLocation.visible) {
+            if (_this.visible && _this._mobileLocation && _this._mobileLocation.visible) {
                 _this._startMobileLocationPolling();
             }
         });
