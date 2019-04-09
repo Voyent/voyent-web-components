@@ -3981,9 +3981,9 @@
                 this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.backgroundColor = this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-                this.div.style.opacity = !_outer._isAnAlertEditor()  || (this.zone.active || this.zone.overlayHighlighted)
+                this.div.style.opacity = !_outer._isAnAlertEditor() || this.zone.active
                     ? '1'
-                    : '0.25';
+                    : this.zone.overlayHighlighted ? '0.30' : '0.25';
             };
             /**
              * Handles drawing and re-drawing of the location overlay on the map.
