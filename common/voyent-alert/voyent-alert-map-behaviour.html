@@ -2057,10 +2057,13 @@
                         // Always force the position to be saved with the template
                         // when we have a zone derived from an imported file
                         _this._loadedAlert.template.forceSavePositionWithTemplate(true);
-
-                        // Close the dialog
-                        _this._closeFileImportDialog();
                     }
+                    // Close the dialog
+                    _this._closeFileImportDialog();
+                }
+                else {
+                    fileUploadInput.inputElement.value = null;
+                    _this.fire('message-error', 'File contains no usable data, check your file or try another one');
                 }
             }).catch(function(e) {
                 _this.fire('message-error', 'Failed to process file, try again later or contact a Voyent administrator');
