@@ -646,16 +646,6 @@ Polymer({
      */
     _addMobileLocationButton: function() {
         var _this = this;
-        /*// Can be used for testing this button on desktop
-        window.vras = {
-            lat: 51.08427,
-            lng: -114.13062,
-            getLocation: function() {
-                this.lat = this.lat + 0.00010;
-                this.lng = this.lng + 0.00010;
-                window.vrasApp.returnCurrentLocation(this.lat, this.lng);
-            },
-        };*/
         if (this.mode === 'notification' && typeof vras !== 'undefined') {
             this._addCustomControl(
                 this._CURRENT_LOCATION_BUTTON_ID,
@@ -988,14 +978,32 @@ Polymer({
      * @private
      */
     _visibleChanged: function(visible) {
-        if (typeof vras !== 'undefined' && this.mode === 'notification') {
-            this._manageVrasGetLocationListener();
-            if (this._mobileLocationEnabled) {
-                visible
-                    ? this._startMobileLocationPolling()
-                    : this._stopMobileLocationPolling();
+        /*// Can be used for testing this button on desktop
+        window.vras = {
+            lat: 51.08427,
+            lng: -114.13062,
+            getLocation: function() {
+                this.lat = this.lat + 0.00010;
+                this.lng = this.lng + 0.00010;
+                window.vrasApp.returnCurrentLocation(this.lat, this.lng);
+            },
+        };*/
+        var _this = this;
+        this._waitForCondition(
+            function() {
+                return typeof _this.mode !== 'undefined';
+            },
+            5000
+        ).then(function() {
+            if (typeof vras !== 'undefined' && _this.mode === 'notification') {
+                _this._manageVrasGetLocationListener();
+                if (_this._mobileLocationEnabled) {
+                    visible
+                        ? _this._startMobileLocationPolling()
+                        : _this._stopMobileLocationPolling();
+                }
             }
-        }
+        }).catch(function() {});
     },
 
     /**
