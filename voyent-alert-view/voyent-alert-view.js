@@ -89,16 +89,6 @@ Polymer({
                     _this._affectedStackId = locProperties.insideStackId;
                     _this._affectedZoneId = locProperties.insideZoneId;
                 }
-                // As of VRAS-854 we want to enable mobile location tracking
-                // when one of the affected locations is of type mobile
-                for (var i=0; i<affectedLocations.length; i++) {
-                    var locationType = affectedLocations[i].properties &&
-                        affectedLocations[i].properties.vras && affectedLocations[i].properties.vras.type;
-                    if (locationType && locationType.toLowerCase() === 'mobile') {
-                        _this._enableMobileLocationTracking();
-                        break;
-                    }
-                }
             }
             Promise.all(promises).then(function(results) {
                 var alert = results[0];
@@ -124,6 +114,16 @@ Polymer({
                 }
                 _this._drawLocations(affectedLocations);
                 _this._toggleEditableMap(false);
+                // As of VRAS-854 we want to enable mobile location tracking
+                // when one of the affected locations is of type mobile
+                for (var i=0; i<affectedLocations.length; i++) {
+                    var locationType = affectedLocations[i].properties &&
+                        affectedLocations[i].properties.vras && affectedLocations[i].properties.vras.type;
+                    if (locationType && locationType.toLowerCase() === 'mobile') {
+                        _this._enableMobileLocationTracking();
+                        break;
+                    }
+                }
                 setTimeout(function() {
                     _this._adjustBoundsAndPan();
                 },0);
@@ -679,8 +679,7 @@ Polymer({
      * @private
      */
     _toggleMobileLocationTracking: function() {
-        this.set('_mobileLocationEnabled',!this._mobileLocationEnabled);
-        this._mobileLocationEnabled
+        !this._mobileLocationEnabled
             ? this._enableMobileLocationTracking()
             : this._disableMobileLocationTracking();
     },
@@ -691,6 +690,7 @@ Polymer({
      */
     _enableMobileLocationTracking: function() {
         if (this['_'+this._CURRENT_LOCATION_BUTTON_ID]) {
+            this.set('_mobileLocationEnabled', true);
             // Include the mobile location in the map panning once it's received from the device
             this._includeMobileLocationInPanning = true;
             // Get the location
@@ -706,6 +706,7 @@ Polymer({
      */
     _disableMobileLocationTracking: function() {
         if (this['_'+this._CURRENT_LOCATION_BUTTON_ID] && this._mobileLocation) {
+            this.set('_mobileLocationEnabled', false);
             // Hide the location from the map
             this._mobileLocation.hide();
             // Stop polling the location position
