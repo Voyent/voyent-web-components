@@ -89,11 +89,11 @@
                 // Restrict JSON size to 250KB
                 this._loadedAlert.template.updateJSON();
                 if (JSON.stringify(this._loadedAlert.template.json).length > 250000) {
-                    var templateTxt = this.nodeName === 'VOYENT-ALERT-EDITOR' ? '' : 'template';
+                    var templateTxt = this._isAlertEditor() ? '' : 'template';
                     results.errors.push('This alert ' + templateTxt + ' is too large, try reducing the size of the message contents or complexity of zones');
                 }
             }
-            if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+            if (this._isAlertEditor()) {
                 //Ensure we have both movement parameters or none at all.
                 if (this._alertSpeed && (!this._alertDirection && this._alertDirection !== 0)) {
                     results.errors.push('Moving alerts must have both a speed and direction defined (direction is missing)');
@@ -344,7 +344,7 @@
             setTimeout(function() {
                 // This may be triggered from one of the alert editor component or from the properties
                 // component so determine which one and find the component we need based on that
-                var alertEditorComp = _this.nodeName === 'VOYENT-ALERT-PROPERTIES'
+                var alertEditorComp = _this._isAlertProperties()
                     ? document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor')
                     : _this;
                 if (alertEditorComp) {
@@ -371,7 +371,7 @@
             setTimeout(function() {
                 // This may be triggered from one of the alert editor component or from the properties
                 // component so determine which one and find the component we need based on that
-                var alertEditorComp = _this.nodeName === 'VOYENT-ALERT-PROPERTIES'
+                var alertEditorComp = _this._isAlertProperties()
                     ? document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor')
                     : _this;
                 if (alertEditorComp) {
@@ -392,7 +392,7 @@
             setTimeout(function() {
                 // This may be triggered from one of the alert editor component or from the properties
                 // component so determine which one and find the component we need based on that
-                var alertEditorComp = _this.nodeName === 'VOYENT-ALERT-PROPERTIES'
+                var alertEditorComp = _this._isAlertProperties()
                     ? document.querySelector(_this.parentIsAlertEditor ? 'voyent-alert-editor' : 'voyent-alert-template-editor')
                     : _this;
                 if (alertEditorComp) {
@@ -1409,11 +1409,59 @@
         },
 
         /**
-         * Returns whether the current component is one of the alert editors.
+         * Returns whether the current component is the alert-editor component.
+         * @private
+         */
+        _isAlertEditor: function() {
+            return this.nodeName === 'VOYENT-ALERT-EDITOR';
+        },
+
+        /**
+         * Returns whether the current component is the alert-template-editor component.
+         * @private
+         */
+        _isAlertTemplateEditor: function() {
+            return this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR';
+        },
+
+        /**
+         * Returns whether the current component is one of the alert-editor or alert-template-editor components.
          * @private
          */
         _isAnAlertEditor: function() {
-            return this.nodeName === 'VOYENT-ALERT-TEMPLATE-EDITOR' || this.nodeName === 'VOYENT-ALERT-EDITOR';
+            return this._isAlertEditor() || this._isAlertTemplateEditor();
+        },
+
+        /**
+         * Returns whether the current component is the alert-properties component.
+         * @private
+         */
+        _isAlertProperties: function() {
+            return this.nodeName === 'VOYENT-ALERT-PROPERTIES';
+        },
+
+        /**
+         * Returns whether the current component is the alert-view component.
+         * @private
+         */
+        _isAlertView: function() {
+            return this.nodeName === 'VOYENT-ALERT-VIEW';
+        },
+
+        /**
+         * Returns whether the current component is the mobile-alert-editor component.
+         * @private
+         */
+        _isMobileAlertEditor: function() {
+            return this.nodeName === 'VOYENT-MOBILE-ALERT-EDITOR';
+        },
+
+        /**
+         * Returns whether the current component is the my-locations component.
+         * @private
+         */
+        _isMyLocations: function() {
+            return this.nodeName === 'VOYENT-MY-LOCATIONS';
         },
 
         /**
@@ -1956,7 +2004,7 @@
                  */
                 _setupMarkerListeners: function () {
                     // As of Feb 6, 2019 the marker is invisible so we won't setup these listeners
-                    /*if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    /*if (_outer._isAlertView()) { return; }
                     var _this = this;
                     google.maps.event.addListener(this.marker, 'dragstart', function () {
                         _this.calculateRelativeStackPositions();
@@ -2129,7 +2177,7 @@
                         var position = _outer._AlertTemplate.calculateCentroidFromPaths(paths);
                         if (!this.marker) {
                             this.marker = new google.maps.Marker({
-                                map: _outer._map, draggable: true, zIndex: 50, cursor: 'move', visible: _outer.nodeName === 'VOYENT-MOBILE-ALERT-EDITOR'
+                                map: _outer._map, draggable: true, zIndex: 50, cursor: 'move', visible: _outer._isMobileAlertEditor()
                             });
                             this._setupMarkerListeners();
                         }
@@ -2533,7 +2581,7 @@
                  * @private
                  */
                 _forceToggleStackMarkerOnZoneActivation: function(visible) {
-                    if (_outer.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR' && this && !this.fromFile) {
+                    if (!_outer._isMobileAlertEditor() && this && !this.fromFile) {
                         var markerWithinStack = google.maps.geometry.poly.containsLocation(
                             this.marker.getPosition(), this.getInnermostZone().shapeOverlay
                         );
@@ -2580,7 +2628,7 @@
                  * @private
                  */
                 _setupMarkerListeners: function () {
-                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    if (_outer._isAlertView()) { return; }
                     var _this = this;
                     var marker = this.marker;
                     google.maps.event.addListener(marker, 'dragstart', function () {
@@ -2642,7 +2690,7 @@
                  */
                 _setupZoneListeners: function (zone) {
                     var _this = this;
-                    if (_outer.nodeName !== 'VOYENT-ALERT-VIEW' && _outer.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR') {
+                    if (!_outer._isAlertView() && !_outer._isMobileAlertEditor()) {
                         var overlay = zone.shapeOverlay;
                         //Add click listener to shapes.
                         google.maps.event.addListener(overlay, 'click', function () {
@@ -3206,7 +3254,7 @@
                  * Toggles the visibility of the stack marker.
                  */
                 toggleStackMarker: function(visible) {
-                    if (_outer.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR' &&
+                    if (!_outer._isMobileAlertEditor() &&
                         _outer._loadedAlert && _outer._loadedAlert.template && !this.fromFile) {
                         var stack = this.getParentStack();
                         // Toggle the stack marker if the zone and stack were not derived from a file import
@@ -3322,7 +3370,7 @@
                  * @param path
                  */
                 _manageDistanceBetweenPointsOverlay: function(enabled, path) {
-                    if (_outer.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR') {
+                    if (!_outer._isMobileAlertEditor()) {
                         if (enabled) {
                             if (!this.polyline) {
                                 this.polyline = new google.maps.Polyline({
@@ -3379,7 +3427,7 @@
                  */
                 _getShapeOverlayOpts: function() {
                     return {
-                        clickable: _outer.nodeName !== 'VOYENT-ALERT-VIEW', draggable: false,
+                        clickable: !_outer._isAlertView(), draggable: false,
                         editable: false, fillColor: this.colour,
                         fillOpacity: this.opacity, map: _outer._map,
                         strokeWeight:0.50, zIndex:this.zIndex, paths:this.paths,
@@ -3644,7 +3692,7 @@
                  * @private
                  */
                 _setupOverlayClickListener: function () {
-                    /*if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    /*if (_outer._isAlertView()) { return; }
                     google.maps.event.addListener(this.shapeOverlay, 'click', function () {
                         // Don't allow de-selecting the zone
                         if (!_outer._fallbackZone.active) {
@@ -3700,7 +3748,7 @@
                     }
                     else {
                         // Don't show the floating name overlay label when Viewing an Alert in certain modes
-                        if (name && (_outer.nodeName !== 'VOYENT-ALERT-VIEW' || _outer.mode === 'notification')) {
+                        if (name && (!_outer._isAlertView() || _outer.mode === 'notification')) {
                             this.nameOverlay = new _outer._LocationOverlay(this);
                         }
                     }
@@ -3767,7 +3815,7 @@
                  * @private
                  */
                 _setupMarkerListeners: function() {
-                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    if (_outer._isAlertView()) { return; }
                     var _this = this;
                     //Continuously re-draw the overlay as the location is dragged.
                     var marker = this.marker;
@@ -3874,7 +3922,7 @@
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv(true);
                 this.div.style.cursor = 'pointer';
-                if (_outer.nodeName === 'VOYENT-MY-LOCATIONS') {
+                if (_outer._isMyLocations()) {
                     // Add some listeners to support info window toggling via label selection
                     this.div.onmouseover = function () {
                         _this.moveToTopPane();

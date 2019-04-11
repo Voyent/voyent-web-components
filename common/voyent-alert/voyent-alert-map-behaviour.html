@@ -131,11 +131,11 @@
                 zoomControl: false,
                 keyboardShortcuts: false //VRAS-394
             };
-            if (this.nodeName !== 'VOYENT-MY-LOCATIONS') {
+            if (!this._isMyLocations()) {
                 mapOptions.clickableIcons = false;
             }
             //Alert view map is readonly.
-            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+            if (this._isAlertView()) {
                 mapOptions.draggable = false;
                 mapOptions.disableDoubleClickZoom = true;
             }
@@ -205,7 +205,7 @@
                     _this._adjustBoundsAndPan();
                 });
             }
-            if (this._isAnAlertEditor() || this.nodeName === 'VOYENT-ALERT-VIEW') {
+            if (this._isAnAlertEditor() || this._isAlertView()) {
                 // Listen for map zoom level changes
                 this._addZoomChangedListener();
             }
@@ -571,7 +571,7 @@
             this.disableFullscreenMode();
             // Don't zoom on region when clearing map on alert detail view as
             // this causes some jerky pan behaviour when viewing an alert
-            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+            if (!this._isAlertView()) {
                 this._zoomOnRegion();
             }
             // Clear loaded alert template
@@ -579,7 +579,7 @@
                 this._removeAlertTemplateFromMap();
             }
             // Clear the user marker and locations
-            if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+            if (this._isAlertView()) {
                 if (this._myLocations) {
                     this._clearMyLocations();
                 }
@@ -587,7 +587,7 @@
             if (this._isAnAlertEditor()) {
                 // Disable drawing mode for alert editors
                 this._disableDrawingMode();
-                if (this.nodeName === 'VOYENT-ALERT-EDITOR') {
+                if (this._isAlertEditor()) {
                     this._enableDefaultPane();
                     this._showMovement = false;
                     // Clear the movement inputs, async so the side panel has time to render
@@ -841,7 +841,7 @@
                     query: {"_id":id}
                 }).then(function (results) {
                     if (!results || !results.length) {
-                        if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                        if (_this._isAlertView()) {
                             return resolve(null);
                         }
                         _this.fire('message-error', 'Alert template not found');
@@ -923,7 +923,7 @@
                     //Only error out for alerts.
                     if (alertId) {
                         if ((!location || !location[0])) {
-                            if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                            if (_this._isAlertView()) {
                                 return resolve(null);
                             }
                             return reject('Alert location cannot be found');
@@ -953,7 +953,7 @@
                     realm:_this.realm, account:_this.account,
                     id:"getMyLocationsForUsername", execParams: {username:voyent.auth.getLastKnownUsername()}
                 }).then(function(locations) {
-                    if (_this.nodeName === 'VOYENT-MY-LOCATIONS') {
+                    if (_this._isMyLocations()) {
                         //Clear the map and draw the locations.
                         _this._loadedLocation = null;
                         _this._clearMyLocations();
@@ -989,7 +989,7 @@
                             locations[i].location.geometry.coordinates[0]
                         ),
                         map: this._map,
-                        draggable: this.nodeName === 'VOYENT-MY-LOCATIONS',
+                        draggable: this._isMyLocations(),
                         icon: this._MY_LOCATION_ICON_INACTIVE
                     })
                 ));
@@ -1048,9 +1048,9 @@
             this._regionMapping[this.realm] = this._areaRegion;
             //Pan the map on the new region but only if we haven't already loaded an alert in one of
             //our editors, otherwise the map will pan to the alert and then snap back to the region.
-            if ((this.nodeName !== 'VOYENT-ALERT-EDITOR' || !this.isAlertLoaded) &&
-                (this.nodeName !== 'VOYENT-ALERT-TEMPLATE-EDITOR' || !this.isTemplateLoaded) &&
-                (this.nodeName !== 'VOYENT-MOBILE-ALERT-EDITOR' || !this.isAlertLoaded)) {
+            if ((!this._isAlertEditor() || !this.isAlertLoaded) &&
+                (!this._isAlertTemplateEditor() || !this.isTemplateLoaded) &&
+                (!this._isMobileAlertEditor() || !this.isAlertLoaded)) {
                 this._zoomOnRegion();
             }
         },
@@ -1082,7 +1082,7 @@
                 var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
                     // If the user was notified by any zone within a stack (we have an affectedStackId)
                     // then we will only draw the affected stack on the map so discard all others
-                    if (_this.nodeName === 'VOYENT-ALERT-VIEW' &&
+                    if (_this._isAlertView() &&
                         _this.mode === 'notification' && _this._affectedStackId &&
                         _this._affectedStackId !== item.stackId) {
                         return stackGroups;
@@ -1102,7 +1102,7 @@
                             currentStackFromFile = zoneGeometries[i].fromFile;
                             haveStackFromFile = true;
                         }
-                        if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                        if (this._isAlertView()) {
                             // For alert detail notification view only show the inner zone of each relevant stack.
                             // The relevant stacks are determined above when building the zoneStackGeometries list
                             if (this.mode === 'notification') {
@@ -1126,7 +1126,7 @@
                             properties.messageTemplate, properties.notificationFilter,
                             properties.acknowledgement, zIndex, properties.fromFile)
                         );
-                        if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                        if (this._isAlertView()) {
                             //Add click listener to the zone so the user can click anywhere on the map to enable fullscreen.
                             this._addFullscreenClickListener(zones[zones.length-1].shapeOverlay);
                         }
@@ -1183,7 +1183,7 @@
             // 3) When we are using the alert view in view, preview, or response mode and are displaying all
             //    zones or only the fallback
             var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
-            if ((this.nodeName !== 'VOYENT-ALERT-VIEW' && (fallbackZoneProperties.enabled || fallbackZoneProperties.name)) ||
+            if ((!this._isAlertView() && (fallbackZoneProperties.enabled || fallbackZoneProperties.name)) ||
                 (this.mode === 'notification' && fallbackZoneProperties.enabled && !zoneStacks.length) ||
                 (this.mode !== 'notification' && (!this._zoneIdToDisplay || this._zoneIdToDisplay === this._FALLBACK_ZONE_ID))) {
                 this._fallbackZone = new this._FallbackAlertZone(
@@ -1197,7 +1197,7 @@
                     fallbackZoneProperties.zIndex
                 );
             }
-            if (this.nodeName !== 'VOYENT-ALERT-VIEW' || this.mode !== 'notification') {
+            if (!this._isAlertView() || this.mode !== 'notification') {
                 this._adjustBoundsAndPan();
             }
         },
@@ -1421,7 +1421,7 @@
             this._addCustomControl(this._ZOOM_BUTTONS_ID, google.maps.ControlPosition.LEFT_TOP, null, function () {
                 var newControl = _this['_' + _this._ZOOM_BUTTONS_ID];
                 // Alert view map is readonly, so start with the control hidden
-                if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                if (_this._isAlertView()) {
                     newControl.style.display = 'none';
                 }
                 // Zoom in button
@@ -1446,7 +1446,7 @@
             this._addCustomControl(this._MAP_TYPE_BUTTONS_ID, google.maps.ControlPosition.TOP_LEFT, null, function () {
                 var newControl = _this['_' + _this._MAP_TYPE_BUTTONS_ID];
                 // Alert view map is readonly, so start with the control hidden
-                if (_this.nodeName === 'VOYENT-ALERT-VIEW') {
+                if (_this._isAlertView()) {
                     newControl.style.display = 'none';
                 }
                 // Map button
@@ -1815,7 +1815,7 @@
             }
             this._isFullscreenMode = !this._isFullscreenMode;
             // Toggle the editable features of the map
-            if (this.nodeName === 'VOYENT-ALERT-VIEW' && (this.mode !== 'view' && this.mode !== 'response')) {
+            if (this._isAlertView() && (this.mode !== 'view' && this.mode !== 'response')) {
                 this._toggleEditableMap(this._isFullscreenMode);
             }
         },
@@ -1849,7 +1849,7 @@
                     dialog.append(this.querySelector('#'+this._SIDE_PANEL_ID));
                 }
                 // Resize the map
-                this.nodeName === 'VOYENT-ALERT-VIEW'
+                this._isAlertView()
                     ? this._resizeMapAndAdjustBounds()
                     : this._resizeMapAndMaintainCenter();
             }
@@ -1878,7 +1878,7 @@
                 this.querySelector('#'+this._CONTAINER_ID).append(this.querySelector('#'+this._SIDE_PANEL_ID));
             }
             // Resize the map
-            this.nodeName === 'VOYENT-ALERT-VIEW'
+            this._isAlertView()
                 ? this._resizeMapAndAdjustBounds()
                 : this._resizeMapAndMaintainCenter();
             // Hide the dialog
@@ -1894,7 +1894,7 @@
          * @private
          */
         _addFullscreenClickListener: function(mapElement) {
-            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'notification') {
+            if (this._isAlertView() && this.mode === 'notification') {
                 var _this = this;
                 google.maps.event.addListener(mapElement, 'click', function() {
                     if (!_this._isFullscreenMode) {
@@ -1905,7 +1905,7 @@
         },
         
         _addUserDetailsCloseListener: function() {
-            if (this.$.map && this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
+            if (this.$.map && this._isAlertView() && this.mode === 'response') {
                 var _this = this;
                 this.$.map.addEventListener('click', function(e) {
                     if (singletonInfoWindow) {
@@ -1920,7 +1920,7 @@
         },
         
         _addUserDetailsClickListener: function(mapElement, user, answer) {
-            if (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode === 'response') {
+            if (this._isAlertView() && this.mode === 'response') {
                 var contentString = '<h3>';
                 
                 if (mapElement.icon && mapElement.icon.url) {
@@ -2430,7 +2430,7 @@
          */
         _realmChanged: function(newRealm) {
             //We don't render the region on the map for the alert view.
-            if (this.nodeName !== 'VOYENT-ALERT-VIEW') {
+            if (!this._isAlertView()) {
                 //Only proceed if we have a valid realm and the map is initialized.
                 if (!newRealm || !this._map) { return; }
                 //First clear the current region from the map.
