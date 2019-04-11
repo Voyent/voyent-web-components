@@ -1072,13 +1072,16 @@
          */
         _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
             var _this = this;
-            var properties, zoneGeometries, zones, zoneStacks = [], zIndex, haveStackFromFile, currentStackFromFile;
+            var properties, zoneGeometries, zones, zoneStacks = [], zIndex,
+                haveStackFromFile, currentStackFromFile, foundZoneIdMatch = false;
             // Add the zone stacks if we have a geo property. Without this it means we only have the fallback zone defined
             if (templateJSON.geo) {
                 var zoneStackGeometries = templateJSON.geo.geometries.reduce(function(stackGroups, item) {
-                    // For alert detail notification mode we only keep the stack/zone that is affected
-                    if (_this.mode === 'notification' &&
-                        (_this._affectedStackId !== item.stackId || _this._affectedZoneId !== item.id)) {
+                    // If the user was notified by any zone within a stack (we have an affectedStackId)
+                    // then we will only draw the affected stack on the map so discard all others
+                    if (_this.nodeName === 'VOYENT-ALERT-VIEW' &&
+                        _this.mode === 'notification' && _this._affectedStackId &&
+                        _this._affectedStackId !== item.stackId) {
                         return stackGroups;
                     }
                     stackGroups[item.stackId] = stackGroups[item.stackId] || [];
@@ -1096,16 +1099,21 @@
                             currentStackFromFile = zoneGeometries[i].fromFile;
                             haveStackFromFile = true;
                         }
-                        // For alert detail view and preview modes only show the requested zone, if available
-                        if (this.nodeName === 'VOYENT-ALERT-VIEW' && ['view','preview'].indexOf(this.mode) > -1 && this._zoneIdToDisplay) {
-                            if (this._foundZoneIdMatch) {
-                                this._foundZoneIdMatch = false;
-                                break;
+                        if (this.nodeName === 'VOYENT-ALERT-VIEW') {
+                            // For alert detail notification view only show the inner zone of each relevant stack.
+                            // The relevant stacks are determined above when building the zoneStackGeometries list
+                            if (this.mode === 'notification') {
+                                if (i >= 1) { break; }
                             }
-                            if (this._zoneIdToDisplay === zoneGeometries[i].id) {
-                                this._foundZoneIdMatch = true;
+                            // For alert detail view and preview modes only show the requested zone, if requested
+                            else if (['view','preview'].indexOf(this.mode) > -1 && this._zoneIdToDisplay) {
+                                if (this._zoneIdToDisplay === zoneGeometries[i].id) {
+                                    foundZoneIdMatch = true;
+                                }
+                                else {
+                                    continue;
+                                }
                             }
-                            else { continue; }
                         }
                         // Generate the ordered sequence of coordinates that completes the Polygon shape.
                         zones.push(new this._AlertZone(
@@ -1120,6 +1128,10 @@
                             this._addFullscreenClickListener(zones[zones.length-1].shapeOverlay);
                         }
                         zIndex--;
+                        // Exit if we found a match for the only zone we are looking for
+                        if (foundZoneIdMatch) {
+                            break;
+                        }
                     }
                     //Build the stack marker, calculate the position using by building JSON that represents only the stack.
                     if (zones.length) {

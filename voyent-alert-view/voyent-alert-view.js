@@ -77,17 +77,14 @@ Polymer({
             var promises = [];
             promises.push(_this._fetchAlertTemplate(templateId));
             promises.push(_this._fetchLocationRecord(templateId));
-            // As of VRAS-854 we only want to draw the affected zone on the map so we
-            // will store the id of the affected stack/zone so we know which one to
-            // draw. We will also use the affected stack id to help determine how the
-            // map should be panned. If there is no affected stack id then it means that
-            // a fallback zone triggered the notification
-            _this._affectedStackId = null; _this._affectedZoneId = null;
+            // Save the id of the affected stack so we know which stack to draw on the map. This
+            // will also indirectly help determine how the map should be panned. If there is no
+            // affected stack id then it means that a fallback zone triggered the notification
+            _this._affectedStackId = null;
             if (affectedLocations && affectedLocations.length) {
                 var locProperties = affectedLocations[0].properties && affectedLocations[0].properties.vras;
                 if (locProperties) {
                     _this._affectedStackId = locProperties.insideStackId;
-                    _this._affectedZoneId = locProperties.insideZoneId;
                 }
             }
             Promise.all(promises).then(function(results) {
@@ -148,7 +145,6 @@ Polymer({
         this.disableFullscreenMode(); // Always load the map as a windowed component
         // Reset some state
         this._zoneIdToDisplay = null;
-        this._foundZoneIdMatch = false;
         // Wait for map before proceeding
         this._mapIsReady().then(function() {
             if (!alert || typeof alert !== 'object') {
@@ -201,7 +197,6 @@ Polymer({
         }
         // Ensure that the passed zoneId is valid. If not we will fallback to just drawing the inner zone of each stack.
         this._zoneIdToDisplay = null;
-        this._foundZoneIdMatch = false;
         if (zoneId) {
             if (zoneId === this._FALLBACK_ZONE_ID && template.properties[this._FALLBACK_ZONE_ID].enabled) {
                 // Ensure we don't zoom in too far when panning the map on a location inside the fallback zone.
@@ -545,17 +540,16 @@ Polymer({
      */
     _extendBoundsForNotificationMode: function(bounds) {
         var boundsExtended = false;
-        // If we were notified by a non-fallback zone then include the affected locations in
-        // the map panning. We don't include them when being notified by a fallback zone to
-        // prevent the map from panning too far from the region boundary and primary zone
-        if (this._affectedStackId) {
-            for (var i=0; i<this._myLocations.length; i++) {
-                bounds.extend(this._myLocations[i].marker.getPosition());
-                boundsExtended = true;
-            }
+        // Always include the locations in the map panning
+        for (var i=0; i<this._myLocations.length; i++) {
+            bounds.extend(this._myLocations[i].marker.getPosition());
+            boundsExtended = true;
         }
-        else if (this._areaRegion && this._areaRegion.bounds) {
-            // If we were notified by a fallback zone then include the region boundary in the map bounds
+        // If we have a fallback zone then include it in the map panning. The rules
+        // for when we draw a fallback zone can be found in _drawAndLoadAlertTemplate
+        if (this._fallbackZone) {
+            // The areaRegion and fallback zone share the same paths so just
+            // use our existing bounds so we don't need to recalculate them
             bounds.extend(this._areaRegion.bounds.getNorthEast());
             bounds.extend(this._areaRegion.bounds.getSouthWest());
             boundsExtended = true;
