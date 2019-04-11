@@ -196,6 +196,11 @@
                         _this._adjustBoundsAndPan();
                     }
                 });
+                this.addEventListener('voyent-alert-zone-added',function(e) {
+                    if (e.detail.isFallbackZone) {
+                        _this._adjustBoundsAndPan(true);
+                    }
+                });
                 this.addEventListener('voyent-alert-zone-removed',function() {
                     _this._adjustBoundsAndPan();
                 });
@@ -1156,23 +1161,26 @@
                 //Re-initialize the polygon path listeners for all stacks of polygonal zones.
                 this._loadedAlert.template.initializePolygonStackPathListeners();
             }
-            //Draw the fallback zone but only if we have properties
-            //other then enabled set (checking name exists is sufficient).
-            if (this.nodeName !== 'VOYENT-ALERT-VIEW' ||
-                (this.nodeName === 'VOYENT-ALERT-VIEW' && this.mode !== 'notification' && (!this._zoneIdToDisplay || this._zoneIdToDisplay === this._FALLBACK_ZONE_ID))) {
-                var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
-                if (fallbackZoneProperties && fallbackZoneProperties.name) {
-                    this._fallbackZone = new this._FallbackAlertZone(
-                        fallbackZoneProperties.enabled,
-                        fallbackZoneProperties.name,
-                        fallbackZoneProperties.opacity,
-                        fallbackZoneProperties.colour,
-                        fallbackZoneProperties.messageTemplate,
-                        fallbackZoneProperties.notificationFilter,
-                        fallbackZoneProperties.acknowledgement,
-                        fallbackZoneProperties.zIndex
-                    );
-                }
+            // Process the fallback zone. A few different conditionals here of when we initialize it:
+            // 1) When we are not using the alert view component we will initialize it if it is enabled or
+            //    we have properties other than enabled set since it may be disabled but with saved state
+            // 2) When we are viewing a notification detail and the fallback zone is the only zone in the alert
+            // 3) When we are using the alert view in view, preview, or response mode and are displaying all
+            //    zones or only the fallback
+            var fallbackZoneProperties = templateJSON.properties[this._FALLBACK_ZONE_ID];
+            if ((this.nodeName !== 'VOYENT-ALERT-VIEW' && (fallbackZoneProperties.enabled || fallbackZoneProperties.name)) ||
+                (this.mode === 'notification' && fallbackZoneProperties.enabled && !zoneStacks.length) ||
+                (this.mode !== 'notification' && (!this._zoneIdToDisplay || this._zoneIdToDisplay === this._FALLBACK_ZONE_ID))) {
+                this._fallbackZone = new this._FallbackAlertZone(
+                    fallbackZoneProperties.enabled,
+                    fallbackZoneProperties.name,
+                    fallbackZoneProperties.opacity,
+                    fallbackZoneProperties.colour,
+                    fallbackZoneProperties.messageTemplate,
+                    fallbackZoneProperties.notificationFilter,
+                    fallbackZoneProperties.acknowledgement,
+                    fallbackZoneProperties.zIndex
+                );
             }
             if (this.nodeName !== 'VOYENT-ALERT-VIEW' || this.mode !== 'notification') {
                 this._adjustBoundsAndPan();
@@ -1712,11 +1720,8 @@
          */
         _fallbackZoneButtonListener: function() {
             this._disableDrawingMode();
-            if (this._fallbackZone && this._fallbackZone.enabled) {
-                this._fallbackZone.setEnabled(false);
-            }
-            else if (this._fallbackZone && !this._fallbackZone.enabled) {
-                this._fallbackZone.setEnabled(true);
+            if (this._fallbackZone) {
+                this._fallbackZone.setEnabled(!this._fallbackZone.enabled);
             }
             else {
                 this._fallbackZone = new this._FallbackAlertZone(true);
@@ -2458,29 +2463,20 @@
          */
         _fallbackZoneEnabledChanged: function(enabled) {
             var _this = this;
-            // Wait a maximum of 2 seconds for the button to appear. We need
-            // to wait for the button because when loading the editor for the
-            // first time and with an alert with a fallback zone the button
-            // will not be rendered before we try to set the toggled state
-            var waitCount = 0, waitLimit = 20;
-            function waitForFallbackZoneButton() {
-                // Select the custom control (+ '_cc')
-                var fallbackZoneButton = _this.querySelector('#'+_this._FALLBACK_ZONE_BUTTON_ID+'_cc');
-                if (!fallbackZoneButton) {
-                    if (waitCount === waitLimit) {
-                        return;
-                    }
-                    waitCount++;
-                    setTimeout(waitForFallbackZoneButton, 100);
-                    return;
-                }
+            // Update the fallback zone button state once it is available. We need to wait because
+            // when loading the editor for the first time with an alert that contains a fallback
+            // zone the button will not be rendered before we try to set the toggled state
+            var fallbackZoneButton;
+            this._waitForCondition(function() {
+                fallbackZoneButton = _this.querySelector('#'+_this._FALLBACK_ZONE_BUTTON_ID+'_cc');
+                return !!fallbackZoneButton;
+            },2000).then(function() {
                 _this.toggleClass('selected', !!enabled, fallbackZoneButton.querySelector('.customMapBttn'));
                 var childDiv = fallbackZoneButton.children[0];
                 if (childDiv) {
                     childDiv.setAttribute('title',enabled ? 'Disable Entire Region Zone' : 'Enable Entire Region Zone')
                 }
-            }
-            waitForFallbackZoneButton();
+            }).catch(function(){});
         }
     };
 </script>

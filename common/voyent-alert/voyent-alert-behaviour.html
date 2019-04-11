@@ -3409,19 +3409,23 @@
              * @private
              */
             this._FallbackAlertZone = function(enabled,name,opacity,colour,messageTemplate,notificationFilter,acknowledgement,zIndex) {
+                // Given the possibility of going back to our old fallback zone approach I have left all the
+                // code in place but commented it out for using the world geography style fallback zone.
                 this.id = _outer._FALLBACK_ZONE_ID;
-                this.setPaths(this._buildWorldPolygon());
+                this.paths = [];
+                this._setPathsFromAreaRegion();
+                //this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
-                this._setupOverlayClickListener();
+                //this._setupOverlayClickListener();
                 this.setName(name || 'Entire Region');
-                this.setOpacity(/*opacity || */0.25); // Fixed opacity
-                this.setColour(/*colour || */'9EAD9E'); // Fixed colour
+                this.setOpacity(0/*0.25*/); // Fixed opacity
+                this.setColour('9EAD9E'); // Fixed colour
                 this.setZIndex(zIndex || 49);
                 this.setActive(false);
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
                 this.acknowledgement = acknowledgement || null;
-                this.nameOverlay = new _outer._FallbackZoneOverlay(this);
+                //this.nameOverlay = new _outer._FallbackZoneOverlay(this);
                 this.setEnabled(enabled);
             };
 
@@ -3433,6 +3437,34 @@
                     this.paths = paths;
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setPaths(paths);
+                        this.determineAndSetNorthernCoordinate();
+                    }
+                },
+                /**
+                 * Determines and sets the northern coordinate and draws the nameOverlay.
+                 */
+                determineAndSetNorthernCoordinate: function() {
+                    var northernCoordinate = [null, -100];
+                    for (var i=0; i<this.paths.length; i++) {
+                        var innerPath = this.paths.getAt ? this.paths.getAt(i) : this.paths[i]; // MVCArray or []
+                        for (var j=0; j<innerPath.length; j++) {
+                            // Retrieve each coordinate from the shape and save it
+                            var latLng = innerPath.getAt ? innerPath.getAt(j) : innerPath[j]; // MVCArray or []
+                            // Look for the northern most point of the polygon so we know
+                            // where to render the Proximity Zone overlay label
+                            if (latLng.lat() > northernCoordinate[1]) {
+                                northernCoordinate = [latLng.lng(), latLng.lat()];
+                            }
+                        }
+                    }
+                    // Set the northern coordinate and redraw the overlay
+                    this.northernCoordinate = northernCoordinate;
+                    if (this.nameOverlay) {
+                        //this.nameOverlay.draw();
+                        this.nameOverlay.displayAndDraw();
+                    }
+                    else {
+                        this.nameOverlay = new _outer._ProximityZoneOverlay(this);
                     }
                 },
                 /**
@@ -3455,7 +3487,8 @@
                         this.shapeOverlay.setOptions({ 'fillColor': colour });
                     }
                     if (this.nameOverlay) {
-                        this.nameOverlay.draw();
+                        //this.nameOverlay.draw();
+                        this.nameOverlay.displayAndDraw();
                     }
                 },
                 /**
@@ -3488,7 +3521,8 @@
                     _outer._notifyPropertyPathForFallbackZone('active');
                     active ? this.activateOverlay() : this.deactivateOverlay();
                     if (this.nameOverlay) {
-                        this.nameOverlay.draw();
+                        //this.nameOverlay.draw();
+                        this.nameOverlay.displayAndDraw();
                     }
                 },
                 /**
@@ -3505,7 +3539,8 @@
                         _outer.fire('voyent-alert-zone-added',{"id":this.id,"zone":this,"isFallbackZone":true});
                         this.punchOutOverlay();
                         if (this.nameOverlay) {
-                            this.nameOverlay.draw();
+                            //this.nameOverlay.draw();
+                            this.nameOverlay.displayAndDraw();
                         }
                     }
                     else {
@@ -3519,17 +3554,17 @@
                  * Activates the shape overlay.
                  */
                 activateOverlay: function() {
-                    if (this.shapeOverlay) {
+                    /*if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ fillOpacity: 0.40 });
-                    }
+                    }*/
                 },
                 /**
                  * Deactivates the shape overlay.
                  */
                 deactivateOverlay: function() {
-                    if (this.shapeOverlay) {
+                    /*if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ fillOpacity: 0.25 });
-                    }
+                    }*/
                 },
                 /**
                  * Removes the shape overlay from the map.
@@ -3548,7 +3583,7 @@
                  * Punches out all of the stacks currently drawn on the map.
                  */
                 punchOutOverlay: function() {
-                    if (!this.enabled) { return; }
+                    /*if (!this.enabled) { return; }
                     var paths = this._buildWorldPolygon();
                     if (_outer._loadedAlert) {
                         for (var i=0; i<_outer._loadedAlert.template.zoneStacks.length; i++) {
@@ -3594,37 +3629,32 @@
                     }
                     //The path at index 0 will be the entire fallback zone and
                     //all of the other paths will be punched out stacks.
-                    this.setPaths(paths);
+                    this.setPaths(paths);*/
                 },
                 /**
-                 * Returns a rectangular polygon representing the entire world.
+                 * Sets the zone paths to the same as the area region.
+                 * @private
                  */
-                _buildWorldPolygon: function() {
-                    //Since Google Maps uses a special web version of the Mercator projection and it
-                    //excludes the polar regions the maximum latitude is closer to 85° instead of 90°.
-                    var worldCoords = [
-                        new google.maps.LatLng(85.05113, 180), new google.maps.LatLng(0, 180),
-                        new google.maps.LatLng(-85.05113, 180), new google.maps.LatLng(-85.05113, 90),
-                        new google.maps.LatLng(-85.05113, 0), new google.maps.LatLng(-85.05113, -90),
-                        new google.maps.LatLng(-85.05113, -180), new google.maps.LatLng(0, -180),
-                        new google.maps.LatLng(85.05113, -180), new google.maps.LatLng(85.05113, -90),
-                        new google.maps.LatLng(85.05113, 0),new google.maps.LatLng(85.05113, 90),
-                        new google.maps.LatLng(85.05113, 180)
-                    ];
-                    return [new google.maps.MVCArray(worldCoords).getArray()];
+                _setPathsFromAreaRegion: function() {
+                    var _this = this;
+                    _outer._areaRegionIsAvailable().then(function() {
+                        if (_outer._areaRegion.polygon) {
+                            _this.setPaths(_outer._areaRegion.polygon.getPaths());
+                        }
+                    });
                 },
                 /**
                  * Initializes click listener for activating the overlay.
                  * @private
                  */
                 _setupOverlayClickListener: function () {
-                    if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
+                    /*if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     google.maps.event.addListener(this.shapeOverlay, 'click', function () {
                         // Don't allow de-selecting the zone
                         if (!_outer._fallbackZone.active) {
                             _outer._toggleFallbackZoneProperties();
                         }
-                    });
+                    });*/
                 },
                 /**
                  * Returns the options for building a google maps polygon.
@@ -3636,7 +3666,7 @@
                         clickable: true, draggable: false,
                         editable: false, fillColor: this.colour,
                         fillOpacity: this.opacity, map: _outer._map,
-                        strokeWeight:0, zIndex:this.zIndex, paths:this.paths,
+                        zIndex: this.zIndex, paths: this.paths,
                         suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                     };
                 }
@@ -3823,8 +3853,9 @@
             this._ProximityZoneOverlay = function(zone) {
                 var _this = this;
                 this.zone = zone;
+                this.isFallbackZone = zone instanceof _outer._FallbackAlertZone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor());
+                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor() && !this.isFallbackZone);
                 if (!_outer._isAnAlertEditor()) {
                     // Bring the label to top on mouseover
                     this.div.onmouseover = function () {
@@ -3981,7 +4012,7 @@
                 this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.backgroundColor = this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-                this.div.style.opacity = !_outer._isAnAlertEditor() || this.zone.active
+                this.div.style.opacity = !_outer._isAnAlertEditor() || this.isFallbackZone || this.zone.active
                     ? '1'
                     : this.zone.overlayHighlighted ? '0.30' : '0.25';
             };
