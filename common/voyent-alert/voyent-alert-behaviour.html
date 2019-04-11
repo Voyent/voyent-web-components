@@ -3459,12 +3459,15 @@
                     }
                     // Set the northern coordinate and redraw the overlay
                     this.northernCoordinate = northernCoordinate;
-                    if (this.nameOverlay) {
+                    if (this.nameOverlay && this.enabled) {
                         //this.nameOverlay.draw();
                         this.nameOverlay.displayAndDraw();
                     }
                     else {
                         this.nameOverlay = new _outer._ProximityZoneOverlay(this);
+                        if (!this.enabled) {
+                            this.nameOverlay.hide();
+                        }
                     }
                 },
                 /**
@@ -3486,7 +3489,7 @@
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setOptions({ 'fillColor': colour });
                     }
-                    if (this.nameOverlay) {
+                    if (this.nameOverlay && this.enabled) {
                         //this.nameOverlay.draw();
                         this.nameOverlay.displayAndDraw();
                     }
@@ -3520,7 +3523,7 @@
                     this.active = active;
                     _outer._notifyPropertyPathForFallbackZone('active');
                     active ? this.activateOverlay() : this.deactivateOverlay();
-                    if (this.nameOverlay) {
+                    if (this.nameOverlay && this.enabled) {
                         //this.nameOverlay.draw();
                         this.nameOverlay.displayAndDraw();
                     }

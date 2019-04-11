@@ -795,9 +795,9 @@
         setFallbackZoneName: function(zoneName) {
             if (this._fallbackZone) {
                 this._fallbackZone.setName(zoneName);
-                //Redraw the overlay since the content changed.
-                if (this._fallbackZone.nameOverlay) {
-                    this._fallbackZone.nameOverlay.draw();
+                // Redraw the overlay since the content changed
+                if (this._fallbackZone.nameOverlay && this._fallbackZone.enabled) {
+                    this._fallbackZone.nameOverlay.displayAndDraw();
                 }
             }
         },
