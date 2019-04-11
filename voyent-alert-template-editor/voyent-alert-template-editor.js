@@ -53,13 +53,8 @@ Polymer({
                 delete template.lastUpdatedBy;
                 delete template._id;
             }
-            //Set this flag so the center_changed listener will not fire for each circular zone that is drawn.
-            _this._ignoreZoneCenterChangedEvent = true;
             _this._drawAndLoadAlertTemplate(template,latLng);
             _this._setIsTemplateLoading(false);
-            setTimeout(function() {
-                _this._ignoreZoneCenterChangedEvent = false;
-            },0);
         }).catch(function (error) {
             _this.fire('message-error', 'Error loading saved alert template: ' + (error.responseText || error.message || error));
         });

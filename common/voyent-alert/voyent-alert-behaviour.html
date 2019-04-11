@@ -577,7 +577,7 @@
                         var smallerZoneRadius = smallerZone.getPolylineLengthInMeters();
                         if (newDistance <= smallerZoneRadius) {
                             _this.fire('message-error', 'Zone radius cannot be smaller than ' + parseInt((smallerZoneRadius+1)) + 'm');
-                            zone.distanceBetweenPointsOverlay.draw();
+                            zone.distanceBetweenPointsOverlay.draw(true);
                             return;
                         }
                     }
@@ -585,7 +585,7 @@
                         var largerZoneRadius = largerZone.getPolylineLengthInMeters();
                         if (newDistance >= largerZoneRadius) {
                             _this.fire('message-error', 'Zone radius cannot be larger than ' + parseInt((largerZoneRadius-1)) + 'm');
-                            zone.distanceBetweenPointsOverlay.draw();
+                            zone.distanceBetweenPointsOverlay.draw(true);
                             return;
                         }
                     }
@@ -619,7 +619,7 @@
             // Reverts the distance value to the current one
             function revertDistanceValue() {
                 // Revert the value
-                zone.distanceBetweenPointsOverlay.draw();
+                zone.distanceBetweenPointsOverlay.draw(true);
                 // Disable editing mode
                 disableEditing();
             }
@@ -809,7 +809,7 @@
             // Reverts the coordinate values to the the current ones
             function revertCoordinateValues() {
                 // Revert the value
-                stack.coordinateOverlay.draw();
+                stack.coordinateOverlay.draw(true);
                 // Disable editing mode
                 disableEditing();
             }
@@ -1958,14 +1958,10 @@
                     // As of Feb 6, 2019 the marker is invisible so we won't setup these listeners
                     /*if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     var _this = this;
-                    //The proximity zone center_changed listener will fire continuously when
-                    //dragging the template marker so we'll add a flag to ignore those events.
                     google.maps.event.addListener(this.marker, 'dragstart', function () {
-                        _outer._ignoreZoneCenterChangedEvent = true;
                         _this.calculateRelativeStackPositions();
                     });
                     google.maps.event.addListener(this.marker, 'dragend', function () {
-                        _outer._ignoreZoneCenterChangedEvent = false;
                         //Re-initialize the polygon path listeners for all stacks of polygonal zones.
                         _this.initializePolygonStackPathListeners();
                     });
@@ -2586,16 +2582,13 @@
                 _setupMarkerListeners: function () {
                     if (_outer.nodeName === 'VOYENT-ALERT-VIEW') { return; }
                     var _this = this;
-                    // The proximity zone center_changed listener will fire continuously when
-                    // dragging the stack marker so we'll add a flag to ignore those events
                     var marker = this.marker;
                     google.maps.event.addListener(marker, 'dragstart', function () {
-                        _outer._ignoreZoneCenterChangedEvent = true;
+                        _outer._draggingStack = true;
                         _this.calculateRelativeZonePositions(_this.marker.getPosition());
-                        _outer._dragStartPosition = _this.marker.getPosition();
                     });
                     google.maps.event.addListener(marker, 'dragend', function () {
-                        _outer._ignoreZoneCenterChangedEvent = false;
+                        _outer._draggingStack = false;
                         // Re-initialize the polygon path listeners for all zones
                         _this.initializePolygonPathListeners();
                     });
@@ -3080,7 +3073,7 @@
                         this.nameOverlay.draw();
                     }
                     if (this.distanceBetweenPointsOverlay) {
-                        this.distanceBetweenPointsOverlay.draw();
+                        this.distanceBetweenPointsOverlay.draw(true);
                     }
                 },
                 /**
@@ -4086,61 +4079,79 @@
             };
             /**
              * Handles drawing the distance between points overlay.
+             * @param isExplicitDraw - Whether this draw event was trigger explicitly by component code since the maps
+             *        API will fire draw in various cases, such as when the map is panned, zoomed, etc.. (VRAS-644)
              */
-            this._DistanceBetweenPointsOverlay.prototype.draw = function() {
-                // Convert the lat/lng coordinates to pixel coordinates
-                var northWestPixelPosition = this.getProjection().fromLatLngToDivPixel(
-                    new google.maps.LatLng(
-                        this.zone.polylineOuterCoordinate.lat,
-                        this.zone.polylineOuterCoordinate.lng
-                    )
-                );
-                // Update the distance value
-                var input = this.div.querySelector('input');
-                input.value = this.zone.getPolylineLengthInMeters();
-                input.style.width = input.value.length + 'ch';
-                // Position the input to the right for circles and centered below for polygons
-                if (this.zone.isCircle) {
-                    this.div.style.left = (northWestPixelPosition.x + 7) + 'px';
-                    this.div.style.top = (northWestPixelPosition.y - 17) + 'px';
+            this._DistanceBetweenPointsOverlay.prototype.draw = function(isExplicitDraw) {
+                if (this.visible) {
+                    // Convert the lat/lng coordinates to pixel coordinates
+                    var northWestPixelPosition = this.getProjection().fromLatLngToDivPixel(
+                        new google.maps.LatLng(
+                            this.zone.polylineOuterCoordinate.lat,
+                            this.zone.polylineOuterCoordinate.lng
+                        )
+                    );
+                    // Update the distance value
+                    var input = this.div.querySelector('input');
+                    // Only set the value if it hasn't been set or we're explicitly redrawing. This
+                    // fixes an issue where the values would be reset by the maps API when the user
+                    // interacted with the map causing them to lose any currently changes (VRAS-644)
+                    if ((!input.value) || isExplicitDraw) {
+                        input.value = this.zone.getPolylineLengthInMeters();
+                    }
+                    input.style.width = input.value.length + 'ch';
+                    // Position the input to the right for circles and centered below for polygons
+                    if (this.zone.isCircle) {
+                        this.div.style.left = (northWestPixelPosition.x + 7) + 'px';
+                        this.div.style.top = (northWestPixelPosition.y - 17) + 'px';
+                    }
+                    else {
+                        this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
+                        this.div.style.top = (northWestPixelPosition.y + 15) + 'px';
+                    }
+                    // Additional zone-specific styling
+                    this.div.style.backgroundColor = 'grey';
+                    this.div.style.color = 'white';
+                    this.div.style.borderColor = this.editing || this.active ? this.div.style.color : 'transparent';
                 }
-                else {
-                    this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
-                    this.div.style.top = (northWestPixelPosition.y + 15) + 'px';
-                }
-                // Additional zone-specific styling
-                this.div.style.backgroundColor = 'grey';
-                this.div.style.color = 'white';
-                this.div.style.borderColor = this.editing || this.active ? this.div.style.color : 'transparent';
             };
             /**
              * Handles drawing the stack coordinate overlay.
+             * @param isExplicitDraw - Whether this draw event was trigger explicitly by component code since the maps
+             *        API will fire draw in various cases, such as when the map is panned, zoomed, etc.. (VRAS-644)
              */
-            this._CoordinateOverlay.prototype.draw = function() {
-                // Convert the lat/lng coordinates to pixel coordinates
-                var northWestPixelPosition = this.getProjection().fromLatLngToDivPixel(
-                    new google.maps.LatLng(
-                        this.stack.lat,
-                        this.stack.lng
-                    )
-                );
-                // Update the coordinate inputs
-                var latInput = this.div.querySelector('input.lat');
-                latInput.value = this.stack.lat;
-                latInput.style.width = latInput.value.length - 1 + 'ch';
+            this._CoordinateOverlay.prototype.draw = function(isExplicitDraw) {
+                if (this.visible) {
+                    // Convert the lat/lng coordinates to pixel coordinates
+                    var northWestPixelPosition = this.getProjection().fromLatLngToDivPixel(
+                        new google.maps.LatLng(
+                            this.stack.lat,
+                            this.stack.lng
+                        )
+                    );
+                    // Update the coordinate inputs
+                    var latInput = this.div.querySelector('input.lat');
+                    var lngInput = this.div.querySelector('input.lng');
+                    latInput.style.width = lngInput.style.width = '65px';
 
-                var lngInput = this.div.querySelector('input.lng');
-                lngInput.value = this.stack.lng;
-                lngInput.style.width = lngInput.value.length - 1 + 'ch';
+                    // Only set the value if it hasn't been set, we're explicitly redrawing,
+                    // or we are currently dragging a stack. This fixes an issue where the
+                    // values would be reset by the maps API when the user interacted with
+                    // the map causing them to lose any currently changes (VRAS-644)
+                    if ((!latInput.value && !lngInput.value) || isExplicitDraw || _outer._draggingStack) {
+                        latInput.value = this.stack.lat;
+                        lngInput.value = this.stack.lng;
+                    }
 
-                // Position the coordinate overlay 3px below the stack marker and horizontally centered
-                this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
-                this.div.style.top = (northWestPixelPosition.y + 8) + 'px';
+                    // Position the coordinate overlay 3px below the stack marker and horizontally centered
+                    this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
+                    this.div.style.top = (northWestPixelPosition.y + 8) + 'px';
 
-                // Styling the overlay based on the innermost zone
-                this.div.style.backgroundColor = 'grey';
-                this.div.style.color = 'white';
-                this.div.style.borderColor = this.editing  || this.active ? this.div.style.color : 'transparent';
+                    // Style the overlay
+                    this.div.style.backgroundColor = 'grey';
+                    this.div.style.color = 'white';
+                    this.div.style.borderColor = this.editing  || this.active ? this.div.style.color : 'transparent';
+                }
             };
             /**
              * Handles drawing the image overlay.
@@ -4212,7 +4223,7 @@
             this._ImageOverlay.prototype.displayAndDraw = function() {
                 this.div.style.display = 'block';
                 this.visible = true;
-                this.draw();
+                this.draw(true);
             };
             /**
              * Enables editing mode styling for the distance and coordinate overlays.

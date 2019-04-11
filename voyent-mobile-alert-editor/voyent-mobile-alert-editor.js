@@ -59,15 +59,9 @@ Polymer({
             latLng = new google.maps.LatLng(coordinates);
         }
         template.state = 'draft'; //Default to draft
-        // Set this flag so the center_changed listener will not fire for each circular zone that is drawn
-        this._ignoreZoneCenterChangedEvent = true;
         this._drawAndLoadAlertTemplate(template,latLng);
         this._loadedAlert.template.setParentId(id);
         this._setIsAlertLoading(false);
-        // Populate the movement pane, async so the properties panel has time to initialize
-        setTimeout(function() {
-            _this._ignoreZoneCenterChangedEvent = false;
-        },0);
     },
 
     //******************PRIVATE API******************

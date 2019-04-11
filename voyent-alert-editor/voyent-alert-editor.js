@@ -69,15 +69,12 @@ Polymer({
                     results[1].location.geometry.coordinates[0]
                 );
             }
-            //Set this flag so the center_changed listener will not fire for each circular zone that is drawn.
-            _this._ignoreZoneCenterChangedEvent = true;
             _this._drawAndLoadAlertTemplate(template,latLng);
             //Toggle the correct pane.
             _this._showPropertiesPane = true;
             _this._setIsAlertLoading(false);
             //Populate the movement pane, async so the properties panel has time to initialize.
             setTimeout(function() {
-                _this._ignoreZoneCenterChangedEvent = false;
                 if (typeof template.properties.direction !== 'undefined') {
                     _this.set('_alertDirection',template.properties.direction);
                 }
