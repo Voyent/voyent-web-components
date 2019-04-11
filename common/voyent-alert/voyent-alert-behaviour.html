@@ -834,14 +834,14 @@
         _buildImageOverlayDiv: function(imgUrl, imgDimensions, onclickListener) {
             var mainDiv = document.createElement('div');
             mainDiv.style.position = 'absolute';
-            mainDiv.style.cursor = 'pointer';
-            mainDiv.onclick = function(e) {
-                // Prevent the event form bubbling so the map doesn't zoom
-                e.stopPropagation();
-                if (typeof onclickListener === 'function') {
+            if (typeof onclickListener === 'function') {
+                mainDiv.style.cursor = 'pointer';
+                mainDiv.onclick = function(e) {
+                    // Prevent the event form bubbling so the map doesn't zoom
+                    e.stopPropagation();
                     onclickListener(e);
-                }
-            };
+                };
+            }
 
             var img = document.createElement('img');
             img.src = imgUrl;

@@ -204,6 +204,8 @@
                 this.addEventListener('voyent-alert-zone-removed',function() {
                     _this._adjustBoundsAndPan();
                 });
+            }
+            if (this._isAnAlertEditor() || this.nodeName === 'VOYENT-ALERT-VIEW') {
                 // Listen for map zoom level changes
                 this._addZoomChangedListener();
             }
@@ -2291,9 +2293,11 @@
                                         zoneStack,
                                         _this.getBadgeUrl(_this._loadedAlert.template.badge),
                                         { height: '32px', width: '32px' },
-                                        function() {
-                                            _this._selectZone(zoneStack, zoneStack.getInnermostZone());
-                                        }
+                                        _this._isAnAlertEditor()
+                                            ? function() {
+                                                _this._selectZone(zoneStack, zoneStack.getInnermostZone());
+                                            }
+                                            : null
                                     )
                                 })(zoneStack);
                             }
