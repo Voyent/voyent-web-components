@@ -408,12 +408,17 @@ Internal component used to display the properties panel inside Voyent alert comp
             <template is="dom-if" if="[[_fallbackZone.enabled]]">
                 <div class="accordion stack">
                     <div class$="{{_getAccordionClasses('header',_fallbackZone.active,'')}}">
-                        <div title="Toggle Zone Properties" class$="arrow[[_fallbackZone.active]]" on-click="_toggleFallbackZoneProperties"></div>
+                        <div title="Toggle Zone Properties" class$="arrow[[_fallbackZone.active]]"
+                             on-click="_toggleFallbackZonePropertiesFromSidePanel"
+                             on-mouseover="_mouseoverFallbackZone"
+                             on-mouseout="_mouseoutFallbackZone"></div>
                         <div class$="{{_getZoneTitleClasses(_fallbackZone.active,'fallback')}}"
-                             on-click="_toggleFallbackZoneProperties">
+                             on-click="_toggleFallbackZonePropertiesFromSidePanel"
+                             on-mouseover="_mouseoverFallbackZone"
+                             on-mouseout="_mouseoutFallbackZone">
                             [[_fallbackZone.name]]
                         </div>
-                        <div class="fallback-img pointer" on-click="_toggleFallbackZoneProperties">
+                        <div class="fallback-img pointer" on-click="_toggleFallbackZonePropertiesFromSidePanel">
                             <img src="../voyent-alert/img/fallback_zone_bttn.png">
                         </div>
                     </div>

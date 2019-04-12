@@ -193,7 +193,7 @@
                             : _this._panToZone(selectedZone);
                     }
                     else {
-                        _this._adjustBoundsAndPan();
+                        _this._adjustBoundsAndPan(this._fallbackZone && this._fallbackZone.enabled);
                     }
                 });
                 this.addEventListener('voyent-alert-zone-added',function(e) {
@@ -2205,15 +2205,21 @@
         _deselectStacksOnClick: function(mapEntity) {
             var _this = this;
             google.maps.event.addListener(mapEntity, 'click', function() {
+                var zoneDeselected = false;
                 if (_this._loadedAlert &&  _this._loadedAlert.selectedStack) {
                     _this._loadedAlert.selectedStack.deactivateZoneOverlays();
                     _this.set('_loadedAlert.selectedStack',null);
-                    if (!_this._fallbackZone || !_this._fallbackZone.active) {
-                        _this.fire('voyent-alert-zone-selected',{
-                            "id": null,
-                            "zone": null
-                        });
-                    }
+                    zoneDeselected = true;
+                }
+                else if (_this._fallbackZone && _this._fallbackZone.enabled) {
+                    _this._fallbackZone.setActive(false);
+                    zoneDeselected = true;
+                }
+                if (zoneDeselected) {
+                    _this.fire('voyent-alert-zone-selected',{
+                        "id": null,
+                        "zone": null
+                    });
                 }
             });
         },

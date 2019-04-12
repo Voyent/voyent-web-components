@@ -219,6 +219,17 @@
         },
 
         /**
+         * Toggles the zone properties section from the side panel.
+         * @param e
+         * @private
+         */
+        _togglePropertiesFromSidePanel: function(e) {
+            var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
+            var zone = zoneStack.getZoneAt(e.model.get('zoneIndex'));
+            this._selectZone(zoneStack, zone);
+        },
+
+        /**
          * Selects the passed zone.
          * @param zoneStack
          * @param zone
@@ -243,17 +254,6 @@
                 this.set('_loadedAlert.selectedStack',zoneStack);
                 this._toggleProperties(zone);
             }
-        },
-
-        /**
-         * Toggles the zone properties section from the side panel.
-         * @param e
-         * @private
-         */
-        _togglePropertiesFromSidePanel: function(e) {
-            var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
-            var zone = zoneStack.getZoneAt(e.model.get('zoneIndex'));
-            this._selectZone(zoneStack, zone);
         },
 
         /**
@@ -297,6 +297,17 @@
         },
 
         /**
+         * Toggles the fallback zone properties section from the side panel.
+         * @private
+         */
+        _toggleFallbackZonePropertiesFromSidePanel: function() {
+            // Don't allow de-selecting the zone
+            if (!this._fallbackZone.active) {
+                this._toggleFallbackZoneProperties();
+            }
+        },
+
+        /**
          * Toggles the fallback zone properties section.
          * @param skipEvent
          * @private
@@ -304,7 +315,7 @@
         _toggleFallbackZoneProperties: function(skipEvent) {
             if (this._fallbackZone.active) {
                 this._fallbackZone.setActive(false);
-                if (typeof skipEvent !== 'boolean' || !skipEvent) {
+                if (!skipEvent) {
                     this.fire('voyent-alert-zone-selected',{
                         "id": null,
                         "zone": null,
@@ -423,6 +434,14 @@
         },
 
         /**
+         * Add mouseover styling to the fallback zone when mousing over it in side panel.
+         * @private
+         */
+        _mouseoverFallbackZone: function() {
+            this._fallbackZone.highlightOverlay();
+        },
+
+        /**
          * Adds mouseover styling for the passed zone.
          * @param zone
          * @param showMarker
@@ -440,6 +459,15 @@
         _mouseoutZoneProperties: function(e) {
             var zoneStack = this._loadedAlert.template.getZoneStackAt(e.model.get('zoneStackIndex'));
             this._mouseoutZone(zoneStack.getZoneAt(e.model.get('zoneIndex')));
+        },
+
+        /**
+         * Removes mouseover styling from the fallback zone when mousing over it in side panel.
+         * @param e
+         * @private
+         */
+        _mouseoutFallbackZone: function(e) {
+            this._fallbackZone.unHighlightOverlay();
         },
 
         /**
@@ -3457,11 +3485,11 @@
                 this._setPathsFromAreaRegion();
                 //this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
-                //this._setupOverlayClickListener();
+                this._setupOverlayClickListener();
                 this.setName(name || 'Entire Region');
-                this.setOpacity(0/*0.25*/); // Fixed opacity
+                this.setOpacity(/*opacity || */0); // Fixed opacity
                 this.setColour('9EAD9E'); // Fixed colour
-                this.setZIndex(zIndex || 49);
+                this.setZIndex(/*zIndex || */1); // Fixed zIndex
                 this.setActive(false);
                 this.messageTemplate = messageTemplate || null;
                 this.notificationFilter = notificationFilter || null;
@@ -3598,17 +3626,45 @@
                  * Activates the shape overlay.
                  */
                 activateOverlay: function() {
-                    /*if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({ fillOpacity: 0.40 });
-                    }*/
+                    if (this.shapeOverlay) {
+                        //this.shapeOverlay.setOptions({ fillOpacity: 0.40 });
+                        this.shapeOverlay.setOptions({ strokeWeight: 3.0/*, fillOpacity: 0.30*/ });
+                    }
                 },
                 /**
                  * Deactivates the shape overlay.
                  */
                 deactivateOverlay: function() {
-                    /*if (this.shapeOverlay) {
-                        this.shapeOverlay.setOptions({ fillOpacity: 0.25 });
-                    }*/
+                    if (this.shapeOverlay) {
+                        //this.shapeOverlay.setOptions({ fillOpacity: 0.25 });
+                        this.shapeOverlay.setOptions({ strokeWeight: 0.50/*, fillOpacity: 0.25*/ });
+                    }
+                },
+                /**
+                 * Highlights the shape overlay by adding a border.
+                 */
+                highlightOverlay: function() {
+                    this.overlayHighlighted = true;
+                    if (this.shapeOverlay && !this.active) {
+                        this.shapeOverlay.setOptions({ strokeWeight: 2.0/*, fillOpacity: 0.30*/ });
+                    }
+                    // Redraw the overlay so the highlight styling updates
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
+                    }
+                },
+                /**
+                 * Restores the original shape overlay border.
+                 */
+                unHighlightOverlay: function() {
+                    this.overlayHighlighted = false;
+                    if (this.shapeOverlay && !this.active) {
+                        this.shapeOverlay.setOptions({ strokeWeight: 0.50/*, fillOpacity: 0.25*/ });
+                    }
+                    // Redraw the overlay so the highlight styling updates
+                    if (this.nameOverlay) {
+                        this.nameOverlay.draw();
+                    }
                 },
                 /**
                  * Removes the shape overlay from the map.
@@ -3692,13 +3748,22 @@
                  * @private
                  */
                 _setupOverlayClickListener: function () {
-                    /*if (_outer._isAlertView()) { return; }
+                    if (_outer._isAlertView()) {
+                        return;
+                    }
                     google.maps.event.addListener(this.shapeOverlay, 'click', function () {
                         // Don't allow de-selecting the zone
                         if (!_outer._fallbackZone.active) {
                             _outer._toggleFallbackZoneProperties();
                         }
-                    });*/
+                    });
+                    // Adjust zone styling on zone hover
+                    google.maps.event.addListener(this.shapeOverlay, 'mouseover', function () {
+                        _outer._mouseoverFallbackZone();
+                    });
+                    google.maps.event.addListener(this.shapeOverlay, 'mouseout', function() {
+                        _outer._mouseoutFallbackZone();
+                    });
                 },
                 /**
                  * Returns the options for building a google maps polygon.
@@ -3710,7 +3775,7 @@
                         clickable: true, draggable: false,
                         editable: false, fillColor: this.colour,
                         fillOpacity: this.opacity, map: _outer._map,
-                        zIndex: this.zIndex, paths: this.paths,
+                        strokeWeight: 0.50, zIndex: this.zIndex, paths: this.paths,
                         suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                     };
                 }
@@ -3897,9 +3962,8 @@
             this._ProximityZoneOverlay = function(zone) {
                 var _this = this;
                 this.zone = zone;
-                this.isFallbackZone = zone instanceof _outer._FallbackAlertZone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor() && !this.isFallbackZone);
+                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor());
                 if (!_outer._isAnAlertEditor()) {
                     // Bring the label to top on mouseover
                     this.div.onmouseover = function () {
@@ -4056,9 +4120,9 @@
                 this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.backgroundColor = this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-                this.div.style.opacity = !_outer._isAnAlertEditor() || this.isFallbackZone || this.zone.active
+                this.div.style.opacity = !_outer._isAnAlertEditor() || this.zone.active
                     ? '1'
-                    : this.zone.overlayHighlighted ? '0.30' : '0.25';
+                    : this.zone.overlayHighlighted ? '0.75' : '0.25';
             };
             /**
              * Handles drawing and re-drawing of the location overlay on the map.
