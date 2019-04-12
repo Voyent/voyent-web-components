@@ -738,22 +738,26 @@
 
             var mainDiv = this._buildOverlayDiv(false, true);
             var latDivWrapper = document.createElement('div');
-            var latSpan = document.createElement('span');
+            var latLbl = document.createElement('div');
             var latInput = document.createElement('input');
             var lngDivWrapper = document.createElement('div');
-            var lngSpan = document.createElement('span');
+            var lngLbl = document.createElement('div');
             var lngInput = document.createElement('input');
 
             // Set some styling
             mainDiv.style.border = '2px solid transparent';
             mainDiv.style.cursor = 'pointer';
             latDivWrapper.style.cursor = lngDivWrapper.style.cursor = 'text';
+            latLbl.style.display = lngLbl.style.display = 'inline-block';
+            latLbl.style.width = lngLbl.style.width = '27px';
             latInput.className = 'lat';
             lngInput.className = 'lng';
             latInput.style.border = lngInput.style.border = 'none';
             latInput.style.outline = lngInput.style.outline = 'none';
             latInput.style.backgroundColor = lngInput.style.backgroundColor = 'transparent';
+            latInput.style.width = lngInput.style.width = '65px';
             latInput.style.color = lngInput.style.color = 'inherit';
+            latInput.style.textAlign = lngInput.style.textAlign = 'right';
 
             // Add some highlight styling to the overlay on mouseover
             mainDiv.onmouseover  = function() {
@@ -766,14 +770,14 @@
 
             // Prevent the event form bubbling so the map doesn't zoom, focus the
             // input, and ensure the cancel / confirm buttons are displayed
-            latDivWrapper.onclick = latDivWrapper.ondblclick = latSpan.onclick =
-            latSpan.ondblclick = latInput.onclick = latInput.ondblclick = function(e) {
+            latDivWrapper.onclick = latDivWrapper.ondblclick = latLbl.onclick =
+            latLbl.ondblclick = latInput.onclick = latInput.ondblclick = function(e) {
                 e.stopPropagation();
                 latInput.focus();
                 stack.coordinateOverlay.enableEditingMode();
             };
-            lngDivWrapper.onclick = lngDivWrapper.ondblclick = lngSpan.onclick =
-            lngSpan.ondblclick = lngInput.onclick = lngInput.ondblclick = function(e) {
+            lngDivWrapper.onclick = lngDivWrapper.ondblclick = lngLbl.onclick =
+            lngLbl.ondblclick = lngInput.onclick = lngInput.ondblclick = function(e) {
                 e.stopPropagation();
                 lngInput.focus();
                 stack.coordinateOverlay.enableEditingMode();
@@ -798,14 +802,14 @@
             };
 
             // Add the "Lat" label before the input
-            latSpan.innerText = 'Lat: ';
-            latDivWrapper.appendChild(latSpan);
+            latLbl.innerText = 'Lat: ';
+            latDivWrapper.appendChild(latLbl);
             latDivWrapper.appendChild(latInput);
             mainDiv.appendChild(latDivWrapper);
 
             // Add the "Lng" label before the input
-            lngSpan.innerText = 'Lng: ';
-            lngDivWrapper.appendChild(lngSpan);
+            lngLbl.innerText = 'Lng: ';
+            lngDivWrapper.appendChild(lngLbl);
             lngDivWrapper.appendChild(lngInput);
             mainDiv.appendChild(lngDivWrapper);
 
@@ -4243,15 +4247,12 @@
                             this.stack.lng
                         )
                     );
-                    // Update the coordinate inputs
-                    var latInput = this.div.querySelector('input.lat');
-                    var lngInput = this.div.querySelector('input.lng');
-                    latInput.style.width = lngInput.style.width = '65px';
-
                     // Only set the value if it hasn't been set, we're explicitly redrawing,
                     // or we are currently dragging a stack. This fixes an issue where the
                     // values would be reset by the maps API when the user interacted with
                     // the map causing them to lose any currently changes (VRAS-644)
+                    var latInput = this.div.querySelector('input.lat');
+                    var lngInput = this.div.querySelector('input.lng');
                     if ((!latInput.value && !lngInput.value) || isExplicitDraw || _outer._draggingStack) {
                         latInput.value = this.stack.lat;
                         lngInput.value = this.stack.lng;
@@ -4349,6 +4350,12 @@
                     this.div.style.borderColor = this.div.style.color;
                     buttons.style.display = 'block';
                 }
+                var inputs = this.div.querySelectorAll('input');
+                if (inputs && inputs.length) {
+                    for (var i=0; i<inputs.length; i++) {
+                        inputs[i].style.fontWeight = 'bold';
+                    }
+                }
                 this.editing = true;
             };
             /**
@@ -4365,6 +4372,7 @@
                 if (inputs && inputs.length) {
                     for (var i=0; i<inputs.length; i++) {
                         inputs[i].blur();
+                        inputs[i].style.fontWeight = 'normal';
                     }
                 }
                 this.editing = false;
