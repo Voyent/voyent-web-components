@@ -3532,7 +3532,7 @@
                         //this.nameOverlay.draw();
                         this.nameOverlay.displayAndDraw();
                     }
-                    else {
+                    else if (!_outer._isAlertView() || _outer.mode !== 'notification') {
                         this.nameOverlay = new _outer._ProximityZoneOverlay(this);
                         if (!this.enabled) {
                             this.nameOverlay.hide();
@@ -3748,23 +3748,23 @@
                  * @private
                  */
                 _setupOverlayClickListener: function () {
-                    if (_outer._isAlertView()) {
-                        return;
+                    if (!_outer._isAlertView() && !_outer._isMobileAlertEditor()) {
+                        google.maps.event.addListener(this.shapeOverlay, 'click', function () {
+                            // Don't allow de-selecting the zone
+                            if (!_outer._fallbackZone.active) {
+                                _outer._toggleFallbackZoneProperties();
+                            }
+                        });
+                        // Adjust zone styling on zone hover
+                        google.maps.event.addListener(this.shapeOverlay, 'mouseover', function () {
+                            _outer._mouseoverFallbackZone();
+                        });
+                        google.maps.event.addListener(this.shapeOverlay, 'mouseout', function() {
+                            _outer._mouseoutFallbackZone();
+                        });
                     }
-                    google.maps.event.addListener(this.shapeOverlay, 'click', function () {
-                        // Don't allow de-selecting the zone
-                        if (!_outer._fallbackZone.active) {
-                            _outer._toggleFallbackZoneProperties();
-                        }
-                    });
-                    // Adjust zone styling on zone hover
-                    google.maps.event.addListener(this.shapeOverlay, 'mouseover', function () {
-                        _outer._mouseoverFallbackZone();
-                    });
-                    google.maps.event.addListener(this.shapeOverlay, 'mouseout', function() {
-                        _outer._mouseoutFallbackZone();
-                    });
                 },
+
                 /**
                  * Returns the options for building a google maps polygon.
                  * @returns {*}
@@ -3772,7 +3772,7 @@
                  */
                 _getShapeOverlayOpts: function() {
                     return {
-                        clickable: true, draggable: false,
+                        clickable: !_outer._isAlertView(), draggable: false,
                         editable: false, fillColor: this.colour,
                         fillOpacity: this.opacity, map: _outer._map,
                         strokeWeight: 0.50, zIndex: this.zIndex, paths: this.paths,
@@ -3985,7 +3985,9 @@
                 this.loc = location;
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv(true);
-                this.div.style.cursor = 'pointer';
+                if (!_outer._isAlertView()) {
+                    this.div.style.cursor = 'pointer';
+                }
                 if (_outer._isMyLocations()) {
                     // Add some listeners to support info window toggling via label selection
                     this.div.onmouseover = function () {

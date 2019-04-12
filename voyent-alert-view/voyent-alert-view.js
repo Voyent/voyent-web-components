@@ -370,7 +370,7 @@ Polymer({
                                     ),
                                     icon: { url: "https://maps.google.com/mapfiles/ms/icons/" + (alertHistory.acknowledgement.answers[i].color ? alertHistory.acknowledgement.answers[i].color : 'orange') + ".png" },
                                     map: this._map,
-                                    draggable: false,
+                                    draggable: false
                                 });
                                 
                                 this._addUserDetailsClickListener(marker, currentUser, alertHistory.acknowledgement.answers[i].text);
@@ -404,6 +404,7 @@ Polymer({
                         icon: (this.mode === 'notification' ? this._MY_LOCATION_ICON_INACTIVE : this._getIconByLocationType(ourLocation.properties.vras.type)),
                         map: this._map,
                         draggable: false,
+                        clickable: this.mode !== 'notification'
                     });
                     
                     this._addFullscreenClickListener(marker);
