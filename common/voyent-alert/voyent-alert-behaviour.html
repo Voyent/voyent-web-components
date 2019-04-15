@@ -3493,7 +3493,6 @@
                 this._setPathsFromAreaRegion();
                 //this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
-                //this._setupOverlayClickListener();
                 this.setName(name || 'Entire Region');
                 this.setOpacity(/*opacity || */0); // Fixed opacity
                 this.setColour('9EAD9E'); // Fixed colour
@@ -3514,6 +3513,7 @@
                     this.paths = paths;
                     if (this.shapeOverlay) {
                         this.shapeOverlay.setPaths(paths);
+                        this._setupOverlayListeners();
                         this.determineAndSetNorthernCoordinate();
                     }
                 },
@@ -3748,7 +3748,6 @@
                     _outer._areaRegionIsAvailable().then(function() {
                         if (_outer._areaRegion.polygon) {
                             _this.setPaths(_outer._areaRegion.polygon.getPaths());
-                            _this._setupOverlayClickListener();
                         }
                     });
                 },
@@ -3756,8 +3755,9 @@
                  * Initializes click listener for activating the overlay.
                  * @private
                  */
-                _setupOverlayClickListener: function () {
+                _setupOverlayListeners: function () {
                     if (!_outer._isAlertView() && !_outer._isMobileAlertEditor()) {
+                        google.maps.event.clearListeners(this.shapeOverlay, 'click');
                         google.maps.event.addListener(this.shapeOverlay, 'click', function () {
                             // Don't allow de-selecting the zone
                             if (!_outer._fallbackZone.active) {
@@ -3765,9 +3765,11 @@
                             }
                         });
                         // Adjust zone styling on zone hover
+                        google.maps.event.clearListeners(this.shapeOverlay, 'mouseover');
                         google.maps.event.addListener(this.shapeOverlay, 'mouseover', function () {
                             _outer._mouseoverFallbackZone();
                         });
+                        google.maps.event.clearListeners(this.shapeOverlay, 'mouseout');
                         google.maps.event.addListener(this.shapeOverlay, 'mouseout', function() {
                             _outer._mouseoutFallbackZone();
                         });
