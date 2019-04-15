@@ -4098,7 +4098,7 @@
             };
             this._ProximityZoneOverlay.prototype.onAdd = function() {
                 // If this is an alert editor then add the div to the overlayLayer pane so it renders below the markers
-                if (_outer._isAnAlertEditor(true)) {
+                if (_outer._isAnAlertEditor(true) || _outer._isMobileAlertEditor()) {
                     this.getPanes().overlayLayer.appendChild(this.div);
                 }
                 else { // Otherwise add the div to the overlayMouseTarget pane so it renders above the markers
