@@ -3493,7 +3493,7 @@
                 this._setPathsFromAreaRegion();
                 //this.setPaths(this._buildWorldPolygon());
                 this.shapeOverlay = (new google.maps.Polygon(this._getShapeOverlayOpts()));
-                this._setupOverlayClickListener();
+                //this._setupOverlayClickListener();
                 this.setName(name || 'Entire Region');
                 this.setOpacity(/*opacity || */0); // Fixed opacity
                 this.setColour('9EAD9E'); // Fixed colour
@@ -3748,6 +3748,7 @@
                     _outer._areaRegionIsAvailable().then(function() {
                         if (_outer._areaRegion.polygon) {
                             _this.setPaths(_outer._areaRegion.polygon.getPaths());
+                            _this._setupOverlayClickListener();
                         }
                     });
                 },
