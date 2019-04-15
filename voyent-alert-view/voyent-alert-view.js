@@ -542,13 +542,15 @@ Polymer({
     _extendBoundsForNotificationMode: function(bounds) {
         var boundsExtended = false;
         // Always include the locations in the map panning
-        for (var i=0; i<this._myLocations.length; i++) {
-            bounds.extend(this._myLocations[i].marker.getPosition());
-            boundsExtended = true;
+        if (this._myLocations && this._myLocations.length) {
+            for (var i=0; i<this._myLocations.length; i++) {
+                bounds.extend(this._myLocations[i].marker.getPosition());
+                boundsExtended = true;
+            }
         }
         // If we have a fallback zone then include it in the map panning. The rules
         // for when we draw a fallback zone can be found in _drawAndLoadAlertTemplate
-        if (this._fallbackZone) {
+        if (this._fallbackZone && this._areaRegion) {
             // The areaRegion and fallback zone share the same paths so just
             // use our existing bounds so we don't need to recalculate them
             bounds.extend(this._areaRegion.bounds.getNorthEast());
