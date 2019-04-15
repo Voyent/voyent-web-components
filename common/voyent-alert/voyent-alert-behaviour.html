@@ -1457,14 +1457,6 @@
         },
 
         /**
-         * Returns whether the current component is one of the alert-editor or alert-template-editor components.
-         * @private
-         */
-        _isAnAlertEditor: function() {
-            return this._isAlertEditor() || this._isAlertTemplateEditor();
-        },
-
-        /**
          * Returns whether the current component is the alert-properties component.
          * @private
          */
@@ -1494,6 +1486,18 @@
          */
         _isMyLocations: function() {
             return this.nodeName === 'VOYENT-MY-LOCATIONS';
+        },
+
+        /**
+         * Returns whether the current component is one of the alert-editor or alert-template-editor components.
+         * @param includeProperties - Whether we should also include the alert-properties component in the condition.
+         * @private
+         */
+        _isAnAlertEditor: function(includeProperties) {
+            if (includeProperties) {
+                return this._isAlertEditor() || this._isAlertTemplateEditor() || this._isAlertProperties();
+            }
+            return this._isAlertEditor() || this._isAlertTemplateEditor();
         },
 
         /**
@@ -3922,7 +3926,7 @@
              */
             this._FallbackZoneOverlay = function(zone) {
                 this.zone = zone;
-                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor());
+                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor(true));
                 if (zone.enabled) {
                     this.draw();
                 }
@@ -3943,7 +3947,7 @@
                     }
                     this.div.style.backgroundColor = this.zone.colour;
                     this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-                    this.div.style.opacity = !_outer._isAnAlertEditor() || this.zone.active
+                    this.div.style.opacity = !_outer._isAnAlertEditor(true) || this.zone.active
                         ? '1'
                         : '0.25';
                     if (!_outer._map.controls[google.maps.ControlPosition.TOP_CENTER].length) {
@@ -3967,8 +3971,8 @@
                 var _this = this;
                 this.zone = zone;
                 this.setMap(_outer._map);
-                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor());
-                if (!_outer._isAnAlertEditor()) {
+                this.div = _outer._buildOverlayDiv(false, false, _outer._isAnAlertEditor(true));
+                if (!_outer._isAnAlertEditor(true)) {
                     // Bring the label to top on mouseover
                     this.div.onmouseover = function () {
                         _this.moveToTopPane();
@@ -4094,7 +4098,7 @@
             };
             this._ProximityZoneOverlay.prototype.onAdd = function() {
                 // If this is an alert editor then add the div to the overlayLayer pane so it renders below the markers
-                if (_outer._isAnAlertEditor()) {
+                if (_outer._isAnAlertEditor(true)) {
                     this.getPanes().overlayLayer.appendChild(this.div);
                 }
                 else { // Otherwise add the div to the overlayMouseTarget pane so it renders above the markers
@@ -4126,7 +4130,7 @@
                 this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.backgroundColor = this.zone.colour;
                 this.div.style.color = this.returnColourBasedOnBackground(this.zone.colour);
-                this.div.style.opacity = !_outer._isAnAlertEditor() || this.zone.active
+                this.div.style.opacity = !_outer._isAnAlertEditor(true) || this.zone.active
                     ? '1'
                     : this.zone.overlayHighlighted ? '0.75' : '0.25';
             };
@@ -4405,7 +4409,7 @@
              * Moves the zone overlay to a map pane with a higher stacking priority.
              */
             this._ProximityZoneOverlay.prototype.moveToTopPane = function() {
-                if (!_outer._isAnAlertEditor()) {
+                if (!_outer._isAnAlertEditor(true)) {
                     // Move the overlay to a pane with a higher stacking priority
                     this.getPanes().overlayMouseTarget.appendChild(this.div);
                 }
@@ -4414,7 +4418,7 @@
              * Moves the zone overlay to the default map pane.
              */
             this._ProximityZoneOverlay.prototype.moveToDefaultPane = function() {
-                if (!_outer._isAnAlertEditor()) {
+                if (!_outer._isAnAlertEditor(true)) {
                     // Move the overlay to the default pane
                     this.getPanes().floatShadow.appendChild(this.div);
                 }
