@@ -205,10 +205,8 @@
                     _this._adjustBoundsAndPan();
                 });
             }
-            if (this._isAnAlertEditor() || this._isAlertView()) {
-                // Listen for map zoom level changes
-                this._addZoomChangedListener();
-            }
+            // Listen for map zoom level changes
+            this._addZoomChangedListener();
             this._maxZoom = 17; //The maximum amount we will zoom when panning the map in certain cases.
             this._manageMaxZoomLevel(); //Ensure we always have imagery in satellite view modes.
             this._regionMapping = {}; //Map of region data so we can toggle between them.
@@ -2272,52 +2270,56 @@
          */
         _addZoomChangedListener: function() {
             var _this = this;
-            google.maps.event.addListener(this._map, 'zoom_changed', function () {
-                var zoneStacks = _this._loadedAlert && _this._loadedAlert.template && _this._loadedAlert.template.zoneStacks;
-                if (zoneStacks && zoneStacks.length) {
-                    for (var i=0; i<zoneStacks.length; i++) {
-                        var zoneStack = zoneStacks[i];
-                        var outerZone = zoneStack.getOutermostZone();
-                        var zoneArea = google.maps.geometry.spherical.computeArea(outerZone.shapeOverlay.getPaths().getAt(0));
-                        var mapBounds = _this._map.getBounds();
-                        var n = mapBounds.getNorthEast().lat(), e = mapBounds.getNorthEast().lng();
-                        var s = mapBounds.getSouthWest().lat(), w = mapBounds.getSouthWest().lng();
-                        var mapArea = google.maps.geometry.spherical.computeArea(new google.maps.MVCArray([
-                                    new google.maps.LatLng(n, e),
-                                    new google.maps.LatLng(s, e),
-                                    new google.maps.LatLng(s, w),
-                                    new google.maps.LatLng(n, w),
-                                    new google.maps.LatLng(n, e)
-                                ]
-                        ));
+            if (this._isAnAlertEditor() || this._isAlertView() || this._isMobileAlertEditor()) {
+                google.maps.event.addListener(this._map, 'zoom_changed', function () {
+                    var zoneStacks = _this._loadedAlert &&
+                        _this._loadedAlert.template &&
+                        _this._loadedAlert.template.zoneStacks;
+                    if (zoneStacks && zoneStacks.length) {
+                        for (var i=0; i<zoneStacks.length; i++) {
+                            var zoneStack = zoneStacks[i];
+                            var outerZone = zoneStack.getOutermostZone();
+                            var zoneArea = google.maps.geometry.spherical.computeArea(outerZone.shapeOverlay.getPaths().getAt(0));
+                            var mapBounds = _this._map.getBounds();
+                            var n = mapBounds.getNorthEast().lat(), e = mapBounds.getNorthEast().lng();
+                            var s = mapBounds.getSouthWest().lat(), w = mapBounds.getSouthWest().lng();
+                            var mapArea = google.maps.geometry.spherical.computeArea(new google.maps.MVCArray([
+                                        new google.maps.LatLng(n, e),
+                                        new google.maps.LatLng(s, e),
+                                        new google.maps.LatLng(s, w),
+                                        new google.maps.LatLng(n, w),
+                                        new google.maps.LatLng(n, e)
+                                    ]
+                            ));
 
-                        var percentageOfMapZoneFills = (zoneArea / mapArea) * 100;
-                        // Show a badge icon for the zone if the area of the outermost zone is less than 0.1% of the size of the map
-                        if (percentageOfMapZoneFills < 0.1) {
-                            if (!zoneStack.badgeOverlay) {
-                                (function(zoneStack) {
-                                    zoneStack.badgeOverlay = new _this._ImageOverlay(
-                                        zoneStack,
-                                        _this.getBadgeUrl(_this._loadedAlert.template.badge),
-                                        { height: '32px', width: '32px' },
-                                        _this._isAnAlertEditor()
-                                            ? function() {
-                                                _this._selectZone(zoneStack, zoneStack.getInnermostZone());
-                                            }
-                                            : null
-                                    )
-                                })(zoneStack);
+                            var percentageOfMapZoneFills = (zoneArea / mapArea) * 100;
+                            // Show a badge icon for the zone if the area of the outermost zone is less than 0.1% of the size of the map
+                            if (percentageOfMapZoneFills < 0.1) {
+                                if (!zoneStack.badgeOverlay) {
+                                    (function(zoneStack) {
+                                        zoneStack.badgeOverlay = new _this._ImageOverlay(
+                                            zoneStack,
+                                            _this.getBadgeUrl(_this._loadedAlert.template.badge),
+                                            { height: '32px', width: '32px' },
+                                            _this._isAnAlertEditor()
+                                                ? function() {
+                                                    _this._selectZone(zoneStack, zoneStack.getInnermostZone());
+                                                }
+                                                : null
+                                        )
+                                    })(zoneStack);
+                                }
+                                else {
+                                    zoneStack.badgeOverlay.displayAndDraw();
+                                }
                             }
-                            else {
-                                zoneStack.badgeOverlay.displayAndDraw();
+                            else if (zoneStack.badgeOverlay) {
+                                zoneStack.badgeOverlay.hide();
                             }
-                        }
-                        else if (zoneStack.badgeOverlay) {
-                            zoneStack.badgeOverlay.hide();
                         }
                     }
-                }
-            });
+                });
+            }
         },
 
         /**
