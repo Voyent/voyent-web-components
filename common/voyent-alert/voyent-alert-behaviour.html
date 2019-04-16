@@ -4198,6 +4198,7 @@
             this._MobileLocationOverlay.prototype.draw = function () {
                 // Convert the lat/lng coordinates to pixel coordinates
                 var northWestPixelPosition = this.getProjection().fromLatLngToDivPixel(this.latLng);
+                console.log('drawing mobile location at latLng', this.latLng.lat(), this.latLng.lng(), 'and coordinate', northWestPixelPosition.x, northWestPixelPosition.y);
                 // Center the content at the exact coordinate
                 this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.top = (northWestPixelPosition.y - this.div.offsetHeight/2) + 'px';
