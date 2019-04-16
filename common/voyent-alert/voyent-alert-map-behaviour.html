@@ -1196,7 +1196,11 @@
                 );
             }
             if (!this._isAlertView() || this.mode !== 'notification') {
-                this._adjustBoundsAndPan();
+                // Pan the map but ensure the area region is available first. Fixes an issue with
+                // the map doesn't pan properly on initial load for fallback zone only alerts
+                this._areaRegionIsAvailable().then(function() {
+                    _this._adjustBoundsAndPan();
+                });
             }
         },
 
@@ -1901,7 +1905,7 @@
                 });
             }
         },
-        
+
         _addUserDetailsCloseListener: function() {
             if (this.$.map && this._isAlertView() && this.mode === 'response') {
                 var _this = this;
@@ -1909,38 +1913,38 @@
                     if (singletonInfoWindow) {
                         singletonInfoWindow.close();
                         singletonInfoWindow = null;
-                        
+
                         // Reset the map zoom level and area
                         _this._adjustBoundsAndPan();
                     }
                 }, true);
             }
         },
-        
+
         _addUserDetailsClickListener: function(mapElement, user, answer) {
             if (this._isAlertView() && this.mode === 'response') {
                 var contentString = '<h3>';
-                
+
                 if (mapElement.icon && mapElement.icon.url) {
                     contentString += '<img src="' + mapElement.icon.url + '" style="max-height: 18px;"/> ';
                 }
-                
+
                 contentString += 'Recipient Details</h3>';
-                
+
                 if (user) {
                     contentString += '<p>Contact: ' + user.contact + '</p>';
-                    
+
                     if (user.firstname && user.lastname) {
                         contentString += '<p>Name: ' + user.firstname + ' ' + user.lastname + '</p>';
                     }
-                    
+
                     if (answer) {
                         contentString += '<p>Response: <b>' + answer + '</b></p>';
                     }
                     if (answer && user.response && user.response.received) {
                         contentString += '<p>Response Time: ' + new Date(user.response.received).toLocaleString() + '</p>';
                     }
-                    
+
                     if (user.location && user.location.properties && user.location.properties.vras) {
                         var locationRes = '<p>Location: ' + user.location.properties.vras.name;
                         if (user.location.properties.vras.type) {
@@ -1949,7 +1953,7 @@
                         if (user.location.geometry && user.location.geometry.coordinates) {
                             locationRes += ' at ' + user.location.geometry.coordinates[1] + ", " + user.location.geometry.coordinates[0];
                         }
-                        
+
                         locationRes += '</p>';
                         contentString += locationRes;
                     }
@@ -1957,25 +1961,25 @@
                 else {
                     contentString += '<p>No details found</p>';
                 }
-                
+
                 var _this = this;
                 google.maps.event.addListener(mapElement, 'click', function(e) {
                     if (singletonInfoWindow) {
                         singletonInfoWindow.close();
                         singletonInfoWindow = null;
                     }
-                    
+
                     singletonInfoWindow = new google.maps.InfoWindow({
                         content: contentString
                     });
-                    
+
                     singletonInfoWindow.open(_this._map, mapElement);
-                    
+
                     _this._panToLatLng(mapElement.getPosition());
                 });
             }
         },
-        
+
         /**
          * Pans the map bounds to the provided LatLng coordinates.
          * @param latLng
@@ -2272,9 +2276,7 @@
             var _this = this;
             if (this._isAnAlertEditor() || this._isAlertView() || this._isMobileAlertEditor()) {
                 google.maps.event.addListener(this._map, 'zoom_changed', function () {
-                    var zoneStacks = _this._loadedAlert &&
-                        _this._loadedAlert.template &&
-                        _this._loadedAlert.template.zoneStacks;
+                    var zoneStacks = _this._loadedAlert && _this._loadedAlert.template && _this._loadedAlert.template.zoneStacks;
                     if (zoneStacks && zoneStacks.length) {
                         for (var i=0; i<zoneStacks.length; i++) {
                             var zoneStack = zoneStacks[i];
