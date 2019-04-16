@@ -1196,7 +1196,11 @@
                 );
             }
             if (!this._isAlertView() || this.mode !== 'notification') {
-                this._adjustBoundsAndPan();
+                // Pan the map but ensure the area region is available first. Fixes an issue with
+                // the map doesn't pan properly on initial load for fallback zone only alerts
+                this._areaRegionIsAvailable().then(function() {
+                    _this._adjustBoundsAndPan();
+                });
             }
         },
 
