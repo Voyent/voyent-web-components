@@ -3634,18 +3634,18 @@
                  * Activates the shape overlay.
                  */
                 activateOverlay: function() {
-                    if (this.shapeOverlay) {
+                    if (this.shapeOverlay && _outer._isAnAlertEditor()) {
                         //this.shapeOverlay.setOptions({ fillOpacity: 0.40 });
-                        this.shapeOverlay.setOptions({ strokeWeight: 3.0/*, fillOpacity: 0.30*/ });
+                        this.shapeOverlay.setOptions({ strokeWeight: 3/*, fillOpacity: 0.3*/ });
                     }
                 },
                 /**
                  * Deactivates the shape overlay.
                  */
                 deactivateOverlay: function() {
-                    if (this.shapeOverlay) {
+                    if (this.shapeOverlay && _outer._isAnAlertEditor()) {
                         //this.shapeOverlay.setOptions({ fillOpacity: 0.25 });
-                        this.shapeOverlay.setOptions({ strokeWeight: 0.50/*, fillOpacity: 0.25*/ });
+                        this.shapeOverlay.setOptions({ strokeWeight: 0.5/*, fillOpacity: 0.25*/ });
                     }
                 },
                 /**
@@ -3653,8 +3653,8 @@
                  */
                 highlightOverlay: function() {
                     this.overlayHighlighted = true;
-                    if (this.shapeOverlay && !this.active) {
-                        this.shapeOverlay.setOptions({ strokeWeight: 2.0/*, fillOpacity: 0.30*/ });
+                    if (this.shapeOverlay && !this.active && _outer._isAnAlertEditor()) {
+                        this.shapeOverlay.setOptions({ strokeWeight: 2/*, fillOpacity: 0.3*/ });
                     }
                     // Redraw the overlay so the highlight styling updates
                     if (this.nameOverlay) {
@@ -3666,8 +3666,8 @@
                  */
                 unHighlightOverlay: function() {
                     this.overlayHighlighted = false;
-                    if (this.shapeOverlay && !this.active) {
-                        this.shapeOverlay.setOptions({ strokeWeight: 0.50/*, fillOpacity: 0.25*/ });
+                    if (this.shapeOverlay && !this.active && _outer._isAnAlertEditor()) {
+                        this.shapeOverlay.setOptions({ strokeWeight: 0.5/*, fillOpacity: 0.25*/ });
                     }
                     // Redraw the overlay so the highlight styling updates
                     if (this.nameOverlay) {
@@ -3756,7 +3756,7 @@
                  * @private
                  */
                 _setupOverlayListeners: function () {
-                    if (!_outer._isAlertView() && !_outer._isMobileAlertEditor()) {
+                    if (_outer._isAnAlertEditor()) {
                         google.maps.event.clearListeners(this.shapeOverlay, 'click');
                         google.maps.event.addListener(this.shapeOverlay, 'click', function () {
                             // Don't allow de-selecting the zone
@@ -3786,7 +3786,7 @@
                         clickable: !_outer._isAlertView(), draggable: false,
                         editable: false, fillColor: this.colour,
                         fillOpacity: this.opacity, map: _outer._map,
-                        strokeWeight: 0.50, zIndex: this.zIndex, paths: this.paths,
+                        strokeWeight: _outer._isAnAlertEditor() ? 0.5 : 3, zIndex: this.zIndex, paths: this.paths,
                         suppressUndo: true //This is undocumented but it works for now so we'll leverage it.
                     };
                 }
