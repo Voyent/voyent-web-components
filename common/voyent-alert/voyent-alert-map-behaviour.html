@@ -2307,7 +2307,9 @@
                                                 ? function() {
                                                     _this._selectZone(zoneStack, zoneStack.getInnermostZone());
                                                 }
-                                                : null
+                                                : function() {
+                                                    _this._panToZone(zoneStack.getInnermostZone(), true);
+                                                }
                                         )
                                     })(zoneStack);
                                 }
