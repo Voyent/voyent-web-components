@@ -1446,40 +1446,95 @@
             // Since we have multiple buttons in a single control we'll add event
             // listeners to the desired elements after the button has been added
             this._addCustomControl(this._MAP_TYPE_BUTTONS_ID, google.maps.ControlPosition.TOP_LEFT, null, function () {
+                // We want to manage the state of the checkboxes separately from the current mode so
+                // we can restore the previously set state when switching between Map and Satellite
+                _this._mapTerrainEnabled = false;
+                _this._mapLabelsEnabled = true;
+                _this._satLabelsEnabled = true;
                 var newControl = _this['_' + _this._MAP_TYPE_BUTTONS_ID];
-                // Alert view map is readonly, so start with the control hidden
+                // Alert view map is readonly, so start with the control hidden.
+                // The visibility of it will be toggled in `_toggleEditableMap`
                 if (_this._isAlertView()) {
                     newControl.style.display = 'none';
                 }
                 // Map button
                 newControl.querySelector('#mapTypeRoadBttn').onclick = function () {
-                    _this._map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
-                    _this._toggleMapTypeCheckboxButtons();
+                    if (_this._map.getMapTypeId() !== google.maps.MapTypeId.ROADMAP &&
+                        _this._map.getMapTypeId() !== google.maps.MapTypeId.TERRAIN) {
+                        _this._map.setMapTypeId(
+                            _this._mapTerrainEnabled
+                                ? google.maps.MapTypeId.TERRAIN
+                                : google.maps.MapTypeId.ROADMAP
+                        );
+                        _this._map.setOptions(
+                            _this._mapLabelsEnabled
+                                ? { styles: null }
+                                : _this._getDisabledLabelOptions()
+                        );
+                        _this._manageMapTypeButtonState();
+                    }
                 };
                 // Map > Terrain button
                 newControl.querySelector('#mapTypeTerrainBttn').onclick = function () {
-                    if (_this._map.getMapTypeId() === google.maps.MapTypeId.TERRAIN) {
+                    if (_this._mapTerrainEnabled) {
                         _this._map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
-                        _this._toggleMapTypeCheckboxButtons();
-                        return;
+                        _this._mapTerrainEnabled = false;
+                        _this._manageMapTypeButtonState();
                     }
-                    _this._map.setMapTypeId(google.maps.MapTypeId.TERRAIN);
-                    _this._toggleMapTypeCheckboxButtons(true, false);
+                    else {
+                        _this._mapTerrainEnabled = true;
+                        _this._map.setMapTypeId(google.maps.MapTypeId.TERRAIN);
+                        _this._manageMapTypeButtonState();
+                    }
+                };
+                // Map > Labels button
+                newControl.querySelector('#mapTypeLabelsBttn').onclick = function () {
+                    if (_this._map.getMapTypeId() === google.maps.MapTypeId.SATELLITE ||
+                        _this._map.getMapTypeId() === google.maps.MapTypeId.HYBRID) {
+                        _this._map.setMapTypeId(
+                            _this._mapTerrainEnabled
+                                ? google.maps.MapTypeId.TERRAIN
+                                : google.maps.MapTypeId.ROADMAP
+                        );
+                    }
+                    if (_this._mapLabelsEnabled) {
+                        _this._map.setOptions(_this._getDisabledLabelOptions());
+                        _this._mapLabelsEnabled = false;
+                        _this._manageMapTypeButtonState();
+                    }
+                    else {
+                        _this._map.setOptions({ styles: null });
+                        _this._mapLabelsEnabled = true;
+                        _this._manageMapTypeButtonState();
+                    }
                 };
                 // Satellite button
                 newControl.querySelector('#mapTypeSatBttn').onclick = function () {
-                    _this._map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
-                    _this._toggleMapTypeCheckboxButtons();
+                    if (_this._map.getMapTypeId() !== google.maps.MapTypeId.SATELLITE &&
+                        _this._map.getMapTypeId() !== google.maps.MapTypeId.HYBRID) {
+                        _this._map.setMapTypeId(
+                            _this._satLabelsEnabled
+                                ? google.maps.MapTypeId.HYBRID
+                                : google.maps.MapTypeId.SATELLITE
+                        );
+                        // To ensure the labels are visible on the map in Hybrid mode remove
+                        // any label styles that can override the labels set in Hybrid mode
+                        _this._map.setOptions({ styles: null });
+                        _this._manageMapTypeButtonState();
+                    }
                 };
                 // Satellite > Labels button
                 newControl.querySelector('#mapTypeHybridBttn').onclick = function () {
-                    if (_this._map.getMapTypeId() === google.maps.MapTypeId.HYBRID) {
+                    if (_this._satLabelsEnabled) {
                         _this._map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
-                        _this._toggleMapTypeCheckboxButtons();
-                        return;
+                        _this._satLabelsEnabled = false;
+                        _this._manageMapTypeButtonState();
                     }
-                    _this._map.setMapTypeId(google.maps.MapTypeId.HYBRID);
-                    _this._toggleMapTypeCheckboxButtons(false, true);
+                    else {
+                        _this._map.setMapTypeId(google.maps.MapTypeId.HYBRID);
+                        _this._satLabelsEnabled = true;
+                        _this._manageMapTypeButtonState();
+                    }
                 };
 
             });
@@ -1784,19 +1839,69 @@
         },
 
         /**
-         * Manages checkbox state for the map type buttons.
-         * @param toggleTerrainButton
-         * @param toggleLabelsButton
+         * Returns a google.maps.MapOptions `styles` option which disables all map labels.
+         * @returns {{}}
          * @private
          */
-        _toggleMapTypeCheckboxButtons: function (toggleTerrainButton, toggleLabelsButton) {
+        _getDisabledLabelOptions: function() {
+            return {
+                styles: [
+                    {
+                        elementType: 'labels',
+                        stylers: [
+                            {
+                                visibility: 'off'
+                            }
+                        ]
+                    },
+                    {
+                        featureType: 'administrative.land_parcel',
+                        stylers: [
+                            {
+                                visibility: 'off'
+                            }
+                        ]
+                    },
+                    {
+                        featureType: 'administrative.neighborhood',
+                        stylers: [
+                            {
+                                visibility: 'off'
+                            }
+                        ]
+                    }
+                ]
+            };
+        },
+
+        /**
+         * Manages checkbox state for the map type buttons.
+         * @private
+         */
+        _manageMapTypeButtonState: function () {
+            // Manage active styling for Map / Satellite buttons
+            var mapTypeRoadBttn = this['_' + this._MAP_TYPE_BUTTONS_ID].querySelector('#mapTypeRoadBttn');
+            var mapActive = this._map.getMapTypeId() === google.maps.MapTypeId.ROADMAP || this._map.getMapTypeId() === google.maps.MapTypeId.TERRAIN;
+            var mapTypeSatBttn = this['_' + this._MAP_TYPE_BUTTONS_ID].querySelector('#mapTypeSatBttn');
+            var satActive = this._map.getMapTypeId() === google.maps.MapTypeId.SATELLITE || this._map.getMapTypeId() === google.maps.MapTypeId.HYBRID;
+            var bttnClass = 'selected';
+            this.toggleClass(bttnClass, mapActive, mapTypeRoadBttn);
+            this.toggleClass(bttnClass, satActive, mapTypeSatBttn);
+
+            // Manage checkbox state
             var checkboxImgTerrain = this['_' + this._MAP_TYPE_BUTTONS_ID].querySelector('#mapTypeTerrainCheckbox');
+            var checkboxImgLabels = this['_' + this._MAP_TYPE_BUTTONS_ID].querySelector('#mapTypeLabelsCheckbox');
             var checkboxImgHybrid = this['_' + this._MAP_TYPE_BUTTONS_ID].querySelector('#mapTypeHybridCheckbox');
             checkboxImgTerrain.style.display = 'none';
-            checkboxImgHybrid.style.display = 'none';
-            if (toggleTerrainButton) {
+            if (this._mapTerrainEnabled) {
                 checkboxImgTerrain.style.display = 'block';
-            } else if (toggleLabelsButton) {
+            }
+            checkboxImgLabels.style.display = 'none';
+            if (this._mapLabelsEnabled) {
+                checkboxImgLabels.style.display = 'block';
+            }
+            checkboxImgHybrid.style.display = 'none';
+            if (this._satLabelsEnabled) {
                 checkboxImgHybrid.style.display = 'block';
             }
         },

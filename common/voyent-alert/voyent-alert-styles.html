@@ -157,6 +157,7 @@
                 font-family: Roboto, Arial, sans-serif;
                 user-select: none;
                 font-size: 11px;
+                color: #565656;
                 background-color: rgb(255, 255, 255);
                 padding: 8px;
                 background-clip: padding-box;
@@ -164,19 +165,21 @@
             }
 
             .mapTypeBttn.mapTypeRoadBttn {
-                color: #000000;
                 border-bottom-left-radius: 2px;
                 border-top-left-radius: 2px;
                 min-width: 21px;
-                font-weight: 500;
             }
 
             .mapTypeBttn.mapTypeSatBttn {
-                color: #565656;
                 border-bottom-right-radius: 2px;
                 border-top-right-radius: 2px;
                 min-width: 39px;
                 border-left: 0;
+            }
+
+            .mapTypeBttn.selected {
+                color: #000000;
+                font-weight: 500;
             }
 
             .mapTypeBttnWrap:hover .mapTypeBttn,
@@ -193,6 +196,7 @@
             }
 
             .mapTypeRoadBttnWrap:hover .mapTypeTerrainBttnWrap,
+            .mapTypeRoadBttnWrap:hover .mapTypeLabelsBttnWrap,
             .mapTypeSatBttnWrap:hover .mapTypeHybridBttnWrap {
                 display: block;
             }
@@ -212,6 +216,11 @@
 
             .mapTypeDropdownBttnWrap.mapTypeTerrainBttnWrap {
                 left: 0;
+            }
+
+            .mapTypeDropdownBttnWrap.mapTypeLabelsBttnWrap {
+                top: 59px;
+                width: 69px;
             }
 
             .mapTypeDropdownBttnWrap.mapTypeHybridBttnWrap {
@@ -272,6 +281,12 @@
                 height: 67px;
                 display: none;
             }
+
+            #mapTypeLabelsCheckbox.mapTypeCheckboxImage,
+            #mapTypeHybridCheckbox.mapTypeCheckboxImage {
+                display: block;
+            }
+
             .badgeIcon {
                 width: 64px;
                 height: 64px;
