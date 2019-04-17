@@ -397,8 +397,7 @@ Polymer({
                 if (locations[i] && locations[i].properties && locations[i].geometry) { // Ensure we have a valid location
                     ourLocation = locations[i];
                     // VRAS-771 - Don't draw affected mobile location on the alert detail map
-                    if (this.mode === 'notification' && ourLocation.properties && ourLocation.properties.vras &&
-                        typeof ourLocation.properties.vras.type === 'string' && ourLocation.properties.vras.type.toLowerCase() === 'mobile') {
+                    if (this.mode === 'notification' && ourLocation.properties.vras.type.toLowerCase() === 'mobile') {
                         continue;
                     }
 
