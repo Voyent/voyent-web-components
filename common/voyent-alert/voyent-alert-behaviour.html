@@ -3996,6 +3996,9 @@
                 this.loc = location;
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv(true);
+                this.div.style.backgroundColor = '#7E5CF4';
+                this.div.style.color = '#FFFFFF';
+                this.div.style.fontWeight = 'normal';
                 if (!_outer._isAlertView()) {
                     this.div.style.cursor = 'pointer';
                 }
@@ -4024,6 +4027,10 @@
                 this.pixelCoordinates = pixelCoordinates;
                 this.setMap(_outer._map);
                 this.div = _outer._buildOverlayDiv(true);
+                this.div.style.backgroundColor = '#88b7d5';
+                this.div.style.border = '2px solid #c2e1f5';
+                this.div.style.borderRadius = '20px';
+                this.div.style.padding = '5px';
                 //Setup our transition and opacity so we can fade this overlay in.
                 this.div.style.opacity = '0';
                 this.div.style.webkitTransition = 'opacity 0.5s';
@@ -4051,6 +4058,8 @@
                 this.zone = zone;
                 this.setMap(_outer._map);
                 this.div = _outer._buildDistanceBetweenPointsOverlayDiv(zone);
+                this.div.style.backgroundColor = 'grey';
+                this.div.style.color = 'white';
                 this.visible = true;
                 this.editing = false;
                 this.active = false;
@@ -4062,6 +4071,8 @@
                 this.stack = stack;
                 this.setMap(_outer._map);
                 this.div = _outer._buildCoordinateOverlayDiv(stack);
+                this.div.style.backgroundColor = 'grey';
+                this.div.style.color = 'white';
                 this.editing = false;
                 this.active = false;
                 this.visible = true;
@@ -4144,15 +4155,11 @@
             this._LocationOverlay.prototype.draw = function () {
                 // Convert the lat/lng coordinates to pixel coordinates
                 var northWestPixelPosition = this.getProjection().fromLatLngToDivPixel(this.loc.marker.getPosition());
-                //Set the div content.
+                // Set the div content
                 this.div.innerHTML = this.loc.name;
-                //Center the label above the location.
+                // Center the label above the location
                 this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
                 this.div.style.top = northWestPixelPosition.y-64 + 'px';
-                //Configure additional styling.
-                this.div.style.backgroundColor = '#7E5CF4';
-                this.div.style.color = '#FFFFFF';
-                this.div.style.fontWeight = 'normal';
             };
             /**
              * Handles drawing the mouse hold overlay on the my locations map.
@@ -4185,12 +4192,8 @@
                 this.div.style.top = (this.pixelCoordinates.y > renderAboveOffset
                     ? northWestPixelPosition.y-this.div.offsetHeight-generalPixelOffset
                     : northWestPixelPosition.y+generalPixelOffset) + 'px';
-                //Configure additional styling.
-                this.div.style.backgroundColor = '#88b7d5';
-                this.div.style.border = '2px solid #c2e1f5';
-                this.div.style.borderRadius = '20px';
+                // Fade the overlay in
                 this.div.style.opacity = '0.9';
-                this.div.style.padding = '5px';
             };
             /**
              * Handles drawing the mobile location icon overlay.
@@ -4234,9 +4237,6 @@
                         this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
                         this.div.style.top = (northWestPixelPosition.y + 15) + 'px';
                     }
-                    // Additional zone-specific styling
-                    this.div.style.backgroundColor = 'grey';
-                    this.div.style.color = 'white';
                     this.div.style.borderColor = this.editing || this.active ? this.div.style.color : 'transparent';
                 }
             };
@@ -4264,15 +4264,11 @@
                         latInput.value = this.stack.lat;
                         lngInput.value = this.stack.lng;
                     }
-
                     // Position the coordinate overlay 3px below the stack marker and horizontally centered
                     this.div.style.left = (northWestPixelPosition.x - this.div.offsetWidth/2) + 'px';
                     this.div.style.top = (northWestPixelPosition.y + 8) + 'px';
-
-                    // Style the overlay
-                    this.div.style.backgroundColor = 'grey';
-                    this.div.style.color = 'white';
-                    this.div.style.borderColor = this.editing  || this.active ? this.div.style.color : 'transparent';
+                    // Manage the border colour
+                    this.div.style.borderColor = this.editing || this.active ? this.div.style.color : 'transparent';
                 }
             };
             /**
