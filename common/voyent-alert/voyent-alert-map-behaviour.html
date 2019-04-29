@@ -468,22 +468,24 @@
                 var stackData = [];
                 for (var i=0; i<zoneStacks.length; i++) {
                     var zoneData = [];
-                    for (var j=0; j<zoneStacks[i].zones.length; j++) {
+                    // Build a list of zones sorted from outermost to innermost
+                    for (var j=zoneStacks[i].zones.length-1; j>=0; j--) {
                         var zone = zoneStacks[i].zones[j];
                         zoneData.push({
                             id: zone.id,
-                            lng: this._AlertZone.getBoundingBox(zone).getSouthWest().lng()
-                        })
+                            lat: this._AlertZone.getBoundingBox(zone).getNorthEast().lat()
+                        });
                     }
+                    // Build a list of stacks
                     stackData.push(zoneData);
                 }
-                // Sort the stacks from west to east. Since the zones within each stack are already
-                // sorted by innermost to outermost we will get the outermost zone by selecting
-                // the last one and use that to determine the order of the stacks. This also
-                // means that we don't need to sort the list of zones further since they will
-                // already be sorted by stack from west to east and innermost to outermost
+                // Sort the stacks from north to south. Since the zones within each stack are already
+                // sorted from outermost to innermost we will get the outermost zone by selecting
+                // the first zone and use that to determine the order of the stacks. This also means
+                // that we don't need to sort the list of zones further since they will already
+                // be sorted by stack from north to south and zone by outermost to innermost.
                 stackData.sort(function(a, b) {
-                    return a[a.length-1].lng - b[b.length-1].lng;
+                    return b[0].lat - a[0].lat;
                 });
                 // Flatten the arrays to a simple list of zone ids
                 sortedZoneIds = stackData.map(function(zonesForStack) {
