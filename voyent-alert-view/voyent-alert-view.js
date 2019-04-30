@@ -512,7 +512,7 @@ Polymer({
         var zoneStacks = this._loadedAlert && this._loadedAlert.template
             ? this._loadedAlert.template.zoneStacks
             : [];
-        if (this._loadedAlert && zoneStacks.length) {
+        if (zoneStacks.length) {
             for (var i=0; i<zoneStacks.length; i++) {
                 var outerZone = zoneStacks[i].getOutermostZone();
                 if (outerZone) {
