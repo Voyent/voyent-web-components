@@ -1471,7 +1471,7 @@
                         _this._map.setOptions(
                             _this._mapLabelsEnabled
                                 ? { styles: null }
-                                : _this._getDisabledLabelOptions()
+                                : _this._getDisabledPlacesOptions()
                         );
                         _this._manageMapTypeButtonState();
                     }
@@ -1500,7 +1500,7 @@
                         );
                     }
                     if (_this._mapLabelsEnabled) {
-                        _this._map.setOptions(_this._getDisabledLabelOptions());
+                        _this._map.setOptions(_this._getDisabledPlacesOptions());
                         _this._mapLabelsEnabled = false;
                         _this._manageMapTypeButtonState();
                     }
@@ -1840,11 +1840,11 @@
         },
 
         /**
-         * Returns a google.maps.MapOptions `styles` option which disables all map labels.
+         * Returns a google.maps.MapOptions `styles` option which disables map place icons and labels.
          * @returns {{}}
          * @private
          */
-        _getDisabledLabelOptions: function() {
+        _getDisabledPlacesOptions: function() {
             return {
                 styles: [
                     {
