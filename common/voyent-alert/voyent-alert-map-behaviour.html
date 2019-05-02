@@ -1490,7 +1490,7 @@
                     }
                 };
                 // Map > Labels button
-                newControl.querySelector('#mapTypeLabelsBttn').onclick = function () {
+                newControl.querySelector('#mapTypePlacesBttn').onclick = function () {
                     if (_this._map.getMapTypeId() === google.maps.MapTypeId.SATELLITE ||
                         _this._map.getMapTypeId() === google.maps.MapTypeId.HYBRID) {
                         _this._map.setMapTypeId(
@@ -1848,7 +1848,8 @@
             return {
                 styles: [
                     {
-                        elementType: 'labels',
+                        featureType: 'poi',
+                        elementType: 'labels.text',
                         stylers: [
                             {
                                 visibility: 'off'
@@ -1856,7 +1857,7 @@
                         ]
                     },
                     {
-                        featureType: 'administrative.land_parcel',
+                        featureType: 'poi.business',
                         stylers: [
                             {
                                 visibility: 'off'
@@ -1864,7 +1865,16 @@
                         ]
                     },
                     {
-                        featureType: 'administrative.neighborhood',
+                        featureType: 'road',
+                        elementType: 'labels.icon',
+                        stylers: [
+                            {
+                                visibility: 'off'
+                            }
+                        ]
+                    },
+                    {
+                        featureType: 'transit',
                         stylers: [
                             {
                                 visibility: 'off'
@@ -1892,7 +1902,7 @@
 
             // Manage checkbox state
             var checkboxImgTerrain = control.querySelector('#mapTypeTerrainCheckbox');
-            var checkboxImgLabels = control.querySelector('#mapTypeLabelsCheckbox');
+            var checkboxImgLabels = control.querySelector('#mapTypePlacesCheckbox');
             var checkboxImgHybrid = control.querySelector('#mapTypeHybridCheckbox');
             checkboxImgTerrain.style.display = 'none';
             if (this._mapTerrainEnabled) {
