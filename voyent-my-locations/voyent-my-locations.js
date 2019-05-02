@@ -316,13 +316,15 @@ Polymer({
      * @private
      */
     _closeInfoWindow: function(skipSave) {
-        this._infoWindow.close();
-        this._infoWindowOpen = false;
-        if (this._loadedLocation) {
-            this._loadedLocation.nameOverlay.displayAndDraw();
-            this._loadedLocation.marker.setIcon(this._MY_LOCATION_ICON_INACTIVE);
-            if (!skipSave) {
-                this._savePendingOrNewLocation();
+        if (this._infoWindowOpen) {
+            this._infoWindow.close();
+            this._infoWindowOpen = false;
+            if (this._loadedLocation) {
+                this._loadedLocation.nameOverlay.displayAndDraw();
+                this._loadedLocation.marker.setIcon(this._MY_LOCATION_ICON_INACTIVE);
+                if (!skipSave) {
+                    this._savePendingOrNewLocation();
+                }
             }
         }
     },
