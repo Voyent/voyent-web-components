@@ -1223,6 +1223,11 @@
                     }
                     var paths;
                     if (oce.type === 'circle') {
+                        // Ensure the circle is valid since if the user clicks immediately rather than
+                        // sizing the shape then it will have a radius of 0 and will break the editor
+                        if (!oce.overlay.getRadius()) {
+                            oce.overlay.setRadius(1);
+                        }
                         paths = _this._AlertTemplate.calculatePathsFromCircleProperties(oce.overlay.getCenter(),oce.overlay.getRadius());
                     }
                     else { //polygon
