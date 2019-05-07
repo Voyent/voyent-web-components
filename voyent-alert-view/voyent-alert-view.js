@@ -400,7 +400,7 @@ Polymer({
                     if (this.mode === 'notification' && ourLocation.properties.vras.type.toLowerCase() === 'mobile') {
                         continue;
                     }
-
+                    
                     marker = new google.maps.Marker({
                         position: new google.maps.LatLng(
                             ourLocation.geometry.coordinates[1], ourLocation.geometry.coordinates[0]
