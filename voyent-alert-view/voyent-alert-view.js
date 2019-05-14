@@ -373,7 +373,7 @@ Polymer({
                                     draggable: false
                                 });
                                 
-                                this._addUserDetailsClickListener(marker, currentUser, alertHistory.acknowledgement.answers[i].text);
+                                this._addUserDetailsClickListener(marker, currentUser, alertHistory.acknowledgement.answers[i].text, alertHistory.timezoneCode);
                                 
                                 // Store our drawn location
                                 this.push('_myLocations',new this._MyLocation(

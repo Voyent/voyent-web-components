@@ -2043,7 +2043,7 @@
             }
         },
         
-        _addUserDetailsClickListener: function(mapElement, user, answer) {
+        _addUserDetailsClickListener: function(mapElement, user, answer, optionalTimezone) {
             if (this._isAlertView() && this.mode === 'response') {
                 var contentString = '<h3 style="margin-top: 0;">';
                 
@@ -2064,7 +2064,11 @@
                         contentString += '<p>Response: <b>' + answer + '</b></p>';
                     }
                     if (answer && user.response && user.response.received) {
-                        contentString += '<p>Response Time: ' + new Date(user.response.received).toString() + '</p>';
+                        var ourDate = moment(user.response.received).format('MM/DD/YYYY HH:mm:ss');
+                        if (optionalTimezone) {
+                            ourDate += ' ' + optionalTimezone;
+                        }
+                        contentString += '<p>Response Time: ' + ourDate + '</p>';
                     }
                     
                     if (user.location && user.location.properties && user.location.properties.vras) {
