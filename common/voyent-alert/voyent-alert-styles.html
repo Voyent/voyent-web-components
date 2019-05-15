@@ -164,13 +164,13 @@
                 box-shadow: rgba(0, 0, 0, 0.3) 0 1px 4px -1px;
             }
 
-            .mapTypeBttn.mapTypeRoadBttn {
+            .mapTypeBttn.mapBttn {
                 border-bottom-left-radius: 2px;
                 border-top-left-radius: 2px;
                 min-width: 21px;
             }
 
-            .mapTypeBttn.mapTypeSatBttn {
+            .mapTypeBttn.satBttn {
                 border-bottom-right-radius: 2px;
                 border-top-right-radius: 2px;
                 min-width: 39px;
@@ -184,24 +184,24 @@
 
             .mapTypeBttnWrap:hover .mapTypeBttn,
             .mapTypeBttn:hover,
-            .mapTypeTerrainDropdownWrap:hover .mapTypeDropdownBttn,
-            .mapTypeDropdownBttn:hover {
+            .terrainDropdownWrap:hover .dropdownBttn,
+            .dropdownBttn:hover {
                 background-color: #EBEBEB;
                 color: black;
             }
 
-            .mapTypeDropdownBttnWrap:hover .mapTypeCheckboxWrap {
+            .dropdownBttnWrap:hover .checkboxWrap {
                 border: 1px solid #666666;
                 color: black;
             }
 
-            .mapTypeRoadBttnWrap:hover .mapTypeTerrainBttnWrap,
-            .mapTypeRoadBttnWrap:hover .mapTypePlacesBttnWrap,
-            .mapTypeSatBttnWrap:hover .mapTypeHybridBttnWrap {
+            .mapBttnWrap:hover .mapTerrainBttnWrap,
+            .mapBttnWrap:hover .mapPlacesBttnWrap,
+            .satBttnWrap:hover .satPlacesBttnWrap {
                 display: block;
             }
 
-            .mapTypeDropdownBttnWrap {
+            .dropdownBttnWrap {
                 background-color: white;
                 z-index: -1;
                 padding: 2px;
@@ -214,20 +214,20 @@
                 display: none;
             }
 
-            .mapTypeDropdownBttnWrap.mapTypeTerrainBttnWrap {
+            .dropdownBttnWrap.mapTerrainBttnWrap {
                 left: 0;
             }
 
-            .mapTypeDropdownBttnWrap.mapTypePlacesBttnWrap {
+            .dropdownBttnWrap.mapPlacesBttnWrap {
                 top: 59px;
                 width: 69px;
             }
 
-            .mapTypeDropdownBttnWrap.mapTypeHybridBttnWrap {
+            .dropdownBttnWrap.satPlacesBttnWrap {
                 right: 0;
             }
 
-            .mapTypeDropdownBttn {
+            .dropdownBttn {
                 color: rgb(0, 0, 0);
                 font-family: Roboto, Arial, sans-serif;
                 user-select: none;
@@ -239,7 +239,7 @@
                 white-space: nowrap;
             }
 
-            .mapTypeCheckboxWrap {
+            .checkboxWrap {
                 box-sizing: border-box;
                 position: relative;
                 line-height: 0;
@@ -254,12 +254,12 @@
                 vertical-align: middle;
             }
 
-            .mapTypesLabel {
+            .label {
                 vertical-align: middle;
                 cursor: pointer;
             }
 
-            .mapTypeCheckbox {
+            .checkbox {
                 position: absolute;
                 left: 1px;
                 top: -2px;
@@ -268,7 +268,7 @@
                 overflow: hidden;
             }
 
-            .mapTypeCheckboxImage {
+            .checkboxImage {
                 position: absolute;
                 left: -52px;
                 top: -44px;
@@ -282,8 +282,8 @@
                 display: none;
             }
 
-            #mapTypePlacesCheckbox.mapTypeCheckboxImage,
-            #mapTypeHybridCheckbox.mapTypeCheckboxImage {
+            #mapPlacesCheckbox.checkboxImage,
+            #satPlacesCheckbox.checkboxImage {
                 display: block;
             }
 
