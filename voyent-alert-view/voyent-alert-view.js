@@ -578,7 +578,7 @@ Polymer({
         // Include the locations in the map panning if we are not currently viewing the alert summary for an alert
         // which contains a fallback zone or we are not currently viewing the zone summary for a fallback_zone.
         // This is to prevent the map from panning too far away from the region boundary or zone.
-        var viewingSummaryWithFallbackZone = !!(this._alertHistory && this._alertHistory.alertId && this._fallbackZone);
+        var viewingSummaryWithFallbackZone = !!(this._alertHistory && this._alertHistory.alertId && this._fallbackZone && this._fallbackZone.enabled);
         var viewingFallbackZone = !!(this._alertHistory && this._alertHistory.zoneId === this._FALLBACK_ZONE_ID);
         if (!viewingSummaryWithFallbackZone && !viewingFallbackZone && this._extendBoundsToIncludeLocations(bounds)) {
             boundsExtended = true;
