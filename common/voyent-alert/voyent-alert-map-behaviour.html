@@ -2084,10 +2084,23 @@
                         contentString += '<p>Response: <b>' + answer + '</b></p>';
                     }
                     if (answer && user.response && user.response.received) {
-                        var ourDate = moment(user.response.received).format('MM/DD/YYYY HH:mm:ss');
+                        var dateFormatString = 'MM/DD/YYYY HH:mm:ss';
+                        var ourDate = moment(user.response.received).format(dateFormatString);
+                        
+                        // Apply a timezone if we have one
                         if (optionalTimezone) {
-                            ourDate += ' ' + optionalTimezone;
+                            // Change the date to use the proper timezone
+                            if (optionalTimezone.name) {
+                                ourDate = moment.tz(user.response.received, optionalTimezone.name);
+                            }
+                            
+                            // Format and append the timezone code if we have it
+                            ourDate = ourDate.format(dateFormatString);
+                            if (optionalTimezone.code) {
+                                ourDate += ' ' + optionalTimezone.code;
+                            }
                         }
+                        
                         contentString += '<p>Response Time: ' + ourDate + '</p>';
                     }
                     
