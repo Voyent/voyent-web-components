@@ -523,8 +523,18 @@ Polymer({
                 }
             }
         }
-        if (this.mode === 'notification' && this._extendBoundsForNotificationMode(bounds)) {
+        if (this._extendBoundsToIncludeFallbackZone(bounds)) {
             boundsExtended = true;
+        }
+        if (this.mode === 'notification') {
+            if (this._extendBoundsForNotificationMode(bounds)) {
+                boundsExtended = true;
+            }
+        }
+        else if (this.mode === 'view') {
+            if (this._extendBoundsForViewMode(bounds)) {
+                boundsExtended = true;
+            }
         }
         // Only pan the map if the bounds were extended otherwise it
         // will try to pan to an empty bounds (middle of the sea)
@@ -545,25 +555,67 @@ Polymer({
      */
     _extendBoundsForNotificationMode: function(bounds) {
         var boundsExtended = false;
-        // Always include the locations in the map panning
+        // Include the locations and fallback zone boundary in the map bounds
+        if (this._extendBoundsToIncludeLocations(bounds)) {
+            boundsExtended = true;
+        }
+        // Include the mobile location in the map bounds
+        if (this._mobileLocation && this._mobileLocation.visible && this._mobileLocation.latLng) {
+            bounds.extend(this._mobileLocation.latLng);
+            boundsExtended = true;
+        }
+        return boundsExtended;
+    },
+
+    /**
+     * Adjusts the bounds further for the alert details view (mode === 'view').
+     * @param bounds
+     * @returns {boolean} - Whether the bounds were extended.
+     * @private
+     */
+    _extendBoundsForViewMode: function(bounds) {
+        var boundsExtended = false;
+        // Include the locations in the map panning if we are not currently viewing the alert summary for an alert
+        // which contains a fallback zone or we are not currently viewing the zone summary for a fallback_zone.
+        // This is to prevent the map from panning too far away from the region boundary or zone.
+        var viewingSummaryWithFallbackZone = !!(this._alertHistory && this._alertHistory.alertId && this._fallbackZone);
+        var viewingFallbackZone = !!(this._alertHistory && this._alertHistory.zoneId === this._FALLBACK_ZONE_ID);
+        if (!viewingSummaryWithFallbackZone && !viewingFallbackZone && this._extendBoundsToIncludeLocations(bounds)) {
+            boundsExtended = true;
+        }
+        return boundsExtended;
+    },
+
+    /**
+     * Adjusts the bounds to include the locations.
+     * @param bounds
+     * @returns {boolean} - Whether the bounds were extended.
+     * @private
+     */
+    _extendBoundsToIncludeLocations: function(bounds) {
+        var boundsExtended = false;
         if (this._myLocations && this._myLocations.length) {
             for (var i=0; i<this._myLocations.length; i++) {
                 bounds.extend(this._myLocations[i].marker.getPosition());
                 boundsExtended = true;
             }
         }
-        // If we have a fallback zone then include it in the map panning. The rules
-        // for when we draw a fallback zone can be found in _drawAndLoadAlertTemplate
-        if (this._fallbackZone && this._areaRegion) {
+        return boundsExtended;
+    },
+
+    /**
+     * Adjusts the bounds to include the locations.
+     * @param bounds
+     * @returns {boolean} - Whether the bounds were extended.
+     * @private
+     */
+    _extendBoundsToIncludeFallbackZone: function(bounds) {
+        var boundsExtended = false;
+        if (this._fallbackZone && this._fallbackZone.enabled && this._areaRegion) {
             // The areaRegion and fallback zone share the same paths so just
             // use our existing bounds so we don't need to recalculate them
             bounds.extend(this._areaRegion.bounds.getNorthEast());
             bounds.extend(this._areaRegion.bounds.getSouthWest());
-            boundsExtended = true;
-        }
-        // Include the mobile location in the map bounds if it is available
-        if (this._mobileLocation && this._mobileLocation.visible && this._mobileLocation.latLng) {
-            bounds.extend(this._mobileLocation.latLng);
             boundsExtended = true;
         }
         return boundsExtended;
