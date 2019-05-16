@@ -1108,8 +1108,8 @@
                             if (this.mode === 'notification') {
                                 if (i >= 1) { break; }
                             }
-                            // For alert detail view and preview modes only show the requested zone, if requested
-                            else if (['view','preview'].indexOf(this.mode) > -1 && this._zoneIdToDisplay) {
+                            // For all other alert detail modes only show the requested zone, if available
+                            else if (this._zoneIdToDisplay) {
                                 if (this._zoneIdToDisplay === zoneGeometries[i].id) {
                                     foundZoneIdMatch = true;
                                 }
