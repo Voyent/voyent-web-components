@@ -1071,9 +1071,10 @@
          * @param templateJSON - The JSON to build the alert template from.
          * @param latLngCentroid - An optional LatLng object specifying the centroid of the template. When this is not
          *                         provided we will calculate the centroid based on the template's stack coordinates.
+         * @param maintainMapState - Set to true to not pan or zoom the map after finishing
          * @private
          */
-        _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid) {
+        _drawAndLoadAlertTemplate: function(templateJSON,latLngCentroid,maintainMapState) {
             var _this = this;
             var properties, zoneGeometries, zones, zoneStacks = [], zIndex,
                 haveStackFromFile, currentStackFromFile, foundZoneIdMatch = false;
@@ -1197,7 +1198,7 @@
                     fallbackZoneProperties.zIndex
                 );
             }
-            if (!this._isAlertView() || this.mode !== 'notification') {
+            if (!maintainMapState && this.mode !== 'notification') {
                 // Pan the map but ensure the area region is available first. Fixes an issue with
                 // the map doesn't pan properly on initial load for fallback zone only alerts
                 this._areaRegionIsAvailable().then(function() {

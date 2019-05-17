@@ -189,8 +189,9 @@ Polymer({
      * @param locations - An array of locations to be drawn.
      * @param alertHistory - The notification history for the zone, this OR notificationFilter should be provided.
      * @param notificationFilter - The notification filter settings for the zone, this OR notificationFilter should be provided.
+     * @param maintainMapState - Keep any existing map zoom and pan
      */
-    previewZoneFromTemplate: function(template,zoneId,locations,alertHistory,notificationFilter) {
+    previewZoneFromTemplate: function(template,zoneId,locations,alertHistory,notificationFilter,maintainMapState) {
         if (!template || typeof template !== 'object') {
             this.fire('message-error','Unable to load template, template not provided');
             return;
@@ -215,7 +216,7 @@ Polymer({
         // Draw the alert
         this.clearMap();
         this._drawLocations(locations, (alertHistory ? alertHistory : null));
-        this._drawAndLoadAlertTemplate(template);
+        this._drawAndLoadAlertTemplate(template, null, maintainMapState);
         this._map.setOptions({maxZoom:null});
         // Set the location types legend history and notification filter
         this.set('_alertHistory',alertHistory);
@@ -434,9 +435,14 @@ Polymer({
             // First determine if the user has checked NO_RESPONSE, which we'll use later
             var selectedNoResponse = false;
             for (var checkLoop = 0; checkLoop < filter.length; checkLoop++) {
-                if (filter[checkLoop].filter === 'NO_RESPONSE') {
-                    selectedNoResponse = true;
-                    break;
+                if (filter) {
+                    if (filter[checkLoop] && filter[checkLoop].filter === 'NO_RESPONSE') {
+                        selectedNoResponse = true;
+                        break;
+                    }
+                }
+                else {
+                    return; // In case we lose our filter right in the middle of applying
                 }
             }
             
@@ -446,12 +452,17 @@ Polymer({
                     // Figure out if the user passes the filter or not
                     var hideMarker = true;
                     for (var filterLoop = 0; filterLoop < filter.length; filterLoop++) {
-                        if (typeof filter[filterLoop].filter.id !== 'undefined' &&
-                            filter[filterLoop].filter.id === this._alertHistory.users[userLoop].response.answerId) {
-                            filteredUsers.push(this._alertHistory.users[userLoop]);
-                            
-                            hideMarker = false;
-                            break;
+                        if (filter) {
+                            if (filter[filterLoop] && typeof filter[filterLoop].filter.id !== 'undefined' &&
+                                filter[filterLoop].filter.id === this._alertHistory.users[userLoop].response.answerId) {
+                                filteredUsers.push(this._alertHistory.users[userLoop]);
+                                
+                                hideMarker = false;
+                                break;
+                            }
+                        }
+                        else {
+                            return; // In case we lose our filter right in the middle of applying
                         }
                     }
                     
