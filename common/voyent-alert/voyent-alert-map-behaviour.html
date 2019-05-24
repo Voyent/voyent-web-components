@@ -487,12 +487,16 @@
                 stackData.sort(function(a, b) {
                     return b[0].lat - a[0].lat;
                 });
-                // Flatten the arrays to a simple list of zone ids
+                // Build an array of zone ids grouped by stack and then flatten the arrays to a simple list of zone ids.
+                // We used to use .flat() but this is not supported in Edge so we will use reduce/contact instead
                 sortedZoneIds = stackData.map(function(zonesForStack) {
                     return zonesForStack.map(function(zoneObj) {
                         return zoneObj.id;
                     });
-                }).flat();
+                });
+                sortedZoneIds = sortedZoneIds.reduce(function (arr, val) {
+                    return arr.concat(val);
+                }, []);
             }
             return sortedZoneIds;
         },
