@@ -86,9 +86,9 @@ Example:
         
         <div class="buttonContainer">
             <content select="buttons-before"></content>
-            <paper-button raised disabled="{{previousdisabled}}" hidden$="{{previoushidden}}" on-click="previous">{{previouslabel}}</paper-button>
+            <paper-button raised disabled="{{previousdisabled}}" hidden$="{{previoushidden}}" on-click="previous">[[previouslabel]]</paper-button>
             <content select="buttons-between"></content>
-            <paper-button raised id="nextButton" disabled="{{nextdisabled}}" hidden$="{{nexthidden}}" on-click="next">{{nextlabel}}</paper-button>
+            <paper-button raised id="nextButton" disabled="{{nextdisabled}}" hidden$="{{nexthidden}}" on-click="next">[[nextlabel]]</paper-button>
             <content select="buttons-after"></content>
         </div>
     </template>

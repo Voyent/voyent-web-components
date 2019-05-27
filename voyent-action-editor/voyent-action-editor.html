@@ -27,14 +27,14 @@ Example:
             }
         </style>
 
-        <template is="dom-if" if="{{_taskGroupSchemas}}">
+        <template is="dom-if" if="[[_taskGroupSchemas]]">
             <div class="buttonContainer">
                 <content select="voyent-action-list"></content>
                 <paper-button raised on-click="_resetEditor">New/Reset</paper-button>
-                <template is="dom-if" if="{{!_loadedAction}}">
+                <template is="dom-if" if="[[!_loadedAction]]">
                     <paper-button raised on-click="_saveAction">Save</paper-button>
                 </template>
-                <template is="dom-if" if="{{_loadedAction}}">
+                <template is="dom-if" if="[[_loadedAction]]">
                     <paper-button raised on-click="_updateAction">Update</paper-button>
                     <paper-button raised on-click="_cloneAction">Clone<!-- (Save as new)--></paper-button>
                     <paper-button raised on-click="_deleteAction">Delete</paper-button>
@@ -49,8 +49,8 @@ Example:
                                 <div class="content layout vertical leftPane">
                                     <!-- This 'strip-whitespace' attribute is added here (and in other components) due to Polymer issue 2292, where IE11 was crashing when a splice was used on an array backing a dynamic loop -->
                                     <template is="dom-repeat" strip-whitespace items="{{_taskGroupSchemas}}" sort="_sortTaskItems">
-                                        <div class="taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" title$="{{item.description}}">
-                                            <div class="title">{{item.label}}</div>
+                                        <div class="taskGroup taskItem taskItemPos" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" title$="[[item.description]]">
+                                            <div class="title">[[item.label]]</div>
                                         </div>
                                     </template>
                                 </div>
@@ -59,10 +59,10 @@ Example:
                                 <div class="header" on-click="_toggleTask">Tasks<div class="arrow"></div></div>
                                 <div class="content layout vertical leftPane taskPane">
                                     <template is="dom-repeat" strip-whitespace items="{{_taskSchemasUI}}">
-                                        <div class="taskClump">{{item.label}}</div>
+                                        <div class="taskClump">[[item.label]]</div>
                                         <template is="dom-repeat" strip-whitespace items="{{item.schemas}}">
-                                            <div class="taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon" title$="{{item.description}}">
-                                                <div class="title">{{item.labelUI}}</div>
+                                            <div class="taskItem taskItemPos" draggable="true" on-dragstart="_startDragTask" on-dragend="_dragEndCommon" title$="[[item.description]]">
+                                                <div class="title">[[item.labelUI]]</div>
                                             </div>
                                         </template>
                                         <div class="taskBuffer"/>
@@ -108,8 +108,8 @@ Example:
                                             <button type="button" on-click="_deleteTaskGroup">Remove</button>
                                         </div>
                                         <div class="title" on-click="_toggleTask" draggable="true" on-dragstart="_startDragGroup" on-dragend="_dragEndCommon" >
-                                            {{group.schema.title}}
-                                            <span class="smallerF">{{_formatContainerName(group.name, group.schema.taskcount)}}</span>
+                                            [[group.schema.title]]
+                                            <span class="smallerF">[[_formatContainerName(group.name, group.schema.taskcount)]]</span>
                                             <div class="arrow"></div>
                                         </div>
                                         <div class="content">
@@ -120,20 +120,20 @@ Example:
                                             </label>
                                             <template is="dom-repeat" strip-whitespace items="{{_toArray(group.schema.properties.required)}}" as="property" sort="_sortProperties">
                                                 <label>
-                                                    <span class="required">*</span><span>{{property.title}}</span>
-                                                    <template is="dom-if" if="{{_isString(property.type)}}">
-                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                    <span class="required">*</span><span>[[property.title]]</span>
+                                                    <template is="dom-if" if="[[_isString(property.type)]]">
+                                                        <template is="dom-if" if="[[_hasEnum(property.enum)]]">
                                                             <select id$="{{_calculateSelectId(group.name,'none',property.title)}}"
                                                                     class="form-control" required value="{{property.value::change}}"
                                                                     data-label$="{{property.title}}" data-group-id$="{{group.id}}">
                                                                 <option value="" selected>Select one...</option>
                                                                 <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
-                                                                    <option value$="{{item}}">{{item}}</option>
+                                                                    <option value$="{{item}}">[[item]]</option>
                                                                 </template>
                                                             </select>
                                                         </template>
-                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
-                                                            <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
+                                                        <template is="dom-if" if="[[!_hasEnum(property.enum)]]">
+                                                            <input class="form-control" type="text" title$="[[property.description]]" placeholder$="{{property.description}}"
                                                                    required value="{{property.value::input}}" data-label$="{{property.title}}" data-group-id$="{{group.id}}">
                                                         </template>
                                                     </template>
@@ -141,32 +141,32 @@ Example:
                                             </template>
                                             <template is="dom-repeat" strip-whitespace items="{{_toArray(group.schema.properties.optional)}}" as="property" sort="_sortProperties">
                                                 <label class$="{{_addBooleanClass(property.type)}}">
-                                                    <span>{{property.title}}</span>
-                                                    <template is="dom-if" if="{{_isString(property.type)}}">
-                                                        <template is="dom-if" if="{{_hasEnum(property.enum)}}">
+                                                    <span>[[property.title]]</span>
+                                                    <template is="dom-if" if="[[_isString(property.type)]]">
+                                                        <template is="dom-if" if="[[_hasEnum(property.enum)]]">
                                                             <select id$="{{_calculateSelectId(group.name,'none',property.title)}}"
                                                                     class="form-control" value="{{property.value::change}}">
                                                                 <option value="" selected>Select one...</option>
                                                                 <template is="dom-repeat" strip-whitespace items="{{property.enum}}">
-                                                                    <option value$="{{item}}">{{item}}</option>
+                                                                    <option value$="{{item}}">[[item]]</option>
                                                                 </template>
                                                             </select>
                                                         </template>
-                                                        <template is="dom-if" if="{{!_hasEnum(property.enum)}}">
+                                                        <template is="dom-if" if="[[!_hasEnum(property.enum)]]">
                                                             <input class="form-control" type="text" title$="{{property.description}}" placeholder$="{{property.description}}"
                                                                    value="{{property.value::input}}">
                                                         </template>
                                                     </template>
-                                                    <template is="dom-if" if="{{_isBoolean(property.type)}}">
+                                                    <template is="dom-if" if="[[_isBoolean(property.type)]]">
                                                         <input class="form-control-chk" type="checkbox" title$="{{property.description}}" checked="{{property.value::change}}"/>
                                                     </template>
                                                 </label>
                                             </template>
-                                            <template is="dom-if" if="{{_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragInAndOverGroup" on-dragenter="_dragInAndOverGroup" on-drop="_dropInGroup">
+                                            <template is="dom-if" if="[[_isConditionalTaskGroup(group.schema.title)]]" on-dragover="_dragInAndOverGroup" on-dragenter="_dragInAndOverGroup" on-drop="_dropInGroup">
                                                 <div class="conditional-task-group-lbl">If</div>
                                                 <div class="conditional-task-group if">
                                                     <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
-                                                        <template is="dom-if" if="{{!task.schema.isElseTask}}">
+                                                        <template is="dom-if" if="[[!task.schema.isElseTask]]">
                                                             <action-task group="{{group}}" task="{{task}}" _task-groups="{{_taskGroups}}" _last-dragged="{{_lastDragged}}" _last-dragged-type="{{_lastDraggedType}}"></action-task>
                                                         </template>
                                                     </template>
@@ -174,13 +174,13 @@ Example:
                                                 <div class="conditional-task-group-lbl">Else</div>
                                                 <div class="conditional-task-group else">
                                                     <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
-                                                        <template is="dom-if" if="{{task.schema.isElseTask}}">
+                                                        <template is="dom-if" if="[[task.schema.isElseTask]]">
                                                             <action-task group="{{group}}" task="{{task}}" _task-groups="{{_taskGroups}}" _last-dragged="{{_lastDragged}}" _last-dragged-type="{{_lastDraggedType}}"></action-task>
                                                         </template>
                                                     </template>
                                                 </div>
                                             </template>
-                                            <template is="dom-if" if="{{!_isConditionalTaskGroup(group.schema.title)}}" on-dragover="_dragInAndOverGroup" on-dragenter="_dragInAndOverGroup" on-drop="_dropInGroup">
+                                            <template is="dom-if" if="[[!_isConditionalTaskGroup(group.schema.title)]]" on-dragover="_dragInAndOverGroup" on-dragenter="_dragInAndOverGroup" on-drop="_dropInGroup">
                                                 <template is="dom-repeat" strip-whitespace items="{{group.tasks}}" as="task">
                                                     <action-task group="{{group}}" task="{{task}}" _task-groups="{{_taskGroups}}" _last-dragged="{{_lastDragged}}" _last-dragged-type="{{_lastDraggedType}}"></action-task>
                                                 </template>

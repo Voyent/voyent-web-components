@@ -60,10 +60,10 @@ This component is used internally by the location simulator for building user ro
             }
         </style>
         <div class="simulatorWrapper">
-            <template is="dom-if" if="{{_eta}}">
+            <template is="dom-if" if="[[_eta]]">
                 <div class="form-group">
                     <label for="eta">ETA:</label>
-                    <div id="eta">{{_eta}}</div>
+                    <div id="eta">[[_eta]]</div>
                 </div>
             </template>
             <div class="buttonContainer">

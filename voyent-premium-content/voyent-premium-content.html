@@ -93,12 +93,12 @@ Polymer component wrapper for blocking any embedded content as Premium
             }
         </style>
         
-        <div id="premium" class="outer" style$="{{style}}">
+        <div id="premium" class="outer" style$="[[style]]">
             <div class="wrapper"
-                 style$="{{overlayStyle}}"
+                 style$="[[overlayStyle]]"
                  title="This feature is exclusive to Premium level accounts. Upgrade today!"
                  on-click="upgradeClick"
-                 hidden$="{{hasPremium}}"><span class$="premiumText premiumText[[bubblePos]]">Premium</span></div>
+                 hidden$="[[hasPremium]]"><span class$="premiumText premiumText[[bubblePos]]">Premium</span></div>
             <content></content>
         </div>
     </template>

@@ -125,11 +125,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 border-top: none;
             }
         </style>
-        <div hidden$="{{hidden}}">
+        <div hidden$="[[hidden]]">
             <form is="iron-form" id="loginForm" on-submit="handleLogin">
                 <paper-card heading="{{heading}}">
                     <template is="dom-if" if="[[headerImage]]">
-                        <img src$="{{headerImage}}" class="headerImage"></img>
+                        <img src$="[[headerImage]]" class="headerImage"></img>
                     </template>
                 
                     <template is="dom-if" if="[[_regionResults.length]]">
@@ -181,13 +181,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     </template>
                     <div class="card-actions" style="text-align: right">
                         <div class="loadWrapper"><voyent-loading></voyent-loading></div>
-                        <div class="error"><span>{{error}}</span></div>
+                        <div class="error"><span>[[error]]</span></div>
                         <template is="dom-if" if="[[_regionResults.length]]">
                             <paper-button raised colored on-click="_cancelRegionResults">Back</paper-button>
                         </template>
                         <template is="dom-if" if="[[!_regionResults.length]]">
-                            <paper-button raised colored on-click="cancel"><span>{{cancelLabel}}</span></paper-button>
-                            <paper-button type="submit" raised colored on-click="handleLogin"><button><span>{{submitLabel}}</span></button></paper-button>
+                            <paper-button raised colored on-click="cancel"><span>[[cancelLabel]]</span></paper-button>
+                            <paper-button type="submit" raised colored on-click="handleLogin"><button><span>[[submitLabel]]</span></button></paper-button>
                         </template>
                     </div>
                 </paper-card>

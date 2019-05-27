@@ -1331,7 +1331,7 @@ Allows editing of voyent location, region and point data
             Buttons are set to appear/disappear in tandem
             -->
 
-            <template is="dom-if" if="{{!hidesearch}}">
+            <template is="dom-if" if="[[!hidesearch]]">
                 <div id="searchBarWrap" style="display:none;">
                     <div id="searchBarDiv" class="ui-widget">
                         <input id="locationSearchBar" placeholder="Search" class="searchBar"
@@ -1358,7 +1358,7 @@ Allows editing of voyent location, region and point data
                 </div>
             </template>
             <!--Import regions from a geoJSON setup.-->
-            <template is="dom-if" if="{{showImportDialog}}">
+            <template is="dom-if" if="[[showImportDialog]]">
                 <div class="smlPopDlg text-center">
                     <button type="button" class="btn btn-xs btn-danger closeSmlPopDlgBttn"
                             on-click="toggleImportDialog">X
@@ -1375,7 +1375,7 @@ Allows editing of voyent location, region and point data
             </template>
 
             <!--Button templates to add to the google buttons toolbar via javascript-->
-            <template is="dom-if" if="{{!hidetracker}}">
+            <template is="dom-if" if="[[!hidetracker]]">
 
                 <div id="trackerButtonWrap" class="customMapBttnWrap">
                     <div id="trackerButtonDiv" title="Create tracker" on-click="startTracker">
@@ -1388,7 +1388,7 @@ Allows editing of voyent location, region and point data
                 </div>
             </template>
 
-            <template is="dom-if" if="{{!hideplaces}}">
+            <template is="dom-if" if="[[!hideplaces]]">
 
                 <div id="searchAddButtonWrap" class="customMapBttnWrap">
                     <div id="searchAddButtonDiv" title="Add with Google Places" on-click="togglePlacesSearch">
@@ -1400,7 +1400,7 @@ Allows editing of voyent location, region and point data
                     </div>
                 </div>
             </template>
-            <template is="dom-if" if="{{!hideimport}}">
+            <template is="dom-if" if="[[!hideimport]]">
 
                 <div id="importButtonWrap" class="customMapBttnWrap">
                     <div id="importButtonDiv" title="Import locations from geoJSON file" on-click="toggleImportDialog">
@@ -1417,7 +1417,7 @@ Allows editing of voyent location, region and point data
 
             <!--Template for the search-add div.  -->
 
-            <template is="dom-if" if="{{showSearchDialog}}">
+            <template is="dom-if" if="[[showSearchDialog]]">
                 <div class="smlPopDlg">
                     <button type="button" class="btn btn-xs btn-danger closeSmlPopDlgBttn"
                             on-click="toggleSearchOptDialog">X
@@ -1465,13 +1465,13 @@ Allows editing of voyent location, region and point data
             </template>
 
 
-            <template is="dom-if" if="{{showDeleteDialog}}">
+            <template is="dom-if" if="[[showDeleteDialog]]">
                 <div class="smlPopDlg">
                     <button type="button" class="btn btn-xs btn-danger closeSmlPopDlgBttn"
                             on-click="toggleDeleteDialog">X
                     </button>
                     <div class="smlPopDlgTitle">Delete <span>[[searchByTxt]]</span>s</div>
-                    <template is="dom-if" if="{{matchingLocations}}">
+                    <template is="dom-if" if="[[matchingLocations]]">
                         <div class="col-sm-12 text-center" style="padding-bottom:10px;">Mouseover the <span>[[searchByTxt]]</span>
                             Names to
                             highlight that Location on the map.
@@ -1479,13 +1479,13 @@ Allows editing of voyent location, region and point data
                         <div class="col-sm-12 text-center">
                             <!--Below originally had {{action "toggleCheckboxes" "matchingLocations" on="click"}}-->
                             <div class="btn btn-sm btn-primary checkboxToggle" on-click="toggleCheckboxes">
-                                {{toggleCheckboxesTxt}}
+                                [[toggleCheckboxesTxt]]
                             </div>
                         </div>
                         <div id="massDeleteContainer" class="col-sm-11 overAutoNoWrap">
                             <template is="dom-repeat" strip-whitespace items="{{matchingLocations}}">
                                 <div class="locationName smlHeight" title="{{item.id}}">
-                                    {{item.name}}
+                                    [[item.name]]
                                 </div>
                             </template>
                         </div>
@@ -1504,7 +1504,7 @@ Allows editing of voyent location, region and point data
                     </template>
 
 
-                    <template is="dom-if" if="{{!matchingLocations}}">
+                    <template is="dom-if" if="[[!matchingLocations]]">
                         <br/>
 
                         <div class="col-sm-12 text-center">
@@ -1534,7 +1534,7 @@ Allows editing of voyent location, region and point data
                         <div id="editLocationName" style="display:none;">
                             <div class="col-sm-6" style="height:50px;">
                                 <input id="locationNameInput" class="form-control locationNameInput"
-                                       value={{locationNameInput::change}}>
+                                       value="{{locationNameInput::change}}">
                             </div>
                             <div class="col-sm-6" style="padding-left:20px;">
                                 <button class="btn btn-sm btn-success" on-click="confirmNameChange">Confirm</button>
@@ -1543,7 +1543,7 @@ Allows editing of voyent location, region and point data
                         </div>
                         <div id="viewId" style="display:none;">
                             <div class="col-sm-6" style="height:50px;width:80%;">
-                                <span id="viewIDDiv" style="font-size:xx-small;">{{currentId}}</span>
+                                <span id="viewIDDiv" style="font-size:xx-small;">[[currentId]]</span>
                             </div>
                             <div style="padding-left:20px; width:19%; display:inline;">
                                 <button class="btn btn-sm btn-danger" on-click="revertViewID">Back</button>
@@ -1551,7 +1551,7 @@ Allows editing of voyent location, region and point data
                         </div>
                     </div>
 
-                    <div class="regionButtonsDiv text-center" hidden$="{{!infowindowisstandard}}">
+                    <div class="regionButtonsDiv text-center" hidden$="[[!infowindowisstandard]]">
                         <div class="col-sm-3" style="padding-left:20px;">
                             <!-- Had class {{ {active:showPropertiesDiv} | tokenList}} -->
                             <button id="showPropertiesButton"
@@ -1570,7 +1570,7 @@ Allows editing of voyent location, region and point data
                         </div>
                       </div>
 
-                    <div class="regionButtonsDiv text-center" hidden$="{{!infowindowisanchor}}">
+                    <div class="regionButtonsDiv text-center" hidden$="[[!infowindowisanchor]]">
                             <div class="col-sm-3" style="padding-left:20px;">
                                 <!-- Had class {{ {active:showPropertiesDiv} | tokenList}} -->
                                 <button
@@ -1588,7 +1588,7 @@ Allows editing of voyent location, region and point data
                                 <button class="btn btn-sm btn-danger" on-click="removeTracker">Delete Tracker</button>
                             </div>
                         </div>
-                    <div class="regionButtonsDiv text-center" hidden$="{{!infowindowiszone}}">
+                    <div class="regionButtonsDiv text-center" hidden$="[[!infowindowiszone]]">
                         <div class="col-sm-3" style="padding-left:20px;">
                             <!-- Had class {{ {active:showPropertiesDiv} | tokenList}} -->
                             <button
@@ -1607,7 +1607,7 @@ Allows editing of voyent location, region and point data
                         </div>
                     </div>
                 </div>
-                <template is="dom-if" if="{{showPropertiesDiv}}">
+                <template is="dom-if" if="[[showPropertiesDiv]]">
                     <div class="regionEditorDiv propertiesDiv">
                         <table class="table table-striped">
                             <thead>
@@ -1638,7 +1638,7 @@ Allows editing of voyent location, region and point data
                                     <button class="btn btn-xs btn-success" data-property="bearing" on-click="updateAnchorProperty">Update</button>
                                 </td>
                             </tr>
-                            <tr hidden$="{{!infowindowisanchor}}">
+                            <tr hidden$="[[!infowindowisanchor]]">
                                     <td>Speed</td>
                                     <td>
                                         <input placeholder="Speed" class='form-control' value="{{_anchorSpeed::change}}">
@@ -1651,7 +1651,7 @@ Allows editing of voyent location, region and point data
                                         <button class="btn btn-xs btn-success" data-property="speed" on-click="updateAnchorProperty">Update</button>
                                     </td>
                                 </tr>
-                            <tr hidden$="{{!infowindowisanchor}}">
+                            <tr hidden$="[[!infowindowisanchor]]">
                                 <td>Duration</td>
                                 <td>
                                     <input placeholder="Duration" class='form-control' value="{{_anchorDuration::change}}">
@@ -1660,7 +1660,7 @@ Allows editing of voyent location, region and point data
                                     <button class="btn btn-xs btn-success" data-property="duration" on-click="updateAnchorProperty">Update</button>
                                 </td>
                             </tr>
-                            <tr hidden$="{{!infowindowisanchor}}">
+                            <tr hidden$="[[!infowindowisanchor]]">
                                 <td>
                                     Enabled
                                 </td>
@@ -1677,8 +1677,8 @@ Allows editing of voyent location, region and point data
                             </tr>
                             <tr>
                                 <td>
-                                    <template is="dom-if" if="{{isPOI}}">Draggable</template>
-                                    <template is="dom-if" if="{{!isPOI}}">Editable</template>
+                                    <template is="dom-if" if="[[isPOI]]">Draggable</template>
+                                    <template is="dom-if" if="[[!isPOI]]">Editable</template>
                                 </td>
                                 <td>
                                     <select id="editableSelect" class="form-control">
@@ -1691,7 +1691,7 @@ Allows editing of voyent location, region and point data
                                     </button>
                                 </td>
                             </tr>
-                            <template is="dom-if" if="{{!isPOI}}">
+                            <template is="dom-if" if="[[!isPOI]]">
                                 <tr class="colourRow">
                                     <td>Colour</td>
                                     <td>
@@ -1728,8 +1728,8 @@ Allows editing of voyent location, region and point data
                             <template id="propertyAddTemplate" is="dom-repeat" strip-whitespace
                                       items="{{regionProperties}}">
                                 <tr>
-                                    <td>{{item.key}}</td>
-                                    <td>{{item.val}}</td>
+                                    <td>[[item.key]]</td>
+                                    <td>[[item.val]]</td>
                                     <td>
                                         <button name="{{item.key}}" class="btn btn-xs btn-danger"
                                                 on-click="removeProperty">Delete
@@ -1741,7 +1741,7 @@ Allows editing of voyent location, region and point data
                         </table>
                     </div>
                 </template>
-                <template is="dom-if" if="{{showTagsDiv}}">
+                <template is="dom-if" if="[[showTagsDiv]]">
                     <div class="regionEditorDiv tagsDiv">
                         <table class="table table-striped">
                             <thead>
@@ -1759,7 +1759,7 @@ Allows editing of voyent location, region and point data
                             </tr>
                             <template is="dom-repeat" strip-whitespace items="{{tags}}">
                                 <tr>
-                                    <td>{{item.name}}</td>
+                                    <td>[[item.name]]</td>
                                     <td>
                                         <button class="btn btn-xs btn-danger" on-click="removeTag">Delete</button>
                                     </td>
@@ -1771,13 +1771,13 @@ Allows editing of voyent location, region and point data
                 </template>
             </div>
 
-            <template is="dom-if" if="{{showPlacesDialog}}">
+            <template is="dom-if" if="[[showPlacesDialog]]">
                 <!-- Was {{ {xLgPopDlg:placesSearchResults} | tokenList}} -->
                 <div class="lgPopDlg placesSearchWrapper" class="noDblClickSelect">
                     <button type="button" class="btn btn-xs btn-danger closeLgPopDlgBttn" on-click="togglePlacesSearch">
                         X
                     </button>
-                    <template is="dom-if" if="{{arePlacesSearchResults}}">
+                    <template is="dom-if" if="[[arePlacesSearchResults]]">
                         <div class="lgPopDlgTitle">Google Places Search Results</div>
                         <div class="placesEditorDiv">
                             <div class="col-sm-12 pull-left">
@@ -1814,8 +1814,8 @@ Allows editing of voyent location, region and point data
                                 <template is="dom-repeat" strip-whitespace items="{{placesSearchResults}}">
                                     <tr>
                                         <td><img style="max-width:35px;" src="[[item.icon]]"></td>
-                                        <td>{{item.name}}</td>
-                                        <td>{{item.vicinity}}</td>
+                                        <td>[[item.name]]</td>
+                                        <td>[[item.vicinity]]</td>
                                         <td><input type="checkbox" name="createPlace" value="{{item.place_id::change}}">
                                         </td>
                                         <td>
@@ -1862,7 +1862,7 @@ Allows editing of voyent location, region and point data
                                     </div>
                                 </div>
                             </div>
-                            <template is="dom-if" if="{{showPlacesPropertiesDiv}}">
+                            <template is="dom-if" if="[[showPlacesPropertiesDiv]]">
                                 <div class="placesEditorDiv propertiesDiv">
                                     <table class="table table-striped">
                                         <thead>
@@ -1913,8 +1913,8 @@ Allows editing of voyent location, region and point data
                                         </tr>
                                         <template is="dom-repeat" strip-whitespace items="{{regionProperties::change}}">
                                             <tr>
-                                                <td>{{item.key}}</td>
-                                                <td>{{item.val}}</td>
+                                                <td>[[item.key]]</td>
+                                                <td>[[item.val]]</td>
                                                 <td>
                                                     <button class="btn btn-xs btn-danger" on-click="removeProperty">
                                                         Delete
@@ -1926,7 +1926,7 @@ Allows editing of voyent location, region and point data
                                     </table>
                                 </div>
                             </template>
-                            <template is="dom-if" if="{{showPlacesTagsDiv}}">
+                            <template is="dom-if" if="[[showPlacesTagsDiv]]">
                                 <div class="placesEditorDiv tagsDiv">
                                     <table class="table table-striped">
                                         <thead>
@@ -1947,7 +1947,7 @@ Allows editing of voyent location, region and point data
                                         </tr>
                                         <template is="dom-repeat" strip-whitespace items="{{tags}}">
                                             <tr>
-                                                <td>{{item.name}}</td>
+                                                <td>[[item.name]]</td>
                                                 <td>
                                                     <button class="btn btn-xs btn-danger" on-click="removeTag">Delete
                                                     </button>
@@ -1965,7 +1965,7 @@ Allows editing of voyent location, region and point data
                             </div>
                         </div>
                     </template>
-                    <template is="dom-if" if="{{!arePlacesSearchResults}}">
+                    <template is="dom-if" if="[[!arePlacesSearchResults]]">
                         <div class="lgPopDlgTitle">Google Places Search</div>
                         <div class="text-center rankSearchResults">
                             <div class="col-sm-12" style="margin-bottom:7px;">Rank Search Results By:</div>
@@ -2009,7 +2009,7 @@ Allows editing of voyent location, region and point data
                             <button class="btn btn-sm btn-primary" on-click="placesSearch">Search</button>
                         </div>
                         <div class="col-sm-12 text-center" style="color:#DD5734;">
-                            <span>{{placesSearchStatus}}</span>
+                            <span>[[placesSearchStatus]]</span>
                         </div>
                     </template>
                 </div>

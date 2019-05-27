@@ -50,10 +50,10 @@ document.getElementById('voyent-message').info("Some info text");
         <div class="wrapper">
             <template is="dom-repeat" strip-whitespace items="{{messages}}" as="message">
                 <span class$="{{message.type}}">
-                <template is="dom-if" if="{{usetimestamp}}">
-                    {{message.timestamp}}>
+                <template is="dom-if" if="[[usetimestamp]]">
+                    [[message.timestamp]]>
                 </template>
-                {{message.text}}&nbsp;
+                [[message.text]]&nbsp;
                 </span><br/>
             </template>
         </div>

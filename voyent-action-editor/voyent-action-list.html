@@ -46,7 +46,7 @@ Example:
             }
         </style>
         <div class="tableWrapper">
-            <template is="dom-if" if="{{_allActions}}">
+            <template is="dom-if" if="[[_allActions]]">
                 <paper-dropdown-menu label="View Saved Actions">
                     <paper-listbox class="dropdown-content" selected="{{selectedIndex}}">
                         <template is="dom-repeat" strip-whitespace items="[[_allActions]]" as="action">
@@ -55,7 +55,7 @@ Example:
                     </paper-listbox>
                 </paper-dropdown-menu>
             </template>
-            <template is="dom-if" if="{{!_allActions}}">
+            <template is="dom-if" if="[[!_allActions]]">
                 <div class="noActionTxt">Saved Actions: No existing actions found.</div>
             </template>
         </div>
