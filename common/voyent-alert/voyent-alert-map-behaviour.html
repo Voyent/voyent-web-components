@@ -953,9 +953,11 @@
         _fetchMyLocations: function() {
             var _this = this;
             return new Promise(function (resolve, reject) {
-                voyent.query.executeQuery({
-                    realm:_this.realm, account:_this.account,
-                    id:"getMyLocationsForUsername", execParams: {username:voyent.auth.getLastKnownUsername()}
+                voyent.action.executeModule({
+                    id: 'get-locations',
+                    params: {
+                        username: voyent.auth.getLastKnownUsername()
+                    }
                 }).then(function(locations) {
                     if (_this._isMyLocations()) {
                         //Clear the map and draw the locations.
