@@ -2584,7 +2584,7 @@
                  * Shows this stack and all of its associated zones and overlays.
                  */
                 show: function() {
-                    if (this.forceDisplayMarker) {
+                    if (_outer._isMobileAlertEditor() || this.forceDisplayMarker) {
                         this.marker.setVisible(true);
                     }
                     if (this.coordinateOverlay && this.coordinateOverlay.visible) {
