@@ -154,8 +154,10 @@ Polymer({
 
     /**
      * Saves the alert currently loaded in the editor as an alert template.
+     *
+     * @param funcBefore optional function to pass to the underlying template save call
      */
-    saveAsAlertTemplate: function() {
+    saveAsAlertTemplate: function(funcBefore) {
         var _this = this;
         if (!this._loadedAlert || !this._loadedAlert.template) {
             return this.fire('message-error', 'Unable to save alert as template: No alert loaded');
@@ -167,7 +169,7 @@ Polymer({
             _this._loadedAlert.template.setId(null);
             _this._loadedAlert.template.setParentId(null);
             _this._skipCategoryValidation = true;
-            _this._saveAlertTemplate().then(function() {
+            _this._saveAlertTemplate(funcBefore).then(function() {
                 done();
                 _this.fire('message-info', 'Successfully saved alert as template');
             }).catch(function(e) {
