@@ -2610,27 +2610,27 @@
          * @private
          */
         _realmChanged: function(newRealm) {
-            //We don't render the region on the map for the alert view.
-            if (!this._isAlertView()) {
-                //Only proceed if we have a valid realm and the map is initialized.
-                if (!newRealm || !this._map) { return; }
-                //First clear the current region from the map.
-                if (this._areaRegion && this._areaRegion.polygon) {
-                    this._areaRegion.polygon.setMap(null);
-                    this._areaRegion = null;
-                }
-                //Check if we have the realm region cached otherwise fetch it.
-                var areaRegion = this._regionMapping && this._regionMapping[newRealm] ?
-                    this._regionMapping[newRealm] : null;
-                if (areaRegion && areaRegion.polygon) {
-                    areaRegion.polygon.setMap(this._map);
-                    this._areaRegion = areaRegion;
-                }
-                else {
-                    this._fetchRealmRegion();
-                }
+            // Only proceed if we have a valid realm and the map is initialized
+            if (!newRealm || !this._map) {
+                return;
             }
-            //Clear the map entirely.
+            // First clear the current region from the map
+            if (this._areaRegion && this._areaRegion.polygon) {
+                this._areaRegion.polygon.setMap(null);
+                this._areaRegion = null;
+            }
+            // Check if we have the realm region cached otherwise fetch it
+            var areaRegion = this._regionMapping && this._regionMapping[newRealm]
+                ? this._regionMapping[newRealm]
+                : null;
+            if (areaRegion && areaRegion.polygon) {
+                areaRegion.polygon.setMap(this._map);
+                this._areaRegion = areaRegion;
+            }
+            else {
+                this._fetchRealmRegion();
+            }
+            // Clear the map entirely
             this.clearMap();
         },
 
