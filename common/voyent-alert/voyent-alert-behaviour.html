@@ -124,10 +124,11 @@
 
         /**
          * Wrapped function for `saveAlertTemplate` that returns a Promise for internal component use.
+         * @param funcBefore optional function called before an actual save, in case we interrupt with the Category dialog
          * @returns {Promise}
          * @private
          */
-        _saveAlertTemplate: function () {
+        _saveAlertTemplate: function (funcBefore) {
             var _this = this, msg;
             return new Promise(function (resolve, reject) {
                 if (_this._savingAlertTemplate) { return reject('already saving template'); }
@@ -137,6 +138,11 @@
                     _this._openUncategorizedTemplateDialog();
                     return reject('no categories provided');
                 }
+                
+                if (funcBefore && typeof funcBefore === 'function') {
+                    funcBefore();
+                }
+                
                 _this._savingAlertTemplate = true;
                 _this._loadedAlert.template.updateJSON();
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
