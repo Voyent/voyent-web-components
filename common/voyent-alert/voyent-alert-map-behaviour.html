@@ -345,9 +345,12 @@
 
         /**
          * Returns preview data via a Promise for the currently loaded alert.
+         *
+         * @params mediaFiles optional array of Files uploaded to this alert
+         *
          * @returns {Promise}
          */
-        previewAlert: function() {
+        previewAlert: function(mediaFiles) {
             var _this = this;
             return new Promise(function (resolve, reject) {
                 if (!_this._loadedAlert || !_this._loadedAlert.template) {
@@ -355,7 +358,7 @@
                     return reject();
                 }
                 var promises = [];
-                var event = _this._buildPreviewEvent();
+                var event = _this._buildPreviewEvent(mediaFiles);
                 promises.push(voyent.action.executeModule({
                     "id":"alert-moved-notify-for-zones",
                     "params":{
@@ -415,7 +418,7 @@
          * @returns Object {}
          * @private
          */
-        _buildPreviewEvent: function() {
+        _buildPreviewEvent: function(mediaFiles) {
             this._loadedAlert.template.updateJSON();
             var json = this._loadedAlert.template.json;
 
@@ -434,6 +437,15 @@
 
             // Add the activatedBy property as it's required for the social-media module.
             json.activatedBy = voyent.auth.getLastKnownUsername();
+            
+            // If we have media files that were uploaded we need to replace their base64 with projected Storage URLs
+            // Otherwise the base64 (which gets replaced before save anyway) could fail to POST, from being too large
+            // And unfortunately we can't just remove the base64 entirely because the processed results from this event
+            //  are used in the client side page (because we replace variables), so the images would just be removed in that case
+            if (mediaFiles && mediaFiles.length > 0) {
+                var replaced = this._replaceBase64ImagesWithURLs(JSON.stringify(json), mediaFiles);
+                json = JSON.parse(replaced);
+            }
 
             return {
                 "time": new Date().toISOString(),

@@ -74,6 +74,48 @@
                 }
             }
         },
+        
+        /**
+         * Removes any base64 encoded images from the passed text (which should be stringified from JSON)
+         */
+        _removeBase64Images: function(text) {
+            if (text) {
+                // Remember the text is stringified so account for escaped quotes
+                var matchOn = '<img src=\\"data:';
+                var matchAt = text.indexOf(matchOn); 
+                if (matchAt !== -1) {
+                    text = text.substring(0, matchAt) +
+                           text.substring(text.indexOf('\\">', matchAt) + '\\">'.length);
+                           
+                    if (text.indexOf(matchOn) !== -1) {
+                        return this._removeBase64Images(text);
+                    }
+                }
+            }
+            return text;
+        },
+        
+        /**
+         * Replaces any base64 encoded images with a link to their Storage version
+         * The passed text should be stringified from JSON
+         */
+        _replaceBase64ImagesWithURLs: function(text, files) {
+            // If we have files try to replace them
+            if (text && files && files.length > 0) {
+                for (var fileLoop = 0; fileLoop < files.length; fileLoop++) {
+                    var currentFile = files[fileLoop];
+                    
+                    // If we have base64 and something to replace it then do so
+                    if (currentFile && currentFile.base64 && currentFile.projectedUrl) {
+                        // Remember the text is stringified so account for escaped quotes
+                        text =
+                            text.split('<img src=\\"' + currentFile.base64).join('<img src=\\"' + currentFile.projectedUrl);
+                    }
+                }
+            }
+            
+            return text;
+        },
 
         /**
          * Validates the currently loaded alert template and returns all errors and warnings in the response.
@@ -88,7 +130,12 @@
             else {
                 // Restrict JSON size to 250KB
                 this._loadedAlert.template.updateJSON();
-                if (JSON.stringify(this._loadedAlert.template.json).length > 250000) {
+                
+                // However we want to ignore any base64 images, since they will be converted eventually
+                var testString = JSON.stringify(this._loadedAlert.template.json);
+                testString = this._removeBase64Images(testString);
+                
+                if (testString.length > 250000) {
                     var templateTxt = this._isAlertEditor() ? '' : 'template';
                     results.errors.push('This alert ' + templateTxt + ' is too large, try reducing the size of the message contents or complexity of zones');
                 }
