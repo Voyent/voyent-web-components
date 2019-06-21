@@ -442,11 +442,16 @@
             // Otherwise the base64 (which gets replaced before save anyway) could fail to POST, from being too large
             // And unfortunately we can't just remove the base64 entirely because the processed results from this event
             //  are used in the client side page (because we replace variables), so the images would just be removed in that case
+            var stringified = JSON.stringify(json);
             if (mediaFiles && mediaFiles.length > 0) {
-                var replaced = this._replaceBase64ImagesWithURLs(JSON.stringify(json), mediaFiles);
-                json = JSON.parse(replaced);
+                stringified = this._replaceBase64ImagesWithURLs(stringified, mediaFiles);
             }
-
+            // In addition we remove any populated Access Tokens from access_token links
+            // This ensures that if we haven't changed the content the hash will stay the same instead of
+            //  thinking the alert has to be sent again
+            stringified = this._removeAccessTokenLinks(stringified);
+            json = JSON.parse(stringified);
+            
             return {
                 "time": new Date().toISOString(),
                 "account": this.account,

@@ -116,6 +116,33 @@
             
             return text;
         },
+        
+        /**
+         * Remove any populated ?access_token= links
+         * This is used before sending for a Preview so that JUST inserting the access_token
+         *  (so that Storage links will work/show) does NOT count as changed content
+         * Which is important to get proper numbers for who the alert will be sent to
+         */
+        _removeAccessTokenLinks: function(text) {
+            if (text) {
+                // Remember the text is stringified so account for escaped quotes
+                var ACCESS_TOKEN_MATCH = '?access_token=' + voyent.auth.getLastAccessToken();
+                if (text.indexOf(ACCESS_TOKEN_MATCH) !== -1) { // Access token match
+                    var foundIndex = text.indexOf(ACCESS_TOKEN_MATCH);
+                    var textBefore = text.substring(0, foundIndex);
+                    var textAfter = text.substring(text.indexOf('\\"', foundIndex));
+                    
+                    text = (textBefore + '?access_token=' + textAfter);
+                    
+                    // Recursive check if we still have matches
+                    if (text.indexOf(ACCESS_TOKEN_MATCH) !== -1) {
+                        return this._removeAccessTokenLinks(text);
+                    }
+                }
+            }
+            
+            return text;
+        },
 
         /**
          * Validates the currently loaded alert template and returns all errors and warnings in the response.
