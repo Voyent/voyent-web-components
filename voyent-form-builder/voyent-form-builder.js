@@ -71,6 +71,11 @@ Polymer({
 	
     onEnterKey: function() {
         if (!this.disableenterkey) {
+            // Also ensure that we don't already have a button focused, in which case pressing Enter will already handle it
+            if (document.activeElement && document.activeElement.tagName && document.activeElement.tagName.toLowerCase().indexOf('button') !== -1) {
+                return;
+            }
+            
             // Only bother if our dialog exists and is actually shown
             var addDialog = this.querySelector('#addDialog');
             if (addDialog && addDialog.style.display !== 'none') {
