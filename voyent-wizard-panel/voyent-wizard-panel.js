@@ -268,6 +268,11 @@ Polymer({
     onEnter: function() {
         if (!this.disableenterkey) {
             if (!this.nexthidden && !this.nextdisabled) {
+                // Also ensure that we don't already have a button focused, in which case pressing Enter will already handle it
+                if (document.activeElement && document.activeElement.tagName && document.activeElement.tagName.toLowerCase().indexOf('button') !== -1) {
+                    return;
+                }
+                
                 var nextButton = this.querySelector('#nextButton');
                 if (nextButton) {
                     nextButton.click();
