@@ -173,7 +173,7 @@ Polymer({
                 done();
                 _this.fire('message-info', 'Successfully saved alert as template');
             }).catch(function(e) {
-                if (e !== 'already saving template') {
+                if (e !== 'already saving template' && (typeof e.status === 'undefined' || e.status !== 409)) {
                     _this.fire('message-error', 'Problem saving alert as template: ' + (e.responseText || e.message || e));
                     done();
                 }

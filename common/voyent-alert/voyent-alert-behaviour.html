@@ -237,9 +237,16 @@
                     _this.fire('voyent-alert-template-saved',{});
                     resolve();
                 }).catch(function(e) {
+                    // Handle duplicate error
+                    if (e && e.status === 409) {
+                        _this.fire('message-error', 'Template name already exists, no duplicates allowed');
+                    }
+                    else {
+                        _this.fire('message-error', 'Issue saving alert template: ' + (e.responseText || e.message || e));
+                    }
+                    
                     _this._savingAlertTemplate = false;
-                    _this.fire('message-error', 'Issue saving alert template: ' + (e.responseText || e.message || e));
-                    reject(msg);
+                    reject(e);
                 });
             });
         },
