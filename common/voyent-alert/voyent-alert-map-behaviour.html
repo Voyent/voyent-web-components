@@ -382,9 +382,17 @@
                     var previewMetrics = moduleResults[0];
                     var socialMediaStatuses = moduleResults[1];
 
+                    // Ensure we have a valid object to work with
+                    if (!previewMetrics || typeof previewMetrics === 'string') {
+                        previewMetrics = {};
+                    }
+                    if (!socialMediaStatuses || typeof socialMediaStatuses === 'string') {
+                        socialMediaStatuses = {};
+                    }
                     if (!previewMetrics.summary) {
                         previewMetrics.summary = {};
                     }
+                    
                     if (socialMediaStatuses.summary) {
                         previewMetrics.summary.facebookWillNotify = !!(socialMediaStatuses.summary.facebookWillNotify);
                         previewMetrics.summary.twitterWillNotify = !!(socialMediaStatuses.summary.twitterWillNotify);
