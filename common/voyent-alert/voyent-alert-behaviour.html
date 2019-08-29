@@ -239,7 +239,7 @@
                 }).catch(function(e) {
                     // Handle duplicate error
                     if (e && e.status === 409) {
-                        _this.fire('message-error', "A template with the same Name and Categories as this one already exists - change the Categories or Name to make this template unique.");
+                        _this.fire('message-error', "A template with the same name and categories already exists. A template's name and categories must be unique.");
                     }
                     else {
                         _this.fire('message-error', 'Issue saving alert template: ' + (e.responseText || e.message || e));
