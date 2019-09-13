@@ -401,15 +401,17 @@
                         previewMetrics.summary.facebookWillNotify = false;
                         previewMetrics.summary.twitterWillNotify = false;
                     }
-                    for (var i=0; i<previewMetrics.zoneMetrics.length; i++) {
-                        var currentZone = socialMediaStatuses.zones ? socialMediaStatuses.zones[previewMetrics.zoneMetrics[i].id] : null;
-                        if (currentZone) {
-                            previewMetrics.zoneMetrics[i].facebookWillNotify = !!(currentZone.facebookWillNotify);
-                            previewMetrics.zoneMetrics[i].twitterWillNotify = !!(currentZone.twitterWillNotify);
-                        }
-                        else {
-                            previewMetrics.zoneMetrics[i].facebookWillNotify = false;
-                            previewMetrics.zoneMetrics[i].twitterWillNotify = false;
+                    if (typeof previewMetrics.zoneMetrics !== 'undefined') {
+                        for (var i=0; i<previewMetrics.zoneMetrics.length; i++) {
+                            var currentZone = socialMediaStatuses.zones ? socialMediaStatuses.zones[previewMetrics.zoneMetrics[i].id] : null;
+                            if (currentZone) {
+                                previewMetrics.zoneMetrics[i].facebookWillNotify = !!(currentZone.facebookWillNotify);
+                                previewMetrics.zoneMetrics[i].twitterWillNotify = !!(currentZone.twitterWillNotify);
+                            }
+                            else {
+                                previewMetrics.zoneMetrics[i].facebookWillNotify = false;
+                                previewMetrics.zoneMetrics[i].twitterWillNotify = false;
+                            }
                         }
                     }
                     resolve(previewMetrics);
