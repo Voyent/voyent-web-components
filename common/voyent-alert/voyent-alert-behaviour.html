@@ -191,18 +191,22 @@
 
         /**
          * Saves or updates the current alert template.
+         * @param funcBefore optional function called before an actual save, in case we interrupt with the Category dialog
          */
-        saveAlertTemplate: function() {
-            this._saveAlertTemplate().catch(function(e){})
+        saveAlertTemplate: function(funcBefore) {
+            if (funcBefore && typeof funcBefore === 'function') {
+                this.funcBeforeSave = funcBefore;
+            }
+            this._saveAlertTemplate(funcBefore).catch(function(e){});
         },
 
         /**
          * Wrapped function for `saveAlertTemplate` that returns a Promise for internal component use.
-         * @param funcBefore optional function called before an actual save, in case we interrupt with the Category dialog
+         * @param localFuncBefore optional function called before an actual save, in case we interrupt with the Category dialog. Overwrites and replaces this.funcBeforeSave
          * @returns {Promise}
          * @private
          */
-        _saveAlertTemplate: function (funcBefore) {
+        _saveAlertTemplate: function (localFuncBefore) {
             var _this = this, msg;
             return new Promise(function (resolve, reject) {
                 if (_this._savingAlertTemplate) { return reject('already saving template'); }
@@ -213,10 +217,47 @@
                     return reject('no categories provided');
                 }
                 
-                if (funcBefore && typeof funcBefore === 'function') {
-                    funcBefore();
+                // Check if we have an overriding before-save function
+                if (localFuncBefore && typeof localFuncBefore === 'function') {
+                    _this.funcBeforeSave = localFuncBefore;
                 }
                 
+                // Now if we have a before save function we fire it off and then continue processing the storing
+                // Otherwise we jump right to storing
+                if (_this.funcBeforeSave && typeof _this.funcBeforeSave === 'function') {
+                    // When the before-save function gives it's Promise we act on that, either to save or error out
+                    _this.funcBeforeSave().then(function() {
+                        // Finally do the actual save
+                        _this._actualPersistAlertTemplate().then(function() {
+                            resolve();
+                        }).catch(function(error) {
+                            reject(error);
+                        });
+                    }).catch(function(error) {
+                        _this.fire('message-error', 'Issue saving alert template: ' + (error.responseText || error.message || error));
+                        reject(error);
+                    });
+                }
+                else {
+                    _this._actualPersistAlertTemplate().then(function() {
+                        resolve();
+                    }).catch(function(error) {
+                        return reject(error);
+                    });
+                }
+            });
+        },
+        
+        /**
+         * Perform the actual saving of the alert template
+         * This doesn't do any category management or before-save functions (which is achieved through _saveAlertTemplate
+         * This literally just taskes our current this._loadedAlert.template and saves it
+         * @returns {Promise}
+         * @private
+         */
+        _actualPersistAlertTemplate: function() {
+            var _this = this, msg;
+            return new Promise(function(resolve, reject) {
                 _this._savingAlertTemplate = true;
                 _this._loadedAlert.template.updateJSON();
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
