@@ -1878,26 +1878,30 @@
          */
         _removeStopDrawingButton: function() {
             if (!this._stopDrawingButtonRemoved) {
-                var callDelayMs = 10;
-                var currentCall = 0;
-                var maxCalls = 2000; // Works out to 20 seconds of waiting
+                var parentComp = document.querySelector('#' + this.id);
                 
-                var _this = this;
-                function waitForStopDrawingButton() {
-                    var stopDrawingButton = document.querySelector('div[title="Stop drawing"]');
-                    if (!stopDrawingButton) {
-                        currentCall++;
-                        if (currentCall <= maxCalls) {
-                            setTimeout(waitForStopDrawingButton, callDelayMs);
-                            return;
+                if (parentComp) {
+                    var callDelayMs = 10;
+                    var currentCall = 0;
+                    var maxCalls = 2000; // Works out to 20 seconds of waiting
+                    
+                    var _this = this;
+                    function waitForStopDrawingButton() {
+                        var stopDrawingButton = parentComp.querySelector('div[title="Stop drawing"]');
+                        if (!stopDrawingButton) {
+                            currentCall++;
+                            if (currentCall <= maxCalls) {
+                                setTimeout(waitForStopDrawingButton, callDelayMs);
+                                return;
+                            }
+                        }
+                        else {
+                            stopDrawingButton.parentNode.removeChild(stopDrawingButton);
+                            _this._stopDrawingButtonRemoved = true;
                         }
                     }
-                    else {
-                        stopDrawingButton.parentNode.removeChild(stopDrawingButton);
-                        _this._stopDrawingButtonRemoved = true;
-                    }
+                    waitForStopDrawingButton();
                 }
-                waitForStopDrawingButton();
             }
         },
 
