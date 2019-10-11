@@ -27,7 +27,7 @@ Polymer({
         /**
          * Bind to this property to indicate whether the component is currently visible so state can be properly managed.
          */
-        visible: { type: Boolean, value: false }
+        visible: { type: Boolean, value: false, observer: '_visibleChanged' } /* Actual listener is in voyent-alert-map-behaviour.html */
     },
 
     observers: [

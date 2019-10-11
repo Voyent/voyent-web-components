@@ -159,7 +159,6 @@
                     markerOptions: { draggable:true, zIndex:50 }
                 });
                 this._setupDrawingListeners();
-                this._removeStopDrawingButton();
                 //Add the fullscreen control.
                 this._addFullscreenButton();
                 // Add the import file input validator
@@ -1850,17 +1849,30 @@
          */
         _removeStopDrawingButton: function() {
             if (!this._stopDrawingButtonRemoved) {
-                var _this = this;
-                function waitForStopDrawingButton() {
-                    var stopDrawingButton = document.querySelector('div[title="Stop drawing"]');
-                    if (!stopDrawingButton) {
-                        setTimeout(waitForStopDrawingButton, 10);
-                        return;
+                var parentComp = document.querySelector('#' + this.id);
+                
+                if (parentComp) {
+                    var callDelayMs = 10;
+                    var currentCall = 0;
+                    var maxCalls = 2000; // Works out to 20 seconds of waiting
+                    
+                    var _this = this;
+                    function waitForStopDrawingButton() {
+                        var stopDrawingButton = parentComp.querySelector('div[title="Stop drawing"]');
+                        if (!stopDrawingButton) {
+                            currentCall++;
+                            if (currentCall <= maxCalls) {
+                                setTimeout(waitForStopDrawingButton, callDelayMs);
+                                return;
+                            }
+                        }
+                        else {
+                            stopDrawingButton.parentNode.removeChild(stopDrawingButton);
+                            _this._stopDrawingButtonRemoved = true;
+                        }
                     }
-                    stopDrawingButton.parentNode.removeChild(stopDrawingButton);
-                    _this._stopDrawingButtonRemoved = true;
+                    waitForStopDrawingButton();
                 }
-                waitForStopDrawingButton();
             }
         },
 
@@ -2673,6 +2685,15 @@
                     childDiv.setAttribute('title',enabled ? 'Disable Entire Region Zone' : 'Enable Entire Region Zone')
                 }
             }).catch(function(){});
-        }
+        },
+        
+        _visibleChanged: function(vis) {
+            // We handle the "stop drawing" button here instead of in _initializeGoogleMap
+            //  because this way we can cancel the call eventually if it fails, BUT still call it again
+            //  if it hasn't succeeded
+            if (vis) {
+                this._removeStopDrawingButton();
+            }
+        },
     };
 </script>
