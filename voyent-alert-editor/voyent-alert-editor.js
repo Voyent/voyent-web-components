@@ -39,7 +39,8 @@ Polymer({
     ready: function() {
         //Initialize parentTemplate list with a fake element so the "no templates found"
         //message won't flicker in the sidebar while we are fetching the templates.
-        this._parentTemplates = ['tmp'];
+        this._parentTemplatesInitValue = ['tmp'];
+        this._parentTemplates = this._parentTemplatesInitValue;
         
         // Load any checkbox state
         this._applyHideSampleDefault();
@@ -103,17 +104,25 @@ Polymer({
         //Fetch the list of categories and templates before opening the dialog. Fetch the
         //categories first because we need them to build our list of categorized templates.
         var errMsg = 'Problem initializing alert editor, try again later or contact a Voyent Alert! Administrator';
+        
+        // Show loading if we don't have anything yet
+        if (!this._parentTemplates || this._parentTemplates === this._parentTemplatesInitValue) {
+            this.fire('loading-on');
+        }
+        this._openNewAlertDialog(); // Immediately open the dialog
         this._fetchTemplateCategories().then(function() {
             _this._fetchAlertTemplates().then(function() {
-                _this._openNewAlertDialog();
+                _this.fire('loading-off');
                 _this._queryTemplates(_this._templateSearchQuery); // Re-run the query to apply the state of our Hide Sample checkbox
             }).catch(function() {
                 _this.fire('message-error',errMsg);
                 _this._cancelNewAlert();
+                _this.fire('loading-off');
             });
         }).catch(function() {
             _this.fire('message-error',errMsg);
             _this._cancelNewAlert();
+            _this.fire('loading-off');
         });
     },
 

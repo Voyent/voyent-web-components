@@ -306,6 +306,7 @@ Example:
                     <div class="table-col categories-col table-header no-select pointer" on-click="_sortTemplatesByCategories" title="Click to sort by Categories">Categories</div>
                 </div>
                 <div class="table-scroll-dynamic" data-is-edge$="[[_isMsEdge()]]">
+                    <voyent-loading><br/>Retrieving...<br/></voyent-loading>
                     <template is="dom-if" if="[[!_filteredParentTemplates.length]]">
                         <div class="no-query-results-msg">
                             Your search <span class="bold">[[_templateSearchQuery]]</span> does not match any templates.
