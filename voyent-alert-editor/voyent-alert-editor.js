@@ -636,6 +636,9 @@ Polymer({
             if (this.hideSample) {
                 voyent.$.setSessionStorageItem(btoa(voyent.auth.getLastKnownUsername() + 'hideSample'), btoa(this.hideSample));
             }
+            else {
+                voyent.$.removeSessionStorageItem(btoa(voyent.auth.getLastKnownUsername() + 'hideSample'));
+            }
         }
     },
     
