@@ -1686,6 +1686,7 @@
              * @param alertFamilyId - The alert family id, only relevant for child templates.
              * @param name - The user-defined name.
              * @param badge - The user chosen alert badge icon.
+             * @param alertSeverity - The alert severity of the whole template.
              * @param marker - The associated map marker for the entire template, centered between the various stacks.
              * @param zoneStacks - A list of _AlertZoneStack objects, the list of zone stacks belonging with the template.
              * @param state - The current state of the alert, only relevant for child templates.
@@ -1694,12 +1695,13 @@
              * @param categories - Zero or more categories that this template belongs to.
              * @private
              */
-            this._AlertTemplate = function(id,parentId,alertFamilyId,name,badge,marker,zoneStacks,state,savePosition,schedule,categories) {
+            this._AlertTemplate = function(id,parentId,alertFamilyId,name,badge,alertSeverity,marker,zoneStacks,state,savePosition,schedule,categories) {
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setAlertFamilyId(alertFamilyId || null);
                 this.setName(name || 'Unnamed');
                 this.setBadge(badge || 'info.png');
+                this.setAlertSeverity(alertSeverity || null);
                 this.setMarker(marker || null);
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
@@ -1888,6 +1890,14 @@
                 setName: function (name) {
                     this.name = name;
                     _outer._notifyPropertyPathForAlert('name');
+                },
+                /**
+                 * Sets the overall alert severity and notifies the polymer path.
+                 * @param severity
+                 */
+                setAlertSeverity: function(alertSeverity) {
+                    this.alertSeverity = alertSeverity;
+                    _outer._notifyPropertyPathForAlert('alertSeverity');
                 },
                 /**
                  * Sets the alert badge icon and notifies the polymer path.
@@ -2096,6 +2106,11 @@
                     else {
                         json.categories = this.categories;
                     }
+                    
+                    if (this.alertSeverity) {
+                        json.properties.alertSeverity = this.alertSeverity;
+                    }
+                    
                     //Add fallback zone, we'll always add it the properties.
                     json.properties[_outer._FALLBACK_ZONE_ID] = {
                         "enabled": false

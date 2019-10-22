@@ -767,6 +767,10 @@
                 }
             }
         },
+        
+        setAlertSeverity: function(severity) {
+            this._loadedAlert.template.setAlertSeverity(severity);
+        },
 
         /**
          * Sets the message template for the fallback zone.
@@ -1191,7 +1195,7 @@
             }
             this.set('_loadedAlert', {
                 template: new this._AlertTemplate(
-                    templateJSON._id, parentId, alertFamilyId, templateJSON.name, templateJSON.badge,
+                    templateJSON._id, parentId, alertFamilyId, templateJSON.name, templateJSON.badge, templateJSON.properties.alertSeverity,
                     templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center,
                     templateJSON.schedule, templateJSON.categories
                 ),
