@@ -36,6 +36,41 @@
             //Messages.
             this._OVERLAP_WITHIN_STACK_MSG = 'The zone cannot overlap other zones in the stack';
         },
+        
+        /**
+         * Waits for the condition function to return true. Optionally pass a
+         * waitTimeout in ms to stop waiting once the timeout is reached.
+         * @param conditionFunc - The function that will be executed to determine whether the condition has passed.
+         * @param waitTimeout - The number of ms to wait until ceasing the search, defaults to indefinitely, can also pass 0 for indefinitely.
+         * @param retryTimeout - The retry frequency, defaults to 100ms.
+         * @returns {Promise<any>}
+         * @private
+         */
+        waitForCondition: function(conditionFunc, waitTimeout, retryTimeout) {
+            retryTimeout = typeof retryTimeout === 'number' ? retryTimeout : 100;
+            var waitedForMs = 0;
+            return new Promise(function (resolve, reject) {
+                if (conditionFunc()) {
+                    resolve();
+                }
+                else {
+                    waitForCondition();
+                }
+                function waitForCondition() {
+                    if (!conditionFunc()) {
+                        if (typeof waitTimeout === 'number' && waitTimeout !== 0 && waitedForMs >= waitTimeout) {
+                            return reject('condition failed after ' + waitTimeout + 'ms');
+                        }
+                        waitedForMs += retryTimeout;
+                        setTimeout(function(){
+                            waitForCondition();
+                        },retryTimeout);
+                        return;
+                    }
+                    resolve();
+                }
+            });
+        },
 
         getBadgeUrl: function(badgeName) {
             var url = window.location.protocol + '//' + this.locationHost + '/vras/images/badges/';

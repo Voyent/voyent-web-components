@@ -25,6 +25,14 @@ Polymer({
          */
         hideSample: { type: Boolean, value: false, observer: '_hideSampleChanged' },
         /**
+         * User object
+         */
+        userObject: { type: Object, value: null, notify: true },
+        /**
+         * The type of admin this user is
+         */
+        adminType: { type: String },
+        /**
          * Bind to this property to indicate whether the component is currently visible so state can be properly managed.
          */
         visible: { type: Boolean, value: false, observer: '_visibleChanged' } /* Actual listener is in voyent-alert-map-behaviour.html */
@@ -250,7 +258,7 @@ Polymer({
         this._fetchRealmRegion();
         this._enableDefaultPane();
     },
-
+    
     /**
      * Fetches the latest alert templates for the realm.
      * @returns {*}
@@ -258,34 +266,73 @@ Polymer({
      */
     _fetchAlertTemplates: function() {
         var _this = this;
+        
         return new Promise(function (resolve, reject) {
             //Make sure we don't fetch the templates an unnecessary amount of times.
             if (_this._isFetchingTemplates) { return resolve(); }
             _this._isFetchingTemplates = true;
-            voyent.locate.findAlertTemplates({"realm":_this.realm,"query": {"properties.parentAlertId":{"$exists":false}},
-                "options":{"sort":{"lastUpdated":-1}}}).then(function(templates) {
-                if (!templates || !templates.length) {
-                    _this.set('_parentTemplates',[]);
-                    _this.set('_filteredParentTemplates',[]);
-                }
-                else {
-                    // Add a stringified version of the categories array that will be used for filtering and sorting
-                    for (var i=0; i<templates.length; i++) {
-                        var template = templates[i];
-                        if (template.categories && template.categories.length) {
-                            template.categoriesString = template.categories.join(', ');
-                        }
-                        else {
-                            template.categoriesString = 'Uncategorized'
-                        }
+            
+            _this.waitForCondition(function() {
+                return ('' === _this.adminType || 'regionAdmin' === _this.adminType ||
+                       ('alertAdmin' === _this.adminType && _this.userObject));
+            }).then(function() {
+                // If we're an Alert admin check our permissions and change the query to account for them
+                var allowedSeverity = ['informational', 'critical'];
+                if (_this.adminType && _this.adminType === 'alertAdmin' &&
+                    _this.userObject && _this.userObject.custom && _this.userObject.custom.allowed &&
+                    _this.userObject.custom.allowed.severity) {
+                    // Use our specific severities if we don't have All permission
+                    if (_this.userObject.custom.allowed.severity[0] !== 'all') {
+                        allowedSeverity = [].concat(_this.userObject.custom.allowed.severity); // clone
                     }
-                    _this.set('_parentTemplates',templates);
-                    _this.set('_filteredParentTemplates',templates.slice(0));
                 }
-                _this._isFetchingTemplates = false;
-                resolve(_this._parentTemplates);
-            }).catch(function (error) {
-                _this.fire('message-error', 'Issue fetching alert templates: ' + (error.responseText || error.message || error));
+                
+                var queryString = {
+                    "realm": _this.realm,
+                    "query": {
+                        "$or": [
+                            { "properties.alertSeverity": { "$exists": false } },
+                            { "properties.alertSeverity": { "$in": allowedSeverity } },
+                        ],
+                        "properties.parentAlertId": {
+                            "$exists": false
+                        }
+                    },
+                    "options": {
+                        "sort": {
+                            "lastUpdated": -1
+                        }
+                    }                
+                };
+                
+                voyent.locate.findAlertTemplates(queryString).then(function(templates) {
+                    if (!templates || !templates.length) {
+                        _this.set('_parentTemplates',[]);
+                        _this.set('_filteredParentTemplates',[]);
+                    }
+                    else {
+                        // Add a stringified version of the categories array that will be used for filtering and sorting
+                        for (var i=0; i<templates.length; i++) {
+                            var template = templates[i];
+                            if (template.categories && template.categories.length) {
+                                template.categoriesString = template.categories.join(', ');
+                            }
+                            else {
+                                template.categoriesString = 'Uncategorized'
+                            }
+                        }
+                        _this.set('_parentTemplates',templates);
+                        _this.set('_filteredParentTemplates',templates.slice(0));
+                    }
+                    _this._isFetchingTemplates = false;
+                    resolve(_this._parentTemplates);
+                }).catch(function (error) {
+                    _this.fire('message-error', 'Issue fetching alert templates: ' + (error.responseText || error.message || error));
+                    reject(error);
+                });
+            }).catch(function(error) {
+                // Timed out waiting for admin type and user object
+                _this.fire('message-error', 'Issue fetching alert templates');
                 reject(error);
             });
         });
