@@ -16,7 +16,7 @@
     "/.*",
     "/tests/"
   ],
-  "version": "vras-1.4.0",
+  "version": "1.4.0",
   "dependencies": {
     "voyent.js": "https://github.com/Voyent/voyent.js.git#vras-1.4.0",
     "voyent.notify.js": "https://github.com/Voyent/voyent.notify.js.git#vras-1.4.0",
