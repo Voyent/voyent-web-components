@@ -71,6 +71,10 @@
                 }
             });
         },
+        
+        hasBadge: function(toCheck) {
+            return (typeof toCheck === 'string' && toCheck.trim().length > 0);
+        },
 
         getBadgeUrl: function(badgeName) {
             var url = window.location.protocol + '//' + this.locationHost + '/vras/images/badges/';
@@ -1933,6 +1937,12 @@
                 setAlertSeverity: function(alertSeverity) {
                     this.alertSeverity = alertSeverity;
                     _outer._notifyPropertyPathForAlert('alertSeverity');
+                },
+                /**
+                 * Gets the overall alert severity of this template
+                 */
+                getAlertSeverity: function() {
+                    return this.alertSeverity;
                 },
                 /**
                  * Sets the alert badge icon and notifies the polymer path.

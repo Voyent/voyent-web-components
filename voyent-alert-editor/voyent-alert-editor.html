@@ -318,7 +318,7 @@ Example:
                                   as="template" sort="_sortTemplates" strip-whitespace>
                             <div name="[[template]]" class="table pointer">
                                 <div class="table-col badge-col no-select">
-                                    <img class="badge-img" src="[[getBadgeUrl(template.badge)]]"/>
+                                    <img class="badge-img" src="[[getBadgeUrl(template.badge)]]" hidden$="[[!hasBadge(template.badge)]]"/>
                                 </div>
                                 <div class="table-col name-col no-select text-left">
                                     [[template.name]]

@@ -768,8 +768,17 @@
             }
         },
         
+        getAlertSeverity: function() {
+            if (this._loadedAlert && this._loadedAlert.template) {
+                return this._loadedAlert.template.getAlertSeverity();
+            }
+            return null;
+        },
+        
         setAlertSeverity: function(severity) {
-            this._loadedAlert.template.setAlertSeverity(severity);
+            if (this._loadedAlert && this._loadedAlert.template) {
+                this._loadedAlert.template.setAlertSeverity(severity);
+            }
         },
 
         /**
