@@ -416,7 +416,7 @@
                     resolve(previewMetrics);
                 }).catch(function(e) {
                     console.error(e);
-                    _this.fire('message-error','Unable to preview alert, try again later.');
+                    _this.fire('message-error','Unable to preview alert, try again later');
                     reject(e);
                 });
             });

@@ -107,7 +107,7 @@ Polymer({
                     _this._templateId = _this._loadedAlert.template.id;
                 }
                 else {
-                    _this.fire('message-info','Unable to find alert geography');
+                    _this.fire('message-error','Unable to find alert geography');
                 }
                 _this._drawLocations(affectedLocations);
                 _this._toggleEditableMap(false);
@@ -148,7 +148,7 @@ Polymer({
         // Wait for map before proceeding
         this._mapIsReady().then(function() {
             if (!alert || typeof alert !== 'object') {
-                _this.fire('message-error','Unable to load template, template not provided.');
+                _this.fire('message-error','Unable to load template, template not provided');
                 return;
             }
             _this.clearMap();
@@ -949,7 +949,7 @@ Polymer({
      * @private
      */
     _showMobileLocationTypeHelp: function() {
-        this.fire('message-info','Mobile locations are not displayed on the map in preview mode because their position cannot be determined until alert activation.');
+        this.fire('message-info','Mobile locations are not displayed on the map in preview mode because their position cannot be determined until alert activation');
     },
 
     /**

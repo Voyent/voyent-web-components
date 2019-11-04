@@ -291,7 +291,7 @@ Polymer({
                 _this._confirmCategoryDeletion();
             }
         }).catch(function () {
-            _this.fire('message-error', 'Issue removing category, try again.');
+            _this.fire('message-error', 'Issue removing category, try again');
             _this._cancelCategoryDeletion();
         });
     },
@@ -586,7 +586,7 @@ Polymer({
                 _this._confirmCategoryUpdate();
             }
         }).catch(function () {
-            _this.fire('message-error', 'Issue updating category, try again.');
+            _this.fire('message-error', 'Issue updating category, try again');
             _this._confirmCategoryUpdate();
         });
     },
