@@ -148,7 +148,7 @@ Polymer({
             }).then(function() {
                 _this._removeAlertTemplateFromMap();
             }).catch(function (error) {
-                _this.fire('message-error', 'Issue deleting alert template: ' + (error.responseText || error.message || error));
+                _this.fire('message-error', 'Error removing alert template: ' + (error.responseText || error.message || error));
             });
         }
         else {
