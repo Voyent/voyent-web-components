@@ -145,10 +145,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <template is="dom-if" if="[[!_regionResults.length]]">
                         <div class="card-content">
                             <paper-input id="username" label="Username" required maxlength="35" value="{{username}}" autofocus>
-                                <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1"></paper-icon-button>
+                                <paper-icon-button suffix icon="clear" on-click="_clearUsername" tabindex="-1" hidden$="[[isIEBrowser()]]"></paper-icon-button>
                             </paper-input>
                             <paper-input id="password" type="password" required label="Password" value="{{password}}">
-                                <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1"></paper-icon-button>
+                                <paper-icon-button suffix icon="clear" on-click="_clearPassword" tabindex="-1" hidden$="[[isIEBrowser()]]"></paper-icon-button>
                             </paper-input>
                             <content select="forgotten-password"></content>
                             <template is="dom-if" if="[[hideallowed]]">
@@ -160,17 +160,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                                 <div id="content">
                                     <template is="dom-if" if="[[showrealminput]]">
                                         <paper-input required label="{{realminputlabel}}" value="{{realm}}">
-                                            <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1"></paper-icon-button>
+                                            <paper-icon-button suffix icon="clear" on-click="_clearRealm" tabindex="-1" hidden$="[[isIEBrowser()]]"></paper-icon-button>
                                         </paper-input>
                                     </template>
                                     <template is="dom-if" if="[[showaccountinput]]">
                                         <paper-input required label="{{accountinputlabel}}" value="{{account}}">
-                                            <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1"></paper-icon-button>
+                                            <paper-icon-button suffix icon="clear" on-click="_clearAccount" tabindex="-1" hidden$="[[isIEBrowser()]]"></paper-icon-button>
                                         </paper-input>
                                     </template>
                                     <template is="dom-if" if="[[showhostinput]]">
                                         <paper-input required label="Host" value="{{host}}" disabled="{{disablehostinput}}">
-                                            <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1"></paper-icon-button>
+                                            <paper-icon-button suffix icon="clear" on-click="_clearHost" tabindex="-1" hidden$="[[isIEBrowser()]]"></paper-icon-button>
                                         </paper-input>
                                     </template>
                                 </div>

@@ -353,6 +353,39 @@
             this.set('realm',e.model.item.realm);
             this._authProviderElem.setAttribute("realm",this.realm);
             this._login();
-        }
+        },
+        
+        isIEBrowser: function() {
+            return this._isMSEdge() || this._isIE11OrLower();
+        },
+        
+        _isIE11OrLower: function() {
+            if (navigator) {
+                var userAgent = navigator.userAgent;
+                if (userAgent) {
+                    var regEx = new RegExp("Trident/([0-9]{1,}[\.0-9]{0,})");
+                    if (regEx.exec(userAgent) != null) {
+                        var version = parseFloat(RegExp.$1);
+                        
+                        // If we're on Trident 7.x or lower that's IE11 and before
+                        if (version <= 7) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            return false;
+        },
+
+        _isMSEdge: function() {
+            if (navigator) {
+                var userAgent = navigator.userAgent;
+                if (userAgent) {
+                    return userAgent.indexOf('Edge/') > -1;
+                }
+            }
+            return false;
+        },
     });
 })();
