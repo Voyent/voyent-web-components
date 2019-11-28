@@ -92,6 +92,12 @@ Example:
                 margin: -7px;
                 padding: 10px;
             }
+            
+            @media print {
+                .custom-control {
+                    display: none;
+                }
+            }
         </style>
         <div id="container" data-is-fullscreen$="[[_isFullscreenMode]]">
             <div id="map" data-is-fullscreen$="[[_isFullscreenMode]]"></div>
