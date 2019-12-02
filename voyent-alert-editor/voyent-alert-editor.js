@@ -385,6 +385,11 @@ Polymer({
      * @private
      */
     _queryTemplates: function(searchQuery) {
+        // Don't start querying if we haven't finished loading
+        if (this._parentTemplates === this._parentTemplatesInitValue) {
+            return;
+        }
+        
         // Always execute the search query against a complete list so
         //  changes made via backspace, copy/paste, etc.. are applied properly
         this.set('_filteredParentTemplates', this._parentTemplates.slice(0));
