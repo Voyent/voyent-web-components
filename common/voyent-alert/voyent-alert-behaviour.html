@@ -114,6 +114,14 @@
             }
         },
         
+        _hasBase64Content: function(text) {
+            if (text) {
+                var matchOn = '<img src=\\"data:';
+                return text.indexOf(matchOn) !== -1;
+            }
+            return false;
+        },
+        
         /**
          * Removes any base64 encoded images from the passed text (which should be stringified from JSON)
          */
@@ -236,7 +244,7 @@
             if (funcBefore && typeof funcBefore === 'function') {
                 this.funcBeforeSave = funcBefore;
             }
-            this._saveAlertTemplate(funcBefore).catch(function(e){});
+            return this._saveAlertTemplate(funcBefore);
         },
 
         /**
@@ -253,7 +261,7 @@
                 if (!_this._skipCategoryValidation &&
                     (!_this._loadedAlert.template.categories || !_this._loadedAlert.template.categories.length)) {
                     _this._openUncategorizedTemplateDialog();
-                    return reject('no categories provided');
+                    return reject('No categories provided, will prompt with dialog...');
                 }
                 
                 // Check if we have an overriding before-save function
@@ -270,17 +278,19 @@
                         _this._actualPersistAlertTemplate().then(function() {
                             resolve();
                         }).catch(function(error) {
-                            reject(error);
+                            _this.fire('message-error', 'Issue saving alert template: ' + (error.responseText || error.message || error));
+                            return reject(error);
                         });
                     }).catch(function(error) {
                         _this.fire('message-error', 'Issue saving alert template: ' + (error.responseText || error.message || error));
-                        reject(error);
+                        return reject(error);
                     });
                 }
                 else {
                     _this._actualPersistAlertTemplate().then(function() {
                         resolve();
                     }).catch(function(error) {
+                        _this.fire('message-error', 'Issue saving alert template: ' + (error.responseText || error.message || error));
                         return reject(error);
                     });
                 }
@@ -299,6 +309,13 @@
             return new Promise(function(resolve, reject) {
                 _this._savingAlertTemplate = true;
                 _this._loadedAlert.template.updateJSON();
+                
+                // VRAS-1160 - If we have base64 images by this point something has gone wrong. So far we have trouble reproducing what happened, but we know we don't want base64 stored on the server, so abort and notify the user
+                if (_this._hasBase64Content(JSON.stringify(_this._loadedAlert.template.json))) {
+                    _this._savingAlertTemplate = false;
+                    return reject('Failed to upload media files, try reattaching them');
+                }
+                
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
                 var func = 'createAlertTemplate';
                 if (_this._loadedAlert.template.id) {
