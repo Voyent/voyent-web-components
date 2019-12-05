@@ -3,6 +3,7 @@
 <link rel="import" href="./voyent-alert-styles.html">
 
 <script>
+    var funcBeforeSave;
     var Voyent = Voyent || {};
     /**
      * Provides common functionality required by all `voyent-alert-*` components.
@@ -112,14 +113,6 @@
                     }
                 }
             }
-        },
-        
-        _hasBase64Content: function(text) {
-            if (text) {
-                var matchOn = '<img src=\\"data:';
-                return text.indexOf(matchOn) !== -1;
-            }
-            return false;
         },
         
         /**
@@ -242,14 +235,14 @@
          */
         saveAlertTemplate: function(funcBefore) {
             if (funcBefore && typeof funcBefore === 'function') {
-                this.funcBeforeSave = funcBefore;
+                funcBeforeSave = funcBefore;
             }
-            return this._saveAlertTemplate(funcBefore);
+            this._saveAlertTemplate(funcBefore).catch(function(e){});
         },
 
         /**
          * Wrapped function for `saveAlertTemplate` that returns a Promise for internal component use.
-         * @param localFuncBefore optional function called before an actual save, in case we interrupt with the Category dialog. Overwrites and replaces this.funcBeforeSave
+         * @param localFuncBefore optional function called before an actual save, in case we interrupt with the Category dialog. Overwrites and replaces funcBeforeSave
          * @returns {Promise}
          * @private
          */
@@ -261,36 +254,34 @@
                 if (!_this._skipCategoryValidation &&
                     (!_this._loadedAlert.template.categories || !_this._loadedAlert.template.categories.length)) {
                     _this._openUncategorizedTemplateDialog();
-                    return reject('No categories provided, will prompt with dialog...');
+                    return reject('no categories provided');
                 }
                 
                 // Check if we have an overriding before-save function
                 if (localFuncBefore && typeof localFuncBefore === 'function') {
-                    _this.funcBeforeSave = localFuncBefore;
+                    funcBeforeSave = localFuncBefore;
                 }
                 
                 // Now if we have a before save function we fire it off and then continue processing the storing
                 // Otherwise we jump right to storing
-                if (_this.funcBeforeSave && typeof _this.funcBeforeSave === 'function') {
+                if (funcBeforeSave && typeof funcBeforeSave === 'function') {
                     // When the before-save function gives it's Promise we act on that, either to save or error out
-                    _this.funcBeforeSave().then(function() {
+                    funcBeforeSave().then(function() {
                         // Finally do the actual save
                         _this._actualPersistAlertTemplate().then(function() {
                             resolve();
                         }).catch(function(error) {
-                            _this.fire('message-error', 'Issue saving alert template: ' + (error.responseText || error.message || error));
-                            return reject(error);
+                            reject(error);
                         });
                     }).catch(function(error) {
                         _this.fire('message-error', 'Issue saving alert template: ' + (error.responseText || error.message || error));
-                        return reject(error);
+                        reject(error);
                     });
                 }
                 else {
                     _this._actualPersistAlertTemplate().then(function() {
                         resolve();
                     }).catch(function(error) {
-                        _this.fire('message-error', 'Issue saving alert template: ' + (error.responseText || error.message || error));
                         return reject(error);
                     });
                 }
@@ -309,13 +300,6 @@
             return new Promise(function(resolve, reject) {
                 _this._savingAlertTemplate = true;
                 _this._loadedAlert.template.updateJSON();
-                
-                // VRAS-1160 - If we have base64 images by this point something has gone wrong. So far we have trouble reproducing what happened, but we know we don't want base64 stored on the server, so abort and notify the user
-                if (_this._hasBase64Content(JSON.stringify(_this._loadedAlert.template.json))) {
-                    _this._savingAlertTemplate = false;
-                    return reject('Failed to upload media files, try reattaching them');
-                }
-                
                 var requestOpts = {realm: _this.realm, account: _this.account, alertTemplate: _this._loadedAlert.template.json};
                 var func = 'createAlertTemplate';
                 if (_this._loadedAlert.template.id) {
