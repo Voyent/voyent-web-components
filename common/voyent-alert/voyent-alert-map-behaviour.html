@@ -588,7 +588,7 @@
          */
         disableFullscreenMode: function() {
             // Always leave the view as a windowed component
-            if (this._isFullscreenMode) {
+            if (this._isFullscreenMode && !this.maintainMapFullscreen) {
                 this._toggleFullscreenContainer();
             }
         },
