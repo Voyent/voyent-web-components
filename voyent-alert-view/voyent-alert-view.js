@@ -17,6 +17,10 @@ Polymer({
          */
         isPortrait: { type: Boolean, value: false, observer: '_isPortraitChanged' },
         /**
+         * Flag to maintain the map in fullscreen through clearing, loading, etc.
+         */
+        maintainMapFullscreen: { type: Boolean, value: false },
+        /**
          * Bind to this property to indicate whether the component is currently visible so state can be properly managed.
          */
         visible: { type: Boolean, value: false, observer: '_visibleChanged' }
@@ -56,7 +60,7 @@ Polymer({
             }
         });
     },
-
+    
     /**
      * View the alert associated with the templateId at its last known location.
      * If location records are included they will be drawn on the map.
