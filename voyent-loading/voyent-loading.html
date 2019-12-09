@@ -26,7 +26,9 @@ If you don't want a particular instance of this component to listen for the load
         
         <div class="throbber-wrapper" hidden$="{{!on}}">
             <content></content>
-            <div class="throbber-loader">...</div>
+            <template is="dom-if" if="[[!noThrobber]]">
+                <div class="throbber-loader">...</div>
+            </template>
         </div>
     </template>
 </dom-module>

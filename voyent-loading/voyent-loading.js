@@ -3,7 +3,8 @@ Polymer({
 
     properties: {
         on: { type: Boolean, value: false, notify: true, reflectToAttribute: true },
-        locked: { type: Boolean, value: false, notify: true, reflectToAttribute: true }
+        locked: { type: Boolean, value: false, notify: true, reflectToAttribute: true },
+        noThrobber: { type: Boolean, value: false, notify: true, reflectToAttribute: true }
     },
     
     ready: function() {
