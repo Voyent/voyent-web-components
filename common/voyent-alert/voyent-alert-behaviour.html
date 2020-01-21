@@ -1727,6 +1727,7 @@
              * @param name - The user-defined name.
              * @param badge - The user chosen alert badge icon.
              * @param alertSeverity - The alert severity of the whole template.
+             * @param placeholders - The placeholders used in the alert template
              * @param marker - The associated map marker for the entire template, centered between the various stacks.
              * @param zoneStacks - A list of _AlertZoneStack objects, the list of zone stacks belonging with the template.
              * @param state - The current state of the alert, only relevant for child templates.
@@ -1735,13 +1736,14 @@
              * @param categories - Zero or more categories that this template belongs to.
              * @private
              */
-            this._AlertTemplate = function(id,parentId,alertFamilyId,name,badge,alertSeverity,marker,zoneStacks,state,savePosition,schedule,categories) {
+            this._AlertTemplate = function(id,parentId,alertFamilyId,name,badge,alertSeverity,placeholders,marker,zoneStacks,state,savePosition,schedule,categories) {
                 this.setId(id || null);
                 this.setParentId(parentId || null);
                 this.setAlertFamilyId(alertFamilyId || null);
                 this.setName(name || 'Unnamed');
                 this.setBadge(badge || 'info.png');
                 this.setAlertSeverity(alertSeverity || null);
+                this.setPlaceholders(placeholders || null);
                 this.setMarker(marker || null);
                 this.setZoneStacks(zoneStacks && zoneStacks.length ? zoneStacks : []);
                 this.setState(state || null);
@@ -1944,6 +1946,20 @@
                  */
                 getAlertSeverity: function() {
                     return this.alertSeverity;
+                },
+                /**
+                 * Sets the overall placeholders and notifies the polymer path.
+                 * @param placeholders
+                 */
+                setPlaceholders: function(placeholders) {
+                    this.placeholders = placeholders;
+                    _outer._notifyPropertyPathForAlert('placeholders');
+                },
+                /**
+                 * Gets the overall placeholders of this template
+                 */
+                getPlaceholders: function() {
+                    return this.placeholders;
                 },
                 /**
                  * Sets the alert badge icon and notifies the polymer path.
@@ -2155,6 +2171,10 @@
                     
                     if (this.alertSeverity) {
                         json.properties.alertSeverity = this.alertSeverity;
+                    }
+                    
+                    if (this.placeholders) {
+                        json.properties.placeholders = this.placeholders;
                     }
                     
                     //Add fallback zone, we'll always add it the properties.

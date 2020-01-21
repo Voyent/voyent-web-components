@@ -709,7 +709,7 @@
             }
             return null;
         },
-
+        
         /**
          * Sets the acknowledgement property into the zone associated with the stack and zone indices.
          * @param acknowledgement
@@ -769,6 +769,9 @@
             }
         },
         
+        /**
+         * Get the overall alert severity
+         */
         getAlertSeverity: function() {
             if (this._loadedAlert && this._loadedAlert.template) {
                 return this._loadedAlert.template.getAlertSeverity();
@@ -776,9 +779,31 @@
             return null;
         },
         
+        /**
+         * Pass through and set the overall alert severity into the current alert
+         */
         setAlertSeverity: function(severity) {
             if (this._loadedAlert && this._loadedAlert.template) {
                 this._loadedAlert.template.setAlertSeverity(severity);
+            }
+        },
+        
+        /**
+         * Get any placeholders for the current alert
+         */
+        getPlaceholders: function() {
+            if (this._loadedAlert && this._loadedAlert.template) {
+                return this._loadedAlert.template.getPlaceholders();
+            }
+            return null;
+        },
+        
+        /**
+         * Pass through and set the placeholders into the current alert
+         */
+        setPlaceholders: function(placeholders) {
+            if (this._loadedAlert && this._loadedAlert.template) {
+                this._loadedAlert.template.setPlaceholders(placeholders);
             }
         },
 
@@ -1206,7 +1231,7 @@
             this.set('_loadedAlert', {
                 template: new this._AlertTemplate(
                     templateJSON._id, parentId, alertFamilyId, templateJSON.name, templateJSON.badge, templateJSON.properties.alertSeverity,
-                    templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center,
+                    templateJSON.properties.placeholders, templateMarker, zoneStacks, templateJSON.state, !!templateJSON.properties.center,
                     templateJSON.schedule, templateJSON.categories
                 ),
                 selectedStack: zoneStacks.length === 1 ? zoneStacks[0] : null

@@ -72,7 +72,7 @@ Polymer({
                 _this.set('_loadedAlert',{
                     template: new _this._AlertTemplate(
                         null,null,null,_this._dialogInput,_this._dialogBadge,
-                        null,null,null,null,false,null,[]
+                        null,null,null,null,null,false,null,[]
                     ),
                     selectedStack: null
                 });
