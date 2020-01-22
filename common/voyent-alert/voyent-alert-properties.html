@@ -514,7 +514,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                     </template>
                 </div>
             </template>
-            <template is="dom-if" if="[[showMovementAccordion]]">
+            <!--<template is="dom-if" if="[[showMovementAccordion]]">
                 <template is="dom-if" if="[[_loadedAlert.template.zoneStacks.length]]">
                     <div class="accordion">
                         <div class="main-header zone-stack text-center" data-selected$="[[_showMovement]]">
@@ -578,7 +578,7 @@ Internal component used to display the properties panel inside Voyent alert comp
                         </div>
                     </div>
                 </template>
-            </template>
+            </template>-->
         </template>
         <paper-dialog id="modalDialog" modal on-keyup="_dialogKeyUp"
                       on-iron-overlay-opened="_patchOverlay" on-iron-overlay-closed="_patchOverlayClosed">

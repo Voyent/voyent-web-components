@@ -207,7 +207,7 @@
                     results.errors.push('This alert ' + templateTxt + ' is too large, try reducing the size of the message contents or complexity of zones');
                 }
             }
-            if (this._isAlertEditor()) {
+            /*if (this._isAlertEditor()) {
                 //Ensure we have both movement parameters or none at all.
                 if (this._alertSpeed && (!this._alertDirection && this._alertDirection !== 0)) {
                     results.errors.push('Moving alerts must have both a speed and direction defined (direction is missing)');
@@ -225,7 +225,7 @@
                         results.errors.push('Moving alerts are restricted to a maximum of two zones');
                     }
                 }
-            }
+            }*/
             return results;
         },
 
@@ -2157,13 +2157,13 @@
                         if (this.schedule) {
                             json.schedule = this.schedule;
                         }
-                        if (_outer._alertDirection || _outer._alertDirection === 0) {
+                        /*if (_outer._alertDirection || _outer._alertDirection === 0) {
                             json.properties.direction = Number(_outer._alertDirection);
                         }
                         if (_outer._alertSpeed) {
                             json.properties.speed = Number(_outer._alertSpeed);
                             json.properties.speedUnit = _outer._alertSpeedUnit || 'kph';
-                        }
+                        }*/
                     }
                     else {
                         json.categories = this.categories;

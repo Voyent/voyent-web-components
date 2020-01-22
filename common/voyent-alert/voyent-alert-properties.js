@@ -174,10 +174,10 @@ Polymer({
         _activelyMovingVertex: { type: Boolean, value: false, notify: true }
     },
 
-    observers: [
+    /*observers: [
         '_alertDirectionChanged(_alertDirection)',
         '_alertSpeedChanged(_alertSpeed)'
-    ],
+    ],*/
 
     attached: function() {
         var _this = this;

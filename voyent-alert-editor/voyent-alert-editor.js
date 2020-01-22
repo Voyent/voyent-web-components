@@ -83,7 +83,7 @@ Polymer({
             _this._showPropertiesPane = true;
             _this._setIsAlertLoading(false);
             //Populate the movement pane, async so the properties panel has time to initialize.
-            setTimeout(function() {
+            /*setTimeout(function() {
                 if (typeof template.properties.direction !== 'undefined') {
                     _this.set('_alertDirection',template.properties.direction);
                 }
@@ -91,7 +91,7 @@ Polymer({
                     _this.set('_alertSpeed',template.properties.speed);
                     _this.set('_alertSpeedUnit',template.properties.speedUnit || 'kph');
                 }
-            },0);
+            },0);*/
         }).catch(function(e) {
             _this.fire('message-error', 'Issue loading saved alert, try again or contact a Voyent administrator');
             console.error('e',e);
